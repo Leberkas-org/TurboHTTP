@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Akka.Streams" Version="1.5.60"/>
+        <PackageReference Include="Servus.Akka" Version="0.3.10"/>
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="TurboHttp.Tests"/>
+    </ItemGroup>
+</Project>

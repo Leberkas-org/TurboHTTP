@@ -1,20 +1,8 @@
 version: 2
 
 updates:
-  - package-ecosystem: nuget
-    directory: "/src"
-    schedule:
-      interval: daily
-      time: "11:00"
-
-  - package-ecosystem: nuget
-    directory: "/.config"
-    schedule:
-      interval: daily
-      time: "11:00"
-
-  - package-ecosystem: dotnet-sdk
-    directory: "/src"
-    schedule:
-      interval: daily
-      time: "11:00"
+- package-ecosystem: nuget
+  directory: "/src"
+  schedule:
+    interval: daily
+    time: "11:00"
