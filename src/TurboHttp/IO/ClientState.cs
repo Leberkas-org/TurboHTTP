@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Pipelines;
 using System.Threading.Channels;
 
-namespace Servus.Akka.IO;
+namespace TurboHttp.IO;
 
 internal sealed class ClientState
 {

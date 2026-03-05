@@ -10,6 +10,7 @@ public interface IHttpProtocolEngine
     BidiFlow<
         HttpRequestMessage,
         (IMemoryOwner<byte>, int),
-        (IMemoryOwner<byte>, int), HttpResponseMessage,
+        (IMemoryOwner<byte>, int), 
+        HttpResponseMessage,
         NotUsed> CreateFlow();
 }

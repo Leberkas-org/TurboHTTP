@@ -20,21 +20,21 @@ public sealed class Http10StatusCodeTests
 
     // ── 2xx ──────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-060: GET /status/200 decoded status is 200 OK")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-060: GET /status/200 decoded status is 200 OK")]
     public async Task Status200_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/200");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-061: GET /status/201 decoded status is 201 Created")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-061: GET /status/201 decoded status is 201 Created")]
     public async Task Status201_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/201");
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-062: GET /status/204 decoded status is 204 No Content with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-062: GET /status/204 decoded status is 204 No Content with empty body")]
     public async Task Status204_IsDecodedCorrectly_EmptyBody()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/204");
@@ -43,7 +43,7 @@ public sealed class Http10StatusCodeTests
         Assert.Empty(body);
     }
 
-    [Fact(DisplayName = "IT-10-063: GET /status/206 decoded status is 206 Partial Content")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-063: GET /status/206 decoded status is 206 Partial Content")]
     public async Task Status206_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/206");
@@ -52,14 +52,14 @@ public sealed class Http10StatusCodeTests
 
     // ── 3xx ──────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-064: GET /status/301 decoded status is 301 Moved Permanently")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-064: GET /status/301 decoded status is 301 Moved Permanently")]
     public async Task Status301_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/301");
         Assert.Equal(HttpStatusCode.MovedPermanently, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-065: GET /status/302 decoded status is 302 Found")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-065: GET /status/302 decoded status is 302 Found")]
     public async Task Status302_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/302");
@@ -68,42 +68,42 @@ public sealed class Http10StatusCodeTests
 
     // ── 4xx ──────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-066: GET /status/400 decoded status is 400 Bad Request")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-066: GET /status/400 decoded status is 400 Bad Request")]
     public async Task Status400_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/400");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-067: GET /status/401 decoded status is 401 Unauthorized")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-067: GET /status/401 decoded status is 401 Unauthorized")]
     public async Task Status401_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/401");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-068: GET /status/403 decoded status is 403 Forbidden")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-068: GET /status/403 decoded status is 403 Forbidden")]
     public async Task Status403_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/403");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-069: GET /status/404 decoded status is 404 Not Found")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-069: GET /status/404 decoded status is 404 Not Found")]
     public async Task Status404_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/404");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-070: GET /status/405 decoded status is 405 Method Not Allowed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-070: GET /status/405 decoded status is 405 Method Not Allowed")]
     public async Task Status405_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/405");
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-071: GET /status/408 decoded status is 408 Request Timeout")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-071: GET /status/408 decoded status is 408 Request Timeout")]
     public async Task Status408_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/408");
@@ -112,21 +112,21 @@ public sealed class Http10StatusCodeTests
 
     // ── 5xx ──────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-072: GET /status/500 decoded status is 500 Internal Server Error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-072: GET /status/500 decoded status is 500 Internal Server Error")]
     public async Task Status500_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/500");
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-073: GET /status/502 decoded status is 502 Bad Gateway")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-073: GET /status/502 decoded status is 502 Bad Gateway")]
     public async Task Status502_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/502");
         Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-074: GET /status/503 decoded status is 503 Service Unavailable")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-074: GET /status/503 decoded status is 503 Service Unavailable")]
     public async Task Status503_IsDecodedCorrectly()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/503");

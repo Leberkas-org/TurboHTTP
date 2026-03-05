@@ -22,7 +22,7 @@ public sealed class Http2StreamTests
 
     // ── Basic Stream Requests ─────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-020: Stream 1: GET /hello → 200 + body 'Hello World'")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-020: Stream 1: GET /hello → 200 + body 'Hello World'")]
     public async Task Should_ReturnHelloWorld_When_GetHelloSentOnStream1()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -33,7 +33,7 @@ public sealed class Http2StreamTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "IT-2-021: Stream 1: POST /echo → server echoes body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-021: Stream 1: POST /echo → server echoes body")]
     public async Task Should_EchoRequestBody_When_PostEchoSentOnStream1()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -48,7 +48,7 @@ public sealed class Http2StreamTests
         Assert.Contains(data, body);
     }
 
-    [Fact(DisplayName = "IT-2-022: HEAD /hello → 200, no body in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-022: HEAD /hello → 200, no body in response")]
     public async Task Should_ReturnNoBody_When_HeadRequestSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -63,7 +63,7 @@ public sealed class Http2StreamTests
         }
     }
 
-    [Fact(DisplayName = "IT-2-023: GET /status/204 → 204 No Content, empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-023: GET /status/204 → 204 No Content, empty body")]
     public async Task Should_ReturnNoContent_When_Status204Requested()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -79,7 +79,7 @@ public sealed class Http2StreamTests
 
     // ── Sequential Streams ────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-024: Stream 1 then stream 3 (sequential) — both return correct responses")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-024: Stream 1 then stream 3 (sequential) — both return correct responses")]
     public async Task Should_ReturnCorrectResponses_When_TwoSequentialStreamsUsed()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -95,7 +95,7 @@ public sealed class Http2StreamTests
         Assert.Equal("pong", await resp2.Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "IT-2-025: Three sequential streams (1, 3, 5) — all return 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-025: Three sequential streams (1, 3, 5) — all return 200")]
     public async Task Should_ReturnOk_When_ThreeSequentialStreamsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -110,7 +110,7 @@ public sealed class Http2StreamTests
 
     // ── RST_STREAM ────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-026: Client sends RST_STREAM CANCEL — connection remains functional")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-026: Client sends RST_STREAM CANCEL — connection remains functional")]
     public async Task Should_RemainFunctional_When_ClientSendsRstStreamCancel()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -128,7 +128,7 @@ public sealed class Http2StreamTests
 
     // ── END_STREAM Placement ──────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-027: GET request has END_STREAM on HEADERS frame (no body)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-027: GET request has END_STREAM on HEADERS frame (no body)")]
     public async Task Should_SetEndStreamOnHeaders_When_GetRequestHasNoBody()
     {
         // We verify this by confirming a GET /hello succeeds — the server only sends
@@ -139,7 +139,7 @@ public sealed class Http2StreamTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-028: POST request has END_STREAM on DATA frame")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-028: POST request has END_STREAM on DATA frame")]
     public async Task Should_SetEndStreamOnDataFrame_When_PostRequestHasBody()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -157,7 +157,7 @@ public sealed class Http2StreamTests
 
     // ── CONTINUATION Frames ───────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-029: CONTINUATION frame triggered by large HEADERS block")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-029: CONTINUATION frame triggered by large HEADERS block")]
     public async Task Should_SendContinuationFrame_When_HeaderBlockExceedsMaxFrameSize()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -174,7 +174,7 @@ public sealed class Http2StreamTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-030: Multiple CONTINUATION frames for very large HEADERS block")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-030: Multiple CONTINUATION frames for very large HEADERS block")]
     public async Task Should_SendMultipleContinuationFrames_When_HeaderBlockIsVeryLarge()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -192,7 +192,7 @@ public sealed class Http2StreamTests
 
     // ── Stream State ──────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-031: Stream state idle → open → half-closed → closed completes cleanly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-031: Stream state idle → open → half-closed → closed completes cleanly")]
     public async Task Should_TransitionThroughStreamStates_When_RequestCompletes()
     {
         // The decoder tracks stream state internally.
@@ -210,7 +210,7 @@ public sealed class Http2StreamTests
 
     // ── Large Bodies ──────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-032: Large response body (60 KB) delivered across multiple DATA frames")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-032: Large response body (60 KB) delivered across multiple DATA frames")]
     public async Task Should_DeliverLargeBody_When_60KbResponseRequested()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -222,7 +222,7 @@ public sealed class Http2StreamTests
         Assert.True(body.All(b => b == (byte)'A'), "All bytes should be 'A'.");
     }
 
-    [Fact(DisplayName = "IT-2-033: Large request body (32 KB) sent via DATA frames and echoed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-033: Large request body (32 KB) sent via DATA frames and echoed")]
     public async Task Should_EcholargeRequestBody_When_32KbPostSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -240,7 +240,7 @@ public sealed class Http2StreamTests
         Assert.Equal(bodyData, received);
     }
 
-    [Fact(DisplayName = "IT-2-034: Response body fragmented across multiple DATA frames is correctly reassembled")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-034: Response body fragmented across multiple DATA frames is correctly reassembled")]
     public async Task Should_ReassembleFragmentedBody_When_LargeBodyReceivedInMultipleFrames()
     {
         // 20 KB body — Kestrel splits this into multiple DATA frames (16384 + remainder).
@@ -252,7 +252,7 @@ public sealed class Http2StreamTests
         Assert.Equal(20 * 1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-2-035: Five sequential streams each get correct responses")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-035: Five sequential streams each get correct responses")]
     public async Task Should_HandleFiveSequentialStreams_When_SentOnSameConnection()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);

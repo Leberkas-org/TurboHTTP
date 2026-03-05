@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using TurboHttp.IntegrationTests.Shared;
 using TurboHttp.Protocol;
 
@@ -22,20 +21,16 @@ public sealed class Http2HpackTests
 
     // ── Static Table / Literal Headers ───────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-040: First request — all headers encoded as literals (cold HPACK state)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-040: First request — all headers encoded as literals (cold HPACK state)")]
     public async Task Should_EncodeAllLiteral_When_FirstRequestSent()
     {
         // Encode two requests with independent encoders to compare sizes.
-        var encoder = new Http2Encoder(useHuffman: false);
-        var buffer1 = new byte[1024 * 64];
-        var mem1 = buffer1.AsMemory();
+        var encoder = new Http2RequestEncoder(useHuffman: false);
         var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"http://127.0.0.1:{_fixture.Port}/ping"));
-        var (_, written1) = encoder.Encode(request, ref mem1);
+        var (_, written1) = encoder.EncodeToBytes(request);
 
         // Encode same request again — HPACK table is warm, so second should be smaller.
-        var buffer2 = new byte[1024 * 64];
-        var mem2 = buffer2.AsMemory();
-        var (_, written2) = encoder.Encode(request, ref mem2);
+        var (_, written2) = encoder.EncodeToBytes(request);
 
         Assert.True(written2 <= written1,
             $"Second identical request ({written2} bytes) should be <= first ({written1} bytes) due to HPACK indexing.");
@@ -48,32 +43,27 @@ public sealed class Http2HpackTests
         Assert.Equal(HttpStatusCode.OK, (await conn.SendAndReceiveAsync(r2)).StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-041: Second identical request uses indexed headers (smaller HEADERS frame)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-041: Second identical request uses indexed headers (smaller HEADERS frame)")]
     public async Task Should_UseSmallerHeadersFrame_When_SecondIdenticalRequestSent()
     {
-        var encoder = new Http2Encoder(useHuffman: false);
+        var encoder = new Http2RequestEncoder(useHuffman: false);
         var uri = new Uri($"http://127.0.0.1:{_fixture.Port}/hello");
 
         var req1 = new HttpRequestMessage(HttpMethod.Get, uri);
         var req2 = new HttpRequestMessage(HttpMethod.Get, uri);
 
-        var buf1 = new byte[1024 * 64];
-        var mem1 = buf1.AsMemory();
-        var (_, written1) = encoder.Encode(req1, ref mem1);
-
-        var buf2 = new byte[1024 * 64];
-        var mem2 = buf2.AsMemory();
-        var (_, written2) = encoder.Encode(req2, ref mem2);
+        var (_, written1) = encoder.EncodeToBytes(req1);
+        var (_, written2) = encoder.EncodeToBytes(req2);
 
         Assert.True(written2 < written1,
             $"Second request ({written2} bytes) should be smaller than first ({written1} bytes).");
     }
 
-    [Fact(DisplayName = "IT-2-042: HPACK dynamic table grows across requests with custom headers")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-042: HPACK dynamic table grows across requests with custom headers")]
     public async Task Should_GrowDynamicTable_When_CustomHeadersSentAcrossRequests()
     {
         // After several requests with the same custom header, later requests are smaller.
-        var encoder = new Http2Encoder(useHuffman: false);
+        var encoder = new Http2RequestEncoder(useHuffman: false);
         var uri = new Uri($"http://127.0.0.1:{_fixture.Port}/headers/echo");
         const string headerName = "X-My-Header";
         const string headerValue = "constant-value";
@@ -83,9 +73,7 @@ public sealed class Http2HpackTests
         {
             var req = new HttpRequestMessage(HttpMethod.Get, uri);
             req.Headers.TryAddWithoutValidation(headerName, headerValue);
-            var buf = new byte[1024 * 64];
-            var mem = buf.AsMemory();
-            var (_, written) = encoder.Encode(req, ref mem);
+            var (_, written) = encoder.EncodeToBytes(req);
             sizes.Add(written);
         }
 
@@ -94,7 +82,7 @@ public sealed class Http2HpackTests
             $"5th request ({sizes[4]} bytes) should be <= 1st ({sizes[0]} bytes) after dynamic table warm-up.");
     }
 
-    [Fact(DisplayName = "IT-2-043: Sensitive header (Authorization) is never-indexed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-043: Sensitive header (Authorization) is never-indexed")]
     public async Task Should_NeverIndexAuthorizationHeader_When_Encoded()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -105,11 +93,11 @@ public sealed class Http2HpackTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-044: HPACK static table entries used (method, path, status)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-044: HPACK static table entries used (method, path, status)")]
     public async Task Should_UseStaticTableEntries_When_CommonMethodsAndPathsEncoded()
     {
         // GET and /ping are in the static table; subsequent requests should be smaller.
-        var encoder = new Http2Encoder(useHuffman: false);
+        var encoder = new Http2RequestEncoder(useHuffman: false);
         var uri = new Uri($"http://127.0.0.1:{_fixture.Port}/");
 
         var req1 = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -121,12 +109,12 @@ public sealed class Http2HpackTests
         Assert.True(written1 < 200, $"First GET / request should be compact due to static table; got {written1} bytes.");
     }
 
-    [Fact(DisplayName = "IT-2-045: Huffman encoding enabled — request headers are compressed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-045: Huffman encoding enabled — request headers are compressed")]
     public async Task Should_CompressHeaders_When_HuffmanEncodingEnabled()
     {
         // Compare encoded size with Huffman on vs off.
-        var encoderHuffman = new Http2Encoder(useHuffman: true);
-        var encoderNoHuffman = new Http2Encoder(useHuffman: false);
+        var encoderHuffman = new Http2RequestEncoder(useHuffman: true);
+        var encoderNoHuffman = new Http2RequestEncoder(useHuffman: false);
         var uri = new Uri($"http://127.0.0.1:{_fixture.Port}/hello");
 
         var req1 = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -144,7 +132,7 @@ public sealed class Http2HpackTests
             $"Huffman-encoded request ({withHuffman} bytes) should be <= plain ({withoutHuffman} bytes).");
     }
 
-    [Fact(DisplayName = "IT-2-046: HPACK dynamic table eviction — table does not grow unbounded")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-046: HPACK dynamic table eviction — table does not grow unbounded")]
     public async Task Should_EvictTableEntries_When_TableSizeLimitReached()
     {
         // Send 50 requests with unique headers — the table eventually reaches the 4096-byte limit
@@ -159,7 +147,7 @@ public sealed class Http2HpackTests
         }
     }
 
-    [Fact(DisplayName = "IT-2-047: Pseudo-headers order — :method, :path, :scheme, :authority come first")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-047: Pseudo-headers order — :method, :path, :scheme, :authority come first")]
     public async Task Should_PlacePseudoHeadersFirst_When_RequestEncoded()
     {
         // We verify by confirming the server accepts the request correctly.
@@ -171,7 +159,7 @@ public sealed class Http2HpackTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-048: Response pseudo-header :status decoded — HttpResponseMessage.StatusCode set correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-048: Response pseudo-header :status decoded — HttpResponseMessage.StatusCode set correctly")]
     public async Task Should_SetStatusCode_When_StatusPseudoHeaderDecoded()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -180,7 +168,7 @@ public sealed class Http2HpackTests
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-049: 20 custom headers sent and echoed back in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-049: 20 custom headers sent and echoed back in response")]
     public async Task Should_EchoTwentyCustomHeaders_When_SentInRequest()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -197,7 +185,7 @@ public sealed class Http2HpackTests
         Assert.True(response.Headers.Contains("X-Header-19"), "Response should echo X-Header-19.");
     }
 
-    [Fact(DisplayName = "IT-2-050: Response has Set-Cookie header — decoded without errors")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-050: Response has Set-Cookie header — decoded without errors")]
     public async Task Should_DecodeSetCookieHeader_When_ResponseContainsCookie()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -213,7 +201,7 @@ public sealed class Http2HpackTests
             "Response should contain a Set-Cookie header.");
     }
 
-    [Fact(DisplayName = "IT-2-051: Authorization header sent and accepted by server (never-index does not break round-trip)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-051: Authorization header sent and accepted by server (never-index does not break round-trip)")]
     public async Task Should_SucceedRoundTrip_When_AuthorizationHeaderSent()
     {
         // Authorization uses NeverIndex in HPACK but must still be transmitted correctly.
@@ -228,7 +216,7 @@ public sealed class Http2HpackTests
         Assert.Equal(HttpStatusCode.OK, authResponse.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-052: HPACK decoder handles indexed + literal + indexed mix in response headers")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-052: HPACK decoder handles indexed + literal + indexed mix in response headers")]
     public async Task Should_DecodeResponseHeaders_When_HeadersUseIndexedAndLiteralMix()
     {
         // Response headers from Kestrel include a mix of indexed and literal entries.
@@ -251,10 +239,10 @@ public sealed class Http2HpackTests
         Assert.True(count >= 3, $"Expected at least 3 X-Custom-* headers, got {count}.");
     }
 
-    [Fact(DisplayName = "IT-2-053: Multiple requests with same custom header — subsequent encodings are smaller")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-053: Multiple requests with same custom header — subsequent encodings are smaller")]
     public async Task Should_CompressSubsequentRequests_When_SameCustomHeaderRepeated()
     {
-        var encoder = new Http2Encoder(useHuffman: false);
+        var encoder = new Http2RequestEncoder(useHuffman: false);
         var uri = new Uri($"http://127.0.0.1:{_fixture.Port}/ping");
         const string customHeader = "X-Repeated-Header";
         const string customValue = "same-value-every-time";

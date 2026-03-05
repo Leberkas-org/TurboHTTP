@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using TurboHttp.IntegrationTests.Shared;
 using TurboHttp.Protocol;
 
@@ -22,7 +21,7 @@ public sealed class Http10ConnectionTests
 
     // ── Connection closes after response ──────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-080: Connection closes after HTTP/1.0 response — second read returns 0")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-080: Connection closes after HTTP/1.0 response — second read returns 0")]
     public async Task Connection_ClosesAfterResponse()
     {
         using var tcp = new TcpClient();
@@ -63,7 +62,7 @@ public sealed class Http10ConnectionTests
 
     // ── Multiple sequential requests each need a new connection ───────────────
 
-    [Fact(DisplayName = "IT-10-081: Five sequential GET /ping requests on separate connections all succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-081: Five sequential GET /ping requests on separate connections all succeed")]
     public async Task FiveSequentialRequests_SeparateConnections_AllSucceed()
     {
         for (var i = 0; i < 5; i++)
@@ -77,7 +76,7 @@ public sealed class Http10ConnectionTests
 
     // ── TryDecodeEof on closed connection ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-082: TryDecodeEof succeeds when server closes connection — HEAD response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-082: TryDecodeEof succeeds when server closes connection — HEAD response")]
     public async Task TryDecodeEof_SucceedsOnServerClose_HeadResponse()
     {
         // HEAD response has no body; decoder must handle server-close + TryDecodeEof
@@ -91,7 +90,7 @@ public sealed class Http10ConnectionTests
 
     // ── Partial response → decoder returns false ──────────────────────────────
 
-    [Fact(DisplayName = "IT-10-083: Partial response bytes cause TryDecode to return false until complete")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-083: Partial response bytes cause TryDecode to return false until complete")]
     public async Task PartialResponse_TryDecode_ReturnsFalse_UntilComplete()
     {
         // Build a synthetic partial response and feed it to a fresh decoder
@@ -119,7 +118,7 @@ public sealed class Http10ConnectionTests
 
     // ── Server-sent Connection:close handled correctly ────────────────────────
 
-    [Fact(DisplayName = "IT-10-084: Response decoded successfully when server sends Connection: close")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-084: Response decoded successfully when server sends Connection: close")]
     public async Task Response_DecodedSuccessfully_WhenServerSendsConnectionClose()
     {
         // Kestrel sends Connection: close for HTTP/1.0 requests.
@@ -133,7 +132,7 @@ public sealed class Http10ConnectionTests
 
     // ── Two independent TCP clients, concurrent requests ──────────────────────
 
-    [Fact(DisplayName = "IT-10-085: Two concurrent GET /ping requests on separate connections both succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-085: Two concurrent GET /ping requests on separate connections both succeed")]
     public async Task TwoConcurrent_GetPing_SeparateConnections_BothSucceed()
     {
         var t1 = Http10Helper.GetAsync(_fixture.Port, "/ping");

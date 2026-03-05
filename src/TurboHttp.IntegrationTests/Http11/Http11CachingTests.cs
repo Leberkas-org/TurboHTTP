@@ -20,7 +20,7 @@ public sealed class Http11CachingTests
 
     // ── If-None-Match matches ETag → 304 ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-030: If-None-Match matches ETag — server returns 304 with no body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-030: If-None-Match matches ETag — server returns 304 with no body")]
     public async Task IfNoneMatch_MatchesETag_Returns304_NoBody()
     {
         const string etag = "\"v1\"";
@@ -36,7 +36,7 @@ public sealed class Http11CachingTests
 
     // ── If-None-Match no match → 200 full body ────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-031: If-None-Match no match — server returns 200 with full body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-031: If-None-Match no match — server returns 200 with full body")]
     public async Task IfNoneMatch_NoMatch_Returns200_FullBody()
     {
         const string staleEtag = "\"old-version\"";
@@ -52,7 +52,7 @@ public sealed class Http11CachingTests
 
     // ── ETag format valid (quoted string) ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-032: ETag in 200 response is a valid quoted-string")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-032: ETag in 200 response is a valid quoted-string")]
     public async Task ETag_InResponse_IsValidQuotedString()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/etag");
@@ -67,7 +67,7 @@ public sealed class Http11CachingTests
 
     // ── If-Modified-Since past → 200 ─────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-033: If-Modified-Since with past date — server returns 200 with full body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-033: If-Modified-Since with past date — server returns 200 with full body")]
     public async Task IfModifiedSince_PastDate_Returns200()
     {
         // /if-modified-since uses a fixed date of 2026-01-01
@@ -85,7 +85,7 @@ public sealed class Http11CachingTests
 
     // ── If-Modified-Since future → 304 ───────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-034: If-Modified-Since with future date — server returns 304 Not Modified")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-034: If-Modified-Since with future date — server returns 304 Not Modified")]
     public async Task IfModifiedSince_FutureDate_Returns304()
     {
         // A date equal to or after the fixed last-modified (2026-01-01) → 304
@@ -100,7 +100,7 @@ public sealed class Http11CachingTests
 
     // ── Last-Modified in response ─────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-035: Last-Modified header present in response from /if-modified-since")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-035: Last-Modified header present in response from /if-modified-since")]
     public async Task LastModified_InResponse_Present()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/if-modified-since");
@@ -110,7 +110,7 @@ public sealed class Http11CachingTests
             "Last-Modified content header should be present");
     }
 
-    [Fact(DisplayName = "IT-11A-036: Last-Modified date is parseable RFC 7231 date")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-036: Last-Modified date is parseable RFC 7231 date")]
     public async Task LastModified_IsParseable_Rfc7231Date()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/if-modified-since");
@@ -123,7 +123,7 @@ public sealed class Http11CachingTests
 
     // ── Cache-Control: no-cache in request ───────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-037: Cache-Control: no-cache request header sent — server still returns 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-037: Cache-Control: no-cache request header sent — server still returns 200")]
     public async Task CacheControl_NoCacheRequest_ServerReturns200()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/cache"));
@@ -139,7 +139,7 @@ public sealed class Http11CachingTests
 
     // ── Cache-Control: max-age=0 in request ──────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-038: Cache-Control: max-age=0 request header sent — server still returns 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-038: Cache-Control: max-age=0 request header sent — server still returns 200")]
     public async Task CacheControl_MaxAge0_ServerReturns200()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/cache"));
@@ -155,7 +155,7 @@ public sealed class Http11CachingTests
 
     // ── Response Cache-Control: no-store ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-039: GET /cache/no-store — response Cache-Control contains no-store")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-039: GET /cache/no-store — response Cache-Control contains no-store")]
     public async Task Get_CacheNoStore_ResponseHasNoCacheControl_NoStore()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/cache/no-store");
@@ -168,7 +168,7 @@ public sealed class Http11CachingTests
 
     // ── Cache-Control in response (max-age, public) ───────────────────────────
 
-    [Fact(DisplayName = "IT-11A-040: GET /cache — response Cache-Control max-age and public directives present")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-040: GET /cache — response Cache-Control max-age and public directives present")]
     public async Task Get_Cache_ResponseHasCacheControlDirectives()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/cache");
@@ -183,7 +183,7 @@ public sealed class Http11CachingTests
 
     // ── Expires header in response ────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-041: GET /cache — response Expires header present and in the future")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-041: GET /cache — response Expires header present and in the future")]
     public async Task Get_Cache_ResponseHasExpires_InFuture()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/cache");
@@ -196,7 +196,7 @@ public sealed class Http11CachingTests
 
     // ── Pragma: no-cache ──────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-042: GET /cache — response Pragma: no-cache header present")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-042: GET /cache — response Pragma: no-cache header present")]
     public async Task Get_Cache_ResponseHasPragmaNoCache()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/cache");
@@ -211,7 +211,7 @@ public sealed class Http11CachingTests
 
     // ── ETag round-trip ───────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-043: ETag from 200 response used in next If-None-Match — returns 304")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-043: ETag from 200 response used in next If-None-Match — returns 304")]
     public async Task ETag_RoundTrip_200ThenConditional304()
     {
         // First request: get resource and its ETag
@@ -230,7 +230,7 @@ public sealed class Http11CachingTests
 
     // ── Last-Modified and If-Modified-Since round-trip ───────────────────────
 
-    [Fact(DisplayName = "IT-11A-044: If-Modified-Since with Last-Modified date → 304 (resource not changed)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-044: If-Modified-Since with Last-Modified date → 304 (resource not changed)")]
     public async Task IfModifiedSince_WithLastModifiedDate_Returns304()
     {
         // Use the fixed Last-Modified date directly as the If-Modified-Since value

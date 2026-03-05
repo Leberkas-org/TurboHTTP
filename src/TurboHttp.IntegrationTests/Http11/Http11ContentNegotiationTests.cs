@@ -21,7 +21,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Accept: application/json ──────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-001: Accept: application/json — server returns Content-Type application/json")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-001: Accept: application/json — server returns Content-Type application/json")]
     public async Task Accept_ApplicationJson_ServerReturnsJsonContentType()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/negotiate"));
@@ -38,7 +38,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Accept: text/html ─────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-002: Accept: text/html — server returns Content-Type text/html")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-002: Accept: text/html — server returns Content-Type text/html")]
     public async Task Accept_TextHtml_ServerReturnsHtmlContentType()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/negotiate"));
@@ -53,7 +53,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Accept: */* ───────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-003: Accept: */* — server returns default Content-Type")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-003: Accept: */* — server returns default Content-Type")]
     public async Task Accept_Wildcard_ServerReturnsDefaultContentType()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/negotiate"));
@@ -68,7 +68,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Accept with quality values ────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-004: Accept with q-values (text/html;q=0.9,application/json;q=1.0) — highest q matched")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-004: Accept with q-values (text/html;q=0.9,application/json;q=1.0) — highest q matched")]
     public async Task Accept_WithQValues_HighestQMatched()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/negotiate"));
@@ -84,7 +84,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Accept-Charset header ─────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-005: Accept-Charset: utf-8 header sent in request without error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-005: Accept-Charset: utf-8 header sent in request without error")]
     public async Task AcceptCharset_Utf8_SentWithoutError()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/hello"));
@@ -97,7 +97,7 @@ public sealed class Http11ContentNegotiationTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "IT-11A-006: Accept-Charset: iso-8859-1,utf-8 multi-value sent without error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-006: Accept-Charset: iso-8859-1,utf-8 multi-value sent without error")]
     public async Task AcceptCharset_MultiValue_SentWithoutError()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/hello"));
@@ -110,7 +110,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Accept-Language header ────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-007: Accept-Language: en-US sent in request without error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-007: Accept-Language: en-US sent in request without error")]
     public async Task AcceptLanguage_EnUS_SentWithoutError()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/hello"));
@@ -121,7 +121,7 @@ public sealed class Http11ContentNegotiationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11A-008: Accept-Language: fr,en;q=0.8 multi-value sent without error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-008: Accept-Language: fr,en;q=0.8 multi-value sent without error")]
     public async Task AcceptLanguage_MultiValue_SentWithoutError()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/hello"));
@@ -134,7 +134,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Content-Type: multipart/form-data ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-009: Content-Type: multipart/form-data — server parses body successfully")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-009: Content-Type: multipart/form-data — server parses body successfully")]
     public async Task ContentType_MultipartFormData_ServerParsesBody()
     {
         const string boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
@@ -162,7 +162,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Content-Type: application/x-www-form-urlencoded ──────────────────────
 
-    [Fact(DisplayName = "IT-11A-010: Content-Type: application/x-www-form-urlencoded — server parses body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-010: Content-Type: application/x-www-form-urlencoded — server parses body")]
     public async Task ContentType_UrlEncoded_ServerParsesBody()
     {
         var bodyBytes = Encoding.UTF8.GetBytes("field1=value1&field2=value2");
@@ -183,7 +183,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Content-Encoding: identity (default) ─────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-011: Default response has no Content-Encoding or Content-Encoding: identity")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-011: Default response has no Content-Encoding or Content-Encoding: identity")]
     public async Task DefaultResponse_NoContentEncoding_OrIdentity()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/hello");
@@ -197,7 +197,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Request with Content-Encoding header ─────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-012: Request with Content-Encoding: identity header accepted by server")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-012: Request with Content-Encoding: identity header accepted by server")]
     public async Task Request_ContentEncodingIdentity_AcceptedByServer()
     {
         var bodyBytes = Encoding.UTF8.GetBytes("identity-encoded-body");
@@ -218,7 +218,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Response Content-Encoding: metadata only ─────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-013: GET /gzip-meta — response Content-Encoding header present in decoded response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-013: GET /gzip-meta — response Content-Encoding header present in decoded response")]
     public async Task Get_GzipMeta_ContentEncodingHeaderPresent()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/gzip-meta");
@@ -230,7 +230,7 @@ public sealed class Http11ContentNegotiationTests
 
     // ── Vary: Accept header ───────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-014: GET /negotiate/vary — response Vary header contains Accept")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-014: GET /negotiate/vary — response Vary header contains Accept")]
     public async Task Get_NegotiateVary_VaryHeaderContainsAccept()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/negotiate/vary");
@@ -240,7 +240,7 @@ public sealed class Http11ContentNegotiationTests
             $"Expected Vary header to contain 'Accept', got: {string.Join(",", response.Headers.Vary)}");
     }
 
-    [Fact(DisplayName = "IT-11A-015: Accept and Accept-Language both in same request — server returns 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-015: Accept and Accept-Language both in same request — server returns 200")]
     public async Task AcceptAndAcceptLanguage_BothInRequest_Returns200()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/negotiate"));

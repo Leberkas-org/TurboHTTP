@@ -20,28 +20,28 @@ public sealed class Http11StatusAndErrorTests
 
     // ── 2xx Success ───────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-090: GET /status/200 returns 200 OK")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-090: GET /status/200 returns 200 OK")]
     public async Task Get_Status200_Returns200OK()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/200");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-091: GET /status/201 returns 201 Created")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-091: GET /status/201 returns 201 Created")]
     public async Task Get_Status201_Returns201Created()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/201");
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-092: GET /status/202 returns 202 Accepted")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-092: GET /status/202 returns 202 Accepted")]
     public async Task Get_Status202_Returns202Accepted()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/202");
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-093: GET /status/204 returns 204 No Content with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-093: GET /status/204 returns 204 No Content with empty body")]
     public async Task Get_Status204_Returns204NoContent_EmptyBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/204");
@@ -51,7 +51,7 @@ public sealed class Http11StatusAndErrorTests
         Assert.Empty(body);
     }
 
-    [Fact(DisplayName = "IT-11-094: GET /status/206 returns 206 Partial Content")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-094: GET /status/206 returns 206 Partial Content")]
     public async Task Get_Status206_Returns206PartialContent()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/206");
@@ -60,35 +60,35 @@ public sealed class Http11StatusAndErrorTests
 
     // ── 3xx Redirection ───────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-095: GET /status/301 returns 301 Moved Permanently")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-095: GET /status/301 returns 301 Moved Permanently")]
     public async Task Get_Status301_ReturnsMovedPermanently()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/301");
         Assert.Equal(HttpStatusCode.MovedPermanently, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-096: GET /status/302 returns 302 Found")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-096: GET /status/302 returns 302 Found")]
     public async Task Get_Status302_ReturnsFound()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/302");
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-097: GET /status/303 returns 303 See Other")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-097: GET /status/303 returns 303 See Other")]
     public async Task Get_Status303_ReturnsSeeOther()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/303");
         Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-098: GET /status/307 returns 307 Temporary Redirect")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-098: GET /status/307 returns 307 Temporary Redirect")]
     public async Task Get_Status307_ReturnsTemporaryRedirect()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/307");
         Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-099: GET /status/308 returns 308 Permanent Redirect")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-099: GET /status/308 returns 308 Permanent Redirect")]
     public async Task Get_Status308_ReturnsPermanentRedirect()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/308");
@@ -97,7 +97,7 @@ public sealed class Http11StatusAndErrorTests
 
     // ── 304 No Body ───────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-100: GET /status/304 returns 304 Not Modified with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-100: GET /status/304 returns 304 Not Modified with empty body")]
     public async Task Get_Status304_ReturnsNotModified_EmptyBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/304");
@@ -109,70 +109,70 @@ public sealed class Http11StatusAndErrorTests
 
     // ── 4xx Client Errors ─────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-101: GET /status/400 returns 400 Bad Request")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-101: GET /status/400 returns 400 Bad Request")]
     public async Task Get_Status400_ReturnsBadRequest()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/400");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-102: GET /status/401 returns 401 Unauthorized")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-102: GET /status/401 returns 401 Unauthorized")]
     public async Task Get_Status401_ReturnsUnauthorized()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/401");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-103: GET /status/403 returns 403 Forbidden")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-103: GET /status/403 returns 403 Forbidden")]
     public async Task Get_Status403_ReturnsForbidden()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/403");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-104: GET /status/404 returns 404 Not Found")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-104: GET /status/404 returns 404 Not Found")]
     public async Task Get_Status404_ReturnsNotFound()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/404");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-105: GET /status/405 returns 405 Method Not Allowed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-105: GET /status/405 returns 405 Method Not Allowed")]
     public async Task Get_Status405_ReturnsMethodNotAllowed()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/405");
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-106: GET /status/408 returns 408 Request Timeout")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-106: GET /status/408 returns 408 Request Timeout")]
     public async Task Get_Status408_ReturnsRequestTimeout()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/408");
         Assert.Equal(HttpStatusCode.RequestTimeout, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-107: GET /status/409 returns 409 Conflict")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-107: GET /status/409 returns 409 Conflict")]
     public async Task Get_Status409_ReturnsConflict()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/409");
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-108: GET /status/410 returns 410 Gone")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-108: GET /status/410 returns 410 Gone")]
     public async Task Get_Status410_ReturnsGone()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/410");
         Assert.Equal(HttpStatusCode.Gone, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-109: GET /status/413 returns 413 Content Too Large")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-109: GET /status/413 returns 413 Content Too Large")]
     public async Task Get_Status413_ReturnsContentTooLarge()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/413");
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-110: GET /status/429 returns 429 Too Many Requests")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-110: GET /status/429 returns 429 Too Many Requests")]
     public async Task Get_Status429_ReturnsTooManyRequests()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/429");
@@ -181,35 +181,35 @@ public sealed class Http11StatusAndErrorTests
 
     // ── 5xx Server Errors ─────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-111: GET /status/500 returns 500 Internal Server Error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-111: GET /status/500 returns 500 Internal Server Error")]
     public async Task Get_Status500_ReturnsInternalServerError()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/500");
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-112: GET /status/501 returns 501 Not Implemented")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-112: GET /status/501 returns 501 Not Implemented")]
     public async Task Get_Status501_ReturnsNotImplemented()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/501");
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-113: GET /status/502 returns 502 Bad Gateway")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-113: GET /status/502 returns 502 Bad Gateway")]
     public async Task Get_Status502_ReturnsBadGateway()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/502");
         Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-114: GET /status/503 returns 503 Service Unavailable")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-114: GET /status/503 returns 503 Service Unavailable")]
     public async Task Get_Status503_ReturnsServiceUnavailable()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/503");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-115: GET /status/504 returns 504 Gateway Timeout")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-115: GET /status/504 returns 504 Gateway Timeout")]
     public async Task Get_Status504_ReturnsGatewayTimeout()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/504");
@@ -218,7 +218,7 @@ public sealed class Http11StatusAndErrorTests
 
     // ── Theory: all 2xx codes have bodies (except 204) ───────────────────────
 
-    [Theory(DisplayName = "IT-11-116: 2xx status codes (except 204) have non-empty body")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-116: 2xx status codes (except 204) have non-empty body")]
     [InlineData(200)]
     [InlineData(201)]
     [InlineData(202)]
@@ -235,7 +235,7 @@ public sealed class Http11StatusAndErrorTests
 
     // ── Theory: 3xx redirect codes have small body ────────────────────────────
 
-    [Theory(DisplayName = "IT-11-117: 3xx status codes are decoded without error")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-117: 3xx status codes are decoded without error")]
     [InlineData(301)]
     [InlineData(302)]
     [InlineData(303)]
@@ -251,7 +251,7 @@ public sealed class Http11StatusAndErrorTests
 
     // ── Theory: 5xx status codes decoded without error ────────────────────────
 
-    [Theory(DisplayName = "IT-11-118: 5xx status codes are decoded without error")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-118: 5xx status codes are decoded without error")]
     [InlineData(500)]
     [InlineData(501)]
     [InlineData(502)]
@@ -266,7 +266,7 @@ public sealed class Http11StatusAndErrorTests
 
     // ── Sequential 4xx responses on keep-alive connection ─────────────────────
 
-    [Fact(DisplayName = "IT-11-119: Sequential 4xx responses on keep-alive connection all decoded")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-119: Sequential 4xx responses on keep-alive connection all decoded")]
     public async Task Sequential_4xxResponses_KeepAlive_AllDecoded()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);

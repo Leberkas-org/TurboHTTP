@@ -32,7 +32,6 @@ public enum FrameType : byte
     Continuation = 0x9,
 }
 
-// ── Frame Flags ───────────────────────────────────────────────────────────────
 [Flags]
 public enum DataFlags : byte
 {
@@ -42,7 +41,7 @@ public enum DataFlags : byte
 }
 
 [Flags]
-public enum HeadersFlags : byte
+public enum Headers : byte
 {
     None = 0x0,
     EndStream = 0x1,
@@ -52,7 +51,7 @@ public enum HeadersFlags : byte
 }
 
 [Flags]
-public enum SettingsFlags : byte
+public enum Settings : byte
 {
     None = 0x0,
     Ack = 0x1,
@@ -117,8 +116,7 @@ public abstract class Http2Frame(int streamId)
         return buf;
     }
 
-    protected static void WriteFrameHeader(ref Span<byte> span, int payloadLength, FrameType type, byte flags,
-        int streamId)
+    protected static void WriteHeader(ref Span<byte> span, int payloadLength, FrameType type, byte flags, int streamId)
     {
         span[0] = (byte)(payloadLength >> 16);
         span[1] = (byte)(payloadLength >> 8);
@@ -131,7 +129,6 @@ public abstract class Http2Frame(int streamId)
     protected const int FrameHeaderSize = 9;
 }
 
-// ── DATA Frame ────────────────────────────────────────────────────────────────
 public sealed class DataFrame : Http2Frame
 {
     public override FrameType Type => FrameType.Data;
@@ -149,7 +146,7 @@ public sealed class DataFrame : Http2Frame
     public override int WriteTo(ref Span<byte> span)
     {
         var flags = EndStream ? (byte)DataFlags.EndStream : (byte)DataFlags.None;
-        WriteFrameHeader(ref span, Data.Length, FrameType.Data, flags, StreamId);
+        WriteHeader(ref span, Data.Length, FrameType.Data, flags, StreamId);
         span = span[FrameHeaderSize..];
         Data.Span.CopyTo(span);
         span = span[Data.Length..];
@@ -157,7 +154,6 @@ public sealed class DataFrame : Http2Frame
     }
 }
 
-// ── HEADERS Frame ─────────────────────────────────────────────────────────────
 public sealed class HeadersFrame : Http2Frame
 {
     public override FrameType Type => FrameType.Headers;
@@ -177,11 +173,18 @@ public sealed class HeadersFrame : Http2Frame
 
     public override int WriteTo(ref Span<byte> span)
     {
-        var flags = HeadersFlags.None;
-        if (EndStream) flags |= HeadersFlags.EndStream;
-        if (EndHeaders) flags |= HeadersFlags.EndHeaders;
+        var flags = Headers.None;
+        if (EndStream)
+        {
+            flags |= Headers.EndStream;
+        }
 
-        WriteFrameHeader(ref span, HeaderBlockFragment.Length, FrameType.Headers, (byte)flags, StreamId);
+        if (EndHeaders)
+        {
+            flags |= Headers.EndHeaders;
+        }
+
+        WriteHeader(ref span, HeaderBlockFragment.Length, FrameType.Headers, (byte)flags, StreamId);
         span = span[FrameHeaderSize..];
         HeaderBlockFragment.Span.CopyTo(span);
         span = span[HeaderBlockFragment.Length..];
@@ -189,7 +192,6 @@ public sealed class HeadersFrame : Http2Frame
     }
 }
 
-// ── CONTINUATION Frame ────────────────────────────────────────────────────────
 public sealed class ContinuationFrame : Http2Frame
 {
     public override FrameType Type => FrameType.Continuation;
@@ -207,7 +209,7 @@ public sealed class ContinuationFrame : Http2Frame
     public override int WriteTo(ref Span<byte> span)
     {
         var flags = EndHeaders ? (byte)ContinuationFlags.EndHeaders : (byte)0;
-        WriteFrameHeader(ref span, HeaderBlockFragment.Length, FrameType.Continuation, flags, StreamId);
+        WriteHeader(ref span, HeaderBlockFragment.Length, FrameType.Continuation, flags, StreamId);
         span = span[FrameHeaderSize..];
         HeaderBlockFragment.Span.CopyTo(span);
         span = span[HeaderBlockFragment.Length..];
@@ -215,7 +217,6 @@ public sealed class ContinuationFrame : Http2Frame
     }
 }
 
-// ── RST_STREAM Frame ──────────────────────────────────────────────────────────
 public sealed class RstStreamFrame : Http2Frame
 {
     public override FrameType Type => FrameType.RstStream;
@@ -228,7 +229,7 @@ public sealed class RstStreamFrame : Http2Frame
 
     public override int WriteTo(ref Span<byte> span)
     {
-        WriteFrameHeader(ref span, 4, FrameType.RstStream, 0, StreamId);
+        WriteHeader(ref span, 4, FrameType.RstStream, 0, StreamId);
         span = span[FrameHeaderSize..];
         BinaryPrimitives.WriteUInt32BigEndian(span, (uint)ErrorCode);
         span = span[4..];
@@ -236,17 +237,16 @@ public sealed class RstStreamFrame : Http2Frame
     }
 }
 
-// ── SETTINGS Frame ────────────────────────────────────────────────────────────
 public sealed class SettingsFrame : Http2Frame
 {
     public override FrameType Type => FrameType.Settings;
     public IReadOnlyList<(SettingsParameter, uint)> Parameters { get; }
     public bool IsAck { get; }
 
-    public SettingsFrame(IReadOnlyList<(SettingsParameter Key, uint Value)> parameters) : base(0)
+    public SettingsFrame(IReadOnlyList<(SettingsParameter Key, uint Value)> parameters, bool isAck = false) : base(0)
     {
         Parameters = parameters;
-        IsAck = false;
+        IsAck = isAck;
     }
 
     public override int SerializedSize => FrameHeaderSize + (IsAck ? 0 : Parameters.Count * 6);
@@ -254,8 +254,8 @@ public sealed class SettingsFrame : Http2Frame
     public override int WriteTo(ref Span<byte> span)
     {
         var payloadSize = IsAck ? 0 : Parameters.Count * 6;
-        var flags = IsAck ? (byte)SettingsFlags.Ack : (byte)0;
-        WriteFrameHeader(ref span, payloadSize, FrameType.Settings, flags, 0);
+        var flags = IsAck ? (byte)Settings.Ack : (byte)0;
+        WriteHeader(ref span, payloadSize, FrameType.Settings, flags, 0);
         span = span[FrameHeaderSize..];
 
         foreach (var (key, val) in Parameters)
@@ -272,12 +272,11 @@ public sealed class SettingsFrame : Http2Frame
     {
         var buf = new byte[FrameHeaderSize];
         var span = buf.AsSpan();
-        WriteFrameHeader(ref span, 0, FrameType.Settings, (byte)SettingsFlags.Ack, 0);
+        WriteHeader(ref span, 0, FrameType.Settings, (byte)Settings.Ack, 0);
         return buf;
     }
 }
 
-// ── PING Frame ────────────────────────────────────────────────────────────────
 public sealed class PingFrame : Http2Frame
 {
     public override FrameType Type => FrameType.Ping;
@@ -287,7 +286,10 @@ public sealed class PingFrame : Http2Frame
     public PingFrame(byte[] data, bool isAck = false) : base(0)
     {
         if (data.Length != 8)
+        {
             throw new ArgumentException("PING data must be exactly 8 bytes.", nameof(data));
+        }
+
         Data = data;
         IsAck = isAck;
     }
@@ -297,7 +299,7 @@ public sealed class PingFrame : Http2Frame
     public override int WriteTo(ref Span<byte> span)
     {
         var flags = IsAck ? (byte)PingFlags.Ack : (byte)0;
-        WriteFrameHeader(ref span, 8, FrameType.Ping, flags, 0);
+        WriteHeader(ref span, 8, FrameType.Ping, flags, 0);
         span = span[FrameHeaderSize..];
         Data.CopyTo(span);
         span = span[8..];
@@ -305,7 +307,6 @@ public sealed class PingFrame : Http2Frame
     }
 }
 
-// ── GOAWAY Frame ──────────────────────────────────────────────────────────────
 public sealed class GoAwayFrame : Http2Frame
 {
     public override FrameType Type => FrameType.GoAway;
@@ -316,7 +317,10 @@ public sealed class GoAwayFrame : Http2Frame
     public GoAwayFrame(int lastStreamId, Http2ErrorCode errorCode, byte[]? debugData = null) : base(0)
     {
         if (lastStreamId < 0)
+        {
             throw new Http2Exception("Invalid LastStreamId");
+        }
+
         LastStreamId = lastStreamId;
         ErrorCode = errorCode;
         DebugData = debugData ?? [];
@@ -327,7 +331,7 @@ public sealed class GoAwayFrame : Http2Frame
     public override int WriteTo(ref Span<byte> span)
     {
         var payloadSize = 8 + DebugData.Length;
-        WriteFrameHeader(ref span, payloadSize, FrameType.GoAway, 0, 0);
+        WriteHeader(ref span, payloadSize, FrameType.GoAway, 0, 0);
         span = span[FrameHeaderSize..];
         BinaryPrimitives.WriteUInt32BigEndian(span, (uint)LastStreamId & 0x7FFFFFFFu);
         BinaryPrimitives.WriteUInt32BigEndian(span[4..], (uint)ErrorCode);
@@ -338,7 +342,6 @@ public sealed class GoAwayFrame : Http2Frame
     }
 }
 
-// ── WINDOW_UPDATE Frame ───────────────────────────────────────────────────────
 public sealed class WindowUpdateFrame : Http2Frame
 {
     public override FrameType Type => FrameType.WindowUpdate;
@@ -358,7 +361,7 @@ public sealed class WindowUpdateFrame : Http2Frame
 
     public override int WriteTo(ref Span<byte> span)
     {
-        WriteFrameHeader(ref span, 4, FrameType.WindowUpdate, 0, StreamId);
+        WriteHeader(ref span, 4, FrameType.WindowUpdate, 0, StreamId);
         span = span[FrameHeaderSize..];
         BinaryPrimitives.WriteUInt32BigEndian(span, (uint)Increment & 0x7FFFFFFFu);
         span = span[4..];
@@ -366,7 +369,35 @@ public sealed class WindowUpdateFrame : Http2Frame
     }
 }
 
-// ── PUSH_PROMISE Frame ────────────────────────────────────────────────────────
+/// <summary>
+/// Represents an HTTP/2 frame with an unrecognized type.
+/// RFC 7540 §4.1 / RFC 9113 §5.5: Unknown frame types MUST be ignored.
+/// Preserved in the decoded output so callers can inspect or discard as needed.
+/// </summary>
+public sealed class UnknownFrame : Http2Frame
+{
+    public byte RawType { get; }
+    public override FrameType Type => (FrameType)RawType;
+    public byte[] Payload { get; }
+
+    public UnknownFrame(byte rawType, int streamId, byte[] payload) : base(streamId)
+    {
+        RawType = rawType;
+        Payload = payload;
+    }
+
+    public override int SerializedSize => FrameHeaderSize + Payload.Length;
+
+    public override int WriteTo(ref Span<byte> span)
+    {
+        WriteHeader(ref span, Payload.Length, Type, 0, StreamId);
+        span = span[FrameHeaderSize..];
+        Payload.CopyTo(span);
+        span = span[Payload.Length..];
+        return SerializedSize;
+    }
+}
+
 public sealed class PushPromiseFrame : Http2Frame
 {
     public override FrameType Type => FrameType.PushPromise;
@@ -388,8 +419,8 @@ public sealed class PushPromiseFrame : Http2Frame
     public override int WriteTo(ref Span<byte> span)
     {
         var payloadSize = 4 + HeaderBlockFragment.Length;
-        var flags = EndHeaders ? (byte)HeadersFlags.EndHeaders : (byte)0;
-        WriteFrameHeader(ref span, payloadSize, FrameType.PushPromise, flags, StreamId);
+        var flags = EndHeaders ? (byte)Headers.EndHeaders : (byte)0;
+        WriteHeader(ref span, payloadSize, FrameType.PushPromise, flags, StreamId);
         span = span[FrameHeaderSize..];
         BinaryPrimitives.WriteUInt32BigEndian(span, (uint)PromisedStreamId & 0x7FFFFFFFu);
         span = span[4..];

@@ -97,7 +97,10 @@ public static class HuffmanCodec
             }
         }
 
-        if (bitLen <= 0) return;
+        if (bitLen <= 0)
+        {
+            return;
+        }
 
         bitBuf = (bitBuf << (8 - bitLen)) | (0xffu >> bitLen);
         output.WriteByte((byte)bitBuf);
@@ -114,7 +117,11 @@ public static class HuffmanCodec
 
     private static HuffmanNode GetRoot()
     {
-        if (_root is not null) return _root;
+        if (_root is not null)
+        {
+            return _root;
+        }
+
         var root = new HuffmanNode();
         for (var sym = 0; sym < HpackHuffmanTable.Length; sym++)
         {

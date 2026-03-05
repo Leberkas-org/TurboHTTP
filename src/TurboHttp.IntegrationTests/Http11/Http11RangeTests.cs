@@ -20,7 +20,7 @@ public sealed class Http11RangeTests
 
     // ── No Range header → 200 full body ──────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-016: No Range header — GET /range/1 returns 200 with full 1 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-016: No Range header — GET /range/1 returns 200 with full 1 KB body")]
     public async Task NoRangeHeader_Returns200_FullBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/range/1");
@@ -32,7 +32,7 @@ public sealed class Http11RangeTests
 
     // ── Range: bytes=0-99 → 206, Content-Range ───────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-017: Range: bytes=0-99 — returns 206 with 100 bytes and Content-Range header")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-017: Range: bytes=0-99 — returns 206 with 100 bytes and Content-Range header")]
     public async Task Range_Bytes0To99_Returns206_ContentRange()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -52,7 +52,7 @@ public sealed class Http11RangeTests
 
     // ── Range: bytes=0-0 → 1 byte ────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-018: Range: bytes=0-0 — returns 206 with exactly 1 byte")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-018: Range: bytes=0-0 — returns 206 with exactly 1 byte")]
     public async Task Range_Bytes0To0_Returns206_OneByte()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -69,7 +69,7 @@ public sealed class Http11RangeTests
 
     // ── Range: bytes=-100 → last 100 bytes ───────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-019: Range: bytes=-100 — returns 206 with last 100 bytes")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-019: Range: bytes=-100 — returns 206 with last 100 bytes")]
     public async Task Range_SuffixRange100_Returns206_Last100Bytes()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -84,7 +84,7 @@ public sealed class Http11RangeTests
 
     // ── Range: bytes=100- → from byte 100 to end ─────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-020: Range: bytes=100- — returns 206 from byte 100 to end of 1 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-020: Range: bytes=100- — returns 206 from byte 100 to end of 1 KB body")]
     public async Task Range_OpenEndedFrom100_Returns206_RestOfBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -102,7 +102,7 @@ public sealed class Http11RangeTests
 
     // ── Range on 1 KB body ────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-021: Range: bytes=512-1023 on 1 KB body — returns 206 with second half")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-021: Range: bytes=512-1023 on 1 KB body — returns 206 with second half")]
     public async Task Range_SecondHalf_1KbBody_Returns206()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -119,7 +119,7 @@ public sealed class Http11RangeTests
 
     // ── Range on 64 KB body ───────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-022: Range: bytes=0-4095 on 64 KB body — returns 206 with first 4 KB")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-022: Range: bytes=0-4095 on 64 KB body — returns 206 with first 4 KB")]
     public async Task Range_First4KB_64KbBody_Returns206()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/64"));
@@ -132,7 +132,7 @@ public sealed class Http11RangeTests
         Assert.Equal(4096, body.Length);
     }
 
-    [Fact(DisplayName = "IT-11A-023: Range: bytes=32768-65535 on 64 KB body — returns 206 with second half")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-023: Range: bytes=32768-65535 on 64 KB body — returns 206 with second half")]
     public async Task Range_SecondHalf_64KbBody_Returns206()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/64"));
@@ -147,7 +147,7 @@ public sealed class Http11RangeTests
 
     // ── Range: unsatisfiable → 416 ────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-024: Range: bytes=99999-99999 on 1 KB body — returns 416 Range Not Satisfiable")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-024: Range: bytes=99999-99999 on 1 KB body — returns 416 Range Not Satisfiable")]
     public async Task Range_Unsatisfiable_Returns416()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -160,7 +160,7 @@ public sealed class Http11RangeTests
 
     // ── If-Range with matching ETag ───────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-025: If-Range with matching ETag — returns 206 partial content")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-025: If-Range with matching ETag — returns 206 partial content")]
     public async Task IfRange_MatchingETag_Returns206()
     {
         // First, get the ETag from the resource
@@ -180,7 +180,7 @@ public sealed class Http11RangeTests
 
     // ── If-Range with non-matching ETag → 200 full body ──────────────────────
 
-    [Fact(DisplayName = "IT-11A-026: If-Range with non-matching ETag — returns 200 with full body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-026: If-Range with non-matching ETag — returns 200 with full body")]
     public async Task IfRange_NonMatchingETag_Returns200_FullBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/etag"));
@@ -197,7 +197,7 @@ public sealed class Http11RangeTests
 
     // ── Range: bytes=0-49,50-99 (multi-range) ────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-027: Range: bytes=0-49,50-99 (multi-range) — server returns 200 or 206")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-027: Range: bytes=0-49,50-99 (multi-range) — server returns 200 or 206")]
     public async Task Range_MultiRange_Returns200Or206()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -214,7 +214,7 @@ public sealed class Http11RangeTests
 
     // ── Content-Range header structure ───────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-028: 206 response includes Content-Range with total resource size")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-028: 206 response includes Content-Range with total resource size")]
     public async Task Range_206Response_ContentRange_IncludesTotalSize()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));
@@ -232,7 +232,7 @@ public sealed class Http11RangeTests
 
     // ── Range preserves body content ─────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-029: Range bytes=256-511 on 1 KB body — body bytes match sequential pattern")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-029: Range bytes=256-511 on 1 KB body — body bytes match sequential pattern")]
     public async Task Range_BodyBytes_MatchSequentialPattern()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/range/1"));

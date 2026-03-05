@@ -21,7 +21,7 @@ public sealed class Http11BasicTests
 
     // ── HTTP verbs — 7 basic scenarios ────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-001: GET /any returns 200 with method 'GET' in body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-001: GET /any returns 200 with method 'GET' in body")]
     public async Task Get_Any_Returns200_MethodNameInBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/any");
@@ -31,7 +31,7 @@ public sealed class Http11BasicTests
         Assert.Equal("GET", body);
     }
 
-    [Fact(DisplayName = "IT-11-002: POST /any returns 200 with method 'POST' in body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-002: POST /any returns 200 with method 'POST' in body")]
     public async Task Post_Any_Returns200_MethodNameInBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, Http11Helper.BuildUri(_fixture.Port, "/any"))
@@ -45,7 +45,7 @@ public sealed class Http11BasicTests
         Assert.Equal("POST", body);
     }
 
-    [Fact(DisplayName = "IT-11-003: HEAD /any returns 200 with no body and HTTP/1.1 version")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-003: HEAD /any returns 200 with no body and HTTP/1.1 version")]
     public async Task Head_Any_Returns200_NoBody()
     {
         var response = await Http11Helper.HeadAsync(_fixture.Port, "/any");
@@ -55,7 +55,7 @@ public sealed class Http11BasicTests
         Assert.Empty(body);
     }
 
-    [Fact(DisplayName = "IT-11-004: PUT /echo returns 200 echoing request body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-004: PUT /echo returns 200 echoing request body")]
     public async Task Put_Echo_Returns200_EchoesBody()
     {
         const string payload = "put-payload";
@@ -70,7 +70,7 @@ public sealed class Http11BasicTests
         Assert.Equal(payload, body);
     }
 
-    [Fact(DisplayName = "IT-11-005: DELETE /any returns 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-005: DELETE /any returns 200")]
     public async Task Delete_Any_Returns200()
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, Http11Helper.BuildUri(_fixture.Port, "/any"));
@@ -79,7 +79,7 @@ public sealed class Http11BasicTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-11-006: PATCH /echo returns 200 echoing request body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-006: PATCH /echo returns 200 echoing request body")]
     public async Task Patch_Echo_Returns200_EchoesBody()
     {
         const string payload = "patch-payload";
@@ -94,7 +94,7 @@ public sealed class Http11BasicTests
         Assert.Equal(payload, body);
     }
 
-    [Fact(DisplayName = "IT-11-007: OPTIONS /any returns 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-007: OPTIONS /any returns 200")]
     public async Task Options_Any_Returns200()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, Http11Helper.BuildUri(_fixture.Port, "/any"));
@@ -105,7 +105,7 @@ public sealed class Http11BasicTests
 
     // ── Host header ──────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-008: GET /hello Host header required — server sees correct Host")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-008: GET /hello Host header required — server sees correct Host")]
     public async Task Get_Hello_HostHeader_IsRequiredAndPresent()
     {
         // The Http11Encoder always adds Host header (RFC 9112 §5.4)
@@ -117,7 +117,7 @@ public sealed class Http11BasicTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "IT-11-009: HTTP/1.1 response carries HTTP/1.1 version")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-009: HTTP/1.1 response carries HTTP/1.1 version")]
     public async Task Get_Hello_ResponseVersion_IsHttp11()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/hello");
@@ -128,7 +128,7 @@ public sealed class Http11BasicTests
 
     // ── Multiple status codes ─────────────────────────────────────────────────
 
-    [Theory(DisplayName = "IT-11-010: GET /status/{code} returns the expected status code")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-010: GET /status/{code} returns the expected status code")]
     [InlineData(200)]
     [InlineData(201)]
     [InlineData(400)]
@@ -146,7 +146,7 @@ public sealed class Http11BasicTests
 
     // ── Large body ────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-011: GET /large/1 returns 200 with 1 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-011: GET /large/1 returns 200 with 1 KB body")]
     public async Task Get_Large_1KB_Returns200_With1KbBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/large/1");
@@ -156,7 +156,7 @@ public sealed class Http11BasicTests
         Assert.Equal(1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-11-012: GET /large/64 returns 200 with 64 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-012: GET /large/64 returns 200 with 64 KB body")]
     public async Task Get_Large_64KB_Returns200_With64KbBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/large/64");
@@ -166,7 +166,7 @@ public sealed class Http11BasicTests
         Assert.Equal(64 * 1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-11-013: GET /large/512 returns 200 with 512 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-013: GET /large/512 returns 200 with 512 KB body")]
     public async Task Get_Large_512KB_Returns200_With512KbBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/large/512");
@@ -176,7 +176,7 @@ public sealed class Http11BasicTests
         Assert.Equal(512 * 1024, body.Length);
     }
 
-    [Theory(DisplayName = "IT-11-014: GET /large/{kb} Content-Length matches actual body byte count")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-014: GET /large/{kb} Content-Length matches actual body byte count")]
     [InlineData(1)]
     [InlineData(4)]
     [InlineData(16)]
@@ -194,7 +194,7 @@ public sealed class Http11BasicTests
 
     // ── Content-Type ──────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-015: GET /content/text/plain response has Content-Type text/plain")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-015: GET /content/text/plain response has Content-Type text/plain")]
     public async Task Get_Content_TextPlain_HasCorrectContentType()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/content/text/plain");
@@ -203,7 +203,7 @@ public sealed class Http11BasicTests
         Assert.Equal("text/plain", response.Content.Headers.ContentType?.MediaType);
     }
 
-    [Fact(DisplayName = "IT-11-016: GET /content/application/json response has Content-Type application/json")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-016: GET /content/application/json response has Content-Type application/json")]
     public async Task Get_Content_ApplicationJson_HasCorrectContentType()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/content/application/json");
@@ -212,7 +212,7 @@ public sealed class Http11BasicTests
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
     }
 
-    [Fact(DisplayName = "IT-11-017: GET /content/application/octet-stream response has correct Content-Type")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-017: GET /content/application/octet-stream response has correct Content-Type")]
     public async Task Get_Content_OctetStream_HasCorrectContentType()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/content/application/octet-stream");
@@ -223,7 +223,7 @@ public sealed class Http11BasicTests
 
     // ── POST /echo basic body round-trip ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-018: POST /echo small body is echoed correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-018: POST /echo small body is echoed correctly")]
     public async Task Post_Echo_SmallBody_IsEchoedCorrectly()
     {
         const string text = "hello-http11";
@@ -235,7 +235,7 @@ public sealed class Http11BasicTests
         Assert.Equal(text, body);
     }
 
-    [Fact(DisplayName = "IT-11-019: POST /echo 64 KB body is echoed correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-019: POST /echo 64 KB body is echoed correctly")]
     public async Task Post_Echo_64KbBody_IsEchoedCorrectly()
     {
         var bodyBytes = new byte[64 * 1024];
@@ -253,7 +253,7 @@ public sealed class Http11BasicTests
         Assert.Equal(bodyBytes, echoedBody);
     }
 
-    [Fact(DisplayName = "IT-11-020: POST /echo empty body returns 200 with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-020: POST /echo empty body returns 200 with empty body")]
     public async Task Post_Echo_EmptyBody_Returns200_EmptyBody()
     {
         var content = new ByteArrayContent(Array.Empty<byte>());
@@ -266,7 +266,7 @@ public sealed class Http11BasicTests
 
     // ── Response date and general headers ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-021: GET /hello response includes Date header")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-021: GET /hello response includes Date header")]
     public async Task Get_Hello_ResponseHasDateHeader()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/hello");
@@ -274,7 +274,7 @@ public sealed class Http11BasicTests
         Assert.True(response.Headers.Contains("Date"), "Date header should be present");
     }
 
-    [Fact(DisplayName = "IT-11-022: GET /hello returns body 'Hello World'")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-022: GET /hello returns body 'Hello World'")]
     public async Task Get_Hello_Returns200_WithBodyHelloWorld()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/hello");
@@ -286,7 +286,7 @@ public sealed class Http11BasicTests
 
     // ── Two sequential independent requests ──────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-023: Two independent GET /ping requests each succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-023: Two independent GET /ping requests each succeed")]
     public async Task TwoIndependent_GetPing_BothSucceed()
     {
         var r1 = await Http11Helper.GetAsync(_fixture.Port, "/ping");
@@ -300,7 +300,7 @@ public sealed class Http11BasicTests
 
     // ── 204 no body ───────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-024: GET /status/204 returns 204 with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-024: GET /status/204 returns 204 with empty body")]
     public async Task Get_Status204_ReturnsNoContent_EmptyBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/204");
@@ -312,7 +312,7 @@ public sealed class Http11BasicTests
 
     // ── 304 no body ───────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-025: GET /status/304 returns 304 with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-025: GET /status/304 returns 304 with empty body")]
     public async Task Get_Status304_ReturnsNotModified_EmptyBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/304");

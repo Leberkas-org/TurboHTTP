@@ -39,7 +39,11 @@ public static class Http10Encoder
 
         bytesWritten += WriteAscii(span[bytesWritten..], "\r\n");
 
-        if (bodyBytes.Length <= 0) return bytesWritten;
+        if (bodyBytes.Length <= 0)
+        {
+            return bytesWritten;
+        }
+
         if (bytesWritten + bodyBytes.Length > buffer.Length)
         {
             throw new InvalidOperationException();
@@ -97,7 +101,11 @@ public static class Http10Encoder
             headers[header.Key] = [..header.Value];
         }
 
-        if (request.Content?.Headers is null) return headers;
+        if (request.Content?.Headers is null)
+        {
+            return headers;
+        }
+
         foreach (var header in request.Content.Headers)
         {
             if (!headers.TryGetValue(header.Key, out var list))

@@ -21,7 +21,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Sequential keep-alive requests ───────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-030: 2 sequential requests on same connection succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-030: 2 sequential requests on same connection succeed")]
     public async Task TwoSequentialRequests_SameConnection_Succeed()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -35,7 +35,7 @@ public sealed class Http11KeepAliveTests
         Assert.Equal("pong", await r2.Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "IT-11-031: 5 sequential requests on same connection all succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-031: 5 sequential requests on same connection all succeed")]
     public async Task FiveSequentialRequests_SameConnection_AllSucceed()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -48,7 +48,7 @@ public sealed class Http11KeepAliveTests
         }
     }
 
-    [Fact(DisplayName = "IT-11-032: 10 sequential requests on same connection all succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-032: 10 sequential requests on same connection all succeed")]
     public async Task TenSequentialRequests_SameConnection_AllSucceed()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -64,7 +64,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Server Connection:close terminates reuse ─────────────────────────────
 
-    [Fact(DisplayName = "IT-11-033: Server Connection:close response is flagged on connection")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-033: Server Connection:close response is flagged on connection")]
     public async Task ServerConnectionClose_IsFlaggedOnConnection()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -78,7 +78,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Request with Connection:close header ─────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-034: Request with Connection:close sends close directive to server")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-034: Request with Connection:close sends close directive to server")]
     public async Task Request_WithConnectionClose_ResponseReceived()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/hello"));
@@ -93,7 +93,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Mixed keep-alive + close ──────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-035: Mixed keep-alive then close — both responses decoded correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-035: Mixed keep-alive then close — both responses decoded correctly")]
     public async Task Mixed_KeepAlive_ThenClose_BothResponsesDecoded()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -112,7 +112,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Decoder resets cleanly between requests ───────────────────────────────
 
-    [Fact(DisplayName = "IT-11-036: Decoder resets cleanly between requests on same connection")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-036: Decoder resets cleanly between requests on same connection")]
     public async Task Decoder_ResetsCleanly_BetweenRequests()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -131,7 +131,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Keep-alive with varying body sizes ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-037: Keep-alive with varying body sizes — decoder handles each correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-037: Keep-alive with varying body sizes — decoder handles each correctly")]
     public async Task KeepAlive_VaryingBodySizes_AllDecodedCorrectly()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -147,7 +147,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Keep-alive: GET then POST then GET ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-038: Keep-alive GET then POST then GET on same connection")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-038: Keep-alive GET then POST then GET on same connection")]
     public async Task KeepAlive_Get_Post_Get_SameConnection()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -173,7 +173,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Pipeline depth 2 ─────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-039: Pipeline depth 2 — two requests in flight, responses in order")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-039: Pipeline depth 2 — two requests in flight, responses in order")]
     public async Task Pipeline_Depth2_ResponsesInOrder()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -195,7 +195,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Pipeline depth 5 ─────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-040: Pipeline depth 5 — five requests in flight, all responses received")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-040: Pipeline depth 5 — five requests in flight, all responses received")]
     public async Task Pipeline_Depth5_AllResponsesReceived()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -216,7 +216,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Pipeline with mixed verbs ─────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-041: Pipeline with mixed GET+POST verbs — responses arrive in order")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-041: Pipeline with mixed GET+POST verbs — responses arrive in order")]
     public async Task Pipeline_MixedVerbs_ResponsesInOrder()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -244,7 +244,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Responses arrive in request order ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-042: Pipelined responses arrive in request order — verified by body content")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-042: Pipelined responses arrive in request order — verified by body content")]
     public async Task Pipeline_ResponsesInRequestOrder_VerifiedByBody()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -267,7 +267,7 @@ public sealed class Http11KeepAliveTests
 
     // ── Keep-alive across 20 sequential requests ──────────────────────────────
 
-    [Fact(DisplayName = "IT-11-043: 20 sequential GET /ping on same keep-alive connection all succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-043: 20 sequential GET /ping on same keep-alive connection all succeed")]
     public async Task TwentySequential_GetPing_SameConnection_AllSucceed()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);

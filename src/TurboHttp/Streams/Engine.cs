@@ -5,13 +5,15 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using TurboHttp.IO;
+using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.Streams;
 
 public class Engine
 {
-    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager, TcpOptions options)
+    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager,
+        TcpOptions options)
     {
         return Flow.FromGraph(GraphDsl.Create(builder =>
         {
@@ -52,8 +54,7 @@ public class Engine
 
             for (var i = 0; i < connectionCount; i++)
             {
-                var tcp = transportFactory?.Invoke() ??
-                          Flow.FromGraph(new Stages.ConnectionStage(clientManager, options));
+                var tcp = transportFactory?.Invoke() ?? Flow.FromGraph(new ConnectionStage(clientManager, options));
                 var conn = builder.Add(new TEngine().CreateFlow().Join(tcp));
                 builder.From(balance.Out(i)).Via(conn).To(merge.In(i));
             }

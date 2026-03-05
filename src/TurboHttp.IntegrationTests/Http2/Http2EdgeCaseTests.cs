@@ -11,7 +11,7 @@ namespace TurboHttp.IntegrationTests.Http2;
 /// unknown flags, GOAWAY mid-connection, PRIORITY frames, long URIs,
 /// and :authority with explicit port numbers.
 /// </summary>
-[Collection("Http2Advanced")]
+[Collection("Http2")]
 public sealed class Http2EdgeCaseTests
 {
     private readonly KestrelH2Fixture _fixture;
@@ -23,7 +23,7 @@ public sealed class Http2EdgeCaseTests
 
     // ── Immediately Closed Stream ─────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-060: Immediately closed stream (HEADERS + END_STREAM, no DATA) — decoded correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-060: Immediately closed stream (HEADERS + END_STREAM, no DATA) — decoded correctly")]
     public async Task Should_ReturnEmptyBodyResponse_When_StreamImmediatelyClosed()
     {
         // GET /status/204 returns HEADERS with END_STREAM set and no DATA frame.
@@ -42,23 +42,23 @@ public sealed class Http2EdgeCaseTests
     [Fact(DisplayName = "IT-2A-061: Immediately closed stream via decoder — HEADERS with END_STREAM returns response")]
     public void Should_ReturnResponse_When_HeadersFrameHasEndStream()
     {
-        var decoder = new Http2Decoder();
+        var session = new Http2IntegrationSession();
         var hpackEncoder = new HpackEncoder(useHuffman: false);
         var headerBlock = hpackEncoder.Encode([(":status", "204")]);
         var frame = new byte[9 + headerBlock.Length];
-        Http2FrameWriter.WriteHeadersFrame(frame, streamId: 1, headerBlock.Span, endStream: true, endHeaders: true);
+        Http2FrameTestWriter.WriteHeadersFrame(frame, streamId: 1, headerBlock.Span, endStream: true, endHeaders: true);
 
-        var decoded = decoder.TryDecode(frame.AsMemory(), out var result);
+        var frames = session.Process(frame.AsMemory());
 
-        Assert.True(decoded);
-        Assert.Single(result.Responses);
-        Assert.Equal(1, result.Responses[0].StreamId);
-        Assert.Equal(HttpStatusCode.NoContent, result.Responses[0].Response.StatusCode);
+        Assert.NotEmpty(frames);
+        Assert.Single(session.Responses);
+        Assert.Equal(1, session.Responses[0].StreamId);
+        Assert.Equal(HttpStatusCode.NoContent, session.Responses[0].Response.StatusCode);
     }
 
     // ── SETTINGS with Multiple Parameters ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-062: SETTINGS with multiple parameters in one frame — all applied correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-062: SETTINGS with multiple parameters in one frame — all applied correctly")]
     public async Task Should_ApplyAllSettings_When_SettingsFrameHasMultipleParameters()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -82,30 +82,30 @@ public sealed class Http2EdgeCaseTests
     [Fact(DisplayName = "IT-2A-063: SETTINGS decoder parses multiple parameters in one frame")]
     public void Should_ParseAllParameters_When_SettingsFrameContainsMultipleEntries()
     {
-        var decoder = new Http2Decoder();
-        var settings = Http2Encoder.EncodeSettings([
+        var session = new Http2IntegrationSession();
+        var settings = Http2FrameUtils.EncodeSettings([
             (SettingsParameter.HeaderTableSize, 8192u),
             (SettingsParameter.MaxConcurrentStreams, 100u),
             (SettingsParameter.InitialWindowSize, 32768u),
         ]);
 
-        var decoded = decoder.TryDecode(settings.AsMemory(), out var result);
+        var frames = session.Process(settings.AsMemory());
 
-        Assert.True(decoded);
-        Assert.Single(result.ReceivedSettings);
-        Assert.Equal(3, result.ReceivedSettings[0].Count);
+        Assert.NotEmpty(frames);
+        Assert.Single(session.ReceivedSettings);
+        Assert.Equal(3, session.ReceivedSettings[0].Count);
 
-        Assert.Contains(result.ReceivedSettings[0],
+        Assert.Contains(session.ReceivedSettings[0],
             s => s.Item1 == SettingsParameter.HeaderTableSize && s.Item2 == 8192u);
-        Assert.Contains(result.ReceivedSettings[0],
+        Assert.Contains(session.ReceivedSettings[0],
             s => s.Item1 == SettingsParameter.MaxConcurrentStreams && s.Item2 == 100u);
-        Assert.Contains(result.ReceivedSettings[0],
+        Assert.Contains(session.ReceivedSettings[0],
             s => s.Item1 == SettingsParameter.InitialWindowSize && s.Item2 == 32768u);
     }
 
     // ── PING Round-Trip ───────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-064: PING with 8-byte opaque data round-trip — ACK data matches")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-064: PING with 8-byte opaque data round-trip — ACK data matches")]
     public async Task Should_EchoOpaqueData_When_PingAckReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -119,39 +119,39 @@ public sealed class Http2EdgeCaseTests
     [Fact(DisplayName = "IT-2A-065: Unknown frame type 0xFE — decoder ignores silently (RFC 7540 §4.1)")]
     public void Should_IgnoreUnknownFrameType_When_Frame0xFeReceived()
     {
-        var decoder = new Http2Decoder();
+        var session = new Http2IntegrationSession();
         var frameBytes = new byte[9 + 8];
         frameBytes[0] = 0; frameBytes[1] = 0; frameBytes[2] = 8;
         frameBytes[3] = 0xFE; // unknown type
         BinaryPrimitives.WriteUInt32BigEndian(frameBytes.AsSpan(5), 1); // stream 1
 
         // Must not throw.
-        var decoded = decoder.TryDecode(frameBytes.AsMemory(), out var result);
+        var frames = session.Process(frameBytes.AsMemory());
 
-        Assert.True(decoded);
-        Assert.Empty(result.Responses);
-        Assert.Null(result.GoAway);
+        Assert.NotEmpty(frames);
+        Assert.Empty(session.Responses);
+        Assert.Null(session.GoAwayFrame);
     }
 
     [Fact(DisplayName = "IT-2A-066: Unknown flags on HEADERS frame — decoder processes frame normally")]
     public void Should_ProcessNormally_When_HeadersFrameHasUnknownFlags()
     {
-        var decoder = new Http2Decoder();
+        var session = new Http2IntegrationSession();
         var hpackEncoder = new HpackEncoder(useHuffman: false);
         var headerBlock = hpackEncoder.Encode([(":status", "200")]);
 
         var frame = new byte[9 + headerBlock.Length];
-        Http2FrameWriter.WriteHeadersFrame(frame, streamId: 1, headerBlock.Span, endStream: true, endHeaders: true);
+        Http2FrameTestWriter.WriteHeadersFrame(frame, streamId: 1, headerBlock.Span, endStream: true, endHeaders: true);
 
         // Set an unknown flag (bit 6 = 0x40, not defined for HEADERS).
         frame[4] |= 0x40;
 
         // Should not throw — unknown flags on known frame types are ignored per RFC 7540 §4.1.
-        var decoded = decoder.TryDecode(frame.AsMemory(), out var result);
+        var frames = session.Process(frame.AsMemory());
 
-        Assert.True(decoded);
-        Assert.Single(result.Responses);
-        Assert.Equal(HttpStatusCode.OK, result.Responses[0].Response.StatusCode);
+        Assert.NotEmpty(frames);
+        Assert.Single(session.Responses);
+        Assert.Equal(HttpStatusCode.OK, session.Responses[0].Response.StatusCode);
     }
 
     // ── GOAWAY Mid-Connection ─────────────────────────────────────────────────
@@ -159,32 +159,32 @@ public sealed class Http2EdgeCaseTests
     [Fact(DisplayName = "IT-2A-067: GOAWAY received mid-connection — decoder returns both response and GOAWAY")]
     public void Should_ReturnResponseAndGoAway_When_BothDecodedInSameBatch()
     {
-        var decoder = new Http2Decoder();
+        var session = new Http2IntegrationSession();
 
         // Build HEADERS response for stream 1 with END_STREAM
         var hpackEncoder = new HpackEncoder(useHuffman: false);
         var headerBlock = hpackEncoder.Encode([(":status", "200")]);
         var headersFrame = new byte[9 + headerBlock.Length];
-        Http2FrameWriter.WriteHeadersFrame(headersFrame, streamId: 1, headerBlock.Span, endStream: true, endHeaders: true);
+        Http2FrameTestWriter.WriteHeadersFrame(headersFrame, streamId: 1, headerBlock.Span, endStream: true, endHeaders: true);
 
         // Build GOAWAY frame (lastStreamId=1, NO_ERROR)
-        var goAwayFrame = Http2Encoder.EncodeGoAway(1, Http2ErrorCode.NoError);
+        var goAwayFrame = Http2FrameUtils.EncodeGoAway(1, Http2ErrorCode.NoError);
 
-        // Feed both in a single call to TryDecode.
+        // Feed both in a single call to Process.
         var batch = new byte[headersFrame.Length + goAwayFrame.Length];
         headersFrame.CopyTo(batch, 0);
         goAwayFrame.CopyTo(batch, headersFrame.Length);
 
-        var decoded = decoder.TryDecode(batch.AsMemory(), out var result);
+        var frames = session.Process(batch.AsMemory());
 
-        Assert.True(decoded);
-        Assert.Single(result.Responses);
-        Assert.Equal(HttpStatusCode.OK, result.Responses[0].Response.StatusCode);
-        Assert.NotNull(result.GoAway);
-        Assert.Equal(Http2ErrorCode.NoError, result.GoAway!.ErrorCode);
+        Assert.NotEmpty(frames);
+        Assert.Single(session.Responses);
+        Assert.Equal(HttpStatusCode.OK, session.Responses[0].Response.StatusCode);
+        Assert.NotNull(session.GoAwayFrame);
+        Assert.Equal(Http2ErrorCode.NoError, session.GoAwayFrame!.ErrorCode);
     }
 
-    [Fact(DisplayName = "IT-2A-068: Connection reuse after SETTINGS_MAX_CONCURRENT_STREAMS update")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-068: Connection reuse after SETTINGS_MAX_CONCURRENT_STREAMS update")]
     public async Task Should_RemainFunctional_When_MaxConcurrentStreamsIncreased()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -210,7 +210,7 @@ public sealed class Http2EdgeCaseTests
     [Fact(DisplayName = "IT-2A-069: PRIORITY frame decoded without error — ignored per RFC 9113")]
     public void Should_IgnorePriorityFrame_When_Received()
     {
-        var decoder = new Http2Decoder();
+        var session = new Http2IntegrationSession();
 
         // Build a PRIORITY frame (type 0x2): 5-byte payload on stream 1.
         var frameBytes = new byte[9 + 5];
@@ -222,16 +222,16 @@ public sealed class Http2EdgeCaseTests
         frameBytes[13] = 15; // weight (actual = value + 1 = 16)
 
         // Must not throw; result should have no responses.
-        var decoded = decoder.TryDecode(frameBytes.AsMemory(), out var result);
+        var frames = session.Process(frameBytes.AsMemory());
 
-        Assert.True(decoded);
-        Assert.Empty(result.Responses);
-        Assert.Null(result.GoAway);
+        Assert.NotEmpty(frames);
+        Assert.Empty(session.Responses);
+        Assert.Null(session.GoAwayFrame);
     }
 
     // ── Long URI ──────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-070: Very long :path value (4 KB URI) — server responds with 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-070: Very long :path value (4 KB URI) — server responds with 200")]
     public async Task Should_Return200_When_PathIs4KbLong()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -250,7 +250,7 @@ public sealed class Http2EdgeCaseTests
 
     // ── :authority with Port ──────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-071: :authority with explicit port number — request succeeds")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-071: :authority with explicit port number — request succeeds")]
     public async Task Should_Return200_When_AuthorityIncludesExplicitPort()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);

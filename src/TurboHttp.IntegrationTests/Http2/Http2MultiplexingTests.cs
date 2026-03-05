@@ -10,7 +10,7 @@ namespace TurboHttp.IntegrationTests.Http2;
 /// Covers concurrent streams, interleaved DATA frames, MAX_CONCURRENT_STREAMS
 /// negotiation, and stream reuse patterns.
 /// </summary>
-[Collection("Http2Advanced")]
+[Collection("Http2")]
 public sealed class Http2MultiplexingTests
 {
     private readonly KestrelH2Fixture _fixture;
@@ -22,7 +22,7 @@ public sealed class Http2MultiplexingTests
 
     // ── Concurrent Streams ────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-001: 2 concurrent streams on same connection — both return 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-001: 2 concurrent streams on same connection — both return 200")]
     public async Task Should_ReturnBothResponses_When_TwoConcurrentStreamsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -41,7 +41,7 @@ public sealed class Http2MultiplexingTests
         }
     }
 
-    [Fact(DisplayName = "IT-2A-002: 4 concurrent streams on same connection — all return 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-002: 4 concurrent streams on same connection — all return 200")]
     public async Task Should_ReturnAllResponses_When_FourConcurrentStreamsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -55,7 +55,7 @@ public sealed class Http2MultiplexingTests
         Assert.True(responses.Values.All(r => r.StatusCode == HttpStatusCode.OK));
     }
 
-    [Fact(DisplayName = "IT-2A-003: 8 concurrent streams on same connection — all return 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-003: 8 concurrent streams on same connection — all return 200")]
     public async Task Should_ReturnAllResponses_When_EightConcurrentStreamsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -69,7 +69,7 @@ public sealed class Http2MultiplexingTests
         Assert.True(responses.Values.All(r => r.StatusCode == HttpStatusCode.OK));
     }
 
-    [Fact(DisplayName = "IT-2A-004: 16 concurrent streams on same connection — all return 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-004: 16 concurrent streams on same connection — all return 200")]
     public async Task Should_ReturnAllResponses_When_SixteenConcurrentStreamsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -83,7 +83,7 @@ public sealed class Http2MultiplexingTests
         Assert.True(responses.Values.All(r => r.StatusCode == HttpStatusCode.OK));
     }
 
-    [Fact(DisplayName = "IT-2A-005: Streams interleaved: large + small body concurrently — both correct")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-005: Streams interleaved: large + small body concurrently — both correct")]
     public async Task Should_ReassembleBothBodies_When_DataFramesInterleaved()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -106,7 +106,7 @@ public sealed class Http2MultiplexingTests
         Assert.Equal("pong", Encoding.UTF8.GetString(smallBody));
     }
 
-    [Fact(DisplayName = "IT-2A-006: Streams complete out of order — collector handles any arrival order")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-006: Streams complete out of order — collector handles any arrival order")]
     public async Task Should_CollectAllResponses_When_StreamsCompleteOutOfOrder()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -125,7 +125,7 @@ public sealed class Http2MultiplexingTests
         Assert.Equal(HttpStatusCode.OK, responses[streamIds[1]].StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2A-007: High-priority (small) + low-priority (large) streams — both complete correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-007: High-priority (small) + low-priority (large) streams — both complete correctly")]
     public async Task Should_CompleteBothStreams_When_DifferentBodySizesUsed()
     {
         // HTTP/2 priority is deprecated (RFC 9113), but both streams must complete.
@@ -142,7 +142,7 @@ public sealed class Http2MultiplexingTests
         Assert.True(responses.Values.All(r => r.StatusCode == HttpStatusCode.OK));
     }
 
-    [Fact(DisplayName = "IT-2A-008: Concurrent GET + POST — both return correct responses")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-008: Concurrent GET + POST — both return correct responses")]
     public async Task Should_ReturnCorrectResponses_When_ConcurrentGetAndPostSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -168,7 +168,7 @@ public sealed class Http2MultiplexingTests
         Assert.Contains("concurrent-post", echoBody);
     }
 
-    [Fact(DisplayName = "IT-2A-009: Stream 1 large body + stream 3 small body — body integrity preserved")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-009: Stream 1 large body + stream 3 small body — body integrity preserved")]
     public async Task Should_PreserveBodyIntegrity_When_LargeAndSmallBodiesInterleaved()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -189,7 +189,7 @@ public sealed class Http2MultiplexingTests
         Assert.Equal("pong", smallBody);
     }
 
-    [Fact(DisplayName = "IT-2A-010: MAX_CONCURRENT_STREAMS = 1: sequential requests succeed after SETTINGS")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-010: MAX_CONCURRENT_STREAMS = 1: sequential requests succeed after SETTINGS")]
     public async Task Should_SucceedSequentially_When_MaxConcurrentStreamsIsOne()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -206,7 +206,7 @@ public sealed class Http2MultiplexingTests
         }
     }
 
-    [Fact(DisplayName = "IT-2A-011: MAX_CONCURRENT_STREAMS = 4: five sequential requests all succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-011: MAX_CONCURRENT_STREAMS = 4: five sequential requests all succeed")]
     public async Task Should_SucceedAllRequests_When_MaxConcurrentStreamsFourAndFiveRequestsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -222,7 +222,7 @@ public sealed class Http2MultiplexingTests
         }
     }
 
-    [Fact(DisplayName = "IT-2A-012: All concurrent streams return correct bodies — each verified individually")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-012: All concurrent streams return correct bodies — each verified individually")]
     public async Task Should_ReturnCorrectBodyPerStream_When_FourConcurrentRequestsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -248,7 +248,7 @@ public sealed class Http2MultiplexingTests
         Assert.Equal("Hello World", body4);
     }
 
-    [Fact(DisplayName = "IT-2A-013: Concurrent streams with different response codes — all decoded correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-013: Concurrent streams with different response codes — all decoded correctly")]
     public async Task Should_DecodeCorrectStatusCodes_When_ConcurrentStreamsReturnDifferentCodes()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -267,7 +267,7 @@ public sealed class Http2MultiplexingTests
         Assert.Equal(HttpStatusCode.InternalServerError, responses[streamIds[2]].StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2A-014: Two streams with same request path — both return identical bodies")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-014: Two streams with same request path — both return identical bodies")]
     public async Task Should_ReturnSameBody_When_TwoStreamsRequestSamePath()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -287,7 +287,7 @@ public sealed class Http2MultiplexingTests
         Assert.Equal("Hello World", body2);
     }
 
-    [Fact(DisplayName = "IT-2A-015: Stream reuse: 20 sequential streams on one connection — all succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-015: Stream reuse: 20 sequential streams on one connection — all succeed")]
     public async Task Should_SucceedAllStreams_When_TwentySequentialStreamsUsed()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);

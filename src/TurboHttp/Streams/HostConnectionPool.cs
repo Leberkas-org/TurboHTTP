@@ -4,11 +4,16 @@ using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka;
-using Servus.Akka.IO;
+using TurboHttp.IO;
 
 namespace TurboHttp.Streams;
 
-public sealed class HostConnectionPool
+internal interface IHostConnectionPool
+{
+    void Send(HttpRequestMessage request);
+}
+
+public sealed class HostConnectionPool : IHostConnectionPool
 {
     private readonly ActorSystem _system;
     private readonly ISourceQueueWithComplete<HttpRequestMessage> _queue;

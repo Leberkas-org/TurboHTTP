@@ -24,7 +24,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── Empty response body with Content-Length: 0 ───────────────────────────
 
-    [Fact(DisplayName = "IT-11A-055: GET /empty-cl — 200 with Content-Length: 0 decoded as empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-055: GET /empty-cl — 200 with Content-Length: 0 decoded as empty body")]
     public async Task EmptyBody_ContentLength0_DecodedAsEmpty()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/empty-cl");
@@ -37,7 +37,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── 204 No Content ────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-056: GET /status/204 — 204 No Content has empty body and no Content-Length")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-056: GET /status/204 — 204 No Content has empty body and no Content-Length")]
     public async Task Status204_NoBody_NoContentLength()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/status/204");
@@ -49,7 +49,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── 304 Not Modified ─────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-057: 304 Not Modified — no body in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-057: 304 Not Modified — no body in response")]
     public async Task Status304_NotModified_NoBody()
     {
         const string etag = "\"v1\"";
@@ -65,7 +65,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── Response with only headers (no body allowed) ─────────────────────────
 
-    [Fact(DisplayName = "IT-11A-058: HEAD /any — response has headers only, no body allowed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-058: HEAD /any — response has headers only, no body allowed")]
     public async Task HeadRequest_HeadersOnly_NoBody()
     {
         var response = await Http11Helper.HeadAsync(_fixture.Port, "/any");
@@ -77,7 +77,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── Very short response via raw TCP ──────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-059: Minimal HTTP/1.1 200 OK\\r\\n\\r\\n — decoder parses correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-059: Minimal HTTP/1.1 200 OK\\r\\n\\r\\n — decoder parses correctly")]
     public async Task MinimalResponse_OnlyStatusLine_DecodedSuccessfully()
     {
         // Send a raw HTTP/1.1 response with no headers and no body (just status + CRLF CRLF)
@@ -92,7 +92,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── Multiple CRLF between header and body ────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-060: Extra blank line before body — decoder stops at first CRLFCRLF")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-060: Extra blank line before body — decoder stops at first CRLFCRLF")]
     public async Task ExtraBlankLineBeforeBody_DecoderUsesFirstCrlfCrlf()
     {
         // RFC 9112 §2.2: the server sends one blank line (CRLF CRLF) to end headers.
@@ -114,7 +114,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── Response with unknown headers ─────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-061: GET /unknown-headers — response non-standard X-Unknown-* headers preserved")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-061: GET /unknown-headers — response non-standard X-Unknown-* headers preserved")]
     public async Task UnknownHeaders_PreservedInResponse()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/unknown-headers");
@@ -145,7 +145,7 @@ public sealed class Http11EdgeCaseTests
         Assert.StartsWith("OPTIONS * HTTP/1.1\r\n", encoded);
     }
 
-    [Fact(DisplayName = "IT-11A-063: OPTIONS /any — returns 200 with method name 'OPTIONS' in body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-063: OPTIONS /any — returns 200 with method name 'OPTIONS' in body")]
     public async Task Options_Path_Returns200_MethodInBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, Http11Helper.BuildUri(_fixture.Port, "/any"));
@@ -158,7 +158,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── POST with empty body ──────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-064: POST /echo with empty body — server returns 200 with empty echo")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-064: POST /echo with empty body — server returns 200 with empty echo")]
     public async Task PostEmptyBody_Returns200_EmptyEcho()
     {
         var content = new ByteArrayContent([]);
@@ -178,7 +178,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── PUT with binary body (0x00..0xFF) ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-065: PUT /echo with binary body containing all byte values 0x00..0xFF — echoed intact")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-065: PUT /echo with binary body containing all byte values 0x00..0xFF — echoed intact")]
     public async Task PutBinaryBody_AllByteValues_EchoedIntact()
     {
         var binaryBody = new byte[256];
@@ -204,7 +204,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── PATCH with JSON body ──────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-066: PATCH /echo with JSON body — server echoes JSON verbatim")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-066: PATCH /echo with JSON body — server echoes JSON verbatim")]
     public async Task PatchJsonBody_EchoedVerbatim()
     {
         const string jsonPayload = "{\"op\":\"replace\",\"path\":\"/name\",\"value\":\"new-name\"}";
@@ -226,7 +226,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── HTTP version in response ──────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-067: GET /hello — decoded response has HTTP/1.1 version")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-067: GET /hello — decoded response has HTTP/1.1 version")]
     public async Task Get_Hello_ResponseVersion_IsHttp11()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/hello");
@@ -237,7 +237,7 @@ public sealed class Http11EdgeCaseTests
 
     // ── Chunked response followed by 2nd request on same connection ──────────
 
-    [Fact(DisplayName = "IT-11A-068: Two sequential GET requests on keep-alive connection — both succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-068: Two sequential GET requests on keep-alive connection — both succeed")]
     public async Task KeepAlive_TwoSequentialRequests_BothSucceed()
     {
         await using var conn = await Http11Connection.OpenAsync(_fixture.Port);
@@ -286,11 +286,18 @@ public sealed class Http11EdgeCaseTests
             while (total < 4)
             {
                 var n = await stream.ReadAsync(buf.AsMemory(total), cts.Token);
-                if (n == 0) break;
+                if (n == 0)
+                {
+                    break;
+                }
+
                 total += n;
                 // Look for \r\n\r\n in what we've read so far
                 var s = Encoding.ASCII.GetString(buf, 0, total);
-                if (s.Contains("\r\n\r\n")) break;
+                if (s.Contains("\r\n\r\n"))
+                {
+                    break;
+                }
             }
 
             await stream.WriteAsync(responseBytes, cts.Token);

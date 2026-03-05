@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -50,10 +49,13 @@ public static class Http11Encoder
         // Check if chunked encoding is requested
         var isChunked = request.Headers.TransferEncodingChunked == true;
 
-        // 3. Request headers (excluding Host which we already wrote)
+        // 3. Accept-Encoding (RFC 9110 §8.4: advertise supported decodings unless already set)
+        bytesWritten += WriteAcceptEncodingIfNeeded(request.Headers, ref buffer);
+
+        // 4. Request headers (excluding Host which we already wrote)
         bytesWritten += WriteHeaders(request.Headers, ref buffer, skipHost: true);
 
-        // 4. Content headers (if body present)
+        // 5. Content headers (if body present)
         if (request.Content != null)
         {
             // Ensure Content-Length is set for content with known length
@@ -70,13 +72,13 @@ public static class Http11Encoder
             bytesWritten += WriteContentHeaders(request.Content.Headers, ref buffer, isChunked);
         }
 
-        // 5. Connection header (if not already set, default to keep-alive)
+        // 6. Connection header (if not already set, default to keep-alive)
         bytesWritten += WriteConnectionHeaderIfNeeded(request.Headers, ref buffer);
 
-        // 6. Header/body separator
+        // 7. Header/body separator
         bytesWritten += WriteCrlf(ref buffer);
 
-        // 7. Body (if present)
+        // 8. Body (if present)
         if (request.Content != null)
         {
             if (isChunked)
@@ -90,18 +92,6 @@ public static class Http11Encoder
         }
 
         return bytesWritten;
-    }
-
-    /// <summary>
-    /// Encodes an HTTP/1.1 request into a Memory buffer (legacy compatibility).
-    /// </summary>
-    public static int Encode(HttpRequestMessage request, ref Memory<byte> buffer, bool absoluteForm = false)
-    {
-        var span = buffer.Span;
-        var written = Encode(request, ref span, absoluteForm);
-        // Note: Don't advance buffer here - let caller decide if they want to advance
-        // buffer = buffer[written..];  // REMOVED - this was causing tests to fail
-        return written;
     }
 
     // ── Request Line ────────────────────────────────────────────────────────────
@@ -173,8 +163,7 @@ public static class Http11Encoder
 
     // ── Headers ─────────────────────────────────────────────────────────────────
 
-    private static int WriteHeaders(
-        IEnumerable<KeyValuePair<string, IEnumerable<string>>> headers,
+    private static int WriteHeaders(IEnumerable<KeyValuePair<string, IEnumerable<string>>> headers,
         ref Span<byte> buffer,
         bool skipHost)
     {
@@ -260,6 +249,17 @@ public static class Http11Encoder
         return bytesWritten;
     }
 
+    private static int WriteAcceptEncodingIfNeeded(HttpRequestHeaders headers, ref Span<byte> buffer)
+    {
+        // RFC 9110 §8.4: Advertise supported content-encodings unless caller already set the header.
+        if (headers.AcceptEncoding.Count > 0)
+        {
+            return 0;
+        }
+
+        return WriteBytes(ref buffer, "Accept-Encoding: gzip, deflate, br\r\n"u8);
+    }
+
     private static int WriteConnectionHeaderIfNeeded(HttpRequestHeaders headers, ref Span<byte> buffer)
     {
         var bytesWritten = 0;
@@ -286,7 +286,11 @@ public static class Http11Encoder
             first = false;
         }
 
-        if (!first) bytesWritten += WriteBytes(ref buffer, ", "u8);
+        if (!first)
+        {
+            bytesWritten += WriteBytes(ref buffer, ", "u8);
+        }
+
         bytesWritten += WriteBytes(ref buffer, "keep-alive\r\n"u8);
 
         return bytesWritten;

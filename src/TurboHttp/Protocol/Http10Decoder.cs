@@ -25,7 +25,10 @@ public sealed class Http10Decoder
 
         var headerBytes = working[..headerEnd].ToArray();
         var lines = SplitHeaderLines(headerBytes);
-        if (lines.Length == 0) return false;
+        if (lines.Length == 0)
+        {
+            return false;
+        }
 
         ValidateStatusLine(lines[0]);
         var headers = ParseHeaders(lines[1..]);
@@ -61,15 +64,24 @@ public sealed class Http10Decoder
     public bool TryDecodeEof(out HttpResponseMessage? response)
     {
         response = null;
-        if (_remainder.IsEmpty) return false;
+        if (_remainder.IsEmpty)
+        {
+            return false;
+        }
 
         var span = _remainder.Span;
         var headerEnd = FindHeaderEnd(span);
-        if (headerEnd < 0) return false;
+        if (headerEnd < 0)
+        {
+            return false;
+        }
 
         var headerBytes = _remainder[..headerEnd].ToArray();
         var lines = SplitHeaderLines(headerBytes);
-        if (lines.Length == 0) return false;
+        if (lines.Length == 0)
+        {
+            return false;
+        }
 
         ValidateStatusLine(lines[0]);
         var headers = ParseHeaders(lines[1..]);
@@ -212,7 +224,10 @@ public sealed class Http10Decoder
     {
         var parts = statusLine.Split(' ', 3);
         var statusCode = 500;
-        if (parts.Length >= 2 && int.TryParse(parts[1], out var code)) statusCode = code;
+        if (parts.Length >= 2 && int.TryParse(parts[1], out var code))
+        {
+            statusCode = code;
+        }
 
         var reasonPhrase = parts.Length > 2 ? parts[2] : string.Empty;
         var response = new HttpResponseMessage((HttpStatusCode)statusCode)
@@ -221,6 +236,19 @@ public sealed class Http10Decoder
             Version = new Version(1, 0)
         };
 
+        // Decompress body if Content-Encoding is set (RFC 9110 §8.4)
+        var contentEncoding = headers.TryGetValue("Content-Encoding", out var ceValues) && ceValues.Count > 0
+            ? ceValues[0]
+            : null;
+
+        var decompressed = !string.IsNullOrWhiteSpace(contentEncoding) &&
+                           !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase);
+
+        if (decompressed)
+        {
+            body = ContentEncodingDecoder.Decompress(body, contentEncoding);
+        }
+
         var content = new ByteArrayContent(body);
         response.Content = content;
 
@@ -228,6 +256,18 @@ public sealed class Http10Decoder
         {
             foreach (var value in values)
             {
+                // Remove Content-Encoding after decompression (RFC 9110 §8.4)
+                if (decompressed && name.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Update Content-Length to decompressed size (skip original value)
+                if (decompressed && name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (ContentHeaders.Contains(name))
                 {
                     content.Headers.TryAddWithoutValidation(name, value);
@@ -239,13 +279,27 @@ public sealed class Http10Decoder
             }
         }
 
+        // Set updated Content-Length after decompression
+        if (decompressed)
+        {
+            content.Headers.ContentLength = body.Length;
+        }
+
         return response;
     }
 
     private static ReadOnlyMemory<byte> Combine(ReadOnlyMemory<byte> a, ReadOnlyMemory<byte> b)
     {
-        if (a.IsEmpty) return b;
-        if (b.IsEmpty) return a;
+        if (a.IsEmpty)
+        {
+            return b;
+        }
+
+        if (b.IsEmpty)
+        {
+            return a;
+        }
+
         var merged = new byte[a.Length + b.Length];
         a.Span.CopyTo(merged.AsSpan());
         b.Span.CopyTo(merged.AsSpan(a.Length));

@@ -6,7 +6,7 @@ using System.Threading.Channels;
 using Akka.Actor;
 using Akka.Event;
 
-namespace Servus.Akka.IO;
+namespace TurboHttp.IO;
 
 public class ClientRunner : ReceiveActor
 {

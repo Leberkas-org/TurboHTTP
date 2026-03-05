@@ -108,7 +108,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         // ── Body ──────────────────────────────────────────────────────────────
 
         // POST /echo → 200, echoes request body verbatim with same Content-Type
-        app.MapPost("/echo", async (HttpContext ctx) =>
+        app.MapPost("/echo", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -120,7 +120,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // PUT /echo → 200, echoes request body (same handler as POST)
-        app.MapPut("/echo", async (HttpContext ctx) =>
+        app.MapPut("/echo", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -132,7 +132,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // PATCH /echo → 200, echoes request body
-        app.MapMethods("/echo", ["PATCH"], async (HttpContext ctx) =>
+        app.MapMethods("/echo", ["PATCH"], async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -235,7 +235,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // POST /echo/chunked → echoes request body as chunked response (no Content-Length)
-        app.MapPost("/echo/chunked", async (HttpContext ctx) =>
+        app.MapPost("/echo/chunked", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -248,7 +248,7 @@ public sealed class KestrelFixture : IAsyncLifetime
 
         // GET /chunked/trailer → chunked response; body includes "chunked-with-trailer"
         // Trailers are sent as trailing headers after the last chunk
-        app.MapGet("/chunked/trailer", async (HttpContext ctx) =>
+        app.MapGet("/chunked/trailer", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.StartAsync();
@@ -264,7 +264,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // GET /chunked/md5 → chunked response with Content-MD5 header in response headers
-        app.MapGet("/chunked/md5", async (HttpContext ctx) =>
+        app.MapGet("/chunked/md5", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             var body = "checksum-body"u8.ToArray();
@@ -277,7 +277,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         // ── HTTP/1.1 Connection management ────────────────────────────────────
 
         // GET /close → returns Connection: close header
-        app.MapGet("/close", async (HttpContext ctx) =>
+        app.MapGet("/close", async ctx =>
         {
             ctx.Response.Headers["Connection"] = "close";
             ctx.Response.ContentType = "text/plain";
@@ -289,7 +289,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         // ── HTTP/1.1 Caching / ETag ───────────────────────────────────────────
 
         // GET /etag → resource with ETag support for conditional requests
-        app.MapGet("/etag", async (HttpContext ctx) =>
+        app.MapGet("/etag", async ctx =>
         {
             const string etag = "\"v1\"";
             if (ctx.Request.Headers["If-None-Match"] == etag)
@@ -307,10 +307,10 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // GET /cache → response with Cache-Control, Last-Modified, Expires headers
-        app.MapGet("/cache", async (HttpContext ctx) =>
+        app.MapGet("/cache", async ctx =>
         {
             ctx.Response.Headers["Cache-Control"] = "max-age=3600, public";
-            ctx.Response.Headers["Last-Modified"] = DateTimeOffset.UtcNow.AddHours(-1).ToString("R");
+            ctx.Response.Headers.LastModified = DateTimeOffset.UtcNow.AddHours(-1).ToString("R");
             ctx.Response.Headers["Expires"] = DateTimeOffset.UtcNow.AddHours(1).ToString("R");
             ctx.Response.Headers["Pragma"] = "no-cache";
             ctx.Response.ContentType = "text/plain";
@@ -321,9 +321,9 @@ public sealed class KestrelFixture : IAsyncLifetime
 
         // GET /if-modified-since → supports If-Modified-Since conditional logic
         var fixedLastModified = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        app.MapGet("/if-modified-since", async (HttpContext ctx) =>
+        app.MapGet("/if-modified-since", async ctx =>
         {
-            ctx.Response.Headers["Last-Modified"] = fixedLastModified.ToString("R");
+            ctx.Response.Headers.LastModified = fixedLastModified.ToString("R");
             if (ctx.Request.Headers.TryGetValue("If-Modified-Since", out var ims) &&
                 DateTimeOffset.TryParse(ims, out var imsDate) &&
                 imsDate >= fixedLastModified)
@@ -365,9 +365,9 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // GET /gzip-meta → returns Content-Encoding: identity header (metadata only — body is plain)
-        app.MapGet("/gzip-meta", async (HttpContext ctx) =>
+        app.MapGet("/gzip-meta", async ctx =>
         {
-            ctx.Response.Headers["Content-Encoding"] = "identity";
+            ctx.Response.Headers.ContentEncoding = "identity";
             ctx.Response.ContentType = "text/plain";
             var body = "encoded-body"u8.ToArray();
             ctx.Response.ContentLength = body.Length;
@@ -375,7 +375,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // POST /form/multipart → accepts multipart/form-data, echoes body length
-        app.MapPost("/form/multipart", async (HttpContext ctx) =>
+        app.MapPost("/form/multipart", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -387,7 +387,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         });
 
         // POST /form/urlencoded → accepts application/x-www-form-urlencoded, echoes body
-        app.MapPost("/form/urlencoded", async (HttpContext ctx) =>
+        app.MapPost("/form/urlencoded", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -431,7 +431,7 @@ public sealed class KestrelFixture : IAsyncLifetime
         // ── Phase 14: Additional Cache Routes ────────────────────────────────
 
         // GET /cache/no-store → returns Cache-Control: no-store
-        app.MapGet("/cache/no-store", async (HttpContext ctx) =>
+        app.MapGet("/cache/no-store", async ctx =>
         {
             ctx.Response.Headers["Cache-Control"] = "no-store";
             ctx.Response.ContentType = "text/plain";

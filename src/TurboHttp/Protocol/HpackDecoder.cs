@@ -41,7 +41,9 @@ public sealed class HpackDynamicTable
     public void SetMaxSize(int newMax)
     {
         if (newMax < 0)
+        {
             throw new HpackException($"Invalid HPACK table size: {newMax}");
+        }
 
         _maxSize = newMax;
         Evict();
@@ -74,7 +76,9 @@ public sealed class HpackDynamicTable
     public HpackHeader? GetEntry(int dynamicIndex)
     {
         if (dynamicIndex <= 0 || dynamicIndex > _entries.Count)
+        {
             return null;
+        }
 
         var node = _entries.First;
         for (var i = 1; i < dynamicIndex; i++)
@@ -130,6 +134,11 @@ public sealed class HpackDecoder
     // RFC 7541 §4.2: Maximum table size is negotiated via SETTINGS_HEADER_TABLE_SIZE
     private int _maxAllowedTableSize = 4096;
 
+    // RFC 7540 §6.5.2 / RFC 7541: MAX_HEADER_LIST_SIZE — maximum cumulative decoded header list size.
+    // Size is computed as: sum of (name_bytes + value_bytes + 32) per entry.
+    // Default: int.MaxValue (no limit enforced until SETTINGS is received).
+    private int _maxHeaderListSize = int.MaxValue;
+
     // Security: Maximum string literal length for header names and values (prevents resource exhaustion).
     private int _maxStringLength = 65535;
 
@@ -142,9 +151,26 @@ public sealed class HpackDecoder
     public void SetMaxAllowedTableSize(int size)
     {
         if (size < 0)
+        {
             throw new HpackException($"Invalid SETTINGS_HEADER_TABLE_SIZE: {size}");
+        }
 
         _maxAllowedTableSize = size;
+    }
+
+    /// <summary>
+    /// Sets the MAX_HEADER_LIST_SIZE limit (RFC 7540 §6.5.2).
+    /// When the cumulative decoded header list size (name + value + 32 per entry) exceeds
+    /// this value, <see cref="HpackException"/> is thrown (COMPRESSION_ERROR — connection error).
+    /// </summary>
+    public void SetMaxHeaderListSize(int size)
+    {
+        if (size < 0)
+        {
+            throw new HpackException($"Invalid MAX_HEADER_LIST_SIZE: {size}");
+        }
+
+        _maxHeaderListSize = size;
     }
 
     /// <summary>
@@ -154,7 +180,9 @@ public sealed class HpackDecoder
     public void SetMaxStringLength(int maxLength)
     {
         if (maxLength < 0)
+        {
             throw new HpackException($"Invalid max string length: {maxLength}");
+        }
 
         _maxStringLength = maxLength;
     }
@@ -170,6 +198,10 @@ public sealed class HpackDecoder
         var result = new List<HpackHeader>();
         var pos = 0;
 
+        // RFC 7540 §6.5.2: Track cumulative header list size for MAX_HEADER_LIST_SIZE enforcement.
+        // Size per entry = name_bytes + value_bytes + 32 (RFC 7541 §4.1 overhead).
+        long cumulativeHeaderListSize = 0;
+
         // RFC 7541 §6.3: Table size updates must appear at the start of a header block.
         // Once a non-update entry is encountered, no further size updates are permitted.
         var tableSizeUpdateAllowed = true;
@@ -183,13 +215,16 @@ public sealed class HpackDecoder
             {
                 tableSizeUpdateAllowed = false;
                 var idx = ReadInteger(data, ref pos, 7);
-                result.Add(Lookup(idx));
+                var header = Lookup(idx);
+                CheckHeaderListSize(ref cumulativeHeaderListSize, header);
+                result.Add(header);
             }
             // RFC 7541 §6.2.1: Literal with Incremental Indexing - bit pattern: 01xxxxxx
             else if ((b & 0x40) != 0)
             {
                 tableSizeUpdateAllowed = false;
                 var header = ReadLiteralHeader(data, ref pos, prefixBits: 6, neverIndex: false);
+                CheckHeaderListSize(ref cumulativeHeaderListSize, header);
                 _table.Add(header.Name, header.Value);
                 result.Add(header);
             }
@@ -221,6 +256,7 @@ public sealed class HpackDecoder
                 tableSizeUpdateAllowed = false;
                 // NeverIndex = true: intermediaries must not add this header to any dynamic table
                 var header = ReadLiteralHeader(data, ref pos, prefixBits: 4, neverIndex: true);
+                CheckHeaderListSize(ref cumulativeHeaderListSize, header);
                 result.Add(header);
             }
             // RFC 7541 §6.2.2: Literal without Indexing - bit pattern: 0000xxxx
@@ -228,11 +264,37 @@ public sealed class HpackDecoder
             {
                 tableSizeUpdateAllowed = false;
                 var header = ReadLiteralHeader(data, ref pos, prefixBits: 4, neverIndex: false);
+                CheckHeaderListSize(ref cumulativeHeaderListSize, header);
                 result.Add(header);
             }
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Accumulates the entry's contribution to the header list size and throws
+    /// <see cref="HpackException"/> if the cumulative total exceeds <see cref="_maxHeaderListSize"/>.
+    /// RFC 7540 §6.5.2: size = name_octets + value_octets + 32 per entry.
+    /// </summary>
+    private void CheckHeaderListSize(ref long cumulative, HpackHeader header)
+    {
+        if (_maxHeaderListSize == int.MaxValue)
+        {
+            return;
+        }
+
+        var entrySize = Encoding.UTF8.GetByteCount(header.Name)
+                        + Encoding.UTF8.GetByteCount(header.Value)
+                        + 32;
+        cumulative += entrySize;
+
+        if (cumulative > _maxHeaderListSize)
+        {
+            throw new HpackException(
+                $"RFC 7540 §6.5.2 violation: Header list size {cumulative} exceeds " +
+                $"MAX_HEADER_LIST_SIZE ({_maxHeaderListSize}) — COMPRESSION_ERROR.");
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -274,15 +336,12 @@ public sealed class HpackDecoder
         // RFC 7541 §2.3.3: Index 0 is reserved and must never be used
         if (idx <= 0)
         {
-            throw new HpackException(
-                $"RFC 7541 §2.3.3 violation: Invalid index {idx}. Index 0 is reserved.");
+            throw new HpackException($"RFC 7541 §2.3.3 violation: Invalid index {idx}. Index 0 is reserved.");
         }
 
         if (idx <= HpackStaticTable.StaticCount)
         {
-            return new HpackHeader(
-                HpackStaticTable.Entries[idx].Name,
-                HpackStaticTable.Entries[idx].Value);
+            return new HpackHeader(HpackStaticTable.Entries[idx].Name, HpackStaticTable.Entries[idx].Value);
         }
 
         var dynIdx = idx - HpackStaticTable.StaticCount;
@@ -411,68 +470,68 @@ public static class HpackStaticTable
     // Index 0 is intentionally empty (reserved, RFC 7541 §2.3.3)
     public static readonly (string Name, string Value)[] Entries =
     [
-        (string.Empty, string.Empty),                    // [0]  reserved
-        (":authority",                  string.Empty),   // [1]
-        (":method",                     "GET"),          // [2]
-        (":method",                     "POST"),         // [3]
-        (":path",                       "/"),            // [4]
-        (":path",                       "/index.html"),  // [5]
-        (":scheme",                     "http"),         // [6]
-        (":scheme",                     "https"),        // [7]
-        (":status",                     "200"),          // [8]
-        (":status",                     "204"),          // [9]
-        (":status",                     "206"),          // [10]
-        (":status",                     "304"),          // [11]
-        (":status",                     "400"),          // [12]
-        (":status",                     "404"),          // [13]
-        (":status",                     "500"),          // [14]
-        ("accept-charset",              string.Empty),   // [15]
-        ("accept-encoding",             "gzip, deflate"),// [16]
-        ("accept-language",             string.Empty),   // [17]
-        ("accept-ranges",               string.Empty),   // [18]
-        ("accept",                      string.Empty),   // [19]
-        ("access-control-allow-origin", string.Empty),   // [20]
-        ("age",                         string.Empty),   // [21]
-        ("allow",                       string.Empty),   // [22]
-        ("authorization",               string.Empty),   // [23]
-        ("cache-control",               string.Empty),   // [24]
-        ("content-disposition",         string.Empty),   // [25]
-        ("content-encoding",            string.Empty),   // [26]
-        ("content-language",            string.Empty),   // [27]
-        ("content-length",              string.Empty),   // [28]
-        ("content-location",            string.Empty),   // [29]
-        ("content-range",               string.Empty),   // [30]
-        ("content-type",                string.Empty),   // [31]
-        ("cookie",                      string.Empty),   // [32]
-        ("date",                        string.Empty),   // [33]
-        ("etag",                        string.Empty),   // [34]
-        ("expect",                      string.Empty),   // [35]
-        ("expires",                     string.Empty),   // [36]
-        ("from",                        string.Empty),   // [37]
-        ("host",                        string.Empty),   // [38]
-        ("if-match",                    string.Empty),   // [39]
-        ("if-modified-since",           string.Empty),   // [40]
-        ("if-none-match",               string.Empty),   // [41]
-        ("if-range",                    string.Empty),   // [42]
-        ("if-unmodified-since",         string.Empty),   // [43]
-        ("last-modified",               string.Empty),   // [44]
-        ("link",                        string.Empty),   // [45]
-        ("location",                    string.Empty),   // [46]
-        ("max-forwards",                string.Empty),   // [47]
-        ("proxy-authenticate",          string.Empty),   // [48]
-        ("proxy-authorization",         string.Empty),   // [49]
-        ("range",                       string.Empty),   // [50]
-        ("referer",                     string.Empty),   // [51]
-        ("refresh",                     string.Empty),   // [52]
-        ("retry-after",                 string.Empty),   // [53]
-        ("server",                      string.Empty),   // [54]
-        ("set-cookie",                  string.Empty),   // [55]
-        ("strict-transport-security",   string.Empty),   // [56]
-        ("transfer-encoding",           string.Empty),   // [57]
-        ("user-agent",                  string.Empty),   // [58]
-        ("vary",                        string.Empty),   // [59]
-        ("via",                         string.Empty),   // [60]
-        ("www-authenticate",            string.Empty)    // [61]
+        (string.Empty, string.Empty), // [0]  reserved
+        (":authority", string.Empty), // [1]
+        (":method", "GET"), // [2]
+        (":method", "POST"), // [3]
+        (":path", "/"), // [4]
+        (":path", "/index.html"), // [5]
+        (":scheme", "http"), // [6]
+        (":scheme", "https"), // [7]
+        (":status", "200"), // [8]
+        (":status", "204"), // [9]
+        (":status", "206"), // [10]
+        (":status", "304"), // [11]
+        (":status", "400"), // [12]
+        (":status", "404"), // [13]
+        (":status", "500"), // [14]
+        ("accept-charset", string.Empty), // [15]
+        ("accept-encoding", "gzip, deflate"), // [16]
+        ("accept-language", string.Empty), // [17]
+        ("accept-ranges", string.Empty), // [18]
+        ("accept", string.Empty), // [19]
+        ("access-control-allow-origin", string.Empty), // [20]
+        ("age", string.Empty), // [21]
+        ("allow", string.Empty), // [22]
+        ("authorization", string.Empty), // [23]
+        ("cache-control", string.Empty), // [24]
+        ("content-disposition", string.Empty), // [25]
+        ("content-encoding", string.Empty), // [26]
+        ("content-language", string.Empty), // [27]
+        ("content-length", string.Empty), // [28]
+        ("content-location", string.Empty), // [29]
+        ("content-range", string.Empty), // [30]
+        ("content-type", string.Empty), // [31]
+        ("cookie", string.Empty), // [32]
+        ("date", string.Empty), // [33]
+        ("etag", string.Empty), // [34]
+        ("expect", string.Empty), // [35]
+        ("expires", string.Empty), // [36]
+        ("from", string.Empty), // [37]
+        ("host", string.Empty), // [38]
+        ("if-match", string.Empty), // [39]
+        ("if-modified-since", string.Empty), // [40]
+        ("if-none-match", string.Empty), // [41]
+        ("if-range", string.Empty), // [42]
+        ("if-unmodified-since", string.Empty), // [43]
+        ("last-modified", string.Empty), // [44]
+        ("link", string.Empty), // [45]
+        ("location", string.Empty), // [46]
+        ("max-forwards", string.Empty), // [47]
+        ("proxy-authenticate", string.Empty), // [48]
+        ("proxy-authorization", string.Empty), // [49]
+        ("range", string.Empty), // [50]
+        ("referer", string.Empty), // [51]
+        ("refresh", string.Empty), // [52]
+        ("retry-after", string.Empty), // [53]
+        ("server", string.Empty), // [54]
+        ("set-cookie", string.Empty), // [55]
+        ("strict-transport-security", string.Empty), // [56]
+        ("transfer-encoding", string.Empty), // [57]
+        ("user-agent", string.Empty), // [58]
+        ("vary", string.Empty), // [59]
+        ("via", string.Empty), // [60]
+        ("www-authenticate", string.Empty) // [61]
     ];
 }
 
@@ -481,7 +540,11 @@ public static class HpackStaticTable
 /// </summary>
 public sealed class HpackException : Exception
 {
-    public HpackException(string message) : base(message) { }
-    public HpackException(string message, Exception inner) : base(message, inner) { }
-}
+    public HpackException(string message) : base(message)
+    {
+    }
 
+    public HpackException(string message, Exception inner) : base(message, inner)
+    {
+    }
+}

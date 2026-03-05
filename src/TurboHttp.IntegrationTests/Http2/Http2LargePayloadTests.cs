@@ -10,7 +10,7 @@ namespace TurboHttp.IntegrationTests.Http2;
 /// reassembly integrity (SHA-256), large headers + large body combinations,
 /// and streaming decode behavior.
 /// </summary>
-[Collection("Http2Advanced")]
+[Collection("Http2")]
 public sealed class Http2LargePayloadTests
 {
     private readonly KestrelH2Fixture _fixture;
@@ -22,7 +22,7 @@ public sealed class Http2LargePayloadTests
 
     // ── Large Response Bodies ─────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2A-050: 1 MB response body decoded correctly — all bytes match")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-050: 1 MB response body decoded correctly — all bytes match")]
     public async Task Should_DecodeFully_When_OneMegabyteResponseBodyReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -35,7 +35,7 @@ public sealed class Http2LargePayloadTests
         Assert.True(body.All(b => b == (byte)'A'), "All bytes should be 'A'.");
     }
 
-    [Fact(DisplayName = "IT-2A-051: 4 MB response body decoded correctly — length and content verified")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-051: 4 MB response body decoded correctly — length and content verified")]
     public async Task Should_DecodeFully_When_FourMegabyteResponseBodyReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -48,7 +48,7 @@ public sealed class Http2LargePayloadTests
         Assert.True(body.All(b => b == (byte)'A'), "All bytes should be 'A'.");
     }
 
-    [Fact(DisplayName = "IT-2A-052: 60 KB request body encoded and echoed correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-052: 60 KB request body encoded and echoed correctly")]
     public async Task Should_EchoRequestBody_When_60KbBodySentToEchoEndpoint()
     {
         // 60 KB fits within the initial 65535-byte send window.
@@ -70,7 +70,7 @@ public sealed class Http2LargePayloadTests
         Assert.Equal(bodyData, received);
     }
 
-    [Fact(DisplayName = "IT-2A-053: Multiple DATA frames reassembly order preserved — 32 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-053: Multiple DATA frames reassembly order preserved — 32 KB body")]
     public async Task Should_PreserveAssemblyOrder_When_BodySpansMultipleDataFrames()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -91,7 +91,7 @@ public sealed class Http2LargePayloadTests
         }
     }
 
-    [Fact(DisplayName = "IT-2A-054: Body matches SHA-256 of expected content — 1 MB all-'A' bytes")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-054: Body matches SHA-256 of expected content — 1 MB all-'A' bytes")]
     public async Task Should_MatchExpectedHash_When_OneMegabyteBodyReceived()
     {
         // Pre-compute the expected SHA-256 of 1 MB of 'A' bytes (0x41).
@@ -109,7 +109,7 @@ public sealed class Http2LargePayloadTests
         Assert.Equal(expectedHash, actualHash);
     }
 
-    [Fact(DisplayName = "IT-2A-055: Large body + large response headers — both decoded correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-055: Large body + large response headers — both decoded correctly")]
     public async Task Should_DecodeBodyAndHeaders_When_LargeBodyWithLargeHeadersReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -137,7 +137,7 @@ public sealed class Http2LargePayloadTests
         Assert.True(body.All(b => b == (byte)'A'));
     }
 
-    [Fact(DisplayName = "IT-2A-056: Streaming decode: slow endpoint delivers body byte-by-byte — reassembled correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-056: Streaming decode: slow endpoint delivers body byte-by-byte — reassembled correctly")]
     public async Task Should_ReassembleBody_When_ServerStreamsOneByteAtATime()
     {
         // /slow/{count} sends count bytes with a 1 ms delay between each flush.
@@ -151,7 +151,7 @@ public sealed class Http2LargePayloadTests
         Assert.True(body.All(b => b == (byte)'x'));
     }
 
-    [Fact(DisplayName = "IT-2A-057: Sequential large bodies — no state leakage between responses")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-057: Sequential large bodies — no state leakage between responses")]
     public async Task Should_DeliverCorrectBodies_When_SequentialLargeResponsesReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -169,7 +169,7 @@ public sealed class Http2LargePayloadTests
         }
     }
 
-    [Fact(DisplayName = "IT-2A-058: Large body on multiple concurrent streams — body integrity per stream")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2A-058: Large body on multiple concurrent streams — body integrity per stream")]
     public async Task Should_PreserveBodyIntegrity_When_ConcurrentLargeBodiessReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);

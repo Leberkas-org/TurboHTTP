@@ -13,5 +13,7 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHttp.Tests"/>
+        <InternalsVisibleTo Include="TurboHttp.IntegrationTests"/>
+        <InternalsVisibleTo Include="TurboHttp.StreamTests"/>
     </ItemGroup>
 </Project>

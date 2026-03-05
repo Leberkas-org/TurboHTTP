@@ -23,7 +23,7 @@ public sealed class Http11SecurityTests
 
     // ── Very large response body (10 MB) ─────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-045: GET /large/10240 (10 MB) — decoder accumulates large body without OOM")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-045: GET /large/10240 (10 MB) — decoder accumulates large body without OOM")]
     public async Task LargeBody_10MB_DecoderNoOOM()
     {
         // 10 MB response from the server tests the decoder's ability to accumulate
@@ -42,7 +42,7 @@ public sealed class Http11SecurityTests
 
     // ── Very many request headers (50 headers) ────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-046: 50 custom headers in request — all echoed back in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-046: 50 custom headers in request — all echoed back in response")]
     public async Task FiftyCustomHeaders_AllPreservedInResponse()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Http11Helper.BuildUri(_fixture.Port, "/headers/echo"));
@@ -105,7 +105,7 @@ public sealed class Http11SecurityTests
 
     // ── CRLF in body — body is opaque bytes, not re-parsed ───────────────────
 
-    [Fact(DisplayName = "IT-11A-050: POST /echo with CRLF bytes in body — body treated as opaque, echoed intact")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-050: POST /echo with CRLF bytes in body — body treated as opaque, echoed intact")]
     public async Task CrlfInBody_TreatedAsOpaque_EchoedIntact()
     {
         // Body contains HTTP-like content with CRLF — decoder must not re-parse as headers
@@ -129,7 +129,7 @@ public sealed class Http11SecurityTests
 
     // ── Zero-length Content-Length body ──────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-051: POST /echo with Content-Length: 0 — server returns 200 with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-051: POST /echo with Content-Length: 0 — server returns 200 with empty body")]
     public async Task ZeroContentLength_PostEcho_Returns200_EmptyBody()
     {
         var content = new ByteArrayContent([]);
@@ -205,7 +205,7 @@ public sealed class Http11SecurityTests
 
     // ── Slow response — decoder accumulates ──────────────────────────────────
 
-    [Fact(DisplayName = "IT-11A-054: GET /slow/10 — decoder accumulates 10 bytes arriving 1-per-flush")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11A-054: GET /slow/10 — decoder accumulates 10 bytes arriving 1-per-flush")]
     public async Task SlowResponse_DecoderAccumulates_ReturnsCompleteBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/slow/10");

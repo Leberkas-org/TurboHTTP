@@ -23,7 +23,7 @@ public sealed class Http11ChunkedTests
 
     // ── GET /chunked/{kb} — body size ─────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-050: GET /chunked/1 returns chunked response with 1 KB of data")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-050: GET /chunked/1 returns chunked response with 1 KB of data")]
     public async Task Get_Chunked_1KB_ReturnsCorrectBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/1");
@@ -34,7 +34,7 @@ public sealed class Http11ChunkedTests
         Assert.All(body, b => Assert.Equal((byte)'A', b));
     }
 
-    [Fact(DisplayName = "IT-11-051: GET /chunked/64 returns chunked response with 64 KB of data")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-051: GET /chunked/64 returns chunked response with 64 KB of data")]
     public async Task Get_Chunked_64KB_ReturnsCorrectBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/64");
@@ -44,7 +44,7 @@ public sealed class Http11ChunkedTests
         Assert.Equal(64 * 1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-11-052: GET /chunked/512 returns chunked response with 512 KB of data")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-052: GET /chunked/512 returns chunked response with 512 KB of data")]
     public async Task Get_Chunked_512KB_ReturnsCorrectBody()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/512");
@@ -56,7 +56,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunk count and sizes via /chunked/exact/{count}/{chunkBytes} ─────────
 
-    [Theory(DisplayName = "IT-11-053: Chunked response with N chunks — all data received correctly")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-053: Chunked response with N chunks — all data received correctly")]
     [InlineData(1, 1024)]     // 1 chunk of 1 KB
     [InlineData(4, 1024)]     // 4 chunks of 1 KB each
     [InlineData(32, 512)]     // 32 chunks of 512 bytes
@@ -70,7 +70,7 @@ public sealed class Http11ChunkedTests
         Assert.All(body, b => Assert.Equal((byte)'B', b));
     }
 
-    [Theory(DisplayName = "IT-11-054: Chunked response with various chunk sizes decoded correctly")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-11-054: Chunked response with various chunk sizes decoded correctly")]
     [InlineData(1)]      // 1-byte chunks
     [InlineData(128)]    // 128-byte chunks
     [InlineData(4096)]   // 4 KB chunks
@@ -86,7 +86,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked body round-trip (POST /echo/chunked) ─────────────────────────
 
-    [Fact(DisplayName = "IT-11-055: POST /echo/chunked — request body echoed as chunked response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-055: POST /echo/chunked — request body echoed as chunked response")]
     public async Task Post_EchoChunked_RequestBodyEchoedChunked()
     {
         const string payload = "chunked-echo-payload";
@@ -103,7 +103,7 @@ public sealed class Http11ChunkedTests
         Assert.Equal(payload, body);
     }
 
-    [Fact(DisplayName = "IT-11-056: POST /echo/chunked with binary body — byte-accurate round-trip")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-056: POST /echo/chunked with binary body — byte-accurate round-trip")]
     public async Task Post_EchoChunked_BinaryBody_ByteAccurateRoundTrip()
     {
         var bodyBytes = new byte[256];
@@ -123,7 +123,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked with trailer headers ─────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-057: GET /chunked/trailer — chunked response includes trailer header")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-057: GET /chunked/trailer — chunked response includes trailer header")]
     public async Task Get_ChunkedTrailer_TrailerHeaderPresent()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/trailer");
@@ -143,7 +143,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked then keep-alive ───────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-058: Chunked response followed by normal keep-alive request on same connection")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-058: Chunked response followed by normal keep-alive request on same connection")]
     public async Task ChunkedResponse_ThenKeepAlive_NextRequestSucceeds()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -162,7 +162,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked with empty body ───────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-059: POST /echo/chunked with empty body — returns 200 empty chunked response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-059: POST /echo/chunked with empty body — returns 200 empty chunked response")]
     public async Task Post_EchoChunked_EmptyBody_Returns200EmptyResponse()
     {
         var content = new ByteArrayContent(Array.Empty<byte>());
@@ -175,7 +175,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked response to HEAD is empty ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-060: HEAD /chunked/1 — response has no body but headers present")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-060: HEAD /chunked/1 — response has no body but headers present")]
     public async Task Head_Chunked_ResponseHasNoBody()
     {
         var response = await Http11Helper.HeadAsync(_fixture.Port, "/chunked/1");
@@ -187,7 +187,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked body matches Content-MD5 ────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-061: GET /chunked/md5 — body MD5 matches Content-MD5 header")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-061: GET /chunked/md5 — body MD5 matches Content-MD5 header")]
     public async Task Get_ChunkedMd5_BodyMatchesContentMd5Header()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/md5");
@@ -208,7 +208,7 @@ public sealed class Http11ChunkedTests
 
     // ── Decode chunked across multiple TCP reads (fragmentation) ─────────────
 
-    [Fact(DisplayName = "IT-11-062: Large chunked response decoded correctly across multiple TCP reads")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-062: Large chunked response decoded correctly across multiple TCP reads")]
     public async Task LargeChunked_DecodedAcrossMultipleTcpReads()
     {
         // 512 KB forces many reads of the 64 KB read buffer
@@ -223,7 +223,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked decoder unit test (last-chunk format) ────────────────────────
 
-    [Fact(DisplayName = "IT-11-063: Last-chunk 0\\r\\n\\r\\n immediately after data — decoder parses correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-063: Last-chunk 0\\r\\n\\r\\n immediately after data — decoder parses correctly")]
     public async Task Decoder_LastChunk_ImmediatelyAfterData_ParsedCorrectly()
     {
         // Synthetic chunked response to test decoder directly
@@ -247,7 +247,7 @@ public sealed class Http11ChunkedTests
 
     // ── Multiple chunked responses on pipelined connection ───────────────────
 
-    [Fact(DisplayName = "IT-11-064: Two pipelined chunked responses decoded in order")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-064: Two pipelined chunked responses decoded in order")]
     public async Task Pipeline_TwoChunkedResponses_DecodedInOrder()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -267,7 +267,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked encoding verified via Transfer-Encoding header ───────────────
 
-    [Fact(DisplayName = "IT-11-065: GET /chunked/1 response uses Transfer-Encoding: chunked")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-065: GET /chunked/1 response uses Transfer-Encoding: chunked")]
     public async Task Get_Chunked_ResponseUsesChunkedTransferEncoding()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/1");
@@ -284,7 +284,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked then normal sequential on same connection (multiple pairs) ───
 
-    [Fact(DisplayName = "IT-11-066: Alternating chunked and normal requests on keep-alive connection")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-066: Alternating chunked and normal requests on keep-alive connection")]
     public async Task AlternatingChunkedAndNormal_KeepAliveConnection_AllSucceed()
     {
         await using var conn = await Http11Helper.OpenAsync(_fixture.Port);
@@ -306,7 +306,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked with 1-byte chunk size ────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-11-067: Chunked response with 1-byte chunks — body assembled correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-067: Chunked response with 1-byte chunks — body assembled correctly")]
     public async Task Get_ChunkedExact_1ByteChunks_BodyAssembledCorrectly()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/exact/8/1");
@@ -319,7 +319,7 @@ public sealed class Http11ChunkedTests
 
     // ── Chunked transfer-encoding: verify wire uses Transfer-Encoding: chunked ─
 
-    [Fact(DisplayName = "IT-11-068: Chunked response uses Transfer-Encoding: chunked on the wire — RFC 9112 §6.1")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-11-068: Chunked response uses Transfer-Encoding: chunked on the wire — RFC 9112 §6.1")]
     public async Task Get_Chunked_WireUsesChunkedTransferEncoding()
     {
         var response = await Http11Helper.GetAsync(_fixture.Port, "/chunked/4");

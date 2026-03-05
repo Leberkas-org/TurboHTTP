@@ -18,7 +18,7 @@ public sealed class Http10HeaderTests
 
     // ── X-* header echo ───────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-040: GET /headers/echo with X-Test header — echoed in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-040: GET /headers/echo with X-Test header — echoed in response")]
     public async Task Get_HeadersEcho_SingleXHeader_IsEchoedInResponse()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
@@ -32,7 +32,7 @@ public sealed class Http10HeaderTests
         Assert.Contains("my-value", vals);
     }
 
-    [Fact(DisplayName = "IT-10-041: GET /headers/echo with multiple X-* headers — all echoed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-041: GET /headers/echo with multiple X-* headers — all echoed")]
     public async Task Get_HeadersEcho_MultipleXHeaders_AllEchoedInResponse()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
@@ -52,7 +52,7 @@ public sealed class Http10HeaderTests
         Assert.Contains("gamma", v3);
     }
 
-    [Fact(DisplayName = "IT-10-042: GET /headers/echo header value with ASCII printable chars is preserved")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-042: GET /headers/echo header value with ASCII printable chars is preserved")]
     public async Task Get_HeadersEcho_AsciiHeaderValue_IsPreserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
@@ -68,7 +68,7 @@ public sealed class Http10HeaderTests
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-043: GET /auth without Authorization header returns 401")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-043: GET /auth without Authorization header returns 401")]
     public async Task Get_Auth_WithoutAuthorization_Returns401()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/auth");
@@ -76,7 +76,7 @@ public sealed class Http10HeaderTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-044: GET /auth with valid Authorization header returns 200")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-044: GET /auth with valid Authorization header returns 200")]
     public async Task Get_Auth_WithAuthorization_Returns200()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
@@ -90,7 +90,7 @@ public sealed class Http10HeaderTests
 
     // ── Response header metadata ───────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-045: GET /hello response has Server header present")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-045: GET /hello response has Server header present")]
     public async Task Get_Hello_HasServerHeader()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");
@@ -99,7 +99,7 @@ public sealed class Http10HeaderTests
         Assert.True(response.Headers.Contains("Server"), "Server header should be present");
     }
 
-    [Fact(DisplayName = "IT-10-046: GET /hello response has Date header with a parseable value")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-046: GET /hello response has Date header with a parseable value")]
     public async Task Get_Hello_DateHeader_HasValidFormat()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");
@@ -109,7 +109,7 @@ public sealed class Http10HeaderTests
         Assert.NotNull(dateValue);
     }
 
-    [Fact(DisplayName = "IT-10-047: GET /hello response Content-Type is text/plain")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-047: GET /hello response Content-Type is text/plain")]
     public async Task Get_Hello_ContentType_IsTextPlain()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");
@@ -121,7 +121,7 @@ public sealed class Http10HeaderTests
 
     // ── Custom response headers via /headers/set ──────────────────────────────
 
-    [Fact(DisplayName = "IT-10-048: GET /headers/set?Foo=Bar sets Foo: Bar in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-048: GET /headers/set?Foo=Bar sets Foo: Bar in response")]
     public async Task Get_HeadersSet_SetsCustomResponseHeader()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/headers/set?Foo=Bar");
@@ -131,7 +131,7 @@ public sealed class Http10HeaderTests
         Assert.Contains("Bar", vals);
     }
 
-    [Fact(DisplayName = "IT-10-049: GET /headers/set?A=1&B=2 sets both A and B response headers")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-049: GET /headers/set?A=1&B=2 sets both A and B response headers")]
     public async Task Get_HeadersSet_SetsMultipleCustomResponseHeaders()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/headers/set?A=1&B=2");
@@ -145,7 +145,7 @@ public sealed class Http10HeaderTests
 
     // ── Multiple values for same header name ──────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-050: GET /multiheader response has two X-Value entries, both accessible")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-050: GET /multiheader response has two X-Value entries, both accessible")]
     public async Task Get_MultiHeader_TwoXValueEntries_BothAccessible()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/multiheader");
@@ -159,7 +159,7 @@ public sealed class Http10HeaderTests
 
     // ── Header name case-insensitivity ────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-051: Response header Content-Length accessible regardless of case")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-051: Response header Content-Length accessible regardless of case")]
     public async Task Get_Hello_ContentLength_CaseInsensitiveAccess()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");
@@ -172,7 +172,7 @@ public sealed class Http10HeaderTests
 
     // ── Content-Length correctness vs actual body ─────────────────────────────
 
-    [Fact(DisplayName = "IT-10-052: GET /hello Content-Length matches actual body bytes returned")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-052: GET /hello Content-Length matches actual body bytes returned")]
     public async Task Get_Hello_ContentLength_MatchesActualBodyLength()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");

@@ -36,7 +36,7 @@ public sealed class Http10BodyTests
 
     // ── Small body ────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-020: POST /echo small body is echoed correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-020: POST /echo small body is echoed correctly")]
     public async Task Post_Echo_SmallBody_IsEchoedCorrectly()
     {
         const string text = "hello echo";
@@ -50,7 +50,7 @@ public sealed class Http10BodyTests
 
     // ── 1 KB body ─────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-021: POST /echo 1 KB body is echoed correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-021: POST /echo 1 KB body is echoed correctly")]
     public async Task Post_Echo_1KbBody_IsEchoedCorrectly()
     {
         var body = new byte[1024];
@@ -68,7 +68,7 @@ public sealed class Http10BodyTests
 
     // ── 64 KB body ────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-022: POST /echo 64 KB body is echoed correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-022: POST /echo 64 KB body is echoed correctly")]
     public async Task Post_Echo_64KbBody_IsEchoedCorrectly()
     {
         var body = new byte[64 * 1024];
@@ -86,7 +86,7 @@ public sealed class Http10BodyTests
 
     // ── Empty body ────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-023: POST /echo empty body returns 200 with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-023: POST /echo empty body returns 200 with empty body")]
     public async Task Post_Echo_EmptyBody_Returns200_EmptyBody()
     {
         var response = await PostEchoAsync(Array.Empty<byte>());
@@ -98,7 +98,7 @@ public sealed class Http10BodyTests
 
     // ── Binary body 0x00..0xFF ────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-024: POST /echo binary body 0x00-0xFF is byte-accurate round-trip")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-024: POST /echo binary body 0x00-0xFF is byte-accurate round-trip")]
     public async Task Post_Echo_BinaryBody_0x00To0xFF_ByteAccurateRoundTrip()
     {
         var body = new byte[256];
@@ -116,7 +116,7 @@ public sealed class Http10BodyTests
 
     // ── Body with CRLF ────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-025: POST /echo body containing CRLF is preserved")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-025: POST /echo body containing CRLF is preserved")]
     public async Task Post_Echo_BodyWithCrlf_IsPreserved()
     {
         const string text = "line1\r\nline2\r\nline3";
@@ -131,7 +131,7 @@ public sealed class Http10BodyTests
 
     // ── Body with null bytes ──────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-026: POST /echo body with null bytes is not truncated")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-026: POST /echo body with null bytes is not truncated")]
     public async Task Post_Echo_BodyWithNullBytes_IsNotTruncated()
     {
         var body = "A\0B\0C"u8.ToArray(); // A\0B\0C
@@ -145,7 +145,7 @@ public sealed class Http10BodyTests
 
     // ── Content-Length accuracy ───────────────────────────────────────────────
 
-    [Theory(DisplayName = "IT-10-027: POST /echo Content-Length header matches actual body byte count")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-10-027: POST /echo Content-Length header matches actual body byte count")]
     [InlineData(1)]
     [InlineData(10)]
     [InlineData(100)]
@@ -166,7 +166,7 @@ public sealed class Http10BodyTests
 
     // ── Content-Type mirroring ────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-028: POST /echo Content-Type text/plain is mirrored in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-028: POST /echo Content-Type text/plain is mirrored in response")]
     public async Task Post_Echo_ContentType_TextPlain_IsMirrored()
     {
         var response = await PostEchoTextAsync("some text");
@@ -176,7 +176,7 @@ public sealed class Http10BodyTests
         Assert.Equal("text/plain", ct);
     }
 
-    [Fact(DisplayName = "IT-10-029: POST /echo Content-Type application/json is mirrored in response")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-029: POST /echo Content-Type application/json is mirrored in response")]
     public async Task Post_Echo_ContentType_Json_IsMirrored()
     {
         const string json = "{\"key\":\"value\"}";
@@ -189,7 +189,7 @@ public sealed class Http10BodyTests
 
     // ── All-zeroes body ───────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-030: POST /echo all-zeroes body is preserved verbatim")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-030: POST /echo all-zeroes body is preserved verbatim")]
     public async Task Post_Echo_AllZeroesBody_IsPreserved()
     {
         var body = new byte[128];

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 
-namespace Servus.Akka.IO;
+namespace TurboHttp.IO;
 
 public sealed record DoClose
 {

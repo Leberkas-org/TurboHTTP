@@ -13,9 +13,23 @@ public sealed class Http2Connection : IAsyncDisposable
 {
     private readonly TcpClient _tcp;
     private readonly NetworkStream _stream;
-    private readonly Http2Decoder _decoder;
-    private readonly Http2Encoder _encoder;
+    private readonly Http2FrameDecoder _frameDecoder = new();
+    private int _streamId;
+    private readonly HpackDecoder _hpack = new();
+    private readonly Dictionary<int, int> _streamReceiveWindows = new();
+    private readonly Http2RequestEncoder _encoder;
     private readonly byte[] _readBuffer;
+    private readonly Queue<byte[]> _pendingPingAcks = new();
+
+    // Response building state
+    private readonly Dictionary<int, HttpResponseMessage> _pendingResponses = new();
+    private readonly Dictionary<int, List<HpackHeader>> _pendingHeaders = new();
+    private readonly Dictionary<int, List<byte>> _dataBodies = new();
+    private readonly Dictionary<int, HttpResponseMessage> _completedResponses = new();
+    private int _continuationStreamId;
+    private List<byte>? _continuationBuffer;
+    private bool _continuationEndStream;
+    private int _connectionReceiveWindow = InitialReceiveWindow;
 
     // Track the connection receive window so we can send WINDOW_UPDATE when needed.
     private const int InitialReceiveWindow = 65535;
@@ -23,11 +37,10 @@ public sealed class Http2Connection : IAsyncDisposable
     private const int ReadBufferSize = 65536;
     private const int EncodeBufferSize = 2 * 1024 * 1024;
 
-    private Http2Connection(TcpClient tcp, Http2Encoder encoder)
+    private Http2Connection(TcpClient tcp, Http2RequestEncoder encoder)
     {
         _tcp = tcp;
         _stream = tcp.GetStream();
-        _decoder = new Http2Decoder();
         _encoder = encoder;
         _readBuffer = new byte[ReadBufferSize];
     }
@@ -46,7 +59,7 @@ public sealed class Http2Connection : IAsyncDisposable
         var tcp = new TcpClient();
         await tcp.ConnectAsync(IPAddress.Loopback, port, cts.Token);
 
-        var conn = new Http2Connection(tcp, new Http2Encoder());
+        var conn = new Http2Connection(tcp, new Http2RequestEncoder());
         await conn.PerformPrefaceAsync(cts.Token);
         return conn;
     }
@@ -59,10 +72,26 @@ public sealed class Http2Connection : IAsyncDisposable
     /// </summary>
     public async Task<int> SendRequestAsync(HttpRequestMessage request, CancellationToken ct = default)
     {
+        var (streamId, frames) = _encoder.Encode(request, _streamId);
+        _streamId += 2;
+
         var buffer = new byte[EncodeBufferSize];
-        var memory = buffer.AsMemory();
-        var (streamId, bytesWritten) = _encoder.Encode(request, ref memory);
-        await _stream.WriteAsync(buffer.AsMemory(0, bytesWritten), ct);
+        var offset = 0;
+
+        foreach (var frame in frames)
+        {
+            var frameBytes = frame.Serialize();
+            if (offset + frameBytes.Length > buffer.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Frame buffer exhausted: {offset} + {frameBytes.Length} > {buffer.Length}");
+            }
+
+            frameBytes.CopyTo(buffer, offset);
+            offset += frameBytes.Length;
+        }
+
+        await _stream.WriteAsync(buffer.AsMemory(0, offset), ct);
         return streamId;
     }
 
@@ -86,6 +115,13 @@ public sealed class Http2Connection : IAsyncDisposable
     /// </summary>
     public async Task<HttpResponseMessage> ReadResponseAsync(int streamId, CancellationToken ct = default)
     {
+        // Check if the response already arrived from a previous read.
+        if (_completedResponses.TryGetValue(streamId, out var cached))
+        {
+            _completedResponses.Remove(streamId);
+            return cached;
+        }
+
         while (true)
         {
             var bytesRead = await _stream.ReadAsync(_readBuffer, ct);
@@ -95,91 +131,32 @@ public sealed class Http2Connection : IAsyncDisposable
                     $"Server closed connection before response on stream {streamId} was received.");
             }
 
-            var chunk = _readBuffer.AsMemory(0, bytesRead).ToArray();
+            var frames = _frameDecoder.Decode(_readBuffer.AsMemory(0, bytesRead));
+            await ProcessFramesAsync(frames, ct);
 
-            if (!_decoder.TryDecode(chunk.AsMemory(), out var result))
-            {
-                continue;
-            }
-
-            // Automatically send SETTINGS ACKs that the server is expecting.
-            foreach (var ack in result.SettingsAcksToSend)
-            {
-                await _stream.WriteAsync(ack, ct);
-            }
-
-            // Automatically send PING ACKs.
-            foreach (var pingAck in result.PingAcksToSend)
-            {
-                await _stream.WriteAsync(pingAck, ct);
-            }
-
-            // Apply any window updates from server to encoder.
-            foreach (var (sid, increment) in result.WindowUpdates)
-            {
-                if (sid == 0)
-                {
-                    _encoder.UpdateConnectionWindow(increment);
-                }
-                else
-                {
-                    _encoder.UpdateStreamWindow(sid, increment);
-                }
-            }
-
-            // Replenish connection and stream receive windows (for large response bodies).
             await SendConnectionWindowUpdateIfNeededAsync(ct);
             await SendStreamWindowUpdateIfNeededAsync(streamId, ct);
 
-            // Return the response if it arrived.
-            foreach (var (sid, resp) in result.Responses)
+            if (_completedResponses.TryGetValue(streamId, out var response))
             {
-                if (sid == streamId)
-                {
-                    return resp;
-                }
-            }
-
-            // Fail fast if the server reset our stream.
-            foreach (var (sid, error) in result.RstStreams)
-            {
-                if (sid == streamId)
-                {
-                    throw new Http2Exception($"Server reset stream {streamId} with error {error}.", error);
-                }
-            }
-
-            // Fail fast on GOAWAY.
-            if (result.GoAway is { } goAway)
-            {
-                throw new Http2Exception(
-                    $"Server sent GOAWAY: lastStream={goAway.LastStreamId}, error={goAway.ErrorCode}.",
-                    goAway.ErrorCode);
+                _completedResponses.Remove(streamId);
+                return response;
             }
         }
     }
 
     /// <summary>
-    /// Reads frames from the connection until a full decode result arrives.
-    /// Used by tests that need raw decode results (SETTINGS, PING, GOAWAY, etc.).
+    /// Returns the connection-level receive window.
+    /// Used in tests to verify flow-control accounting.
     /// </summary>
-    public async Task<Http2DecodeResult> ReadDecodeResultAsync(CancellationToken ct = default)
-    {
-        while (true)
-        {
-            var bytesRead = await _stream.ReadAsync(_readBuffer, ct);
-            if (bytesRead == 0)
-            {
-                throw new InvalidOperationException("Server closed connection unexpectedly.");
-            }
+    public int GetConnectionReceiveWindow() => _connectionReceiveWindow;
 
-            var chunk = _readBuffer.AsMemory(0, bytesRead).ToArray();
-            if (_decoder.TryDecode(chunk.AsMemory(), out var result))
-            {
-                return result;
-            }
-        }
-    }
+    /// <summary>
+    /// Returns the stream-level receive window for <paramref name="streamId"/>.
+    /// Used in tests to verify flow-control accounting.
+    /// </summary>
+    public int GetStreamReceiveWindow(int streamId) =>
+        _streamReceiveWindows.TryGetValue(streamId, out var w) ? w : InitialReceiveWindow;
 
     /// <summary>Sends raw bytes directly to the TCP stream (for low-level frame tests).</summary>
     public Task WriteRawAsync(byte[] bytes, CancellationToken ct = default) => _stream.WriteAsync(bytes, ct).AsTask();
@@ -190,7 +167,7 @@ public sealed class Http2Connection : IAsyncDisposable
     /// </summary>
     public async Task<byte[]> PingAsync(byte[] data, CancellationToken ct = default)
     {
-        var pingBytes = Http2Encoder.EncodePing(data);
+        var pingBytes = Http2FrameUtils.EncodePing(data);
         await _stream.WriteAsync(pingBytes, ct);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -204,20 +181,12 @@ public sealed class Http2Connection : IAsyncDisposable
                 throw new InvalidOperationException("Server closed connection during PING exchange.");
             }
 
-            var chunk = _readBuffer.AsMemory(0, bytesRead).ToArray();
-            if (!_decoder.TryDecode(chunk.AsMemory(), out var result))
-            {
-                continue;
-            }
+            var frames = _frameDecoder.Decode(_readBuffer.AsMemory(0, bytesRead));
+            await ProcessFramesAsync(frames, cts.Token);
 
-            foreach (var ack in result.SettingsAcksToSend)
+            if (_pendingPingAcks.TryDequeue(out var ackData))
             {
-                await _stream.WriteAsync(ack, cts.Token);
-            }
-
-            if (result.PingAcks.Count > 0)
-            {
-                return result.PingAcks[0];
+                return ackData;
             }
         }
     }
@@ -225,21 +194,21 @@ public sealed class Http2Connection : IAsyncDisposable
     /// <summary>Sends an HTTP/2 GOAWAY frame to the server.</summary>
     public Task SendGoAwayAsync(int lastStreamId, Http2ErrorCode errorCode, CancellationToken ct = default)
     {
-        var frame = Http2Encoder.EncodeGoAway(lastStreamId, errorCode);
+        var frame = Http2FrameUtils.EncodeGoAway(lastStreamId, errorCode);
         return _stream.WriteAsync(frame, ct).AsTask();
     }
 
     /// <summary>Sends an HTTP/2 RST_STREAM frame for <paramref name="streamId"/>.</summary>
     public Task SendRstStreamAsync(int streamId, Http2ErrorCode errorCode, CancellationToken ct = default)
     {
-        var frame = Http2Encoder.EncodeRstStream(streamId, errorCode);
+        var frame = Http2FrameUtils.EncodeRstStream(streamId, errorCode);
         return _stream.WriteAsync(frame, ct).AsTask();
     }
 
     /// <summary>Sends an HTTP/2 WINDOW_UPDATE frame.</summary>
     public Task SendWindowUpdateAsync(int streamId, int increment, CancellationToken ct = default)
     {
-        var frame = Http2Encoder.EncodeWindowUpdate(streamId, increment);
+        var frame = Http2FrameUtils.EncodeWindowUpdate(streamId, increment);
         return _stream.WriteAsync(frame, ct).AsTask();
     }
 
@@ -247,12 +216,9 @@ public sealed class Http2Connection : IAsyncDisposable
     public Task SendSettingsAsync(ReadOnlySpan<(SettingsParameter Key, uint Value)> parameters,
         CancellationToken ct = default)
     {
-        var frame = Http2Encoder.EncodeSettings(parameters);
+        var frame = Http2FrameUtils.EncodeSettings(parameters);
         return _stream.WriteAsync(frame, ct).AsTask();
     }
-
-    /// <summary>Exposes the underlying decoder for window and state inspection by tests.</summary>
-    public Http2Decoder Decoder => _decoder;
 
     // ── Multi-stream API ──────────────────────────────────────────────────────
 
@@ -286,6 +252,17 @@ public sealed class Http2Connection : IAsyncDisposable
         var pending = new HashSet<int>(streamIds);
         var collected = new Dictionary<int, HttpResponseMessage>();
 
+        // Drain any responses already buffered from prior reads.
+        foreach (var sid in streamIds)
+        {
+            if (_completedResponses.TryGetValue(sid, out var existing))
+            {
+                _completedResponses.Remove(sid);
+                collected[sid] = existing;
+                pending.Remove(sid);
+            }
+        }
+
         while (pending.Count > 0)
         {
             var bytesRead = await _stream.ReadAsync(_readBuffer, cts.Token);
@@ -295,33 +272,8 @@ public sealed class Http2Connection : IAsyncDisposable
                     "Server closed connection before all responses were received.");
             }
 
-            var chunk = _readBuffer.AsMemory(0, bytesRead).ToArray();
-            if (!_decoder.TryDecode(chunk.AsMemory(), out var result))
-            {
-                continue;
-            }
-
-            foreach (var ack in result.SettingsAcksToSend)
-            {
-                await _stream.WriteAsync(ack, cts.Token);
-            }
-
-            foreach (var pingAck in result.PingAcksToSend)
-            {
-                await _stream.WriteAsync(pingAck, cts.Token);
-            }
-
-            foreach (var (sid, increment) in result.WindowUpdates)
-            {
-                if (sid == 0)
-                {
-                    _encoder.UpdateConnectionWindow(increment);
-                }
-                else
-                {
-                    _encoder.UpdateStreamWindow(sid, increment);
-                }
-            }
+            var frames = _frameDecoder.Decode(_readBuffer.AsMemory(0, bytesRead));
+            await ProcessFramesAsync(frames, cts.Token);
 
             await SendConnectionWindowUpdateIfNeededAsync(cts.Token);
             foreach (var sid in pending)
@@ -329,30 +281,14 @@ public sealed class Http2Connection : IAsyncDisposable
                 await SendStreamWindowUpdateIfNeededAsync(sid, cts.Token);
             }
 
-            foreach (var (sid, resp) in result.Responses)
+            foreach (var sid in streamIds)
             {
-                if (pending.Contains(sid))
+                if (pending.Contains(sid) && _completedResponses.TryGetValue(sid, out var resp))
                 {
+                    _completedResponses.Remove(sid);
                     collected[sid] = resp;
                     pending.Remove(sid);
                 }
-            }
-
-            foreach (var (sid, error) in result.RstStreams)
-            {
-                if (pending.Contains(sid))
-                {
-                    throw new Http2Exception(
-                        $"Server reset stream {sid} with error {error}.",
-                        error);
-                }
-            }
-
-            if (result.GoAway is { } goAway && pending.Count > 0)
-            {
-                throw new Http2Exception(
-                    $"Server sent GOAWAY: lastStream={goAway.LastStreamId}, error={goAway.ErrorCode}.",
-                    goAway.ErrorCode);
             }
         }
 
@@ -374,12 +310,221 @@ public sealed class Http2Connection : IAsyncDisposable
         return await ReadAllResponsesAsync(streamIds, cts.Token);
     }
 
+    // ── Frame processing ──────────────────────────────────────────────────────
+
+    private async Task ProcessFramesAsync(IReadOnlyList<Http2Frame> frames, CancellationToken ct)
+    {
+        foreach (var frame in frames)
+        {
+            switch (frame)
+            {
+                case HeadersFrame headers:
+                    HandleHeadersFrame(headers);
+                    break;
+                case ContinuationFrame cont:
+                    HandleContinuationFrame(cont);
+                    break;
+                case DataFrame data:
+                    HandleDataFrame(data);
+                    break;
+                default:
+                    await DispatchControlFrameAsync(frame, ct);
+                    break;
+            }
+        }
+    }
+
+    private void HandleHeadersFrame(HeadersFrame frame)
+    {
+        var streamId = frame.StreamId;
+
+        if (frame.EndHeaders)
+        {
+            var headers = _hpack.Decode(frame.HeaderBlockFragment.Span);
+            _pendingHeaders[streamId] = headers;
+            var response = BuildResponse(headers);
+            if (response != null)
+            {
+                _pendingResponses[streamId] = response;
+            }
+
+            if (frame.EndStream)
+            {
+                FinalizeResponse(streamId);
+            }
+        }
+        else
+        {
+            _continuationStreamId = streamId;
+            _continuationBuffer = new List<byte>(frame.HeaderBlockFragment.ToArray());
+            _continuationEndStream = frame.EndStream;
+        }
+    }
+
+    private void HandleContinuationFrame(ContinuationFrame frame)
+    {
+        if (_continuationBuffer == null || frame.StreamId != _continuationStreamId)
+        {
+            return;
+        }
+
+        _continuationBuffer.AddRange(frame.HeaderBlockFragment.ToArray());
+
+        if (frame.EndHeaders)
+        {
+            var block = _continuationBuffer.ToArray();
+            var headers = _hpack.Decode(block);
+            _pendingHeaders[_continuationStreamId] = headers;
+            var response = BuildResponse(headers);
+            if (response != null)
+            {
+                _pendingResponses[_continuationStreamId] = response;
+            }
+
+            if (_continuationEndStream)
+            {
+                FinalizeResponse(_continuationStreamId);
+            }
+
+            _continuationBuffer = null;
+            _continuationStreamId = 0;
+        }
+    }
+
+    private void HandleDataFrame(DataFrame frame)
+    {
+        var streamId = frame.StreamId;
+
+        _connectionReceiveWindow -= frame.Data.Length;
+        _streamReceiveWindows[streamId] = GetStreamReceiveWindow(streamId) - frame.Data.Length;
+
+        if (!_dataBodies.TryGetValue(streamId, out var body))
+        {
+            body = new List<byte>();
+            _dataBodies[streamId] = body;
+        }
+
+        body.AddRange(frame.Data.ToArray());
+
+        if (frame.EndStream)
+        {
+            FinalizeResponse(streamId);
+        }
+    }
+
+    private void FinalizeResponse(int streamId)
+    {
+        if (!_pendingResponses.TryGetValue(streamId, out var response))
+        {
+            return;
+        }
+
+        _pendingResponses.Remove(streamId);
+
+        var bodyBytes = Array.Empty<byte>();
+        if (_dataBodies.TryGetValue(streamId, out var bodyList))
+        {
+            _dataBodies.Remove(streamId);
+            bodyBytes = bodyList.ToArray();
+        }
+
+        _pendingHeaders.TryGetValue(streamId, out var allHeaders);
+        _pendingHeaders.Remove(streamId);
+
+        var hasContentHeaders = allHeaders != null &&
+                                allHeaders.Any(h => !h.Name.StartsWith(':') && IsContentHeader(h.Name));
+
+        if (bodyBytes.Length > 0 || hasContentHeaders)
+        {
+            var content = new ByteArrayContent(bodyBytes);
+            if (allHeaders != null)
+            {
+                foreach (var h in allHeaders.Where(h => !h.Name.StartsWith(':') && IsContentHeader(h.Name)))
+                {
+                    content.Headers.TryAddWithoutValidation(h.Name, h.Value);
+                }
+            }
+
+            response.Content = content;
+        }
+
+        _completedResponses[streamId] = response;
+    }
+
+    private static HttpResponseMessage? BuildResponse(IReadOnlyList<HpackHeader> headers)
+    {
+        var status = headers.FirstOrDefault(h => h.Name == ":status");
+        if (status == default)
+        {
+            return null;
+        }
+
+        var response = new HttpResponseMessage((HttpStatusCode)int.Parse(status.Value));
+        foreach (var h in headers.Where(h => !h.Name.StartsWith(':') && !IsContentHeader(h.Name)))
+        {
+            response.Headers.TryAddWithoutValidation(h.Name, h.Value);
+        }
+
+        return response;
+    }
+
+    private static bool IsContentHeader(string name) =>
+        name.ToLowerInvariant() switch
+        {
+            "content-type" => true,
+            "content-length" => true,
+            "content-encoding" => true,
+            "content-language" => true,
+            "content-location" => true,
+            "content-md5" => true,
+            "content-range" => true,
+            "content-disposition" => true,
+            "expires" => true,
+            "last-modified" => true,
+            _ => false
+        };
+
     // ── Internal helpers ──────────────────────────────────────────────────────
+
+    private async Task DispatchControlFrameAsync(Http2Frame frame, CancellationToken ct)
+    {
+        switch (frame)
+        {
+            case SettingsFrame { IsAck: false }:
+                await _stream.WriteAsync(Http2FrameUtils.EncodeSettingsAck(), ct);
+                break;
+            case PingFrame { IsAck: false } ping:
+                await _stream.WriteAsync(Http2FrameUtils.EncodePingAck(ping.Data), ct);
+                break;
+            case PingFrame { IsAck: true } ackPing:
+                _pendingPingAcks.Enqueue(ackPing.Data);
+                break;
+            case WindowUpdateFrame wu:
+                if (wu.StreamId == 0)
+                {
+                    _encoder.UpdateConnectionWindow(wu.Increment);
+                }
+                else
+                {
+                    _encoder.UpdateStreamWindow(wu.StreamId, wu.Increment);
+                }
+
+                break;
+            case RstStreamFrame rst:
+                throw new Http2Exception(
+                    $"RST_STREAM on stream {rst.StreamId}: {rst.ErrorCode}",
+                    rst.ErrorCode, Http2ErrorScope.Stream);
+            case GoAwayFrame goAway:
+                throw new Http2Exception(
+                    $"GOAWAY: lastStreamId={goAway.LastStreamId} error={goAway.ErrorCode}",
+                    goAway.ErrorCode, Http2ErrorScope.Connection);
+        }
+    }
 
     private async Task PerformPrefaceAsync(CancellationToken ct)
     {
         // RFC 7540 §3.5: Send client connection preface (magic string + SETTINGS frame).
-        var preface = Http2Encoder.BuildConnectionPreface();
+        var preface = Http2FrameUtils.BuildConnectionPreface();
         await _stream.WriteAsync(preface, ct);
 
         // Read until we receive the server's initial SETTINGS frame.
@@ -391,25 +536,22 @@ public sealed class Http2Connection : IAsyncDisposable
                 throw new InvalidOperationException("Server closed connection during HTTP/2 handshake.");
             }
 
-            var chunk = _readBuffer.AsMemory(0, bytesRead).ToArray();
-            if (!_decoder.TryDecode(chunk.AsMemory(), out var result))
+            var frames = _frameDecoder.Decode(_readBuffer.AsMemory(0, bytesRead));
+            var receivedSettings = false;
+
+            foreach (var frame in frames)
             {
-                continue;
+                if (frame is SettingsFrame { IsAck: false } settings)
+                {
+                    // Send SETTINGS ACK required by the server.
+                    await _stream.WriteAsync(Http2FrameUtils.EncodeSettingsAck(), ct);
+                    // Apply server settings to encoder (e.g., MAX_FRAME_SIZE).
+                    _encoder.ApplyServerSettings(settings.Parameters);
+                    receivedSettings = true;
+                }
             }
 
-            // Send SETTINGS ACK(s) required by the server.
-            foreach (var ack in result.SettingsAcksToSend)
-            {
-                await _stream.WriteAsync(ack, ct);
-            }
-
-            // Apply server settings to encoder (e.g., MAX_FRAME_SIZE).
-            foreach (var settings in result.ReceivedSettings)
-            {
-                _encoder.ApplyServerSettings(settings);
-            }
-
-            if (result.ReceivedSettings.Count > 0)
+            if (receivedSettings)
             {
                 // Preface exchange complete.
                 break;
@@ -419,16 +561,14 @@ public sealed class Http2Connection : IAsyncDisposable
 
     private async Task SendConnectionWindowUpdateIfNeededAsync(CancellationToken ct)
     {
-        var current = _decoder.GetConnectionReceiveWindow();
-        if (current < ReceiveWindowRefillThreshold)
+        if (_connectionReceiveWindow < ReceiveWindowRefillThreshold)
         {
-            var increment = InitialReceiveWindow - current;
+            var increment = InitialReceiveWindow - _connectionReceiveWindow;
             if (increment > 0)
             {
-                var wu = Http2Encoder.EncodeWindowUpdate(0, increment);
+                var wu = Http2FrameUtils.EncodeWindowUpdate(0, increment);
                 await _stream.WriteAsync(wu, ct);
-                // Update decoder so it knows the extra receive space is available.
-                _decoder.SetConnectionReceiveWindow(InitialReceiveWindow);
+                _connectionReceiveWindow = InitialReceiveWindow;
             }
         }
     }
@@ -441,16 +581,15 @@ public sealed class Http2Connection : IAsyncDisposable
     /// </summary>
     private async Task SendStreamWindowUpdateIfNeededAsync(int streamId, CancellationToken ct)
     {
-        var current = _decoder.GetStreamReceiveWindow(streamId);
+        var current = GetStreamReceiveWindow(streamId);
         if (current < ReceiveWindowRefillThreshold)
         {
             var increment = InitialReceiveWindow - current;
             if (increment > 0)
             {
-                var wu = Http2Encoder.EncodeWindowUpdate(streamId, increment);
+                var wu = Http2FrameUtils.EncodeWindowUpdate(streamId, increment);
                 await _stream.WriteAsync(wu, ct);
-                // Update decoder so it accepts future DATA frames within the new window.
-                _decoder.SetStreamReceiveWindow(streamId, InitialReceiveWindow);
+                _streamReceiveWindows[streamId] = InitialReceiveWindow;
             }
         }
     }
@@ -459,7 +598,7 @@ public sealed class Http2Connection : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _decoder.Reset();
+        _frameDecoder.Reset();
 
         try
         {

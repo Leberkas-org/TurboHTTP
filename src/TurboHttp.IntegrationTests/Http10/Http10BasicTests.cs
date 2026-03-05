@@ -20,7 +20,7 @@ public sealed class Http10BasicTests
 
     // ── GET /hello ─────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-001: GET /hello returns 200 with body 'Hello World'")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-001: GET /hello returns 200 with body 'Hello World'")]
     public async Task Get_Hello_Returns200_WithBodyHelloWorld()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");
@@ -30,7 +30,7 @@ public sealed class Http10BasicTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "IT-10-002: GET /hello response has Date header and correct Content-Length")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-002: GET /hello response has Date header and correct Content-Length")]
     public async Task Get_Hello_HasDateHeader_AndCorrectContentLength()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/hello");
@@ -42,7 +42,7 @@ public sealed class Http10BasicTests
 
     // ── GET /large ─────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-003: GET /large/1 returns 200 with 1 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-003: GET /large/1 returns 200 with 1 KB body")]
     public async Task Get_Large_1KB_Returns200_With1KbBody()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/large/1");
@@ -52,7 +52,7 @@ public sealed class Http10BasicTests
         Assert.Equal(1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-10-004: GET /large/64 returns 200 with 64 KB body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-004: GET /large/64 returns 200 with 64 KB body")]
     public async Task Get_Large_64KB_Returns200_With64KbBody()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/large/64");
@@ -64,7 +64,7 @@ public sealed class Http10BasicTests
 
     // ── GET /status/* ──────────────────────────────────────────────────────────
 
-    [Theory(DisplayName = "IT-10-005: GET /status/{code} returns the expected status code")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-10-005: GET /status/{code} returns the expected status code")]
     [InlineData(200)]
     [InlineData(201)]
     [InlineData(400)]
@@ -77,7 +77,7 @@ public sealed class Http10BasicTests
         Assert.Equal(code, (int)response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-10-006: GET /status/204 returns 204 with empty body")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-006: GET /status/204 returns 204 with empty body")]
     public async Task Get_Status204_ReturnsNoContent()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/204");
@@ -87,7 +87,7 @@ public sealed class Http10BasicTests
         Assert.Empty(body);
     }
 
-    [Fact(DisplayName = "IT-10-007: GET /status/301 returns 301 redirect status")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-007: GET /status/301 returns 301 redirect status")]
     public async Task Get_Status301_ReturnsMovedPermanently()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/status/301");
@@ -97,7 +97,7 @@ public sealed class Http10BasicTests
 
     // ── GET /ping ─────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-008: GET /ping returns 200 with body 'pong'")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-008: GET /ping returns 200 with body 'pong'")]
     public async Task Get_Ping_Returns200_WithBodyPong()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/ping");
@@ -109,7 +109,7 @@ public sealed class Http10BasicTests
 
     // ── GET /content/* ────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-009: GET /content/text/html response has Content-Type text/html")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-009: GET /content/text/html response has Content-Type text/html")]
     public async Task Get_Content_TextHtml_HasCorrectContentType()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/content/text/html");
@@ -119,7 +119,7 @@ public sealed class Http10BasicTests
         Assert.Equal("text/html", ct);
     }
 
-    [Fact(DisplayName = "IT-10-010: GET /content/application/json response has Content-Type application/json")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-010: GET /content/application/json response has Content-Type application/json")]
     public async Task Get_Content_ApplicationJson_HasCorrectContentType()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/content/application/json");
@@ -131,7 +131,7 @@ public sealed class Http10BasicTests
 
     // ── HEAD /hello ───────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-011: HEAD /hello returns 200 with no body and Content-Length present")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-011: HEAD /hello returns 200 with no body and Content-Length present")]
     public async Task Head_Hello_Returns200_NoBody_WithContentLength()
     {
         var response = await Http10Helper.HeadAsync(_fixture.Port, "/hello");
@@ -148,7 +148,7 @@ public sealed class Http10BasicTests
 
     // ── GET /methods ─────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-10-012: GET /methods returns body equal to 'GET'")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-012: GET /methods returns body equal to 'GET'")]
     public async Task Get_Methods_Returns_GET()
     {
         var response = await Http10Helper.GetAsync(_fixture.Port, "/methods");
@@ -160,7 +160,7 @@ public sealed class Http10BasicTests
 
     // ── Repeated requests (each needs a new TCP connection) ──────────────────
 
-    [Fact(DisplayName = "IT-10-013: Two sequential GET /ping requests each succeed independently")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-10-013: Two sequential GET /ping requests each succeed independently")]
     public async Task TwoSequential_Get_Ping_BothSucceed()
     {
         var r1 = await Http10Helper.GetAsync(_fixture.Port, "/ping");
@@ -177,7 +177,7 @@ public sealed class Http10BasicTests
 
     // ── Content-Length accuracy ───────────────────────────────────────────────
 
-    [Theory(DisplayName = "IT-10-014: GET /large/{kb} Content-Length header matches actual body byte count")]
+    [Theory(Timeout = 10_000, DisplayName = "IT-10-014: GET /large/{kb} Content-Length header matches actual body byte count")]
     [InlineData(1)]
     [InlineData(4)]
     [InlineData(8)]

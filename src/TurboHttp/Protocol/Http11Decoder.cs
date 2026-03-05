@@ -61,11 +61,10 @@ public sealed class Http11Decoder : IDisposable
         // Combine remainder with incoming data using pooled buffer
         ReadOnlySpan<byte> working;
         byte[]? combinedBuffer = null;
-        int combinedLength;
 
         if (_remainderLength > 0)
         {
-            combinedLength = _remainderLength + incomingData.Length;
+            var combinedLength = _remainderLength + incomingData.Length;
             combinedBuffer = ArrayPool<byte>.Shared.Rent(combinedLength);
 
             _remainderBuffer.AsSpan(0, _remainderLength).CopyTo(combinedBuffer);
@@ -120,7 +119,11 @@ public sealed class Http11Decoder : IDisposable
             }
         }
 
-        if (builder.Count <= 0) return false;
+        if (builder.Count <= 0)
+        {
+            return false;
+        }
+
         responses = builder.ToImmutable();
         return true;
     }
@@ -143,11 +146,10 @@ public sealed class Http11Decoder : IDisposable
 
         ReadOnlySpan<byte> working;
         byte[]? combinedBuffer = null;
-        var combinedLength = 0;
 
         if (_remainderLength > 0)
         {
-            combinedLength = _remainderLength + incomingData.Length;
+            var combinedLength = _remainderLength + incomingData.Length;
             combinedBuffer = ArrayPool<byte>.Shared.Rent(combinedLength);
 
             _remainderBuffer.AsSpan(0, _remainderLength).CopyTo(combinedBuffer);
@@ -223,7 +225,9 @@ public sealed class Http11Decoder : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _disposed = true;
 
@@ -233,7 +237,11 @@ public sealed class Http11Decoder : IDisposable
             _remainderBuffer = null;
         }
 
-        if (_bodyBuffer == null) return;
+        if (_bodyBuffer == null)
+        {
+            return;
+        }
+
         ArrayPool<byte>.Shared.Return(_bodyBuffer);
         _bodyBuffer = null;
     }
@@ -243,7 +251,9 @@ public sealed class Http11Decoder : IDisposable
     private void StoreRemainder(ReadOnlySpan<byte> data)
     {
         if (data.IsEmpty)
+        {
             return;
+        }
 
         if (_remainderBuffer == null || _remainderBuffer.Length < data.Length)
         {
@@ -273,7 +283,11 @@ public sealed class Http11Decoder : IDisposable
 
     private void EnsureBodyCapacity(int required)
     {
-        if (_bodyBuffer != null && _bodyBuffer.Length >= required) return;
+        if (_bodyBuffer != null && _bodyBuffer.Length >= required)
+        {
+            return;
+        }
+
         var newBuffer = ArrayPool<byte>.Shared.Rent(required);
         if (_bodyBuffer != null)
         {
@@ -342,7 +356,11 @@ public sealed class Http11Decoder : IDisposable
         var emptyContent = new ByteArrayContent([]);
         foreach (var (name, values) in headers)
         {
-            if (!IsContentHeader(name)) continue;
+            if (!IsContentHeader(name))
+            {
+                continue;
+            }
+
             foreach (var value in values)
             {
                 emptyContent.Headers.TryAddWithoutValidation(name, value);
@@ -417,7 +435,11 @@ public sealed class Http11Decoder : IDisposable
             var emptyContent = new ByteArrayContent([]);
             foreach (var (name, values) in headers)
             {
-                if (!IsContentHeader(name)) continue;
+                if (!IsContentHeader(name))
+                {
+                    continue;
+                }
+
                 foreach (var value in values)
                 {
                     emptyContent.Headers.TryAddWithoutValidation(name, value);
@@ -441,16 +463,51 @@ public sealed class Http11Decoder : IDisposable
             return HttpDecodeResult.Incomplete();
         }
 
-        // 7. Create content
+        // 7. Decompress body if Content-Encoding is set (RFC 9110 §8.4)
+        var contentEncoding = GetSingleHeader(headers, "Content-Encoding");
+        if (!string.IsNullOrWhiteSpace(contentEncoding) &&
+            !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+        {
+            bodyBytes = ContentEncodingDecoder.Decompress(bodyBytes, contentEncoding);
+        }
+
+        // 8. Create content
         var content = new ByteArrayContent(bodyBytes);
 
         foreach (var (name, values) in headers)
         {
-            if (!IsContentHeader(name)) continue;
+            if (!IsContentHeader(name))
+            {
+                continue;
+            }
+
+            // Remove Content-Encoding after successful decompression (RFC 9110 §8.4)
+            if (name.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(contentEncoding) &&
+                !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Update Content-Length to match decompressed size (skip the original value)
+            if (name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(contentEncoding) &&
+                !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             foreach (var value in values)
             {
                 content.Headers.TryAddWithoutValidation(name, value);
             }
+        }
+
+        // Set updated Content-Length after decompression
+        if (!string.IsNullOrWhiteSpace(contentEncoding) &&
+            !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+        {
+            content.Headers.ContentLength = bodyBytes.Length;
         }
 
         // 8. Add trailer headers
@@ -601,7 +658,11 @@ public sealed class Http11Decoder : IDisposable
             return ParseChunkedBody(data);
         }
 
-        if (!contentLength.HasValue) return (HttpDecodeResult.Ok(), [], 0, null);
+        if (!contentLength.HasValue)
+        {
+            return (HttpDecodeResult.Ok(), [], 0, null);
+        }
+
         var len = contentLength.Value;
 
         if (len > _maxBodySize)
@@ -722,7 +783,9 @@ public sealed class Http11Decoder : IDisposable
     private static int? GetContentLengthHeader(Dictionary<string, List<string>> headers)
     {
         if (!headers.TryGetValue("Content-Length", out var values) || values.Count == 0)
+        {
             return null;
+        }
 
         // RFC 9112 Section 6.3: Multiple Content-Length with different values is error
         if (values.Count > 1)

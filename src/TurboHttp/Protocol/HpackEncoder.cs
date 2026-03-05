@@ -145,7 +145,7 @@ public sealed class HpackEncoder
 
     /// <summary>
     /// Encodes a list of header tuples and returns the encoded bytes.
-    /// Backward-compatible overload for Http2Encoder and Http2SizePredictor.
+    /// Backward-compatible overload for Http2RequestEncoder and Http2SizePredictor.
     /// </summary>
     /// <param name="headers">Headers as (name, value) tuples.</param>
     /// <returns>HPACK-encoded header block.</returns>
@@ -188,15 +188,12 @@ public sealed class HpackEncoder
 
         // 1. Try full match in static table (name + value)
         var staticFullIdx = FindStaticFullMatch(header.Name, header.Value);
-        if (staticFullIdx > 0)
+        if (staticFullIdx > 0 && encoding != HpackEncoding.NeverIndexed)
         {
             // RFC 7541 §6.1 – Indexed Header Field: cheapest possible encoding
             // Only emit as indexed if the header is not sensitive
-            if (encoding != HpackEncoding.NeverIndexed)
-            {
-                WriteIndexed(staticFullIdx, output);
-                return;
-            }
+            WriteIndexed(staticFullIdx, output);
+            return;
         }
 
         // 2. Try full match in dynamic table (name + value)
@@ -233,11 +230,7 @@ public sealed class HpackEncoder
     /// <summary>
     /// RFC 7541 §6.2.1 / §6.2.2 / §6.2.3 – Literal Header Field.
     /// </summary>
-    private void WriteLiteral(
-        HpackHeader header,
-        int nameIndex,
-        HpackEncoding encoding,
-        IBufferWriter<byte> output,
+    private void WriteLiteral(HpackHeader header, int nameIndex, HpackEncoding encoding, IBufferWriter<byte> output,
         bool useHuffman)
     {
         // First byte encodes the representation type and name index prefix
@@ -301,10 +294,14 @@ public sealed class HpackEncoder
     internal static void WriteInteger(int value, int prefixBits, byte prefixFlags, IBufferWriter<byte> output)
     {
         if (value < 0)
+        {
             throw new HpackException($"RFC 7541 §5.1 violation: integer value must be non-negative, got {value}.");
+        }
 
         if (prefixBits is < 1 or > 8)
+        {
             throw new ArgumentOutOfRangeException(nameof(prefixBits), "prefixBits must be between 1 and 8.");
+        }
 
         var mask = (1 << prefixBits) - 1;
 

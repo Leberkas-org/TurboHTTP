@@ -1,8 +1,9 @@
 using System;
 using Akka.Actor;
 using Akka.Event;
+using Servus.Akka;
 
-namespace Servus.Akka.IO;
+namespace TurboHttp.IO;
 
 public sealed class ClientManager : ReceiveActor
 {
@@ -16,16 +17,20 @@ public sealed class ClientManager : ReceiveActor
 
     private void Handle(CreateTcpRunner msg)
     {
-        var provider = msg.StreamProvider ?? new TcpClientProvider(msg.Options);
+        var provider = msg.StreamProvider ?? msg.Options switch
+        {
+            TlsOptions tls => new TlsClientProvider(tls),
+            _ => new TcpClientProvider(msg.Options)
+        };
         var host = msg.Options.Host;
         var port = msg.Options.Port;
         var name = $"tcp-runner-{host.Replace(".", "-")}-{port}-{Guid.NewGuid()}";
-        var runner = Context.ResolveChildActor<ClientRunner>(name, provider, msg.Options, msg.Handler);
+        var runner = Context.ResolveChildActor<ClientRunner>(name, provider, msg.Handler, msg.Options.MaxFrameSize);
         Context.Watch(runner);
         Sender.Tell(runner);
     }
 
-    private void Handle(Terminated msg)
+    private static void Handle(Terminated msg)
     {
         Context.GetLogger().Error("Client dead: {0}", msg.ActorRef.Path);
     }

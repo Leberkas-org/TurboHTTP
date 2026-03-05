@@ -21,7 +21,7 @@ public sealed class Http2ConnectionTests
 
     // ── Connection Preface ────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-001: Connection preface sent and server SETTINGS received")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-001: Connection preface sent and server SETTINGS received")]
     public async Task Should_ReceiveServerSettings_When_SendingConnectionPreface()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -32,7 +32,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-002: SETTINGS ACK sent in response to server SETTINGS")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-002: SETTINGS ACK sent in response to server SETTINGS")]
     public async Task Should_SendSettingsAck_When_ServerSettingsReceived()
     {
         // After OpenAsync the fixture server has received our SETTINGS ACK;
@@ -47,7 +47,7 @@ public sealed class Http2ConnectionTests
 
     // ── PING ──────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-003: PING → server returns PING ACK with same data")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-003: PING → server returns PING ACK with same data")]
     public async Task Should_ReceivePingAck_When_PingIsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -56,7 +56,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(pingData, ack);
     }
 
-    [Fact(DisplayName = "IT-2-004: Multiple PING frames — each ACK matches its request data")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-004: Multiple PING frames — each ACK matches its request data")]
     public async Task Should_ReceiveMatchingPingAcks_When_MultiplePingsSent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -72,7 +72,7 @@ public sealed class Http2ConnectionTests
 
     // ── SETTINGS Negotiation ──────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-005: Server SETTINGS contains INITIAL_WINDOW_SIZE")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-005: Server SETTINGS contains INITIAL_WINDOW_SIZE")]
     public async Task Should_ReceiveInitialWindowSize_When_HandshakeCompletes()
     {
         // We verify this indirectly: after preface, we can receive a response body,
@@ -85,7 +85,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(32 * 1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-2-006: SETTINGS: server announces MAX_FRAME_SIZE — connection remains functional")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-006: SETTINGS: server announces MAX_FRAME_SIZE — connection remains functional")]
     public async Task Should_HonorMaxFrameSize_When_ServerAnnouncesIt()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -96,7 +96,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-007: SETTINGS: MAX_CONCURRENT_STREAMS respected — sequential streams succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-007: SETTINGS: MAX_CONCURRENT_STREAMS respected — sequential streams succeed")]
     public async Task Should_SucceedWithSequentialStreams_When_MaxConcurrentStreamsIsRespected()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -109,7 +109,7 @@ public sealed class Http2ConnectionTests
         }
     }
 
-    [Fact(DisplayName = "IT-2-008: SETTINGS frame with zero parameters is valid — no error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-008: SETTINGS frame with zero parameters is valid — no error")]
     public async Task Should_AcceptEmptySettings_When_ZeroParametersPresent()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -123,7 +123,7 @@ public sealed class Http2ConnectionTests
 
     // ── GOAWAY ────────────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-009: Client sends GOAWAY before disconnect — no server error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-009: Client sends GOAWAY before disconnect — no server error")]
     public async Task Should_SendGoAway_When_ClientDisconnects()
     {
         // After completing a successful exchange, send GOAWAY then close.
@@ -139,16 +139,16 @@ public sealed class Http2ConnectionTests
 
     // ── Flow Control ──────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "IT-2-010: Connection-level flow control — initial window is 65535")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-010: Connection-level flow control — initial window is 65535")]
     public async Task Should_HaveInitialConnectionWindow_When_Connected()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
         // The decoder starts with a 65535-byte receive window.
-        var window = conn.Decoder.GetConnectionReceiveWindow();
+        var window = conn.GetConnectionReceiveWindow();
         Assert.Equal(65535, window);
     }
 
-    [Fact(DisplayName = "IT-2-011: WINDOW_UPDATE on connection level — encoder send window increases")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-011: WINDOW_UPDATE on connection level — encoder send window increases")]
     public async Task Should_IncreaseConnectionSendWindow_When_WindowUpdateReceived()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -162,7 +162,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(60 * 1024, body.Length);
     }
 
-    [Fact(DisplayName = "IT-2-012: Idle connection — multiple requests succeed without error")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-012: Idle connection — multiple requests succeed without error")]
     public async Task Should_RemainFunctional_When_NoRequestsSentBetweenRequests()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -174,7 +174,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-013: SETTINGS update INITIAL_WINDOW_SIZE mid-connection — next stream uses new window")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-013: SETTINGS update INITIAL_WINDOW_SIZE mid-connection — next stream uses new window")]
     public async Task Should_UseNewWindowSize_When_SettingsUpdatedMidConnection()
     {
         await using var conn = await Http2Connection.OpenAsync(_fixture.Port);
@@ -191,7 +191,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-014: Two separate connections to the same server both succeed")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-014: Two separate connections to the same server both succeed")]
     public async Task Should_SupportMultipleIndependentConnections_When_ServerIsRunning()
     {
         await using var conn1 = await Http2Connection.OpenAsync(_fixture.Port);
@@ -207,11 +207,11 @@ public sealed class Http2ConnectionTests
         Assert.Equal(HttpStatusCode.OK, resp2.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-015: Connection preface magic is exactly 24 bytes (RFC 7540 §3.5)")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-015: Connection preface magic is exactly 24 bytes (RFC 7540 §3.5)")]
     public async Task Should_Have24ByteConnectionPreface_When_PrefaceMagicInspected()
     {
         // Verify the static preface starts with the standard magic string.
-        var preface = Http2Encoder.BuildConnectionPreface();
+        var preface = Http2FrameUtils.BuildConnectionPreface();
         var magic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
         Assert.True(preface.Length > magic.Length, "Preface should include magic + SETTINGS frame.");
         for (var i = 0; i < magic.Length; i++)
@@ -226,7 +226,7 @@ public sealed class Http2ConnectionTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "IT-2-016: Server responds with 200 status to a basic GET over HTTP/2")]
+    [Fact(Timeout = 10_000, DisplayName = "IT-2-016: Server responds with 200 status to a basic GET over HTTP/2")]
     public async Task Should_Return200_When_SimpleGetSentOverHttp2()
     {
         var response = await Http2Helper.GetAsync(_fixture.Port, "/hello");

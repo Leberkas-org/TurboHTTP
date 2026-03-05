@@ -7,5 +7,5 @@ namespace TurboHttp.IntegrationTests.Http2;
 /// Phase 16 HTTP/2 Advanced integration test classes. Tests in the collection run
 /// sequentially to avoid port conflicts.
 /// </summary>
-[CollectionDefinition("Http2Advanced")]
+[CollectionDefinition("Http2")]
 public sealed class Http2AdvancedCollection : ICollectionFixture<KestrelH2Fixture>;
