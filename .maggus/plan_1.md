@@ -34,12 +34,12 @@
 **File:** `Http20/StreamIdAllocatorStageTests.cs`
 **RFC:** 9113 §5.1.1 — Stream Identifiers
 
-- [ ] `SID-001`: First stream ID is 1 (client initiates with odd number)
-- [ ] `SID-002`: Consecutive IDs: 1, 3, 5, 7 (strictly ascending +2)
-- [ ] `SID-003`: 10 requests → 10 distinct, monotonically increasing stream IDs
-- [ ] `SID-004`: Stream ID is always odd (no even value)
-- [ ] `SID-005`: Request object is passed through unchanged (reference equality)
-- [ ] `SID-006`: Stage terminates cleanly on UpstreamFinish (CompleteStage)
+- [x] `SID-001`: First stream ID is 1 (client initiates with odd number)
+- [x] `SID-002`: Consecutive IDs: 1, 3, 5, 7 (strictly ascending +2)
+- [x] `SID-003`: 10 requests → 10 distinct, monotonically increasing stream IDs
+- [x] `SID-004`: Stream ID is always odd (no even value)
+- [x] `SID-005`: Request object is passed through unchanged (reference equality)
+- [x] `SID-006`: Stage terminates cleanly on UpstreamFinish (CompleteStage)
 
 **Test pattern:**
 ```csharp
