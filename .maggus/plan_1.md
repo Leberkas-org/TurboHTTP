@@ -367,10 +367,10 @@
 **File:** `Http20/Http20ConnectionPrefaceRfcTests.cs`
 **RFC:** 9113 §3.4 — HTTP/2 Connection Preface
 
-- [ ] `H2P-001`: First 24 bytes = `PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n`
-- [ ] `H2P-002`: SETTINGS frame directly after magic (byte 24+)
-- [ ] `H2P-003`: Preface is sent exactly once (not repeated on second request)
-- [ ] `H2P-004`: SETTINGS frame on stream 0
+- [x] `H2P-001`: First 24 bytes = `PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n`
+- [x] `H2P-002`: SETTINGS frame directly after magic (byte 24+)
+- [x] `H2P-003`: Preface is sent exactly once (not repeated on second request)
+- [x] `H2P-004`: SETTINGS frame on stream 0
 
 ---
 
