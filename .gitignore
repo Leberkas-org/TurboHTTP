@@ -337,3 +337,5 @@ ASALocalRun/
 COMMIT.md
 .tools/
 coverage-results/
+.maggus/runs
+.maggus/MEMORY.md
