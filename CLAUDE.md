@@ -35,7 +35,7 @@ Client Layer (TurboHttp/Client/)
     ITurboHttpClient — channel-based request/response API
          ↓
 Streams Layer (TurboHttp/Streams/)
-    Akka.Streams GraphStages — Engine, HostRoutingFlow, ConnectionStage
+    Akka.Streams GraphStages — Engine, ConnectionStage, Protocol Engines
          ↓
 Protocol Layer (TurboHttp/Protocol/)
     Encoders/Decoders, HPACK, RedirectHandler, RetryEvaluator, CookieJar
@@ -49,7 +49,7 @@ Network (TCP)
 ### Protocol Layer (`TurboHttp/Protocol/`)
 
 **Encoders** — Serialise `HttpRequestMessage` to bytes:
-- `Http10Encoder.Encode()`, `Http11Encoder.Encode()`, `Http2Encoder.Encode()`
+- `Http10Encoder.Encode()`, `Http11Encoder.Encode()`, `Http2RequestEncoder.Encode()`
 - Use `ref Span<byte>` or `ref Memory<byte>` for zero-allocation patterns
 
 **Decoders** — Stateful, handle partial frames across TCP boundaries:
@@ -76,13 +76,35 @@ Network (TCP)
 - `ContentEncodingDecoder` — gzip/deflate/brotli decompression
 - `PerHostConnectionLimiter` — per-host concurrency limits
 
+**Caching** (RFC 9111):
+- `HttpCacheStore` — RFC 9111 §3: thread-safe in-memory LRU cache with Vary support
+- `CacheFreshnessEvaluator` — RFC 9111 §4.2: freshness lifetime, current age, s-maxage/max-age/Expires/heuristic
+- `CacheValidationRequestBuilder` — RFC 9111 §4.3: conditional requests (If-None-Match, If-Modified-Since), 304 merge
+- `CacheControlParser` — RFC 9111 §5.2: parses Cache-Control directives
+- `CachePolicy`, `CacheEntry`, `CacheLookupResult` — supporting types
+
 ### Streams Layer (`TurboHttp/Streams/`)
 
 - `Engine` — version demultiplexer (Partition → Http*Engine → Merge)
-- `Http10Engine`, `Http11Engine`, `Http20Engine` — per-version routing flows
-- `HostRoutingFlow` — partitions requests by host, maintains per-host connection pools
+- `Http10Engine`, `Http11Engine`, `Http20Engine` — per-version routing flows (`IHttpProtocolEngine`)
 - `ConnectionStage` — TCP connection wrapper (Akka `GraphStage`)
-- `HostConnectionPool` — manages concurrent connections per host
+- `RequestEnricherStage` — applies BaseAddress, DefaultRequestVersion, DefaultRequestHeaders
+- `ExtractOptionsStage` — splits `HttpRequest(Options, RequestMessage)` into transport + request
+
+**HTTP/1.x Stages**:
+- `Http10EncoderStage` / `Http11EncoderStage` — serialize `HttpRequestMessage` to bytes
+- `Http10DecoderStage` / `Http11DecoderStage` — parse bytes to `HttpResponseMessage`
+- `CorrelationHttp1XStage` — FIFO request-response matching
+
+**HTTP/2 Stages**:
+- `StreamIdAllocatorStage` — allocates client stream IDs (1, 3, 5, …)
+- `Request2FrameStage` — `(HttpRequestMessage, streamId)` → `Http2Frame` list
+- `Http20EncoderStage` — serialise `Http2Frame` to bytes
+- `Http20DecoderStage` — parse bytes to `Http2Frame` (stateful buffer)
+- `Http20ConnectionStage` — bidirectional flow control, SETTINGS/PING/GOAWAY handling
+- `Http20StreamStage` — assemble frames into `HttpResponseMessage` (HPACK decode, decompression)
+- `PrependPrefaceStage` — inject HTTP/2 connection preface on first connect
+- `CorrelationHttp20Stage` — stream-ID-based request-response matching
 
 ### I/O Layer (`TurboHttp/IO/`)
 
@@ -117,7 +139,7 @@ Network (TCP)
 - Private fields prefixed with underscore `_fieldName`
 - Use `var` when type is apparent
 - Default to `sealed` classes and records
-- Do NOT add `#nullable enable` — not used in this codebase
+- Do NOT add `#nullable enable` — nullable is enabled at project level in the csproj; file-level directives are unnecessary
 - Never use `async void`, `.Result`, or `.Wait()`
 - Always pass `CancellationToken` through async call chains
 - Always use braces for control structures (even single-line)
@@ -150,7 +172,7 @@ Tests live in `src/TurboHttp.Tests/` organised by RFC:
 
 Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and pool behaviour.
 
-Integration tests: `src/TurboHttp.IntegrationTests/` (Http10/, Http11/, Http2/, Shared/) — real Kestrel server via `KestrelFixture` and `KestrelH2Fixture`.
+Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures (`KestrelFixture`, `KestrelH2Fixture`, `KestrelTlsFixture`) with 60+ routes registered. No end-to-end test classes yet — fixtures are infrastructure-only, ready for future integration tests.
 
 ## RFC Compliance
 
@@ -159,6 +181,15 @@ Integration tests: `src/TurboHttp.IntegrationTests/` (Http10/, Http11/, Http2/, 
 - **HTTP/2**: RFC 9113 (protocol), RFC 7541 (HPACK)
 - **HTTP Semantics**: RFC 9110 (redirects, retries, content negotiation)
 - **Cookies**: RFC 6265
+- **Caching**: RFC 9111 (freshness, validation, storage)
+
+## Current Limitations
+
+- **Pipeline not fully wired**: Protocol handlers (RedirectHandler, CookieJar, RetryEvaluator, CacheFreshnessEvaluator, etc.) exist as standalone classes but are NOT integrated into the Akka.Streams Engine pipeline. The Engine currently only does: encode → TCP → decode → correlate.
+- **Client graph not materialized**: `TurboClientStreamManager` has graph construction commented out. `TurboHttpClient.SendAsync` does not work end-to-end yet.
+- **No business logic stages**: Missing Akka.Streams stages for redirect looping, cookie injection/storage, retry, cache lookup/store, and decompression (except partial HTTP/2 decompression in `Http20StreamStage`).
+- **No end-to-end integration tests**: Kestrel fixtures are defined with 60+ routes but no test classes consume them.
+- **See `TODO.md`** for the full migration plan to wire everything together.
 
 ## Dependencies
 

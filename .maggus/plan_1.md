@@ -133,11 +133,11 @@
 **File:** `Http10/Http10DecoderStageRfcTests.cs`
 **RFC:** 1945 §6.1 — Status-Line, §4.2 — Headers
 
-- [ ] `10D-RFC-001`: Status-line `HTTP/1.0 200 OK` → StatusCode=200, Version=1.0
-- [ ] `10D-RFC-002`: Status-line `HTTP/1.0 404 Not Found` → StatusCode=404
-- [ ] `10D-RFC-003`: Response headers correctly parsed (Content-Type, Content-Length)
-- [ ] `10D-RFC-004`: Body with Content-Length correctly read
-- [ ] `10D-RFC-005`: Connection-Close: stream ends after body
+- [x] `10D-RFC-001`: Status-line `HTTP/1.0 200 OK` → StatusCode=200, Version=1.0
+- [x] `10D-RFC-002`: Status-line `HTTP/1.0 404 Not Found` → StatusCode=404
+- [x] `10D-RFC-003`: Response headers correctly parsed (Content-Type, Content-Length)
+- [x] `10D-RFC-004`: Body with Content-Length correctly read
+- [x] `10D-RFC-005`: Connection-Close: stream ends after body
 
 ---
 
