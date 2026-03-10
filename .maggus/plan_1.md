@@ -392,11 +392,11 @@
 **File:** `Http20/Http20PseudoHeaderRfcTests.cs`
 **RFC:** 9113 §8.3.1 — Request Pseudo-Header Fields
 
-- [ ] `H2PH-001`: `:method` = HTTP method (GET, POST, etc.)
-- [ ] `H2PH-002`: `:path` = absolute path + query
-- [ ] `H2PH-003`: `:scheme` = URI scheme (http/https)
-- [ ] `H2PH-004`: `:authority` = host:port
-- [ ] `H2PH-005`: Pseudo-headers appear BEFORE regular headers
+- [x] `H2PH-001`: `:method` = HTTP method (GET, POST, etc.)
+- [x] `H2PH-002`: `:path` = absolute path + query
+- [x] `H2PH-003`: `:scheme` = URI scheme (http/https)
+- [x] `H2PH-004`: `:authority` = host:port
+- [x] `H2PH-005`: Pseudo-headers appear BEFORE regular headers
 
 ---
 
