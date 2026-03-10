@@ -241,11 +241,11 @@
 **File:** `Http11/Http11StageFragmentationTests.cs`
 **RFC:** 9112 §6 — Message Body (TCP boundary handling)
 
-- [ ] `11F-001`: Chunked response over 4 TCP segments → correctly reassembled
-- [ ] `11F-002`: Header/body boundary on TCP segment boundary → correctly separated
-- [ ] `11F-003`: Chunk-size line split across 2 segments → correctly parsed
-- [ ] `11F-004`: Content-Length body in 3 fragments → fully read
-- [ ] `11F-005`: Very small fragments (1–2 bytes) → decoder handles gracefully
+- [x] `11F-001`: Chunked response over 4 TCP segments → correctly reassembled
+- [x] `11F-002`: Header/body boundary on TCP segment boundary → correctly separated
+- [x] `11F-003`: Chunk-size line split across 2 segments → correctly parsed
+- [x] `11F-004`: Content-Length body in 3 fragments → fully read
+- [x] `11F-005`: Very small fragments (1–2 bytes) → decoder handles gracefully
 
 ---
 
