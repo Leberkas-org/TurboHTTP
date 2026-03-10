@@ -13,9 +13,7 @@ public static class CacheValidationRequestBuilder
     /// If-None-Match (from ETag) and/or If-Modified-Since (from Last-Modified) headers.
     /// The returned request shares the same URI, method, version, and content as the original.
     /// </summary>
-    public static HttpRequestMessage BuildConditionalRequest(
-        HttpRequestMessage original,
-        CacheEntry entry)
+    public static HttpRequestMessage BuildConditionalRequest(HttpRequestMessage original, CacheEntry entry)
     {
         var conditional = new HttpRequestMessage(original.Method, original.RequestUri)
         {
@@ -49,8 +47,7 @@ public static class CacheValidationRequestBuilder
     /// Returns a new 200 OK response with the cached body and the merged headers.
     /// Headers present in the 304 response override those in the cached entry.
     /// </summary>
-    public static HttpResponseMessage MergeNotModifiedResponse(
-        HttpResponseMessage notModifiedResponse,
+    public static HttpResponseMessage MergeNotModifiedResponse(HttpResponseMessage notModifiedResponse,
         CacheEntry cachedEntry)
     {
         // RFC 9111 §4.3.4: construct a new 200 response using stored headers + body
@@ -86,6 +83,5 @@ public static class CacheValidationRequestBuilder
     /// RFC 9111 §4.3.2 — Returns true if the cache entry has an ETag or a Last-Modified date,
     /// which means a conditional request can be built.
     /// </summary>
-    public static bool CanRevalidate(CacheEntry entry)
-        => entry.ETag is not null || entry.LastModified.HasValue;
+    public static bool CanRevalidate(CacheEntry entry) => entry.ETag is not null || entry.LastModified.HasValue;
 }

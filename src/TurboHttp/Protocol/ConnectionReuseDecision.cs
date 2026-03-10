@@ -8,24 +8,24 @@ namespace TurboHttp.Protocol;
 public sealed record ConnectionReuseDecision
 {
     /// <summary>Whether the connection can be reused for the next request.</summary>
-    public bool CanReuse { get; init; }
+    public bool CanReuse { get; private init; }
 
     /// <summary>Human-readable reason for the decision (for diagnostics and logging).</summary>
-    public string Reason { get; init; } = string.Empty;
+    public string Reason { get; private init; } = string.Empty;
 
     /// <summary>
     /// Server-advertised keep-alive timeout parsed from the Keep-Alive response header.
     /// Null if no timeout was specified.
     /// RFC 9112 §9.3: client SHOULD NOT keep connection open longer than this interval.
     /// </summary>
-    public TimeSpan? KeepAliveTimeout { get; init; }
+    public TimeSpan? KeepAliveTimeout { get; private init; }
 
     /// <summary>
     /// Server-advertised maximum number of requests on this connection,
     /// parsed from the Keep-Alive header's <c>max</c> parameter.
     /// Null if no max was specified.
     /// </summary>
-    public int? MaxRequests { get; init; }
+    public int? MaxRequests { get; private init; }
 
     /// <summary>Creates a keep-alive decision (connection may be reused).</summary>
     public static ConnectionReuseDecision KeepAlive(string reason, TimeSpan? keepAliveTimeout = null,

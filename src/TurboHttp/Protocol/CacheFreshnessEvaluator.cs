@@ -32,25 +32,27 @@ public static class CacheFreshnessEvaluator
         }
 
         // Expires header (RFC 9111 §5.3)
-        if (entry.Expires.HasValue && entry.Date.HasValue)
+        if (entry is { Expires: not null, Date: not null })
         {
             var lifetime = entry.Expires.Value - entry.Date.Value;
             return lifetime > TimeSpan.Zero ? lifetime : TimeSpan.Zero;
         }
 
         // Heuristic freshness (RFC 9111 §4.2.2) — 10 % of (Date – Last-Modified), capped at 1 day
-        if (entry.LastModified.HasValue && entry.Date.HasValue)
+        if (entry is not { LastModified: not null, Date: not null })
         {
-            var age = entry.Date.Value - entry.LastModified.Value;
-            if (age > TimeSpan.Zero)
-            {
-                var heuristic = TimeSpan.FromSeconds(age.TotalSeconds * 0.1);
-                var cap = TimeSpan.FromDays(1);
-                return heuristic < cap ? heuristic : cap;
-            }
+            return TimeSpan.Zero;
         }
 
-        return TimeSpan.Zero;
+        var age = entry.Date.Value - entry.LastModified.Value;
+        if (age <= TimeSpan.Zero)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var heuristic = TimeSpan.FromSeconds(age.TotalSeconds * 0.1);
+        var cap = TimeSpan.FromDays(1);
+        return heuristic < cap ? heuristic : cap;
     }
 
     /// <summary>

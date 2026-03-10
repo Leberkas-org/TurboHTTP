@@ -6,6 +6,7 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Akka.Streams.Stage;
 using TurboHttp.IO;
 using TurboHttp.Streams.Stages;
 
@@ -13,21 +14,13 @@ namespace TurboHttp.Streams;
 
 public class Engine
 {
-    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager,
-        TcpOptions options)
+    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager)
     {
         return Flow.FromGraph(GraphDsl.Create(builder =>
         {
-            var enricher =
-                builder.Add(new RequestEnricherStage(null, HttpVersion.Version11, new HttpRequestMessage().Headers));
+            var enricher = builder.Add(new RequestEnricherStage(null, HttpVersion.Version11, new HttpRequestMessage().Headers));
 
-            var partition = builder.Add(new Partition<HttpRequestMessage>(4, msg => msg.Version switch
-            {
-                { Major: 3, Minor: 0 } => 3,
-                { Major: 2, Minor: 0 } => 2,
-                { Major: 1, Minor: 1 } => 1,
-                { Major: 1, Minor: 0 } => 0
-            }));
+            var partition = builder.Add(Router());
             var hub = builder.Add(new Merge<HttpResponseMessage>(4));
 
             var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager));
@@ -65,5 +58,17 @@ public class Engine
 
             return new FlowShape<HttpRequestMessage, HttpResponseMessage>(balance.In, merge.Out);
         });
+    }
+
+    private static Partition<HttpRequestMessage> Router()
+    {
+        return new Partition<HttpRequestMessage>(4, msg
+            => msg.Version switch
+            {
+                { Major: 3, Minor: 0 } => 3,
+                { Major: 2, Minor: 0 } => 2,
+                { Major: 1, Minor: 1 } => 1,
+                { Major: 1, Minor: 0 } => 0
+            });
     }
 }
