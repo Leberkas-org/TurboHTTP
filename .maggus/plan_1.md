@@ -54,13 +54,13 @@
 **File:** `Http11/CorrelationHttp1XStageTests.cs`
 **RFC:** 9112 §9 — Request/Response Ordering (HTTP/1.x pipeline)
 
-- [ ] `COR1X-001`: Single request/response pairing → `response.RequestMessage == request`
-- [ ] `COR1X-002`: 5 sequential requests → FIFO order maintained
-- [ ] `COR1X-003`: Request reference is the exact same object (not copied)
-- [ ] `COR1X-004`: Response arrives before request → correctly buffered and correlated
-- [ ] `COR1X-005`: Request arrives before response → correctly buffered and correlated
-- [ ] `COR1X-006`: Stage terminates on empty queue after UpstreamFinish on both inlets
-- [ ] `COR1X-007`: Stage remains open while pending requests still exist
+- [x] `COR1X-001`: Single request/response pairing → `response.RequestMessage == request`
+- [x] `COR1X-002`: 5 sequential requests → FIFO order maintained
+- [x] `COR1X-003`: Request reference is the exact same object (not copied)
+- [x] `COR1X-004`: Response arrives before request → correctly buffered and correlated
+- [x] `COR1X-005`: Request arrives before response → correctly buffered and correlated
+- [x] `COR1X-006`: Stage terminates on empty queue after UpstreamFinish on both inlets
+- [x] `COR1X-007`: Stage remains open while pending requests still exist
 
 **Test pattern:**
 ```csharp
