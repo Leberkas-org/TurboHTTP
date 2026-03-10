@@ -379,11 +379,11 @@
 **File:** `Http20/Http20StreamIdRfcTests.cs`
 **RFC:** 9113 §5.1.1 — Stream Identifiers
 
-- [ ] `H2S-001`: First request → stream ID 1
-- [ ] `H2S-002`: Second request → stream ID 3
-- [ ] `H2S-003`: 5 requests → IDs 1, 3, 5, 7, 9
-- [ ] `H2S-004`: All HEADERS frames have correct stream ID
-- [ ] `H2S-005`: DATA frames have same stream ID as associated HEADERS
+- [x] `H2S-001`: First request → stream ID 1
+- [x] `H2S-002`: Second request → stream ID 3
+- [x] `H2S-003`: 5 requests → IDs 1, 3, 5, 7, 9
+- [x] `H2S-004`: All HEADERS frames have correct stream ID
+- [x] `H2S-005`: DATA frames have same stream ID as associated HEADERS
 
 ---
 
