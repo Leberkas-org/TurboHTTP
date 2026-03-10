@@ -9,7 +9,7 @@ public sealed class StreamIdAllocatorStageTests : StreamTestBase
         params HttpRequestMessage[] requests)
     {
         return await Source.From(requests)
-            .Via(Flow.FromGraph(new StreamIdAllocator()))
+            .Via(Flow.FromGraph(new StreamIdAllocatorStage()))
             .RunWith(Sink.Seq<(HttpRequestMessage, int)>(), Materializer);
     }
 

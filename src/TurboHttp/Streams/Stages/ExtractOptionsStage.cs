@@ -5,16 +5,20 @@ using TurboHttp.IO;
 
 namespace TurboHttp.Streams.Stages;
 
-internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequest, IConnectionItem, HttpRequestMessage>>
+public record HttpRequestOptions();
+
+public record HttpRequest(HttpRequestOptions Options, HttpRequestMessage RequestMessage);
+
+internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequest, ITransportItem, HttpRequestMessage>>
 {
-    private readonly Outlet<IConnectionItem> _outletOptions = new("");
+    private readonly Outlet<ITransportItem> _outletOptions = new("");
     private readonly Outlet<HttpRequestMessage> _outletRequest = new("");
     private readonly Inlet<HttpRequest> _inletRequest = new("");
-    public override FanOutShape<HttpRequest, IConnectionItem, HttpRequestMessage> Shape { get; }
+    public override FanOutShape<HttpRequest, ITransportItem, HttpRequestMessage> Shape { get; }
 
     public ExtractOptionsStage()
     {
-        Shape = new FanOutShape<HttpRequest, IConnectionItem, HttpRequestMessage>(_inletRequest, _outletOptions,
+        Shape = new FanOutShape<HttpRequest, ITransportItem, HttpRequestMessage>(_inletRequest, _outletOptions,
             _outletRequest);
     }
 
@@ -38,7 +42,7 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequest, 
                         var options = new TcpOptions { Host = string.Empty, Port = 0 };
                         _pending = request;
                         _initialSent = true;
-                        Push(stage.Shape.Out0, new InitialInput(options));
+                        Push(stage.Shape.Out0, new ConnectItem(options));
                     }
                     else
                     {

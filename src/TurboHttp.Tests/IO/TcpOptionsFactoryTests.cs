@@ -7,7 +7,7 @@ namespace TurboHttp.Tests.IO;
 
 public sealed class TcpOptionsFactoryTests
 {
-    private static TurboClientOptions DefaultOptions() => new TurboClientOptions();
+    private static TurboClientOptions DefaultOptions() => new();
 
     // TCP-001: http URI with no explicit port → TcpOptions, Port=80
     [Fact]
@@ -15,7 +15,7 @@ public sealed class TcpOptionsFactoryTests
     {
         var result = TcpOptionsFactory.Build(new Uri("http://example.com"), DefaultOptions());
 
-        Assert.IsNotType<TlsOptions>(result);
+        Assert.IsType<TcpOptions>(result);
         Assert.Equal("example.com", result.Host);
         Assert.Equal(80, result.Port);
     }
@@ -37,7 +37,7 @@ public sealed class TcpOptionsFactoryTests
     {
         var result = TcpOptionsFactory.Build(new Uri("http://example.com:8080"), DefaultOptions());
 
-        Assert.IsNotType<TlsOptions>(result);
+        Assert.IsType<TcpOptions>(result);
         Assert.Equal(8080, result.Port);
     }
 
@@ -57,7 +57,7 @@ public sealed class TcpOptionsFactoryTests
     {
         var result = TcpOptionsFactory.Build(new Uri("http://1.2.3.4"), DefaultOptions());
 
-        Assert.IsNotType<TlsOptions>(result);
+        Assert.IsType<TcpOptions>(result);
         Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
     }
 
@@ -67,7 +67,7 @@ public sealed class TcpOptionsFactoryTests
     {
         var result = TcpOptionsFactory.Build(new Uri("http://[::1]"), DefaultOptions());
 
-        Assert.IsNotType<TlsOptions>(result);
+        Assert.IsType<TcpOptions>(result);
         Assert.Equal(AddressFamily.InterNetworkV6, result.AddressFamily);
     }
 
@@ -77,7 +77,7 @@ public sealed class TcpOptionsFactoryTests
     {
         var result = TcpOptionsFactory.Build(new Uri("http://hostname"), DefaultOptions());
 
-        Assert.IsNotType<TlsOptions>(result);
+        Assert.IsType<TcpOptions>(result);
         Assert.Equal(AddressFamily.Unspecified, result.AddressFamily);
     }
 
@@ -85,7 +85,7 @@ public sealed class TcpOptionsFactoryTests
     [Fact]
     public void TCP_008_ConnectTimeout_Propagated()
     {
-        var opts   = new TurboClientOptions { ConnectTimeout = TimeSpan.FromSeconds(30) };
+        var opts = new TurboClientOptions { ConnectTimeout = TimeSpan.FromSeconds(30) };
         var result = TcpOptionsFactory.Build(new Uri("http://example.com"), opts);
 
         Assert.Equal(TimeSpan.FromSeconds(30), result.ConnectTimeout);
@@ -95,7 +95,7 @@ public sealed class TcpOptionsFactoryTests
     [Fact]
     public void TCP_009_ReconnectInterval_Propagated()
     {
-        var opts   = new TurboClientOptions { ReconnectInterval = TimeSpan.FromSeconds(2) };
+        var opts = new TurboClientOptions { ReconnectInterval = TimeSpan.FromSeconds(2) };
         var result = TcpOptionsFactory.Build(new Uri("http://example.com"), opts);
 
         Assert.Equal(TimeSpan.FromSeconds(2), result.ReconnectInterval);
@@ -105,7 +105,7 @@ public sealed class TcpOptionsFactoryTests
     [Fact]
     public void TCP_010_MaxReconnectAttempts_Propagated()
     {
-        var opts   = new TurboClientOptions { MaxReconnectAttempts = 3 };
+        var opts = new TurboClientOptions { MaxReconnectAttempts = 3 };
         var result = TcpOptionsFactory.Build(new Uri("http://example.com"), opts);
 
         Assert.Equal(3, result.MaxReconnectAttempts);
@@ -115,7 +115,7 @@ public sealed class TcpOptionsFactoryTests
     [Fact]
     public void TCP_011_MaxFrameSize_Propagated()
     {
-        var opts   = new TurboClientOptions { MaxFrameSize = 256 * 1024 };
+        var opts = new TurboClientOptions { MaxFrameSize = 256 * 1024 };
         var result = TcpOptionsFactory.Build(new Uri("http://example.com"), opts);
 
         Assert.Equal(256 * 1024, result.MaxFrameSize);
@@ -125,10 +125,9 @@ public sealed class TcpOptionsFactoryTests
     [Fact]
     public void TCP_012_Https_CallbackPropagated()
     {
-        RemoteCertificateValidationCallback callback =
-            (_, _, _, _) => true;
+        RemoteCertificateValidationCallback callback = (_, _, _, _) => true;
 
-        var opts   = new TurboClientOptions { ServerCertificateValidationCallback = callback };
+        var opts = new TurboClientOptions { ServerCertificateValidationCallback = callback };
         var result = TcpOptionsFactory.Build(new Uri("https://example.com"), opts);
 
         var tls = Assert.IsType<TlsOptions>(result);
@@ -142,10 +141,10 @@ public sealed class TcpOptionsFactoryTests
         RemoteCertificateValidationCallback callback =
             (_, _, _, _) => true;
 
-        var opts   = new TurboClientOptions { ServerCertificateValidationCallback = callback };
+        var opts = new TurboClientOptions { ServerCertificateValidationCallback = callback };
         var result = TcpOptionsFactory.Build(new Uri("http://example.com"), opts);
 
-        Assert.IsNotType<TlsOptions>(result);
+        Assert.IsType<TcpOptions>(result);
     }
 
     // TCP-014: TlsOptions.TargetHost == Host (SNI set automatically)

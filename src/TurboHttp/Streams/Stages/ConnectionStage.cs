@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Collections.Generic;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -10,21 +9,31 @@ using TurboHttp.IO;
 
 namespace TurboHttp.Streams.Stages;
 
-public sealed class ConnectionStage : GraphStage<FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)>>
+public interface ITransportItem
 {
-    internal IActorRef ClientManager { get; }
-    internal TcpOptions Options { get; }
+    bool IsTls { get; }
+}
 
-    private readonly Inlet<(IMemoryOwner<byte>, int)> _inlet = new("tcp.in");
+public record ConnectItem(TcpOptions Options) : ITransportItem
+{
+    public bool IsTls => Options is TlsOptions;
+}
+
+public record DataItem(IMemoryOwner<byte> Memory, int Length, bool IsTls = false) : ITransportItem;
+
+public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>>
+{
+    private IActorRef ClientManager { get; }
+
+    private readonly Inlet<ITransportItem> _inlet = new("tcp.in");
     private readonly Outlet<(IMemoryOwner<byte>, int)> _outlet = new("tcp.out");
 
-    public override FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)> Shape { get; }
+    public override FlowShape<ITransportItem, (IMemoryOwner<byte>, int)> Shape { get; }
 
-    public ConnectionStage(IActorRef clientManager, TcpOptions options)
+    public ConnectionStage(IActorRef clientManager)
     {
         ClientManager = clientManager;
-        Options = options;
-        Shape = new FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)>(_inlet, _outlet);
+        Shape = new FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>(_inlet, _outlet);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -33,317 +42,112 @@ public sealed class ConnectionStage : GraphStage<FlowShape<(IMemoryOwner<byte>, 
     private sealed class Logic : GraphStageLogic
     {
         private readonly ConnectionStage _stage;
-        private StageActor? _self;
-        private bool _connected;
-        private bool _downstreamWaiting;
-        private int _reconnectAttempts;
-        private readonly Queue<(IMemoryOwner<byte>, int)> _outboundBuffer = new();
-        private ChannelWriter<(IMemoryOwner<byte>, int)>? _outboundWriter;
-        private ChannelReader<(IMemoryOwner<byte>, int)>? _inboundReader;
+        private IActorRef _self = ActorRefs.Nobody;
 
-        private Action? _onReadReady;
-        private Action? _onDisconnected;
+        private bool _connected;
+        private TcpOptions? _options;
+
+        private ChannelReader<(IMemoryOwner<byte>, int)>? _inboundReader;
+        private ChannelWriter<(IMemoryOwner<byte>, int)>? _outboundWriter;
+
+        private readonly Queue<(IMemoryOwner<byte>, int)> _pendingWrites = new();
 
         public Logic(ConnectionStage stage) : base(stage.Shape)
         {
             _stage = stage;
 
-            SetHandler(stage._inlet,
-                onPush: () =>
-                {
-                    var chunk = Grab(stage._inlet);
-                    if (_connected)
-                    {
-                        _outboundWriter!.TryWrite(chunk);
-                    }
-                    else
-                    {
-                        _outboundBuffer.Enqueue(chunk);
-                        _stage.ClientManager.Tell(new ClientManager.CreateTcpRunner(_stage.Options, _self!.Ref));
-                    }
-                },
-                onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
-
-            SetHandler(stage._outlet,
-                onPull: () =>
-                {
-                    _downstreamWaiting = true;
-                    if (_connected)
-                    {
-                        TryReadInbound();
-                    }
-                },
-                onDownstreamFinish: _ => CompleteStage());
+            SetHandler(stage._inlet, onPush: HandlePush, onUpstreamFinish: CompleteStage);
+            SetHandler(stage._outlet, onPull: () => { }, onDownstreamFinish: _ => CompleteStage());
         }
 
         public override void PreStart()
         {
-            _onReadReady = GetAsyncCallback(TryReadInbound);
-            _onDisconnected = GetAsyncCallback(HandleDisconnected);
+            _self = GetStageActor(OnMessage).Ref;
+        }
 
-            _self = GetStageActor(OnMessage);
+        private void HandlePush()
+        {
+            var elem = Grab(_stage._inlet);
+
+            switch (elem)
+            {
+                case ConnectItem init:
+                    _options ??= init.Options;
+                    Pull(_stage._inlet);
+                    break;
+
+                case DataItem data:
+                    if (_connected)
+                    {
+                        _outboundWriter?.TryWrite((data.Memory, data.Length));
+                    }
+                    else
+                    {
+                        _pendingWrites.Enqueue((data.Memory, data.Length));
+                        TryConnect();
+                    }
+
+                    break;
+            }
+        }
+
+        private void TryConnect()
+        {
+            if (_options == null) return;
+            _stage.ClientManager.Tell(new ClientManager.CreateTcpRunner(_options, _self));
         }
 
         private void OnMessage((IActorRef sender, object msg) args)
         {
             switch (args.msg)
             {
-                case ClientRunner.ClientConnected connected:
+                case ClientRunner.ClientConnected c:
                     _connected = true;
-                    _reconnectAttempts = 0;
-                    _inboundReader = connected.InboundReader;
-                    _outboundWriter = connected.OutboundWriter;
-
-                    while (_outboundBuffer.TryDequeue(out var chunk))
+                    _inboundReader = c.InboundReader;
+                    _outboundWriter = c.OutboundWriter;
+                    _ = BeginReadLoop(_inboundReader);
+                    while (_pendingWrites.TryDequeue(out var cw))
                     {
-                        _outboundWriter.TryWrite(chunk);
+                        _outboundWriter.TryWrite(cw);
                     }
 
                     Pull(_stage._inlet);
-
-                    if (_downstreamWaiting)
-                    {
-                        TryReadInbound();
-                    }
-
                     break;
 
                 case ClientRunner.ClientDisconnected:
-                    HandleDisconnected();
+                    _connected = false;
+                    _inboundReader = null;
+                    _outboundWriter = null;
                     break;
             }
         }
 
-        private void TryReadInbound()
+        private async Task BeginReadLoop(ChannelReader<(IMemoryOwner<byte>, int)> reader)
         {
-            if (_inboundReader is null)
+            var pushCallback = GetAsyncCallback<(IMemoryOwner<byte>, int)>(chunk =>
             {
-                return;
-            }
-
-            if (_inboundReader.TryRead(out var chunk))
-            {
-                _downstreamWaiting = false;
-                Push(_stage._outlet, chunk);
-                return;
-            }
-
-            _inboundReader
-                .WaitToReadAsync()
-                .AsTask()
-                .ContinueWith(t =>
+                if (IsAvailable(_stage._outlet))
                 {
-                    if (t is { IsCompletedSuccessfully: true, Result: true })
-                    {
-                        _onReadReady!();
-                    }
-                    else
-                    {
-                        _onDisconnected!();
-                    }
-                }, TaskContinuationOptions.ExecuteSynchronously);
-        }
+                    Push(_stage._outlet, chunk);
+                }
+            });
 
-        private void HandleDisconnected()
-        {
-            _connected = false;
-            _inboundReader = null;
-            _outboundWriter = null;
+            await foreach (var chunk in reader.ReadAllAsync())
+            {
+                pushCallback(chunk);
+            }
 
-            var delay = TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, _reconnectAttempts++)));
-            var stageRef = _self.Ref;
-            var options = _stage.Options;
-            var manager = _stage.ClientManager;
-
-            Task.Delay(delay).ContinueWith(_ =>
-                manager.Tell(new ClientManager.CreateTcpRunner(options, stageRef)));
+            var disconnected = GetAsyncCallback(() =>
+            {
+                _connected = false;
+                TryConnect();
+            });
+            disconnected();
         }
 
         public override void PostStop()
         {
-            while (_outboundBuffer.TryDequeue(out var chunk))
-            {
-                chunk.Item1.Dispose();
-            }
-        }
-    }
-}
-
-public interface IConnectionItem;
-
-public record InitialInput(TcpOptions Options) : IConnectionItem;
-
-public record DataInput(IMemoryOwner<byte> Memory, int Length) : IConnectionItem;
-
-public sealed class ConnectionV2Stage : GraphStage<FlowShape<IConnectionItem, (IMemoryOwner<byte>, int)>>
-{
-    internal IActorRef ClientManager { get; }
-
-    private readonly Inlet<IConnectionItem> _inlet = new("tcp.in");
-    private readonly Outlet<(IMemoryOwner<byte>, int)> _outlet = new("tcp.out");
-
-    public override FlowShape<IConnectionItem, (IMemoryOwner<byte>, int)> Shape { get; }
-
-    public ConnectionV2Stage(IActorRef clientManager)
-    {
-        ClientManager = clientManager;
-        Shape = new FlowShape<IConnectionItem, (IMemoryOwner<byte>, int)>(_inlet, _outlet);
-    }
-
-    protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
-        => new Logic(this);
-
-    private sealed class Logic : GraphStageLogic
-    {
-        private readonly ConnectionV2Stage _stage;
-        private StageActor? _self;
-        private bool _connected;
-        private bool _downstreamWaiting;
-        private int _reconnectAttempts;
-        private TcpOptions? _options;
-        private readonly Queue<(IMemoryOwner<byte>, int)> _outboundBuffer = new();
-        private ChannelWriter<(IMemoryOwner<byte>, int)>? _outboundWriter;
-        private ChannelReader<(IMemoryOwner<byte>, int)>? _inboundReader;
-
-        private Action? _onReadReady;
-        private Action? _onDisconnected;
-
-        public Logic(ConnectionV2Stage stage) : base(stage.Shape)
-        {
-            _stage = stage;
-
-            SetHandler(stage._inlet,
-                onPush: () =>
-                {
-                    var input = Grab(stage._inlet);
-
-                    if (input is InitialInput initial && _options is null)
-                    {
-                        _options = initial.Options;
-                        Pull(_stage._inlet); 
-                        return;
-                    }
-
-                    (IMemoryOwner<byte> memory, int length) chunk = input switch
-                    {
-                        DataInput d => (d.Memory, d.Length),
-                        _ => throw new InvalidOperationException("Unknown input type")
-                    };
-
-                    if (_connected)
-                    {
-                        _outboundWriter!.TryWrite(chunk);
-                    }
-                    else
-                    {
-                        _outboundBuffer.Enqueue(chunk);
-
-                        if (_options is not null)
-                        {
-                            _stage.ClientManager.Tell(new ClientManager.CreateTcpRunner(_options, _self!.Ref));
-                        }
-                    }
-                },
-                onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
-
-            SetHandler(stage._outlet,
-                onPull: () =>
-                {
-                    _downstreamWaiting = true;
-                    if (_connected)
-                    {
-                        TryReadInbound();
-                    }
-                },
-                onDownstreamFinish: _ => CompleteStage());
-        }
-
-        public override void PreStart()
-        {
-            _onReadReady = GetAsyncCallback(TryReadInbound);
-            _onDisconnected = GetAsyncCallback(HandleDisconnected);
-            _self = GetStageActor(OnMessage);
-        }
-
-        private void OnMessage((IActorRef sender, object msg) args)
-        {
-            switch (args.msg)
-            {
-                case ClientRunner.ClientConnected connected:
-                    _connected = true;
-                    _reconnectAttempts = 0;
-                    _inboundReader = connected.InboundReader;
-                    _outboundWriter = connected.OutboundWriter;
-
-                    while (_outboundBuffer.TryDequeue(out var chunk))
-                    {
-                        _outboundWriter.TryWrite(chunk);
-                    }
-
-                    Pull(_stage._inlet);
-
-                    if (_downstreamWaiting)
-                    {
-                        TryReadInbound();
-                    }
-
-                    break;
-
-                case ClientRunner.ClientDisconnected:
-                    HandleDisconnected();
-                    break;
-            }
-        }
-
-        private void TryReadInbound()
-        {
-            if (_inboundReader is null) return;
-
-            if (_inboundReader.TryRead(out var chunk))
-            {
-                _downstreamWaiting = false;
-                Push(_stage._outlet, chunk);
-                return;
-            }
-
-            _inboundReader
-                .WaitToReadAsync()
-                .AsTask()
-                .ContinueWith(t =>
-                {
-                    if (t is { IsCompletedSuccessfully: true, Result: true })
-                    {
-                        _onReadReady!();
-                    }
-                    else
-                    {
-                        _onDisconnected!();
-                    }
-                }, TaskContinuationOptions.ExecuteSynchronously);
-        }
-
-        private void HandleDisconnected()
-        {
-            _connected = false;
-            _inboundReader = null;
-            _outboundWriter = null;
-
-            if (_options is null) return;
-
-            var delay = TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, _reconnectAttempts++)));
-            var stageRef = _self!.Ref;
-            var options = _options;
-            var manager = _stage.ClientManager;
-
-            Task.Delay(delay).ContinueWith(_ =>
-                manager.Tell(new ClientManager.CreateTcpRunner(options, stageRef)));
-        }
-
-        public override void PostStop()
-        {
-            while (_outboundBuffer.TryDequeue(out var chunk))
+            while (_pendingWrites.TryDequeue(out var chunk))
             {
                 chunk.Item1.Dispose();
             }

@@ -3,12 +3,13 @@ using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.Streams;
 
 public class Http30Engine : IHttpProtocolEngine
 {
-    public BidiFlow<HttpRequestMessage, (IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int), HttpResponseMessage,
+    public BidiFlow<HttpRequestMessage, ITransportItem, (IMemoryOwner<byte>, int), HttpResponseMessage,
         NotUsed> CreateFlow()
     {
         return BidiFlow.FromGraph(GraphDsl.Create(_ =>
@@ -16,11 +17,11 @@ public class Http30Engine : IHttpProtocolEngine
             // TODO: 
             return new BidiShape<
                 HttpRequestMessage,
-                (IMemoryOwner<byte> buffer, int readableBytes),
-                (IMemoryOwner<byte>buffer, int readableBytes),
+                ITransportItem,
+                (IMemoryOwner<byte>, int),
                 HttpResponseMessage>(
                 Sink.Ignore<HttpRequestMessage>().Shape.Inlet,
-                Source.Empty<(IMemoryOwner<byte>, int)>().Shape.Outlet,
+                Source.Empty<ITransportItem>().Shape.Outlet,
                 Sink.Ignore<(IMemoryOwner<byte>, int)>().Shape.Inlet,
                 Source.Empty<HttpResponseMessage>().Shape.Outlet);
         }));

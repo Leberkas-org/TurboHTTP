@@ -4,14 +4,14 @@ namespace TurboHttp.Tests.IO;
 
 public sealed class ClientManagerProviderSelectionTests
 {
-    private static TcpOptions MakeTcp() => new TcpOptions { Host = "localhost", Port = 80 };
-    private static TlsOptions MakeTls() => new TlsOptions { Host = "localhost", Port = 443 };
+    private static TcpOptions MakeTcp() => new() { Host = "localhost", Port = 80 };
+    private static TlsOptions MakeTls() => new() { Host = "localhost", Port = 443 };
 
     private static IClientProvider SelectProvider(IClientProvider? streamProvider, TcpOptions options)
         => streamProvider ?? options switch
         {
-            TlsOptions tls => (IClientProvider)new TlsClientProvider(tls),
-            TcpOptions tcp =>                   new TcpClientProvider(tcp)
+            TlsOptions tls => new TlsClientProvider(tls),
+            _ => new TcpClientProvider(options)
         };
 
     // CLT-001: TcpOptions, no StreamProvider → TcpClientProvider selected
@@ -48,7 +48,10 @@ public sealed class ClientManagerProviderSelectionTests
     private sealed class StubClientProvider : IClientProvider
     {
         public System.Net.EndPoint? RemoteEndPoint => null;
-        public System.IO.Stream GetStream() => throw new NotSupportedException();
-        public void Close() { }
+        public Stream GetStream() => throw new NotSupportedException();
+
+        public void Close()
+        {
+        }
     }
 }

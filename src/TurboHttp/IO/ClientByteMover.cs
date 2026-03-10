@@ -123,23 +123,25 @@ internal static class ClientByteMover
             try
             {
                 while (await state.OutboundReader.WaitToReadAsync(ct).ConfigureAwait(false))
-                while (state.OutboundReader.TryRead(out var item))
                 {
-                    var (buffer, readableBytes) = item;
-                    try
+                    while (state.OutboundReader.TryRead(out var item))
                     {
-                        var workingBuffer = buffer.Memory;
-                        while (readableBytes > 0 && state.Stream is not null)
+                        var (buffer, readableBytes) = item;
+                        try
                         {
-                            var slice = workingBuffer[..readableBytes];
-                            await state.Stream.WriteAsync(slice, ct).ConfigureAwait(false);
-                            readableBytes = 0;
+                            var workingBuffer = buffer.Memory;
+                            while (readableBytes > 0 && state.Stream is not null)
+                            {
+                                var slice = workingBuffer[..readableBytes];
+                                await state.Stream.WriteAsync(slice, ct).ConfigureAwait(false);
+                                readableBytes = 0;
+                            }
                         }
-                    }
-                    finally
-                    {
-                        // free the pooled buffer
-                        buffer.Dispose();
+                        finally
+                        {
+                            // free the pooled buffer
+                            buffer.Dispose();
+                        }
                     }
                 }
             }

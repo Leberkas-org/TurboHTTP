@@ -9,7 +9,7 @@ namespace TurboHttp.Streams;
 
 public class Http10Engine : IHttpProtocolEngine
 {
-    public BidiFlow<HttpRequestMessage, (IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int), HttpResponseMessage,
+    public BidiFlow<HttpRequestMessage, ITransportItem, (IMemoryOwner<byte>, int), HttpResponseMessage,
         NotUsed> CreateFlow()
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
@@ -20,18 +20,20 @@ public class Http10Engine : IHttpProtocolEngine
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
-            b.From(requestBCast).To(encoder.Inlet);
+            var flow = b.Add(Flow.Create<(IMemoryOwner<byte>, int), ITransportItem>()
+                .Select(ITransportItem (x) => new DataItem(x.Item1, x.Item2)));
+            b.From(requestBCast).Via(encoder).To(flow.Inlet);
             b.From(requestBCast).To(correlation.In0);
 
             b.From(decoder.Outlet).To(correlation.In1);
 
             return new BidiShape<
                 HttpRequestMessage,
-                (IMemoryOwner<byte>, int),
+                ITransportItem,
                 (IMemoryOwner<byte>, int),
                 HttpResponseMessage>(
                 requestBCast.In,
-                encoder.Outlet,
+                flow.Outlet,
                 decoder.Inlet,
                 correlation.Out);
         }));

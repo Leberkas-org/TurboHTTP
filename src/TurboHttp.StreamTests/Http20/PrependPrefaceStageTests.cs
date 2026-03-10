@@ -1,5 +1,6 @@
 using System.Buffers;
 using Akka.Streams.Dsl;
+using TurboHttp.IO;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http20;
@@ -8,24 +9,30 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
 {
     private static readonly byte[] PrefaceMagic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
 
-    // Wraps byte[] inputs as (IMemoryOwner<byte>, int) tuples, pushes them through the stage,
-    // and returns each output chunk copied out as a byte[].
+    private static readonly ConnectItem DefaultConnect =
+        new(new TcpOptions { Host = "test.local", Port = 443 });
+
+    // Prepends a ConnectItem (triggers preface), then wraps byte[] inputs as DataItems.
+    // Returns only DataItem outputs, copied out as byte[].
     private async Task<IReadOnlyList<byte[]>> RunAsync(params byte[][] inputs)
     {
-        var source = Source.From(inputs.Select(b =>
+        var items = new List<ITransportItem> { DefaultConnect };
+        items.AddRange(inputs.Select(ITransportItem (b) =>
         {
             IMemoryOwner<byte> owner = new SimpleMemoryOwner(b);
-            return (owner, b.Length);
+            return new DataItem(owner, b.Length);
         }));
+
+        var source = Source.From(items);
 
         var chunks = await source
             .Via(Flow.FromGraph(new PrependPrefaceStage()))
-            .RunWith(Sink.Seq<(IMemoryOwner<byte>, int)>(), Materializer);
+            .RunWith(Sink.Seq<ITransportItem>(), Materializer);
 
-        return chunks.Select(c =>
+        return chunks.OfType<DataItem>().Select(c =>
         {
-            var bytes = c.Item1.Memory.Span[..c.Item2].ToArray();
-            c.Item1.Dispose();
+            var bytes = c.Memory.Memory.Span[..c.Length].ToArray();
+            c.Memory.Dispose();
             return bytes;
         }).ToList();
     }
@@ -41,7 +48,8 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
         Assert.Equal(PrefaceMagic, first[..24]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.5: Bytes 24..32 are a SETTINGS frame header (type=0x4, stream=0)")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "RFC-9113-§3.5: Bytes 24..32 are a SETTINGS frame header (type=0x4, stream=0)")]
     public async Task ST_20_PRE_002_Preface_Settings_FrameHeader()
     {
         var outputs = await RunAsync([0x01]);
@@ -58,7 +66,8 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
         Assert.Equal(0x00, first[32]); // stream ID = 0 (connection-level)
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.5: Second element passed through unchanged after preface emitted")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "RFC-9113-§3.5: Second element passed through unchanged after preface emitted")]
     public async Task ST_20_PRE_003_PassThrough_After_Preface()
     {
         var payload = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
@@ -68,7 +77,8 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
         Assert.Equal(payload, outputs[1]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.5: Preface emitted exactly once (not repeated for second demand)")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "RFC-9113-§3.5: Preface emitted exactly once (not repeated for second demand)")]
     public async Task ST_20_PRE_004_Preface_Emitted_Once()
     {
         var outputs = await RunAsync([0x01], [0x02], [0x03]);

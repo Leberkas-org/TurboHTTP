@@ -29,14 +29,21 @@ internal sealed class
 
         private readonly Queue<HttpResponseMessage> _waiting = new();
 
-        public Logic(CorrelationHttp1XStage http1XStage) : base(http1XStage.Shape)
+        public Logic(CorrelationHttp1XStage stage) : base(stage.Shape)
         {
-            SetHandler(http1XStage._requestIn,
+            SetHandler(stage._requestIn,
                 onPush: () =>
                 {
-                    _pending.Enqueue(Grab(http1XStage._requestIn));
-                    TryCorrelateAndEmit(http1XStage);
-                    Pull(http1XStage._requestIn);
+                    if (_pending.Count == 0)
+                    {
+                        _pending.Enqueue(Grab(stage._requestIn));
+                        TryCorrelateAndEmit(stage);
+                    }
+
+                    if (!HasBeenPulled(stage._requestIn))
+                    {
+                        Pull(stage._requestIn);
+                    }
                 },
                 onUpstreamFinish: () =>
                 {
@@ -46,11 +53,15 @@ internal sealed class
                     }
                 });
 
-            SetHandler(http1XStage._responseIn,
+            SetHandler(stage._responseIn,
                 onPush: () =>
                 {
-                    _waiting.Enqueue(Grab(http1XStage._responseIn));
-                    TryCorrelateAndEmit(http1XStage);
+                    _waiting.Enqueue(Grab(stage._responseIn));
+                    TryCorrelateAndEmit(stage);
+                    if (!HasBeenPulled(stage._responseIn))
+                    {
+                        Pull(stage._responseIn);
+                    }
                 },
                 onUpstreamFinish: () =>
                 {
@@ -60,17 +71,17 @@ internal sealed class
                     }
                 });
 
-            SetHandler(http1XStage._out,
+            SetHandler(stage._out,
                 onPull: () =>
                 {
-                    if (!IsClosed(http1XStage._responseIn) && !HasBeenPulled(http1XStage._responseIn))
+                    if (!IsClosed(stage._responseIn) && !HasBeenPulled(stage._responseIn))
                     {
-                        Pull(http1XStage._responseIn);
+                        Pull(stage._responseIn);
                     }
 
-                    if (!IsClosed(http1XStage._requestIn) && !HasBeenPulled(http1XStage._requestIn))
+                    if (!IsClosed(stage._requestIn) && !HasBeenPulled(stage._requestIn))
                     {
-                        Pull(http1XStage._requestIn);
+                        Pull(stage._requestIn);
                     }
                 });
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Net;
 using System.Net.Http;
 using Akka;
 using Akka.Actor;
@@ -17,6 +18,9 @@ public class Engine
     {
         return Flow.FromGraph(GraphDsl.Create(builder =>
         {
+            var enricher =
+                builder.Add(new RequestEnricherStage(null, HttpVersion.Version11, new HttpRequestMessage().Headers));
+
             var partition = builder.Add(new Partition<HttpRequestMessage>(4, msg => msg.Version switch
             {
                 { Major: 3, Minor: 0 } => 3,
@@ -26,25 +30,25 @@ public class Engine
             }));
             var hub = builder.Add(new Merge<HttpResponseMessage>(4));
 
-            var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager, options));
-            var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(4, clientManager, options));
-            var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(1, clientManager, options));
-            var http30 = builder.Add(BuildProtocolFlow<Http30Engine>(1, clientManager, options));
+            var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager));
+            var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(4, clientManager));
+            var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(1, clientManager));
+            var http30 = builder.Add(BuildProtocolFlow<Http30Engine>(1, clientManager));
 
+            builder.From(enricher.Outlet).To(partition);
             builder.From(partition.Out(0)).Via(http10).To(hub);
             builder.From(partition.Out(1)).Via(http11).To(hub);
             builder.From(partition.Out(2)).Via(http20).To(hub);
             builder.From(partition.Out(3)).Via(http30).To(hub);
 
-            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(partition.In, hub.Out);
+            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(enricher.Inlet, hub.Out);
         }));
     }
 
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildProtocolFlow<TEngine>(
         int connectionCount,
         IActorRef clientManager,
-        TcpOptions options,
-        Func<Flow<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int), NotUsed>>? transportFactory = null)
+        Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? transportFactory = null)
         where TEngine : IHttpProtocolEngine, new()
     {
         return GraphDsl.Create(builder =>
@@ -54,7 +58,7 @@ public class Engine
 
             for (var i = 0; i < connectionCount; i++)
             {
-                var tcp = transportFactory?.Invoke() ?? Flow.FromGraph(new ConnectionStage(clientManager, options));
+                var tcp = transportFactory?.Invoke() ?? Flow.FromGraph(new ConnectionStage(clientManager));
                 var conn = builder.Add(new TEngine().CreateFlow().Join(tcp));
                 builder.From(balance.Out(i)).Via(conn).To(merge.In(i));
             }

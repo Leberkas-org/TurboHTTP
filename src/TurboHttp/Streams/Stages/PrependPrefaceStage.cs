@@ -1,19 +1,21 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.IO;
 using TurboHttp.Protocol;
 
 namespace TurboHttp.Streams.Stages;
 
 // ── RFC 7540 §3.5 — prepend connection preface to the first outbound bytes ──
-public sealed class PrependPrefaceStage : GraphStage<FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)>>
+public sealed class PrependPrefaceStage : GraphStage<FlowShape<ITransportItem, ITransportItem>>
 {
-    private readonly Inlet<(IMemoryOwner<byte>, int)> _inlet = new("preface.in");
-    private readonly Outlet<(IMemoryOwner<byte>, int)> _outlet = new("preface.out");
+    private readonly Inlet<ITransportItem> _inlet = new("preface.in");
+    private readonly Outlet<ITransportItem> _outlet = new("preface.out");
 
-    public override FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)> Shape
+    public override FlowShape<ITransportItem, ITransportItem> Shape
         => new(_inlet, _outlet);
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -21,28 +23,36 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<(IMemoryOwner<byt
 
     private sealed class Logic : GraphStageLogic
     {
-        private bool _prefaceSent;
+        private readonly Dictionary<string, bool> _prefaceSentHost = new();
 
         public Logic(PrependPrefaceStage stage) : base(stage.Shape)
         {
-            SetHandler(stage._outlet, onPull: () =>
-            {
-                if (!_prefaceSent)
-                {
-                    _prefaceSent = true;
-                    var preface = BuildHttp2ConnectionPreface();
-                    var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
-                    ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
-                    Push(stage._outlet, (owner, preface.Length));
-                }
-                else
-                {
-                    Pull(stage._inlet);
-                }
-            });
+            SetHandler(stage._outlet, onPull: () => Pull(stage._inlet));
 
             SetHandler(stage._inlet,
-                onPush: () => Push(stage._outlet, Grab(stage._inlet)),
+                onPush: () =>
+                {
+                    var item = Grab(stage._inlet);
+                    if (item is ConnectItem connectItem)
+                    {
+                        var prefix = connectItem.Options is TlsOptions ? "TLS" : "TCP";
+                        var key = $"{prefix}:{connectItem.Options.Host}:{connectItem.Options.Port}";
+                        if (_prefaceSentHost.ContainsKey(key))
+                        {
+                            return;
+                        }
+
+                        var preface = BuildHttp2ConnectionPreface();
+                        var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
+                        ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
+                        EmitMultiple(stage._outlet, [item, new DataItem(owner, preface.Length)]);
+                        _prefaceSentHost[key] = true;
+                    }
+                    else
+                    {
+                        Push(stage._outlet, item);
+                    }
+                },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: FailStage);
         }

@@ -8,26 +8,27 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using Akka.TestKit.Xunit2;
 using TurboHttp.Protocol;
+using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests;
 
 public sealed class
-    EngineFakeConnectionStage : GraphStage<FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)>>
+    EngineFakeConnectionStage : GraphStage<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>>
 {
     private readonly Func<byte[]> _responseFactory;
 
     public Channel<(IMemoryOwner<byte>, int)> OutboundChannel { get; } =
         Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
 
-    public Inlet<(IMemoryOwner<byte>, int)> In { get; } = new("fake-tcp.in");
+    public Inlet<ITransportItem> In { get; } = new("fake-tcp.in");
     public Outlet<(IMemoryOwner<byte>, int)> Out { get; } = new("fake-tcp.out");
 
-    public override FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)> Shape { get; }
+    public override FlowShape<ITransportItem, (IMemoryOwner<byte>, int)> Shape { get; }
 
     public EngineFakeConnectionStage(Func<byte[]> responseFactory)
     {
         _responseFactory = responseFactory;
-        Shape = new FlowShape<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int)>(In, Out);
+        Shape = new FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -45,7 +46,8 @@ public sealed class
             SetHandler(stage.In,
                 onPush: () =>
                 {
-                    var (owner, length) = Grab(stage.In);
+                    var item = Grab(stage.In);
+                    if (item is not DataItem(var owner, var length, _)) return;
 
                     var copy = new byte[length];
                     owner.Memory.Span[..length].CopyTo(copy);
@@ -167,13 +169,13 @@ public abstract class EngineTestBase : TestKit
     }
 
     protected async Task<(HttpResponseMessage Response, string RawRequest)> SendAsync(
-        BidiFlow<HttpRequestMessage, (IMemoryOwner<byte>, int),
+        BidiFlow<HttpRequestMessage, ITransportItem,
             (IMemoryOwner<byte>, int), HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         Func<byte[]> responseFactory)
     {
         var fake = new EngineFakeConnectionStage(responseFactory);
-        var flow = engine.Join(Flow.FromGraph<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int), NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -193,14 +195,14 @@ public abstract class EngineTestBase : TestKit
     }
 
     protected async Task<(List<HttpResponseMessage> Responses, string RawRequests)> SendManyAsync(
-        BidiFlow<HttpRequestMessage, (IMemoryOwner<byte>, int),
+        BidiFlow<HttpRequestMessage, ITransportItem,
             (IMemoryOwner<byte>, int), HttpResponseMessage, NotUsed> engine,
         IEnumerable<HttpRequestMessage> requests,
         Func<byte[]> responseFactory,
         int expectedCount)
     {
         var fake = new EngineFakeConnectionStage(responseFactory);
-        var flow = engine.Join(Flow.FromGraph<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int), NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -231,12 +233,13 @@ public abstract class EngineTestBase : TestKit
     /// Runs the H2 engine against pre-queued server frames, sending multiple requests.
     /// Returns all decoded responses and all outbound H2 frames (excluding the client preface chunk).
     /// </summary>
-    protected async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2ManyAsync(
-        BidiFlow<HttpRequestMessage, (IMemoryOwner<byte>, int),
-            (IMemoryOwner<byte>, int), HttpResponseMessage, NotUsed> engine,
-        IEnumerable<HttpRequestMessage> requests,
-        int expectedCount,
-        params byte[][] serverFrames)
+    protected async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
+        SendH2ManyAsync(
+            BidiFlow<HttpRequestMessage, (IMemoryOwner<byte>, int),
+                (IMemoryOwner<byte>, int), HttpResponseMessage, NotUsed> engine,
+            IEnumerable<HttpRequestMessage> requests,
+            int expectedCount,
+            params byte[][] serverFrames)
     {
         var fake = new H2FakeConnectionStage(serverFrames);
         var flow = engine.Join(Flow.FromGraph<(IMemoryOwner<byte>, int), (IMemoryOwner<byte>, int), NotUsed>(fake));

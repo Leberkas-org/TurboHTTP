@@ -74,8 +74,7 @@ internal sealed class RequestEnricherStage
             {
                 if (_stage._baseAddress is null)
                 {
-                    throw new InvalidOperationException(
-                        "RequestUri is null or relative but no BaseAddress is configured.");
+                    throw new InvalidOperationException("RequestUri is null or relative but no BaseAddress is configured.");
                 }
 
                 request.RequestUri = request.RequestUri is null
@@ -84,8 +83,7 @@ internal sealed class RequestEnricherStage
             }
 
             // Rule 2: Version — only override when request is still at the 1.1 default
-            if (request.Version == HttpVersion.Version11 &&
-                _stage._defaultVersion != HttpVersion.Version11)
+            if (request.Version == HttpVersion.Version11 && _stage._defaultVersion != HttpVersion.Version11)
             {
                 request.Version = _stage._defaultVersion;
             }

@@ -202,7 +202,8 @@ public sealed class Phase60ValidationGateTests
     public void Should_RejectResponse_When_BothTransferEncodingAndContentLengthPresent()
     {
         var decoder = new Http11Decoder();
-        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nContent-Length: 5\r\n\r\n5\r\nhello\r\n0\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nContent-Length: 5\r\n\r\n5\r\nhello\r\n0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         // Decoder throws to signal protocol violation (request-smuggling risk)
@@ -241,7 +242,8 @@ public sealed class Phase60ValidationGateTests
     public async Task Should_DecodeFullBody_When_ChunkedFraming()
     {
         var decoder = new Http11Decoder();
-        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n6\r\n World\r\n0\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n6\r\n World\r\n0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         var ok = decoder.TryDecode(bytes, out var responses);
@@ -416,7 +418,8 @@ public sealed class Phase60ValidationGateTests
     {
         var decoder = new Http11Decoder();
         // Each letter in its own chunk
-        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nA\r\n1\r\nB\r\n1\r\nC\r\n0\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nA\r\n1\r\nB\r\n1\r\nC\r\n0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         var ok = decoder.TryDecode(bytes, out var responses);
@@ -494,7 +497,8 @@ public sealed class Phase60ValidationGateTests
     public async Task Should_IgnoreChunkExtension_When_QuotedValue()
     {
         var decoder = new Http11Decoder();
-        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=\"quoted value\"\r\nhello\r\n0\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5;ext=\"quoted value\"\r\nhello\r\n0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         var ok = decoder.TryDecode(bytes, out var responses);
@@ -511,7 +515,8 @@ public sealed class Phase60ValidationGateTests
     public void Should_AccessTrailer_When_TrailerAfterFinalChunk()
     {
         var decoder = new Http11Decoder();
-        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nX-Checksum: abc123\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\nX-Checksum: abc123\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         var ok = decoder.TryDecode(bytes, out var responses);
@@ -526,7 +531,8 @@ public sealed class Phase60ValidationGateTests
     public void Should_AccessMultipleTrailers_When_MultipleTrailerFields()
     {
         var decoder = new Http11Decoder();
-        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nfoo\r\n0\r\nX-Trailer-A: val-a\r\nX-Trailer-B: val-b\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nfoo\r\n0\r\nX-Trailer-A: val-a\r\nX-Trailer-B: val-b\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         var ok = decoder.TryDecode(bytes, out var responses);
@@ -594,7 +600,8 @@ public sealed class Phase60ValidationGateTests
     {
         var decoder = new Http11Decoder();
         // RFC 9112 §6.3: if both Transfer-Encoding and Content-Length are present, must reject
-        const string raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n";
+        const string raw =
+            "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw).AsMemory();
 
         Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(bytes, out _));
@@ -679,8 +686,8 @@ public sealed class Phase60ValidationGateTests
         }
 
         if (!string.IsNullOrEmpty(body) && !headers.Any(h =>
-            h.Name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) ||
-            h.Name.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)))
+                h.Name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) ||
+                h.Name.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)))
         {
             sb.Append($"Content-Length: {Encoding.UTF8.GetByteCount(body)}\r\n");
         }

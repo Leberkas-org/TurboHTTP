@@ -96,12 +96,12 @@
 **File:** `Streams/ExtractOptionsStageTests.cs`
 **RFC:** N/A — internal architecture (connection initialization)
 
-- [ ] `EXT-001`: First request → Out0 emits `InitialInput(TcpOptions)`, Out1 emits `RequestMessage`
-- [ ] `EXT-002`: Second request → only Out1 emits (no repeated options event)
-- [ ] `EXT-003`: 5 requests → exactly 1× Out0, 5× Out1
-- [ ] `EXT-004`: Options extracted only on very first request (`_initialSent` flag)
-- [ ] `EXT-005`: UpstreamFinish → stage terminates cleanly
-- [ ] `EXT-006`: Pending request after InitialInput correctly delivered via Out1
+- [x] `EXT-001`: First request → Out0 emits `InitialInput(TcpOptions)`, Out1 emits `RequestMessage`
+- [x] `EXT-002`: Second request → only Out1 emits (no repeated options event)
+- [x] `EXT-003`: 5 requests → exactly 1× Out0, 5× Out1
+- [x] `EXT-004`: Options extracted only on very first request (`_initialSent` flag)
+- [x] `EXT-005`: UpstreamFinish → stage terminates cleanly
+- [x] `EXT-006`: Pending request after InitialInput correctly delivered via Out1
 
 **Test pattern:**
 ```csharp
