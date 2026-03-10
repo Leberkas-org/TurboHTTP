@@ -254,11 +254,11 @@
 **File:** `Http11/Http11StageStatusCodeTests.cs`
 **RFC:** 9110 §15 — Status Codes
 
-- [ ] `11SC-001`: 200 OK → StatusCode=200
-- [ ] `11SC-002`: 301 Moved Permanently → StatusCode=301, Location header present
-- [ ] `11SC-003`: 404 Not Found → StatusCode=404
-- [ ] `11SC-004`: 500 Internal Server Error → StatusCode=500
-- [ ] `11SC-005`: 204 No Content → StatusCode=204, no body
+- [x] `11SC-001`: 200 OK → StatusCode=200
+- [x] `11SC-002`: 301 Moved Permanently → StatusCode=301, Location header present
+- [x] `11SC-003`: 404 Not Found → StatusCode=404
+- [x] `11SC-004`: 500 Internal Server Error → StatusCode=500
+- [x] `11SC-005`: 204 No Content → StatusCode=204, no body
 
 ---
 
