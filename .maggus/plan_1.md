@@ -75,13 +75,13 @@
 **File:** `Http20/CorrelationHttp20StageTests.cs`
 **RFC:** 9113 §5.1 — Stream Multiplexing
 
-- [ ] `COR20-001`: Single (Request, streamId=1) + (Response, streamId=1) → correctly correlated
-- [ ] `COR20-002`: 3 requests (IDs 1,3,5) + 3 responses (IDs 5,1,3) → out-of-order correlation
-- [ ] `COR20-003`: Response stream ID with no matching request → stays in queue
-- [ ] `COR20-004`: Reference equality: `response.RequestMessage` is exactly the sent object
-- [ ] `COR20-005`: 10 interleaved requests/responses → all correctly matched
-- [ ] `COR20-006`: Stage terminates on empty dictionaries after UpstreamFinish
-- [ ] `COR20-007`: Interleaved push: Request(1), Response(3), Request(3) → correlation immediately on match
+- [x] `COR20-001`: Single (Request, streamId=1) + (Response, streamId=1) → correctly correlated
+- [x] `COR20-002`: 3 requests (IDs 1,3,5) + 3 responses (IDs 5,1,3) → out-of-order correlation
+- [x] `COR20-003`: Response stream ID with no matching request → stays in queue
+- [x] `COR20-004`: Reference equality: `response.RequestMessage` is exactly the sent object
+- [x] `COR20-005`: 10 interleaved requests/responses → all correctly matched
+- [x] `COR20-006`: Stage terminates on empty dictionaries after UpstreamFinish
+- [x] `COR20-007`: Interleaved push: Request(1), Response(3), Request(3) → correlation immediately on match
 
 **Test pattern:**
 ```csharp
