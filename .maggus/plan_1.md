@@ -312,11 +312,11 @@
 **File:** `Http20/Http20ConnectionStageSettingsTests.cs`
 **RFC:** 9113 §6.5 — SETTINGS
 
-- [ ] `20CS-001`: Server SETTINGS received → SETTINGS ACK sent
-- [ ] `20CS-002`: SETTINGS with ACK flag → no ACK sent back
-- [ ] `20CS-003`: INITIAL_WINDOW_SIZE parameter → `_initialStreamWindow` updated
-- [ ] `20CS-004`: SETTINGS frame forwarded downstream
-- [ ] `20CS-005`: Multiple consecutive SETTINGS → one ACK each
+- [x] `20CS-001`: Server SETTINGS received → SETTINGS ACK sent
+- [x] `20CS-002`: SETTINGS with ACK flag → no ACK sent back
+- [x] `20CS-003`: INITIAL_WINDOW_SIZE parameter → `_initialStreamWindow` updated
+- [x] `20CS-004`: SETTINGS frame forwarded downstream
+- [x] `20CS-005`: Multiple consecutive SETTINGS → one ACK each
 
 ---
 
