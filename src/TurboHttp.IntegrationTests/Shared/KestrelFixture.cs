@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
@@ -475,6 +476,82 @@ public sealed class KestrelFixture : IAsyncLifetime
             var body = "ok"u8.ToArray();
             ctx.Response.ContentLength = body.Length;
             return Results.Content("ok", "text/plain");
+        });
+
+        // ── Redirect Routes ─────────────────────────────────────────────────
+        RegisterRedirectRoutes(app);
+    }
+
+    internal static void RegisterRedirectRoutes(WebApplication app)
+    {
+        // GET /redirect/{code}/{target} → responds with status {code}, Location: {target}
+        app.MapGet("/redirect/{code:int}/{*target}", (HttpContext ctx, int code, string target) =>
+        {
+            ctx.Response.StatusCode = code;
+            ctx.Response.Headers.Location = "/" + target;
+            return Results.Empty;
+        });
+
+        // GET /redirect/chain/{n} → chain of n redirects ending at /hello
+        // /redirect/chain/3 → 302 Location: /redirect/chain/2
+        // /redirect/chain/1 → 302 Location: /hello
+        app.MapGet("/redirect/chain/{n:int}", (HttpContext ctx, int n) =>
+        {
+            if (n <= 1)
+            {
+                ctx.Response.StatusCode = 302;
+                ctx.Response.Headers.Location = "/hello";
+            }
+            else
+            {
+                ctx.Response.StatusCode = 302;
+                ctx.Response.Headers.Location = $"/redirect/chain/{n - 1}";
+            }
+
+            return Results.Empty;
+        });
+
+        // GET /redirect/loop → infinite redirect loop (redirects back to itself)
+        app.MapGet("/redirect/loop", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 302;
+            ctx.Response.Headers.Location = "/redirect/loop";
+            return Results.Empty;
+        });
+
+        // GET /redirect/relative → redirect with relative Location header
+        app.MapGet("/redirect/relative", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 302;
+            ctx.Response.Headers.Location = "hello";
+            return Results.Empty;
+        });
+
+        // GET /redirect/cross-scheme → HTTPS → HTTP downgrade redirect
+        app.MapGet("/redirect/cross-scheme", (HttpContext ctx) =>
+        {
+            var port = ctx.Connection.LocalPort;
+            ctx.Response.StatusCode = 302;
+            ctx.Response.Headers.Location = $"http://127.0.0.1:{port}/hello";
+            return Results.Empty;
+        });
+
+        // POST /redirect/307 → 307 preserves method & body
+        // Redirects to POST /echo so the body is echoed back
+        app.MapPost("/redirect/307", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 307;
+            ctx.Response.Headers.Location = "/echo";
+            return Results.Empty;
+        });
+
+        // POST /redirect/303 → 303 changes to GET
+        // Redirects to GET /hello (303 forces GET)
+        app.MapPost("/redirect/303", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 303;
+            ctx.Response.Headers.Location = "/hello";
+            return Results.Empty;
         });
     }
 }

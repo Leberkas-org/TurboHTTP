@@ -162,16 +162,16 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a test author, I want Kestrel fixture routes for redirect scenarios so that integration tests can verify redirect behavior end-to-end.
 
 **Acceptance Criteria:**
-- [ ] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
-- [ ] `GET /redirect/{code}/{target}` — responds with status `{code}`, `Location: {target}`
-- [ ] `GET /redirect/chain/{n}` — chain of n redirects ending at `/hello`
-- [ ] `GET /redirect/loop` — infinite redirect loop
-- [ ] `GET /redirect/relative` — redirect with relative Location header
-- [ ] `GET /redirect/cross-scheme` — HTTPS → HTTP downgrade redirect
-- [ ] `POST /redirect/307` — 307 preserves method & body
-- [ ] `POST /redirect/303` — 303 changes to GET
-- [ ] Unit tests written and successful
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
+- [x] `GET /redirect/{code}/{target}` — responds with status `{code}`, `Location: {target}`
+- [x] `GET /redirect/chain/{n}` — chain of n redirects ending at `/hello`
+- [x] `GET /redirect/loop` — infinite redirect loop
+- [x] `GET /redirect/relative` — redirect with relative Location header
+- [x] `GET /redirect/cross-scheme` — HTTPS → HTTP downgrade redirect
+- [x] `POST /redirect/307` — 307 preserves method & body
+- [x] `POST /redirect/303` — 303 changes to GET
+- [x] Unit tests written and successful
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-013: Kestrel Cookie Routes
 **Description:** As a test author, I want Kestrel fixture routes for cookie scenarios so that integration tests can verify cookie injection, storage, and attribute handling.

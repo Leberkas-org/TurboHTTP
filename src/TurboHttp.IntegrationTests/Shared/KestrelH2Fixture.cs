@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
@@ -264,5 +265,8 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
             ctx.Response.ContentLength = 0;
             return Results.Empty;
         });
+
+        // ── Redirect Routes ─────────────────────────────────────────────────
+        KestrelFixture.RegisterRedirectRoutes(app);
     }
 }
