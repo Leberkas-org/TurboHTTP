@@ -293,9 +293,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Retry routes already registered in `KestrelFixture.RegisterRetryRoutes()` ([KestrelFixture.cs L663-L727](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/retry/408`, `/retry/503`, `/retry/503-retry-after/{seconds}`, `/retry/503-retry-after-date`, `/retry/succeed-after/{n}`, `POST /retry/non-idempotent-503`. Stateful counter uses `ConcurrentDictionary` with `?key=` param.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http10/05_Http10RetryTests.cs`
-- [ ] 6 tests: GET retry 503, GET retry 408, POST no retry 503, Retry-After, max count, succeed after N
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10RetryTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http10/05_Http10RetryTests.cs`
+- [x] 6 tests: GET retry 503, GET retry 408, POST no retry 503, Retry-After, max count, succeed after N
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10RetryTests"`
 
 ### TASK-023: Http10Engine Content Encoding Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
