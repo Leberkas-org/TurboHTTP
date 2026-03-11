@@ -510,10 +510,10 @@
 **File:** `Stages/StageLifecycleTests.cs`
 **RFC:** N/A — Akka.Streams compliance
 
-- [ ] `LIFE-001`: UpstreamFinish → stage terminates without exception
-- [ ] `LIFE-002`: DownstreamCancel → stage shuts down cleanly
-- [ ] `LIFE-003`: Exception in encoder → stage fails with meaningful error message
-- [ ] `LIFE-004`: Exception in decoder → stage fails with HttpDecoderException
+- [x] `LIFE-001`: UpstreamFinish → stage terminates without exception
+- [x] `LIFE-002`: DownstreamCancel → stage shuts down cleanly
+- [x] `LIFE-003`: Exception in encoder → stage fails with meaningful error message
+- [x] `LIFE-004`: Exception in decoder → stage fails with HttpDecoderException
 
 ---
 
