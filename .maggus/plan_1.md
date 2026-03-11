@@ -458,11 +458,11 @@
 **File:** `Http20/Http20EngineRfcRoundTripTests.cs`
 **RFC:** 9113 (combined)
 
-- [ ] `20ENG-001`: GET → 200 — preface + SETTINGS + HEADERS round-trip
-- [ ] `20ENG-002`: POST with body → HEADERS + DATA frames
-- [ ] `20ENG-003`: gzip-compressed response → body correctly decompressed
-- [ ] `20ENG-004`: Server SETTINGS ACK → correct in outbound frames
-- [ ] `20ENG-005`: 3 requests → 3 responses with correct stream IDs
+- [x] `20ENG-001`: GET → 200 — preface + SETTINGS + HEADERS round-trip
+- [x] `20ENG-002`: POST with body → HEADERS + DATA frames
+- [x] `20ENG-003`: gzip-compressed response → body correctly decompressed
+- [x] `20ENG-004`: Server SETTINGS ACK → correct in outbound frames
+- [x] `20ENG-005`: 3 requests → 3 responses with correct stream IDs
 
 ---
 

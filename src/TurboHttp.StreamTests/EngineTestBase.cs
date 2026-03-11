@@ -159,6 +159,74 @@ public sealed class H2FakeConnectionStage : GraphStage<FlowShape<(IMemoryOwner<b
     }
 }
 
+/// <summary>
+/// H2-aware fake TCP stage that accepts <see cref="ITransportItem"/> input (as produced by Http20Engine).
+/// Inbound (In): captures outbound DataItem bytes for inspection, always pulls more.
+/// Outbound (Out): serves pre-queued server frames when downstream pulls.
+/// </summary>
+public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>>
+{
+    private readonly IReadOnlyList<byte[]> _serverFrames;
+
+    public Channel<(IMemoryOwner<byte>, int)> OutboundChannel { get; } =
+        Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+
+    public Inlet<ITransportItem> In { get; } = new("h2-engine-fake.in");
+    public Outlet<(IMemoryOwner<byte>, int)> Out { get; } = new("h2-engine-fake.out");
+
+    public override FlowShape<ITransportItem, (IMemoryOwner<byte>, int)> Shape { get; }
+
+    public H2EngineFakeConnectionStage(params byte[][] serverFrames)
+    {
+        _serverFrames = serverFrames;
+        Shape = new FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>(In, Out);
+    }
+
+    protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
+
+    private sealed class Logic : GraphStageLogic
+    {
+        private readonly H2EngineFakeConnectionStage _stage;
+        private int _serverFrameIndex;
+
+        public Logic(H2EngineFakeConnectionStage stage) : base(stage.Shape)
+        {
+            _stage = stage;
+
+            SetHandler(stage.In,
+                onPush: () =>
+                {
+                    var item = Grab(stage.In);
+                    if (item is DataItem(var owner, var length, _))
+                    {
+                        var copy = new byte[length];
+                        owner.Memory.Span[..length].CopyTo(copy);
+                        stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), length));
+                        owner.Dispose();
+                    }
+
+                    Pull(stage.In);
+                },
+                onUpstreamFinish: CompleteStage,
+                onUpstreamFailure: FailStage);
+
+            SetHandler(stage.Out,
+                onPull: () =>
+                {
+                    if (_serverFrameIndex < _stage._serverFrames.Count)
+                    {
+                        var frameBytes = _stage._serverFrames[_serverFrameIndex++];
+                        IMemoryOwner<byte> frameOwner = new SimpleMemoryOwner(frameBytes);
+                        Push(stage.Out, (frameOwner, frameBytes.Length));
+                    }
+                },
+                onDownstreamFinish: _ => CompleteStage());
+        }
+
+        public override void PreStart() => Pull(_stage.In);
+    }
+}
+
 public abstract class EngineTestBase : TestKit
 {
     protected readonly IMaterializer Materializer;
@@ -272,6 +340,84 @@ public abstract class EngineTestBase : TestKit
             }
 
             outboundBytes.AddRange(bytes);
+        }
+
+        var frames = outboundBytes.Count > 0
+            ? new Http2FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
+            : [];
+
+        return (results, frames);
+    }
+
+    /// <summary>
+    /// Runs Http20Engine (ITransportItem variant) against pre-queued server frames.
+    /// Returns the decoded response and all outbound H2 frames.
+    /// </summary>
+    protected async Task<(HttpResponseMessage Response, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2EngineAsync(
+        BidiFlow<HttpRequestMessage, ITransportItem,
+            (IMemoryOwner<byte>, int), HttpResponseMessage, NotUsed> engine,
+        HttpRequestMessage request,
+        params byte[][] serverFrames)
+    {
+        var fake = new H2EngineFakeConnectionStage(serverFrames);
+        var flow = engine.Join(Flow.FromGraph<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>(fake));
+
+        var tcs = new TaskCompletionSource<HttpResponseMessage>();
+
+        _ = Source.Single(request)
+            .Via(flow)
+            .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
+
+        var response = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var outboundBytes = new List<byte>();
+        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        {
+            outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
+        }
+
+        var frames = outboundBytes.Count > 0
+            ? new Http2FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
+            : [];
+
+        return (response, frames);
+    }
+
+    /// <summary>
+    /// Runs Http20Engine (ITransportItem variant) with multiple requests against pre-queued server frames.
+    /// Returns all decoded responses and all outbound H2 frames.
+    /// </summary>
+    protected async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
+        SendH2EngineAsyncMany(
+            BidiFlow<HttpRequestMessage, ITransportItem,
+                (IMemoryOwner<byte>, int), HttpResponseMessage, NotUsed> engine,
+            IEnumerable<HttpRequestMessage> requests,
+            int expectedCount,
+            params byte[][] serverFrames)
+    {
+        var fake = new H2EngineFakeConnectionStage(serverFrames);
+        var flow = engine.Join(Flow.FromGraph<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>(fake));
+
+        var results = new List<HttpResponseMessage>();
+        var tcs = new TaskCompletionSource();
+
+        _ = Source.From(requests)
+            .Via(flow)
+            .RunWith(Sink.ForEach<HttpResponseMessage>(res =>
+            {
+                results.Add(res);
+                if (results.Count == expectedCount)
+                {
+                    tcs.TrySetResult();
+                }
+            }), Materializer);
+
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var outboundBytes = new List<byte>();
+        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        {
+            outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
         }
 
         var frames = outboundBytes.Count > 0
