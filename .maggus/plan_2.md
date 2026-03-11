@@ -315,10 +315,10 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Adapt `SendAsync` pattern from [`01_Http10EngineBasicTests.cs`](../src/TurboHttp.IntegrationTests/Http10/01_Http10EngineBasicTests.cs) — replace `Http10Engine` with `Http11Engine`, set `Version = HttpVersion.Version11`. Uses same `TestKit` base, `IClassFixture<KestrelFixture>`, `ConnectionStage` + `ClientManager`. Basic routes: `/hello`, `/any`, `/echo`, `/status/{code}`, `/large/{kb}`, `/headers/echo`, `/multiheader`.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http11/01_Http11BasicTests.cs`
-- [ ] Uses `KestrelFixture` with `request.Version = HttpVersion.Version11`
-- [ ] 10 tests: GET+Host, HEAD, POST, PUT, DELETE, PATCH, OPTIONS, status codes, large (1MB), header round-trip
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11BasicTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http11/01_Http11BasicTests.cs`
+- [x] Uses `KestrelFixture` with `request.Version = HttpVersion.Version11`
+- [x] 10 tests: GET+Host, HEAD, POST, PUT, DELETE, PATCH, OPTIONS, status codes, large (1MB), header round-trip
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11BasicTests"`
 
 ### TASK-025: Http11Engine Chunked Transfer Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
