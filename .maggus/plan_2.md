@@ -235,17 +235,17 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-017: Kestrel Connection Reuse Routes
 **Description:** As a test author, I want Kestrel fixture routes for connection reuse scenarios so that integration tests can verify keep-alive and close behavior.
 
+> **Infra note:** `KestrelFixture.RegisterConnectionReuseRoutes()` already exists with all 4 routes implemented ([KestrelFixture.cs L1000-L1039](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)), but is **not called** from `RegisterRoutes()`. Only a one-line call needs to be added.
+
 **Acceptance Criteria:**
-- [ ] Routes added to `KestrelFixture` only (HTTP/1.x specific)
-- [ ] `GET /conn/keep-alive` — explicit Connection: Keep-Alive header (HTTP/1.0)
-- [ ] `GET /conn/close` — explicit Connection: close header
-- [ ] `GET /conn/default` — no Connection header (HTTP/1.1 default keep-alive)
-- [ ] `GET /conn/upgrade-101` — 101 Switching Protocols (connection not reusable)
+- [ ] `RegisterConnectionReuseRoutes(app)` call added to `KestrelFixture.RegisterRoutes()` (routes already implemented)
 - [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-018: Http10Engine Basic Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine basic RFC 1945 compliance so that GET, HEAD, POST, PUT, DELETE, status codes, and large bodies are verified end-to-end.
+
+> **Infra:** See [`01_Http10EngineBasicTests.cs`](../src/TurboHttp.IntegrationTests/Http10/01_Http10EngineBasicTests.cs) — this is the **reference implementation** for all integration tests. Uses `TestKit` base class ([TestKit.cs](../src/TurboHttp.IntegrationTests/TestKit.cs)), `IClassFixture<KestrelFixture>`, and a `SendAsync` helper that wires `Http10Engine.CreateFlow()` → `ConnectionStage` → `ClientManager` with `Source.Queue` + `Sink.First`.
 
 **Acceptance Criteria:**
 - [x] File created: `src/TurboHttp.IntegrationTests/Http10/01_Http10BasicTests.cs`
@@ -257,6 +257,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine connection management so that HTTP/1.0 no-keep-alive default and opt-in keep-alive are verified.
 
+> **Infra:** Follow `SendAsync` pattern from [`01_Http10EngineBasicTests.cs`](../src/TurboHttp.IntegrationTests/Http10/01_Http10EngineBasicTests.cs). Connection reuse routes require TASK-017 (wiring `RegisterConnectionReuseRoutes` call). Uses `KestrelFixture` routes: `/conn/keep-alive`, `/conn/close`, `/conn/default`.
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http10/02_Http10ConnectionTests.cs`
 - [ ] 5 tests: no keep-alive default, Keep-Alive opt-in, sequential requests new connection, reuse with Keep-Alive, server close overrides
@@ -265,6 +267,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-020: Http10Engine Redirect Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine redirect handling so that 301/302 follows, method rewriting, chains, loops, and cross-origin header stripping are verified.
+
+> **Infra:** Redirect routes already registered in `KestrelFixture.RegisterRedirectRoutes()` ([KestrelFixture.cs L575-L658](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/redirect/{code}/{target}`, `/redirect/chain/{n}`, `/redirect/loop`, `/redirect/relative`, `/redirect/cross-scheme`, `POST /redirect/307`, `POST /redirect/303`, `POST /redirect/302`, `/redirect/cross-origin`.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http10/03_Http10RedirectTests.cs`
@@ -275,6 +279,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine cookie handling so that Set-Cookie storage, accumulation, Path restriction, deletion, expiry, and cross-redirect persistence are verified.
 
+> **Infra:** Cookie routes already registered in `KestrelFixture.RegisterCookieRoutes()` ([KestrelFixture.cs L489-L573](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/cookie/set/{name}/{value}`, `/cookie/echo`, `/cookie/set-multiple`, `/cookie/delete/{name}`, `/cookie/set-expires/...`, `/cookie/set-path/...`, etc.
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http10/04_Http10CookieTests.cs`
 - [ ] 6 tests: Set-Cookie stored+sent, multiple cookies, Path attribute, Max-Age=0 deletion, expired not sent, cookies across redirects
@@ -283,6 +289,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-022: Http10Engine Retry Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine retry handling so that idempotent retry on 503/408, non-retry on POST, Retry-After, max count, and succeed-after-N are verified.
+
+> **Infra:** Retry routes already registered in `KestrelFixture.RegisterRetryRoutes()` ([KestrelFixture.cs L663-L727](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/retry/408`, `/retry/503`, `/retry/503-retry-after/{seconds}`, `/retry/503-retry-after-date`, `/retry/succeed-after/{n}`, `POST /retry/non-idempotent-503`. Stateful counter uses `ConcurrentDictionary` with `?key=` param.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http10/05_Http10RetryTests.cs`
@@ -293,6 +301,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine content encoding so that gzip, deflate decompression, passthrough, header removal, and Content-Length update are verified.
 
+> **Infra:** Content encoding routes already registered in `KestrelFixture.RegisterContentEncodingRoutes()` ([KestrelFixture.cs L865-L998](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/compress/gzip/{kb}`, `/compress/deflate/{kb}`, `/compress/br/{kb}`, `/compress/identity/{kb}`, `/compress/negotiate`. Server-side compression uses `GZipStream`/`DeflateStream`/`BrotliStream`.
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http10/06_Http10ContentEncodingTests.cs`
 - [ ] 5 tests: gzip decompressed, deflate decompressed, identity passthrough, Content-Encoding removed, Content-Length updated
@@ -301,6 +311,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-024: Http11Engine Basic Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine basic RFC 9112 compliance so that all methods, Host header, status codes, and large bodies are verified.
+
+> **Infra:** Adapt `SendAsync` pattern from [`01_Http10EngineBasicTests.cs`](../src/TurboHttp.IntegrationTests/Http10/01_Http10EngineBasicTests.cs) — replace `Http10Engine` with `Http11Engine`, set `Version = HttpVersion.Version11`. Uses same `TestKit` base, `IClassFixture<KestrelFixture>`, `ConnectionStage` + `ClientManager`. Basic routes: `/hello`, `/any`, `/echo`, `/status/{code}`, `/large/{kb}`, `/headers/echo`, `/multiheader`.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/01_Http11BasicTests.cs`
@@ -312,6 +324,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine chunked transfer encoding so that chunked responses, multi-chunk reassembly, trailers, and large chunked bodies are verified.
 
+> **Infra:** Chunked routes already in `KestrelFixture` ([L204-L280](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/chunked/{kb}`, `/chunked/exact/{count}/{chunkBytes}`, `POST /echo/chunked`, `/chunked/trailer`, `/chunked/md5`. Uses `StartAsync()` to force chunked encoding.
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/02_Http11ChunkedTests.cs`
 - [ ] 8 tests: chunked decoded, multi-chunk, chunked POST, zero-length final, trailers, large (100KB), HEAD for chunked, MD5 trailer
@@ -320,6 +334,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-026: Http11Engine Connection Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine connection management so that keep-alive default, Connection: close, pipelining, per-host limits, and reuse are verified.
+
+> **Infra:** Connection routes: `/close` (already in KestrelFixture L285-L292) + TASK-017 connection reuse routes (`/conn/keep-alive`, `/conn/close`, `/conn/default`). Depends on TASK-017 being wired.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/03_Http11ConnectionTests.cs`
@@ -330,6 +346,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine redirect handling so that all redirect codes, method rewriting, chains, loops, cross-origin, HTTPS downgrade, and cookie preservation are verified.
 
+> **Infra:** Reuses same redirect routes as TASK-020 — see `KestrelFixture.RegisterRedirectRoutes()` ([L575-L658](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)).
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/04_Http11RedirectTests.cs`
 - [ ] 10 tests: 301/302/307/308 GET, 303 POST→GET, 307 preserves POST, 308 preserves POST, chain (5 hops), loop, cross-origin Auth strip, HTTPS→HTTP blocked, relative Location, cookies across redirects
@@ -338,6 +356,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-028: Http11Engine Cookie Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine cookie handling so that all RFC 6265 attributes, SameSite, sorting, and cross-redirect persistence are verified.
+
+> **Infra:** Reuses same cookie routes as TASK-021 — see `KestrelFixture.RegisterCookieRoutes()` ([L489-L573](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)). Also includes `/cookie/set-secure/...`, `/cookie/set-httponly/...`, `/cookie/set-samesite/...`.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/05_Http11CookieTests.cs`
@@ -348,6 +368,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine retry handling so that all idempotent methods, POST non-retry, Retry-After (seconds+date), max count, and succeed-after-N are verified.
 
+> **Infra:** Reuses same retry routes as TASK-022 — see `KestrelFixture.RegisterRetryRoutes()` ([L663-L727](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)).
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/06_Http11RetryTests.cs`
 - [ ] 10 tests: GET 503, GET 408, HEAD 503, PUT 503, DELETE 503, POST no-retry, Retry-After seconds, Retry-After date, max count (3), succeed after 2
@@ -356,6 +378,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-030: Http11Engine Cache Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine caching so that RFC 9111 freshness, validation, no-store, no-cache, Vary, POST invalidation, must-revalidate, min-fresh, max-stale, and LRU eviction are verified.
+
+> **Infra:** Reuses cache routes from `KestrelFixture.RegisterCacheRoutes()` ([L729-L863](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/cache/max-age/{s}`, `/cache/no-cache`, `/cache/no-store`, `/cache/etag/{id}`, `/cache/last-modified/{id}`, `/cache/vary/{header}`, `/cache/must-revalidate`, `/cache/s-maxage/{s}`, `/cache/expires`, `/cache/private`. Also existing ETag routes: `/etag`, `/if-modified-since`.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/07_Http11CacheTests.cs`
@@ -366,6 +390,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine content encoding so that gzip, deflate, brotli, identity, header removal, Accept-Encoding, and large compressed bodies are verified.
 
+> **Infra:** Reuses same content encoding routes as TASK-023 — see `KestrelFixture.RegisterContentEncodingRoutes()` ([L865-L998](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)).
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http11/08_Http11ContentEncodingTests.cs`
 - [ ] 7 tests: gzip, deflate, brotli, identity, Content-Encoding removed, Accept-Encoding sent, large (500KB)
@@ -374,6 +400,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-032: Http20Engine Basic Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine basic RFC 9113 compliance so that GET, HEAD, POST, PUT, status codes, large bodies, pseudo-headers, and binary round-trip are verified.
+
+> **Infra:** Uses `IClassFixture<KestrelH2Fixture>` ([KestrelH2Fixture.cs](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)) — h2c on random port, `HttpProtocols.Http2`. Adapt `SendAsync` from TASK-018 with `Http20Engine`. H2-specific routes: `/h2/settings`, `/h2/many-headers`, `/h2/echo-binary`, `/h2/echo-path`, `/h2/large-headers/{kb}`. Shared routes reused via `KestrelFixture.RegisterRedirectRoutes(app)`, etc.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/01_Http20BasicTests.cs`
@@ -384,6 +412,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-033: Http20Engine Multiplexing Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine multiplexing so that concurrent requests, parallel GET, interleaving, stream IDs, MAX_CONCURRENT_STREAMS, and non-blocking are verified.
+
+> **Infra:** Uses `KestrelH2Fixture`. H2-specific routes: `/h2/settings/max-concurrent` (echoes X-Stream-Id), `/h2/priority/{kb}`, `/slow/{count}` (streaming delay). Need multi-request `SendAsync` variant using `Source.Queue` with capacity > 1.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/02_Http20MultiplexTests.cs`
@@ -403,6 +433,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine HPACK so that dynamic table reuse, Huffman decoding, CONTINUATION frames, many headers, and sensitive header indexing are verified.
 
+> **Infra:** Uses `KestrelH2Fixture` — configured with `MaxRequestHeaderCount = 2000` and `MaxRequestHeadersTotalSize = 512KB` for large header tests. Route: `/h2/many-headers` (20 custom headers), `/headers/count`.
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/04_Http20HpackTests.cs`
 - [ ] 5 tests: dynamic table reuse, Huffman decoded, CONTINUATION for large headers, 100+ headers round-trip, Authorization NeverIndex
@@ -421,6 +453,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine redirect handling so that all redirect codes, method rewriting, chains, loops, and same-connection reuse are verified over HTTP/2.
 
+> **Infra:** `KestrelH2Fixture` reuses redirect routes via `KestrelFixture.RegisterRedirectRoutes(app)` ([KestrelH2Fixture.cs L264](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)).
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/06_Http20RedirectTests.cs`
 - [ ] 6 tests: 301/302/307/308 follow, 303 POST→GET, 307 preserves POST, chain (5 hops), loop, same connection reuse
@@ -429,6 +463,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-038: Http20Engine Cookie Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine cookie handling so that cookie storage, multiple Set-Cookie, HPACK compression, cross-redirect persistence, and Path restriction are verified over HTTP/2.
+
+> **Infra:** `KestrelH2Fixture` reuses cookie routes via `KestrelFixture.RegisterCookieRoutes(app)` ([KestrelH2Fixture.cs L267](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)). Also has H2-specific `/h2/cookie` route.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/07_Http20CookieTests.cs`
@@ -439,6 +475,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine retry handling so that GET retry, POST non-retry, new stream on same connection, REFUSED_STREAM, and GOAWAY retry are verified over HTTP/2.
 
+> **Infra:** `KestrelH2Fixture` reuses retry routes via `KestrelFixture.RegisterRetryRoutes(app)` ([KestrelH2Fixture.cs L270](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)).
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/08_Http20RetryTests.cs`
 - [ ] 5 tests: GET retry 503, POST no-retry, retry new stream, RST_STREAM REFUSED_STREAM trigger, GOAWAY non-zero last-stream retry
@@ -448,6 +486,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine caching so that cache hit, stale revalidation, 304 merge, no-store, and POST invalidation are verified over HTTP/2.
 
+> **Infra:** `KestrelH2Fixture` reuses cache routes via `KestrelFixture.RegisterCacheRoutes(app)` ([KestrelH2Fixture.cs L273](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)).
+
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/09_Http20CacheTests.cs`
 - [ ] 5 tests: cached served, stale conditional, 304 merge, no-store bypass, POST invalidation
@@ -456,6 +496,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 ### TASK-041: Http20Engine Content Encoding Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine content encoding so that gzip, deflate, brotli, and large compressed bodies are verified over HTTP/2.
+
+> **Infra:** `KestrelH2Fixture` reuses content encoding routes via `KestrelFixture.RegisterContentEncodingRoutes(app)` ([KestrelH2Fixture.cs L276](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)).
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Http20/10_Http20ContentEncodingTests.cs`
@@ -473,6 +515,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 
 ### TASK-043: TurboHttpClient SendAsync Integration Tests
 **Description:** As a developer, I want integration tests for TurboHttpClient.SendAsync so that the public API (BaseAddress, DefaultHeaders, CancellationToken, Timeout, CancelPendingRequests, Dispose, Channel API) is verified end-to-end.
+
+> **Infra:** Uses `KestrelFixture` for HTTP/1.x and `KestrelH2Fixture` for HTTP/2. Unlike engine tests, these test through the public `TurboHttpClient` API (depends on TASK-011 graph materialization). Basic routes `/hello`, `/ping`, `/echo` already available in all fixtures.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Shared/01_TurboHttpClientTests.cs`
@@ -497,6 +541,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 
 ### TASK-046: TLS Integration Tests
 **Description:** As a developer, I want integration tests for TLS so that HTTPS with self-signed certs, Secure cookies, HTTPS redirects, and HTTP↔HTTPS transitions are verified.
+
+> **Infra:** Uses [`KestrelTlsFixture`](../src/TurboHttp.IntegrationTests/Shared/KestrelTlsFixture.cs) — HTTPS on random port with self-signed cert (`HttpProtocols.Http1`). Has basic routes (`/hello`, `/ping`, `/echo`, etc.), chunked, caching, range, edge-case routes. No redirect/cookie/retry/cache routes registered — may need to add if cross-scheme tests require them.
 
 **Acceptance Criteria:**
 - [ ] File created: `src/TurboHttp.IntegrationTests/Shared/04_TlsTests.cs`
