@@ -85,14 +85,14 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want a RedirectStage that automatically follows HTTP redirects (301/302/303/307/308) with correct method rewriting, loop detection, and cross-origin header stripping so that redirects are handled transparently.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp/Streams/Stages/RedirectStage.cs`
-- [ ] Implements `GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>` (or `BidiShape` wrapping engine)
-- [ ] On push: if `RedirectHandler.IsRedirect(response)` → calls `BuildRedirectRequest`, re-emits upstream
-- [ ] Tracks redirect count via `RedirectHandler.RedirectCount`; on max redirects or non-redirect → pushes final response downstream
-- [ ] Integrates with `CookieJar` for cross-redirect cookie handling
-- [ ] Constructor takes `RedirectHandler` (or `RedirectPolicy`)
-- [ ] ~15 unit tests written and successful
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] File created: `src/TurboHttp/Streams/Stages/RedirectStage.cs`
+- [x] Implements `GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>` (or `BidiShape` wrapping engine)
+- [x] On push: if `RedirectHandler.IsRedirect(response)` → calls `BuildRedirectRequest`, re-emits upstream
+- [x] Tracks redirect count via `RedirectHandler.RedirectCount`; on max redirects or non-redirect → pushes final response downstream
+- [x] Integrates with `CookieJar` for cross-redirect cookie handling
+- [x] Constructor takes `RedirectHandler` (or `RedirectPolicy`)
+- [x] ~15 unit tests written and successful
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-007: RetryStage
 **Description:** As a developer, I want a RetryStage that automatically retries idempotent requests on 408/503 responses with Retry-After support so that transient failures are handled transparently.
