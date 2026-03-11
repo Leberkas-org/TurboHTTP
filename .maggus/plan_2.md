@@ -478,9 +478,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** `KestrelH2Fixture` reuses retry routes via `KestrelFixture.RegisterRetryRoutes(app)` ([KestrelH2Fixture.cs L270](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)).
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/08_Http20RetryTests.cs`
-- [ ] 5 tests: GET retry 503, POST no-retry, retry new stream, RST_STREAM REFUSED_STREAM trigger, GOAWAY non-zero last-stream retry
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20RetryTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/08_Http20RetryTests.cs`
+- [x] 5 tests: GET retry 503, POST no-retry, retry new stream, RST_STREAM REFUSED_STREAM trigger, GOAWAY non-zero last-stream retry
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20RetryTests"`
 
 ### TASK-040: Http20Engine Cache Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
