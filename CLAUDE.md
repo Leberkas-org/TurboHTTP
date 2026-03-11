@@ -168,9 +168,15 @@ Tests live in `src/TurboHttp.Tests/` organised by RFC:
 | `RFC9113/` (01–20 + preserved) | HTTP/2 | Decoder, RoundTrip, Encoder |
 | `RFC7541/` (01–06 + HpackTests) | HPACK | Static table, encoding, dynamic table |
 | `RFC9110/` (01–03) | Content encoding | gzip, deflate/brotli, integration |
+| `RFC9111/` (01–05) | Caching | CacheControlParser, CacheFreshnessEvaluator, ConditionalRequest, CacheStore, Integration |
 | `Integration/` | Cross-layer | CookieJar, RedirectHandler, RetryEvaluator, ConnectionReuse, TcpFragmentation |
 
-Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and pool behaviour.
+Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and stage behaviour. Organised by protocol version:
+- `Http10/` — encoder/decoder/roundtrip stage tests + TCP fragmentation
+- `Http11/` — encoder/decoder/chunked/correlation/pipeline/connection management stage tests
+- `Http20/` — encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control stage tests
+- `Streams/` — `RequestEnricherStage`, `ExtractOptionsStage`, `EngineVersionRoutingTests`
+- Base classes: `StreamTestBase` (extends `TestKit`, creates `IMaterializer`), `EngineTestBase` (full engine round-trip helper)
 
 Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures (`KestrelFixture`, `KestrelH2Fixture`, `KestrelTlsFixture`) with 60+ routes registered. No end-to-end test classes yet — fixtures are infrastructure-only, ready for future integration tests.
 
@@ -185,7 +191,7 @@ Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures
 
 ## Current Limitations
 
-- **Pipeline not fully wired**: Protocol handlers (RedirectHandler, CookieJar, RetryEvaluator, CacheFreshnessEvaluator, etc.) exist as standalone classes but are NOT integrated into the Akka.Streams Engine pipeline. The Engine currently only does: encode → TCP → decode → correlate.
+- **Pipeline not fully wired**: Protocol handlers (RedirectHandler, CookieJar, RetryEvaluator, CacheFreshnessEvaluator, HttpCacheStore, etc.) have unit tests and exist as standalone classes but are NOT integrated into the Akka.Streams Engine pipeline. The Engine currently only does: encode → TCP → decode → correlate.
 - **Client graph not materialized**: `TurboClientStreamManager` has graph construction commented out. `TurboHttpClient.SendAsync` does not work end-to-end yet.
 - **No business logic stages**: Missing Akka.Streams stages for redirect looping, cookie injection/storage, retry, cache lookup/store, and decompression (except partial HTTP/2 decompression in `Http20StreamStage`).
 - **No end-to-end integration tests**: Kestrel fixtures are defined with 60+ routes but no test classes consume them.
@@ -198,6 +204,16 @@ Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures
 - **.NET 10.0** — target framework
 - **xunit** 2.9.3 — test framework
 - **Akka.TestKit.Xunit2** 1.5.62 — stream test helpers
+
+# Custom Agents (`.claude/agents/`)
+
+Four project-specific agents are available via `/agent-name` or the Agent tool:
+
+| Agent | When to use |
+|-------|-------------|
+| `rfc-test-writer` | Generate a new RFC test file following exact project conventions |
+| `akka-stage-builder` | Implement a new Akka.Streams `GraphStage` (Phase 1 TODO.md stages) |
+| `build-guardian` | Run full build + tests; produce RFC-breakdown coverage report |
 
 # Agent Guidance: dotnet-skills
 
