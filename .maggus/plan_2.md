@@ -349,9 +349,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Reuses same redirect routes as TASK-020 — see `KestrelFixture.RegisterRedirectRoutes()` ([L575-L658](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)).
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http11/04_Http11RedirectTests.cs`
-- [ ] 10 tests: 301/302/307/308 GET, 303 POST→GET, 307 preserves POST, 308 preserves POST, chain (5 hops), loop, cross-origin Auth strip, HTTPS→HTTP blocked, relative Location, cookies across redirects
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11RedirectTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http11/04_Http11RedirectTests.cs`
+- [x] 10 tests: 301/302/307/308 GET, 303 POST→GET, 307 preserves POST, 308 preserves POST, chain (5 hops), loop, cross-origin Auth strip, HTTPS→HTTP blocked, relative Location, cookies across redirects
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11RedirectTests"`
 
 ### TASK-028: Http11Engine Cookie Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)

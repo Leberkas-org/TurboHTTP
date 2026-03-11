@@ -658,6 +658,15 @@ public sealed class KestrelFixture : IAsyncLifetime
             return Results.Empty;
         });
 
+        // POST /redirect/308 → 308 preserves method & body
+        // Redirects to POST /echo so the body is echoed back
+        app.MapPost("/redirect/308", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 308;
+            ctx.Response.Headers.Location = "/echo";
+            return Results.Empty;
+        });
+
         // GET /redirect/cross-origin → 302 to http://127.0.0.1:{port}/headers/echo
         // Used to test cross-origin Authorization header stripping
         // (client connects via localhost, redirect goes to 127.0.0.1 = different origin)
@@ -666,6 +675,16 @@ public sealed class KestrelFixture : IAsyncLifetime
             var port = ctx.Connection.LocalPort;
             ctx.Response.StatusCode = 302;
             ctx.Response.Headers.Location = $"http://127.0.0.1:{port}/headers/echo";
+            return Results.Empty;
+        });
+
+        // GET /redirect/cross-origin-auth → 302 to http://127.0.0.1:{port}/auth
+        // Used to test cross-origin Authorization header stripping via /auth (returns 401 if no Auth)
+        app.MapGet("/redirect/cross-origin-auth", (HttpContext ctx) =>
+        {
+            var port = ctx.Connection.LocalPort;
+            ctx.Response.StatusCode = 302;
+            ctx.Response.Headers.Location = $"http://127.0.0.1:{port}/auth";
             return Results.Empty;
         });
     }
