@@ -104,14 +104,13 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-003: INITIAL_WINDOW_SIZE exceeded causes stage failure")]
     public async Task Initial_Window_Size_Exceeded_Causes_Failure()
     {
-        // Send SETTINGS with INITIAL_WINDOW_SIZE = 100, then a DATA frame of 200 bytes.
-        // The stage should fail because the stream window is exceeded.
-        var settings = new SettingsFrame(
-            [(SettingsParameter.InitialWindowSize, 100u)]);
-        var data = new DataFrame(streamId: 1, data: new byte[200], endStream: true);
+        // Default stream recv window is 65535. Send 65536 bytes to exceed it.
+        // Server SETTINGS INITIAL_WINDOW_SIZE affects the client's SEND window (not recv),
+        // so we test inbound data exceeding the default recv window directly.
+        var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
         // The stage should fail — either the materialized task faults or we get an exception
-        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(settings, data));
+        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data));
     }
 
     // ─── 20CS-004: SETTINGS frame forwarded downstream ──────────────────────────

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -13,6 +13,13 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
         private readonly Inlet<Http2Frame> _inletRequest = new("h2.app.in");
         private readonly Outlet<Http2Frame> _outletRaw = new("h2.server.out");
 
+        private readonly int _initialRecvWindowSize;
+
+        public Http20ConnectionStage(int initialRecvWindowSize = 65535)
+        {
+            _initialRecvWindowSize = initialRecvWindowSize;
+        }
+
         public override BidiShape<Http2Frame, Http2Frame, Http2Frame, Http2Frame> Shape
             => new(_inletRaw, _outletStream, _inletRequest, _outletRaw);
 
@@ -22,8 +29,9 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
         private sealed class Logic : GraphStageLogic
         {
             private readonly Http20ConnectionStage _stage;
-            private int _connectionWindow = 65535;
-            private int _initialStreamWindow = 65535;
+            private int _connectionWindow;
+            private int _initialRecvStreamWindow;
+            private int _initialSendStreamWindow = 65535;
             private bool _goAwayReceived;
 
             private readonly Dictionary<int, int> _streamWindows = new();
@@ -31,6 +39,9 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
             public Logic(Http20ConnectionStage stage) : base(stage.Shape)
             {
                 _stage = stage;
+                _connectionWindow = stage._initialRecvWindowSize;
+                _initialRecvStreamWindow = stage._initialRecvWindowSize;
+
                 SetHandler(stage._inletRaw, onPush: () =>
                 {
                     var frame = Grab(stage._inletRaw);
@@ -106,7 +117,8 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
                 {
                     if (key == SettingsParameter.InitialWindowSize)
                     {
-                        _initialStreamWindow = (int)value;
+                        // Server's InitialWindowSize controls how much the CLIENT can SEND per stream
+                        _initialSendStreamWindow = (int)value;
                     }
                 }
 
@@ -115,11 +127,13 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
 
             private void HandleInboundData(DataFrame frame)
             {
-                _connectionWindow -= frame.Data.Length;
+                var dataLength = frame.Data.Length;
 
-                _streamWindows.TryAdd(frame.StreamId, _initialStreamWindow);
+                _connectionWindow -= dataLength;
 
-                _streamWindows[frame.StreamId] -= frame.Data.Length;
+                _streamWindows.TryAdd(frame.StreamId, _initialRecvStreamWindow);
+
+                _streamWindows[frame.StreamId] -= dataLength;
 
                 if (_connectionWindow < 0)
                 {
@@ -131,9 +145,13 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
                     FailStage(new Exception("Stream window exceeded"));
                 }
 
-                Emit(_stage._outletRaw, new WindowUpdateFrame(0, frame.Data.Length));
-
-                Emit(_stage._outletRaw, new WindowUpdateFrame(frame.StreamId, frame.Data.Length));
+                // RFC 9113 §6.9: WINDOW_UPDATE increment of 0 is a protocol error.
+                // Skip window updates for empty DATA frames (e.g. END_STREAM-only frames).
+                if (dataLength > 0)
+                {
+                    Emit(_stage._outletRaw, new WindowUpdateFrame(0, dataLength));
+                    Emit(_stage._outletRaw, new WindowUpdateFrame(frame.StreamId, dataLength));
+                }
             }
 
             private void HandlePing(PingFrame ping)
@@ -152,7 +170,7 @@ public sealed class Http20ConnectionStage : GraphStage<BidiShape<Http2Frame, Htt
                 }
                 else
                 {
-                    _streamWindows.TryAdd(frame.StreamId, _initialStreamWindow);
+                    _streamWindows.TryAdd(frame.StreamId, _initialRecvStreamWindow);
 
                     _streamWindows[frame.StreamId] += frame.Increment;
                 }

@@ -133,16 +133,13 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-002: Stream window tracked per-stream independently")]
     public async Task Stream_Window_Tracked_Per_Stream()
     {
-        // Two streams each with data under the stream window but together exceeding connection window.
-        // Use SETTINGS to reduce INITIAL_WINDOW_SIZE to 100, then send 100 bytes on stream 1 (OK)
-        // and 101 bytes on stream 3 (stream window exceeded).
-        var settings = new SettingsFrame(
-            [(SettingsParameter.InitialWindowSize, 100u)]);
-        var data1 = new DataFrame(streamId: 1, data: new byte[100], endStream: true);
-        var data2 = new DataFrame(streamId: 3, data: new byte[101], endStream: true);
+        // Stream 1 gets 65535 bytes (exactly at window), stream 3 gets 65536 (exceeds).
+        // Per-stream tracking means stream 1 succeeds but stream 3 exceeds its own window.
+        var data1 = new DataFrame(streamId: 1, data: new byte[65535], endStream: true);
+        var data2 = new DataFrame(streamId: 3, data: new byte[65536], endStream: true);
 
         // Stage should fail because stream 3 exceeds its stream window
-        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(settings, data1, data2));
+        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data1, data2));
     }
 
     // ─── 20CW-003: Inbound DATA → WINDOW_UPDATE(stream=0) sent ─────────────────
@@ -212,12 +209,10 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-006: Stream window exceeded causes stage failure")]
     public async Task Stream_Window_Exceeded_Fails_Stage()
     {
-        // Use SETTINGS to set a small stream window (100 bytes), then send 200 bytes.
-        var settings = new SettingsFrame(
-            [(SettingsParameter.InitialWindowSize, 100u)]);
-        var data = new DataFrame(streamId: 1, data: new byte[200], endStream: true);
+        // Default stream window is 65535. Send 65536 bytes on one stream to exceed it.
+        var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(settings, data));
+        var ex = await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data));
         Assert.Contains("window", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 

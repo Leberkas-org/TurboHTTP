@@ -404,10 +404,10 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Uses `IClassFixture<KestrelH2Fixture>` ([KestrelH2Fixture.cs](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)) — h2c on random port, `HttpProtocols.Http2`. Adapt `SendAsync` from TASK-018 with `Http20Engine`. H2-specific routes: `/h2/settings`, `/h2/many-headers`, `/h2/echo-binary`, `/h2/echo-path`, `/h2/large-headers/{kb}`. Shared routes reused via `KestrelFixture.RegisterRedirectRoutes(app)`, etc.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/01_Http20BasicTests.cs`
-- [ ] Uses `KestrelH2Fixture` with `request.Version = HttpVersion.Version20`
-- [ ] 9 tests: GET, HEAD, POST, PUT, status codes, large (1MB), pseudo-headers, custom headers, binary body
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20BasicTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/01_Http20BasicTests.cs`
+- [x] Uses `KestrelH2Fixture` with `request.Version = HttpVersion.Version20`
+- [x] 9 tests: GET, HEAD, POST, PUT, status codes, large (1MB), pseudo-headers, custom headers, binary body
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20BasicTests"`
 
 ### TASK-033: Http20Engine Multiplexing Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)

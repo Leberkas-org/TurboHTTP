@@ -51,13 +51,20 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
         private ChannelWriter<(IMemoryOwner<byte>, int)>? _outboundWriter;
 
         private readonly Queue<(IMemoryOwner<byte>, int)> _pendingWrites = new();
+        private readonly Queue<(IMemoryOwner<byte>, int)> _pendingReads = new();
 
         public Logic(ConnectionStage stage) : base(stage.Shape)
         {
             _stage = stage;
 
             SetHandler(stage._inlet, onPush: HandlePush, onUpstreamFinish: CompleteStage);
-            SetHandler(stage._outlet, onPull: () => { }, onDownstreamFinish: _ => CompleteStage());
+            SetHandler(stage._outlet, onPull: () =>
+            {
+                if (_pendingReads.TryDequeue(out var chunk))
+                {
+                    Push(_stage._outlet, chunk);
+                }
+            }, onDownstreamFinish: _ => CompleteStage());
         }
 
         public override void PreStart()
@@ -81,6 +88,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
                     if (_connected)
                     {
                         _outboundWriter?.TryWrite((data.Memory, data.Length));
+                        Pull(_stage._inlet);
                     }
                     else
                     {
@@ -135,6 +143,10 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
                 {
                     Push(_stage._outlet, chunk);
                 }
+                else
+                {
+                    _pendingReads.Enqueue(chunk);
+                }
             });
 
             await foreach (var chunk in reader.ReadAllAsync())
@@ -153,6 +165,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
         public override void PostStop()
         {
             while (_pendingWrites.TryDequeue(out var chunk))
+            {
+                chunk.Item1.Dispose();
+            }
+
+            while (_pendingReads.TryDequeue(out var chunk))
             {
                 chunk.Item1.Dispose();
             }
