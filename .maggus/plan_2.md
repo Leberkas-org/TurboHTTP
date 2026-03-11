@@ -34,12 +34,12 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want a CookieStorageStage that extracts Set-Cookie headers from responses and stores them in the CookieJar so that cookies accumulate across requests.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp/Streams/Stages/CookieStorageStage.cs`
-- [ ] Implements `GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>`
-- [ ] On push: calls `CookieJar.ProcessResponse(response.RequestMessage.RequestUri, response)` then pushes downstream
-- [ ] Side-effect only — response is NOT modified
-- [ ] Unit tests written and successful
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] File created: `src/TurboHttp/Streams/Stages/CookieStorageStage.cs`
+- [x] Implements `GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>`
+- [x] On push: calls `CookieJar.ProcessResponse(response.RequestMessage.RequestUri, response)` then pushes downstream
+- [x] Side-effect only — response is NOT modified
+- [x] Unit tests written and successful
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-003: DecompressionStage
 **Description:** As a developer, I want a DecompressionStage that automatically decompresses gzip/deflate/brotli response bodies so that the consumer receives uncompressed content.
