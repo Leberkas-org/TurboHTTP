@@ -467,9 +467,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** `KestrelH2Fixture` reuses cookie routes via `KestrelFixture.RegisterCookieRoutes(app)` ([KestrelH2Fixture.cs L267](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)). Also has H2-specific `/h2/cookie` route.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/07_Http20CookieTests.cs`
-- [ ] 5 tests: store+send, multiple Set-Cookie, HPACK compressed cookie header, cookies across redirects, Path restriction
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20CookieTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/07_Http20CookieTests.cs`
+- [x] 5 tests: store+send, multiple Set-Cookie, HPACK compressed cookie header, cookies across redirects, Path restriction
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20CookieTests"`
 
 ### TASK-039: Http20Engine Retry Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
