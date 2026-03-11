@@ -436,9 +436,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Uses `KestrelH2Fixture` — configured with `MaxRequestHeaderCount = 2000` and `MaxRequestHeadersTotalSize = 512KB` for large header tests. Route: `/h2/many-headers` (20 custom headers), `/headers/count`.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/04_Http20HpackTests.cs`
-- [ ] 5 tests: dynamic table reuse, Huffman decoded, CONTINUATION for large headers, 100+ headers round-trip, Authorization NeverIndex
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20HpackTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/04_Http20HpackTests.cs`
+- [x] 5 tests: dynamic table reuse, Huffman decoded, CONTINUATION for large headers, 100+ headers round-trip, Authorization NeverIndex
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20HpackTests"`
 
 ### TASK-036: Http20Engine Settings & Ping Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
