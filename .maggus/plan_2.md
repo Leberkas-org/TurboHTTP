@@ -416,9 +416,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Uses `KestrelH2Fixture`. H2-specific routes: `/h2/settings/max-concurrent` (echoes X-Stream-Id), `/h2/priority/{kb}`, `/slow/{count}` (streaming delay). Need multi-request `SendAsync` variant using `Source.Queue` with capacity > 1.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/02_Http20MultiplexTests.cs`
-- [ ] 6 tests: concurrent on same conn, 10 parallel GETs, interleaved ordering, odd stream IDs, MAX_CONCURRENT_STREAMS, slow doesn't block fast
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20MultiplexTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/02_Http20MultiplexTests.cs`
+- [x] 6 tests: concurrent on same conn, 10 parallel GETs, interleaved ordering, odd stream IDs, MAX_CONCURRENT_STREAMS, slow doesn't block fast
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20MultiplexTests"`
 
 ### TASK-034: Http20Engine Flow Control Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
