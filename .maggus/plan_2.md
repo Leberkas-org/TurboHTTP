@@ -271,9 +271,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Redirect routes already registered in `KestrelFixture.RegisterRedirectRoutes()` ([KestrelFixture.cs L575-L658](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/redirect/{code}/{target}`, `/redirect/chain/{n}`, `/redirect/loop`, `/redirect/relative`, `/redirect/cross-scheme`, `POST /redirect/307`, `POST /redirect/303`, `POST /redirect/302`, `/redirect/cross-origin`.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http10/03_Http10RedirectTests.cs`
-- [ ] 7 tests: 301/302 GET follow, 302 POST→GET, chain (3 hops), loop detection, max limit, relative Location, cross-origin Auth strip
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10RedirectTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http10/03_Http10RedirectTests.cs`
+- [x] 7 tests: 301/302 GET follow, 302 POST→GET, chain (3 hops), loop detection, max limit, relative Location, cross-origin Auth strip
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10RedirectTests"`
 
 ### TASK-021: Http10Engine Cookie Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
