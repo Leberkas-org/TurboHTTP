@@ -238,8 +238,8 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra note:** `KestrelFixture.RegisterConnectionReuseRoutes()` already exists with all 4 routes implemented ([KestrelFixture.cs L1000-L1039](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)), but is **not called** from `RegisterRoutes()`. Only a one-line call needs to be added.
 
 **Acceptance Criteria:**
-- [ ] `RegisterConnectionReuseRoutes(app)` call added to `KestrelFixture.RegisterRoutes()` (routes already implemented)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] `RegisterConnectionReuseRoutes(app)` call added to `KestrelFixture.RegisterRoutes()` (routes already implemented)
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-018: Http10Engine Basic Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)

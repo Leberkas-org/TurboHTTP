@@ -484,6 +484,9 @@ public sealed class KestrelFixture : IAsyncLifetime
 
         // ── Content Encoding Routes ─────────────────────────────────────────
         RegisterContentEncodingRoutes(app);
+
+        // ── Connection Reuse Routes ────────────────────────────────────────
+        RegisterConnectionReuseRoutes(app);
     }
 
     internal static void RegisterCookieRoutes(WebApplication app)
