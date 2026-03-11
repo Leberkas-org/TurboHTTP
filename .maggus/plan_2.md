@@ -338,9 +338,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Connection routes: `/close` (already in KestrelFixture L285-L292) + TASK-017 connection reuse routes (`/conn/keep-alive`, `/conn/close`, `/conn/default`). Depends on TASK-017 being wired.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http11/03_Http11ConnectionTests.cs`
-- [ ] 8 tests: keep-alive default, multiple on same conn, Connection:close, server close, pipelining, per-host limit (6), reuse after success, no reuse after error
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11ConnectionTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http11/03_Http11ConnectionTests.cs`
+- [x] 8 tests: keep-alive default, multiple on same conn, Connection:close, server close, pipelining, per-host limit (6), reuse after success, no reuse after error
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11ConnectionTests"`
 
 ### TASK-027: Http11Engine Redirect Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
