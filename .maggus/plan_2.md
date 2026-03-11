@@ -98,15 +98,15 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want a RetryStage that automatically retries idempotent requests on 408/503 responses with Retry-After support so that transient failures are handled transparently.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp/Streams/Stages/RetryStage.cs`
-- [ ] Implements `GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>` (or `RestartFlow`/`RecoverWith` pattern)
-- [ ] On push: calls `RetryEvaluator.Evaluate(request, response, networkFailure, ...)`
-- [ ] If `ShouldRetry` → re-emits original request upstream (after optional `RetryAfter` delay)
-- [ ] If not → pushes response downstream
-- [ ] Preserves original `HttpRequestMessage` for re-emission
-- [ ] Constructor takes `RetryPolicy`
-- [ ] ~10 unit tests written and successful
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] File created: `src/TurboHttp/Streams/Stages/RetryStage.cs`
+- [x] Implements `GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>` (or `RestartFlow`/`RecoverWith` pattern)
+- [x] On push: calls `RetryEvaluator.Evaluate(request, response, networkFailure, ...)`
+- [x] If `ShouldRetry` → re-emits original request upstream (after optional `RetryAfter` delay)
+- [x] If not → pushes response downstream
+- [x] Preserves original `HttpRequestMessage` for re-emission
+- [x] Constructor takes `RetryPolicy`
+- [x] ~10 unit tests written and successful
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-008: ConnectionReuseStage
 **Description:** As a developer, I want a ConnectionReuseStage that evaluates whether a TCP connection can be reused based on HTTP version and Connection headers so that connections are pooled efficiently.
