@@ -304,9 +304,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Content encoding routes already registered in `KestrelFixture.RegisterContentEncodingRoutes()` ([KestrelFixture.cs L865-L998](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/compress/gzip/{kb}`, `/compress/deflate/{kb}`, `/compress/br/{kb}`, `/compress/identity/{kb}`, `/compress/negotiate`. Server-side compression uses `GZipStream`/`DeflateStream`/`BrotliStream`.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http10/06_Http10ContentEncodingTests.cs`
-- [ ] 5 tests: gzip decompressed, deflate decompressed, identity passthrough, Content-Encoding removed, Content-Length updated
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10ContentEncodingTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http10/06_Http10ContentEncodingTests.cs`
+- [x] 5 tests: gzip decompressed, deflate decompressed, identity passthrough, Content-Encoding removed, Content-Length updated
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10ContentEncodingTests"`
 
 ### TASK-024: Http11Engine Basic Integration Tests
 **Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
