@@ -59,14 +59,14 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want a CacheLookupStage that checks the in-memory cache before sending requests to the network so that fresh cached responses are served instantly.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp/Streams/Stages/CacheLookupStage.cs`
-- [ ] Implements `GraphStage<FanOutShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage>>`
-- [ ] Outlet 0 (cache miss): request passes to engine
-- [ ] Outlet 1 (cache hit): emits cached `HttpResponseMessage` directly
-- [ ] On push: calls `CacheFreshnessEvaluator.Evaluate(entry, request, now)` — Fresh → outlet 1, MustRevalidate → conditional request via `CacheValidationRequestBuilder` → outlet 0, Miss → outlet 0
-- [ ] Constructor takes `HttpCacheStore` and `CachePolicy`
-- [ ] ~12 unit tests written and successful
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] File created: `src/TurboHttp/Streams/Stages/CacheLookupStage.cs`
+- [x] Implements `GraphStage<FanOutShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage>>`
+- [x] Outlet 0 (cache miss): request passes to engine
+- [x] Outlet 1 (cache hit): emits cached `HttpResponseMessage` directly
+- [x] On push: calls `CacheFreshnessEvaluator.Evaluate(entry, request, now)` — Fresh → outlet 1, MustRevalidate → conditional request via `CacheValidationRequestBuilder` → outlet 0, Miss → outlet 0
+- [x] Constructor takes `HttpCacheStore` and `CachePolicy`
+- [x] ~12 unit tests written and successful
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-005: CacheStorageStage
 **Description:** As a developer, I want a CacheStorageStage that stores cacheable responses and merges 304 Not Modified responses with cached entries so that the cache stays up-to-date.
