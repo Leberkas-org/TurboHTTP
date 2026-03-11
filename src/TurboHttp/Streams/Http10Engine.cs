@@ -16,7 +16,7 @@ public class Http10Engine : IHttpProtocolEngine
         {
             var encoder = b.Add(new Http10EncoderStage());
             var decoder = b.Add(new Http10DecoderStage());
-            var correlation = b.Add(new CorrelationHttp1XStage());
+            var correlation = b.Add(new Http1XCorrelationStage());
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 

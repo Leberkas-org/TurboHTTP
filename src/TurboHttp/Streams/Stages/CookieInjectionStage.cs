@@ -1,4 +1,3 @@
-using System;
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -10,8 +9,7 @@ namespace TurboHttp.Streams.Stages;
 /// Injects cookies from a <see cref="CookieJar"/> into outgoing HTTP requests (RFC 6265 §5.4).
 /// When no <see cref="CookieJar"/> is provided the stage is a pass-through.
 /// </summary>
-internal sealed class CookieInjectionStage
-    : GraphStage<FlowShape<HttpRequestMessage, HttpRequestMessage>>
+internal sealed class CookieInjectionStage : GraphStage<FlowShape<HttpRequestMessage, HttpRequestMessage>>
 {
     private readonly CookieJar? _cookieJar;
 

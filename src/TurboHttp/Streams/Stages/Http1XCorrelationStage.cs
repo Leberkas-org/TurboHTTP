@@ -6,7 +6,7 @@ using Akka.Streams.Stage;
 namespace TurboHttp.Streams.Stages;
 
 internal sealed class
-    CorrelationHttp1XStage : GraphStage<FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
+    Http1XCorrelationStage : GraphStage<FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly Inlet<HttpRequestMessage> _requestIn = new("correlation.request.in");
     private readonly Inlet<HttpResponseMessage> _responseIn = new("correlation.response.in");
@@ -14,7 +14,7 @@ internal sealed class
 
     public override FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
-    public CorrelationHttp1XStage()
+    public Http1XCorrelationStage()
     {
         Shape = new FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>(
             _out, _requestIn, _responseIn);
@@ -29,7 +29,7 @@ internal sealed class
 
         private readonly Queue<HttpResponseMessage> _waiting = new();
 
-        public Logic(CorrelationHttp1XStage stage) : base(stage.Shape)
+        public Logic(Http1XCorrelationStage stage) : base(stage.Shape)
         {
             SetHandler(stage._requestIn,
                 onPush: () =>
@@ -86,13 +86,13 @@ internal sealed class
                 });
         }
 
-        private void TryCorrelateAndEmit(CorrelationHttp1XStage http1XStage)
+        private void TryCorrelateAndEmit(Http1XCorrelationStage stage)
         {
-            while (_pending.Count > 0 && _waiting.Count > 0 && IsAvailable(http1XStage._out))
+            while (_pending.Count > 0 && _waiting.Count > 0 && IsAvailable(stage._out))
             {
                 var response = _waiting.Dequeue();
                 response.RequestMessage = _pending.Dequeue();
-                Push(http1XStage._out, response);
+                Push(stage._out, response);
             }
         }
     }

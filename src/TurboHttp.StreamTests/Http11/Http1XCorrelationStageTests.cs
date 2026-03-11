@@ -6,7 +6,7 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http11;
 
-public sealed class CorrelationHttp1XStageTests : StreamTestBase
+public sealed class Http1XCorrelationStageTests : StreamTestBase
 {
     /// <summary>
     /// Builds and runs a closed graph that wires requestSource → In0, responseSource → In1, Out → Sink.Seq.
@@ -21,7 +21,7 @@ public sealed class CorrelationHttp1XStageTests : StreamTestBase
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
-            var corr = b.Add(new CorrelationHttp1XStage());
+            var corr = b.Add(new Http1XCorrelationStage());
             var reqSrc = b.Add(requestSource);
             var resSrc = b.Add(responseSource);
 
@@ -141,7 +141,7 @@ public sealed class CorrelationHttp1XStageTests : StreamTestBase
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
-            var corr = b.Add(new CorrelationHttp1XStage());
+            var corr = b.Add(new Http1XCorrelationStage());
             var reqSrc = b.Add(Source.Single(request));
             var resSrc = b.Add(Source.Single(response));
 
@@ -179,7 +179,7 @@ public sealed class CorrelationHttp1XStageTests : StreamTestBase
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
-            var corr = b.Add(new CorrelationHttp1XStage());
+            var corr = b.Add(new Http1XCorrelationStage());
             var reqSrc = b.Add(Source.From(new[] { request1, request2 }));
             var resSrc = b.Add(neverEndingResponses);
 

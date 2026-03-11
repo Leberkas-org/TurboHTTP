@@ -77,8 +77,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
         var cert = req.CreateSelfSigned(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddYears(1));
-
-        return new X509Certificate2(cert.Export(X509ContentType.Pfx));
+        return X509CertificateLoader.LoadCertificate(cert.Export(X509ContentType.Pfx));
     }
 
     private static void RegisterRoutes(WebApplication app)

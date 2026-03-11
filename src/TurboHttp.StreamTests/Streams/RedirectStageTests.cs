@@ -17,17 +17,17 @@ public sealed class RedirectStageTests : StreamTestBase
     /// Source is concatenated with Source.Never to prevent premature completion.
     /// </summary>
     private (TestSubscriber.ManualProbe<HttpResponseMessage> final,
-             TestSubscriber.ManualProbe<HttpRequestMessage> redirect) Run(
-        RedirectStage stage,
-        int demandEach,
-        params HttpResponseMessage[] responses)
+        TestSubscriber.ManualProbe<HttpRequestMessage> redirect) Run(
+            RedirectStage stage,
+            int demandEach,
+            params HttpResponseMessage[] responses)
     {
-        var probeFinal    = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
         var probeRedirect = this.CreateManualSubscriberProbe<HttpRequestMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
         {
-            var s   = b.Add(stage);
+            var s = b.Add(stage);
             var src = b.Add(Source.From(responses).Concat(Source.Never<HttpResponseMessage>()));
 
             b.From(src).To(s.In);
@@ -37,7 +37,7 @@ public sealed class RedirectStageTests : StreamTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal    = probeFinal.ExpectSubscription();
+        var subFinal = probeFinal.ExpectSubscription();
         var subRedirect = probeRedirect.ExpectSubscription();
 
         subFinal.Request(demandEach);
@@ -58,6 +58,7 @@ public sealed class RedirectStageTests : StreamTestBase
         {
             response.RequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUri);
         }
+
         return response;
     }
 
@@ -72,8 +73,8 @@ public sealed class RedirectStageTests : StreamTestBase
         };
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REDIR-002: 404 Not Found → forwarded on Out0 (final)")]
@@ -85,8 +86,8 @@ public sealed class RedirectStageTests : StreamTestBase
         };
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── redirect forwarding to Out1 ────────────────────────────────────────────
@@ -95,21 +96,21 @@ public sealed class RedirectStageTests : StreamTestBase
     public async Task REDIR_003_301_EmitsRedirectOnOut1()
     {
         var response = BuildRedirect(HttpStatusCode.MovedPermanently, "http://example.com/new");
-        var (final, redirect) = Run(new RedirectStage(), 1, response);
+        var (_, redirect) = Run(new RedirectStage(), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.Equal("http://example.com/new", newRequest.RequestUri?.AbsoluteUri);
-        final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REDIR-004: 302 Found → redirect request emitted on Out1")]
     public async Task REDIR_004_302_EmitsRedirectOnOut1()
     {
         var response = BuildRedirect(HttpStatusCode.Found, "http://example.com/new");
-        var (final, redirect) = Run(new RedirectStage(), 1, response);
+        var (_, redirect) = Run(new RedirectStage(), 1, response);
 
-        redirect.ExpectNext();
-        final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await redirect.ExpectNextAsync();
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REDIR-005: 303 See Other → method rewritten to GET on Out1")]
@@ -123,9 +124,9 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.Equal(HttpMethod.Get, newRequest.Method);
-        final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await final.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REDIR-006: 307 Temporary Redirect → method preserved on Out1")]
@@ -139,9 +140,9 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.Equal(HttpMethod.Post, newRequest.Method);
-        final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await final.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REDIR-007: 308 Permanent Redirect → method preserved on Out1")]
@@ -155,9 +156,9 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.Equal(HttpMethod.Put, newRequest.Method);
-        final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await final.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── max redirects enforcement ──────────────────────────────────────────────
@@ -165,7 +166,7 @@ public sealed class RedirectStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "REDIR-008: max redirects exceeded → final response forwarded on Out0")]
     public async Task REDIR_008_MaxRedirectsExceeded_ForwardedOnOut0()
     {
-        var policy  = new RedirectPolicy { MaxRedirects = 1 };
+        var policy = new RedirectPolicy { MaxRedirects = 1 };
         var handler = new RedirectHandler(policy);
         // Exhaust the single allowed redirect
         var req1 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
@@ -179,8 +180,8 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(handler), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── redirect loop detection ────────────────────────────────────────────────
@@ -201,8 +202,8 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(handler), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── HTTPS → HTTP downgrade protection ─────────────────────────────────────
@@ -210,7 +211,7 @@ public sealed class RedirectStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "REDIR-010: HTTPS to HTTP downgrade blocked → final response on Out0")]
     public async Task REDIR_010_HttpsToHttpDowngrade_ForwardedOnOut0()
     {
-        var handler  = new RedirectHandler(); // AllowHttpsToHttpDowngrade = false
+        var handler = new RedirectHandler(); // AllowHttpsToHttpDowngrade = false
         var response = new HttpResponseMessage(HttpStatusCode.Found)
         {
             RequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure")
@@ -219,8 +220,8 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(handler), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── missing Location header ────────────────────────────────────────────────
@@ -236,13 +237,14 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── null RequestMessage ────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-012: redirect response with null RequestMessage → passes through on Out0")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "REDIR-012: redirect response with null RequestMessage → passes through on Out0")]
     public async Task REDIR_012_NullRequestMessage_ForwardedOnOut0()
     {
         var response = new HttpResponseMessage(HttpStatusCode.Found);
@@ -251,8 +253,8 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (final, redirect) = Run(new RedirectStage(), 1, response);
 
-        Assert.Same(response, final.ExpectNext());
-        redirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        Assert.Same(response, await final.ExpectNextAsync());
+        await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── default constructor (null handler) ────────────────────────────────────
@@ -261,14 +263,14 @@ public sealed class RedirectStageTests : StreamTestBase
     public async Task REDIR_013_NullHandler_UsesDefaults()
     {
         // Using default constructor (no handler)
-        var stage    = new RedirectStage();
+        var stage = new RedirectStage();
         var response = BuildRedirect(HttpStatusCode.Found, "http://example.com/new");
 
         var (final, redirect) = Run(stage, 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.Equal("http://example.com/new", newRequest.RequestUri?.AbsoluteUri);
-        final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await final.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
     // ── redirect request URL ───────────────────────────────────────────────────
@@ -276,12 +278,12 @@ public sealed class RedirectStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "REDIR-014: redirect request on Out1 targets the Location URI")]
     public async Task REDIR_014_RedirectRequest_TargetsLocationUri()
     {
-        const string target   = "http://other.com/new-location";
+        const string target = "http://other.com/new-location";
         var response = BuildRedirect(HttpStatusCode.MovedPermanently, target);
 
         var (_, redirect) = Run(new RedirectStage(), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.Equal(target, newRequest.RequestUri?.AbsoluteUri);
     }
 
@@ -301,7 +303,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (_, redirect) = Run(new RedirectStage(), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.False(newRequest.Headers.Contains("Authorization"),
             "Authorization must be stripped on cross-origin redirect");
     }
@@ -324,7 +326,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (_, redirect) = Run(new RedirectStage(null, jar), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.True(newRequest.Headers.Contains("Cookie"),
             "Applicable cookies should be re-applied to the redirect request");
         var cookieHeader = string.Join("; ", newRequest.Headers.GetValues("Cookie"));
@@ -347,7 +349,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
         var (_, redirect) = Run(new RedirectStage(null, jar), 1, response);
 
-        var newRequest = redirect.ExpectNext();
+        var newRequest = await redirect.ExpectNextAsync();
         Assert.False(newRequest.Headers.Contains("Cookie"),
             "Cookies for example.com must not be sent to other.com");
     }

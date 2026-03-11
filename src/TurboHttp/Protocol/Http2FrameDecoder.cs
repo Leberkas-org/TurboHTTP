@@ -43,6 +43,7 @@ public sealed class Http2FrameDecoder
             {
                 frames.Add(frame);
             }
+
             working = working[(9 + payloadLen)..];
         }
 
@@ -71,15 +72,11 @@ public sealed class Http2FrameDecoder
                 (flags & (byte)ContinuationFlags.EndHeaders) != 0),
 
             FrameType.Ping => streamId != 0
-                ? throw new Http2Exception(
-                    "RFC 7540 §6.7: PING frame MUST be sent on stream 0.",
-                    Http2ErrorCode.ProtocolError)
+                ? throw new Http2Exception("RFC 7540 §6.7: PING frame MUST be sent on stream 0.")
                 : CreatePing(flags, payload),
 
             FrameType.Settings => streamId != 0
-                ? throw new Http2Exception(
-                    "RFC 7540 §6.5: SETTINGS frame MUST be sent on stream 0.",
-                    Http2ErrorCode.ProtocolError)
+                ? throw new Http2Exception("RFC 7540 §6.5: SETTINGS frame MUST be sent on stream 0.")
                 : ParseSettings(payload, flags),
 
             FrameType.WindowUpdate => CreateWindowUpdateFrame(streamId, payload),
@@ -92,8 +89,7 @@ public sealed class Http2FrameDecoder
 
             FrameType.GoAway => streamId != 0
                 ? throw new Http2Exception(
-                    "RFC 7540 §6.8: GOAWAY frame MUST be sent on stream 0.",
-                    Http2ErrorCode.ProtocolError)
+                    "RFC 7540 §6.8: GOAWAY frame MUST be sent on stream 0.")
                 : ParseGoAway(payload),
 
             FrameType.PushPromise => ParsePushPromise(streamId, flags, payload),
@@ -113,15 +109,13 @@ public sealed class Http2FrameDecoder
         {
             if (data.IsEmpty)
             {
-                throw new Http2Exception("HEADERS PADDED frame: payload is empty",
-                    Http2ErrorCode.ProtocolError);
+                throw new Http2Exception("HEADERS PADDED frame: payload is empty");
             }
 
             var padLen = data.Span[0];
             if (1 + padLen > data.Length)
             {
-                throw new Http2Exception("HEADERS PADDED frame: pad_length exceeds payload size",
-                    Http2ErrorCode.ProtocolError);
+                throw new Http2Exception("HEADERS PADDED frame: pad_length exceeds payload size");
             }
 
             data = data.Slice(1, data.Length - 1 - padLen);
@@ -177,8 +171,7 @@ public sealed class Http2FrameDecoder
             if (key == SettingsParameter.MaxFrameSize && (value < 16384 || value > 16777215))
             {
                 throw new Http2Exception(
-                    $"RFC 7540 §6.5.2: SETTINGS_MAX_FRAME_SIZE {value} is outside the valid range [16384, 16777215].",
-                    Http2ErrorCode.ProtocolError);
+                    $"RFC 7540 §6.5.2: SETTINGS_MAX_FRAME_SIZE {value} is outside the valid range [16384, 16777215].");
             }
 
             list.Add((key, value));
@@ -219,8 +212,7 @@ public sealed class Http2FrameDecoder
         if (increment == 0)
         {
             throw new Http2Exception(
-                "RFC 7540 §6.9: WINDOW_UPDATE increment of 0 is a PROTOCOL_ERROR.",
-                Http2ErrorCode.ProtocolError);
+                "RFC 7540 §6.9: WINDOW_UPDATE increment of 0 is a PROTOCOL_ERROR.");
         }
 
         return new WindowUpdateFrame(streamId, increment);

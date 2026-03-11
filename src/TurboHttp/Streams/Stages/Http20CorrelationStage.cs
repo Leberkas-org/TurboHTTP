@@ -6,7 +6,7 @@ using Akka.Streams.Stage;
 namespace TurboHttp.Streams.Stages;
 
 internal sealed class
-    CorrelationHttp20Stage :
+    Http20CorrelationStage :
     GraphStage<FanInShape<(HttpRequestMessage, int), (HttpResponseMessage, int), HttpResponseMessage>>
 {
     private readonly Inlet<(HttpRequestMessage, int)> _requestIn = new("correlation.request.in");
@@ -18,7 +18,7 @@ internal sealed class
         get;
     }
 
-    public CorrelationHttp20Stage()
+    public Http20CorrelationStage()
     {
         Shape = new FanInShape<(HttpRequestMessage, int), (HttpResponseMessage, int), HttpResponseMessage>(
             _out, _requestIn, _responseIn);
@@ -32,7 +32,7 @@ internal sealed class
         private readonly Dictionary<int, HttpRequestMessage> _pending = new();
         private readonly Dictionary<int, HttpResponseMessage> _waiting = new();
 
-        public Logic(CorrelationHttp20Stage stage) : base(stage.Shape)
+        public Logic(Http20CorrelationStage stage) : base(stage.Shape)
         {
             SetHandler(stage._requestIn,
                 onPush: () =>
@@ -81,7 +81,7 @@ internal sealed class
                 });
         }
 
-        private void TryCorrelateAndEmit(CorrelationHttp20Stage stage)
+        private void TryCorrelateAndEmit(Http20CorrelationStage stage)
         {
             if (!IsAvailable(stage._out))
             {

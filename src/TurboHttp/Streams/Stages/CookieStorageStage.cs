@@ -10,8 +10,7 @@ namespace TurboHttp.Streams.Stages;
 /// The response is passed through unmodified — this stage is a side-effect-only observer.
 /// When no <see cref="CookieJar"/> is provided the stage is a pass-through.
 /// </summary>
-internal sealed class CookieStorageStage
-    : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
+internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly CookieJar? _cookieJar;
 

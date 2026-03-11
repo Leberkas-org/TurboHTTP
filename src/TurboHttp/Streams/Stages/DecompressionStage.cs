@@ -1,6 +1,6 @@
 using System;
+using System.Buffers;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol;
@@ -66,28 +66,83 @@ internal sealed class DecompressionStage
                 return response;
             }
 
-            var body = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
-            var decompressed = ContentEncodingDecoder.Decompress(body, encoding);
-
-            var newContent = new ByteArrayContent(decompressed);
-
-            // Copy all content headers except Content-Encoding
-            foreach (var header in response.Content.Headers)
+            var (owner, written) = ReadContentAsMemory(response.Content);
+            try
             {
-                if (header.Key.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase))
+                var decompressed = ContentEncodingDecoder.Decompress(owner.Memory[..written].ToArray(), encoding);
+
+                var newContent = new ByteArrayContent(decompressed);
+
+                // Copy all content headers except Content-Encoding
+                foreach (var header in response.Content.Headers)
                 {
-                    continue;
+                    if (header.Key.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    newContent.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
 
-                newContent.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                // Update Content-Length to reflect decompressed size
+                newContent.Headers.ContentLength = decompressed.Length;
+
+                response.Content = newContent;
+                return response;
+            }
+            finally
+            {
+                owner.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Reads the HTTP content into a pooled buffer without heap allocation.
+        /// The caller must dispose the returned <see cref="IMemoryOwner{T}"/> when done.
+        /// </summary>
+        private static (IMemoryOwner<byte>, int) ReadContentAsMemory(HttpContent content)
+        {
+            using var stream = content.ReadAsStream();
+
+            // Fast path: seekable stream — exact size is known upfront
+            if (stream.CanSeek)
+            {
+                var length = (int)stream.Length;
+                var owner = MemoryPool<byte>.Shared.Rent(length);
+                stream.ReadExactly(owner.Memory.Span[..length]);
+                return (owner, length);
             }
 
-            // Update Content-Length to reflect decompressed size
-            newContent.Headers.ContentLength = decompressed.Length;
+            // Slow path: unknown size — grow a pooled buffer as needed
+            var pooled = MemoryPool<byte>.Shared.Rent(4096);
+            var written = 0;
 
-            response.Content = newContent;
+            try
+            {
+                int read;
+                while ((read = stream.Read(pooled.Memory.Span[written..])) > 0)
+                {
+                    written += read;
 
-            return response;
+                    if (written < pooled.Memory.Length)
+                    {
+                        continue;
+                    }
+
+                    // Double the buffer via the pool
+                    var larger = MemoryPool<byte>.Shared.Rent(pooled.Memory.Length * 2);
+                    pooled.Memory.Span[..written].CopyTo(larger.Memory.Span);
+                    pooled.Dispose();
+                    pooled = larger;
+                }
+
+                return (pooled, written);
+            }
+            catch
+            {
+                pooled.Dispose();
+                throw;
+            }
         }
     }
 }

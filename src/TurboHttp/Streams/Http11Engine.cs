@@ -16,7 +16,7 @@ public class Http11Engine : IHttpProtocolEngine
         {
             var encoder = b.Add(new Http11EncoderStage());
             var decoder = b.Add(new Http11DecoderStage());
-            var correlation = b.Add(new CorrelationHttp1XStage());
+            var correlation = b.Add(new Http1XCorrelationStage());
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 

@@ -72,8 +72,8 @@ internal sealed class CacheLookupStage
                 {
                     var request = Grab(stage.Shape.In);
                     var entry = _stage._store.Get(request);
-                    var result = CacheFreshnessEvaluator.Evaluate(
-                        entry, request, DateTimeOffset.UtcNow, _stage._policy);
+                    var result =
+                        CacheFreshnessEvaluator.Evaluate(entry, request, DateTimeOffset.UtcNow, _stage._policy);
 
                     if (result.Status is CacheLookupStatus.Fresh or CacheLookupStatus.Stale)
                     {

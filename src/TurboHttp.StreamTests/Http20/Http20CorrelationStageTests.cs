@@ -6,7 +6,7 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http20;
 
-public sealed class CorrelationHttp20StageTests : StreamTestBase
+public sealed class Http20CorrelationStageTests : StreamTestBase
 {
     /// <summary>
     /// Runs the CorrelationHttp20Stage with the given sources and returns collected responses.
@@ -21,7 +21,7 @@ public sealed class CorrelationHttp20StageTests : StreamTestBase
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
-            var corr = b.Add(new CorrelationHttp20Stage());
+            var corr = b.Add(new Http20CorrelationStage());
             var reqSrc = b.Add(requestSource);
             var resSrc = b.Add(responseSource);
 
@@ -105,7 +105,7 @@ public sealed class CorrelationHttp20StageTests : StreamTestBase
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
-            var corr = b.Add(new CorrelationHttp20Stage());
+            var corr = b.Add(new Http20CorrelationStage());
             var reqSrc = b.Add(requestSource);
             var resSrc = b.Add(responseSource);
 
@@ -185,7 +185,7 @@ public sealed class CorrelationHttp20StageTests : StreamTestBase
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
-            var corr = b.Add(new CorrelationHttp20Stage());
+            var corr = b.Add(new Http20CorrelationStage());
             var reqSrc = b.Add(Source.Single((request, 1)));
             var resSrc = b.Add(Source.Single((response, 1)));
 

@@ -124,10 +124,7 @@ public static class CacheFreshnessEvaluator
     /// Applies request directives (no-cache, max-age, min-fresh, max-stale, only-if-cached)
     /// and response directives (must-revalidate) to determine the lookup outcome.
     /// </summary>
-    public static CacheLookupResult Evaluate(
-        CacheEntry? entry,
-        HttpRequestMessage request,
-        DateTimeOffset now,
+    public static CacheLookupResult Evaluate(CacheEntry? entry, HttpRequestMessage request, DateTimeOffset now,
         CachePolicy? policy = null)
     {
         if (entry is null)

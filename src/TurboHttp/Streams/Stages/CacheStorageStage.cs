@@ -32,8 +32,7 @@ namespace TurboHttp.Streams.Stages;
 /// </para>
 /// When <see cref="HttpResponseMessage.RequestMessage"/> is null the response is passed through unmodified.
 /// </summary>
-internal sealed class CacheStorageStage
-    : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
+internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly HttpCacheStore _store;
 
@@ -84,9 +83,9 @@ internal sealed class CacheStorageStage
         {
             var method = request.Method;
             var isUnsafe = method == HttpMethod.Post
-                        || method == HttpMethod.Put
-                        || method == HttpMethod.Delete
-                        || method == HttpMethod.Patch;
+                           || method == HttpMethod.Put
+                           || method == HttpMethod.Delete
+                           || method == HttpMethod.Patch;
 
             if (isUnsafe)
             {
