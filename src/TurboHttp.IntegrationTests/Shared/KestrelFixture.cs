@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -483,6 +484,9 @@ public sealed class KestrelFixture : IAsyncLifetime
 
         // ── Cookie Routes ───────────────────────────────────────────────────
         RegisterCookieRoutes(app);
+
+        // ── Retry Routes ─────────────────────────────────────────────────────
+        RegisterRetryRoutes(app);
     }
 
     internal static void RegisterCookieRoutes(WebApplication app)
@@ -636,6 +640,75 @@ public sealed class KestrelFixture : IAsyncLifetime
         {
             ctx.Response.StatusCode = 303;
             ctx.Response.Headers.Location = "/hello";
+            return Results.Empty;
+        });
+    }
+
+    /// <summary>Server-side request counter for /retry/succeed-after/{n} routes.</summary>
+    private static readonly ConcurrentDictionary<string, int> _retryCounters = new();
+
+    internal static void RegisterRetryRoutes(WebApplication app)
+    {
+        // GET /retry/408 → 408 Request Timeout
+        app.MapGet("/retry/408", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 408;
+            return Results.Empty;
+        });
+
+        // GET /retry/503 → 503 Service Unavailable
+        app.MapGet("/retry/503", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 503;
+            return Results.Empty;
+        });
+
+        // GET /retry/503-retry-after/{seconds} → 503 with Retry-After header (seconds)
+        app.MapGet("/retry/503-retry-after/{seconds:int}", (HttpContext ctx, int seconds) =>
+        {
+            ctx.Response.StatusCode = 503;
+            ctx.Response.Headers["Retry-After"] = seconds.ToString();
+            return Results.Empty;
+        });
+
+        // GET /retry/503-retry-after-date → 503 with Retry-After as HTTP-date (10 seconds from now)
+        app.MapGet("/retry/503-retry-after-date", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 503;
+            ctx.Response.Headers["Retry-After"] = DateTimeOffset.UtcNow.AddSeconds(10).ToString("R");
+            return Results.Empty;
+        });
+
+        // GET /retry/succeed-after/{n} → fail first N-1 times with 503, then 200
+        // Uses a query parameter ?key={unique} or the path itself as the counter key.
+        // Each unique key tracks its own counter independently.
+        app.MapGet("/retry/succeed-after/{n:int}", async (HttpContext ctx, int n) =>
+        {
+            var key = ctx.Request.Query.ContainsKey("key")
+                ? ctx.Request.Query["key"].ToString()
+                : $"{ctx.Connection.RemoteIpAddress}:{ctx.Connection.RemotePort}:{n}";
+
+            var count = _retryCounters.AddOrUpdate(key, 1, (_, prev) => prev + 1);
+
+            if (count >= n)
+            {
+                // Reset counter for future test runs
+                _retryCounters.TryRemove(key, out _);
+                ctx.Response.ContentType = "text/plain";
+                var body = "success"u8.ToArray();
+                ctx.Response.ContentLength = body.Length;
+                await ctx.Response.Body.WriteAsync(body);
+            }
+            else
+            {
+                ctx.Response.StatusCode = 503;
+            }
+        });
+
+        // POST /retry/non-idempotent-503 → 503 on POST (should NOT be retried)
+        app.MapPost("/retry/non-idempotent-503", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 503;
             return Results.Empty;
         });
     }

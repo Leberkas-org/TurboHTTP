@@ -194,14 +194,14 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a test author, I want Kestrel fixture routes for retry scenarios so that integration tests can verify retry behavior with Retry-After, idempotency, and succeed-after-N patterns.
 
 **Acceptance Criteria:**
-- [ ] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
-- [ ] `GET /retry/408` — responds with 408 Request Timeout
-- [ ] `GET /retry/503` — responds with 503 Service Unavailable
-- [ ] `GET /retry/503-retry-after/{seconds}` — 503 with Retry-After header
-- [ ] `GET /retry/503-retry-after-date` — 503 with Retry-After as HTTP-date
-- [ ] `GET /retry/succeed-after/{n}` — fail first N-1 times with 503, then 200 (stateful)
-- [ ] `POST /retry/non-idempotent-503` — 503 on POST (should NOT retry)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
+- [x] `GET /retry/408` — responds with 408 Request Timeout
+- [x] `GET /retry/503` — responds with 503 Service Unavailable
+- [x] `GET /retry/503-retry-after/{seconds}` — 503 with Retry-After header
+- [x] `GET /retry/503-retry-after-date` — 503 with Retry-After as HTTP-date
+- [x] `GET /retry/succeed-after/{n}` — fail first N-1 times with 503, then 200 (stateful)
+- [x] `POST /retry/non-idempotent-503` — 503 on POST (should NOT retry)
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-015: Kestrel Cache Routes
 **Description:** As a test author, I want Kestrel fixture routes for caching scenarios so that integration tests can verify cache freshness, validation, and invalidation.
