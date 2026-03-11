@@ -573,6 +573,16 @@ public sealed class KestrelFixture : IAsyncLifetime
             ctx.Response.Headers.Append("Set-Cookie", $"{name}=; Path=/; Max-Age=0");
             return Results.Content("cookie-deleted", "text/plain");
         });
+
+        // GET /cookie/set-and-redirect → Set-Cookie + 302 redirect to /cookie/echo
+        // Used to verify cookies persist across redirects
+        app.MapGet("/cookie/set-and-redirect", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers.Append("Set-Cookie", "redirect_cookie=from-redirect; Path=/");
+            ctx.Response.StatusCode = 302;
+            ctx.Response.Headers.Location = "/cookie/echo";
+            return Results.Empty;
+        });
     }
 
     internal static void RegisterRedirectRoutes(WebApplication app)

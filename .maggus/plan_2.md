@@ -282,9 +282,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Cookie routes already registered in `KestrelFixture.RegisterCookieRoutes()` ([KestrelFixture.cs L489-L573](../src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs)): `/cookie/set/{name}/{value}`, `/cookie/echo`, `/cookie/set-multiple`, `/cookie/delete/{name}`, `/cookie/set-expires/...`, `/cookie/set-path/...`, etc.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http10/04_Http10CookieTests.cs`
-- [ ] 6 tests: Set-Cookie stored+sent, multiple cookies, Path attribute, Max-Age=0 deletion, expired not sent, cookies across redirects
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10CookieTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http10/04_Http10CookieTests.cs`
+- [x] 6 tests: Set-Cookie stored+sent, multiple cookies, Path attribute, Max-Age=0 deletion, expired not sent, cookies across redirects
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10CookieTests"`
 
 ### TASK-022: Http10Engine Retry Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
