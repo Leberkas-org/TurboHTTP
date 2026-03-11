@@ -29,20 +29,16 @@ internal sealed class CookieInjectionStage : GraphStage<FlowShape<HttpRequestMes
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly CookieInjectionStage _stage;
-
         public Logic(CookieInjectionStage stage) : base(stage.Shape)
         {
-            _stage = stage;
-
             SetHandler(stage._inlet,
                 onPush: () =>
                 {
                     var request = Grab(stage._inlet);
 
-                    if (_stage._cookieJar is not null && request.RequestUri is not null)
+                    if (stage._cookieJar is not null && request.RequestUri is not null)
                     {
-                        _stage._cookieJar.AddCookiesToRequest(request.RequestUri, ref request);
+                        stage._cookieJar.AddCookiesToRequest(request.RequestUri, ref request);
                     }
 
                     Push(stage._outlet, request);

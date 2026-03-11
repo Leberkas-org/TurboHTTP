@@ -78,10 +78,6 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-002: EnableCookies — cookies are injected into outgoing requests")]
     public async Task EnableCookies_CookiesAreInjectedIntoOutgoingRequests()
     {
-        // The fake transport captures the raw request bytes so we can inspect Cookie header
-        byte[] responseFactory()
-            => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
-
         // Pre-populate a cookie jar so injection has something to inject
         var cookieJar = new CookieJar();
         var seedRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -97,8 +93,8 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
         var options = new TurboClientOptions { EnableCookies = true };
         var engine = new Engine();
         var flow = engine.CreateFlow(
-            () => Http10Flow(responseFactory),
-            () => Http11Flow(responseFactory),
+            () => Http10Flow(ResponseFactory),
+            () => Http11Flow(ResponseFactory),
             NoOpH2Flow,
             NoOpH2Flow,
             options);
@@ -111,6 +107,10 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
         var response = await RunSingleAsync(flow, request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return;
+
+        // The fake transport captures the raw request bytes so we can inspect Cookie header
+        byte[] ResponseFactory() => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
     }
 
     // -----------------------------------------------------------------------
@@ -157,13 +157,13 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
         {
             sw.Write(text);
         }
+
         return ms.ToArray();
     }
 
     private static byte[] BuildGzipResponse(byte[] compressedBody)
     {
-        var header =
-            $"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {compressedBody.Length}\r\n\r\n";
+        var header = $"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {compressedBody.Length}\r\n\r\n";
         var headerBytes = System.Text.Encoding.Latin1.GetBytes(header);
         return [.. headerBytes, .. compressedBody];
     }
@@ -251,7 +251,8 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // EPIPE-007: All flags true — full pipeline assembles without error
     // -----------------------------------------------------------------------
 
-    [Fact(Timeout = 10_000, DisplayName = "EPIPE-007: All flags true — full pipeline assembles and processes a request")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "EPIPE-007: All flags true — full pipeline assembles and processes a request")]
     public async Task AllFlagsTrue_FullPipelineAssemblesAndProcessesRequest()
     {
         var options = new TurboClientOptions

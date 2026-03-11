@@ -13,8 +13,7 @@ namespace TurboHttp.Streams.Stages;
 /// Responses with no Content-Encoding or "identity" pass through unchanged.
 /// After decompression the Content-Encoding header is removed and Content-Length is updated.
 /// </summary>
-internal sealed class DecompressionStage
-    : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
+internal sealed class DecompressionStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly Inlet<HttpResponseMessage> _inlet = new("decompression.in");
     private readonly Outlet<HttpResponseMessage> _outlet = new("decompression.out");
@@ -31,12 +30,8 @@ internal sealed class DecompressionStage
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly DecompressionStage _stage;
-
         public Logic(DecompressionStage stage) : base(stage.Shape)
         {
-            _stage = stage;
-
             SetHandler(stage._inlet,
                 onPush: () =>
                 {

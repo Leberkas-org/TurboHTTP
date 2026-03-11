@@ -217,9 +217,7 @@ public sealed class RedirectHandler
     /// <param name="original">The original request that triggered the redirect.</param>
     /// <param name="response">The redirect response received.</param>
     /// <param name="cookieJar">The cookie jar to use for re-evaluation.</param>
-    public HttpRequestMessage BuildRedirectRequest(
-        HttpRequestMessage original,
-        HttpResponseMessage response,
+    public HttpRequestMessage BuildRedirectRequest(HttpRequestMessage original, HttpResponseMessage response,
         CookieJar cookieJar)
     {
         ArgumentNullException.ThrowIfNull(cookieJar);

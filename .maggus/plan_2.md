@@ -224,13 +224,13 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a test author, I want Kestrel fixture routes for content encoding scenarios so that integration tests can verify automatic decompression.
 
 **Acceptance Criteria:**
-- [ ] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
-- [ ] `GET /compress/gzip/{kb}` — gzip-compressed response
-- [ ] `GET /compress/deflate/{kb}` — deflate-compressed response
-- [ ] `GET /compress/br/{kb}` — brotli-compressed response
-- [ ] `GET /compress/identity/{kb}` — no compression (control)
-- [ ] `GET /compress/negotiate` — honors Accept-Encoding, responds with matching encoding
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
+- [x] `GET /compress/gzip/{kb}` — gzip-compressed response
+- [x] `GET /compress/deflate/{kb}` — deflate-compressed response
+- [x] `GET /compress/br/{kb}` — brotli-compressed response
+- [x] `GET /compress/identity/{kb}` — no compression (control)
+- [x] `GET /compress/negotiate` — honors Accept-Encoding, responds with matching encoding
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-017: Kestrel Connection Reuse Routes
 **Description:** As a test author, I want Kestrel fixture routes for connection reuse scenarios so that integration tests can verify keep-alive and close behavior.
@@ -244,15 +244,17 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-018: Http10Engine Basic Integration Tests
+**Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine basic RFC 1945 compliance so that GET, HEAD, POST, PUT, DELETE, status codes, and large bodies are verified end-to-end.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http10/01_Http10BasicTests.cs`
-- [ ] Uses `KestrelFixture` with `request.Version = HttpVersion.Version10`
-- [ ] 10 tests: GET 200, HEAD, POST, PUT, DELETE, status code theory, large body (100KB), custom headers, multi-value headers, empty body
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10BasicTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http10/01_Http10BasicTests.cs`
+- [x] Uses `KestrelFixture` with `request.Version = HttpVersion.Version10`
+- [x] 10 tests: GET 200, HEAD, POST, PUT, DELETE, status code theory, large body (100KB), custom headers, multi-value headers, empty body
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10BasicTests"`
 
 ### TASK-019: Http10Engine Connection Integration Tests
+**Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine connection management so that HTTP/1.0 no-keep-alive default and opt-in keep-alive are verified.
 
 **Acceptance Criteria:**
@@ -261,6 +263,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10ConnectionTests"`
 
 ### TASK-020: Http10Engine Redirect Integration Tests
+**Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine redirect handling so that 301/302 follows, method rewriting, chains, loops, and cross-origin header stripping are verified.
 
 **Acceptance Criteria:**
@@ -269,6 +272,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10RedirectTests"`
 
 ### TASK-021: Http10Engine Cookie Integration Tests
+**Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine cookie handling so that Set-Cookie storage, accumulation, Path restriction, deletion, expiry, and cross-redirect persistence are verified.
 
 **Acceptance Criteria:**
@@ -277,6 +281,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10CookieTests"`
 
 ### TASK-022: Http10Engine Retry Integration Tests
+**Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine retry handling so that idempotent retry on 503/408, non-retry on POST, Retry-After, max count, and succeed-after-N are verified.
 
 **Acceptance Criteria:**
@@ -285,6 +290,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10RetryTests"`
 
 ### TASK-023: Http10Engine Content Encoding Integration Tests
+**Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
 **Description:** As a developer, I want integration tests for Http10Engine content encoding so that gzip, deflate decompression, passthrough, header removal, and Content-Length update are verified.
 
 **Acceptance Criteria:**
@@ -293,6 +299,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10ContentEncodingTests"`
 
 ### TASK-024: Http11Engine Basic Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine basic RFC 9112 compliance so that all methods, Host header, status codes, and large bodies are verified.
 
 **Acceptance Criteria:**
@@ -302,6 +309,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11BasicTests"`
 
 ### TASK-025: Http11Engine Chunked Transfer Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine chunked transfer encoding so that chunked responses, multi-chunk reassembly, trailers, and large chunked bodies are verified.
 
 **Acceptance Criteria:**
@@ -310,6 +318,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11ChunkedTests"`
 
 ### TASK-026: Http11Engine Connection Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine connection management so that keep-alive default, Connection: close, pipelining, per-host limits, and reuse are verified.
 
 **Acceptance Criteria:**
@@ -318,6 +327,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11ConnectionTests"`
 
 ### TASK-027: Http11Engine Redirect Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine redirect handling so that all redirect codes, method rewriting, chains, loops, cross-origin, HTTPS downgrade, and cookie preservation are verified.
 
 **Acceptance Criteria:**
@@ -326,6 +336,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11RedirectTests"`
 
 ### TASK-028: Http11Engine Cookie Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine cookie handling so that all RFC 6265 attributes, SameSite, sorting, and cross-redirect persistence are verified.
 
 **Acceptance Criteria:**
@@ -334,6 +345,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11CookieTests"`
 
 ### TASK-029: Http11Engine Retry Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine retry handling so that all idempotent methods, POST non-retry, Retry-After (seconds+date), max count, and succeed-after-N are verified.
 
 **Acceptance Criteria:**
@@ -342,6 +354,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11RetryTests"`
 
 ### TASK-030: Http11Engine Cache Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine caching so that RFC 9111 freshness, validation, no-store, no-cache, Vary, POST invalidation, must-revalidate, min-fresh, max-stale, and LRU eviction are verified.
 
 **Acceptance Criteria:**
@@ -350,6 +363,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11CacheTests"`
 
 ### TASK-031: Http11Engine Content Encoding Integration Tests
+**Engine:** [`Http11Engine.cs`](../src/TurboHttp/Streams/Http11Engine.cs)
 **Description:** As a developer, I want integration tests for Http11Engine content encoding so that gzip, deflate, brotli, identity, header removal, Accept-Encoding, and large compressed bodies are verified.
 
 **Acceptance Criteria:**
@@ -358,6 +372,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http11ContentEncodingTests"`
 
 ### TASK-032: Http20Engine Basic Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine basic RFC 9113 compliance so that GET, HEAD, POST, PUT, status codes, large bodies, pseudo-headers, and binary round-trip are verified.
 
 **Acceptance Criteria:**
@@ -367,6 +382,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20BasicTests"`
 
 ### TASK-033: Http20Engine Multiplexing Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine multiplexing so that concurrent requests, parallel GET, interleaving, stream IDs, MAX_CONCURRENT_STREAMS, and non-blocking are verified.
 
 **Acceptance Criteria:**
@@ -375,6 +391,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20MultiplexTests"`
 
 ### TASK-034: Http20Engine Flow Control Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine flow control so that large POST bodies, WINDOW_UPDATE, connection/stream-level independence, and small initial windows are verified.
 
 **Acceptance Criteria:**
@@ -383,6 +400,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20FlowControlTests"`
 
 ### TASK-035: Http20Engine HPACK Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine HPACK so that dynamic table reuse, Huffman decoding, CONTINUATION frames, many headers, and sensitive header indexing are verified.
 
 **Acceptance Criteria:**
@@ -391,6 +409,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20HpackTests"`
 
 ### TASK-036: Http20Engine Settings & Ping Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine SETTINGS and PING so that handshake, MAX_CONCURRENT_STREAMS, INITIAL_WINDOW_SIZE, and PING round-trip are verified.
 
 **Acceptance Criteria:**
@@ -399,6 +418,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20SettingsPingTests"`
 
 ### TASK-037: Http20Engine Redirect Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine redirect handling so that all redirect codes, method rewriting, chains, loops, and same-connection reuse are verified over HTTP/2.
 
 **Acceptance Criteria:**
@@ -407,6 +427,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20RedirectTests"`
 
 ### TASK-038: Http20Engine Cookie Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine cookie handling so that cookie storage, multiple Set-Cookie, HPACK compression, cross-redirect persistence, and Path restriction are verified over HTTP/2.
 
 **Acceptance Criteria:**
@@ -415,6 +436,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20CookieTests"`
 
 ### TASK-039: Http20Engine Retry Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine retry handling so that GET retry, POST non-retry, new stream on same connection, REFUSED_STREAM, and GOAWAY retry are verified over HTTP/2.
 
 **Acceptance Criteria:**
@@ -423,6 +445,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20RetryTests"`
 
 ### TASK-040: Http20Engine Cache Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine caching so that cache hit, stale revalidation, 304 merge, no-store, and POST invalidation are verified over HTTP/2.
 
 **Acceptance Criteria:**
@@ -431,6 +454,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20CacheTests"`
 
 ### TASK-041: Http20Engine Content Encoding Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine content encoding so that gzip, deflate, brotli, and large compressed bodies are verified over HTTP/2.
 
 **Acceptance Criteria:**
@@ -439,6 +463,7 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 - [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20ContentEncodingTests"`
 
 ### TASK-042: Http20Engine Error Handling Integration Tests
+**Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
 **Description:** As a developer, I want integration tests for Http20Engine error handling so that RST_STREAM isolation, GOAWAY graceful shutdown, protocol error reporting, and automatic reconnection are verified.
 
 **Acceptance Criteria:**

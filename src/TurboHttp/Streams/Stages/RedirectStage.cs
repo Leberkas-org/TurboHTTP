@@ -20,11 +20,10 @@ namespace TurboHttp.Streams.Stages;
 /// matching the same demand contract used by <see cref="CacheLookupStage"/>.
 /// </para>
 /// </summary>
-internal sealed class RedirectStage
-    : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage>>
+internal sealed class
+    RedirectStage : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage>>
 {
     private readonly RedirectHandler _handler;
-    private readonly CookieJar? _cookieJar;
 
     private readonly Inlet<HttpResponseMessage> _in
         = new("redirect.in");
@@ -41,11 +40,9 @@ internal sealed class RedirectStage
     /// Creates a new <see cref="RedirectStage"/> with the given handler and optional cookie jar.
     /// </summary>
     /// <param name="handler">Redirect handler (with policy and state). Defaults to <see cref="RedirectHandler"/> with <see cref="RedirectPolicy.Default"/>.</param>
-    /// <param name="cookieJar">Optional cookie jar for cross-redirect cookie re-evaluation (RFC 6265).</param>
-    public RedirectStage(RedirectHandler? handler = null, CookieJar? cookieJar = null)
+    public RedirectStage(RedirectHandler? handler = null)
     {
         _handler = handler ?? new RedirectHandler();
-        _cookieJar = cookieJar;
         Shape = new FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage>(
             _in, _outFinal, _outRedirect);
     }
@@ -87,15 +84,7 @@ internal sealed class RedirectStage
 
                     try
                     {
-                        HttpRequestMessage newRequest;
-                        if (_stage._cookieJar is not null)
-                        {
-                            newRequest = _stage._handler.BuildRedirectRequest(original, response, _stage._cookieJar);
-                        }
-                        else
-                        {
-                            newRequest = _stage._handler.BuildRedirectRequest(original, response);
-                        }
+                        var newRequest = _stage._handler.BuildRedirectRequest(original, response);
 
                         _redirectHasDemand = false;
                         Push(stage._outRedirect, newRequest);

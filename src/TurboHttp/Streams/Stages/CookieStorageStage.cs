@@ -30,20 +30,16 @@ internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMess
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly CookieStorageStage _stage;
-
         public Logic(CookieStorageStage stage) : base(stage.Shape)
         {
-            _stage = stage;
-
             SetHandler(stage._inlet,
                 onPush: () =>
                 {
                     var response = Grab(stage._inlet);
 
-                    if (_stage._cookieJar is not null && response.RequestMessage?.RequestUri is not null)
+                    if (stage._cookieJar is not null && response.RequestMessage?.RequestUri is not null)
                     {
-                        _stage._cookieJar.ProcessResponse(response.RequestMessage.RequestUri, response);
+                        stage._cookieJar.ProcessResponse(response.RequestMessage.RequestUri, response);
                     }
 
                     Push(stage._outlet, response);
@@ -51,9 +47,7 @@ internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMess
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: FailStage);
 
-            SetHandler(stage._outlet,
-                onPull: () => Pull(stage._inlet),
-                onDownstreamFinish: _ => CompleteStage());
+            SetHandler(stage._outlet, onPull: () => Pull(stage._inlet), onDownstreamFinish: _ => CompleteStage());
         }
     }
 }

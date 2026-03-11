@@ -31,10 +31,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
             // MaxRequestHeadersTotalSize must be <= MaxRequestBufferSize (default 1 MB).
             // 512 KB handles 500 custom headers × ~100 bytes each = ~50 KB comfortably.
             options.Limits.MaxRequestHeadersTotalSize = 512 * 1024;
-            options.ListenAnyIP(0, listenOptions =>
-            {
-                listenOptions.Protocols = HttpProtocols.Http2;
-            });
+            options.ListenAnyIP(0, listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; });
         });
         builder.Logging.ClearProviders();
 
@@ -101,7 +98,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         // ── Body ──────────────────────────────────────────────────────────────
 
         // POST /echo → echoes request body verbatim
-        app.MapPost("/echo", async (HttpContext ctx) =>
+        app.MapPost("/echo", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -113,7 +110,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         });
 
         // PUT /echo → echoes request body verbatim
-        app.MapPut("/echo", async (HttpContext ctx) =>
+        app.MapPut("/echo", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -177,7 +174,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         {
             ctx.Response.ContentType = "text/plain";
             await ctx.Response.StartAsync();
-            var single = new byte[] { (byte)'x' };
+            var single = new[] { (byte)'x' };
             for (var i = 0; i < count; i++)
             {
                 await ctx.Response.Body.WriteAsync(single);
@@ -189,10 +186,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         // ── HTTP/2 specific ───────────────────────────────────────────────────
 
         // GET /h2/settings → echoes some server settings info
-        app.MapGet("/h2/settings", (HttpContext ctx) =>
-        {
-            return Results.Content("h2-ok", "text/plain");
-        });
+        app.MapGet("/h2/settings", (HttpContext ctx) => { return Results.Content("h2-ok", "text/plain"); });
 
         // GET /h2/many-headers → response with 20 custom headers
         app.MapGet("/h2/many-headers", (HttpContext ctx) =>
@@ -209,7 +203,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         });
 
         // POST /h2/echo-binary → echoes binary request body
-        app.MapPost("/h2/echo-binary", async (HttpContext ctx) =>
+        app.MapPost("/h2/echo-binary", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
@@ -277,5 +271,8 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
 
         // ── Cache Routes ──────────────────────────────────────────────────────
         KestrelFixture.RegisterCacheRoutes(app);
+
+        // ── Content Encoding Routes ─────────────────────────────────────────
+        KestrelFixture.RegisterContentEncodingRoutes(app);
     }
 }

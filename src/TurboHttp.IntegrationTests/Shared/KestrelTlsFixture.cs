@@ -464,7 +464,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
         // GET /cache/no-store → returns Cache-Control: no-store
         app.MapGet("/cache/no-store", async ctx =>
         {
-            ctx.Response.Headers["Cache-Control"] = "no-store";
+            ctx.Response.Headers.CacheControl = "no-store";
             ctx.Response.ContentType = "text/plain";
             var body = "no-store-resource"u8.ToArray();
             ctx.Response.ContentLength = body.Length;

@@ -23,8 +23,7 @@ public class Engine
     /// based on <paramref name="options"/> feature flags.
     /// When all flags are false the pipeline is identical to the no-options overload.
     /// </summary>
-    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(
-        IActorRef clientManager,
+    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager,
         TurboClientOptions? options)
     {
         options ??= new TurboClientOptions();
@@ -180,7 +179,7 @@ public class Engine
             // ---- REQUEST CHAIN ----
 
             var enricher = builder.Add(new RequestEnricherStage(() => requestOptions));
-            Outlet<HttpRequestMessage> requestTip = enricher.Outlet;
+            var requestTip = enricher.Outlet;
 
             // Redirect merge: preferred port receives redirect feedback.
             // MergePreferred is used so that the preferred (feedback) path never back-pressures
@@ -218,7 +217,7 @@ public class Engine
             {
                 var cacheLookup = builder.Add(new CacheLookupStage(cacheStore!, options.CachePolicy));
                 builder.From(requestTip).To(cacheLookup.In);
-                requestTip = cacheLookup.Out0;  // miss → engine
+                requestTip = cacheLookup.Out0; // miss → engine
                 cacheHitTip = cacheLookup.Out1; // hit → cache merge (bypasses engine)
             }
 
@@ -227,7 +226,7 @@ public class Engine
             var engineCore = builder.Add(
                 BuildEngineCoreGraph(clientManager, http10Factory, http11Factory, http20Factory));
             builder.From(requestTip).To(engineCore.Inlet);
-            Outlet<HttpResponseMessage> responseTip = engineCore.Outlet;
+            var responseTip = engineCore.Outlet;
 
             // ---- RESPONSE CHAIN ----
 
@@ -283,8 +282,7 @@ public class Engine
             // A buffer decouples the feedback cycle to prevent deadlock.
             if (options.EnableRedirectHandling)
             {
-                var redirect = builder.Add(new RedirectStage(
-                    new RedirectHandler(options.RedirectPolicy), cookieJar));
+                var redirect = builder.Add(new RedirectStage(new RedirectHandler(options.RedirectPolicy)));
                 builder.From(responseTip).To(redirect.In);
                 builder.From(redirect.Out1)
                     .Via(Flow.Create<HttpRequestMessage>().Buffer(1, OverflowStrategy.Backpressure))
