@@ -63,6 +63,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
         public override void PreStart()
         {
             _self = GetStageActor(OnMessage).Ref;
+            Pull(_stage._inlet);
         }
 
         private void HandlePush()
@@ -111,7 +112,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
                         _outboundWriter.TryWrite(cw);
                     }
 
-                    Pull(_stage._inlet);
+                    if (!HasBeenPulled(_stage._inlet))
+                    {
+                        Pull(_stage._inlet);
+                    }
+
                     break;
 
                 case ClientRunner.ClientDisconnected:
