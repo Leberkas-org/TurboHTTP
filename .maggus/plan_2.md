@@ -207,18 +207,18 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a test author, I want Kestrel fixture routes for caching scenarios so that integration tests can verify cache freshness, validation, and invalidation.
 
 **Acceptance Criteria:**
-- [ ] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
-- [ ] `GET /cache/max-age/{seconds}` — Cache-Control: max-age={seconds}, body = timestamp
-- [ ] `GET /cache/no-cache` — Cache-Control: no-cache
-- [ ] `GET /cache/no-store` — Cache-Control: no-store
-- [ ] `GET /cache/etag/{id}` — ETag header, supports If-None-Match → 304
-- [ ] `GET /cache/last-modified/{id}` — Last-Modified, supports If-Modified-Since → 304
-- [ ] `GET /cache/vary/{header}` — Vary: {header}, body changes based on header value
-- [ ] `GET /cache/must-revalidate` — Cache-Control: max-age=0, must-revalidate
-- [ ] `GET /cache/s-maxage/{seconds}` — Cache-Control: s-maxage={seconds}
-- [ ] `GET /cache/expires` — Expires header (absolute date)
-- [ ] `GET /cache/private` — Cache-Control: private
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] Routes added to both `KestrelFixture` and `KestrelH2Fixture`
+- [x] `GET /cache/max-age/{seconds}` — Cache-Control: max-age={seconds}, body = timestamp
+- [x] `GET /cache/no-cache` — Cache-Control: no-cache
+- [x] `GET /cache/no-store` — Cache-Control: no-store
+- [x] `GET /cache/etag/{id}` — ETag header, supports If-None-Match → 304
+- [x] `GET /cache/last-modified/{id}` — Last-Modified, supports If-Modified-Since → 304
+- [x] `GET /cache/vary/{header}` — Vary: {header}, body changes based on header value
+- [x] `GET /cache/must-revalidate` — Cache-Control: max-age=0, must-revalidate
+- [x] `GET /cache/s-maxage/{seconds}` — Cache-Control: s-maxage={seconds}
+- [x] `GET /cache/expires` — Expires header (absolute date)
+- [x] `GET /cache/private` — Cache-Control: private
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-016: Kestrel Content Encoding Routes
 **Description:** As a test author, I want Kestrel fixture routes for content encoding scenarios so that integration tests can verify automatic decompression.

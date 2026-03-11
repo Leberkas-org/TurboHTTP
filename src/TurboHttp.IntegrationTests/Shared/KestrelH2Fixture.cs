@@ -274,5 +274,8 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
 
         // ── Retry Routes ─────────────────────────────────────────────────────
         KestrelFixture.RegisterRetryRoutes(app);
+
+        // ── Cache Routes ──────────────────────────────────────────────────────
+        KestrelFixture.RegisterCacheRoutes(app);
     }
 }

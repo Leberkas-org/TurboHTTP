@@ -430,18 +430,6 @@ public sealed class KestrelFixture : IAsyncLifetime
                 enableRangeProcessing: true);
         });
 
-        // ── Phase 14: Additional Cache Routes ────────────────────────────────
-
-        // GET /cache/no-store → returns Cache-Control: no-store
-        app.MapGet("/cache/no-store", async ctx =>
-        {
-            ctx.Response.Headers["Cache-Control"] = "no-store";
-            ctx.Response.ContentType = "text/plain";
-            var body = "no-store-resource"u8.ToArray();
-            ctx.Response.ContentLength = body.Length;
-            await ctx.Response.Body.WriteAsync(body);
-        });
-
         // ── Phase 14: Slow Response ───────────────────────────────────────────
 
         // GET /slow/{count} → sends count ASCII 'x' bytes, 1 per write with a flush,
@@ -487,6 +475,9 @@ public sealed class KestrelFixture : IAsyncLifetime
 
         // ── Retry Routes ─────────────────────────────────────────────────────
         RegisterRetryRoutes(app);
+
+        // ── Cache Routes ──────────────────────────────────────────────────────
+        RegisterCacheRoutes(app);
     }
 
     internal static void RegisterCookieRoutes(WebApplication app)
@@ -710,6 +701,142 @@ public sealed class KestrelFixture : IAsyncLifetime
         {
             ctx.Response.StatusCode = 503;
             return Results.Empty;
+        });
+    }
+
+    internal static void RegisterCacheRoutes(WebApplication app)
+    {
+        // GET /cache/max-age/{seconds} → Cache-Control: max-age={seconds}, body = timestamp
+        app.MapGet("/cache/max-age/{seconds:int}", async (HttpContext ctx, int seconds) =>
+        {
+            ctx.Response.Headers["Cache-Control"] = $"max-age={seconds}";
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O"));
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/no-cache → Cache-Control: no-cache
+        app.MapGet("/cache/no-cache", async (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["Cache-Control"] = "no-cache";
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O"));
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/no-store → Cache-Control: no-store
+        app.MapGet("/cache/no-store", async (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["Cache-Control"] = "no-store";
+            ctx.Response.ContentType = "text/plain";
+            var body = "no-store-resource"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/etag/{id} → ETag header, supports If-None-Match → 304
+        app.MapGet("/cache/etag/{id}", async (HttpContext ctx, string id) =>
+        {
+            var etag = $"\"{id}\"";
+            if (ctx.Request.Headers["If-None-Match"].ToString() == etag)
+            {
+                ctx.Response.StatusCode = 304;
+                ctx.Response.Headers["ETag"] = etag;
+                return;
+            }
+
+            ctx.Response.Headers["ETag"] = etag;
+            ctx.Response.Headers["Cache-Control"] = "max-age=3600";
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes($"etag-resource-{id}");
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/last-modified/{id} → Last-Modified, supports If-Modified-Since → 304
+        // Uses a fixed date per id (2026-01-01 + id hash hours) for deterministic testing
+        app.MapGet("/cache/last-modified/{id}", async (HttpContext ctx, string id) =>
+        {
+            var lastModified = new DateTimeOffset(2026, 1, 1, Math.Abs(id.GetHashCode()) % 24, 0, 0, TimeSpan.Zero);
+            ctx.Response.Headers.LastModified = lastModified.ToString("R");
+            ctx.Response.Headers["Cache-Control"] = "max-age=3600";
+
+            if (ctx.Request.Headers.TryGetValue("If-Modified-Since", out var ims) &&
+                DateTimeOffset.TryParse(ims, out var imsDate) &&
+                imsDate >= lastModified)
+            {
+                ctx.Response.StatusCode = 304;
+                return;
+            }
+
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes($"last-modified-resource-{id}");
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/vary/{header} → Vary: {header}, body changes based on header value
+        app.MapGet("/cache/vary/{header}", async (HttpContext ctx, string header) =>
+        {
+            ctx.Response.Headers.Vary = header;
+            ctx.Response.Headers["Cache-Control"] = "max-age=3600";
+            ctx.Response.ContentType = "text/plain";
+            var headerValue = ctx.Request.Headers[header].ToString();
+            var body = System.Text.Encoding.UTF8.GetBytes($"vary-{header}:{headerValue}");
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/must-revalidate → Cache-Control: max-age=0, must-revalidate
+        app.MapGet("/cache/must-revalidate", async (HttpContext ctx) =>
+        {
+            var etag = "\"must-rev-1\"";
+            if (ctx.Request.Headers["If-None-Match"].ToString() == etag)
+            {
+                ctx.Response.StatusCode = 304;
+                ctx.Response.Headers["ETag"] = etag;
+                ctx.Response.Headers["Cache-Control"] = "max-age=0, must-revalidate";
+                return;
+            }
+
+            ctx.Response.Headers["ETag"] = etag;
+            ctx.Response.Headers["Cache-Control"] = "max-age=0, must-revalidate";
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O"));
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/s-maxage/{seconds} → Cache-Control: s-maxage={seconds}
+        app.MapGet("/cache/s-maxage/{seconds:int}", async (HttpContext ctx, int seconds) =>
+        {
+            ctx.Response.Headers["Cache-Control"] = $"s-maxage={seconds}";
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O"));
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/expires → Expires header (absolute date, 1 hour from now)
+        app.MapGet("/cache/expires", async (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["Expires"] = DateTimeOffset.UtcNow.AddHours(1).ToString("R");
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O"));
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /cache/private → Cache-Control: private
+        app.MapGet("/cache/private", async (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["Cache-Control"] = "private";
+            ctx.Response.ContentType = "text/plain";
+            var body = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O"));
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
         });
     }
 }
