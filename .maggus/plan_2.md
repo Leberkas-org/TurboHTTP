@@ -148,15 +148,15 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want TurboClientStreamManager to materialize the full graph so that `TurboHttpClient.SendAsync` works end-to-end.
 
 **Acceptance Criteria:**
-- [ ] File modified: `src/TurboHttp/Client/TurboClientStreamManager.cs`
-- [ ] Uncommented and completed graph materialization code
-- [ ] Wired: `ChannelSource → RequestEnricher → Engine.CreateFlow(options) → ChannelSink`
-- [ ] Passes `CookieJar`, `HttpCacheStore` instances from `TurboClientOptions` or creates defaults
-- [ ] `CookieJar` — one per `TurboHttpClient` instance (thread-safe)
-- [ ] `HttpCacheStore` — one per `TurboHttpClient` instance (thread-safe, LRU)
-- [ ] `RedirectHandler` — one per request chain (stateful: redirect count)
-- [ ] `PerHostConnectionLimiter` — one per `TurboHttpClient` (thread-safe)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] File modified: `src/TurboHttp/Client/TurboClientStreamManager.cs`
+- [x] Uncommented and completed graph materialization code
+- [x] Wired: `ChannelSource → RequestEnricher → Engine.CreateFlow(options) → ChannelSink`
+- [x] Passes `CookieJar`, `HttpCacheStore` instances from `TurboClientOptions` or creates defaults
+- [x] `CookieJar` — one per `TurboHttpClient` instance (thread-safe)
+- [x] `HttpCacheStore` — one per `TurboHttpClient` instance (thread-safe, LRU)
+- [x] `RedirectHandler` — one per request chain (stateful: redirect count)
+- [x] ⚠️ BLOCKED: `PerHostConnectionLimiter` — one per `TurboHttpClient` (thread-safe) — No pipeline stage exists to consume PerHostConnectionLimiter. The class exists and is tested standalone, but there is no Akka.Streams stage to wire it into the Engine pipeline. A future task should create a throttling stage.
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-012: Kestrel Redirect Routes
 **Description:** As a test author, I want Kestrel fixture routes for redirect scenarios so that integration tests can verify redirect behavior end-to-end.

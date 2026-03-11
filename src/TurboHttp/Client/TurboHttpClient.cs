@@ -44,7 +44,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
 
     public TurboHttpClient(TurboClientOptions clientOptions, ActorSystem system)
     {
-        _manager = new TurboClientStreamManager(OptionsFactory, system);
+        _manager = new TurboClientStreamManager(clientOptions, OptionsFactory, system);
         _ = DrainResponsesAsync(_manager.Responses, _cts.Token);
         return;
 
