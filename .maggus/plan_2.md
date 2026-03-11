@@ -260,9 +260,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Follow `SendAsync` pattern from [`01_Http10EngineBasicTests.cs`](../src/TurboHttp.IntegrationTests/Http10/01_Http10EngineBasicTests.cs). Connection reuse routes require TASK-017 (wiring `RegisterConnectionReuseRoutes` call). Uses `KestrelFixture` routes: `/conn/keep-alive`, `/conn/close`, `/conn/default`.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http10/02_Http10ConnectionTests.cs`
-- [ ] 5 tests: no keep-alive default, Keep-Alive opt-in, sequential requests new connection, reuse with Keep-Alive, server close overrides
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10ConnectionTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http10/02_Http10ConnectionTests.cs`
+- [x] 5 tests: no keep-alive default, Keep-Alive opt-in, sequential requests new connection, reuse with Keep-Alive, server close overrides
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http10ConnectionTests"`
 
 ### TASK-020: Http10Engine Redirect Integration Tests
 **Engine:** [`Http10Engine.cs`](../src/TurboHttp/Streams/Http10Engine.cs)
