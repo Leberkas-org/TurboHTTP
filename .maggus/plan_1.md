@@ -445,11 +445,11 @@
 **File:** `Http11/Http11EngineRfcRoundTripTests.cs`
 **RFC:** 9112 (combined)
 
-- [ ] `11ENG-001`: GET → 200 with Content-Length body — version 1.1
-- [ ] `11ENG-002`: POST → chunked request + chunked response
-- [ ] `11ENG-003`: 5 sequential requests → FIFO correlation
-- [ ] `11ENG-004`: Host header in wire correct for each URI
-- [ ] `11ENG-005`: Hop-by-hop headers stripped in wire
+- [x] `11ENG-001`: GET → 200 with Content-Length body — version 1.1
+- [x] `11ENG-002`: POST → chunked request + chunked response
+- [x] `11ENG-003`: 5 sequential requests → FIFO correlation
+- [x] `11ENG-004`: Host header in wire correct for each URI
+- [x] `11ENG-005`: Hop-by-hop headers stripped in wire
 
 ---
 
