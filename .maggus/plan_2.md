@@ -136,13 +136,13 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want Engine.CreateFlow to conditionally insert the new stages based on TurboClientOptions feature flags so that the full pipeline is assembled dynamically.
 
 **Acceptance Criteria:**
-- [ ] File modified: `src/TurboHttp/Streams/Engine.cs`
-- [ ] Accepts `TurboClientOptions` (or `PipelineOptions` record)
-- [ ] Conditionally inserts stages: RequestEnricher → CookieInjection → CacheLookup → [Engine core] → Decompression → CookieStorage → CacheStorage → Redirect → merge
-- [ ] Retry wraps the engine core (not a linear stage)
-- [ ] With all flags `false`, pipeline is identical to current behavior
-- [ ] Unit tests written and successful
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] File modified: `src/TurboHttp/Streams/Engine.cs`
+- [x] Accepts `TurboClientOptions` (or `PipelineOptions` record)
+- [x] Conditionally inserts stages: RequestEnricher → CookieInjection → CacheLookup → [Engine core] → Decompression → CookieStorage → CacheStorage → Redirect → merge
+- [x] Retry wraps the engine core (not a linear stage)
+- [x] With all flags `false`, pipeline is identical to current behavior
+- [x] Unit tests written and successful
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
 
 ### TASK-011: TurboClientStreamManager Activation
 **Description:** As a developer, I want TurboClientStreamManager to materialize the full graph so that `TurboHttpClient.SendAsync` works end-to-end.
