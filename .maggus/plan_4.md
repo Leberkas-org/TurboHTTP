@@ -133,13 +133,13 @@ plan_3 (Stage-based):                    plan_5 (Actor-based):
 **Equivalent to plan_3 TASK-003 (Multi-Connection per Host — Dynamic Scaling)**
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/IO/HostPoolActorTests.cs` created
-- [ ] Test: First `Incoming` request spawns a new `ConnectionActor` child
-- [ ] Test: Second request while first connection is busy spawns a second `ConnectionActor`
-- [ ] Test: N parallel requests with `MaxConnectionsPerHost=N` → N connections spawned
-- [ ] Test: Request when `MaxConnectionsPerHost` is reached → request queued in `_pending`
-- [ ] Test: Each spawned `ConnectionActor` is `Context.Watch`'ed
-- [ ] All tests green
+- [x] Test file `src/TurboHttp.Tests/IO/HostPoolActorTests.cs` created
+- [x] Test: First `Incoming` request spawns a new `ConnectionActor` child
+- [x] Test: Second request while first connection is busy spawns a second `ConnectionActor`
+- [x] Test: N parallel requests with `MaxConnectionsPerHost=N` → N connections spawned
+- [x] Test: Request when `MaxConnectionsPerHost` is reached → request queued in `_pending`
+- [x] Test: Each spawned `ConnectionActor` is `Context.Watch`'ed
+- [x] All tests green
 
 ---
 
