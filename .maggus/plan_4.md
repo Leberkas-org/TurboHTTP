@@ -318,14 +318,14 @@ private void HandleReconnect(Reconnect msg)
 **Description:** As a developer, I want tests for the TCP connection lifecycle so that connect/disconnect/reconnect behavior is verified.
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/IO/ConnectionActorTests.cs` created
-- [ ] Test: `PreStart` sends `ClientManager.CreateTcpRunner` with correct `TcpOptions` and `Self`
-- [ ] Test: `ClientConnected` stores inbound/outbound channels and runner ref
-- [ ] Test: `ClientConnected` starts PumpInbound task
-- [ ] Test: `ClientDisconnected` triggers reconnect (sends `CreateTcpRunner` again)
-- [ ] Test: `Terminated` of runner triggers reconnect
-- [ ] Test: Reconnect clears old channel references before creating new ones
-- [ ] All tests green
+- [x] Test file `src/TurboHttp.Tests/IO/ConnectionActorTests.cs` created
+- [x] Test: `PreStart` sends `ClientManager.CreateTcpRunner` with correct `TcpOptions` and `Self`
+- [x] Test: `ClientConnected` stores inbound/outbound channels and runner ref
+- [x] Test: `ClientConnected` starts PumpInbound task
+- [x] Test: `ClientDisconnected` triggers reconnect (sends `CreateTcpRunner` again)
+- [x] Test: `Terminated` of runner triggers reconnect
+- [x] Test: Reconnect clears old channel references before creating new ones
+- [x] All tests green
 
 ---
 
