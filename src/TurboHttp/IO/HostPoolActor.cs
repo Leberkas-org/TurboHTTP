@@ -167,6 +167,7 @@ public sealed class HostPoolActor : ReceiveActor
             if (now - conn.LastActivity > _config.IdleTimeout &&
                 _connections.Count > 1)
             {
+                Context.Unwatch(conn.Actor);
                 conn.Actor.Tell(PoisonPill.Instance);
                 _connections.Remove(conn);
             }

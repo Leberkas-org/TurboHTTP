@@ -290,13 +290,13 @@ private void HandleReconnect(Reconnect msg)
 **Equivalent to plan_3 TASK-006 (Idle Connection Eviction)**
 
 **Acceptance Criteria:**
-- [ ] Test: `IdleCheck` timer is started in `PreStart` with `PoolConfig.IdleCheckInterval`
-- [ ] Test: Idle connection past `IdleTimeout` receives `PoisonPill` and is removed
-- [ ] Test: Idle connection within `IdleTimeout` is preserved
-- [ ] Test: Active (non-idle) connection is never evicted regardless of `LastActivity`
-- [ ] Test: Last remaining connection per host is preserved (`_connections.Count > 1` check)
-- [ ] Test: Multiple idle connections — only expired ones are evicted
-- [ ] All tests green
+- [x] Test: `IdleCheck` timer is started in `PreStart` with `PoolConfig.IdleCheckInterval`
+- [x] Test: Idle connection past `IdleTimeout` receives `PoisonPill` and is removed
+- [x] Test: Idle connection within `IdleTimeout` is preserved
+- [x] Test: Active (non-idle) connection is never evicted regardless of `LastActivity`
+- [x] Test: Last remaining connection per host is preserved (`_connections.Count > 1` check)
+- [x] Test: Multiple idle connections — only expired ones are evicted
+- [x] All tests green
 
 ---
 
