@@ -500,9 +500,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** `KestrelH2Fixture` reuses content encoding routes via `KestrelFixture.RegisterContentEncodingRoutes(app)` ([KestrelH2Fixture.cs L276](../src/TurboHttp.IntegrationTests/Shared/KestrelH2Fixture.cs)).
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/10_Http20ContentEncodingTests.cs`
-- [ ] 4 tests: gzip, deflate, brotli, large (500KB)
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20ContentEncodingTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/10_Http20ContentEncodingTests.cs`
+- [x] 4 tests: gzip, deflate, brotli, large (500KB)
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20ContentEncodingTests"`
 
 ### TASK-042: Http20Engine Error Handling Integration Tests
 **Engine:** [`Http20Engine.cs`](../src/TurboHttp/Streams/Http20Engine.cs)
