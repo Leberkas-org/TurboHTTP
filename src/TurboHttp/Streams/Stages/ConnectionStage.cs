@@ -45,7 +45,9 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
         private IActorRef _self = ActorRefs.Nobody;
 
         private bool _connected;
+        private bool _stopping;
         private TcpOptions? _options;
+        private IActorRef _runner = ActorRefs.Nobody;
 
         private ChannelReader<(IMemoryOwner<byte>, int)>? _inboundReader;
         private ChannelWriter<(IMemoryOwner<byte>, int)>? _outboundWriter;
@@ -57,14 +59,22 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
         {
             _stage = stage;
 
-            SetHandler(stage._inlet, onPush: HandlePush, onUpstreamFinish: CompleteStage);
+            SetHandler(stage._inlet, onPush: HandlePush, onUpstreamFinish: () =>
+            {
+                _stopping = true;
+                CompleteStage();
+            });
             SetHandler(stage._outlet, onPull: () =>
             {
                 if (_pendingReads.TryDequeue(out var chunk))
                 {
                     Push(_stage._outlet, chunk);
                 }
-            }, onDownstreamFinish: _ => CompleteStage());
+            }, onDownstreamFinish: _ =>
+            {
+                _stopping = true;
+                CompleteStage();
+            });
         }
 
         public override void PreStart()
@@ -102,7 +112,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
 
         private void TryConnect()
         {
-            if (_options == null) return;
+            if (_stopping || _options == null) return;
             _stage.ClientManager.Tell(new ClientManager.CreateTcpRunner(_options, _self));
         }
 
@@ -111,7 +121,15 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
             switch (args.msg)
             {
                 case ClientRunner.ClientConnected c:
+                    if (_stopping)
+                    {
+                        // Stage is shutting down — close the runner immediately
+                        args.sender.Tell(DoClose.Instance);
+                        return;
+                    }
+
                     _connected = true;
+                    _runner = args.sender;
                     _inboundReader = c.InboundReader;
                     _outboundWriter = c.OutboundWriter;
                     _ = BeginReadLoop(_inboundReader);
@@ -129,6 +147,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
 
                 case ClientRunner.ClientDisconnected:
                     _connected = false;
+                    _runner = ActorRefs.Nobody;
                     _inboundReader = null;
                     _outboundWriter = null;
                     break;
@@ -164,6 +183,14 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, (IMem
 
         public override void PostStop()
         {
+            _stopping = true;
+            _outboundWriter?.TryComplete();
+
+            if (!_runner.IsNobody())
+            {
+                _runner.Tell(DoClose.Instance);
+            }
+
             while (_pendingWrites.TryDequeue(out var chunk))
             {
                 chunk.Item1.Dispose();

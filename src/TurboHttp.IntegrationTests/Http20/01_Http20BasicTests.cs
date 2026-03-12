@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Net;
 using System.Text;
 using Akka.Actor;
@@ -6,22 +5,19 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.IntegrationTests.Shared;
 using TurboHttp.IO;
-using TurboHttp.Protocol;
+using TurboHttp.Streams;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.IntegrationTests.Http20;
 
 /// <summary>
 /// Integration tests for Http20Engine basic RFC 9113 compliance.
-/// These tests drive the actual HTTP/2 Akka.Streams pipeline
-/// (streamIdAllocator → request2Frame → h2Connection → encoder → prependPreface →
-///  ConnectionStage/ClientManager → real TCP → decoder → h2Connection → streamDecoder)
+/// These tests drive the actual HTTP/2 Akka.Streams pipeline via Http20Engine
 /// against a real Kestrel h2c server.
 ///
-/// Unlike HTTP/1.x, the Http20Engine's PrependPrefaceStage must see the ConnectItem
-/// so it can inject the HTTP/2 connection preface (magic + client SETTINGS) before
-/// the first request frames. We build the graph manually using Concat to feed the
-/// ConnectItem through PrependPrefaceStage before the encoder's output.
+/// The transport layer prepends a ConnectItem and routes it through PrependPrefaceStage
+/// so the HTTP/2 connection preface (magic + client SETTINGS) is injected before
+/// the first request frames reach the ConnectionStage.
 /// </summary>
 public sealed class Http20BasicTests : TestKit, IClassFixture<KestrelH2Fixture>
 {
@@ -37,63 +33,28 @@ public sealed class Http20BasicTests : TestKit, IClassFixture<KestrelH2Fixture>
     }
 
     /// <summary>
-    /// Sends a single HTTP/2 request through a manually-wired pipeline.
-    /// The ConnectItem is injected via Concat before PrependPrefaceStage
-    /// so the HTTP/2 connection preface is emitted before any request frames.
+    /// Sends a single HTTP/2 request through the Http20Engine pipeline.
+    /// The ConnectItem is prepended in the transport layer and routed through
+    /// PrependPrefaceStage before reaching the ConnectionStage.
     /// </summary>
     private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
     {
-        var requestEncoder = new Http2RequestEncoder();
         var tcpOptions = new TcpOptions
         {
             Host = "127.0.0.1",
             Port = _fixture.Port
         };
 
-        var flow = Flow.FromGraph(GraphDsl.Create(b =>
-        {
-            // ── HTTP/2 engine stages ───────────────────────────────────────────
-            var streamIdAllocator = b.Add(new StreamIdAllocatorStage());
-            var requestToFrame = b.Add(new Request2FrameStage(requestEncoder));
-            var frameEncoder = b.Add(new Http20EncoderStage());
-            const int windowSize = 2 * 1024 * 1024; // 2 MB — supports large body transfers
-            var prependPreface = b.Add(new PrependPrefaceStage(windowSize));
-            var frameDecoder = b.Add(new Http20DecoderStage());
-            var streamDecoder = b.Add(new Http20StreamStage());
-            var h2Connection = b.Add(new Http20ConnectionStage(windowSize));
+        const int windowSize = 2 * 1024 * 1024;
+        var engine = new Http20Engine(windowSize).CreateFlow();
 
-            // ── Transport ──────────────────────────────────────────────────────
-            var connectionStage = b.Add(new ConnectionStage(_clientManager));
+        var transport =
+            Flow.Create<ITransportItem>()
+                .Prepend(Source.Single<ITransportItem>(new ConnectItem(tcpOptions)))
+                .Via(new PrependPrefaceStage(windowSize))
+                .Via(new ConnectionStage(_clientManager));
 
-            // Convert encoder output to ITransportItem (DataItem)
-            var toDataItem = b.Add(Flow.Create<(IMemoryOwner<byte>, int)>()
-                .Select(ITransportItem (x) => new DataItem(x.Item1, x.Item2)));
-
-            // Concat: ConnectItem (input 0) first, then encoder DataItems (input 1)
-            var connectSource = b.Add(Source.Single<ITransportItem>(new ConnectItem(tcpOptions)));
-            var concat = b.Add(Concat.Create<ITransportItem>(2));
-
-            // ── Request path ───────────────────────────────────────────────────
-            // request → streamIdAllocator → request2Frame → h2Connection(outbound)
-            b.From(streamIdAllocator.Outlet).To(requestToFrame.Inlet);
-            b.From(requestToFrame.Outlet).To(h2Connection.Inlet2);
-
-            // ── Outbound: h2Connection → encoder → DataItem → Concat → PrependPreface → TCP
-            b.From(h2Connection.Outlet2).To(frameEncoder.Inlet);
-            b.From(frameEncoder.Outlet).To(toDataItem.Inlet);
-            b.From(connectSource).To(concat.In(0));
-            b.From(toDataItem.Outlet).To(concat.In(1));
-            b.From(concat.Out).To(prependPreface.Inlet);
-            b.From(prependPreface.Outlet).To(connectionStage.Inlet);
-
-            // ── Inbound: TCP → frameDecoder → h2Connection(inbound) → streamDecoder
-            b.From(connectionStage.Outlet).To(frameDecoder.Inlet);
-            b.From(frameDecoder.Outlet).To(h2Connection.Inlet1);
-            b.From(h2Connection.Outlet1).To(streamDecoder.Inlet);
-
-            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(
-                streamIdAllocator.Inlet, streamDecoder.Outlet);
-        }));
+        var flow = engine.Join(transport);
 
         var (queue, responseTask) = Source.Queue<HttpRequestMessage>(1, OverflowStrategy.Backpressure)
             .Via(flow)
@@ -129,7 +90,7 @@ public sealed class Http20BasicTests : TestKit, IClassFixture<KestrelH2Fixture>
 
         var response = await SendAsync(request);
 
-        // HEAD may return 200 or 204 depending on server behaviour with HTTP/2
+        // HEAD may return 200 or 204 depending on server behavior with HTTP/2
         Assert.True(response.StatusCode is HttpStatusCode.OK or HttpStatusCode.NoContent);
         var body = await response.Content.ReadAsByteArrayAsync();
         Assert.Empty(body);

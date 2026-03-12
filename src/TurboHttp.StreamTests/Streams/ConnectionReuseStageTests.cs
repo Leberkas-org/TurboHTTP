@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using Akka.Streams.Dsl;
 using TurboHttp.Protocol;
 using TurboHttp.Streams.Stages;

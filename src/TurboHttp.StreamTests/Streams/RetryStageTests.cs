@@ -1,6 +1,4 @@
-using System;
 using System.Net;
-using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;

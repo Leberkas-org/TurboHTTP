@@ -104,7 +104,7 @@ public sealed class Http20FlowControlTests : TestKit, IClassFixture<KestrelH2Fix
     /// Sends multiple HTTP/2 requests through a single pipeline with configurable window size.
     /// </summary>
     private async Task<List<HttpResponseMessage>> SendManyAsync(
-        IReadOnlyList<HttpRequestMessage> requests,
+        List<HttpRequestMessage> requests,
         int windowSize = 2 * 1024 * 1024,
         TimeSpan? timeout = null)
     {
@@ -144,7 +144,7 @@ public sealed class Http20FlowControlTests : TestKit, IClassFixture<KestrelH2Fix
         // that exceeds the available space in either the connection or stream flow-control window.
         // The server's default initial window is 65535 bytes. A 32KB body fits within this window,
         // verifying that the pipeline correctly sends large POST bodies through flow control.
-        var bodySize = 32 * 1024;
+        const int bodySize = 32 * 1024;
         var bodyBytes = new byte[bodySize];
         Array.Fill(bodyBytes, (byte)'B');
 

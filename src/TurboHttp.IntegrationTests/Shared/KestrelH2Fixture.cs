@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
+using Servus.Core.Network;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
@@ -24,6 +21,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        var port = PortFinder.FindFreeLocalPort();
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.ConfigureKestrel(options =>
         {
@@ -31,7 +29,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
             // MaxRequestHeadersTotalSize must be <= MaxRequestBufferSize (default 1 MB).
             // 512 KB handles 500 custom headers × ~100 bytes each = ~50 KB comfortably.
             options.Limits.MaxRequestHeadersTotalSize = 512 * 1024;
-            options.ListenAnyIP(0, listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; });
+            options.ListenAnyIP(port, listenOptions => { listenOptions.Protocols = HttpProtocols.Http2; });
         });
         builder.Logging.ClearProviders();
 
@@ -41,10 +39,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
 
         await app.StartAsync();
 
-        var server = app.Services.GetRequiredService<IServer>();
-        var addrFeature = server.Features.Get<IServerAddressesFeature>()!;
-        Port = new Uri(addrFeature.Addresses.First()).Port;
-
+        Port = port;
         _app = app;
     }
 
@@ -186,7 +181,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         // ── HTTP/2 specific ───────────────────────────────────────────────────
 
         // GET /h2/settings → echoes some server settings info
-        app.MapGet("/h2/settings", (HttpContext ctx) => { return Results.Content("h2-ok", "text/plain"); });
+        app.MapGet("/h2/settings", (HttpContext _) => Results.Content("h2-ok", "text/plain"));
 
         // GET /h2/many-headers → response with 20 custom headers
         app.MapGet("/h2/many-headers", (HttpContext ctx) =>
@@ -261,18 +256,18 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         });
 
         // ── Redirect Routes ─────────────────────────────────────────────────
-        KestrelFixture.RegisterRedirectRoutes(app);
+        Routes.RegisterRedirectRoutes(app);
 
         // ── Cookie Routes ───────────────────────────────────────────────────
-        KestrelFixture.RegisterCookieRoutes(app);
+        Routes.RegisterCookieRoutes(app);
 
         // ── Retry Routes ─────────────────────────────────────────────────────
-        KestrelFixture.RegisterRetryRoutes(app);
+        Routes.RegisterRetryRoutes(app);
 
         // ── Cache Routes ──────────────────────────────────────────────────────
-        KestrelFixture.RegisterCacheRoutes(app);
+        Routes.RegisterCacheRoutes(app);
 
         // ── Content Encoding Routes ─────────────────────────────────────────
-        KestrelFixture.RegisterContentEncodingRoutes(app);
+        Routes.RegisterContentEncodingRoutes(app);
     }
 }

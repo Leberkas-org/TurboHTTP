@@ -2,9 +2,9 @@ using Akka.Actor;
 using Akka.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace TurboHttp.IntegrationTests;
+namespace TurboHttp.IntegrationTests.Shared;
 
-public class TestKit : IDisposable
+public class TestKit : IAsyncLifetime
 {
     protected TestKit()
     {
@@ -14,8 +14,10 @@ public class TestKit : IDisposable
 
     protected ActorSystem Sys { get; }
 
-    public void Dispose()
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync()
     {
-        Sys.Terminate().Wait(TimeSpan.FromSeconds(5));
+        await Sys.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
     }
 }

@@ -15,8 +15,7 @@ namespace TurboHttp.Streams.Stages;
 /// the stage unchanged.
 /// </para>
 /// </summary>
-internal sealed class ConnectionReuseStage
-    : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
+internal sealed class ConnectionReuseStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly Version _httpVersion;
     private readonly Action<ConnectionReuseDecision> _onDecision;

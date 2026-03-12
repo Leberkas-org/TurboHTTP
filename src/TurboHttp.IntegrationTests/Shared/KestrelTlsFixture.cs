@@ -2,12 +2,10 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Servus.Core.Network;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
@@ -19,6 +17,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        var port = PortFinder.FindFreeLocalPort();
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
 
@@ -26,7 +25,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
 
         builder.WebHost.ConfigureKestrel(options =>
         {
-            options.ListenLocalhost(0, listenOptions =>
+            options.ListenLocalhost(port, listenOptions =>
             {
                 listenOptions.UseHttps(cert);
                 listenOptions.Protocols = HttpProtocols.Http1;
@@ -39,10 +38,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
 
         await app.StartAsync();
 
-        var server = app.Services.GetRequiredService<IServer>();
-        var addrFeature = server.Features.Get<IServerAddressesFeature>()!;
-        Port = new Uri(addrFeature.Addresses.First()).Port;
-
+        Port = port;
         _app = app;
     }
 

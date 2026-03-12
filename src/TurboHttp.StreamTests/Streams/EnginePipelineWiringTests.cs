@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Http.Headers;
 using Akka;
 using Akka.Streams.Dsl;
 using TurboHttp.Client;

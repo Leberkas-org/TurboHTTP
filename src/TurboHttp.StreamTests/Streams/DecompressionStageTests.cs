@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Net.Http;
 using Akka.Streams.Dsl;
 using TurboHttp.Streams.Stages;
 

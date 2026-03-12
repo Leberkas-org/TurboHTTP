@@ -67,6 +67,7 @@ public class ClientRunner : ReceiveActor
             _state.Pipe.Writer.Complete();
             _state.Stream.Close();
             _state.Stream.Dispose();
+            _clientProvider.Close();
         }
         catch (Exception ex)
         {

@@ -35,8 +35,7 @@ public sealed class Http20MultiplexTests : TestKit, IClassFixture<KestrelH2Fixtu
     /// Uses Source.Queue with capacity > 1 so requests can be enqueued concurrently.
     /// Responses are collected via Sink.ForEach into a thread-safe bag.
     /// </summary>
-    private async Task<List<HttpResponseMessage>> SendManyAsync(
-        IReadOnlyList<HttpRequestMessage> requests,
+    private async Task<List<HttpResponseMessage>> SendManyAsync(List<HttpRequestMessage> requests,
         TimeSpan? timeout = null)
     {
         var effectiveTimeout = timeout ?? TimeSpan.FromSeconds(15);
@@ -113,64 +112,6 @@ public sealed class Http20MultiplexTests : TestKit, IClassFixture<KestrelH2Fixtu
 
         await tcs.Task.WaitAsync(effectiveTimeout);
         return responses.ToList();
-    }
-
-    /// <summary>
-    /// Sends a single HTTP/2 request (convenience wrapper for single-request tests).
-    /// </summary>
-    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
-    {
-        var requestEncoder = new Http2RequestEncoder();
-        var tcpOptions = new TcpOptions
-        {
-            Host = "127.0.0.1",
-            Port = _fixture.Port
-        };
-
-        var flow = Flow.FromGraph(GraphDsl.Create(b =>
-        {
-            var streamIdAllocator = b.Add(new StreamIdAllocatorStage());
-            var requestToFrame = b.Add(new Request2FrameStage(requestEncoder));
-            var frameEncoder = b.Add(new Http20EncoderStage());
-            const int windowSize = 2 * 1024 * 1024;
-            var prependPreface = b.Add(new PrependPrefaceStage(windowSize));
-            var frameDecoder = b.Add(new Http20DecoderStage());
-            var streamDecoder = b.Add(new Http20StreamStage());
-            var h2Connection = b.Add(new Http20ConnectionStage(windowSize));
-
-            var connectionStage = b.Add(new ConnectionStage(_clientManager));
-
-            var toDataItem = b.Add(Flow.Create<(IMemoryOwner<byte>, int)>()
-                .Select(ITransportItem (x) => new DataItem(x.Item1, x.Item2)));
-
-            var connectSource = b.Add(Source.Single<ITransportItem>(new ConnectItem(tcpOptions)));
-            var concat = b.Add(Concat.Create<ITransportItem>(2));
-
-            b.From(streamIdAllocator.Outlet).To(requestToFrame.Inlet);
-            b.From(requestToFrame.Outlet).To(h2Connection.Inlet2);
-
-            b.From(h2Connection.Outlet2).To(frameEncoder.Inlet);
-            b.From(frameEncoder.Outlet).To(toDataItem.Inlet);
-            b.From(connectSource).To(concat.In(0));
-            b.From(toDataItem.Outlet).To(concat.In(1));
-            b.From(concat.Out).To(prependPreface.Inlet);
-            b.From(prependPreface.Outlet).To(connectionStage.Inlet);
-
-            b.From(connectionStage.Outlet).To(frameDecoder.Inlet);
-            b.From(frameDecoder.Outlet).To(h2Connection.Inlet1);
-            b.From(h2Connection.Outlet1).To(streamDecoder.Inlet);
-
-            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(
-                streamIdAllocator.Inlet, streamDecoder.Outlet);
-        }));
-
-        var (queue, responseTask) = Source.Queue<HttpRequestMessage>(1, OverflowStrategy.Backpressure)
-            .Via(flow)
-            .ToMaterialized(Sink.First<HttpResponseMessage>(), Keep.Both)
-            .Run(_materializer);
-
-        await queue.OfferAsync(request);
-        return await responseTask.WaitAsync(TimeSpan.FromSeconds(10));
     }
 
     [Fact(DisplayName = "20E-INT-010: Two concurrent GETs on same connection both succeed")]
@@ -256,7 +197,8 @@ public sealed class Http20MultiplexTests : TestKit, IClassFixture<KestrelH2Fixtu
         Assert.Contains("h2-ok", bodies);
     }
 
-    [Fact(DisplayName = "20E-INT-013: Client stream IDs are odd (RFC 9113 §5.1.1) — verified by successful multiplexed exchange")]
+    [Fact(DisplayName =
+        "20E-INT-013: Client stream IDs are odd (RFC 9113 §5.1.1) — verified by successful multiplexed exchange")]
     public async Task StreamIds_AreOddForClientInitiated()
     {
         // RFC 9113 §5.1.1: client-initiated streams MUST use odd stream IDs.
@@ -283,7 +225,7 @@ public sealed class Http20MultiplexTests : TestKit, IClassFixture<KestrelH2Fixtu
         // Verify each request's X-Stream-Id was echoed back
         var echoedIds = responses
             .Select(r => r.Headers.GetValues("X-Stream-Id").First())
-            .OrderBy(id => int.Parse(id))
+            .OrderBy(int.Parse)
             .ToList();
 
         Assert.Equal(new[] { "1", "2", "3", "4", "5" }, echoedIds);

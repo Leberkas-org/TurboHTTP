@@ -2,12 +2,10 @@ using System;
 using System.Net.Http;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.IO;
-using TurboHttp.Protocol;
 using TurboHttp.Streams;
 
 namespace TurboHttp.Client;

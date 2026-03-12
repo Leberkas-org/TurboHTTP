@@ -24,7 +24,8 @@
       "mcp__plugin_context-mode_context-mode__index",
       "mcp__plugin_context-mode_context-mode__search",
       "Bash(read f:*)",
-      "*"
+      "*",
+      "Bash(for i:*)"
     ]
   },
   "enabledPlugins": {}
