@@ -1,5 +1,6 @@
 using System.Buffers;
-using Akka.Actor;
+using Akka;
+using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
@@ -7,25 +8,36 @@ using TurboHttp.IO.Stages;
 namespace TurboHttp.StreamTests.Stages;
 
 /// <summary>
-/// Foundation tests for <see cref="ConnectionPoolStage"/>.
-/// Covers: ConnectItem registration, unknown PoolKey rejection, empty pass-through.
+/// Tests for <see cref="ConnectionPoolStage"/>.
+/// TASK-001: Foundation — ConnectItem registration, unknown PoolKey rejection, empty pass-through.
+/// TASK-002: Per-host connection lifecycle — sub-graph materialisation, single-host roundtrip.
 /// </summary>
 public sealed class ConnectionPoolStageTests : StreamTestBase
 {
     private static readonly new PoolConfig DefaultConfig = new();
 
     /// <summary>
-    /// Creates a ConnectionPoolStage with a dummy ConnectionStage factory.
-    /// The factory is not invoked in TASK-001 foundation tests — it exists only
-    /// to satisfy the constructor signature.
+    /// Creates an echo flow that filters out ConnectItems and echoes DataItems back.
+    /// Used as a fake ConnectionStage for unit tests.
+    /// </summary>
+    private static IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed> CreateEchoFlow()
+    {
+        return Flow.Create<ITransportItem>()
+            .Where(x => x is DataItem)
+            .Select(x =>
+            {
+                var data = (DataItem)x;
+                return (data.Memory, data.Length);
+            });
+    }
+
+    /// <summary>
+    /// Creates a ConnectionPoolStage with an echo flow factory.
+    /// The echo flow passes DataItems through and filters ConnectItems.
     /// </summary>
     private static ConnectionPoolStage CreateStage()
     {
-        // Factory creates a ConnectionStage with a Nobody actor ref.
-        // Foundation tests never materialise sub-graphs, so this is safe.
-        return new ConnectionPoolStage(
-            () => new ConnectionStage(ActorRefs.Nobody),
-            DefaultConfig);
+        return new ConnectionPoolStage(CreateEchoFlow, DefaultConfig);
     }
 
     private static TcpOptions TestOptions(string host = "example.com", int port = 443)
@@ -153,28 +165,29 @@ public sealed class ConnectionPoolStageTests : StreamTestBase
         Assert.Empty(results);
     }
 
-    // ── POOL-007: ConnectItem then DataItem for registered key does not fail ──
+    // ── POOL-007: ConnectItem then DataItem for registered key produces response ──
 
     [Fact(Timeout = 10_000,
-        DisplayName = "POOL-007: DataItem after ConnectItem for same key does not fail")]
-    public async Task POOL_007_DataItem_AfterConnectItem_SameKey_DoesNotFail()
+        DisplayName = "POOL-007: DataItem after ConnectItem for same key produces response")]
+    public async Task POOL_007_DataItem_AfterConnectItem_SameKey_ProducesResponse()
     {
         const string poolKey = "https:example.com:443:1.1";
-        var data = new SimpleMemoryOwner(new byte[] { 0x48, 0x49 });
+        var payload = new byte[] { 0x48, 0x49 };
+        var data = new SimpleMemoryOwner(payload);
         var items = new List<RoutedTransportItem>
         {
             new(poolKey, new ConnectItem(TestOptions())),
             new(poolKey, new DataItem(data, 2))
         };
 
-        // Should complete without exception — data is accepted (even though
-        // no sub-graph is materialised yet in TASK-001 foundation).
         var results = await Source.From(items)
             .Via(Flow.FromGraph(CreateStage()))
             .RunWith(Sink.Seq<RoutedDataItem>(), Materializer);
 
-        // No responses expected in foundation (no sub-graph wired)
-        Assert.Empty(results);
+        // Sub-graph echo flow returns the DataItem as a RoutedDataItem
+        Assert.Single(results);
+        Assert.Equal(poolKey, results[0].PoolKey);
+        Assert.Equal(2, results[0].Length);
     }
 
     // ── POOL-008: Stage shape has correct inlet/outlet names ──────────────────
@@ -188,5 +201,56 @@ public sealed class ConnectionPoolStageTests : StreamTestBase
         Assert.NotNull(stage.Shape.Outlet);
         Assert.Equal("pool.in", stage.Shape.Inlet.Name);
         Assert.Equal("pool.out", stage.Shape.Outlet.Name);
+    }
+
+    // ── POOL-009: Single-host single-connection roundtrip ─────────────────────
+
+    [Fact(Timeout = 10_000,
+        DisplayName = "POOL-009: Single-host single-connection roundtrip with echo flow")]
+    public async Task POOL_009_SingleHost_SingleConnection_Roundtrip()
+    {
+        const string poolKey = "https:example.com:443:1.1";
+        var payload = new byte[] { 0x48, 0x45, 0x4C, 0x4C, 0x4F }; // HELLO
+        var data = new SimpleMemoryOwner(payload);
+        var items = new List<RoutedTransportItem>
+        {
+            new(poolKey, new ConnectItem(TestOptions())),
+            new(poolKey, new DataItem(data, payload.Length))
+        };
+
+        var results = await Source.From(items)
+            .Via(Flow.FromGraph(CreateStage()))
+            .RunWith(Sink.Seq<RoutedDataItem>(), Materializer);
+
+        Assert.Single(results);
+        Assert.Equal(poolKey, results[0].PoolKey);
+        Assert.Equal(payload.Length, results[0].Length);
+        Assert.Equal(payload, results[0].Memory.Memory.Slice(0, results[0].Length).ToArray());
+    }
+
+    // ── POOL-010: Multiple DataItems for same host reuse connection slot ──────
+
+    [Fact(Timeout = 10_000,
+        DisplayName = "POOL-010: Multiple DataItems for same host reuse the same connection slot")]
+    public async Task POOL_010_MultipleDataItems_SameHost_ReuseSlot()
+    {
+        const string poolKey = "https:example.com:443:1.1";
+        var payload1 = new byte[] { 0x01, 0x02 };
+        var payload2 = new byte[] { 0x03, 0x04, 0x05 };
+        var items = new List<RoutedTransportItem>
+        {
+            new(poolKey, new ConnectItem(TestOptions())),
+            new(poolKey, new DataItem(new SimpleMemoryOwner(payload1), payload1.Length)),
+            new(poolKey, new DataItem(new SimpleMemoryOwner(payload2), payload2.Length))
+        };
+
+        var results = await Source.From(items)
+            .Via(Flow.FromGraph(CreateStage()))
+            .RunWith(Sink.Seq<RoutedDataItem>(), Materializer);
+
+        Assert.Equal(2, results.Count);
+        Assert.All(results, r => Assert.Equal(poolKey, r.PoolKey));
+        Assert.Equal(payload1.Length, results[0].Length);
+        Assert.Equal(payload2.Length, results[1].Length);
     }
 }

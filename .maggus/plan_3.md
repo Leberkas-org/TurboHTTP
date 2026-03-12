@@ -50,17 +50,17 @@ The key architectural insight: rather than bypassing `ConnectionStage`, the pool
 **Description:** As a developer, I want the pool to materialise a `ConnectionStage` instance for a host on the first DataItem after a ConnectItem, and route data through it.
 
 **Acceptance Criteria:**
-- [ ] After ConnectItem + first DataItem, a new `ConnectionStage` is materialised as a sub-graph
-- [ ] Sub-graph materialisation uses `SubFusingActorMaterializer` from the stage's `Materializer` (available via `GraphStageLogic`)
-- [ ] The materialised `ConnectionStage` flow is driven by `Source.Queue` (inlet) and `Sink.ForEach` (outlet) — pool pushes items into it and reads results
-- [ ] DataItem is forwarded to the ConnectionStage's materialised source
-- [ ] Response data from ConnectionStage is emitted as `RoutedDataItem` with correct PoolKey
-- [ ] Internal state tracks: `Dictionary<string, HostPool>` with list of active connections
-- [ ] `HostPool` contains: `TcpOptions` (from ConnectItem), `List<ConnectionSlot>`, connection counter
-- [ ] `ConnectionSlot` wraps: materialised ConnectionStage (Source.Queue + completion), active/idle status, pending request count
-- [ ] Single host, single connection, request-response works end-to-end
-- [ ] Unit tests: single-host single-connection roundtrip with fake ConnectionStage
-- [ ] Typecheck/build passes
+- [x] After ConnectItem + first DataItem, a new `ConnectionStage` is materialised as a sub-graph
+- [x] Sub-graph materialisation uses `SubFusingActorMaterializer` from the stage's `Materializer` (available via `GraphStageLogic`)
+- [x] The materialised `ConnectionStage` flow is driven by `Source.Queue` (inlet) and `Sink.ForEach` (outlet) — pool pushes items into it and reads results
+- [x] DataItem is forwarded to the ConnectionStage's materialised source
+- [x] Response data from ConnectionStage is emitted as `RoutedDataItem` with correct PoolKey
+- [x] Internal state tracks: `Dictionary<string, HostPool>` with list of active connections
+- [x] `HostPool` contains: `TcpOptions` (from ConnectItem), `List<ConnectionSlot>`, connection counter
+- [x] `ConnectionSlot` wraps: materialised ConnectionStage (Source.Queue + completion), active/idle status, pending request count
+- [x] Single host, single connection, request-response works end-to-end
+- [x] Unit tests: single-host single-connection roundtrip with fake ConnectionStage
+- [x] Typecheck/build passes
 
 ### TASK-003: Multi-Connection per Host — Dynamic Scaling
 

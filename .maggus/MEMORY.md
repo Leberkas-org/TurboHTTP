@@ -98,19 +98,23 @@
 
 ## Test Counts (TASK-048 Baseline — 2026-03-12)
 - Unit tests (TurboHttp.Tests): 2158
-- Stream tests (TurboHttp.StreamTests): 411
+- Stream tests (TurboHttp.StreamTests): 421
 - Integration tests (TurboHttp.IntegrationTests): 234
   - Http10: 46, Http11: 89, Http20: 66, Cross/Client/TLS/Edge: 46 (some overlap in filter)
 - New stage tests: 83 (Cookie 12, Decompression 10, Cache 24, Redirect 15, Retry 12, ConnReuse 10)
 - **Total: 2803 all green**
 - Flaky timeouts when running all 3 projects simultaneously (resource contention); each project passes 100% individually
 
-## Connection Pool (TASK-001+)
-- **ConnectionPoolStage**: `src/TurboHttp/IO/Stages/ConnectionPoolStage.cs` — custom GraphStage foundation
+## Connection Pool (TASK-001 ✅, TASK-002 ✅)
+- **ConnectionPoolStage**: `src/TurboHttp/IO/Stages/ConnectionPoolStage.cs` — custom GraphStage with sub-graph materialization
 - **Types**: `src/TurboHttp/IO/Stages/ConnectionPoolTypes.cs` — `RoutedTransportItem`, `RoutedDataItem`, `PoolConfig`
-- **Tests**: `src/TurboHttp.StreamTests/Stages/ConnectionPoolStageTests.cs` — 8 foundation tests
+- **Tests**: `src/TurboHttp.StreamTests/Stages/ConnectionPoolStageTests.cs` — 10 tests (8 foundation + 2 roundtrip)
 - **Plan**: `.maggus/plan_3.md` — 12 tasks (TASK-001 through TASK-012)
 - **Pattern**: Pool wraps/orchestrates multiple `ConnectionStage` instances as materialised sub-graphs (Source.Queue → ConnectionStage → Sink.ForEach)
+- **Factory type**: `Func<IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed>>` — accepts both real ConnectionStage and test echo flows
+- **Inner types**: `HostPool` (TcpOptions, List<ConnectionSlot>, ConnectionCounter), `ConnectionSlot` (Queue, Completion, Active, Idle, PendingRequestCount)
+- **Sub-graph materialization**: Uses `GraphStageLogic.Materializer` (SubFusingActorMaterializer) + `GetAsyncCallback` for thread-safe response delivery
+- **In-flight tracking**: `_inFlightCount` prevents premature CompleteStage when sub-graph responses pending
 - **TcpOptions**: Uses `required` init properties, not positional constructor — use `new() { Host = "...", Port = 443 }`
 - **Pre-existing failure**: `RFC-9113-ENG-004` in StreamTests (unrelated to pool work)
 

@@ -1,7 +1,11 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Akka;
 using Akka.Actor;
 using Akka.Streams;
+using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 
 namespace TurboHttp.IO.Stages;
@@ -13,7 +17,7 @@ namespace TurboHttp.IO.Stages;
 /// </summary>
 public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportItem, RoutedDataItem>>
 {
-    private readonly Func<ConnectionStage> _connectionStageFactory;
+    private readonly Func<IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed>> _connectionFlowFactory;
     private readonly PoolConfig _config;
 
     private readonly Inlet<RoutedTransportItem> _inlet = new("pool.in");
@@ -21,9 +25,11 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
 
     public override FlowShape<RoutedTransportItem, RoutedDataItem> Shape { get; }
 
-    public ConnectionPoolStage(Func<ConnectionStage> connectionStageFactory, PoolConfig config)
+    public ConnectionPoolStage(
+        Func<IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed>> connectionFlowFactory,
+        PoolConfig config)
     {
-        _connectionStageFactory = connectionStageFactory ?? throw new ArgumentNullException(nameof(connectionStageFactory));
+        _connectionFlowFactory = connectionFlowFactory ?? throw new ArgumentNullException(nameof(connectionFlowFactory));
         _config = config ?? throw new ArgumentNullException(nameof(config));
         Shape = new FlowShape<RoutedTransportItem, RoutedDataItem>(_inlet, _outlet);
     }
@@ -36,17 +42,19 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
         private readonly ConnectionPoolStage _stage;
         private IActorRef _self = ActorRefs.Nobody;
         private bool _stopping;
+        private int _inFlightCount;
 
         /// <summary>
-        /// Tracks which pool keys have been registered via a ConnectItem.
-        /// Maps pool key → the TcpOptions from the ConnectItem.
+        /// Tracks per-host connection pools. Maps pool key → HostPool.
         /// </summary>
-        private readonly Dictionary<string, HostRegistration> _registeredHosts = new();
+        private readonly Dictionary<string, HostPool> _hostPools = new();
 
         /// <summary>
         /// Pending responses waiting to be pushed downstream.
         /// </summary>
         private readonly Queue<RoutedDataItem> _pendingResponses = new();
+
+        private Action<(string poolKey, IMemoryOwner<byte> memory, int length)>? _onResponseCallback;
 
         public Logic(ConnectionPoolStage stage) : base(stage.Shape)
         {
@@ -55,10 +63,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
             SetHandler(stage._inlet, onPush: HandlePush, onUpstreamFinish: () =>
             {
                 _stopping = true;
-                if (_pendingResponses.Count == 0)
-                {
-                    CompleteStage();
-                }
+                TryComplete();
             });
 
             SetHandler(stage._outlet, onPull: () =>
@@ -66,10 +71,15 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
                 if (_pendingResponses.TryDequeue(out var item))
                 {
                     Push(_stage._outlet, item);
+                    TryComplete();
                 }
-                else if (_stopping)
+                else if (_stopping && _inFlightCount == 0)
                 {
                     CompleteStage();
+                }
+                else if (!HasBeenPulled(_stage._inlet) && !_stopping)
+                {
+                    Pull(_stage._inlet);
                 }
             }, onDownstreamFinish: _ =>
             {
@@ -81,6 +91,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
         public override void PreStart()
         {
             _self = GetStageActor(OnMessage).Ref;
+            _onResponseCallback = GetAsyncCallback<(string, IMemoryOwner<byte>, int)>(OnSubGraphResponse);
             Pull(_stage._inlet);
         }
 
@@ -96,7 +107,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
                     break;
 
                 case DataItem data:
-                    if (!_registeredHosts.ContainsKey(elem.PoolKey))
+                    if (!_hostPools.ContainsKey(elem.PoolKey))
                     {
                         FailStage(new InvalidOperationException(
                             $"Received DataItem for unknown pool key '{elem.PoolKey}'. " +
@@ -104,9 +115,11 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
                         return;
                     }
 
-                    // TASK-001: Foundation only — data routing will be implemented in TASK-002.
-                    // For now, just pull next to avoid stalling.
-                    Pull(_stage._inlet);
+                    RouteDataItem(elem.PoolKey, data);
+                    if (!_stopping)
+                    {
+                        Pull(_stage._inlet);
+                    }
                     break;
 
                 default:
@@ -118,36 +131,156 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
 
         private void RegisterHost(string poolKey, ConnectItem connect)
         {
-            if (!_registeredHosts.ContainsKey(poolKey))
+            if (!_hostPools.ContainsKey(poolKey))
             {
-                _registeredHosts[poolKey] = new HostRegistration(connect.Options);
+                _hostPools[poolKey] = new HostPool(connect.Options);
+            }
+        }
+
+        private void RouteDataItem(string poolKey, DataItem data)
+        {
+            var pool = _hostPools[poolKey];
+            var slot = GetOrCreateSlot(poolKey, pool);
+
+            _inFlightCount++;
+            slot.PendingRequestCount++;
+            slot.Idle = false;
+            slot.Queue.OfferAsync(data);
+        }
+
+        private ConnectionSlot GetOrCreateSlot(string poolKey, HostPool pool)
+        {
+            // TASK-002: single connection per host
+            if (pool.Connections.Count > 0 && pool.Connections[0].Active)
+            {
+                return pool.Connections[0];
+            }
+
+            // Materialise a new ConnectionStage sub-graph using SubFusingActorMaterializer
+            var connectionFlow = _stage._connectionFlowFactory();
+            var capturedPoolKey = poolKey;
+            var capturedCallback = _onResponseCallback!;
+
+            var (queue, completion) = Source.Queue<ITransportItem>(16, OverflowStrategy.Backpressure)
+                .Via(connectionFlow)
+                .ToMaterialized(
+                    Sink.ForEach<(IMemoryOwner<byte>, int)>(chunk =>
+                    {
+                        capturedCallback((capturedPoolKey, chunk.Item1, chunk.Item2));
+                    }),
+                    Keep.Both)
+                .Run(Materializer);
+
+            var slot = new ConnectionSlot(queue, completion);
+            pool.Connections.Add(slot);
+            pool.ConnectionCounter++;
+
+            // Send ConnectItem to initialise the connection in the sub-graph
+            slot.Queue.OfferAsync(new ConnectItem(pool.Options));
+
+            return slot;
+        }
+
+        private void OnSubGraphResponse((string poolKey, IMemoryOwner<byte> memory, int length) response)
+        {
+            if (_stopping && _pendingResponses.Count == 0 && _inFlightCount <= 1)
+            {
+                // Stage is shutting down — still deliver this last response
+            }
+
+            _inFlightCount--;
+
+            // Update slot status
+            if (_hostPools.TryGetValue(response.poolKey, out var pool))
+            {
+                foreach (var slot in pool.Connections)
+                {
+                    if (slot.PendingRequestCount > 0)
+                    {
+                        slot.PendingRequestCount--;
+                        if (slot.PendingRequestCount == 0)
+                        {
+                            slot.Idle = true;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            var item = new RoutedDataItem(response.poolKey, response.memory, response.length);
+
+            if (IsAvailable(_stage._outlet))
+            {
+                Push(_stage._outlet, item);
+                TryComplete();
+            }
+            else
+            {
+                _pendingResponses.Enqueue(item);
+            }
+        }
+
+        private void TryComplete()
+        {
+            if (_stopping && _inFlightCount == 0 && _pendingResponses.Count == 0)
+            {
+                CompleteStage();
             }
         }
 
         private void OnMessage((IActorRef sender, object msg) args)
         {
-            // TASK-001: Foundation only — actor message handling will be needed
-            // in later tasks for sub-graph communication.
+            // Future use for actor-based sub-graph communication
         }
 
         public override void PostStop()
         {
             _stopping = true;
-            _registeredHosts.Clear();
+
+            foreach (var pool in _hostPools.Values)
+            {
+                foreach (var slot in pool.Connections)
+                {
+                    slot.Queue.Complete();
+                    slot.Active = false;
+                }
+            }
+
+            _hostPools.Clear();
         }
     }
 
     /// <summary>
-    /// Tracks a registered host (ConnectItem received) and its TCP options.
-    /// Will be extended in later tasks with connection slots, activity tracking, etc.
+    /// Per-host connection pool. Tracks TCP options, active connections, and connection count.
     /// </summary>
-    private sealed class HostRegistration
+    private sealed class HostPool
     {
         public TcpOptions Options { get; }
+        public List<ConnectionSlot> Connections { get; } = new();
+        public int ConnectionCounter { get; set; }
 
-        public HostRegistration(TcpOptions options)
+        public HostPool(TcpOptions options)
         {
             Options = options;
+        }
+    }
+
+    /// <summary>
+    /// A single materialised connection within a host pool.
+    /// Wraps the Source.Queue handle and tracks connection status.
+    /// </summary>
+    private sealed class ConnectionSlot
+    {
+        public ISourceQueueWithComplete<ITransportItem> Queue { get; }
+        public Task Completion { get; }
+        public bool Active { get; set; } = true;
+        public bool Idle { get; set; } = true;
+        public int PendingRequestCount { get; set; }
+
+        public ConnectionSlot(ISourceQueueWithComplete<ITransportItem> queue, Task completion)
+        {
+            Queue = queue;
+            Completion = completion;
         }
     }
 }
