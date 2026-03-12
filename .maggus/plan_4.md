@@ -305,11 +305,11 @@ private void HandleReconnect(Reconnect msg)
 **Description:** As a developer, I want the `ConnectionActor` in its own file so that TCP connection lifecycle management is isolated.
 
 **Acceptance Criteria:**
-- [ ] `ConnectionActor.cs` in `src/TurboHttp/IO/` created
-- [ ] Contains actor with records: `GetStreamRefs`, `StreamRefsResponse`
-- [ ] References `ClientManager`, `ClientRunner`, `DataItem`, `IDataItem`, `DoClose`
-- [ ] `PreStart` calls `Connect()` which sends `CreateTcpRunner` to ClientManager
-- [ ] Build passes
+- [x] `ConnectionActor.cs` in `src/TurboHttp/IO/` created
+- [x] Contains actor with records: `GetStreamRefs`, `StreamRefsResponse`
+- [x] References `ClientManager`, `ClientRunner`, `DataItem`, `IDataItem`, `DoClose`
+- [x] `PreStart` calls `Connect()` which sends `CreateTcpRunner` to ClientManager
+- [x] Build passes
 
 ---
 
