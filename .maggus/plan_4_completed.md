@@ -446,16 +446,16 @@ private void HandleReconnect(Reconnect msg)
 **Description:** As a developer, I want to verify zero regressions after the full refactoring.
 
 **Acceptance Criteria:**
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test src/TurboHttp.sln` — all tests green
-- [ ] No new `[Obsolete]` warnings introduced
-- [ ] Every file has correct namespace matching its folder
-- [ ] `PoolRouterActor` — minimum 5 tests
-- [ ] `HostPoolActor` — minimum 20 tests (core complexity lives here)
-- [ ] `ConnectionActor` — minimum 8 tests
-- [ ] `ConnectionPoolStage` — minimum 6 stream tests
-- [ ] Integration test — minimum 4 scenarios
-- [ ] Total new tests: ≥ 43
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
+- [x] `dotnet test src/TurboHttp.sln` — all tests green
+- [x] No new `[Obsolete]` warnings introduced
+- [x] Every file has correct namespace matching its folder
+- [x] `PoolRouterActor` — minimum 5 tests
+- [x] `HostPoolActor` — minimum 20 tests (core complexity lives here)
+- [x] `ConnectionActor` — minimum 8 tests
+- [x] `ConnectionPoolStage` — minimum 6 stream tests
+- [x] Integration test — minimum 4 scenarios
+- [x] Total new tests: ≥ 43
 
 ---
 
