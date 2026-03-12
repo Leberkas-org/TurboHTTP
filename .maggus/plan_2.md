@@ -535,9 +535,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want integration tests for cross-feature interactions so that combinations like redirect+cookies, cache+redirect, decompression+cache, and all-features-enabled are verified.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Shared/03_CrossFeatureTests.cs`
-- [ ] 8 tests: redirect+cookies, redirect+retry, cache+redirect, cache+cookies, decompression+cache, retry+decompression, all features, flags disabled = passthrough
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~CrossFeatureTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Shared/03_CrossFeatureTests.cs`
+- [x] 8 tests: redirect+cookies, redirect+retry, cache+redirect, cache+cookies, decompression+cache, retry+decompression, all features, flags disabled = passthrough
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~CrossFeatureTests"`
 
 ### TASK-046: TLS Integration Tests
 **Description:** As a developer, I want integration tests for TLS so that HTTPS with self-signed certs, Secure cookies, HTTPS redirects, and HTTP↔HTTPS transitions are verified.
