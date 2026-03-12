@@ -92,10 +92,7 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void SendToConnection(ConnectionState conn, DataItem data)
     {
-        conn.Idle = false;
-        conn.PendingRequests++;
-        conn.LastActivity = DateTime.UtcNow;
-
+        conn.MarkBusy();
         conn.Actor.Tell(data);
     }
 
@@ -121,12 +118,7 @@ public sealed class HostPoolActor : ReceiveActor
         if (conn == null)
             return;
 
-        conn.PendingRequests--;
-
-        if (conn.PendingRequests == 0)
-            conn.Idle = true;
-
-        conn.LastActivity = DateTime.UtcNow;
+        conn.MarkIdle();
 
         DrainPending();
     }
@@ -143,7 +135,7 @@ public sealed class HostPoolActor : ReceiveActor
         if (conn == null)
             return;
 
-        conn.Active = false;
+        conn.MarkDead();
 
         Context.System.Scheduler.ScheduleTellOnceCancelable(
             _config.ReconnectInterval,
@@ -195,19 +187,4 @@ public sealed class HostPoolActor : ReceiveActor
 
     private ConnectionState? Find(IActorRef actor)
         => _connections.Find(x => x.Actor.Equals(actor));
-
-    private sealed class ConnectionState
-    {
-        public IActorRef Actor { get; }
-
-        public bool Active = true;
-        public bool Idle = true;
-        public int PendingRequests;
-        public DateTime LastActivity = DateTime.UtcNow;
-
-        public ConnectionState(IActorRef actor)
-        {
-            Actor = actor;
-        }
-    }
 }

@@ -117,12 +117,12 @@ plan_3 (Stage-based):                    plan_5 (Actor-based):
 **Description:** As a developer, I want the `HostPoolActor` in its own file with its internal state management.
 
 **Acceptance Criteria:**
-- [ ] `HostPoolActor.cs` in `src/TurboHttp/IO/` created
-- [ ] Contains actor with message records: `Incoming`, `ConnectionIdle`, `ConnectionFailed`, `ConnectionResponse`, `IdleCheck`, `Reconnect`
-- [ ] References `ConnectionState`, `PoolConfig`, `ConnectionActor`
-- [ ] Constructor takes `TcpOptions`, `PoolConfig`, `IActorRef streamPublisher`
-- [ ] `PreStart` schedules `IdleCheck` timer via `ScheduleTellRepeatedlyCancelable`
-- [ ] Build passes
+- [x] `HostPoolActor.cs` in `src/TurboHttp/IO/` created
+- [x] Contains actor with message records: `Incoming`, `ConnectionIdle`, `ConnectionFailed`, `ConnectionResponse`, `IdleCheck`, `Reconnect`
+- [x] References `ConnectionState`, `PoolConfig`, `ConnectionActor`
+- [x] Constructor takes `TcpOptions`, `PoolConfig`, `IActorRef streamPublisher`
+- [x] `PreStart` schedules `IdleCheck` timer via `ScheduleTellRepeatedlyCancelable`
+- [x] Build passes
 
 ---
 
