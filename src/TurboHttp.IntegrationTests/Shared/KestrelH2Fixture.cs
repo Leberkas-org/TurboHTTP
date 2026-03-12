@@ -269,5 +269,8 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
 
         // ── Content Encoding Routes ─────────────────────────────────────────
         Routes.RegisterContentEncodingRoutes(app);
+
+        // ── Error Handling Routes ─────────────────────────────────────────────
+        Routes.RegisterErrorHandlingRoutes(app);
     }
 }

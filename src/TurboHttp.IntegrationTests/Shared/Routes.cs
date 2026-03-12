@@ -562,6 +562,26 @@ internal static class Routes
         });
     }
 
+    internal static void RegisterErrorHandlingRoutes(WebApplication app)
+    {
+        // GET /h2/abort → aborts the request, triggering RST_STREAM on the HTTP/2 stream
+        app.MapGet("/h2/abort", (HttpContext ctx) =>
+        {
+            ctx.Abort();
+            return Results.Empty;
+        });
+
+        // GET /h2/delay/{ms} → delays response by ms milliseconds, then returns 200
+        app.MapGet("/h2/delay/{ms:int}", async (HttpContext ctx, int ms) =>
+        {
+            await Task.Delay(ms);
+            ctx.Response.ContentType = "text/plain";
+            var body = "delayed"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+    }
+
     internal static void RegisterConnectionReuseRoutes(WebApplication app)
     {
         // GET /conn/keep-alive → explicit Connection: Keep-Alive header (HTTP/1.0 style)

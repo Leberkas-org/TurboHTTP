@@ -509,9 +509,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want integration tests for Http20Engine error handling so that RST_STREAM isolation, GOAWAY graceful shutdown, protocol error reporting, and automatic reconnection are verified.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Http20/11_Http20ErrorHandlingTests.cs`
-- [ ] 4 tests: RST_STREAM single stream doesn't kill conn, GOAWAY graceful, protocol error as exception, auto-reconnect on closed conn
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20ErrorHandlingTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Http20/11_Http20ErrorHandlingTests.cs`
+- [x] 4 tests: RST_STREAM single stream doesn't kill conn, GOAWAY graceful, protocol error as exception, auto-reconnect on closed conn
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~Http20ErrorHandlingTests"`
 
 ### TASK-043: TurboHttpClient SendAsync Integration Tests
 **Description:** As a developer, I want integration tests for TurboHttpClient.SendAsync so that the public API (BaseAddress, DefaultHeaders, CancellationToken, Timeout, CancelPendingRequests, Dispose, Channel API) is verified end-to-end.
