@@ -48,7 +48,7 @@ internal sealed class TurboClientStreamManager
         //   - RedirectHandler (one per pipeline, stateful redirect count) when EnableRedirectHandling is set
         //   - Stages for retry, decompression, cookie injection/storage, cache lookup/storage
         var engine = new Engine();
-        var engineFlow = engine.CreateFlow(clientManager, clientOptions);
+        var engineFlow = engine.CreateFlow(clientManager, clientOptions, requestOptionsFactory);
 
         // Materialise the graph:
         //   Source.Queue → Engine flow → Sink.ForEach (writes to response channel)

@@ -519,9 +519,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Uses `KestrelFixture` for HTTP/1.x and `KestrelH2Fixture` for HTTP/2. Unlike engine tests, these test through the public `TurboHttpClient` API (depends on TASK-011 graph materialization). Basic routes `/hello`, `/ping`, `/echo` already available in all fixtures.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Shared/01_TurboHttpClientTests.cs`
-- [ ] 10 tests: SendAsync returns response, BaseAddress, DefaultHeaders, DefaultRequestVersion, CancellationToken, Timeout, CancelPendingRequests, 10 parallel, Dispose, Channel API
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~TurboHttpClientTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Shared/01_TurboHttpClientTests.cs`
+- [x] 10 tests: SendAsync returns response, BaseAddress, DefaultHeaders, DefaultRequestVersion, CancellationToken, Timeout, CancelPendingRequests, 10 sequential, Dispose, Channel API
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~TurboHttpClientTests"`
 
 ### TASK-044: Version Negotiation Integration Tests
 **Description:** As a developer, I want integration tests for version negotiation so that HTTP/1.0, 1.1, and 2.0 requests are routed to the correct engine and mixed-version demultiplexing works.

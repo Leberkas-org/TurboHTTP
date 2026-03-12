@@ -1,0 +1,67 @@
+# Maggus Project Memory — TurboHttp
+
+## Integration Test Patterns
+
+### Http10 Integration Tests
+- Location: `src/TurboHttp.IntegrationTests/Http10/`
+- Pattern: Each test class uses `TestKit` + `IClassFixture<KestrelFixture>`
+- HTTP/1.0 = new pipeline per request (connection closes after response)
+- Helper `SendAsync()` materializes fresh `Http10Engine` + `ConnectionStage` per call
+- Cookie tests use `CookieJar` manually: call `AddCookiesToRequest` before send, `ProcessResponse` after
+- Redirect tests use `RedirectHandler` manually in a loop
+
+### Http11 Integration Tests
+- Location: `src/TurboHttp.IntegrationTests/Http11/`
+- Same pattern as Http10: `TestKit` + `IClassFixture<KestrelFixture>` + `SendAsync()` helper
+- Uses `Http11Engine` + `HttpVersion.Version11`
+- Tests: 01_BasicTests (10), 02_ChunkedTests (8), 03_ConnectionTests (8), 04_RedirectTests (10 methods, 13 cases), 05_CookieTests (12), 06_RetryTests (10), 07_CacheTests (15)
+- Connection routes: `/conn/default`, `/conn/close`, `/conn/keep-alive`, `/close`
+- Redirect tests: same manual `RedirectHandler` loop as Http10, but with body-preservation workaround (fresh `ByteArrayContent` per hop since encoder disposes content streams)
+- Retry tests: manual `RetryEvaluator` loop with request cloning per attempt; content cloned via `ReadAsByteArrayAsync`
+- Cache tests: manual `HttpCacheStore` + `CacheFreshnessEvaluator` + `CacheValidationRequestBuilder` in `SendWithCacheAsync()` helper; Kestrel `MapGet` doesn't handle HEAD (405), POST to GET-only routes returns 405 (cacheable status 405 can re-store after invalidation)
+
+### Kestrel Fixture Routes
+- Cookie routes: `/cookie/set/{name}/{value}`, `/cookie/echo`, `/cookie/set-multiple`, `/cookie/delete/{name}`, `/cookie/set-expires/{name}/{value}/{seconds}`, `/cookie/set-path/{name}/{value}/{*path}`, `/cookie/set-and-redirect` (added TASK-021)
+- Redirect routes: `/redirect/{code}/{*target}`, `/redirect/chain/{n}`, `/redirect/loop`, `/redirect/relative`, `/redirect/cross-origin`, `/redirect/cross-origin-auth` (added TASK-027), POST `/redirect/308` (added TASK-027)
+- Retry routes: `/retry/408`, `/retry/503` (GET|HEAD|PUT|DELETE), `/retry/503-retry-after/{seconds}`, `/retry/503-retry-after-date`, `/retry/succeed-after/{n}`, POST `/retry/non-idempotent-503`
+- Cache routes: `/cache/max-age/{s}`, `/cache/no-cache`, `/cache/no-store`, `/cache/etag/{id}`, `/cache/last-modified/{id}`, `/cache/vary/{header}`, `/cache/must-revalidate`, `/cache/s-maxage/{s}`, `/cache/expires`, `/cache/private`
+
+### Http20 Integration Tests
+- Location: `src/TurboHttp.IntegrationTests/Http20/`
+- Pattern: `TestKit` + `IClassFixture<KestrelH2Fixture>` + custom `SendAsync()` helper
+- **Cannot use `engine.CreateFlow().Join(transport)` pattern** — must build graph manually because Http20Engine's PrependPrefaceStage never receives ConnectItem (it's wired after the encoder, not before transport)
+- Uses `Concat.Create<ITransportItem>(2)` to inject ConnectItem before PrependPrefaceStage
+- Requires configurable window sizes: `new Http20ConnectionStage(2 * 1024 * 1024)` and `new PrependPrefaceStage(2 * 1024 * 1024)` for 1MB+ body transfers
+- H2-specific routes on `KestrelH2Fixture`: `/h2/settings`, `/h2/many-headers`, `/h2/echo-binary`, `/h2/echo-path`, `/h2/large-headers/{kb}`, `/h2/cookie`, `/h2/priority/{kb}`
+- Tests: 01_BasicTests (9), 02_MultiplexTests (6), 03_FlowControlTests (4), 04_SettingsPingTests, 05_PseudoHeaderTests, 06_RedirectTests, 07_CookieTests, 08_RetryTests, 09_CacheTests (5), 10_ContentEncodingTests (4), 11_ErrorHandlingTests (4)
+- Cache tests: manual `HttpCacheStore` + `CacheFreshnessEvaluator` + `CacheValidationRequestBuilder` in `SendWithCacheAsync()` helper (same pattern as Http11); test IDs 20E-INT-046 through 20E-INT-050
+- Error handling routes: `/h2/abort` (triggers RST_STREAM via ctx.Abort), `/h2/delay/{ms}` (delayed response)
+- Error handling tests: RST_STREAM isolation in multiplexed pipeline, 500 as status code not exception, sequential reconnect, recovery after abort; test IDs 20E-INT-055 through 20E-INT-058
+- Note: Http20StreamStage silently ignores RstStreamFrame (no case in switch) — aborted stream hangs but other streams complete. True GOAWAY testing not feasible with shared KestrelH2Fixture.
+
+### Http20 Flow Control Limitations (TASK-034)
+- `Http20ConnectionStage._connectionWindow` is NOT replenished after emitting WINDOW_UPDATE — responses must fit within the initial window allocation
+- `HandleOutboundData` shares `_connectionWindow` with receive-side tracking (should be separate)
+- POST bodies limited to ≤65535 bytes (server's default INITIAL_WINDOW_SIZE) because pipeline doesn't handle server WINDOW_UPDATE for outbound flow control
+- Tests designed around these constraints: use 2MB window for large responses, keep POST ≤65535
+
+### Http20 Production Code Fixes (TASK-032)
+- **ConnectionStage**: Added `_pendingReads` buffer (was dropping data when outlet not available); added `Pull` after connected write (needed for multi-frame HTTP/2)
+- **Http20ConnectionStage**: Configurable `initialRecvWindowSize` (default 65535); separate recv/send stream window tracking; skip WindowUpdate for 0-length DATA frames
+- **PrependPrefaceStage**: Configurable `initialWindowSize` (default 65535); emits connection-level WINDOW_UPDATE when window > 65535
+
+### TurboHttpClient Integration Tests (TASK-043)
+- Location: `src/TurboHttp.IntegrationTests/Shared/01_TurboHttpClientTests.cs`
+- Pattern: `TestKit` + `IClassFixture<KestrelFixture>` + `TurboHttpClient.SendAsync()` public API
+- Tests go through the full pipeline: TurboHttpClient → TurboClientStreamManager → Engine → ConnectionStage → TCP
+- Key infrastructure fixes made to Engine.cs to enable production mode:
+  - `BuildConnectionFlow<TEngine>` injects ConnectItem via `Broadcast(2) + Take(1) + Concat + Buffer(1)` pattern
+  - `Func<TurboRequestOptions>?` factory threading for dynamic BaseAddress/DefaultHeaders
+- `/delay/{ms}` route added to KestrelFixture for timeout/cancellation tests
+- Http30Engine stub fixed: uses `BidiFlow.FromFlows` with `NotSupportedException` instead of empty GraphDsl
+- CLIENT-008 uses sequential (not parallel) requests — HTTP/1.1 single-pipeline limitation
+
+## Build Notes
+- `COMMIT.md` is in `.gitignore` — use `git add -f COMMIT.md` to stage it
+- `BenchmarkDotNet.Artifacts` also gitignored
+- Pre-existing warning: `Engine.cs(382,28): CS8509` non-exhaustive switch — not a blocker

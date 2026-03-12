@@ -8,6 +8,7 @@ using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Client;
+using TurboHttp.IO;
 using TurboHttp.Protocol;
 using TurboHttp.Streams.Stages;
 
@@ -25,23 +26,35 @@ public class Engine
     /// </summary>
     public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager,
         TurboClientOptions? options)
+        => CreateFlow(clientManager, options, requestOptionsFactory: null);
+
+    /// <summary>
+    /// Creates the full HTTP pipeline flow with an optional dynamic request-options factory.
+    /// When <paramref name="requestOptionsFactory"/> is provided, the <see cref="RequestEnricherStage"/>
+    /// evaluates it per-request, enabling dynamic <see cref="TurboHttpClient.BaseAddress"/> and
+    /// <see cref="TurboHttpClient.DefaultRequestHeaders"/> changes after construction.
+    /// </summary>
+    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef clientManager,
+        TurboClientOptions? options,
+        Func<TurboRequestOptions>? requestOptionsFactory)
     {
         options ??= new TurboClientOptions();
         var requestOptions = BuildRequestOptions(options);
+        requestOptionsFactory ??= () => requestOptions;
 
         if (!NeedsExtendedPipeline(options))
         {
             return Flow.FromGraph(GraphDsl.Create(builder =>
             {
-                var enricher = builder.Add(new RequestEnricherStage(() => requestOptions));
+                var enricher = builder.Add(new RequestEnricherStage(requestOptionsFactory));
 
                 var partition = builder.Add(Router());
                 var hub = builder.Add(new Merge<HttpResponseMessage>(4));
 
-                var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager));
-                var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(4, clientManager));
-                var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(1, clientManager));
-                var http30 = builder.Add(BuildProtocolFlow<Http30Engine>(1, clientManager));
+                var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager, clientOptions: options));
+                var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(4, clientManager, clientOptions: options));
+                var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(1, clientManager, clientOptions: options));
+                var http30 = builder.Add(BuildProtocolFlow<Http30Engine>(1, clientManager, clientOptions: options));
 
                 builder.From(enricher.Outlet).To(partition);
                 builder.From(partition.Out(0)).Via(http10).To(hub);
@@ -53,7 +66,7 @@ public class Engine
             }));
         }
 
-        return BuildExtendedPipeline(clientManager, options, requestOptions);
+        return BuildExtendedPipeline(clientManager, options, requestOptionsFactory);
     }
 
     internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(
@@ -106,7 +119,7 @@ public class Engine
             }));
         }
 
-        return BuildExtendedPipeline(ActorRefs.Nobody, options, defaultOptions,
+        return BuildExtendedPipeline(ActorRefs.Nobody, options, () => defaultOptions,
             http10Factory, http11Factory, http20Factory);
     }
 
@@ -166,7 +179,7 @@ public class Engine
     private static Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> BuildExtendedPipeline(
         IActorRef clientManager,
         TurboClientOptions options,
-        TurboRequestOptions requestOptions,
+        Func<TurboRequestOptions> requestOptionsFactory,
         Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? http10Factory = null,
         Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? http11Factory = null,
         Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? http20Factory = null)
@@ -178,7 +191,7 @@ public class Engine
         {
             // ---- REQUEST CHAIN ----
 
-            var enricher = builder.Add(new RequestEnricherStage(() => requestOptions));
+            var enricher = builder.Add(new RequestEnricherStage(requestOptionsFactory));
             var requestTip = enricher.Outlet;
 
             // Redirect merge: preferred port receives redirect feedback.
@@ -224,7 +237,7 @@ public class Engine
             // ---- ENGINE CORE ----
 
             var engineCore = builder.Add(
-                BuildEngineCoreGraph(clientManager, http10Factory, http11Factory, http20Factory));
+                BuildEngineCoreGraph(clientManager, options, http10Factory, http11Factory, http20Factory));
             builder.From(requestTip).To(engineCore.Inlet);
             var responseTip = engineCore.Outlet;
 
@@ -301,6 +314,7 @@ public class Engine
     /// </summary>
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildEngineCoreGraph(
         IActorRef clientManager,
+        TurboClientOptions clientOptions,
         Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? http10Factory,
         Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? http11Factory,
         Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? http20Factory)
@@ -339,10 +353,10 @@ public class Engine
                 var partition = builder.Add(Router());
                 var hub = builder.Add(new Merge<HttpResponseMessage>(4));
 
-                var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager));
-                var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(4, clientManager));
-                var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(1, clientManager));
-                var http30 = builder.Add(BuildProtocolFlow<Http30Engine>(1, clientManager));
+                var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(4, clientManager, clientOptions: clientOptions));
+                var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(4, clientManager, clientOptions: clientOptions));
+                var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(1, clientManager, clientOptions: clientOptions));
+                var http30 = builder.Add(BuildProtocolFlow<Http30Engine>(1, clientManager, clientOptions: clientOptions));
 
                 builder.From(partition.Out(0)).Via(http10).To(hub);
                 builder.From(partition.Out(1)).Via(http11).To(hub);
@@ -357,7 +371,8 @@ public class Engine
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildProtocolFlow<TEngine>(
         int connectionCount,
         IActorRef clientManager,
-        Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? transportFactory = null)
+        Func<Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed>>? transportFactory = null,
+        TurboClientOptions? clientOptions = null)
         where TEngine : IHttpProtocolEngine, new()
     {
         return GraphDsl.Create(builder =>
@@ -367,12 +382,88 @@ public class Engine
 
             for (var i = 0; i < connectionCount; i++)
             {
-                var tcp = transportFactory?.Invoke() ?? Flow.FromGraph(new ConnectionStage(clientManager));
-                var conn = builder.Add(new TEngine().CreateFlow().Join(tcp));
-                builder.From(balance.Out(i)).Via(conn).To(merge.In(i));
+                if (transportFactory is not null)
+                {
+                    // Test mode: factory provides transport with ConnectItem already included
+                    var tcp = transportFactory.Invoke();
+                    var conn = builder.Add(new TEngine().CreateFlow().Join(tcp));
+                    builder.From(balance.Out(i)).Via(conn).To(merge.In(i));
+                }
+                else
+                {
+                    // Production mode: inject ConnectItem from first request's URI
+                    var tcp = Flow.FromGraph(new ConnectionStage(clientManager));
+                    var conn = builder.Add(BuildConnectionFlow<TEngine>(tcp, clientOptions ?? new TurboClientOptions()));
+                    builder.From(balance.Out(i)).Via(conn).To(merge.In(i));
+                }
             }
 
             return new FlowShape<HttpRequestMessage, HttpResponseMessage>(balance.In, merge.Out);
+        });
+    }
+
+    /// <summary>
+    /// Builds a per-connection flow that injects a <see cref="ConnectItem"/> into the transport
+    /// stream before the first encoded data. The ConnectItem carries the host/port extracted
+    /// from the first request's URI, which <see cref="ConnectionStage"/> needs to establish
+    /// the TCP connection.
+    ///
+    /// Topology:
+    /// <code>
+    ///   HttpRequestMessage
+    ///        ↓
+    ///   [Broadcast(2)]
+    ///    Out(0)          Out(1)
+    ///      ↓               ↓
+    ///   [Buffer(1)]    [Take(1) → ConnectItem]
+    ///      ↓               ↓
+    ///   [BidiFlow]     [Concat.In(0)]
+    ///    Out1 ──────→  [Concat.In(1)]
+    ///                      ↓
+    ///                 [ConnectionStage]
+    ///                      ↓
+    ///                 [BidiFlow.In2]
+    ///                      ↓
+    ///              HttpResponseMessage
+    /// </code>
+    /// </summary>
+    private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildConnectionFlow<TEngine>(
+        Flow<ITransportItem, (IMemoryOwner<byte>, int), NotUsed> transport,
+        TurboClientOptions clientOptions)
+        where TEngine : IHttpProtocolEngine, new()
+    {
+        return GraphDsl.Create(b =>
+        {
+            var bidi = b.Add(new TEngine().CreateFlow());
+            var transportFlow = b.Add(transport);
+
+            var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
+
+            // Extract URI from the first request and create a ConnectItem.
+            // Take(1) completes after one element, causing Concat to switch to In(1).
+            var connectOnce = b.Add(
+                Flow.Create<HttpRequestMessage>()
+                    .Take(1)
+                    .Select(ITransportItem (req) =>
+                        new ConnectItem(TcpOptionsFactory.Build(req.RequestUri!, clientOptions))));
+
+            // Concat: first the ConnectItem (In 0), then all BidiFlow transport output (In 1)
+            var concat = b.Add(Concat.Create<ITransportItem>(2));
+
+            // Buffer(1) decouples the Broadcast from the BidiFlow to prevent deadlock:
+            // Broadcast waits for all outputs to pull, but Concat only pulls In(1) after In(0)
+            // completes. The buffer absorbs the first request while Concat processes the ConnectItem.
+            var buffer = b.Add(
+                Flow.Create<HttpRequestMessage>().Buffer(1, OverflowStrategy.Backpressure));
+
+            b.From(requestBCast.Out(0)).Via(buffer).To(bidi.Inlet1);
+            b.From(requestBCast.Out(1)).Via(connectOnce).To(concat.In(0));
+            b.From(bidi.Outlet1).To(concat.In(1));
+            b.From(concat.Out).To(transportFlow.Inlet);
+            b.From(transportFlow.Outlet).To(bidi.Inlet2);
+
+            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(
+                requestBCast.In, bidi.Outlet2);
         });
     }
 

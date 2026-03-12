@@ -465,6 +465,16 @@ public sealed class KestrelFixture : IAsyncLifetime
             return Results.Content("ok", "text/plain");
         });
 
+        // GET /delay/{ms} → delays response by ms milliseconds, then returns 200
+        app.MapGet("/delay/{ms:int}", async (HttpContext ctx, int ms) =>
+        {
+            await Task.Delay(ms);
+            ctx.Response.ContentType = "text/plain";
+            var body = "delayed"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
         // ── Redirect Routes ─────────────────────────────────────────────────
         Routes.RegisterRedirectRoutes(app);
 
