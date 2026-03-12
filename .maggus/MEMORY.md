@@ -70,6 +70,15 @@
 - **Known limitation**: `Http20StreamStage` assembles responses with default `Version = 1.1` — cannot assert `response.Version == 2.0` on HTTP/2 responses.
 - Tests: VERNEG-001 (HTTP/1.0), VERNEG-002 (HTTP/1.1), VERNEG-003 (HTTP/2.0), VERNEG-004 (mixed demux), VERNEG-005 (DefaultRequestVersion override)
 
+### TLS Integration Tests (TASK-046)
+- Location: `src/TurboHttp.IntegrationTests/Shared/04_TlsTests.cs`
+- Pattern: `TestKit` + `IClassFixture<KestrelTlsFixture>` + `SendTlsAsync()` helper
+- Uses `TlsOptions` with `ServerCertificateValidationCallback = (_, _, _, _) => true` for self-signed cert
+- `TargetHost = "localhost"` required (must match cert CN)
+- Tests 1, 3, 4 make real TLS connections; tests 2, 5 test protocol handler logic only
+- **KestrelTlsFixture fix**: `LoadCertificate()` → `LoadPkcs12()` (PFX contains private key, LoadCertificate expects DER/PEM)
+- Pre-existing failures: RETRY-INT-001, COOKIE-INT-006 (10s timeouts, unrelated to TLS)
+
 ## Build Notes
 - `COMMIT.md` is in `.gitignore` — use `git add -f COMMIT.md` to stage it
 - `BenchmarkDotNet.Artifacts` also gitignored

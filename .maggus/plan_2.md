@@ -545,10 +545,10 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 > **Infra:** Uses [`KestrelTlsFixture`](../src/TurboHttp.IntegrationTests/Shared/KestrelTlsFixture.cs) — HTTPS on random port with self-signed cert (`HttpProtocols.Http1`). Has basic routes (`/hello`, `/ping`, `/echo`, etc.), chunked, caching, range, edge-case routes. No redirect/cookie/retry/cache routes registered — may need to add if cross-scheme tests require them.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Shared/04_TlsTests.cs`
-- [ ] Uses `KestrelTlsFixture`
-- [ ] 5 tests: HTTPS self-signed, Secure cookie HTTPS-only, HTTPS redirect preserves TLS, HTTP→HTTPS upgrade, HTTPS→HTTP blocked
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~TlsTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Shared/04_TlsTests.cs`
+- [x] Uses `KestrelTlsFixture`
+- [x] 5 tests: HTTPS self-signed, Secure cookie HTTPS-only, HTTPS redirect preserves TLS, HTTP→HTTPS upgrade, HTTPS→HTTP blocked
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~TlsTests"`
 
 ### TASK-047: Edge Case & Error Handling Integration Tests
 **Description:** As a developer, I want integration tests for edge cases so that mid-response close, large headers, empty bodies, unknown encoding, non-existent host, non-listening port, timeouts, and multi-host concurrency are verified.
