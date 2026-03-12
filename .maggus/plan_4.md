@@ -90,12 +90,12 @@ plan_3 (Stage-based):                    plan_5 (Actor-based):
 **Description:** As a developer, I want tests for host registration so that I can verify hosts are correctly created and duplicates are ignored.
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/IO/PoolRouterActorTests.cs` created
-- [ ] Test class extends `TestKit` (Akka.TestKit.Xunit2)
-- [ ] Test: `RegisterHost` creates a child actor for the given PoolKey
-- [ ] Test: Duplicate `RegisterHost` with same PoolKey is silently ignored (no second child)
-- [ ] Test: Different PoolKeys create different child actors
-- [ ] All tests green
+- [x] Test file `src/TurboHttp.Tests/IO/PoolRouterActorTests.cs` created
+- [x] Test class extends `TestKit` (Akka.TestKit.Xunit2)
+- [x] Test: `RegisterHost` creates a child actor for the given PoolKey
+- [x] Test: Duplicate `RegisterHost` with same PoolKey is silently ignored (no second child)
+- [x] Test: Different PoolKeys create different child actors
+- [x] All tests green
 
 ---
 
@@ -104,11 +104,11 @@ plan_3 (Stage-based):                    plan_5 (Actor-based):
 **Description:** As a developer, I want tests for request forwarding so that I can verify requests reach the correct host pool.
 
 **Acceptance Criteria:**
-- [ ] Test: `SendRequest` with registered PoolKey is forwarded to the correct `HostPoolActor`
-- [ ] Test: `SendRequest` with unknown PoolKey replies with `Status.Failure(InvalidOperationException("Unknown host"))`
-- [ ] Test: Multiple hosts — request goes to the correct host based on PoolKey
-- [ ] Test: `Sender` is preserved through `Forward` (original sender receives the failure)
-- [ ] All tests green
+- [x] Test: `SendRequest` with registered PoolKey is forwarded to the correct `HostPoolActor`
+- [x] Test: `SendRequest` with unknown PoolKey replies with `Status.Failure(InvalidOperationException("Unknown host"))`
+- [x] Test: Multiple hosts — request goes to the correct host based on PoolKey
+- [x] Test: `Sender` is preserved through `Forward` (original sender receives the failure)
+- [x] All tests green
 
 ---
 

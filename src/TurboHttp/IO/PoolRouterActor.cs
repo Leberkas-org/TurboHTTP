@@ -30,7 +30,7 @@ public sealed class PoolRouterActor : ReceiveActor
                 return;
             }
 
-            var host = Context.ResolveChildActor<HostPoolActor>(msg.PoolKey, msg.PoolKey, msg.Options);
+            var host = Context.ResolveChildActor<HostPoolActor>(msg.PoolKey, msg.Options);
             _hosts[msg.PoolKey] = host;
         });
 
