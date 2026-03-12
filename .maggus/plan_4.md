@@ -347,12 +347,12 @@ private void HandleReconnect(Reconnect msg)
 **Description:** As a developer, I want tests for clean resource disposal on actor stop.
 
 **Acceptance Criteria:**
-- [ ] Test: `PostStop` cancels `CancellationTokenSource`
-- [ ] Test: `PostStop` sends `DoClose` to runner
-- [ ] Test: `PostStop` completes `_responseQueue`
-- [ ] Test: `PostStop` with null runner does not throw
-- [ ] Test: `PostStop` with null `_responseQueue` does not throw
-- [ ] All tests green
+- [x] Test: `PostStop` cancels `CancellationTokenSource`
+- [x] Test: `PostStop` sends `DoClose` to runner
+- [x] Test: `PostStop` completes `_responseQueue`
+- [x] Test: `PostStop` with null runner does not throw
+- [x] Test: `PostStop` with null `_responseQueue` does not throw
+- [x] All tests green
 
 ---
 

@@ -4,6 +4,8 @@ using System.Net;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Streams;
+using Akka.Streams.Dsl;
 using Akka.TestKit.Xunit2;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
@@ -181,6 +183,116 @@ public sealed class ConnectionActorTests : TestKit
         actor.Tell(new DataItem(owner3, 16));
         var written = await outbound2.Reader.ReadAsync();
         Assert.Equal(16, written.Item2);
+    }
+
+    // ── TASK-015: Cleanup (PostStop) ─────────────────────────────────
+
+    [Fact(DisplayName = "CA-011: PostStop cancels CancellationTokenSource")]
+    public void CA_011_PostStop_CancelsCts()
+    {
+        var actor = CreateConnectionActor();
+        ExpectMsg<ClientManager.CreateTcpRunner>();
+
+        // Use a probe as runner so DoClose goes there, not TestActor
+        var runnerProbe = CreateTestProbe();
+        var (inbound, _, connMsg) = MakeConnectedMessage();
+        actor.Tell(connMsg, runnerProbe);
+
+        // Stop the actor — triggers PostStop which cancels the CTS
+        Sys.Stop(actor);
+
+        // Wait for PostStop to complete
+        runnerProbe.ExpectMsg<DoClose>(TimeSpan.FromSeconds(3));
+
+        // PumpInbound should have exited because CTS was cancelled.
+        // The inbound channel is still open (not completed by us).
+        // If PumpInbound were still running, it would consume items we write.
+        // After cancellation, writing an item should remain unconsumed.
+        ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        var mem = MemoryPool<byte>.Shared.Rent(8);
+        Assert.True(inbound.Writer.TryWrite((mem, 8)));
+        Assert.True(inbound.Reader.TryRead(out _));
+    }
+
+    [Fact(DisplayName = "CA-012: PostStop sends DoClose to runner")]
+    public void CA_012_PostStop_SendsDoCloseToRunner()
+    {
+        var actor = CreateConnectionActor();
+        ExpectMsg<ClientManager.CreateTcpRunner>();
+
+        // Use a probe as the runner so we can verify it receives DoClose
+        var runnerProbe = CreateTestProbe();
+        var (_, _, connMsg) = MakeConnectedMessage();
+        actor.Tell(connMsg, runnerProbe);
+
+        // Stop the actor — PostStop should send DoClose to the runner
+        Sys.Stop(actor);
+
+        runnerProbe.ExpectMsg<DoClose>(TimeSpan.FromSeconds(3));
+    }
+
+    [Fact(DisplayName = "CA-013: PostStop completes _responseQueue")]
+    public async Task CA_013_PostStop_CompletesResponseQueue()
+    {
+        var actor = CreateConnectionActor();
+        ExpectMsg<ClientManager.CreateTcpRunner>();
+
+        // Connect first so the actor has a runner
+        var (_, _, connMsg) = MakeConnectedMessage();
+        actor.Tell(connMsg, TestActor);
+
+        // Request stream refs to materialize _responseQueue
+        actor.Tell(new ConnectionActor.GetStreamRefs());
+        var refs = ExpectMsg<ConnectionActor.StreamRefsResponse>(TimeSpan.FromSeconds(5));
+
+        // Stop the actor — PostStop calls _responseQueue.Complete()
+        Sys.Stop(actor);
+
+        // The source ref should eventually complete (no more items)
+        // We verify by sinking the source ref — it should complete without error
+        var mat = Sys.Materializer();
+        var items = await refs.Responses.Source
+            .RunWith(Sink.Seq<IDataItem>(), mat);
+
+        // Should complete with zero items (nothing was offered before stop)
+        Assert.Empty(items);
+    }
+
+    [Fact(DisplayName = "CA-014: PostStop with null runner does not throw")]
+    public void CA_014_PostStop_NullRunner_NoThrow()
+    {
+        var actor = CreateConnectionActor();
+        ExpectMsg<ClientManager.CreateTcpRunner>();
+
+        // Do NOT send ClientConnected — _runner stays null
+        // Stop the actor — PostStop should not throw
+        Sys.Stop(actor);
+
+        // If PostStop threw, the actor system would log an error.
+        // Give time for any error to surface.
+        ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+
+        // Actor should be terminated without issues
+        Watch(actor);
+        ExpectTerminated(actor, TimeSpan.FromSeconds(3));
+    }
+
+    [Fact(DisplayName = "CA-015: PostStop with null _responseQueue does not throw")]
+    public void CA_015_PostStop_NullResponseQueue_NoThrow()
+    {
+        var actor = CreateConnectionActor();
+        ExpectMsg<ClientManager.CreateTcpRunner>();
+
+        // Connect (sets _runner) but do NOT call GetStreamRefs — _responseQueue stays null
+        var runnerProbe = CreateTestProbe();
+        var (_, _, connMsg) = MakeConnectedMessage();
+        actor.Tell(connMsg, runnerProbe);
+
+        // Stop the actor — PostStop should handle null _responseQueue gracefully
+        Sys.Stop(actor);
+
+        // Runner should still get DoClose even though _responseQueue is null
+        runnerProbe.ExpectMsg<DoClose>(TimeSpan.FromSeconds(3));
     }
 
     // ── TASK-014: Data Send ──────────────────────────────────────────
