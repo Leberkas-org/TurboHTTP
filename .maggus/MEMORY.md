@@ -79,6 +79,15 @@
 - **KestrelTlsFixture fix**: `LoadCertificate()` → `LoadPkcs12()` (PFX contains private key, LoadCertificate expects DER/PEM)
 - Pre-existing failures: RETRY-INT-001, COOKIE-INT-006 (10s timeouts, unrelated to TLS)
 
+### Edge Case Integration Tests (TASK-047)
+- Location: `src/TurboHttp.IntegrationTests/Shared/05_EdgeCaseTests.cs`
+- Pattern: `TestKit` + `IClassFixture<KestrelFixture>` + `SendAsync()` helper with optional timeout
+- New Kestrel routes added: `/edge/close-mid-response`, `/edge/large-header/{kb}`, `/edge/unknown-encoding`, `/edge/empty-body`
+- **Http11Decoder enforces RFC 9112 §2.3 max line length**: 32KB header value triggers `HttpDecoderException`, cannot receive oversized headers
+- **ContentEncodingDecoder throws for unknown encodings**: `Content-Encoding: x-custom` → `HttpDecoderException` per RFC 9110 §8.4; no passthrough mode
+- **Non-routable IPs cause ActorSystem shutdown hangs**: TCP connections to non-routable IPs (e.g., 192.0.2.1) leave pending actors that block `Sys.Terminate()` beyond 10s timeout. Use loopback with closed ports for connection failure tests.
+- Test count: 8 tests (EDGE-001 through EDGE-008), all passing
+
 ## Build Notes
 - `COMMIT.md` is in `.gitignore` — use `git add -f COMMIT.md` to stage it
 - `BenchmarkDotNet.Artifacts` also gitignored

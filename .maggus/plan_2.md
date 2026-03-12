@@ -554,9 +554,9 @@ Wire all existing protocol handlers (RedirectHandler, CookieJar, RetryEvaluator,
 **Description:** As a developer, I want integration tests for edge cases so that mid-response close, large headers, empty bodies, unknown encoding, non-existent host, non-listening port, timeouts, and multi-host concurrency are verified.
 
 **Acceptance Criteria:**
-- [ ] File created: `src/TurboHttp.IntegrationTests/Shared/05_EdgeCaseTests.cs`
-- [ ] 8 tests: server closes mid-response, 32KB header, empty body, unknown Content-Encoding passthrough, non-existent host throws, non-listening port throws, connection timeout, concurrent multi-host
-- [ ] All tests pass: `dotnet test --filter "FullyQualifiedName~EdgeCaseTests"`
+- [x] File created: `src/TurboHttp.IntegrationTests/Shared/05_EdgeCaseTests.cs`
+- [x] 8 tests: server closes mid-response, 32KB header, empty body, unknown Content-Encoding passthrough, non-existent host throws, non-listening port throws, connection timeout, concurrent multi-host
+- [x] All tests pass: `dotnet test --filter "FullyQualifiedName~EdgeCaseTests"`
 
 ### TASK-048: Validation Gate
 **Description:** As a developer, I want a final validation gate that verifies all existing tests still pass, all new tests pass, zero compiler warnings, and a documented RFC compliance matrix.

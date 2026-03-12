@@ -475,6 +475,48 @@ public sealed class KestrelFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
+        // ── Phase 15: Edge Case Routes for Integration Tests ──────────────
+
+        // GET /edge/close-mid-response → starts writing body then aborts connection
+        app.MapGet("/edge/close-mid-response", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 10000;
+            await ctx.Response.StartAsync();
+            await ctx.Response.Body.WriteAsync("partial"u8.ToArray());
+            await ctx.Response.Body.FlushAsync();
+            ctx.Abort();
+        });
+
+        // GET /edge/large-header/{kb} → response with X-Large-Header of kb*1024 chars
+        app.MapGet("/edge/large-header/{kb:int}", async (HttpContext ctx, int kb) =>
+        {
+            var headerValue = new string('X', kb * 1024);
+            ctx.Response.Headers["X-Large-Header"] = headerValue;
+            ctx.Response.ContentType = "text/plain";
+            var body = "ok"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /edge/unknown-encoding → Content-Encoding: x-custom with raw body
+        app.MapGet("/edge/unknown-encoding", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.Headers.ContentEncoding = "x-custom";
+            var body = "raw-payload"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // GET /edge/empty-body → 200 with empty body (no Content-Length header)
+        app.MapGet("/edge/empty-body", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 0;
+            await ctx.Response.StartAsync();
+        });
+
         // ── Redirect Routes ─────────────────────────────────────────────────
         Routes.RegisterRedirectRoutes(app);
 
