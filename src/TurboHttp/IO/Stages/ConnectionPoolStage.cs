@@ -36,14 +36,11 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
 
         private readonly Queue<RoutedDataItem> _responses = new();
 
+        private IActorRef _stageActorRef = ActorRefs.Nobody;
+
         public Logic(ConnectionPoolStage stage) : base(stage.Shape)
         {
             _stage = stage;
-        }
-
-        public override void PreStart()
-        {
-            var stageActor = GetStageActor(OnMessage);
 
             SetHandler(_stage._inlet, onPush: () =>
             {
@@ -55,13 +52,20 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
                         new PoolRouterActor.SendRequest(
                             item.PoolKey,
                             data,
-                            stageActor.Ref));
+                            _stageActorRef));
                 }
 
                 Pull(_stage._inlet);
             });
 
             SetHandler(_stage._outlet, onPull: PushIfAvailable);
+        }
+
+        public override void PreStart()
+        {
+            var stageActor = GetStageActor(OnMessage);
+            _stageActorRef = stageActor.Ref;
+            Pull(_stage._inlet);
         }
 
         private void OnMessage((IActorRef sender, object msg) args)

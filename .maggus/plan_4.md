@@ -375,13 +375,13 @@ private void HandleReconnect(Reconnect msg)
 **Description:** As a developer, I want stream tests for the GraphStage inlet so that request routing through StageActor is verified.
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.StreamTests/IO/ConnectionPoolStageTests.cs` created
-- [ ] Test class extends `StreamTestBase`
-- [ ] Test: `RoutedTransportItem` with `DataItem` is sent as `PoolRouterActor.SendRequest` to the router
-- [ ] Test: StageActor ref is used as `ReplyTo` in `SendRequest`
-- [ ] Test: After push, inlet pulls immediately (demand signaling)
-- [ ] Test: Non-DataItem transport items are handled gracefully (no crash)
-- [ ] All tests green
+- [x] Test file `src/TurboHttp.StreamTests/IO/ConnectionPoolStageTests.cs` created
+- [x] Test class extends `StreamTestBase`
+- [x] Test: `RoutedTransportItem` with `DataItem` is sent as `PoolRouterActor.SendRequest` to the router
+- [x] Test: StageActor ref is used as `ReplyTo` in `SendRequest`
+- [x] Test: After push, inlet pulls immediately (demand signaling)
+- [x] Test: Non-DataItem transport items are handled gracefully (no crash)
+- [x] All tests green
 
 ---
 
