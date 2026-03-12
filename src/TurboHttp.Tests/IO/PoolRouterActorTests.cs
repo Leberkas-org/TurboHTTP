@@ -20,7 +20,7 @@ public sealed class PoolRouterActorTests : TestKit
         var services = new ServiceCollection();
         services.AddSingleton(new TcpOptions { Host = "test", Port = 80 });
         services.AddSingleton(new PoolConfig());
-        services.AddSingleton<IActorRef>(ActorRefs.Nobody);
+        // HostPoolActor constructor: (TcpOptions, PoolConfig) — resolved via DI
         var provider = services.BuildServiceProvider();
         var diSetup = DependencyResolverSetup.Create(provider);
 
@@ -117,20 +117,19 @@ public sealed class PoolRouterActorTests : TestKit
         router.Tell(new PoolRouterActor.RegisterHost(poolKey, MakeOptions()));
         ExpectNoMsg(TimeSpan.FromMilliseconds(200));
 
-        // Resolve the child HostPoolActor ref
-        Sys.ActorSelection(router.Path / poolKey).Tell(new Identify(1));
-        var hostPool = ExpectMsg<ActorIdentity>(TimeSpan.FromSeconds(3)).Subject!;
-
-        // Subscribe to UnhandledMessage to observe forwarding
-        // (HostPoolActor doesn't handle SendRequest, so it becomes unhandled)
+        // Subscribe to UnhandledMessage to observe side effects.
+        // HostPoolActor now handles SendRequest, spawns a ConnectionActor,
+        // which sends CreateTcpRunner to its parent (the HostPoolActor).
+        // Since HostPoolActor doesn't handle CreateTcpRunner, it becomes unhandled.
         Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
 
         var data = MakeDataItem();
         router.Tell(new PoolRouterActor.SendRequest(poolKey, data, TestActor));
 
+        // The forwarded SendRequest causes HostPoolActor to spawn a ConnectionActor,
+        // which sends CreateTcpRunner — proving the message reached the correct host pool.
         var unhandled = ExpectMsg<UnhandledMessage>(TimeSpan.FromSeconds(3));
-        Assert.IsType<PoolRouterActor.SendRequest>(unhandled.Message);
-        Assert.Equal(hostPool, unhandled.Recipient);
+        Assert.IsType<ClientManager.CreateTcpRunner>(unhandled.Message);
     }
 
     [Fact(DisplayName = "PRA-005: SendRequest with unknown PoolKey replies with Status.Failure")]
@@ -162,17 +161,22 @@ public sealed class PoolRouterActorTests : TestKit
         Sys.ActorSelection(router.Path / "host-b:443").Tell(new Identify(2));
         var hostB = ExpectMsg<ActorIdentity>(TimeSpan.FromSeconds(3)).Subject!;
 
-        // Subscribe to UnhandledMessage
+        // Subscribe to UnhandledMessage to observe side effects
         Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
 
-        // Send to host-b
+        // Send to host-b — HostPoolActor handles SendRequest, spawns a ConnectionActor,
+        // which sends CreateTcpRunner (unhandled). The CreateTcpRunner.Handler ref is the
+        // ConnectionActor child of host-b's HostPoolActor.
         var data = MakeDataItem();
         router.Tell(new PoolRouterActor.SendRequest("host-b:443", data, TestActor));
 
         var unhandled = ExpectMsg<UnhandledMessage>(TimeSpan.FromSeconds(3));
-        Assert.IsType<PoolRouterActor.SendRequest>(unhandled.Message);
-        Assert.Equal(hostB, unhandled.Recipient);
-        Assert.NotEqual(hostA, unhandled.Recipient);
+        Assert.IsType<ClientManager.CreateTcpRunner>(unhandled.Message);
+
+        // The ConnectionActor that sent CreateTcpRunner must be a child of hostB, not hostA
+        var createMsg = (ClientManager.CreateTcpRunner)unhandled.Message;
+        var connectionPath = createMsg.Handler.Path;
+        Assert.StartsWith(hostB.Path.ToString(), connectionPath.Parent.ToString());
     }
 
     [Fact(DisplayName = "PRA-007: Sender is preserved through Forward — original sender receives failure")]

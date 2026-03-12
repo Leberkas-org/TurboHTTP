@@ -8,8 +8,6 @@ namespace TurboHttp.IO;
 
 public sealed class HostPoolActor : ReceiveActor
 {
-    public sealed record Incoming(DataItem Item);
-
     public sealed record ConnectionIdle(IActorRef Connection);
 
     public sealed record ConnectionFailed(IActorRef Connection);
@@ -24,22 +22,19 @@ public sealed class HostPoolActor : ReceiveActor
     private readonly PoolConfig _config;
 
     private readonly List<ConnectionState> _connections = [];
-    private readonly Queue<DataItem> _pending = new();
+    private readonly Queue<PendingItem> _pending = new();
+    private readonly Dictionary<IActorRef, Queue<PendingReplyTo>> _replyToMap = new();
 
     private int _roundRobinIndex;
 
-    private readonly IActorRef _streamPublisher;
-
     public HostPoolActor(
         TcpOptions options,
-        PoolConfig config,
-        IActorRef streamPublisher)
+        PoolConfig config)
     {
         _options = options;
         _config = config;
-        _streamPublisher = streamPublisher;
 
-        Receive<Incoming>(HandleRequest);
+        Receive<PoolRouterActor.SendRequest>(HandleRequest);
         Receive<ConnectionIdle>(HandleIdle);
         Receive<ConnectionResponse>(HandleResponse);
         Receive<ConnectionFailed>(HandleFailure);
@@ -57,24 +52,25 @@ public sealed class HostPoolActor : ReceiveActor
             Self);
     }
 
-    private void HandleRequest(Incoming msg)
+    private void HandleRequest(PoolRouterActor.SendRequest msg)
     {
+        var pending = new PendingReplyTo(msg.ReplyTo, msg.PoolKey);
         var conn = SelectConnection();
 
         if (conn != null)
         {
-            SendToConnection(conn, msg.Item);
+            SendToConnection(conn, msg.Data, pending);
             return;
         }
 
         if (_connections.Count < _config.MaxConnectionsPerHost)
         {
             conn = SpawnConnection();
-            SendToConnection(conn, msg.Item);
+            SendToConnection(conn, msg.Data, pending);
             return;
         }
 
-        _pending.Enqueue(msg.Item);
+        _pending.Enqueue(new PendingItem(msg.Data, pending));
     }
 
     private ConnectionState? SelectConnection()
@@ -90,10 +86,18 @@ public sealed class HostPoolActor : ReceiveActor
         return null;
     }
 
-    private void SendToConnection(ConnectionState conn, DataItem data)
+    private void SendToConnection(ConnectionState conn, DataItem data, PendingReplyTo pending)
     {
         conn.MarkBusy();
         conn.Actor.Tell(data);
+
+        if (!_replyToMap.TryGetValue(conn.Actor, out var queue))
+        {
+            queue = new Queue<PendingReplyTo>();
+            _replyToMap[conn.Actor] = queue;
+        }
+
+        queue.Enqueue(pending);
     }
 
     private ConnectionState SpawnConnection()
@@ -125,7 +129,13 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void HandleResponse(ConnectionResponse msg)
     {
-        _streamPublisher.Tell((msg.Memory, msg.Length));
+        if (!_replyToMap.TryGetValue(msg.Connection, out var queue) || queue.Count == 0)
+        {
+            return;
+        }
+
+        var pending = queue.Dequeue();
+        pending.ReplyTo.Tell(new PoolRouterActor.Response(pending.PoolKey, msg.Memory, msg.Length));
     }
 
     private void HandleFailure(ConnectionFailed msg)
@@ -151,6 +161,7 @@ public sealed class HostPoolActor : ReceiveActor
         if (conn == null)
             return;
 
+        _replyToMap.Remove(msg.Connection);
         _connections.Remove(conn);
         SpawnConnection();
     }
@@ -169,6 +180,7 @@ public sealed class HostPoolActor : ReceiveActor
             {
                 Context.Unwatch(conn.Actor);
                 conn.Actor.Tell(PoisonPill.Instance);
+                _replyToMap.Remove(conn.Actor);
                 _connections.Remove(conn);
             }
         }
@@ -183,10 +195,15 @@ public sealed class HostPoolActor : ReceiveActor
             if (conn == null)
                 break;
 
-            SendToConnection(conn, _pending.Dequeue());
+            var item = _pending.Dequeue();
+            SendToConnection(conn, item.Data, item.Pending);
         }
     }
 
     private ConnectionState? Find(IActorRef actor)
         => _connections.Find(x => x.Actor.Equals(actor));
+
+    private readonly record struct PendingReplyTo(IActorRef ReplyTo, string PoolKey);
+
+    private readonly record struct PendingItem(DataItem Data, PendingReplyTo Pending);
 }

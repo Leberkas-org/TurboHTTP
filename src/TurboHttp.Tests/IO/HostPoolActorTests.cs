@@ -12,6 +12,8 @@ namespace TurboHttp.Tests.IO;
 
 public sealed class HostPoolActorTests : TestKit
 {
+    private const string DefaultPoolKey = "test.local:80";
+
     private static TcpOptions MakeOptions()
         => new() { Host = "test.local", Port = 80 };
 
@@ -21,9 +23,10 @@ public sealed class HostPoolActorTests : TestKit
         return new DataItem(owner, 16);
     }
 
-    private IActorRef CreateHostPool(
-        int maxConnections = 10,
-        IActorRef? streamPublisher = null)
+    private PoolRouterActor.SendRequest MakeRequest(IActorRef? replyTo = null)
+        => new(DefaultPoolKey, MakeDataItem(), replyTo ?? TestActor);
+
+    private IActorRef CreateHostPool(int maxConnections = 10)
     {
         var options = MakeOptions();
         var config = new PoolConfig(
@@ -31,7 +34,7 @@ public sealed class HostPoolActorTests : TestKit
             IdleCheckInterval: TimeSpan.FromHours(1));
 
         return Sys.ActorOf(Props.Create(() =>
-            new HostPoolActor(options, config, streamPublisher ?? TestActor)));
+            new HostPoolActor(options, config)));
     }
 
     /// <summary>
@@ -50,13 +53,13 @@ public sealed class HostPoolActorTests : TestKit
         return create.Handler;
     }
 
-    [Fact(DisplayName = "HPA-001: First Incoming request spawns a new ConnectionActor child")]
-    public void HPA_001_FirstIncoming_SpawnsConnectionActor()
+    [Fact(DisplayName = "HPA-001: First SendRequest spawns a new ConnectionActor child")]
+    public void HPA_001_FirstRequest_SpawnsConnectionActor()
     {
         Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
         var pool = CreateHostPool();
 
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
 
         var connectionRef = ExpectConnectionSpawned();
         Assert.NotNull(connectionRef);
@@ -69,11 +72,11 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 2);
 
         // First request — spawns connection 1
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
 
         // Second request — connection 1 is busy → spawns connection 2
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         Assert.NotEqual(conn1, conn2);
@@ -88,14 +91,14 @@ public sealed class HostPoolActorTests : TestKit
 
         for (var i = 0; i < n; i++)
         {
-            pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+            pool.Tell(MakeRequest());
             // Wait for each connection to spawn before sending next request,
-            // ensuring the prior connection is marked busy before the next Incoming
+            // ensuring the prior connection is marked busy before the next request
             ExpectConnectionSpawned();
         }
 
         // Send one more — should NOT spawn (verified by no new CreateTcpRunner)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
     }
 
@@ -106,11 +109,11 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // First request spawns a connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Second request — connection is busy, max reached → should be queued (no new spawn)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
 
         // Verify the queued request drains when the connection becomes idle:
@@ -128,7 +131,7 @@ public sealed class HostPoolActorTests : TestKit
         Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
         var pool = CreateHostPool(maxConnections: 2);
 
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Watch the HostPoolActor from the test
@@ -154,7 +157,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // Send request → spawns connection, marks it busy (PendingRequests=1, Idle=false)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Send ConnectionIdle → MarkIdle: PendingRequests=0, Idle=true
@@ -162,7 +165,7 @@ public sealed class HostPoolActorTests : TestKit
 
         // Send another request — if PendingRequests was decremented and Idle=true,
         // the existing connection is reused (no new spawn)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
     }
 
@@ -173,15 +176,15 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 2);
 
         // Spawn connection via request, then idle it
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
 
         // Send two more requests. If connection is Idle=true, first request reuses it.
         // Second request should spawn a new connection (first is now busy again).
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
 
         // Only one new spawn expected (for second request) — proves first request reused the idle connection
         var conn2 = ExpectConnectionSpawned();
@@ -198,18 +201,18 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // Spawn connection, make it busy
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Queue a second request (max=1, connection is busy)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(300));
 
         // ConnectionIdle → MarkIdle (Idle=true), then DrainPending dequeues req2 → MarkBusy (Idle=false)
         pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
 
         // Now send a third request. Connection is busy again (drained req2), so it should be queued.
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
 
         // No new spawn — proves the connection is NOT idle after drain
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
@@ -228,14 +231,14 @@ public sealed class HostPoolActorTests : TestKit
             IdleTimeout: TimeSpan.FromMilliseconds(200));
 
         var pool = Sys.ActorOf(Props.Create(() =>
-            new HostPoolActor(options, config, TestActor)));
+            new HostPoolActor(options, config)));
 
         // Spawn connection via request
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Spawn a second connection (so eviction is allowed — min 1 preserved)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         // Wait past idle timeout, then send ConnectionIdle (updates LastActivity to now)
@@ -247,7 +250,7 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new HostPoolActor.IdleCheck());
 
         // Verify connection survives: send a new request, should reuse the idle connection (no new spawn)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
     }
 
@@ -258,11 +261,11 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // Spawn connection, mark busy
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Queue a request
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(300));
 
         // ConnectionIdle → connection freed → DrainPending sends queued request to it
@@ -278,12 +281,12 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // Spawn connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Queue two more requests
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(300));
 
         // ConnectionIdle → drain first pending (connection becomes busy), second pending stays queued
@@ -296,7 +299,7 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
 
         // Now send one more request — should still be queued (connection busy from draining second pending)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
     }
 
@@ -307,13 +310,13 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // Spawn one connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Queue 3 requests
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(300));
 
         // Drain cycle 1: idles connection → drains pending #1 → connection busy again
@@ -330,7 +333,7 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
 
         // New request should reuse the idle connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
     }
 
@@ -340,8 +343,7 @@ public sealed class HostPoolActorTests : TestKit
 
     private IActorRef CreateHostPoolWithReconnect(
         int maxConnections = 10,
-        TimeSpan? reconnectInterval = null,
-        IActorRef? streamPublisher = null)
+        TimeSpan? reconnectInterval = null)
     {
         var options = MakeOptions();
         var config = new PoolConfig(
@@ -350,7 +352,7 @@ public sealed class HostPoolActorTests : TestKit
             ReconnectInterval: reconnectInterval ?? TimeSpan.FromMilliseconds(200));
 
         return Sys.ActorOf(Props.Create(() =>
-            new HostPoolActor(options, config, streamPublisher ?? TestActor)));
+            new HostPoolActor(options, config)));
     }
 
     [Fact(DisplayName = "HPA-030: ConnectionFailed marks ConnectionState.Active=false — connection not reused")]
@@ -360,7 +362,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPoolWithReconnect(maxConnections: 2);
 
         // Spawn connection via request
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Mark connection idle so it would be selected for reuse
@@ -371,7 +373,7 @@ public sealed class HostPoolActorTests : TestKit
 
         // Send a new request. If Active=false, the dead connection is skipped.
         // Since maxConnections=2 and only 1 exists (dead), a new connection should spawn.
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         Assert.NotEqual(connectionRef, conn2);
@@ -384,7 +386,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPoolWithReconnect(maxConnections: 1, reconnectInterval: TimeSpan.FromMilliseconds(300));
 
         // Spawn connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Fail it — should schedule Reconnect after 300ms
@@ -405,7 +407,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPoolWithReconnect(maxConnections: 1);
 
         // Spawn a connection so the pool has state
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Send ConnectionFailed for an unknown actor
@@ -414,7 +416,7 @@ public sealed class HostPoolActorTests : TestKit
 
         // Pool is still alive and functional — idle the real connection and reuse it
         pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
 
         // No new spawn — real connection reused, pool not crashed
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
@@ -427,7 +429,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPoolWithReconnect(maxConnections: 1, reconnectInterval: TimeSpan.FromMilliseconds(200));
 
         // Spawn connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Fail it — triggers scheduled Reconnect
@@ -440,7 +442,7 @@ public sealed class HostPoolActorTests : TestKit
 
         // Verify the new connection is functional — idle it and send a request
         pool.Tell(new HostPoolActor.ConnectionIdle(newConn));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
 
         // Should reuse the new connection, no additional spawn
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
@@ -459,12 +461,12 @@ public sealed class HostPoolActorTests : TestKit
             ReconnectInterval: TimeSpan.FromMilliseconds(500));
 
         var pool = Sys.ActorOf(Props.Create(() =>
-            new HostPoolActor(options, config, TestActor)));
+            new HostPoolActor(options, config)));
 
         // Spawn two connections (need 2 so idle eviction is allowed — min 1 preserved)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         // Fail conn1 — schedules Reconnect in 500ms
@@ -487,7 +489,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPoolWithReconnect(maxConnections: 1, reconnectInterval: TimeSpan.FromMilliseconds(200));
 
         // Spawn connection via request
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Idle the connection so it can be found & failed
@@ -504,7 +506,7 @@ public sealed class HostPoolActorTests : TestKit
         // Send a request — if it's idle, the pool selects it (no new spawn needed).
         // If it were NOT idle or NOT active, the pool would try to spawn another
         // connection, but maxConnections=1 so it would queue instead.
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
 
         // No new connection spawn — proves the reconnected connection was selected (Active + Idle)
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
@@ -517,7 +519,7 @@ public sealed class HostPoolActorTests : TestKit
         var pool = CreateHostPool(maxConnections: 1);
 
         // Spawn a connection so the pool has state
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Send ConnectionIdle for an unknown actor ref
@@ -526,7 +528,7 @@ public sealed class HostPoolActorTests : TestKit
 
         // Pool should still be alive and functional — send another request
         // Connection is busy, so this queues. Then idle the real connection to drain it.
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(300));
 
         pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
@@ -542,8 +544,7 @@ public sealed class HostPoolActorTests : TestKit
     private IActorRef CreateHostPoolWithEviction(
         int maxConnections = 10,
         TimeSpan? idleTimeout = null,
-        TimeSpan? idleCheckInterval = null,
-        IActorRef? streamPublisher = null)
+        TimeSpan? idleCheckInterval = null)
     {
         var options = MakeOptions();
         var config = new PoolConfig(
@@ -552,7 +553,7 @@ public sealed class HostPoolActorTests : TestKit
             IdleTimeout: idleTimeout ?? TimeSpan.FromMilliseconds(200));
 
         return Sys.ActorOf(Props.Create(() =>
-            new HostPoolActor(options, config, streamPublisher ?? TestActor)));
+            new HostPoolActor(options, config)));
     }
 
     [Fact(DisplayName = "HPA-040: IdleCheck timer is started in PreStart with PoolConfig.IdleCheckInterval")]
@@ -568,9 +569,9 @@ public sealed class HostPoolActorTests : TestKit
             idleCheckInterval: TimeSpan.FromMilliseconds(300));
 
         // Spawn two connections (need >1 so eviction is allowed — min 1 preserved)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         // Idle both connections
@@ -582,8 +583,8 @@ public sealed class HostPoolActorTests : TestKit
 
         // The automatic IdleCheck should have evicted at least one connection.
         // Send two requests — if eviction happened, at least one new connection spawns.
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
 
         // At least one new connection should spawn (proving the timer-driven eviction ran)
         ExpectConnectionSpawned(TimeSpan.FromSeconds(3));
@@ -599,9 +600,9 @@ public sealed class HostPoolActorTests : TestKit
             idleTimeout: TimeSpan.FromMilliseconds(100));
 
         // Spawn two connections (need >1 for eviction)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         // Idle both connections
@@ -623,8 +624,8 @@ public sealed class HostPoolActorTests : TestKit
         // Verify conn1 is removed from pool: send a request while conn2 is still idle.
         // If conn1 were still tracked, it might be selected. Since it's removed,
         // conn2 is used. Then a second request should spawn a new connection.
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
 
         // One request reuses conn2 (idle), second needs a new spawn
         var conn3 = ExpectConnectionSpawned(TimeSpan.FromSeconds(3));
@@ -641,9 +642,9 @@ public sealed class HostPoolActorTests : TestKit
             idleTimeout: TimeSpan.FromHours(1)); // Very long — never expires
 
         // Spawn two connections
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         // Idle both connections
@@ -654,8 +655,8 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new HostPoolActor.IdleCheck());
 
         // Both connections should still be reusable — send two requests, no new spawns
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
+        pool.Tell(MakeRequest());
 
         // No new connections spawned — both idle connections were reused
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
@@ -671,9 +672,9 @@ public sealed class HostPoolActorTests : TestKit
             idleTimeout: TimeSpan.FromMilliseconds(100));
 
         // Spawn two connections
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
 
         // Only idle conn2, leave conn1 busy (Idle=false)
@@ -690,7 +691,7 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new HostPoolActor.ConnectionIdle(conn1));
 
         // Send a request — should reuse conn1 (proves it wasn't evicted)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
 
         // No new spawn — conn1 was preserved despite being past idle timeout age
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
@@ -706,7 +707,7 @@ public sealed class HostPoolActorTests : TestKit
             idleTimeout: TimeSpan.FromMilliseconds(100));
 
         // Spawn single connection
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var connectionRef = ExpectConnectionSpawned();
 
         // Idle it
@@ -720,7 +721,7 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new HostPoolActor.IdleCheck());
 
         // Send a request — should reuse the preserved connection (no new spawn)
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
     }
 
@@ -734,11 +735,11 @@ public sealed class HostPoolActorTests : TestKit
             idleTimeout: TimeSpan.FromMilliseconds(200));
 
         // Spawn three connections
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn1 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn2 = ExpectConnectionSpawned();
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn3 = ExpectConnectionSpawned();
 
         // Idle conn1 and conn2 early
@@ -767,13 +768,230 @@ public sealed class HostPoolActorTests : TestKit
         Assert.Contains(conn2, evicted);
 
         // conn3 should be preserved — send a request, should reuse it
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         ExpectNoMsg(TimeSpan.FromMilliseconds(500));
 
         // Send two more requests — conn3 is busy now, so new connections should spawn
-        pool.Tell(new HostPoolActor.Incoming(MakeDataItem()));
+        pool.Tell(MakeRequest());
         var conn4 = ExpectConnectionSpawned(TimeSpan.FromSeconds(3));
         Assert.NotEqual(conn1, conn4);
         Assert.NotEqual(conn2, conn4);
+    }
+
+    // ================================================================
+    // TASK-019: ReplyTo-Based Response Routing
+    // ================================================================
+
+    [Fact(DisplayName = "HPA-050: Response for request A goes to ReplyTo A")]
+    public void HPA_050_Response_RoutedToCorrectReplyTo()
+    {
+        Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
+
+        var options = MakeOptions();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 1,
+            IdleCheckInterval: TimeSpan.FromHours(1));
+
+        var pool = Sys.ActorOf(Props.Create(() =>
+            new HostPoolActor(options, config)));
+
+        var replyToA = CreateTestProbe("replyToA");
+
+        // Send request with replyToA
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToA));
+        var connectionRef = ExpectConnectionSpawned();
+
+        // Simulate response from connection
+        var mem = MemoryPool<byte>.Shared.Rent(4);
+        new byte[] { 0xDE, 0xAD, 0xBE, 0xEF }.CopyTo(mem.Memory.Span);
+        pool.Tell(new HostPoolActor.ConnectionResponse(connectionRef, mem, 4));
+
+        // Response should arrive at replyToA as PoolRouterActor.Response
+        var response = replyToA.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal(DefaultPoolKey, response.PoolKey);
+        Assert.Equal(4, response.Length);
+        Assert.Equal(0xDE, response.Memory.Memory.Span[0]);
+        Assert.Equal(0xEF, response.Memory.Memory.Span[3]);
+    }
+
+    [Fact(DisplayName = "HPA-051: Response for request B goes to ReplyTo B (not A)")]
+    public void HPA_051_Response_RoutedToCorrectReplyTo_NotOther()
+    {
+        Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
+
+        var options = MakeOptions();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 2,
+            IdleCheckInterval: TimeSpan.FromHours(1));
+
+        var pool = Sys.ActorOf(Props.Create(() =>
+            new HostPoolActor(options, config)));
+
+        var replyToA = CreateTestProbe("replyToA");
+        var replyToB = CreateTestProbe("replyToB");
+
+        // Send request A → spawns connection 1
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToA));
+        var conn1 = ExpectConnectionSpawned();
+
+        // Send request B → spawns connection 2
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToB));
+        var conn2 = ExpectConnectionSpawned();
+
+        // Response from connection 2 (request B)
+        var memB = MemoryPool<byte>.Shared.Rent(2);
+        new byte[] { 0xBB, 0xCC }.CopyTo(memB.Memory.Span);
+        pool.Tell(new HostPoolActor.ConnectionResponse(conn2, memB, 2));
+
+        // replyToB should get the response
+        var responseB = replyToB.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal(DefaultPoolKey, responseB.PoolKey);
+        Assert.Equal(0xBB, responseB.Memory.Memory.Span[0]);
+
+        // replyToA should NOT have received anything
+        replyToA.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+    }
+
+    [Fact(DisplayName = "HPA-052: Multiple concurrent requests to different ReplyTos are correctly routed")]
+    public void HPA_052_MultipleConcurrentRequests_CorrectlyRouted()
+    {
+        Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
+
+        var options = MakeOptions();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 3,
+            IdleCheckInterval: TimeSpan.FromHours(1));
+
+        var pool = Sys.ActorOf(Props.Create(() =>
+            new HostPoolActor(options, config)));
+
+        var replyTo1 = CreateTestProbe("replyTo1");
+        var replyTo2 = CreateTestProbe("replyTo2");
+        var replyTo3 = CreateTestProbe("replyTo3");
+
+        // Send 3 requests → 3 connections
+        pool.Tell(new PoolRouterActor.SendRequest("host-a", MakeDataItem(), replyTo1));
+        var conn1 = ExpectConnectionSpawned();
+
+        pool.Tell(new PoolRouterActor.SendRequest("host-b", MakeDataItem(), replyTo2));
+        var conn2 = ExpectConnectionSpawned();
+
+        pool.Tell(new PoolRouterActor.SendRequest("host-c", MakeDataItem(), replyTo3));
+        var conn3 = ExpectConnectionSpawned();
+
+        // Responses arrive out of order: conn3, conn1, conn2
+        var mem3 = MemoryPool<byte>.Shared.Rent(1);
+        mem3.Memory.Span[0] = 0x33;
+        pool.Tell(new HostPoolActor.ConnectionResponse(conn3, mem3, 1));
+
+        var mem1 = MemoryPool<byte>.Shared.Rent(1);
+        mem1.Memory.Span[0] = 0x11;
+        pool.Tell(new HostPoolActor.ConnectionResponse(conn1, mem1, 1));
+
+        var mem2 = MemoryPool<byte>.Shared.Rent(1);
+        mem2.Memory.Span[0] = 0x22;
+        pool.Tell(new HostPoolActor.ConnectionResponse(conn2, mem2, 1));
+
+        // Each ReplyTo gets the correct response
+        var resp3 = replyTo3.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal("host-c", resp3.PoolKey);
+        Assert.Equal(0x33, resp3.Memory.Memory.Span[0]);
+
+        var resp1 = replyTo1.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal("host-a", resp1.PoolKey);
+        Assert.Equal(0x11, resp1.Memory.Memory.Span[0]);
+
+        var resp2 = replyTo2.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal("host-b", resp2.PoolKey);
+        Assert.Equal(0x22, resp2.Memory.Memory.Span[0]);
+    }
+
+    [Fact(DisplayName = "HPA-053: FIFO ordering — multiple requests on same connection route to correct ReplyTos")]
+    public void HPA_053_FifoOrdering_SameConnection_CorrectRouting()
+    {
+        Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
+
+        var options = MakeOptions();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 1,
+            IdleCheckInterval: TimeSpan.FromHours(1));
+
+        var pool = Sys.ActorOf(Props.Create(() =>
+            new HostPoolActor(options, config)));
+
+        var replyToA = CreateTestProbe("replyToA");
+        var replyToB = CreateTestProbe("replyToB");
+
+        // Send request A → spawns connection
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToA));
+        var connectionRef = ExpectConnectionSpawned();
+
+        // Idle the connection, then send request B → reuses same connection
+        pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToB));
+
+        // Response 1 → should go to replyToA (FIFO)
+        var mem1 = MemoryPool<byte>.Shared.Rent(1);
+        mem1.Memory.Span[0] = 0xAA;
+        pool.Tell(new HostPoolActor.ConnectionResponse(connectionRef, mem1, 1));
+
+        var respA = replyToA.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal(0xAA, respA.Memory.Memory.Span[0]);
+
+        // Response 2 → should go to replyToB (FIFO)
+        var mem2 = MemoryPool<byte>.Shared.Rent(1);
+        mem2.Memory.Span[0] = 0xBB;
+        pool.Tell(new HostPoolActor.ConnectionResponse(connectionRef, mem2, 1));
+
+        var respB = replyToB.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal(0xBB, respB.Memory.Memory.Span[0]);
+
+        // Neither probe got the other's response
+        replyToA.ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+        replyToB.ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+    }
+
+    [Fact(DisplayName = "HPA-054: Queued (pending) request preserves ReplyTo through drain")]
+    public void HPA_054_QueuedRequest_PreservesReplyTo()
+    {
+        Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
+
+        var options = MakeOptions();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 1,
+            IdleCheckInterval: TimeSpan.FromHours(1));
+
+        var pool = Sys.ActorOf(Props.Create(() =>
+            new HostPoolActor(options, config)));
+
+        var replyToA = CreateTestProbe("replyToA");
+        var replyToB = CreateTestProbe("replyToB");
+
+        // Send request A → spawns connection, marks busy
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToA));
+        var connectionRef = ExpectConnectionSpawned();
+
+        // Send request B → queued (max=1, connection busy)
+        pool.Tell(new PoolRouterActor.SendRequest(DefaultPoolKey, MakeDataItem(), replyToB));
+        ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+
+        // Response for request A
+        var memA = MemoryPool<byte>.Shared.Rent(1);
+        memA.Memory.Span[0] = 0xAA;
+        pool.Tell(new HostPoolActor.ConnectionResponse(connectionRef, memA, 1));
+
+        var respA = replyToA.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal(0xAA, respA.Memory.Memory.Span[0]);
+
+        // Idle → drains request B to the connection
+        pool.Tell(new HostPoolActor.ConnectionIdle(connectionRef));
+
+        // Response for request B (which was queued, then drained)
+        var memB = MemoryPool<byte>.Shared.Rent(1);
+        memB.Memory.Span[0] = 0xBB;
+        pool.Tell(new HostPoolActor.ConnectionResponse(connectionRef, memB, 1));
+
+        var respB = replyToB.ExpectMsg<PoolRouterActor.Response>(TimeSpan.FromSeconds(3));
+        Assert.Equal(0xBB, respB.Memory.Memory.Span[0]);
     }
 }

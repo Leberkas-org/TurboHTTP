@@ -405,13 +405,13 @@ private void HandleReconnect(Reconnect msg)
 **Current problem:** `HandleResponse` sends all responses to `_streamPublisher` — there is no correlation between a request's `ReplyTo` and the response.
 
 **Acceptance Criteria:**
-- [ ] `HostPoolActor` tracks `ReplyTo` per pending request (e.g. in `ConnectionState` or a separate correlation dictionary)
-- [ ] `HandleResponse` routes the response to the correct `ReplyTo` actor
-- [ ] `_streamPublisher` constructor parameter removed or repurposed
-- [ ] Test: Response for request A goes to ReplyTo A
-- [ ] Test: Response for request B goes to ReplyTo B (not A)
-- [ ] Test: Multiple concurrent requests to different ReplyTos are correctly routed
-- [ ] Build + all tests green
+- [x] `HostPoolActor` tracks `ReplyTo` per pending request (e.g. in `ConnectionState` or a separate correlation dictionary)
+- [x] `HandleResponse` routes the response to the correct `ReplyTo` actor
+- [x] `_streamPublisher` constructor parameter removed or repurposed
+- [x] Test: Response for request A goes to ReplyTo A
+- [x] Test: Response for request B goes to ReplyTo B (not A)
+- [x] Test: Multiple concurrent requests to different ReplyTos are correctly routed
+- [x] Build + all tests green
 
 ---
 
@@ -420,11 +420,11 @@ private void HandleReconnect(Reconnect msg)
 **Description:** As a developer, I want an integration test that exercises the complete actor hierarchy with the GraphStage bridge.
 
 **Acceptance Criteria:**
-- [ ] Test: `RegisterHost` → `SendRequest` via stream inlet → `ConnectionActor` spawned → response flows back through stream outlet
-- [ ] Test: Multiple PoolKeys (hosts) work in parallel
-- [ ] Test: Pool under load — `MaxConnectionsPerHost` reached → requests queued → connection freed → requests drained
-- [ ] Test: Connection failure → reconnect → subsequent request succeeds
-- [ ] All tests green
+- [x] Test: `RegisterHost` → `SendRequest` via stream inlet → `ConnectionActor` spawned → response flows back through stream outlet
+- [x] Test: Multiple PoolKeys (hosts) work in parallel
+- [x] Test: Pool under load — `MaxConnectionsPerHost` reached → requests queued → connection freed → requests drained
+- [x] Test: Connection failure → reconnect → subsequent request succeeds
+- [x] All tests green
 
 ---
 
