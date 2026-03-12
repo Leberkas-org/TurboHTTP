@@ -31,7 +31,8 @@ public sealed record PoolConfig(
     TimeSpan ConnectionTimeout = default,
     LoadBalancingStrategy Strategy = LoadBalancingStrategy.LeastLoaded,
     int MaxReconnectAttempts = 3,
-    TimeSpan ReconnectInterval = default)
+    TimeSpan ReconnectInterval = default,
+    TimeSpan IdleCheckInterval = default)
 {
     public TimeSpan IdleTimeout { get; init; } =
         IdleTimeout == TimeSpan.Zero ? TimeSpan.FromMinutes(5) : IdleTimeout;
@@ -41,6 +42,13 @@ public sealed record PoolConfig(
 
     public TimeSpan ReconnectInterval { get; init; } =
         ReconnectInterval == TimeSpan.Zero ? TimeSpan.FromSeconds(5) : ReconnectInterval;
+
+    /// <summary>
+    /// How often the idle eviction timer fires to check for stale connections.
+    /// Defaults to 30 seconds.
+    /// </summary>
+    public TimeSpan IdleCheckInterval { get; init; } =
+        IdleCheckInterval == TimeSpan.Zero ? TimeSpan.FromSeconds(30) : IdleCheckInterval;
 }
 
 /// <summary>

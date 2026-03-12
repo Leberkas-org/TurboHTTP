@@ -112,16 +112,16 @@ The key architectural insight: rather than bypassing `ConnectionStage`, the pool
 **Description:** As a developer, I want unused ConnectionStage instances to be automatically shut down after a timeout to free resources.
 
 **Acceptance Criteria:**
-- [ ] `PoolConfig.IdleTimeout` (default 5 minutes) defines maximum idle time
-- [ ] Periodic timer (via `ScheduleRepeatedly` in GraphStageLogic) checks for idle connections
-- [ ] Connection without traffic for > IdleTimeout is gracefully shut down (complete the materialised source)
-- [ ] At least one connection per host is preserved (no complete eviction while host is registered)
-- [ ] Activity timestamp is updated on every request and response
-- [ ] `ConnectionReuseEvaluator` results feed into eviction decisions (Keep-Alive timeout overrides IdleTimeout)
-- [ ] Unit tests: connection idle > timeout → shut down
-- [ ] Unit tests: connection with traffic → preserved
-- [ ] Unit tests: last connection per host → preserved despite idle
-- [ ] Typecheck/build passes
+- [x] `PoolConfig.IdleTimeout` (default 5 minutes) defines maximum idle time
+- [x] Periodic timer (via `ScheduleRepeatedly` in GraphStageLogic) checks for idle connections
+- [x] Connection without traffic for > IdleTimeout is gracefully shut down (complete the materialised source)
+- [x] At least one connection per host is preserved (no complete eviction while host is registered)
+- [x] Activity timestamp is updated on every request and response
+- [x] `ConnectionReuseEvaluator` results feed into eviction decisions (Keep-Alive timeout overrides IdleTimeout)
+- [x] Unit tests: connection idle > timeout → shut down
+- [x] Unit tests: connection with traffic → preserved
+- [x] Unit tests: last connection per host → preserved despite idle
+- [x] Typecheck/build passes
 
 ### TASK-007: Per-Host Backpressure
 

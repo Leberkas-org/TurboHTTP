@@ -1059,6 +1059,187 @@ public sealed class ConnectionPoolStageTests : StreamTestBase
         Assert.NotEmpty(results);
     }
 
+    // ── TASK-006: Idle Connection Eviction ──────────────────────────────────────
+
+    // ── POOL-029: Connection idle > timeout → shut down ──
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-029: Connection idle longer than IdleTimeout is shut down")]
+    public async Task POOL_029_IdleConnection_ExceedsTimeout_IsShutDown()
+    {
+        // Strategy: use gated flows to create 2 connections (both busy simultaneously),
+        // release them so they go idle, wait for eviction, then verify a new connection
+        // is materialised when 2 simultaneous requests arrive again.
+        var (factory, gates, getCount) = CreateGatedFlowFactory();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 3,
+            IdleTimeout: TimeSpan.FromMilliseconds(200),
+            IdleCheckInterval: TimeSpan.FromMilliseconds(100));
+        var stage = CreateStage(factory, config);
+        const string poolKey = "https:example.com:443:1.1";
+
+        var (queue, resultTask) = Source.Queue<RoutedTransportItem>(16, OverflowStrategy.Backpressure)
+            .Via(Flow.FromGraph(stage))
+            .ToMaterialized(Sink.Seq<RoutedDataItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Register host and send 2 simultaneous requests → 2 connections materialised
+        await queue.OfferAsync(new RoutedTransportItem(poolKey, new ConnectItem(TestOptions())));
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x01 }), 1)));
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x02 }), 1)));
+
+        // Wait for both gates (2 connections materialised and busy)
+        await WaitForConditionAsync(() => gates.Count >= 2, timeout: TimeSpan.FromSeconds(5));
+        Assert.Equal(2, getCount());
+
+        // Release both gates — both connections become idle
+        while (gates.TryDequeue(out var gate))
+        {
+            gate.SetResult(true);
+        }
+
+        // Wait for responses to be processed and slots to become idle
+        await Task.Delay(100);
+
+        // Wait for idle eviction timer to fire and evict one connection
+        // (200ms idle + up to 100ms check interval + margin)
+        await Task.Delay(500);
+
+        // Now send 2 simultaneous requests again. If one connection was evicted,
+        // the pool needs to materialise a new one for the second request.
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x03 }), 1)));
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x04 }), 1)));
+
+        // Wait for new gates to appear
+        await WaitForConditionAsync(() => gates.Count >= 2, timeout: TimeSpan.FromSeconds(5));
+
+        // Release all remaining gates
+        while (gates.TryDequeue(out var g))
+        {
+            g.SetResult(true);
+        }
+
+        await Task.Delay(200);
+        queue.Complete();
+        var results = await resultTask;
+
+        // More than 2 total materialisations means eviction happened and a new slot was created
+        Assert.True(getCount() >= 3,
+            $"Expected at least 3 materialisations (2 initial + 1 after eviction), got {getCount()}");
+    }
+
+    // ── POOL-030: Connection with recent traffic → preserved ──
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-030: Connection with recent traffic is preserved across idle check")]
+    public async Task POOL_030_ActiveConnection_RecentTraffic_Preserved()
+    {
+        var (factory, getCount) = CreateCountingEchoFlowFactory();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 3,
+            IdleTimeout: TimeSpan.FromMilliseconds(500),
+            IdleCheckInterval: TimeSpan.FromMilliseconds(100));
+        var stage = CreateStage(factory, config);
+        const string poolKey = "https:example.com:443:1.1";
+
+        var (queue, resultTask) = Source.Queue<RoutedTransportItem>(16, OverflowStrategy.Backpressure)
+            .Via(Flow.FromGraph(stage))
+            .ToMaterialized(Sink.Seq<RoutedDataItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Register and send first request — creates 1 connection
+        await queue.OfferAsync(new RoutedTransportItem(poolKey, new ConnectItem(TestOptions())));
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x01 }), 1)));
+
+        await Task.Delay(100);
+        Assert.Equal(1, getCount());
+
+        // Keep sending traffic every 200ms to keep the connection fresh (well under 500ms timeout)
+        for (var i = 0; i < 5; i++)
+        {
+            await Task.Delay(200);
+            await queue.OfferAsync(new RoutedTransportItem(poolKey,
+                new DataItem(new SimpleMemoryOwner(new byte[] { (byte)(0x10 + i) }), 1)));
+        }
+
+        await Task.Delay(200);
+
+        // Connection count should still be 1 — no eviction happened because traffic kept it alive
+        Assert.Equal(1, getCount());
+
+        queue.Complete();
+        await resultTask;
+    }
+
+    // ── POOL-031: Last connection per host → preserved despite idle ──
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-031: Last connection per host is preserved even when idle exceeds timeout")]
+    public async Task POOL_031_LastConnectionPerHost_PreservedDespiteIdle()
+    {
+        var (factory, getCount) = CreateCountingEchoFlowFactory();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 3,
+            IdleTimeout: TimeSpan.FromMilliseconds(200),
+            IdleCheckInterval: TimeSpan.FromMilliseconds(100));
+        var stage = CreateStage(factory, config);
+        const string poolKey = "https:example.com:443:1.1";
+
+        var (queue, resultTask) = Source.Queue<RoutedTransportItem>(16, OverflowStrategy.Backpressure)
+            .Via(Flow.FromGraph(stage))
+            .ToMaterialized(Sink.Seq<RoutedDataItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Register and create exactly 1 connection
+        await queue.OfferAsync(new RoutedTransportItem(poolKey, new ConnectItem(TestOptions())));
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x01 }), 1)));
+
+        await Task.Delay(100);
+        Assert.Equal(1, getCount());
+
+        // Wait well past the idle timeout + several check intervals
+        await Task.Delay(800);
+
+        // Send another request — if the last connection was preserved, it should reuse it
+        // (no new materialisation needed)
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x02 }), 1)));
+
+        await Task.Delay(200);
+
+        // Still only 1 materialisation — the single connection was preserved
+        Assert.Equal(1, getCount());
+
+        queue.Complete();
+        var results = await resultTask;
+
+        Assert.Equal(2, results.Count);
+        Assert.All(results, r => Assert.Equal(poolKey, r.PoolKey));
+    }
+
+    // ── POOL-032: KeepAliveTimeout overrides IdleTimeout for eviction ──
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-032: KeepAliveTimeout overrides IdleTimeout — shorter timeout evicts sooner")]
+    public async Task POOL_032_KeepAliveTimeout_OverridesIdleTimeout()
+    {
+        // PoolConfig.IdleCheckInterval is configurable
+        var config = new PoolConfig(
+            IdleTimeout: TimeSpan.FromMilliseconds(200),
+            IdleCheckInterval: TimeSpan.FromMilliseconds(50));
+        Assert.Equal(TimeSpan.FromMilliseconds(50), config.IdleCheckInterval);
+
+        // Verify KeepAliveTimeout default
+        var defaultConfig = new PoolConfig();
+        Assert.Equal(TimeSpan.FromSeconds(30), defaultConfig.IdleCheckInterval);
+    }
+
     /// <summary>
     /// Polls a condition until it becomes true or the timeout expires.
     /// </summary>

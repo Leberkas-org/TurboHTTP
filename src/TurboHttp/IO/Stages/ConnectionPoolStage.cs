@@ -89,12 +89,19 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
             });
         }
 
+        private const string IdleEvictionTimerKey = "idle-eviction";
+
         public override void PreStart()
         {
             _self = GetStageActor(OnMessage).Ref;
             _onResponseCallback = GetAsyncCallback<(string, int, IMemoryOwner<byte>, int)>(OnSubGraphResponse);
             _onSlotDeathCallback = GetAsyncCallback<(string, int, Exception?)>(OnSlotDeath);
             Pull(_stage._inlet);
+
+            // Start periodic idle eviction timer
+            ScheduleRepeatedly(IdleEvictionTimerKey,
+                _stage._config.IdleCheckInterval,
+                _stage._config.IdleCheckInterval);
         }
 
         private void HandlePush()
@@ -160,6 +167,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
             _inFlightCount++;
             slot.PendingRequestCount++;
             slot.Idle = false;
+            slot.LastActivityUtc = DateTime.UtcNow;
             slot.Queue.OfferAsync(data);
         }
 
@@ -340,7 +348,18 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
 
         protected override void OnTimer(object timerKey)
         {
-            if (timerKey is not string key || !key.StartsWith("reconnect:"))
+            if (timerKey is not string key)
+            {
+                return;
+            }
+
+            if (key == IdleEvictionTimerKey)
+            {
+                EvictIdleConnections();
+                return;
+            }
+
+            if (!key.StartsWith("reconnect:"))
             {
                 return;
             }
@@ -364,6 +383,74 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
             }
         }
 
+        /// <summary>
+        /// Scans all host pools and gracefully shuts down connections that have been idle
+        /// longer than the configured timeout. Preserves at least one connection per host.
+        /// A slot's <see cref="ConnectionSlot.KeepAliveTimeout"/> (from the server's Keep-Alive header)
+        /// overrides <see cref="PoolConfig.IdleTimeout"/> when present.
+        /// </summary>
+        private void EvictIdleConnections()
+        {
+            if (_stopping)
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+
+            foreach (var (poolKey, pool) in _hostPools)
+            {
+                // Collect slots eligible for eviction (idle, active, timed out)
+                var evictable = new List<ConnectionSlot>();
+
+                foreach (var slot in pool.Connections)
+                {
+                    if (!slot.Active || !slot.Idle)
+                    {
+                        continue;
+                    }
+
+                    var timeout = slot.KeepAliveTimeout ?? _stage._config.IdleTimeout;
+                    var idleDuration = now - slot.LastActivityUtc;
+
+                    if (idleDuration > timeout)
+                    {
+                        evictable.Add(slot);
+                    }
+                }
+
+                // Preserve at least one connection per host
+                var activeCount = 0;
+                foreach (var slot in pool.Connections)
+                {
+                    if (slot.Active)
+                    {
+                        activeCount++;
+                    }
+                }
+
+                var maxEvictions = activeCount - 1;
+                if (maxEvictions <= 0)
+                {
+                    continue;
+                }
+
+                var evicted = 0;
+                foreach (var slot in evictable)
+                {
+                    if (evicted >= maxEvictions)
+                    {
+                        break;
+                    }
+
+                    slot.Active = false;
+                    slot.Queue.Complete();
+                    pool.Connections.Remove(slot);
+                    evicted++;
+                }
+            }
+        }
+
         private void OnSubGraphResponse((string poolKey, int slotId, IMemoryOwner<byte> memory, int length) response)
         {
             if (_stopping && _pendingResponses.Count == 0 && _inFlightCount <= 1)
@@ -381,6 +468,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
                     if (slot.Id == response.slotId && slot.PendingRequestCount > 0)
                     {
                         slot.PendingRequestCount--;
+                        slot.LastActivityUtc = DateTime.UtcNow;
                         if (slot.PendingRequestCount == 0)
                         {
                             slot.Idle = true;
@@ -499,6 +587,18 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
         public bool Active { get; set; } = true;
         public bool Idle { get; set; } = true;
         public int PendingRequestCount { get; set; }
+
+        /// <summary>
+        /// UTC timestamp of last request or response activity on this slot.
+        /// Updated on every <see cref="SendToSlot"/> and <see cref="OnSubGraphResponse"/>.
+        /// </summary>
+        public DateTime LastActivityUtc { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Optional per-slot idle timeout override from the server's Keep-Alive header.
+        /// When set, overrides <see cref="PoolConfig.IdleTimeout"/> for this slot.
+        /// </summary>
+        public TimeSpan? KeepAliveTimeout { get; set; }
 
         public ConnectionSlot(int id, ISourceQueueWithComplete<ITransportItem> queue, Task completion)
         {
