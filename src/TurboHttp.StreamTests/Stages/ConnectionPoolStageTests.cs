@@ -803,6 +803,262 @@ public sealed class ConnectionPoolStageTests : StreamTestBase
         Assert.All(itemsByConn.Values, count => Assert.Equal(2, count));
     }
 
+    // ── TASK-005: Connection Health Monitoring and Auto-Reconnect ─────────
+
+    /// <summary>
+    /// Creates a flow factory where the first N materialisations throw/fail after
+    /// processing the ConnectItem, and subsequent ones echo normally. Used to simulate
+    /// a dead connection followed by a successful reconnect.
+    /// </summary>
+    private static (
+        Func<IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed>> factory,
+        Func<int> getCount)
+        CreateFailThenSucceedFlowFactory(int failCount)
+    {
+        var count = 0;
+        IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed> Factory()
+        {
+            var myIndex = Interlocked.Increment(ref count) - 1;
+            if (myIndex < failCount)
+            {
+                // This flow accepts the ConnectItem, then fails
+                return Flow.Create<ITransportItem>()
+                    .SelectAsync(1, async item =>
+                    {
+                        if (item is ConnectItem)
+                        {
+                            // Simulate connection established then dies
+                            await Task.Delay(10);
+                            throw new InvalidOperationException($"Simulated connection failure #{myIndex}");
+                        }
+                        var data = (DataItem)item;
+                        return (data.Memory, data.Length);
+                    });
+            }
+            // Successful echo flow
+            return CreateEchoFlow();
+        }
+        return (Factory, () => Volatile.Read(ref count));
+    }
+
+    /// <summary>
+    /// Creates a flow factory where every materialisation fails immediately after
+    /// the ConnectItem. Used to verify max reconnect attempts exhaustion.
+    /// </summary>
+    private static (
+        Func<IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed>> factory,
+        Func<int> getCount)
+        CreateAlwaysFailFlowFactory()
+    {
+        var count = 0;
+        IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed> Factory()
+        {
+            Interlocked.Increment(ref count);
+            return Flow.Create<ITransportItem>()
+                .SelectAsync(1, async item =>
+                {
+                    if (item is ConnectItem)
+                    {
+                        await Task.Delay(10);
+                        throw new InvalidOperationException("Simulated permanent failure");
+                    }
+                    var data = (DataItem)item;
+                    return (data.Memory, data.Length);
+                });
+        }
+        return (Factory, () => Volatile.Read(ref count));
+    }
+
+    // ── POOL-024: Dead connection detected and removed ──────────────────────
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-024: Connection dies → retry → new connection works")]
+    public async Task POOL_024_ConnectionDies_Retry_NewConnectionWorks()
+    {
+        // First connection fails on ConnectItem, second succeeds (echo flow).
+        // After reconnect, a DataItem sent to the new connection should work.
+        var (factory, getCount) = CreateFailThenSucceedFlowFactory(failCount: 1);
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 1,
+            MaxReconnectAttempts: 3,
+            ReconnectInterval: TimeSpan.FromMilliseconds(100));
+        var stage = CreateStage(factory, config);
+        const string poolKey = "https:example.com:443:1.1";
+
+        // Use Source.Queue to control timing
+        var (queue, resultTask) = Source.Queue<RoutedTransportItem>(16, OverflowStrategy.Backpressure)
+            .Via(Flow.FromGraph(stage))
+            .ToMaterialized(Sink.Seq<RoutedDataItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Register host
+        await queue.OfferAsync(new RoutedTransportItem(poolKey, new ConnectItem(TestOptions())));
+
+        // Send a DataItem — triggers connection materialisation. First connection fails
+        // on ConnectItem processing, which triggers OnSlotDeath → reconnect timer.
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x42 }), 1)));
+
+        // Wait for the reconnect (second connection created)
+        await WaitForConditionAsync(() => getCount() >= 2, timeout: TimeSpan.FromSeconds(5));
+
+        // Give the new connection time to initialise and process any queued items
+        await Task.Delay(300);
+
+        // Send another DataItem — should go to the second (working) connection
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x43 }), 1)));
+
+        // Wait for response
+        await Task.Delay(500);
+
+        queue.Complete();
+        var results = await resultTask;
+
+        // At least one response from the working connection
+        Assert.NotEmpty(results);
+        Assert.All(results, r => Assert.Equal(poolKey, r.PoolKey));
+        // At least 2 connections were created (first failed, second succeeded)
+        Assert.True(getCount() >= 2);
+    }
+
+    // ── POOL-025: Max reconnect attempts exhausted → ConnectionPoolException ──
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-025: Connection dies → max retries reached → ConnectionPoolException")]
+    public async Task POOL_025_ConnectionDies_MaxRetries_ThrowsConnectionPoolException()
+    {
+        var (factory, getCount) = CreateAlwaysFailFlowFactory();
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 1,
+            MaxReconnectAttempts: 2,
+            ReconnectInterval: TimeSpan.FromMilliseconds(50));
+        var stage = CreateStage(factory, config);
+        const string poolKey = "https:example.com:443:1.1";
+
+        // Use Source.Queue so the stream stays open while reconnects happen
+        var (queue, resultTask) = Source.Queue<RoutedTransportItem>(16, OverflowStrategy.Backpressure)
+            .Via(Flow.FromGraph(stage))
+            .ToMaterialized(Sink.Seq<RoutedDataItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Register host
+        await queue.OfferAsync(new RoutedTransportItem(poolKey, new ConnectItem(TestOptions())));
+
+        // Send a DataItem — triggers first connection materialisation which will fail
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x01 }), 1)));
+
+        // The stage should fail after exhausting reconnect attempts.
+        // resultTask will fault when the stage fails.
+        var ex = await Assert.ThrowsAnyAsync<Exception>(async () => await resultTask);
+
+        // Unwrap AggregateException if needed
+        var inner = ex is AggregateException agg ? agg.InnerException! : ex;
+        Assert.IsType<ConnectionPoolException>(inner);
+        Assert.Contains("reconnect attempts", inner.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(poolKey, inner.Message);
+
+        // Should have tried: initial + reconnects up to max
+        Assert.True(getCount() >= 2, $"Expected at least 2 connection attempts, got {getCount()}");
+    }
+
+    // ── POOL-026: PoolConfig exposes MaxReconnectAttempts and ReconnectInterval ──
+
+    [Fact(DisplayName = "POOL-026: PoolConfig has MaxReconnectAttempts and ReconnectInterval defaults")]
+    public void POOL_026_PoolConfig_ReconnectDefaults()
+    {
+        var config = new PoolConfig();
+        Assert.Equal(3, config.MaxReconnectAttempts);
+        Assert.Equal(TimeSpan.FromSeconds(5), config.ReconnectInterval);
+    }
+
+    [Theory(DisplayName = "POOL-027: PoolConfig MaxReconnectAttempts and ReconnectInterval are configurable")]
+    [InlineData(1, 100)]
+    [InlineData(5, 2000)]
+    [InlineData(10, 500)]
+    public void POOL_027_PoolConfig_ReconnectConfigurable(int maxAttempts, int intervalMs)
+    {
+        var config = new PoolConfig(
+            MaxReconnectAttempts: maxAttempts,
+            ReconnectInterval: TimeSpan.FromMilliseconds(intervalMs));
+        Assert.Equal(maxAttempts, config.MaxReconnectAttempts);
+        Assert.Equal(TimeSpan.FromMilliseconds(intervalMs), config.ReconnectInterval);
+    }
+
+    // ── POOL-028: Connection death with pending queue drains to new connection ──
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "POOL-028: Connection dies with queued items → items dispatched to reconnected slot")]
+    public async Task POOL_028_ConnectionDies_QueuedItems_DispatchedAfterReconnect()
+    {
+        // Use a flow factory: first flow accepts ConnectItem + 1 DataItem then fails,
+        // second flow echoes normally
+        var materialCount = 0;
+        var firstFlowGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed> Factory()
+        {
+            var myIndex = Interlocked.Increment(ref materialCount) - 1;
+            if (myIndex == 0)
+            {
+                // First flow: process first DataItem, then die after gate is released
+                return Flow.Create<ITransportItem>()
+                    .Where(x => x is DataItem)
+                    .SelectAsync(1, async x =>
+                    {
+                        var data = (DataItem)x;
+                        var result = (data.Memory, data.Length);
+                        // Signal that we processed one item, then wait for gate to fail
+                        firstFlowGate.SetResult(true);
+                        // Give time for the next item to be queued, then fail
+                        await Task.Delay(200);
+                        throw new InvalidOperationException("Connection died mid-stream");
+#pragma warning disable CS0162 // Unreachable code
+                        return result;
+#pragma warning restore CS0162
+                    });
+            }
+            return CreateEchoFlow();
+        }
+
+        var config = new PoolConfig(
+            MaxConnectionsPerHost: 1,
+            MaxReconnectAttempts: 3,
+            ReconnectInterval: TimeSpan.FromMilliseconds(100));
+        var stage = CreateStage(Factory, config);
+        const string poolKey = "https:example.com:443:1.1";
+
+        var (queue, resultTask) = Source.Queue<RoutedTransportItem>(16, OverflowStrategy.Backpressure)
+            .Via(Flow.FromGraph(stage))
+            .ToMaterialized(Sink.Seq<RoutedDataItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Register and send first request
+        await queue.OfferAsync(new RoutedTransportItem(poolKey, new ConnectItem(TestOptions())));
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x01 }), 1)));
+
+        // Wait for first flow to process
+        await firstFlowGate.Task;
+
+        // Send second request — will be queued since connection is busy, then connection dies
+        await queue.OfferAsync(new RoutedTransportItem(poolKey,
+            new DataItem(new SimpleMemoryOwner(new byte[] { 0x02 }), 1)));
+
+        // Wait for reconnect and response
+        await WaitForConditionAsync(() => Volatile.Read(ref materialCount) >= 2, timeout: TimeSpan.FromSeconds(5));
+
+        // Allow time for queued item to be processed by new connection
+        await Task.Delay(500);
+
+        queue.Complete();
+        var results = await resultTask;
+
+        // We should get at least the second request's response from the reconnected flow
+        Assert.NotEmpty(results);
+    }
+
     /// <summary>
     /// Polls a condition until it becomes true or the timeout expires.
     /// </summary>

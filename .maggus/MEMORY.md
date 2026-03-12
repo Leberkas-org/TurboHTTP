@@ -105,17 +105,19 @@
 - **Total: 2803 all green**
 - Flaky timeouts when running all 3 projects simultaneously (resource contention); each project passes 100% individually
 
-## Connection Pool (TASK-001 ✅, TASK-002 ✅, TASK-003 ✅, TASK-004 ✅)
+## Connection Pool (TASK-001 ✅, TASK-002 ✅, TASK-003 ✅, TASK-004 ✅, TASK-005 ✅)
 - **ConnectionPoolStage**: `src/TurboHttp/IO/Stages/ConnectionPoolStage.cs` — custom GraphStage with sub-graph materialization
-- **Types**: `src/TurboHttp/IO/Stages/ConnectionPoolTypes.cs` — `RoutedTransportItem`, `RoutedDataItem`, `PoolConfig`, `LoadBalancingStrategy`
-- **Tests**: `src/TurboHttp.StreamTests/Stages/ConnectionPoolStageTests.cs` — 25 tests (POOL-001 through POOL-023)
+- **Types**: `src/TurboHttp/IO/Stages/ConnectionPoolTypes.cs` — `RoutedTransportItem`, `RoutedDataItem`, `PoolConfig`, `LoadBalancingStrategy`, `ConnectionPoolException`
+- **Tests**: `src/TurboHttp.StreamTests/Stages/ConnectionPoolStageTests.cs` — 32 tests (POOL-001 through POOL-028)
 - **Plan**: `.maggus/plan_3.md` — 12 tasks (TASK-001 through TASK-012)
 - **Pattern**: Pool wraps/orchestrates multiple `ConnectionStage` instances as materialised sub-graphs (Source.Queue → ConnectionStage → Sink.ForEach)
 - **Factory type**: `Func<IGraph<FlowShape<ITransportItem, (IMemoryOwner<byte>, int)>, NotUsed>>` — accepts both real ConnectionStage and test echo flows
-- **Inner types**: `HostPool` (TcpOptions, List<ConnectionSlot>, ConnectionCounter, RoundRobinIndex), `ConnectionSlot` (Id, Queue, Completion, Active, Idle, PendingRequestCount)
+- **Inner types**: `HostPool` (TcpOptions, List<ConnectionSlot>, ConnectionCounter, RoundRobinIndex, ReconnectAttempts), `ConnectionSlot` (Id, Queue, Completion, Active, Idle, PendingRequestCount)
 - **Load balancing**: `LoadBalancingStrategy` enum (LeastLoaded default, RoundRobin). Idle connections always preferred. Strategy applies to idle slot selection.
+- **Health monitoring (TASK-005)**: Sub-graph fault detection via `ContinueWith` on completion task (faults only, not normal completions). Dead slots removed, in-flight count adjusted. Reconnect via `TimerGraphStageLogic.ScheduleOnce`. `PoolConfig.MaxReconnectAttempts` (default 3) and `ReconnectInterval` (default 5s). `ConnectionPoolException` on exhaustion.
+- **IMPORTANT**: When using `ContinueWith` on Akka.Streams sub-graph completion tasks, use `TaskScheduler.Default` NOT `ExecuteSynchronously` — the latter interferes with Akka.Streams internal scheduling and causes phantom extra outputs.
 - **Slot ID tracking**: Each `ConnectionSlot` has a unique `Id` (from `ConnectionCounter`). Response callbacks include slot ID so `OnSubGraphResponse` correctly identifies which slot responded.
-- **Sub-graph materialization**: Uses `GraphStageLogic.Materializer` (SubFusingActorMaterializer) + `GetAsyncCallback` for thread-safe response delivery
+- **Sub-graph materialization**: Uses `TimerGraphStageLogic.Materializer` (SubFusingActorMaterializer) + `GetAsyncCallback` for thread-safe response delivery
 - **In-flight tracking**: `_inFlightCount` prevents premature CompleteStage when sub-graph responses pending
 - **TcpOptions**: Uses `required` init properties, not positional constructor — use `new() { Host = "...", Port = 443 }`
 - **Pre-existing failure**: `RFC-9113-ENG-004` in StreamTests (unrelated to pool work)

@@ -96,16 +96,16 @@ The key architectural insight: rather than bypassing `ConnectionStage`, the pool
 **Description:** As a developer, I want the pool to detect dead connections and automatically replace them with fresh ConnectionStage instances.
 
 **Acceptance Criteria:**
-- [ ] Materialised ConnectionStage completion/failure is detected (via `WatchTermination` on the materialised graph)
-- [ ] Dead ConnectionSlot is marked as `Dead` and removed from the active list
-- [ ] Pending requests on a dead connection are re-routed to another ConnectionSlot or queued for retry
-- [ ] If no other connection is available → a new ConnectionStage is materialised (retry)
-- [ ] `PoolConfig.MaxReconnectAttempts` limits retry attempts per host
-- [ ] `PoolConfig.ReconnectInterval` defines wait time between retries (via `ScheduleOnce` timer)
-- [ ] After MaxReconnectAttempts → stage fails with `ConnectionPoolException`
-- [ ] Unit tests: connection dies → retry → new request works
-- [ ] Unit tests: connection dies → max retries reached → exception
-- [ ] Typecheck/build passes
+- [x] Materialised ConnectionStage completion/failure is detected (via `WatchTermination` on the materialised graph)
+- [x] Dead ConnectionSlot is marked as `Dead` and removed from the active list
+- [x] Pending requests on a dead connection are re-routed to another ConnectionSlot or queued for retry
+- [x] If no other connection is available → a new ConnectionStage is materialised (retry)
+- [x] `PoolConfig.MaxReconnectAttempts` limits retry attempts per host
+- [x] `PoolConfig.ReconnectInterval` defines wait time between retries (via `ScheduleOnce` timer)
+- [x] After MaxReconnectAttempts → stage fails with `ConnectionPoolException`
+- [x] Unit tests: connection dies → retry → new request works
+- [x] Unit tests: connection dies → max retries reached → exception
+- [x] Typecheck/build passes
 
 ### TASK-006: Idle Connection Eviction
 

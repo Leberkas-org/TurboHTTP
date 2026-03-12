@@ -29,11 +29,25 @@ public sealed record PoolConfig(
     int MaxConnectionsPerHost = 10,
     TimeSpan IdleTimeout = default,
     TimeSpan ConnectionTimeout = default,
-    LoadBalancingStrategy Strategy = LoadBalancingStrategy.LeastLoaded)
+    LoadBalancingStrategy Strategy = LoadBalancingStrategy.LeastLoaded,
+    int MaxReconnectAttempts = 3,
+    TimeSpan ReconnectInterval = default)
 {
     public TimeSpan IdleTimeout { get; init; } =
         IdleTimeout == TimeSpan.Zero ? TimeSpan.FromMinutes(5) : IdleTimeout;
 
     public TimeSpan ConnectionTimeout { get; init; } =
         ConnectionTimeout == TimeSpan.Zero ? TimeSpan.FromSeconds(30) : ConnectionTimeout;
+
+    public TimeSpan ReconnectInterval { get; init; } =
+        ReconnectInterval == TimeSpan.Zero ? TimeSpan.FromSeconds(5) : ReconnectInterval;
+}
+
+/// <summary>
+/// Thrown when the connection pool exhausts reconnect attempts for a host.
+/// </summary>
+public sealed class ConnectionPoolException : Exception
+{
+    public ConnectionPoolException(string message) : base(message) { }
+    public ConnectionPoolException(string message, Exception innerException) : base(message, innerException) { }
 }

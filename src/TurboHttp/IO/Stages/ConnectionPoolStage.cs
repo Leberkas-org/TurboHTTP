@@ -37,7 +37,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         => new Logic(this);
 
-    private sealed class Logic : GraphStageLogic
+    private sealed class Logic : TimerGraphStageLogic
     {
         private readonly ConnectionPoolStage _stage;
         private IActorRef _self = ActorRefs.Nobody;
@@ -55,6 +55,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
         private readonly Queue<RoutedDataItem> _pendingResponses = new();
 
         private Action<(string poolKey, int slotId, IMemoryOwner<byte> memory, int length)>? _onResponseCallback;
+        private Action<(string poolKey, int slotId, Exception? exception)>? _onSlotDeathCallback;
 
         public Logic(ConnectionPoolStage stage) : base(stage.Shape)
         {
@@ -92,6 +93,7 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
         {
             _self = GetStageActor(OnMessage).Ref;
             _onResponseCallback = GetAsyncCallback<(string, int, IMemoryOwner<byte>, int)>(OnSubGraphResponse);
+            _onSlotDeathCallback = GetAsyncCallback<(string, int, Exception?)>(OnSlotDeath);
             Pull(_stage._inlet);
         }
 
@@ -263,10 +265,103 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
             pool.Connections.Add(slot);
             pool.ConnectionCounter++;
 
+            // Watch for sub-graph failure to detect dead connections.
+            // Only faults trigger the death callback; normal completions (during shutdown) are ignored.
+            var capturedDeathCallback = _onSlotDeathCallback!;
+            completion.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    capturedDeathCallback((capturedPoolKey, slotId, t.Exception?.GetBaseException()));
+                }
+            }, TaskScheduler.Default);
+
             // Send ConnectItem to initialise the connection in the sub-graph
             slot.Queue.OfferAsync(new ConnectItem(pool.Options));
 
             return slot;
+        }
+
+        /// <summary>
+        /// Called (via async callback) when a materialised sub-graph faults.
+        /// Marks the slot as dead, removes it, and schedules reconnection if within retry limits.
+        /// </summary>
+        private void OnSlotDeath((string poolKey, int slotId, Exception? exception) death)
+        {
+            if (_stopping)
+            {
+                return;
+            }
+
+            if (!_hostPools.TryGetValue(death.poolKey, out var pool))
+            {
+                return;
+            }
+
+            // Find and remove the dead slot
+            ConnectionSlot? deadSlot = null;
+            for (var i = pool.Connections.Count - 1; i >= 0; i--)
+            {
+                if (pool.Connections[i].Id == death.slotId)
+                {
+                    deadSlot = pool.Connections[i];
+                    pool.Connections.RemoveAt(i);
+                    break;
+                }
+            }
+
+            if (deadSlot is null || !deadSlot.Active)
+            {
+                return; // Already cleaned up (e.g. during PostStop)
+            }
+
+            // Mark dead
+            deadSlot.Active = false;
+
+            // Adjust in-flight count for lost requests on the dead slot
+            var lostRequests = deadSlot.PendingRequestCount;
+            _inFlightCount -= lostRequests;
+
+            // Check reconnect limits
+            pool.ReconnectAttempts++;
+
+            if (pool.ReconnectAttempts > _stage._config.MaxReconnectAttempts)
+            {
+                FailStage(new ConnectionPoolException(
+                    $"Connection pool for '{death.poolKey}' exhausted {_stage._config.MaxReconnectAttempts} " +
+                    $"reconnect attempts. Last error: {death.exception?.Message ?? "connection completed unexpectedly"}"));
+                return;
+            }
+
+            // Schedule reconnection after the configured interval
+            var timerKey = $"reconnect:{death.poolKey}";
+            ScheduleOnce(timerKey, _stage._config.ReconnectInterval);
+        }
+
+        protected override void OnTimer(object timerKey)
+        {
+            if (timerKey is not string key || !key.StartsWith("reconnect:"))
+            {
+                return;
+            }
+
+            var poolKey = key.Substring("reconnect:".Length);
+            if (_stopping || !_hostPools.TryGetValue(poolKey, out var pool))
+            {
+                return;
+            }
+
+            // Materialise a replacement connection
+            MaterialiseNewSlot(poolKey, pool);
+
+            // Drain any pending items to the new slot
+            DrainPendingQueue(poolKey, pool);
+
+            // If outlet is waiting and we have no pending responses, pull inlet
+            if (!HasBeenPulled(_stage._inlet) && !_stopping && IsAvailable(_stage._outlet) && _pendingResponses.Count == 0)
+            {
+                Pull(_stage._inlet);
+            }
         }
 
         private void OnSubGraphResponse((string poolKey, int slotId, IMemoryOwner<byte> memory, int length) response)
@@ -379,6 +474,12 @@ public sealed class ConnectionPoolStage : GraphStage<FlowShape<RoutedTransportIt
         /// and a slot becomes idle, or when a new slot is materialised.
         /// </summary>
         public Queue<DataItem> PendingDataItems { get; } = new();
+
+        /// <summary>
+        /// Number of reconnect attempts for this host pool. Incremented each time a
+        /// connection dies and a reconnect is attempted.
+        /// </summary>
+        public int ReconnectAttempts { get; set; }
 
         public HostPool(TcpOptions options)
         {
