@@ -152,66 +152,6 @@ The key architectural insight: rather than bypassing `ConnectionStage`, the pool
 - [x] Unit tests: limiter blocks connection → request waits
 - [x] Typecheck/build passes
 
-### TASK-009: ConnectionReuseEvaluator Integration
-
-**Description:** As a developer, I want connection reuse decisions (Keep-Alive, Close) to flow back into the pool.
-
-**Acceptance Criteria:**
-- [ ] After each response, `ConnectionReuseEvaluator.Evaluate()` is called
-- [ ] `ConnectionReuseDecision.CanReuse == false` → ConnectionStage is shut down after response
-- [ ] `ConnectionReuseDecision.KeepAliveTimeout` → overrides `PoolConfig.IdleTimeout` for that connection slot
-- [ ] `ConnectionReuseDecision.MaxRequests` → ConnectionStage is shut down after N requests
-- [ ] Request counter per ConnectionSlot
-- [ ] Unit tests: "Connection: close" response → ConnectionStage shut down
-- [ ] Unit tests: "Keep-Alive: timeout=10" → idle timeout set to 10s
-- [ ] Typecheck/build passes
-
-### TASK-010: Engine Pipeline Integration
-
-**Description:** As a developer, I want the new ConnectionPoolStage integrated into the Engine pipeline, replacing the current direct ConnectionStage usage.
-
-**Acceptance Criteria:**
-- [ ] `Engine.BuildConnectionFlow<TEngine>()` uses `ConnectionPoolStage` instead of direct `ConnectionStage`
-- [ ] `BuildProtocolFlow<TEngine>()` `Balance(N)` is replaced by the pool (pool manages parallelism)
-- [ ] `Engine.CreateFlow()` test overload accepts a ConnectionStage factory for the pool
-- [ ] HTTP/1.0 and HTTP/1.1: pool with MaxConnectionsPerHost=4 (same as current Balance(4))
-- [ ] HTTP/2: pool with MaxConnectionsPerHost=1 (multiplexing via streams)
-- [ ] Existing `EngineVersionRoutingTests` remain green
-- [ ] Existing `StreamTests` remain green
-- [ ] New integration test: full Engine → Pool → ConnectionStage → Response
-- [ ] Typecheck/build passes
-
-### TASK-011: PoolConfig Extension and Validation
-
-**Description:** As a developer, I want a complete `PoolConfig` with all required parameters and validation.
-
-**Acceptance Criteria:**
-- [ ] `PoolConfig` extended with:
-  - `MaxConnectionsPerHost` (default 10)
-  - `IdleTimeout` (default 5 min)
-  - `ConnectionTimeout` (default 30s)
-  - `MaxReconnectAttempts` (default 3)
-  - `ReconnectInterval` (default 5s)
-  - `PerHostQueueSize` (default 100)
-  - `LoadBalancingStrategy` (enum, default LeastLoaded)
-  - `QueueOverflowStrategy` (enum, default Fail)
-- [ ] Validation: no negative values, MaxConnections >= 1, Timeouts > 0
-- [ ] Invalid config → `ArgumentException` in constructor
-- [ ] Unit tests for all defaults and validation
-- [ ] Typecheck/build passes
-
-### TASK-012: Cleanup and Migration
-
-**Description:** As a developer, I want the old static partition-based pool removed and replaced by the new dynamic pool.
-
-**Acceptance Criteria:**
-- [ ] Old `ConnectionPool` static class code (partition-based) is removed
-- [ ] `ConnectionPoolTests` are migrated to new `ConnectionPoolStage`
-- [ ] All existing tests remain green
-- [ ] No dead code in `ConnectionDemuxStage.cs`
-- [ ] File renamed to `ConnectionPoolStage.cs` if appropriate
-- [ ] Typecheck/build passes
-
 ## Functional Requirements
 
 - **FR-1:** The pool must manage a separate connection lifecycle per PoolKey (host:port)
@@ -222,8 +162,6 @@ The key architectural insight: rather than bypassing `ConnectionStage`, the pool
 - **FR-6:** The pool must isolate backpressure per host — a slow host must not block other hosts
 - **FR-7:** The pool must load-balance across active connections of a host
 - **FR-8:** HTTP/2 stream tracking is delegated to H2-Connection-Stage — the pool treats H2 connections as black boxes
-- **FR-9:** `ConnectionReuseEvaluator` results must feed into connection lifecycle decisions
-- **FR-10:** The pool must interact with the existing `ClientManager`/`ClientRunner` actor system through `ConnectionStage`
 
 ## Non-Goals
 
