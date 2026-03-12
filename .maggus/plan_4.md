@@ -62,14 +62,14 @@ plan_3 (Stage-based):                    plan_5 (Actor-based):
 **Description:** As a developer, I want `ConnectionState` as a standalone, testable type so that connection state transitions (active/idle/pending) are verified independently.
 
 **Acceptance Criteria:**
-- [ ] `ConnectionState.cs` created in `src/TurboHttp/IO/`
-- [ ] `internal sealed class` with properties: `Actor` (IActorRef), `Active` (bool), `Idle` (bool), `PendingRequests` (int), `LastActivity` (DateTime)
-- [ ] Default state: `Active=true`, `Idle=true`, `PendingRequests=0`, `LastActivity=DateTime.UtcNow`
-- [ ] Methods: `MarkBusy()` sets `Idle=false`, increments `PendingRequests`, updates `LastActivity`
-- [ ] Methods: `MarkIdle()` decrements `PendingRequests`, sets `Idle=true` when `PendingRequests==0`, updates `LastActivity`
-- [ ] Methods: `MarkDead()` sets `Active=false`
-- [ ] Test file `src/TurboHttp.Tests/IO/ConnectionStateTests.cs` with tests for all transitions
-- [ ] Build passes
+- [x] `ConnectionState.cs` created in `src/TurboHttp/IO/`
+- [x] `internal sealed class` with properties: `Actor` (IActorRef), `Active` (bool), `Idle` (bool), `PendingRequests` (int), `LastActivity` (DateTime)
+- [x] Default state: `Active=true`, `Idle=true`, `PendingRequests=0`, `LastActivity=DateTime.UtcNow`
+- [x] Methods: `MarkBusy()` sets `Idle=false`, increments `PendingRequests`, updates `LastActivity`
+- [x] Methods: `MarkIdle()` decrements `PendingRequests`, sets `Idle=true` when `PendingRequests==0`, updates `LastActivity`
+- [x] Methods: `MarkDead()` sets `Active=false`
+- [x] Test file `src/TurboHttp.Tests/IO/ConnectionStateTests.cs` with tests for all transitions
+- [x] Build passes
 
 ---
 
