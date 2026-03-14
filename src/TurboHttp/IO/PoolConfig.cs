@@ -1,6 +1,6 @@
 using System;
 
-namespace TurboHttp.IO.Stages;
+namespace TurboHttp.IO;
 
 public sealed record PoolConfig(
     int MaxConnectionsPerHost = 10,

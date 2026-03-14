@@ -204,12 +204,12 @@ wraps exactly one `SinkRef<ITransportItem>` and one `SourceRef<IDataItem>` obtai
 `RoutedDataItem` removed since they are fully superseded by the new architecture.
 
 **Acceptance Criteria:**
-- [ ] `src/TurboHttp/IO/Stages/ConnectionPoolStage.cs` deleted.
-- [ ] `src/TurboHttp/IO/Stages/ConnectionPoolTypes.cs` deleted (contains `RoutedTransportItem` + `RoutedDataItem`).
-- [ ] `src/TurboHttp.Tests/IO/ConnectionPoolIntegrationTests.cs` deleted or replaced with new actor-hierarchy tests.
-- [ ] `src/TurboHttp.StreamTests/IO/ConnectionPoolStageTests.cs` deleted or replaced.
-- [ ] No remaining references to `ConnectionPoolStage`, `RoutedTransportItem`, or `RoutedDataItem` anywhere in the solution.
-- [ ] Build succeeds with zero errors.
+- [x] `src/TurboHttp/IO/Stages/ConnectionPoolStage.cs` deleted.
+- [x] `src/TurboHttp/IO/Stages/ConnectionPoolTypes.cs` deleted (contains `RoutedTransportItem` + `RoutedDataItem`).
+- [x] `src/TurboHttp.Tests/IO/ConnectionPoolIntegrationTests.cs` deleted or replaced with new actor-hierarchy tests.
+- [x] `src/TurboHttp.StreamTests/IO/ConnectionPoolStageTests.cs` deleted or replaced.
+- [x] No remaining references to `ConnectionPoolStage`, `RoutedTransportItem`, or `RoutedDataItem` anywhere in the solution.
+- [x] Build succeeds with zero errors.
 
 ---
 
