@@ -22,9 +22,9 @@ public record TurboClientOptions
 
     public X509CertificateCollection? ClientCertificates { get; init; }
     public SslProtocols EnabledSslProtocols { get; init; } = SslProtocols.None;
-    public RedirectPolicy? RedirectPolicy { get; init; } = RedirectPolicy.Default;
-    public RetryPolicy? RetryPolicy { get; init; } = RetryPolicy.Default;
-    public CachePolicy? CachePolicy { get; init; } = CachePolicy.Default;
-    public ConnectionPolicy? ConnectionPolicy { get; init; } = ConnectionPolicy.Default;
+    public RedirectPolicy? RedirectPolicy { get; init; }
+    public RetryPolicy? RetryPolicy { get; init; }
+    public CachePolicy? CachePolicy { get; init; }
+    public ConnectionPolicy? ConnectionPolicy { get; init; }
     public PoolConfig PoolConfig { get; init; } = new PoolConfig();
 }
