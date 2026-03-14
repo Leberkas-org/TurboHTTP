@@ -7,25 +7,16 @@
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(dotnet build:*)",
-      "Bash(git add:*)",
       "Bash(grep:*)",
       "Bash(dotnet test:*)",
       "Bash(test:*)",
-      "Bash(xargs:*)",
-      "mcp__plugin_context-mode_context-mode__execute_file",
-      "Bash(git restore:*)",
-      "mcp__plugin_context-mode_context-mode__execute",
-      "Bash(git commit:*)",
       "Bash(rm:*)",
       "Bash(find src:*)",
       "Bash(find:*)",
-      "Bash(git checkout:*)",
-      "mcp__plugin_context-mode_context-mode__batch_execute",
-      "mcp__plugin_context-mode_context-mode__index",
-      "mcp__plugin_context-mode_context-mode__search",
       "Bash(read f:*)",
-      "*",
-      "Bash(for i:*)"
+      "Bash(for i:*)",
+      "Bash(cd:*)",
+      "Bash(while pgrep:*)"
     ]
   },
   "enabledPlugins": {}

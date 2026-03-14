@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Akka.Actor;
+using Akka.Hosting;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.IntegrationTests.Shared;
@@ -27,6 +28,10 @@ public sealed class Http11CacheTests : TestKit, IClassFixture<KestrelFixture>
     {
         _fixture = fixture;
         _materializer = Sys.Materializer();
+        var clientManager = Sys.ActorOf(Props.Create(() => new ClientManager()));
+        var actorRegistry = ActorRegistry.For(Sys);
+        actorRegistry.Register<ClientManager>(clientManager);
+
         _poolRouter = Sys.ActorOf(Props.Create(() => new PoolRouterActor()));
     }
 
@@ -86,10 +91,12 @@ public sealed class Http11CacheTests : TestKit, IClassFixture<KestrelFixture>
             {
                 cached.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
+
             foreach (var header in result.Entry.Response.Content.Headers)
             {
                 cached.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
+
             return cached;
         }
 
@@ -149,10 +156,12 @@ public sealed class Http11CacheTests : TestKit, IClassFixture<KestrelFixture>
             {
                 result2.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
+
             foreach (var header in response.Content.Headers)
             {
                 result2.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
+
             return result2;
         }
     }
@@ -363,7 +372,8 @@ public sealed class Http11CacheTests : TestKit, IClassFixture<KestrelFixture>
         // Evaluate freshness — should be MustRevalidate (max-age=0)
         var entry = store.Get(MakeGet("/cache/must-revalidate"));
         Assert.NotNull(entry);
-        var lookupResult = CacheFreshnessEvaluator.Evaluate(entry, MakeGet("/cache/must-revalidate"), DateTimeOffset.UtcNow);
+        var lookupResult =
+            CacheFreshnessEvaluator.Evaluate(entry, MakeGet("/cache/must-revalidate"), DateTimeOffset.UtcNow);
         Assert.Equal(CacheLookupStatus.MustRevalidate, lookupResult.Status);
     }
 

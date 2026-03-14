@@ -5,6 +5,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
+using Akka.Hosting;
 using Akka.Streams.Dsl;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
@@ -21,7 +22,14 @@ public sealed class ActorHierarchyStreamRefTests : StreamTestBase
     [Fact(DisplayName = "ETE-001: ConnectItem pushed to PoolRouterActor SinkRef traverses full hierarchy and DataItem arrives in TCP outbound channel")]
     public async Task ETE_001_FullHierarchy_ItemArrivesInTcpOutboundChannel()
     {
-        // Subscribe to UnhandledMessage so we can intercept actor refs
+        // Register a TestProbe as the ClientManager BEFORE creating PoolRouterActor so
+        // that HostPoolActor.SpawnConnection() → Context.GetActor<ClientManager>() resolves
+        // to the probe instead of throwing MissingActorRegistryEntryException.
+        var clientManagerProbe = CreateTestProbe();
+        ActorRegistry.For(Sys).Register<ClientManager>(clientManagerProbe.Ref);
+
+        // Subscribe to UnhandledMessage so we can intercept the ConnectItem that
+        // HostPoolActor receives but has no handler for.
         Sys.EventStream.Subscribe(TestActor, typeof(UnhandledMessage));
 
         // Create PoolRouterActor with the real default factory (creates real HostPoolActors)
@@ -51,10 +59,9 @@ public sealed class ActorHierarchyStreamRefTests : StreamTestBase
         pendingOwner.Memory.Span[0] = 0xEE;
         hostPoolActor.Tell(new DataItem(pendingOwner, 8));
 
-        // ConnectionActor.PreStart sends CreateTcpRunner to HostPoolActor (its clientManager).
-        // HostPoolActor has no handler for CreateTcpRunner → UnhandledMessage.
-        var runnerUnhandled = await ExpectMsgAsync<UnhandledMessage>(TimeSpan.FromSeconds(10));
-        var createMsg = Assert.IsType<ClientManager.CreateTcpRunner>(runnerUnhandled.Message);
+        // ConnectionActor.PreStart sends CreateTcpRunner to clientManagerProbe.
+        // Intercept it directly from the probe.
+        var createMsg = clientManagerProbe.ExpectMsg<ClientManager.CreateTcpRunner>(TimeSpan.FromSeconds(10));
         var connectionActor = createMsg.Handler;
 
         // Simulate the TCP runner signalling that the connection is established.

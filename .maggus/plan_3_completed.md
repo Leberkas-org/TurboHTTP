@@ -134,10 +134,10 @@ Either way, the 10-second wait for `UnhandledMessage(CreateTcpRunner)` times out
 **Description:** As a test author, I want the `ActorHierarchyStreamRefTests` to correctly intercept `CreateTcpRunner` after the `HostPoolActor` refactoring, so the end-to-end hierarchy test can extract the `ConnectionActor` ref and complete successfully.
 
 **Acceptance Criteria:**
-- [ ] A `TestProbe` or minimal stub is registered in the `StreamTestBase` actor system under the `ClientManager` actor name, before `PoolRouterActor` is created
-- [ ] `ETE-001` completes within the 15-second timeout
-- [ ] `DataItem` arrives in the TCP outbound channel with correct `Length = 8` and first byte `0xEE`
-- [ ] Build has 0 errors
+- [x] A `TestProbe` or minimal stub is registered in the `StreamTestBase` actor system under the `ClientManager` actor name, before `PoolRouterActor` is created
+- [x] `ETE-001` completes within the 15-second timeout
+- [x] `DataItem` arrives in the TCP outbound channel with correct `Length = 8` and first byte `0xEE`
+- [x] Build has 0 errors
 
 ---
 

@@ -7,6 +7,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Servus.Akka;
 using TurboHttp.IO.Stages;
 
 
@@ -196,7 +197,8 @@ public sealed class HostPoolActor : ReceiveActor
 
     private ConnectionState SpawnConnection()
     {
-        var actor = Context.ActorOf(Props.Create(() => new ConnectionActor(_options, Self)));
+        var clientManager = Context.GetActor<ClientManager>();
+        var actor = Context.ActorOf(Props.Create(() => new ConnectionActor(_options, clientManager)));
 
         Context.Watch(actor);
 

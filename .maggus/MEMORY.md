@@ -162,7 +162,8 @@
 - `HandleRegisterConnectionRefs`: creates per-connection `Source.Queue<IDataItem>(128)`, wires queue → SinkRef → ConnectionActor outbound, wires ConnectionActor SourceRef → MergeHub, registers queue in `_connectionQueues`, calls `DrainPending`
 - **Bug fixed**: removed `newConn.MarkBusy()` from spawn path in `HandleDataItem` — calling it before queue registration prevented `DrainPending` from routing (requires `Idle=true`)
 - New tests: HA-001 (two SourceRefs → merged output), HA-002 (pending DataItem drained after RegisterConnectionRefs)
-- **UnhandledMessage trick**: `ConnectionActor` sends `CreateTcpRunner` to `HostPoolActor` (has no handler) → Akka publishes `UnhandledMessage` on EventStream → test subscribes and extracts `ConnectionActor` ref
+- **ActorRegistry pattern for ClientManager in tests**: `Context.GetActor<ClientManager>()` (from Servus.Akka) resolves via `ActorRegistry.For(system).Get<ClientManager>()`. In tests, register a TestProbe before creating any actor that calls `SpawnConnection()`: `ActorRegistry.For(Sys).Register<ClientManager>(probe.Ref)`. Requires `using Akka.Hosting;`. Then capture `CreateTcpRunner` directly from the probe's mailbox — do NOT rely on `UnhandledMessage` on the event stream.
+- **OBSOLETE UnhandledMessage trick** (pre-TASK-002): `ConnectionActor` previously sent `CreateTcpRunner` to `Self` (HostPoolActor) which had no handler → `UnhandledMessage` on EventStream. This no longer works since `SpawnConnection()` now uses `Context.GetActor<ClientManager>()`.
 - **HostPoolActorProxy pattern**: bidirectional proxy that routes child→parent messages to TestActor and external→proxy to child
 - Build: 0 errors, 0 warnings; 2181 tests pass; PRA-004..007 pre-existing (PoolRouterActor SendRequest stub → TASK-4B-004)
 
@@ -179,6 +180,11 @@
 - `Context.Parent.Tell(...)` sends to hierarchical parent, NOT to TestActor
 - Pattern: create a `ConnectionActorParent : ReceiveActor` that spawns `ConnectionActor` as child and `ReceiveAny(msg => forwardTo.Forward(msg))` — routes parent-bound messages to TestActor
 - `TestProbe` type requires `using Akka.TestKit;` (not just `using Akka.TestKit.Xunit2;`)
+
+## TurboClientOptions Policy Defaults (TASK-001)
+- `RedirectPolicy`, `RetryPolicy`, `CachePolicy`, `ConnectionPolicy` all default to `null` (no initializer)
+- DO NOT add `= *.Default` initializers — the documented contract requires null = "no policy configured"
+- `PoolConfig` keeps its `= new PoolConfig()` default (not a policy)
 
 ## Build Notes
 - `BenchmarkDotNet.Artifacts` also gitignored
