@@ -111,6 +111,16 @@
 - No errors in type definitions
 - Implementing code will be fixed in TASK-4B-002/003/004
 
+### TASK-4B-005 Complete (2026-03-14)
+- `ConnectionStage` fully rewritten: accepts `IActorRef poolRouter` (no TCP types); uses `GetStageActor(OnMessage)` + `Tell(GetPoolRefs(), stageActor.Ref)` to obtain PoolRefs without PipeTo
+- `OnMessage` materializes `Source.Queue<ITransportItem>(256) → sinkRef.Sink` (Keep.Left, not tuple) and `sourceRef.Source → Sink.ForEach → _onResponse GetAsyncCallback`
+- `_pendingReads` queue buffers outlet items when downstream not ready; `PostStop` disposes buffered DataItems
+- Offer backpressure: `OfferAsync.ContinueWith(_ => _onOfferDone!())` pulls inlet after offer completes
+- **StubRouter pattern**: test actor that responds to `GetPoolRefs` with pre-built SinkRef+SourceRef; avoids TCP infrastructure in stream tests
+- New stream tests: CS-001 (ConnectItem reaches SinkRef), CS-002 (DataItem reaches outlet) — both green
+- Integration test files still compile (constructor still takes `IActorRef`); runtime fix in TASK-4B-007
+- Build: 0 warnings, 0 errors; 2180 unit + 412 stream tests all green
+
 ### TASK-4B-004 Complete (2026-03-14)
 - `PoolRouterActor` fully rewritten: materializes `MergeHub.Source<IDataItem>` + `SourceRef<IDataItem>` + `SinkRef<ITransportItem>` in `PreStart`
 - `Sink.ForEach<ITransportItem>(item => self.Tell(item)).RunWith(StreamRefs.SinkRef<ITransportItem>(), mat)` pattern routes items to actor thread safely

@@ -186,16 +186,16 @@ wraps exactly one `SinkRef<ITransportItem>` and one `SourceRef<IDataItem>` obtai
 `PoolRouterActor` so that all TCP management is fully encapsulated inside the actor hierarchy.
 
 **Acceptance Criteria:**
-- [ ] `ConnectionStage` constructor accepts `IActorRef poolRouter` (instead of `IActorRef clientManager`).
-- [ ] On `PreStart`, `ConnectionStage` asks `PoolRouterActor` for `PoolRefs` using `GetAsyncCallback` + actor ask pattern (timeout: 10 s).
-- [ ] Once `PoolRefs` received:
+- [x] `ConnectionStage` constructor accepts `IActorRef poolRouter` (instead of `IActorRef clientManager`).
+- [x] On `PreStart`, `ConnectionStage` asks `PoolRouterActor` for `PoolRefs` using `GetAsyncCallback` + actor ask pattern (timeout: 10 s).
+- [x] Once `PoolRefs` received:
   - Requests flow: `inlet` elements → `Source.ActorRef` / callback → `sinkRef.Sink` (via materialised sub-graph).
   - Responses flow: `sourceRef.Source` → push to `outlet` (via `GetAsyncCallback`).
-- [ ] `ConnectionStage` contains NO references to `ClientManager`, `ClientRunner`, `TcpOptions`, `Channel`, or TCP-related types.
-- [ ] Shape stays `FlowShape<ITransportItem, IDataItem>` — Engine.cs wiring is unchanged.
-- [ ] Backpressure is respected: outlet pulls drive demand; inlet pulls happen when the sink is ready.
-- [ ] `PostStop` completes any pending sub-streams.
-- [ ] Unit test (stream test): items pushed into inlet appear on PoolRouter's SinkRef; items pushed into PoolRouter's SourceRef appear at outlet.
+- [x] `ConnectionStage` contains NO references to `ClientManager`, `ClientRunner`, `TcpOptions`, `Channel`, or TCP-related types.
+- [x] Shape stays `FlowShape<ITransportItem, IDataItem>` — Engine.cs wiring is unchanged.
+- [x] Backpressure is respected: outlet pulls drive demand; inlet pulls happen when the sink is ready.
+- [x] `PostStop` completes any pending sub-streams.
+- [x] Unit test (stream test): items pushed into inlet appear on PoolRouter's SinkRef; items pushed into PoolRouter's SourceRef appear at outlet.
 
 ---
 
