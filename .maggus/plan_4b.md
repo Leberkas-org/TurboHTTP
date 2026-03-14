@@ -166,17 +166,17 @@ so that the response path is fully stream-based.
 has a single clean pair of stream endpoints to wire into.
 
 **Acceptance Criteria:**
-- [ ] `PoolRouterActor` materializes a `MergeHub.Source<IDataItem>` on creation.
-- [ ] `PoolRouterActor` materializes a `SinkRef<ITransportItem>` backed by `Sink.ForEach<ITransportItem>` that:
+- [x] `PoolRouterActor` materializes a `MergeHub.Source<IDataItem>` on creation.
+- [x] `PoolRouterActor` materializes a `SinkRef<ITransportItem>` backed by `Sink.ForEach<ITransportItem>` that:
   - On `ConnectItem`: looks up or creates a `HostPoolActor` child (keyed by `item.Key`), and `Forward`s the item.
   - On `DataItem`: looks up the `HostPoolActor` by `item.Key` and `Tell`s the item.
-- [ ] `PoolRouterActor` materializes its `MergeHub.Source<IDataItem>` as a `SourceRef<IDataItem>`.
-- [ ] On receiving `HostStreamRefsReady(key, sourceRef)`:
+- [x] `PoolRouterActor` materializes its `MergeHub.Source<IDataItem>` as a `SourceRef<IDataItem>`.
+- [x] On receiving `HostStreamRefsReady(key, sourceRef)`:
   - Subscribes `sourceRef.Source.RunWith(mergeHubSink, materializer)`.
-- [ ] Handles `GetPoolRefs` message: replies with `PoolRefs(sinkRef, sourceRef)`.
-- [ ] Old `RegisterHost`, `SendRequest`, `Response` messages removed.
-- [ ] Unit test: `GetPoolRefs` returns valid SinkRef + SourceRef after actor start.
-- [ ] Unit test: item pushed into SinkRef with `HostKey("http","localhost",8080)` is forwarded to the correct HostPoolActor.
+- [x] Handles `GetPoolRefs` message: replies with `PoolRefs(sinkRef, sourceRef)`.
+- [x] Old `RegisterHost`, `SendRequest`, `Response` messages removed.
+- [x] Unit test: `GetPoolRefs` returns valid SinkRef + SourceRef after actor start.
+- [x] Unit test: item pushed into SinkRef with `HostKey("http","localhost",8080)` is forwarded to the correct HostPoolActor.
 
 ---
 

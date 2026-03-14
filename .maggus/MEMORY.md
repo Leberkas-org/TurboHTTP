@@ -111,6 +111,19 @@
 - No errors in type definitions
 - Implementing code will be fixed in TASK-4B-002/003/004
 
+### TASK-4B-004 Complete (2026-03-14)
+- `PoolRouterActor` fully rewritten: materializes `MergeHub.Source<IDataItem>` + `SourceRef<IDataItem>` + `SinkRef<ITransportItem>` in `PreStart`
+- `Sink.ForEach<ITransportItem>(item => self.Tell(item)).RunWith(StreamRefs.SinkRef<ITransportItem>(), mat)` pattern routes items to actor thread safely
+- `ConnectItem` → derives HostKey from TcpOptions (Schema="http", Host, Port); creates HostPoolActor child via factory; `Forward`s item
+- `DataItem` → routes by `item.Key`; drops with warning if HostKey.Default (no known host)
+- `GetPoolRefs` buffers senders in `_pendingReplies` until both refs ready; replies immediately if already ready
+- `HostStreamRefsReady` → subscribes host SourceRef into router's MergeHub (`msg.Source.Source.RunWith(_mergeHubSink!, _mat!)`)
+- `hostFactory` constructor parameter (optional) enables test injection of `TestProbe` refs instead of real HostPoolActors
+- Old messages removed: `RegisterHost`, `SendRequest`, `Response` — this required deleting `ConnectionPoolStage.cs` and `ConnectionPoolStageTests.cs` (advancing TASK-4B-006 work)
+- `RoutedTransportItem` and `RoutedDataItem` removed from `ConnectionPoolTypes.cs`
+- New tests: PR-001 (GetPoolRefs returns valid refs), PR-002 (ConnectItem forwarded to correct HostPoolActor via factory)
+- Build: 0 warnings, 0 errors; 2180 unit + 410 stream tests all green
+
 ### TASK-4B-003 Complete (2026-03-14)
 - `HostPoolActor` materializes `MergeHub.Source<IDataItem>` in `PreStart`, tells parent `HostStreamRefsReady` once SourceRef is ready
 - `HandleRegisterConnectionRefs`: creates per-connection `Source.Queue<IDataItem>(128)`, wires queue → SinkRef → ConnectionActor outbound, wires ConnectionActor SourceRef → MergeHub, registers queue in `_connectionQueues`, calls `DrainPending`

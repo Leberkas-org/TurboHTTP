@@ -1,11 +1,6 @@
 using System;
-using System.Buffers;
 
 namespace TurboHttp.IO.Stages;
-
-public sealed record RoutedTransportItem(string PoolKey, ITransportItem Item);
-
-public sealed record RoutedDataItem(string PoolKey, IMemoryOwner<byte> Memory, int Length);
 
 public sealed record PoolConfig(
     int MaxConnectionsPerHost = 10,
