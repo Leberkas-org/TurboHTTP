@@ -1,7 +1,8 @@
+using System;
+using System.Buffers;
 using System.Net;
+using System.Threading;
 using Akka.Actor;
-using Akka.Streams;
-using Akka.Streams.Dsl;
 using Akka.TestKit.Xunit2;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
@@ -13,91 +14,105 @@ public sealed class PoolRouterActorTests : TestKit
     private static TcpOptions MakeOptions(string host = "localhost", int port = 8080)
         => new() { Host = host, Port = port };
 
-    /// <summary>
-    /// A test-only ITransportItem that carries an explicit HostKey,
-    /// exercising the non-ConnectItem routing branch in PoolRouterActor.RouteItem.
-    /// </summary>
-    private sealed record KeyedItem(HostKey ExplicitKey) : IOutputItem
-    {
-        HostKey IOutputItem.Key => ExplicitKey;
-    }
+    private static HostKey MakeKey(TcpOptions options)
+        => new ConnectItem(options, HttpVersion.Version11).Key;
 
-    // ── PR-001: GetPoolRefs returns valid SinkRef + SourceRef ─────────
+    // ── PR-001: EnsureHost creates a HostPoolActor and routes DataItems to it ──
 
-    [Fact(DisplayName = "PR-001: GetPoolRefs returns valid SinkRef + SourceRef after actor start")]
-    public async Task PR_001_GetPoolRefs_ReturnsValidRefs()
-    {
-        var actor = Sys.ActorOf(Props.Create(() => new PoolRouterActor()));
-
-        actor.Tell(new PoolRouterActor.GetPoolRefs(), TestActor);
-
-        var refs = await ExpectMsgAsync<PoolRouterActor.PoolRefs>(TimeSpan.FromSeconds(10));
-
-        Assert.NotNull(refs.Sink);
-        Assert.NotNull(refs.Source);
-    }
-
-    // ── PR-002: ConnectItem routed to HostPoolActor by derived HostKey ─
-
-    [Fact(DisplayName = "PR-002: ConnectItem pushed into SinkRef is forwarded to the correct HostPoolActor")]
-    public async Task PR_002_ConnectItem_ForwardedToHostPoolActor()
+    [Fact(DisplayName = "PR-001: EnsureHost creates a HostPoolActor and routes DataItems to it")]
+    public void PR_001_EnsureHost_CreatesHostPoolActorAndRoutesDataItem()
     {
         var hostProbe = CreateTestProbe();
-        var actor = Sys.ActorOf(Props.Create(() =>
+        var router = Sys.ActorOf(Props.Create(() =>
             new PoolRouterActor(null, (opts, cfg, key) => hostProbe.Ref)));
 
-        var mat = Sys.Materializer();
+        var options = MakeOptions();
+        var key = MakeKey(options);
 
-        actor.Tell(new PoolRouterActor.GetPoolRefs(), TestActor);
-        var refs = await ExpectMsgAsync<PoolRouterActor.PoolRefs>(TimeSpan.FromSeconds(10));
+        router.Tell(new PoolRouterActor.EnsureHost(key, options));
 
-        await Task.Delay(200); // let SinkRef stream subscription establish
+        var owner = MemoryPool<byte>.Shared.Rent(4);
+        router.Tell(new DataItem(owner, 4) { Key = key });
 
-        var options = MakeOptions("localhost", 8080);
-        Source.Single<IOutputItem>(new ConnectItem(options))
-            .RunWith(refs.Sink.Sink, mat);
-
-        var received = hostProbe.ExpectMsg<ConnectItem>(TimeSpan.FromSeconds(5));
-        Assert.Equal("localhost", received.Options.Host);
-        Assert.Equal(8080, received.Options.Port);
+        hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
     }
 
-    // ── PR-003: PoolRouterActor routes keyed item to correct host ─────
+    // ── PR-002: Same key reuses the existing HostPoolActor ────────────────────
 
-    [Fact(DisplayName = "PR-003: KeyedItem with HostKey (http,host-a,80) is routed to the correct HostPoolActor")]
-    public async Task PR_003_KeyedItem_RoutedToCorrectHostActor()
+    [Fact(DisplayName = "PR-002: EnsureHost with the same key reuses the existing HostPoolActor (factory called once)")]
+    public void PR_002_SameKey_ReusesHostPoolActor()
     {
+        var factoryCallCount = 0;
         var hostProbe = CreateTestProbe();
-        var actor = Sys.ActorOf(Props.Create(() =>
-            new PoolRouterActor(null, (opts, cfg, key) => hostProbe.Ref)));
+        Func<TcpOptions, PoolConfig, HostKey, IActorRef> factory = (_, _, _) =>
+        {
+            Interlocked.Increment(ref factoryCallCount);
+            return hostProbe.Ref;
+        };
+        var router = Sys.ActorOf(Props.Create(() => new PoolRouterActor(null, factory)));
 
-        var mat = Sys.Materializer();
+        var options = MakeOptions();
+        var key = MakeKey(options);
 
-        actor.Tell(new PoolRouterActor.GetPoolRefs(), TestActor);
-        var refs = await ExpectMsgAsync<PoolRouterActor.PoolRefs>(TimeSpan.FromSeconds(10));
+        router.Tell(new PoolRouterActor.EnsureHost(key, options));
+        router.Tell(new PoolRouterActor.EnsureHost(key, options));
 
-        // Use a queue-based Source so we can push two items through the same SinkRef subscription
-        var (queue, queueSource) = Source
-            .Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
-            .PreMaterialize(mat);
-        queueSource.RunWith(refs.Sink.Sink, mat);
+        // Both DataItems should reach the same probe
+        var owner1 = MemoryPool<byte>.Shared.Rent(4);
+        router.Tell(new DataItem(owner1, 4) { Key = key });
+        hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
-        await Task.Delay(200); // let subscription establish
+        var owner2 = MemoryPool<byte>.Shared.Rent(4);
+        router.Tell(new DataItem(owner2, 4) { Key = key });
+        hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
-        // Push ConnectItem first to register the host mapping
-        var connectOptions = MakeOptions("host-a", 80);
-        await queue.OfferAsync(new ConnectItem(connectOptions));
-        hostProbe.ExpectMsg<ConnectItem>(TimeSpan.FromSeconds(5));
+        Assert.Equal(1, factoryCallCount);
+    }
 
-        // Push a KeyedItem with the same HostKey — must route to the same hostProbe
-        var key = new HostKey { Schema = "http", Host = "host-a", Port = 80, HttpVersion = HttpVersion.Unknown };
-        await queue.OfferAsync(new KeyedItem(key));
+    // ── PR-003: Different keys create separate HostPoolActors ─────────────────
 
-        var routed = hostProbe.ExpectMsg<KeyedItem>(TimeSpan.FromSeconds(5));
-        Assert.Equal("host-a", routed.ExplicitKey.Host);
-        Assert.Equal((ushort)80, routed.ExplicitKey.Port);
-        Assert.Equal("http", routed.ExplicitKey.Schema);
+    [Fact(DisplayName = "PR-003: EnsureHost with different keys creates separate HostPoolActors")]
+    public void PR_003_DifferentKeys_CreateSeparateActors()
+    {
+        var probeA = CreateTestProbe();
+        var probeB = CreateTestProbe();
+        var callCount = 0;
 
-        queue.Complete();
+        Func<TcpOptions, PoolConfig, HostKey, IActorRef> factory =
+            (_, _, _) => Interlocked.Increment(ref callCount) == 1 ? probeA.Ref : probeB.Ref;
+
+        var router = Sys.ActorOf(Props.Create(() => new PoolRouterActor(null, factory)));
+
+        var optionsA = MakeOptions("host-a", 80);
+        var keyA = MakeKey(optionsA);
+        var optionsB = MakeOptions("host-b", 80);
+        var keyB = MakeKey(optionsB);
+
+        router.Tell(new PoolRouterActor.EnsureHost(keyA, optionsA));
+        router.Tell(new PoolRouterActor.EnsureHost(keyB, optionsB));
+
+        var ownerA = MemoryPool<byte>.Shared.Rent(4);
+        router.Tell(new DataItem(ownerA, 4) { Key = keyA });
+        probeA.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
+
+        var ownerB = MemoryPool<byte>.Shared.Rent(4);
+        router.Tell(new DataItem(ownerB, 4) { Key = keyB });
+        probeB.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(2, callCount);
+    }
+
+    // ── PR-004: GetGlobalRefs returns initialized stream handles ──────────────
+
+    [Fact(DisplayName = "PR-004: GetGlobalRefs returns non-null RequestQueue and ResponseSource")]
+    public void PR_004_GetGlobalRefs_ReturnsValidRefs()
+    {
+        var router = Sys.ActorOf(Props.Create(() => new PoolRouterActor()));
+
+        router.Tell(new PoolRouterActor.GetGlobalRefs(), TestActor);
+
+        var refs = ExpectMsg<PoolRouterActor.GlobalRefs>(TimeSpan.FromSeconds(5));
+        Assert.NotNull(refs.RequestQueue);
+        Assert.NotNull(refs.ResponseSource);
     }
 }

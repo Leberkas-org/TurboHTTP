@@ -1,7 +1,6 @@
 using System;
 using System.Buffers;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
@@ -15,9 +14,10 @@ public sealed class ConnectionActor : ReceiveActor
 {
     private readonly TcpOptions _options;
     private readonly IActorRef _clientManager;
+    private readonly HostKey _hostKey;
 
-    private ChannelWriter<(IMemoryOwner<byte>, int)>? _outbound;
-    private ChannelReader<(IMemoryOwner<byte>, int)>? _inbound;
+    private System.Threading.Channels.ChannelWriter<(IMemoryOwner<byte>, int)>? _outbound;
+    private System.Threading.Channels.ChannelReader<(IMemoryOwner<byte>, int)>? _inbound;
 
     private readonly CancellationTokenSource _cts = new();
 
@@ -27,14 +27,16 @@ public sealed class ConnectionActor : ReceiveActor
 
     private ISourceQueueWithComplete<DataItem>? _responseQueue;
 
-    public ConnectionActor(TcpOptions options, IActorRef clientManager)
+    public ConnectionActor(TcpOptions options, IActorRef clientManager, HostKey hostKey = default)
     {
         _options = options;
         _clientManager = clientManager;
+        _hostKey = hostKey;
 
-        ReceiveAsync<ClientRunner.ClientConnected>(HandleConnected);
+        Receive<ClientRunner.ClientConnected>(HandleConnected);
         Receive<ClientRunner.ClientDisconnected>(HandleDisconnected);
         Receive<Terminated>(HandleTerminated);
+        Receive<DataItem>(HandleOutboundDataItem);
     }
 
     protected override void PreStart()
@@ -47,7 +49,7 @@ public sealed class ConnectionActor : ReceiveActor
         _clientManager.Tell(new ClientManager.CreateTcpRunner(_options, Self));
     }
 
-    private async Task HandleConnected(ClientRunner.ClientConnected msg)
+    private void HandleConnected(ClientRunner.ClientConnected msg)
     {
         _log.Debug("Connected {0}", msg.RemoteEndPoint);
 
@@ -59,26 +61,27 @@ public sealed class ConnectionActor : ReceiveActor
 
         var mat = Context.System.Materializer();
 
-        // ---------- RESPONSE STREAM (TCP inbound → SourceRef) ----------
-        var responseMat =
+        // ---------- RESPONSE STREAM (TCP inbound → pre-materialized Source) ----------
+        var (responseQueue, responseSource) =
             Source.Queue<DataItem>(1024, OverflowStrategy.Backpressure)
                 .PreMaterialize(mat);
 
-        _responseQueue = responseMat.Item1;
+        _responseQueue = responseQueue;
 
-        var sourceRef = await responseMat.Item2
-            .RunWith(StreamRefs.SourceRef<DataItem>(), mat);
-
-        // ---------- REQUEST STREAM (SinkRef → TCP outbound) ----------
-        var requestSink = Sink.ForEachAsync<DataItem>(1, async x =>
-            await _outbound!.WriteAsync((x.Memory, x.Length)));
-
-        var sinkRef = await requestSink
-            .RunWith(StreamRefs.SinkRef<DataItem>(), mat);
-
-        Context.Parent.Tell(new HostPoolActor.RegisterConnectionRefs(Self, sinkRef, sourceRef));
+        // Register with parent — passes response source; HostPoolActor wires the request side
+        Context.Parent.Tell(new HostPoolActor.RegisterConnectionRefs(Self, responseSource));
 
         _ = PumpInbound(_cts.Token);
+    }
+
+    private void HandleOutboundDataItem(DataItem item)
+    {
+        if (_outbound == null)
+        {
+            return;
+        }
+
+        _ = _outbound.WriteAsync((item.Memory, item.Length)).AsTask();
     }
 
     private async Task PumpInbound(CancellationToken token)
@@ -89,7 +92,7 @@ public sealed class ConnectionActor : ReceiveActor
             {
                 if (_responseQueue != null)
                 {
-                    await _responseQueue.OfferAsync(new DataItem(item.Item1, item.Item2));
+                    await _responseQueue.OfferAsync(new DataItem(item.Item1, item.Item2) { Key = _hostKey });
                 }
             }
         }

@@ -275,7 +275,7 @@ public class Engine
                 Flow.Create<HttpRequestMessage>()
                     .Take(1)
                     .Select(IOutputItem (req) =>
-                        new ConnectItem(TcpOptionsFactory.Build(req.RequestUri!, clientOptions))));
+                        new ConnectItem(TcpOptionsFactory.Build(req.RequestUri!, clientOptions), req.Version)));
 
             // Concat: first the ConnectItem (In 0), then all BidiFlow transport output (In 1)
             var concat = b.Add(Concat.Create<IOutputItem>(2));

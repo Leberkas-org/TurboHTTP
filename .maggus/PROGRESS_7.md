@@ -261,3 +261,155 @@ Searched for `Http11ConnectionTests`, `Http11BasicTests`, or any file consuming 
 - **Keep-alive: ❌** — `ConnectionReuseStage` is dead code (not in Engine.cs). No integration test proves TCP reuse.
 - **HTTP/2 multiplex: ✅** — Multiplexing works at the protocol/stage layer (fake TCP). No real-TCP integration test.
 - The Kestrel routes and the stage infrastructure are in place; what is missing is: (1) wiring `ConnectionReuseStage` into the Engine, and (2) writing integration test classes that exercise the `/conn/*` routes with real TCP.
+
+---
+
+## TASK-AUD-004 — Error Tolerance: What Happens on TCP Connection Drop?
+
+**Date:** 2026-03-15
+
+### Summary
+
+| Question | Answer |
+|----------|--------|
+| Does `TryConnect()` fire on `ClientDisconnected`? | ✅ YES — immediate, no delay |
+| Does the full Engine flow survive a TCP drop? | ⚠️ PARTIAL — stream graph survives, in-flight requests lost |
+| Does one connection failure propagate to all? | ✅ NO propagation — MergeHub isolates failures |
+| Is there exponential backoff / retry on reconnect? | ❌ NO — immediate reconnect only; backoff config is dead code |
+
+---
+
+### Q1: Does `TryConnect()` fire on `ClientDisconnected`?
+
+**YES — immediately, with no delay.**
+
+Signal path when TCP drops:
+1. `ClientByteMover.MoveStreamToPipe` receives `bytesRead == 0` or I/O exception
+2. Tells `DoClose` to `ClientRunner`
+3. `ClientRunner.Receive<DoClose>` sends `ClientDisconnected` to handler (`ConnectionActor`) and kills itself
+4. `ConnectionActor.HandleDisconnected` (line 105-109) receives the message and calls `Reconnect()`
+5. `Reconnect()` nulls out `_responseQueue`, `_runner`, `_outbound`, `_inbound`, then calls `Connect()` immediately
+6. `Connect()` sends `ClientManager.CreateTcpRunner(_options, Self)` — a new TCP connection attempt starts
+
+Additionally, `ConnectionActor` watches the `ClientRunner` actor via `Context.Watch(_runner)`. If the runner terminates without sending `ClientDisconnected` (e.g. crash), `HandleTerminated` also calls `Reconnect()`.
+
+**There is no backoff or delay in `ConnectionActor.Reconnect()`.** The reconnect is a direct actor message send.
+
+---
+
+### Q2: Does the full Engine flow survive a TCP drop?
+
+**Partial survival — the stream graph stays alive, but in-flight requests are silently lost.**
+
+#### Why the stream graph survives
+
+The Engine uses two levels of `MergeHub`:
+
+1. **`PoolRouterActor`**: materializes `MergeHub.Source<DataItem>` and exposes it as a `SourceRef`. Each `HostPoolActor`'s responses are subscribed as producers into this hub. The `ConnectionStage` holds this single `SourceRef` for the duration of the stream.
+
+2. **`HostPoolActor`**: materializes another `MergeHub.Source<DataItem>`. Each TCP connection's response `SourceRef` is subscribed as a producer. When one connection drops and its `_responseQueue.Complete()` is called, that producer stream completes — but the `MergeHub` continues with any remaining producers and accepts new ones when the connection reconnects.
+
+Result: the `ConnectionStage`'s outlet (`SourceRef` from `PoolRouterActor`) is never completed by a single connection dropping.
+
+#### Why in-flight requests are lost
+
+When `ConnectionActor.Reconnect()` is called:
+- `_responseQueue?.Complete()` is called — completes the response SOURCE for this connection
+- `_outbound` is set to `null`
+- The `SinkRef` stream (requests: `Sink.ForEachAsync<DataItem>(1, async x => await _outbound!.WriteAsync(...))`) is still alive and trying to process queued requests
+- When the next item arrives from the per-connection queue in `HostPoolActor`, the `ForEachAsync` tries to write to `_outbound!` which is now `null` → `NullReferenceException`
+- This exception kills the `SinkRef` stream, which eventually completes the `Source.Queue` in `HostPoolActor._connectionQueues[conn.Actor]` with a failure
+
+Any requests that were in-flight (written to the per-connection queue but not yet processed) are silently dropped.
+
+#### Missing cleanup: `ConnectionFailed` is never sent
+
+`HostPoolActor.HandleFailure` contains logic to mark the connection dead, remove its queue, and schedule a delayed reconnect via `_config.ReconnectInterval`. But `ConnectionActor` **never sends `ConnectionFailed` to its parent**. When a connection drops and reconnects, `HostPoolActor` only learns about the new connection when `RegisterConnectionRefs` is sent (overwriting the old queue entry).
+
+This means:
+- The stale queue entry persists until the new connection reconnects
+- New requests arriving during the reconnect window may be routed to the stale (now-failing) queue
+- The `_connections` list in `HostPoolActor` still shows the old connection entry as `Active=true` during the reconnect gap
+
+---
+
+### Q3: Does a failure in one connection propagate to all parallel connections?
+
+**NO — failures are isolated at the connection level.**
+
+The `MergeHub` pattern at both `HostPoolActor` and `PoolRouterActor` levels provides isolation:
+- When a producer stream (one connection's `SourceRef`) completes or fails, the `MergeHub` simply removes that producer. All other producers continue unaffected.
+- Connections to other hosts in `PoolRouterActor` are completely independent (`_hosts` dictionary, separate `HostPoolActor` actors).
+- The `ConnectionStage` in the Engine graph sees only the router-level `SourceRef` (the combined MergeHub output) — it is never notified that an individual connection dropped.
+
+One TCP drop → one connection → one producer removed from inner MergeHub → **no visible effect on the Engine stream graph or on other connections**.
+
+---
+
+### Q4: Is there exponential backoff / retry on reconnect?
+
+**NO exponential backoff. The existing backoff configuration is dead code.**
+
+#### What `PoolConfig` promises (but doesn't deliver)
+
+```csharp
+public sealed record PoolConfig(
+    int MaxReconnectAttempts = 3,
+    TimeSpan ReconnectInterval = default,  // default: 5 seconds
+    ...
+)
+```
+
+`HostPoolActor.HandleFailure` schedules a delayed reconnect using `_config.ReconnectInterval`:
+```csharp
+Context.System.Scheduler.ScheduleTellOnceCancelable(
+    _config.ReconnectInterval, Self, new Reconnect(msg.Connection), Self);
+```
+
+This code exists and is correct. However, it is **never reached** because `ConnectionFailed` is never sent to `HostPoolActor` from `ConnectionActor`. The reconnect is handled entirely within `ConnectionActor`:
+
+```csharp
+private void Reconnect()
+{
+    _responseQueue?.Complete();
+    _responseQueue = null;
+    _runner = null;
+    _outbound = null;
+    _inbound = null;
+    Connect();   // immediate — no delay, no backoff
+}
+```
+
+#### Actual reconnect behavior
+
+- **Delay**: None. Reconnect is immediate.
+- **Backoff**: None. No exponential or linear back-off.
+- **Max attempts**: Not tracked. `MaxReconnectAttempts = 3` is never read.
+- **Failure notification to parent**: None. `HostPoolActor` does not know a reconnect happened until the new connection is ready.
+
+This means: if the TCP target is repeatedly unavailable (server down), `ConnectionActor` will immediately hammer it with connection attempts in a tight loop — limited only by TCP connection timeout (`PoolConfig.ConnectionTimeout = 30s`) and the latency of the `ClientManager` actor message round-trip.
+
+---
+
+### Code Locations
+
+| Component | File | Key Line(s) |
+|-----------|------|-------------|
+| `HandleDisconnected` → `Reconnect()` | `src/TurboHttp/IO/ConnectionActor.cs` | 105-108 |
+| `Reconnect()` → `Connect()` (immediate) | `src/TurboHttp/IO/ConnectionActor.cs` | 120-129 |
+| `_outbound = null` (causes in-flight loss) | `src/TurboHttp/IO/ConnectionActor.cs` | 125 |
+| MergeHub per-connection wiring | `src/TurboHttp/IO/HostPoolActor.cs` | 141-157 |
+| `HandleFailure` with `ReconnectInterval` (dead) | `src/TurboHttp/IO/HostPoolActor.cs` | 223-244 |
+| `PoolConfig.ReconnectInterval` (dead config) | `src/TurboHttp/IO/PoolConfig.cs` | 9, 21-23 |
+| `PoolConfig.MaxReconnectAttempts` (dead config) | `src/TurboHttp/IO/PoolConfig.cs` | 9 |
+| MergeHub at router level | `src/TurboHttp/IO/PoolRouterActor.cs` | 76-85 |
+
+---
+
+### Architectural Gaps Identified
+
+1. **`ConnectionFailed` is never sent** — `HostPoolActor.HandleFailure` is dead code. The parent actor has no visibility into reconnect events.
+2. **No backoff** — A target that is repeatedly unavailable will be hammered with immediate reconnect attempts.
+3. **In-flight request loss** — No retry or re-queuing of requests that were in the per-connection queue when the connection dropped.
+4. **Stale queue entry** — During the reconnect window, the stale `_connectionQueues[conn.Actor]` entry can receive new requests that will fail.
+5. **`MaxReconnectAttempts` unused** — The circuit breaker behavior intended by this config field is not implemented.

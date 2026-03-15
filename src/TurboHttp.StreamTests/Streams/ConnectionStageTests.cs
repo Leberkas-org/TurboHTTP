@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Net;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
@@ -20,15 +21,25 @@ public sealed class ConnectionStageTests : StreamTestBase
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// A minimal router stub that responds to GetPoolRefs with pre-built refs.
-    /// Avoids any TCP infrastructure.
+    /// Stub router that handles GetGlobalRefs (replies with pre-built GlobalRefs)
+    /// and forwards EnsureHost messages to a probe for assertion.
     /// </summary>
     private sealed class StubRouter : ReceiveActor
     {
-        public StubRouter(ISinkRef<IOutputItem> sinkRef, ISourceRef<DataItem> sourceRef)
+        public StubRouter(
+            ISourceQueueWithComplete<DataItem> requestQueue,
+            Source<DataItem, NotUsed> responseSource,
+            IActorRef probe)
         {
-            Receive<PoolRouterActor.GetPoolRefs>(_ =>
-                Sender.Tell(new PoolRouterActor.PoolRefs(sinkRef, sourceRef)));
+            Receive<PoolRouterActor.GetGlobalRefs>(_ =>
+            {
+                Sender.Tell(new PoolRouterActor.GlobalRefs(requestQueue, responseSource));
+            });
+
+            Receive<PoolRouterActor.EnsureHost>(msg =>
+            {
+                probe.Tell(msg);
+            });
         }
     }
 
@@ -40,91 +51,91 @@ public sealed class ConnectionStageTests : StreamTestBase
     }
 
     /// <summary>
-    /// Builds a pre-materialized SinkRef→probe pair and a SourceRef→queue pair,
+    /// Builds a pre-materialized request queue + response queue pair,
     /// then wires a ConnectionStage to the stub router.
-    /// Returns the stage flow and the two queues/probes for injection/observation.
+    /// Returns the stage flow, the response queue (for injecting inbound data),
+    /// and a probe that records EnsureHost messages.
     /// </summary>
-    private async Task<(
+    private (
         Flow<IOutputItem, IInputItem, NotUsed> stageFlow,
         ISourceQueueWithComplete<DataItem> responseQueue,
-        TestProbe requestProbe)>
-    BuildAsync()
+        TestProbe routerProbe)
+    Build()
     {
-        // Request side: SinkRef that forwards items to a TestProbe
-        var requestProbe = CreateTestProbe();
-        var sinkRefTask = Sink
-            .ForEach<IOutputItem>(item => requestProbe.Tell(item))
-            .RunWith(StreamRefs.SinkRef<IOutputItem>(), Materializer);
-        var sinkRef = await sinkRefTask.WaitAsync(TimeSpan.FromSeconds(10));
-
-        // Response side: SourceQueue → SourceRef that ConnectionStage subscribes to
+        // Response side: Source.Queue that ConnectionStage will subscribe to
         var (responseQueue, responseSource) = Source
             .Queue<DataItem>(16, OverflowStrategy.Backpressure)
             .PreMaterialize(Materializer);
-        var sourceRefTask = responseSource.RunWith(
-            StreamRefs.SourceRef<DataItem>(), Materializer);
-        var sourceRef = await sourceRefTask.WaitAsync(TimeSpan.FromSeconds(10));
 
-        // Stub router responds to GetPoolRefs
-        var stubRouter = Sys.ActorOf(Props.Create(() => new StubRouter(sinkRef, sourceRef)));
+        // Request side: outbound queue (ConnectionStage offers DataItems here)
+        var (requestQueue, _) = Source
+            .Queue<DataItem>(16, OverflowStrategy.Backpressure)
+            .PreMaterialize(Materializer);
+
+        var routerProbe = CreateTestProbe();
+        var stubRouter = Sys.ActorOf(Props.Create(() =>
+            new StubRouter(requestQueue, responseSource, routerProbe.Ref)));
+
         var stageFlow = Flow.FromGraph(new ConnectionStage(stubRouter));
 
-        return (stageFlow, responseQueue, requestProbe);
+        return (stageFlow, responseQueue, routerProbe);
     }
 
-    // ── CS-001: requests reach the PoolRouter's SinkRef ──────────────────────
+    // ── CS-001: ConnectItem triggers EnsureHost to PoolRouter ────────────────
 
     [Fact(Timeout = 15_000,
-        DisplayName = "CS-001: ConnectItem pushed into inlet reaches PoolRouter's SinkRef")]
-    public async Task CS_001_RequestReachesSinkRef()
+        DisplayName = "CS-001: ConnectItem pushed into inlet triggers EnsureHost to PoolRouter")]
+    public async Task CS_001_ConnectItem_TriggersEnsureHost()
     {
-        var (stageFlow, responseQueue, requestProbe) = await BuildAsync();
+        var (stageFlow, responseQueue, routerProbe) = Build();
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
-        var connectItem = new ConnectItem(options);
+        var connectItem = new ConnectItem(options, HttpVersion.Version11);
 
-        // Run the stage: push one ConnectItem, collect nothing (no responses)
-        var stageSource = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
-            .Via(stageFlow);
-
-        var (queue, _) = stageSource
+        var (queue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
+            .Via(stageFlow)
             .ToMaterialized(Sink.Ignore<IInputItem>(), Keep.Both)
             .Run(Materializer);
 
-        await Task.Delay(300); // let ConnectionStage establish the sub-streams
-
+        await Task.Delay(200);
         await queue.OfferAsync(connectItem);
 
-        var received = requestProbe.ExpectMsg<ConnectItem>(TimeSpan.FromSeconds(10));
+        var received = routerProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(10));
         Assert.Equal("localhost", received.Options.Host);
 
-        // Cleanup
         responseQueue.Complete();
     }
 
-    // ── CS-002: responses from SourceRef appear at outlet ────────────────────
+    // ── CS-002: responses from ResponseSource appear at outlet ───────────────
 
     [Fact(Timeout = 15_000,
-        DisplayName = "CS-002: DataItem injected into PoolRouter's SourceRef appears at outlet")]
+        DisplayName = "CS-002: DataItem injected into ResponseSource appears at outlet")]
     public async Task CS_002_ResponseReachesOutlet()
     {
-        var (stageFlow, responseQueue, _) = await BuildAsync();
+        var (stageFlow, responseQueue, _) = Build();
+        var options = new TcpOptions { Host = "localhost", Port = 8080 };
+        var connectItem = new ConnectItem(options, HttpVersion.Version11);
         var data = MakeData(0xAB, 4);
 
-        // Run the stage: no inbound items, collect from outlet
-        var resultTask = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
+        var (inputQueue, resultTask) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
             .Via(stageFlow)
-            .RunWith(Sink.First<IInputItem>(), Materializer);
+            .ToMaterialized(Sink.First<IInputItem>(), Keep.Both)
+            .Run(Materializer);
 
-        await Task.Delay(300); // let ConnectionStage establish the sub-streams
+        await Task.Delay(200);
 
-        // Inject a response via the SourceRef-backed queue
+        // Push ConnectItem → triggers GetGlobalRefs → StubRouter replies with GlobalRefs
+        await inputQueue.OfferAsync(connectItem);
+
+        // Wait for GlobalRefs to be received and ResponseSource subscription to establish
+        await Task.Delay(400);
+
+        // Inject a DataItem through the response queue
         await responseQueue.OfferAsync(data);
 
         var received = (DataItem)await resultTask.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(4, received.Length);
         Assert.Equal(0xAB, received.Memory.Memory.Span[0]);
 
-        // Cleanup
         responseQueue.Complete();
     }
 }

@@ -11,7 +11,7 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
     private static readonly byte[] PrefaceMagic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
 
     private static readonly ConnectItem DefaultConnect =
-        new(new TcpOptions { Host = "test.local", Port = 443 });
+        new(new TcpOptions { Host = "test.local", Port = 443 }, System.Net.HttpVersion.Version20);
 
     // Prepends a ConnectItem (triggers preface), then wraps byte[] inputs as DataItems.
     // Returns only DataItem outputs, copied out as byte[].

@@ -140,7 +140,7 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
 
 public record TlsOptions : TcpOptions
 {
-    public string? TargetHost { get; set; }
+    public string? TargetHost { get; init; }
     public X509CertificateCollection? ClientCertificates { get; init; }
     public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; init; }
     public SslProtocols EnabledSslProtocols { get; init; } = SslProtocols.None;
@@ -151,8 +151,8 @@ public record TcpOptions
     public required string Host { get; init; }
     public required int Port { get; init; }
     public int MaxFrameSize { get; init; } = 128 * 1024;
-    public AddressFamily AddressFamily { get; set; } = AddressFamily.Unspecified;
-    public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(10);
-    public TimeSpan ReconnectInterval { get; set; } = TimeSpan.FromSeconds(5);
-    public int MaxReconnectAttempts { get; set; } = 10;
+    public AddressFamily AddressFamily { get; init; } = AddressFamily.Unspecified;
+    public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(10);
+    public TimeSpan ReconnectInterval { get; init; } = TimeSpan.FromSeconds(5);
+    public int MaxReconnectAttempts { get; init; } = 10;
 }

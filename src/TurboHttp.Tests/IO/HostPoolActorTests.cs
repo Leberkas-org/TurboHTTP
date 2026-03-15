@@ -4,7 +4,6 @@ using System.Net;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Event;
 using Akka.Hosting;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -34,42 +33,41 @@ public sealed class HostPoolActorTests : TestKit
         return Sys.ActorOf(Props.Create(() => new HostPoolActorProxy(opts, cfg, TestActor)));
     }
 
-    // ── HA-001: MergeHub aggregates responses from two ConnectionActor SourceRefs ────
+    // ── HA-001: MergeHub aggregates responses from two connection sources ─────
 
-    [Fact(DisplayName = "HA-001: Two ConnectionActor SourceRefs registered → both responses appear on merged output SourceRef")]
+    [Fact(DisplayName = "HA-001: Two connection ResponseSources registered → both responses appear on merged output")]
     public async Task HA_001_TwoSourceRefs_BothAppearOnMergedOutput()
     {
+        var clientManagerProbe = CreateTestProbe();
+        ActorRegistry.For(Sys).Register<ClientManager>(clientManagerProbe.Ref);
+
         var proxy = CreateProxy();
         var mat = Sys.Materializer();
 
-        // Wait for the MergeHub to be ready and receive the merged SourceRef
-        var ready = await ExpectMsgAsync<HostPoolActor.HostStreamRefsReady>(TimeSpan.FromSeconds(10));
-        Assert.NotNull(ready.Source);
+        // HostPoolActor sends RegisterHostResponseSource to its parent (proxy) in PreStart.
+        // The proxy forwards it to TestActor.
+        var registerMsg = await ExpectMsgAsync<PoolRouterActor.RegisterHostResponseSource>(TimeSpan.FromSeconds(10));
+        Assert.NotNull(registerMsg.ResponseSource);
 
-        // Subscribe to the merged output stream
+        // Subscribe to the merged response source
         var resultChannel = Channel.CreateUnbounded<DataItem>();
-        _ = ready.Source.Source.RunForeach(item => resultChannel.Writer.TryWrite(item), mat);
+        _ = registerMsg.ResponseSource.RunForeach(item => resultChannel.Writer.TryWrite(item), mat);
 
         await Task.Delay(200); // let subscription establish
 
-        // Create two fake connection source queues + SourceRefs (simulating two ConnectionActors)
-        var (queue1, src1) = Source.Queue<DataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
-        var sourceRef1 = await src1.RunWith(StreamRefs.SourceRef<DataItem>(), mat);
-        var sinkRef1 = await Sink.Ignore<DataItem>().RunWith(StreamRefs.SinkRef<DataItem>(), mat);
+        // Create two fake connection response queues
+        var (queue1, source1) = Source.Queue<DataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
+        var (queue2, source2) = Source.Queue<DataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
 
-        var (queue2, src2) = Source.Queue<DataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
-        var sourceRef2 = await src2.RunWith(StreamRefs.SourceRef<DataItem>(), mat);
-        var sinkRef2 = await Sink.Ignore<DataItem>().RunWith(StreamRefs.SinkRef<DataItem>(), mat);
-
-        // Register both connections with HostPoolActor (via the proxy)
+        // Register both connections with HostPoolActor
         var probe1 = CreateTestProbe();
         var probe2 = CreateTestProbe();
-        proxy.Tell(new HostPoolActor.RegisterConnectionRefs(probe1.Ref, sinkRef1, sourceRef1));
-        proxy.Tell(new HostPoolActor.RegisterConnectionRefs(probe2.Ref, sinkRef2, sourceRef2));
+        proxy.Tell(new HostPoolActor.RegisterConnectionRefs(probe1.Ref, source1));
+        proxy.Tell(new HostPoolActor.RegisterConnectionRefs(probe2.Ref, source2));
 
         await Task.Delay(300); // let stream wiring complete
 
-        // Push one item from each connection's source queue
+        // Push one item from each connection's response queue
         var owner1 = MemoryPool<byte>.Shared.Rent(4);
         owner1.Memory.Span[0] = 0xAA;
         await queue1.OfferAsync(new DataItem(owner1, 4));
@@ -109,19 +107,16 @@ public sealed class HostPoolActorTests : TestKit
         ActorRegistry.For(Sys).Register<ClientManager>(clientManagerProbe.Ref);
 
         var proxy = CreateProxy();
-        var mat = Sys.Materializer();
 
-        // Receive the merged SourceRef (ignore for this test — we focus on routing)
-        await ExpectMsgAsync<HostPoolActor.HostStreamRefsReady>(TimeSpan.FromSeconds(10));
+        // Consume the RegisterHostResponseSource that HostPoolActor sends in PreStart.
+        await ExpectMsgAsync<PoolRouterActor.RegisterHostResponseSource>(TimeSpan.FromSeconds(10));
 
-        // Send a DataItem to HostPoolActor — no connections exist, so it spawns one
-        // and enqueues the item as pending.
+        // Send a DataItem to HostPoolActor — no connections have queues yet, so it enqueues as pending.
         var pendingOwner = MemoryPool<byte>.Shared.Rent(8);
         pendingOwner.Memory.Span[0] = 0xCC;
         proxy.Tell(new DataItem(pendingOwner, 8));
 
         // Capture the CreateTcpRunner that ConnectionActor sends to its clientManager.
-        // Extract the ConnectionActor ref from the Handler field.
         var createMsg = clientManagerProbe.ExpectMsg<ClientManager.CreateTcpRunner>(TimeSpan.FromSeconds(5));
         var connectionActor = createMsg.Handler;
 
@@ -131,18 +126,18 @@ public sealed class HostPoolActorTests : TestKit
         var endpoint = new IPEndPoint(IPAddress.Loopback, 8080);
         var connectedMsg = new ClientRunner.ClientConnected(endpoint, inbound.Reader, outbound.Writer);
 
-        // Send ClientConnected to ConnectionActor — it will materialise StreamRefs and
+        // Send ClientConnected to ConnectionActor — it will pre-materialize its response queue and
         // tell its parent (HostPoolActor) with RegisterConnectionRefs.
         // HostPoolActor then:
         //   1. Creates a per-connection queue
-        //   2. Wires queue → SinkRef (→ ConnectionActor outbound)
-        //   3. Wires SourceRef → MergeHub
-        //   4. Calls DrainPending → routes the pending DataItem through the queue
+        //   2. Wires queue → Sink.ForEach → connection.Tell(item)
+        //   3. Wires ResponseSource → MergeHub
+        //   4. Calls DrainPending → routes the pending DataItem to the connection's queue
+        //      → ForEach fires → connection.Tell(dataItem) → writes to outbound channel
         var runnerProbe = CreateTestProbe();
         connectionActor.Tell(connectedMsg, runnerProbe.Ref);
 
-        // The pending DataItem should flow: queue → SinkRef → ConnectionActor.ForEachAsync
-        // → outbound channel writer.
+        // The pending DataItem should flow through to the TCP outbound channel
         using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
         var (outboundMem, outboundLen) = await outbound.Reader.ReadAsync(cts.Token);
 

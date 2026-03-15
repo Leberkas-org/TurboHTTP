@@ -43,7 +43,7 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<RequestItem, 
                         var options = new TcpOptions { Host = string.Empty, Port = 0 };
                         _pending = request;
                         _initialSent = true;
-                        Push(stage.Shape.Out0, new ConnectItem(options));
+                        Push(stage.Shape.Out0, new ConnectItem(options, request.RequestMessage.Version));
                     }
                     else
                     {

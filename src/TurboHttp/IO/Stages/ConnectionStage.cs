@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
@@ -32,10 +31,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         private readonly ConnectionStage _stage;
         private readonly Queue<IInputItem> _pendingReads = new();
 
-        private ChannelWriter<IOutputItem>? _requestWriter;
+        private ISourceQueueWithComplete<DataItem>? _globalRequestQueue;
+
         private Action<IInputItem>? _onResponse;
         private Action? _onOfferDone;
-        private HostKey _hostKey;
+        private StageActor? _stageActor;
 
         public Logic(ConnectionStage stage) : base(stage.Shape)
         {
@@ -45,7 +45,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 onPush: HandlePush,
                 onUpstreamFinish: () =>
                 {
-                    _requestWriter?.TryComplete();
+                    _globalRequestQueue?.Complete();
                     CompleteStage();
                 });
 
@@ -59,14 +59,13 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 },
                 onDownstreamFinish: _ =>
                 {
-                    _requestWriter?.TryComplete();
+                    _globalRequestQueue?.Complete();
                     CompleteStage();
                 });
         }
 
         public override void PreStart()
         {
-            // Callbacks created once, reused for every push/offer
             _onResponse = GetAsyncCallback<IInputItem>(item =>
             {
                 if (IsAvailable(_stage._outlet))
@@ -87,34 +86,27 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 }
             });
 
-            // Ask PoolRouter for refs via stage actor (avoids needing an external actor for PipeTo)
-            var stageActor = GetStageActor(OnMessage);
-            _stage.PoolRouter.Tell(new PoolRouterActor.GetPoolRefs(), stageActor.Ref);
-            // inlet pull is deferred until PoolRefs arrive in OnMessage
+            _stageActor = GetStageActor(OnMessage);
+
+            // Ask for global refs — do NOT pull until we receive them.
+            _stage.PoolRouter.Tell(new PoolRouterActor.GetGlobalRefs(), _stageActor.Ref);
         }
 
         private void OnMessage((IActorRef sender, object msg) args)
         {
-            if (args.msg is not PoolRouterActor.PoolRefs refs)
+            if (args.msg is not PoolRouterActor.GlobalRefs refs)
             {
                 return;
             }
 
-            var mat = Materializer;
-            var channel = Channel.CreateUnbounded<IOutputItem>();
-            _requestWriter = channel.Writer;
+            _globalRequestQueue = refs.RequestQueue;
 
-            // Requests: inlet → ChannelSource.FromReader → sinkRef.Sink
-            ChannelSource.FromReader(channel.Reader)
-                .ToMaterialized(refs.Sink.Sink, Keep.Left)
-                .Run(mat);
-
-            // Responses: sourceRef.Source → GetAsyncCallback → outlet
-            refs.Source.Source.RunWith(
+            // Subscribe to the global aggregated response stream.
+            refs.ResponseSource.RunWith(
                 Sink.ForEach<DataItem>(item => _onResponse!(item)),
-                mat);
+                Materializer);
 
-            // Ready to receive
+            // Now ready to process items.
             Pull(_stage._inlet);
         }
 
@@ -122,18 +114,27 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         {
             var item = Grab(_stage._inlet);
 
-            if (item is DataItem data && data.Key.Equals(HostKey.Default))
+            if (item is ConnectItem connect)
             {
-                item = data with { Key = _hostKey };
+                // Ensure a HostPoolActor exists for this host (fire-and-forget, no reply).
+                _stage.PoolRouter.Tell(new PoolRouterActor.EnsureHost(connect.Key, connect.Options));
+
+                // Pull immediately — no need to wait for a reply.
+                Pull(_stage._inlet);
+                return;
             }
 
-            _ = _requestWriter!.WriteAsync(item).AsTask().ContinueWith(_ => _onOfferDone!(),
-                TaskContinuationOptions.ExecuteSynchronously);
+            if (item is DataItem dataItem)
+            {
+                _ = _globalRequestQueue!
+                    .OfferAsync(dataItem)
+                    .ContinueWith(_ => _onOfferDone!(), TaskContinuationOptions.ExecuteSynchronously);
+            }
         }
 
         public override void PostStop()
         {
-            _requestWriter?.TryComplete();
+            _globalRequestQueue?.Complete();
         }
     }
 }

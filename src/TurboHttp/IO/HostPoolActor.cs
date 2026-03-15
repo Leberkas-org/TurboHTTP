@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net;
 using Akka;
@@ -17,22 +16,15 @@ public sealed class HostPoolActor : ReceiveActor
 {
     public record HostPoolConfig(TcpOptions Options, PoolConfig Config, HostKey Key);
 
-    // ── Private async-handshake messages ─────────────────────────────
-    private sealed record MergeHubReady(ISourceRef<DataItem> SourceRef);
-
-    private sealed record MergeHubFailed(Exception Error);
-
     // ── Public message protocol ───────────────────────────────────────
+
     public sealed record ConnectionIdle(IActorRef Connection);
 
     public sealed record ConnectionFailed(IActorRef Connection);
 
     public sealed record RegisterConnectionRefs(
         IActorRef Connection,
-        ISinkRef<DataItem> Sink,
-        ISourceRef<DataItem> Source);
-
-    public sealed record HostStreamRefsReady(HostKey Key, ISourceRef<DataItem> Source);
+        Source<DataItem, NotUsed> ResponseSource);
 
     public sealed record IdleCheck;
 
@@ -43,6 +35,7 @@ public sealed class HostPoolActor : ReceiveActor
     public sealed record MarkConnectionNoReuse(IActorRef Connection);
 
     // ── Fields ────────────────────────────────────────────────────────
+
     private readonly HostKey _key;
     private readonly TcpOptions _options;
     private readonly PoolConfig _config;
@@ -61,6 +54,9 @@ public sealed class HostPoolActor : ReceiveActor
     private IMaterializer? _mat;
     private Sink<DataItem, NotUsed>? _mergeHubSink;
 
+    /// <summary>Aggregated response stream; wired into PoolRouterActor's global MergeHub.</summary>
+    private Source<DataItem, NotUsed>? _responseSource;
+
     public HostPoolActor(HostPoolConfig config)
     {
         _options = config.Options;
@@ -74,15 +70,6 @@ public sealed class HostPoolActor : ReceiveActor
         Receive<MarkConnectionNoReuse>(HandleMarkNoReuse);
         Receive<RegisterConnectionRefs>(HandleRegisterConnectionRefs);
         Receive<DataItem>(HandleDataItem);
-        Receive<ISignalItem>(HandleSignalItem);
-
-        Receive<MergeHubReady>(msg =>
-        {
-            var key = HostKey.Default; // TODO: Over CTR
-            Context.Parent.Tell(new HostStreamRefsReady(key, msg.SourceRef));
-        });
-
-        Receive<MergeHubFailed>(msg => { _log.Error(msg.Error, "MergeHub SourceRef initialization failed"); });
     }
 
     protected override void PreStart()
@@ -96,14 +83,16 @@ public sealed class HostPoolActor : ReceiveActor
 
         _mat = Context.System.Materializer();
 
-        var (sink, source) = MergeHub.Source<DataItem>().PreMaterialize(_mat);
-        _mergeHubSink = sink;
+        // ── Response aggregation: all connections → PoolRouterActor's global MergeHub ──
+        var (mergeHubSink, responseSource) = MergeHub.Source<DataItem>().PreMaterialize(_mat);
+        _mergeHubSink = mergeHubSink;
+        _responseSource = responseSource;
 
-        source.RunWith(StreamRefs.SourceRef<DataItem>(), _mat)
-            .PipeTo(
-                Self,
-                success: sourceRef => new MergeHubReady(sourceRef),
-                failure: ex => new MergeHubFailed(ex));
+        // Wire this host's aggregated response source into the global MergeHub via parent.
+        Context.Parent.Tell(new PoolRouterActor.RegisterHostResponseSource(_responseSource));
+
+        // Eagerly establish the first connection
+        SpawnConnection();
     }
 
     protected override void PostStop()
@@ -115,7 +104,7 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void HandleDataItem(DataItem item)
     {
-        var conn = SelectConnectionWithQueue();
+        var conn = SelectConnectionWithQueue(item.Key.HttpVersion);
         if (conn != null)
         {
             _ = _connectionQueues[conn.Actor].OfferAsync(item);
@@ -130,31 +119,26 @@ public sealed class HostPoolActor : ReceiveActor
         }
     }
 
-    private void HandleSignalItem(ISignalItem _)
-    {
-        if (_connections.Count == 0)
-        {
-            SpawnConnection();
-        }
-    }
-
     private void HandleRegisterConnectionRefs(RegisterConnectionRefs msg)
     {
         // Create a per-connection request queue (buffer 128)
-        var (queue, queueSource) =
+        var (connectionQueue, connectionSource) =
             Source.Queue<DataItem>(128, OverflowStrategy.Backpressure)
                 .PreMaterialize(_mat!);
 
-        // Wire queue → SinkRef → ConnectionActor's TCP outbound
-        queueSource.RunWith(msg.Sink.Sink, _mat!);
+        // Wire queue items → ConnectionActor as messages (which writes to TCP outbound)
+        var connection = msg.Connection;
+        connectionSource.RunWith(
+            Sink.ForEach<DataItem>(item => connection.Tell(item)),
+            _mat!);
 
-        // Wire ConnectionActor's SourceRef → MergeHub (merged response stream)
-        msg.Source.Source.RunWith(_mergeHubSink!, _mat!);
+        // Wire ConnectionActor's response source → MergeHub (merged response stream)
+        msg.ResponseSource.RunWith(_mergeHubSink!, _mat!);
 
-        _connectionQueues[msg.Connection] = queue;
+        _connectionQueues[msg.Connection] = connectionQueue;
 
         // Drain any pending items that were queued while waiting for a connection
-        DrainPending(queue);
+        DrainPending(connectionQueue);
     }
 
     private void DrainPending(ISourceQueueWithComplete<DataItem> queue)
@@ -204,7 +188,7 @@ public sealed class HostPoolActor : ReceiveActor
     private ConnectionState SpawnConnection()
     {
         var clientManager = Context.GetActor<ClientManager>();
-        var actor = Context.ActorOf(Props.Create(() => new ConnectionActor(_options, clientManager)));
+        var actor = Context.ActorOf(Props.Create(() => new ConnectionActor(_options, clientManager, _key)));
 
         Context.Watch(actor);
 

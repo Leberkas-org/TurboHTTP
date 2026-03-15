@@ -144,7 +144,7 @@ public sealed class ConnectionActorTests : TestKit
         Assert.NotNull(reconnect);
     }
 
-    [Fact(DisplayName = "CA-006: Reconnect creates new StreamRefs and sends RegisterConnectionRefs again")]
+    [Fact(DisplayName = "CA-006: Reconnect creates new ResponseSource and sends RegisterConnectionRefs again")]
     public async Task CA_006_Reconnect_CreatesNewStreamRefs()
     {
         var (connectionActor, cmProbe) = await CreateConnectionActorWithParent();
@@ -167,8 +167,7 @@ public sealed class ConnectionActorTests : TestKit
         var refs2 = await ExpectMsgAsync<HostPoolActor.RegisterConnectionRefs>(TimeSpan.FromSeconds(10));
 
         // New refs should be different objects
-        Assert.NotSame(refs1.Source, refs2.Source);
-        Assert.NotSame(refs1.Sink, refs2.Sink);
+        Assert.NotSame(refs1.ResponseSource, refs2.ResponseSource);
         Assert.Equal(connectionActor, refs2.Connection);
     }
 
@@ -218,7 +217,7 @@ public sealed class ConnectionActorTests : TestKit
         runnerProbe.ExpectMsg<DoClose>(TimeSpan.FromSeconds(5));
     }
 
-    [Fact(DisplayName = "CA-013: PostStop completes _responseQueue, closing the SourceRef stream")]
+    [Fact(DisplayName = "CA-013: PostStop completes _responseQueue, closing the ResponseSource stream")]
     public async Task CA_013_PostStop_CompletesResponseQueue()
     {
         var (connectionActor, cmProbe) = await CreateConnectionActorWithParent();
@@ -228,14 +227,14 @@ public sealed class ConnectionActorTests : TestKit
         connectionActor.Tell(connMsg, cmProbe.Ref);
         var refs = await ExpectMsgAsync<HostPoolActor.RegisterConnectionRefs>(TimeSpan.FromSeconds(10));
 
-        // Subscribe to the SourceRef before stopping
+        // Subscribe to the ResponseSource before stopping
         var mat = Sys.Materializer();
-        var itemsTask = refs.Source.Source.RunWith(Sink.Seq<DataItem>(), mat);
+        var itemsTask = refs.ResponseSource.RunWith(Sink.Seq<DataItem>(), mat);
 
         // Stop the actor — PostStop calls _responseQueue.Complete()
         Sys.Stop(connectionActor);
 
-        // The SourceRef stream should complete with zero items
+        // The ResponseSource stream should complete with zero items
         var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
         var result = await itemsTask.WaitAsync(cts.Token);
         Assert.Empty(result);
@@ -269,11 +268,10 @@ public sealed class ConnectionActorTests : TestKit
         var refs = await ExpectMsgAsync<HostPoolActor.RegisterConnectionRefs>(TimeSpan.FromSeconds(10));
 
         Assert.Equal(connectionActor, refs.Connection);
-        Assert.NotNull(refs.Sink);
-        Assert.NotNull(refs.Source);
+        Assert.NotNull(refs.ResponseSource);
     }
 
-    [Fact(DisplayName = "CA-017: TCP bytes written to inbound channel are emitted on the registered SourceRef")]
+    [Fact(DisplayName = "CA-017: TCP bytes written to inbound channel are emitted on the registered ResponseSource")]
     public async Task CA_017_InboundTcpBytes_EmittedOnSourceRef()
     {
         var (connectionActor, cmProbe) = await CreateConnectionActorWithParent();
@@ -284,10 +282,10 @@ public sealed class ConnectionActorTests : TestKit
         // Wait for materialization
         var refs = await ExpectMsgAsync<HostPoolActor.RegisterConnectionRefs>(TimeSpan.FromSeconds(10));
 
-        // Subscribe to the SourceRef
+        // Subscribe to the ResponseSource
         var mat = Sys.Materializer();
         var resultChannel = Channel.CreateUnbounded<DataItem>();
-        _ = refs.Source.Source.RunForeach(item => resultChannel.Writer.TryWrite(item), mat);
+        _ = refs.ResponseSource.RunForeach(item => resultChannel.Writer.TryWrite(item), mat);
 
         // Give the subscription a moment to establish
         await Task.Delay(100);
@@ -309,27 +307,23 @@ public sealed class ConnectionActorTests : TestKit
 
     // ── TASK-4B-008: SinkRef sends item to TCP outbound channel ──────
 
-    [Fact(DisplayName = "CA-018: DataItem offered to ConnectionActor SinkRef appears in TCP outbound channel")]
-    public async Task CA_018_SinkRef_ItemAppearsInOutboundChannel()
+    [Fact(DisplayName = "CA-018: DataItem told to ConnectionActor appears in TCP outbound channel")]
+    public async Task CA_018_DataItem_Tell_AppearsInOutboundChannel()
     {
         var (connectionActor, cmProbe) = await CreateConnectionActorWithParent();
 
         var (_, outbound, connMsg) = MakeConnectedMessage();
         connectionActor.Tell(connMsg, cmProbe.Ref);
 
-        var refs = await ExpectMsgAsync<HostPoolActor.RegisterConnectionRefs>(TimeSpan.FromSeconds(10));
+        await ExpectMsgAsync<HostPoolActor.RegisterConnectionRefs>(TimeSpan.FromSeconds(10));
 
-        var mat = Sys.Materializer();
-
-        // Offer a DataItem via the SinkRef (simulates HostPoolActor writing a request to this connection)
+        // Tell a DataItem directly (simulates HostPoolActor routing a request to this connection)
         var owner = MemoryPool<byte>.Shared.Rent(4);
         owner.Memory.Span[0] = 0xDE;
         var item = new DataItem(owner, 4);
+        connectionActor.Tell(item);
 
-        Source.Single<DataItem>(item)
-            .RunWith(refs.Sink.Sink, mat);
-
-        // The ConnectionActor's ForEachAsync writes each item to the TCP outbound channel
+        // ConnectionActor writes each DataItem to the TCP outbound channel
         using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
         var (mem, len) = await outbound.Reader.ReadAsync(cts.Token);
 

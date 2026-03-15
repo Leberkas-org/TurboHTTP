@@ -205,3 +205,53 @@
 - `TurboHttp.Benchmarks` project has infrastructure only (Config.cs, Program.cs)
 - No `[Benchmark]` methods defined — cannot measure performance baseline
 - RFC compliance matrix: `RFC_COMPLIANCE.md` in repo root
+
+## TCP Error Tolerance Audit (TASK-AUD-004, 2026-03-15)
+
+### Key Findings
+- **`ConnectionActor.HandleDisconnected`** calls `Reconnect()` → `Connect()` **immediately** (zero delay) on `ClientDisconnected` or actor `Terminated`
+- **Stream graph survives** (MergeHub at `HostPoolActor` + `PoolRouterActor` level insulates individual drops); **in-flight requests on the dropped connection are silently lost**
+- **No failure propagation to parallel connections** — MergeHub isolation
+- **No exponential backoff** — `PoolConfig.ReconnectInterval` (5s) and `MaxReconnectAttempts = 3` are dead config; `ConnectionFailed` is **never sent** from `ConnectionActor` to `HostPoolActor`
+- `HostPoolActor.HandleFailure` is unreachable dead code in current implementation
+- During reconnect gap, stale `_connectionQueues[conn.Actor]` entry can receive new requests that will throw `NullReferenceException` (from null `_outbound`)
+
+## Connection Reuse Audit (TASK-AUD-003, 2026-03-15)
+
+### Key Findings
+- **`ConnectionReuseStage`** (`Streams/Stages/ConnectionReuseStage.cs`) exists and has 10 unit tests but is **NOT wired into Engine.cs** — dead code
+- **No integration test class exists** in `src/TurboHttp.IntegrationTests/` beyond infrastructure (`KestrelFixture`, `Routes`, `TestKit`). The Http11/, Http20/ etc. test class directories from memory do NOT exist on disk in poc2 branch.
+- Kestrel routes `/conn/keep-alive`, `/conn/close`, `/conn/default` are registered but never called by any test class
+- **HTTP/1.1 keep-alive: ❌** — not empirically proven. Stage logic is correct (RFC 9112 compliant) but not integrated.
+- **HTTP/2 multiplexing: ✅** (at stream/stage layer) — `Http20EngineRfcRoundTripTests` uses `SendH2EngineAsyncMany` to send 3 requests on streams 1,3,5 through one fake-TCP engine. Out-of-order correlation tested in `COR20-002`.
+- **All stream tests use fake TCP stages** (`EngineFakeConnectionStage`, `H2EngineFakeConnectionStage`) — no real TCP socket involved.
+- Full findings in `.maggus/PROGRESS_7.md`
+
+## Engine.cs Wiring — Full Audit (TASK-AUD-001, 2026-03-15)
+
+### Stages Wired in Engine.cs (direct)
+| Stage | Role |
+|-------|------|
+| RequestEnricherStage | First in request chain |
+| CookieInjectionStage | After redirect merge |
+| CacheLookupStage | Last before engine core; Out0=miss, Out1=hit |
+| DecompressionStage | First in response chain |
+| CookieStorageStage | Stores Set-Cookie |
+| CacheStorageStage | Stores cacheable responses |
+| RetryStage | Out0=final, Out1→retry merge |
+| RedirectStage | Out0=final, Out1→redirect merge |
+| ConnectionStage | Transport bridge (production only) |
+
+### Stages NOT Wired in Engine.cs
+- `ConnectionReuseStage` — exists, tested, NEVER referenced in Engine.cs (dead code)
+- `ExtractOptionsStage` — exists, superseded by RequestEnricherStage pattern
+- `GroupByHostKeyStage` — exists but Engine.cs uses built-in `.GroupBy()` DSL
+- `MergeSubstreamsStage` — exists but Engine.cs uses built-in `.MergeSubstreams()` DSL
+
+### ConnectionPoolStage
+- Does NOT exist in codebase. The actor pool (PoolRouterActor) is integrated via `ConnectionStage(poolRouter)`.
+
+### Key Architecture Note
+Production mode: `GroupBy(HostKey.FromRequest, maxSubstreams)` → per-host substream → `BuildConnectionFlowPublic` (Broadcast+ConnectItem+Concat+Buffer+BidiFlow+ConnectionStage). Test mode: factory replaces ConnectionStage.
+
+### Full audit documented in `.maggus/PROGRESS_7.md`

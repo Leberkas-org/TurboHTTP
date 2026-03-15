@@ -71,11 +71,11 @@ What is unclear right now:
 **Description:** As a developer, I want to know whether the stream keeps running when a single TCP connection drops.
 
 **Acceptance Criteria:**
-- [ ] `ConnectionStage` checked for reconnect logic (does `TryConnect()` fire on `ClientDisconnected`?)
-- [ ] Clear answer: does the full `Engine` flow survive a TCP drop?
-- [ ] Clear answer: does a failure in one connection propagate failures to all parallel connections?
-- [ ] Clear answer: is there exponential backoff / retry on reconnect?
-- [ ] Result documented in `.maggus/PROGRESS_7.md`
+- [x] `ConnectionStage` checked for reconnect logic (does `TryConnect()` fire on `ClientDisconnected`?)
+- [x] Clear answer: does the full `Engine` flow survive a TCP drop?
+- [x] Clear answer: does a failure in one connection propagate failures to all parallel connections?
+- [x] Clear answer: is there exponential backoff / retry on reconnect?
+- [x] Result documented in `.maggus/PROGRESS_7.md`
 
 
 ### TASK-AUD-005: TurboHttpClient.SendAsync — End-to-End Status
