@@ -17,8 +17,8 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
     // Returns only DataItem outputs, copied out as byte[].
     private async Task<IReadOnlyList<byte[]>> RunAsync(params byte[][] inputs)
     {
-        var items = new List<ITransportItem> { DefaultConnect };
-        items.AddRange(inputs.Select(ITransportItem (b) =>
+        var items = new List<IOutputItem> { DefaultConnect };
+        items.AddRange(inputs.Select(IOutputItem (b) =>
         {
             IMemoryOwner<byte> owner = new SimpleMemoryOwner(b);
             return new DataItem(owner, b.Length);
@@ -28,7 +28,7 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
 
         var chunks = await source
             .Via(Flow.FromGraph(new PrependPrefaceStage()))
-            .RunWith(Sink.Seq<ITransportItem>(), Materializer);
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
         return chunks.OfType<DataItem>().Select(c =>
         {

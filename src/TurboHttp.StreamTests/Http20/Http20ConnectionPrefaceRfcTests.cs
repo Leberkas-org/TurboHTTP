@@ -21,22 +21,22 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     /// Runs the PrependPrefaceStage with the given transport items and collects all output.
     /// Returns the raw byte sequences (extracted from DataItems) and all transport items.
     /// </summary>
-    private async Task<IReadOnlyList<ITransportItem>> RunAsync(params ITransportItem[] items)
+    private async Task<IReadOnlyList<IOutputItem>> RunAsync(params IOutputItem[] items)
     {
         return await Source.From(items)
             .Via(Flow.FromGraph(new PrependPrefaceStage()))
-            .RunWith(Sink.Seq<ITransportItem>(), Materializer);
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
     }
 
     /// <summary>
     /// Extracts all raw bytes from DataItems in the output, concatenated.
     /// </summary>
-    private static byte[] ExtractBytes(IReadOnlyList<ITransportItem> items)
+    private static byte[] ExtractBytes(IReadOnlyList<IOutputItem> items)
     {
         var bytes = new List<byte>();
         foreach (var item in items)
         {
-            if (item is DataItem(var owner, var length, _))
+            if (item is DataItem(var owner, var length))
             {
                 bytes.AddRange(owner.Memory.Span[..length].ToArray());
             }
@@ -47,7 +47,8 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     // ─── H2P-001: First 24 bytes = PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n ──────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.4-H2P-001: First 24 bytes are the HTTP/2 connection preface magic")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "RFC-9113-§3.4-H2P-001: First 24 bytes are the HTTP/2 connection preface magic")]
     public async Task First_24_Bytes_Are_Http2_Magic()
     {
         var output = await RunAsync(
@@ -62,7 +63,8 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     // ─── H2P-002: SETTINGS frame directly after magic (byte 24+) ────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.4-H2P-002: SETTINGS frame immediately follows the 24-byte magic")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "RFC-9113-§3.4-H2P-002: SETTINGS frame immediately follows the 24-byte magic")]
     public async Task Settings_Frame_Follows_Magic()
     {
         var output = await RunAsync(
@@ -125,7 +127,8 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     // ─── H2P-003: Preface is sent exactly once (not repeated on second request) ──
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.4-H2P-003: Preface is sent exactly once — not repeated on subsequent data")]
+    [Fact(Timeout = 10_000,
+        DisplayName = "RFC-9113-§3.4-H2P-003: Preface is sent exactly once — not repeated on subsequent data")]
     public async Task Preface_Sent_Exactly_Once()
     {
         // One connect followed by multiple data items — preface only on connect

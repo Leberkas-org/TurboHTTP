@@ -47,19 +47,19 @@ public sealed class HostPoolActorTests : TestKit
         Assert.NotNull(ready.Source);
 
         // Subscribe to the merged output stream
-        var resultChannel = Channel.CreateUnbounded<IDataItem>();
+        var resultChannel = Channel.CreateUnbounded<DataItem>();
         _ = ready.Source.Source.RunForeach(item => resultChannel.Writer.TryWrite(item), mat);
 
         await Task.Delay(200); // let subscription establish
 
         // Create two fake connection source queues + SourceRefs (simulating two ConnectionActors)
-        var (queue1, src1) = Source.Queue<IDataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
-        var sourceRef1 = await src1.RunWith(StreamRefs.SourceRef<IDataItem>(), mat);
-        var sinkRef1 = await Sink.Ignore<IDataItem>().RunWith(StreamRefs.SinkRef<IDataItem>(), mat);
+        var (queue1, src1) = Source.Queue<DataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
+        var sourceRef1 = await src1.RunWith(StreamRefs.SourceRef<DataItem>(), mat);
+        var sinkRef1 = await Sink.Ignore<DataItem>().RunWith(StreamRefs.SinkRef<DataItem>(), mat);
 
-        var (queue2, src2) = Source.Queue<IDataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
-        var sourceRef2 = await src2.RunWith(StreamRefs.SourceRef<IDataItem>(), mat);
-        var sinkRef2 = await Sink.Ignore<IDataItem>().RunWith(StreamRefs.SinkRef<IDataItem>(), mat);
+        var (queue2, src2) = Source.Queue<DataItem>(10, OverflowStrategy.Backpressure).PreMaterialize(mat);
+        var sourceRef2 = await src2.RunWith(StreamRefs.SourceRef<DataItem>(), mat);
+        var sinkRef2 = await Sink.Ignore<DataItem>().RunWith(StreamRefs.SinkRef<DataItem>(), mat);
 
         // Register both connections with HostPoolActor (via the proxy)
         var probe1 = CreateTestProbe();
@@ -166,7 +166,7 @@ public sealed class HostPoolActorTests : TestKit
         public HostPoolActorProxy(TcpOptions options, PoolConfig config, IActorRef forwardTo)
         {
             _hostPool = Context.ActorOf(
-                Props.Create(() => new HostPoolActor(options, config)),
+                Props.Create(() => new HostPoolActor(new HostPoolActor.HostPoolConfig(options, config, HostKey.Default))),
                 "host-pool");
 
             ReceiveAny(msg =>

@@ -25,7 +25,7 @@ public sealed class ConnectionStageTests : StreamTestBase
     /// </summary>
     private sealed class StubRouter : ReceiveActor
     {
-        public StubRouter(ISinkRef<ITransportItem> sinkRef, ISourceRef<IDataItem> sourceRef)
+        public StubRouter(ISinkRef<IOutputItem> sinkRef, ISourceRef<DataItem> sourceRef)
         {
             Receive<PoolRouterActor.GetPoolRefs>(_ =>
                 Sender.Tell(new PoolRouterActor.PoolRefs(sinkRef, sourceRef)));
@@ -45,24 +45,24 @@ public sealed class ConnectionStageTests : StreamTestBase
     /// Returns the stage flow and the two queues/probes for injection/observation.
     /// </summary>
     private async Task<(
-        Flow<ITransportItem, IDataItem, NotUsed> stageFlow,
-        ISourceQueueWithComplete<IDataItem> responseQueue,
+        Flow<IOutputItem, IInputItem, NotUsed> stageFlow,
+        ISourceQueueWithComplete<DataItem> responseQueue,
         TestProbe requestProbe)>
     BuildAsync()
     {
         // Request side: SinkRef that forwards items to a TestProbe
         var requestProbe = CreateTestProbe();
         var sinkRefTask = Sink
-            .ForEach<ITransportItem>(item => requestProbe.Tell(item))
-            .RunWith(StreamRefs.SinkRef<ITransportItem>(), Materializer);
+            .ForEach<IOutputItem>(item => requestProbe.Tell(item))
+            .RunWith(StreamRefs.SinkRef<IOutputItem>(), Materializer);
         var sinkRef = await sinkRefTask.WaitAsync(TimeSpan.FromSeconds(10));
 
         // Response side: SourceQueue → SourceRef that ConnectionStage subscribes to
         var (responseQueue, responseSource) = Source
-            .Queue<IDataItem>(16, OverflowStrategy.Backpressure)
+            .Queue<DataItem>(16, OverflowStrategy.Backpressure)
             .PreMaterialize(Materializer);
         var sourceRefTask = responseSource.RunWith(
-            StreamRefs.SourceRef<IDataItem>(), Materializer);
+            StreamRefs.SourceRef<DataItem>(), Materializer);
         var sourceRef = await sourceRefTask.WaitAsync(TimeSpan.FromSeconds(10));
 
         // Stub router responds to GetPoolRefs
@@ -83,11 +83,11 @@ public sealed class ConnectionStageTests : StreamTestBase
         var connectItem = new ConnectItem(options);
 
         // Run the stage: push one ConnectItem, collect nothing (no responses)
-        var stageSource = Source.Queue<ITransportItem>(4, OverflowStrategy.Backpressure)
+        var stageSource = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
             .Via(stageFlow);
 
         var (queue, _) = stageSource
-            .ToMaterialized(Sink.Ignore<IDataItem>(), Keep.Both)
+            .ToMaterialized(Sink.Ignore<IInputItem>(), Keep.Both)
             .Run(Materializer);
 
         await Task.Delay(300); // let ConnectionStage establish the sub-streams
@@ -111,16 +111,16 @@ public sealed class ConnectionStageTests : StreamTestBase
         var data = MakeData(0xAB, 4);
 
         // Run the stage: no inbound items, collect from outlet
-        var resultTask = Source.Queue<ITransportItem>(4, OverflowStrategy.Backpressure)
+        var resultTask = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
             .Via(stageFlow)
-            .RunWith(Sink.First<IDataItem>(), Materializer);
+            .RunWith(Sink.First<IInputItem>(), Materializer);
 
         await Task.Delay(300); // let ConnectionStage establish the sub-streams
 
         // Inject a response via the SourceRef-backed queue
         await responseQueue.OfferAsync(data);
 
-        var received = await resultTask.WaitAsync(TimeSpan.FromSeconds(10));
+        var received = (DataItem)await resultTask.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(4, received.Length);
         Assert.Equal(0xAB, received.Memory.Memory.Span[0]);
 

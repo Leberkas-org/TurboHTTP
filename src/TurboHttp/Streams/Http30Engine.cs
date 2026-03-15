@@ -8,7 +8,7 @@ namespace TurboHttp.Streams;
 
 public class Http30Engine : IHttpProtocolEngine
 {
-    public BidiFlow<HttpRequestMessage, ITransportItem, IDataItem, HttpResponseMessage,
+    public BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage,
         NotUsed> CreateFlow()
     {
         // TODO: HTTP/3 not yet implemented. This stub provides a valid BidiFlow
@@ -16,9 +16,9 @@ public class Http30Engine : IHttpProtocolEngine
         // 4-port partition graph to materialize without errors.
         return BidiFlow.FromFlows(
             Flow.Create<HttpRequestMessage>()
-                .Select(ITransportItem (_) =>
+                .Select(IOutputItem (_) =>
                     throw new NotSupportedException("HTTP/3 is not yet implemented.")),
-            Flow.Create<IDataItem>()
+            Flow.Create<IInputItem>()
                 .Select(HttpResponseMessage (_) =>
                     throw new NotSupportedException("HTTP/3 is not yet implemented.")));
     }

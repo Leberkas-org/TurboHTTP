@@ -1,5 +1,4 @@
-using System;
-using System.Threading.Tasks;
+using System.Net;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -18,9 +17,9 @@ public sealed class PoolRouterActorTests : TestKit
     /// A test-only ITransportItem that carries an explicit HostKey,
     /// exercising the non-ConnectItem routing branch in PoolRouterActor.RouteItem.
     /// </summary>
-    private sealed record KeyedItem(HostKey ExplicitKey) : ITransportItem
+    private sealed record KeyedItem(HostKey ExplicitKey) : IOutputItem
     {
-        HostKey ITransportItem.Key => ExplicitKey;
+        HostKey IOutputItem.Key => ExplicitKey;
     }
 
     // ── PR-001: GetPoolRefs returns valid SinkRef + SourceRef ─────────
@@ -45,7 +44,7 @@ public sealed class PoolRouterActorTests : TestKit
     {
         var hostProbe = CreateTestProbe();
         var actor = Sys.ActorOf(Props.Create(() =>
-            new PoolRouterActor(null, (opts, cfg) => hostProbe.Ref)));
+            new PoolRouterActor(null, (opts, cfg, key) => hostProbe.Ref)));
 
         var mat = Sys.Materializer();
 
@@ -55,7 +54,7 @@ public sealed class PoolRouterActorTests : TestKit
         await Task.Delay(200); // let SinkRef stream subscription establish
 
         var options = MakeOptions("localhost", 8080);
-        Source.Single<ITransportItem>(new ConnectItem(options))
+        Source.Single<IOutputItem>(new ConnectItem(options))
             .RunWith(refs.Sink.Sink, mat);
 
         var received = hostProbe.ExpectMsg<ConnectItem>(TimeSpan.FromSeconds(5));
@@ -70,7 +69,7 @@ public sealed class PoolRouterActorTests : TestKit
     {
         var hostProbe = CreateTestProbe();
         var actor = Sys.ActorOf(Props.Create(() =>
-            new PoolRouterActor(null, (opts, cfg) => hostProbe.Ref)));
+            new PoolRouterActor(null, (opts, cfg, key) => hostProbe.Ref)));
 
         var mat = Sys.Materializer();
 
@@ -79,7 +78,7 @@ public sealed class PoolRouterActorTests : TestKit
 
         // Use a queue-based Source so we can push two items through the same SinkRef subscription
         var (queue, queueSource) = Source
-            .Queue<ITransportItem>(4, OverflowStrategy.Backpressure)
+            .Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
             .PreMaterialize(mat);
         queueSource.RunWith(refs.Sink.Sink, mat);
 
@@ -91,7 +90,7 @@ public sealed class PoolRouterActorTests : TestKit
         hostProbe.ExpectMsg<ConnectItem>(TimeSpan.FromSeconds(5));
 
         // Push a KeyedItem with the same HostKey — must route to the same hostProbe
-        var key = new HostKey { Schema = "http", Host = "host-a", Port = 80 };
+        var key = new HostKey { Schema = "http", Host = "host-a", Port = 80, HttpVersion = HttpVersion.Unknown };
         await queue.OfferAsync(new KeyedItem(key));
 
         var routed = hostProbe.ExpectMsg<KeyedItem>(TimeSpan.FromSeconds(5));

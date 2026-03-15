@@ -1,6 +1,6 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
@@ -9,53 +9,19 @@ using Akka.Streams.Stage;
 
 namespace TurboHttp.IO.Stages;
 
-public record struct HostKey
-{
-    public static HostKey Default => new() { Host = string.Empty, Port = ushort.MinValue, Schema = string.Empty };
-    public required string Schema { get; init; }
-    public required string Host { get; init; }
-    public required ushort Port { get; init; }
-}
-
-public interface ITransportItem
-{
-    HostKey Key => HostKey.Default;
-}
-
-public interface IDataItem
-{
-    HostKey Key => HostKey.Default;
-    IMemoryOwner<byte> Memory { get; }
-    int Length { get; }
-}
-
-public record ConnectItem(TcpOptions Options) : ITransportItem;
-
-public record DataItem(IMemoryOwner<byte> Memory, int Length, bool IsTls = false) : ITransportItem, IDataItem;
-
-/// <summary>
-/// Pure stream bridge between the Akka.Streams pipeline and the actor-based
-/// connection pool. Obtains a <see cref="PoolRouterActor.PoolRefs"/> from
-/// <paramref name="poolRouter"/> on start, then:
-/// <list type="bullet">
-///   <item>Inlet → <c>ISinkRef&lt;ITransportItem&gt;.Sink</c> (requests to pool)</item>
-///   <item><c>ISourceRef&lt;IDataItem&gt;.Source</c> → Outlet (responses from pool)</item>
-/// </list>
-/// Contains zero references to TCP infrastructure (ClientManager, Channel, etc.).
-/// </summary>
-public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IDataItem>>
+public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
     private IActorRef PoolRouter { get; }
 
-    private readonly Inlet<ITransportItem> _inlet = new("pool.in");
-    private readonly Outlet<IDataItem> _outlet = new("pool.out");
+    private readonly Inlet<IOutputItem> _inlet = new("pool.in");
+    private readonly Outlet<IInputItem> _outlet = new("pool.out");
 
-    public override FlowShape<ITransportItem, IDataItem> Shape { get; }
+    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
     public ConnectionStage(IActorRef poolRouter)
     {
         PoolRouter = poolRouter;
-        Shape = new FlowShape<ITransportItem, IDataItem>(_inlet, _outlet);
+        Shape = new FlowShape<IOutputItem, IInputItem>(_inlet, _outlet);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -64,11 +30,12 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IData
     private sealed class Logic : GraphStageLogic
     {
         private readonly ConnectionStage _stage;
-        private readonly Queue<IDataItem> _pendingReads = new();
+        private readonly Queue<IInputItem> _pendingReads = new();
 
-        private ISourceQueueWithComplete<ITransportItem>? _requestQueue;
-        private Action<IDataItem>? _onResponse;
+        private ChannelWriter<IOutputItem>? _requestWriter;
+        private Action<IInputItem>? _onResponse;
         private Action? _onOfferDone;
+        private HostKey _hostKey;
 
         public Logic(ConnectionStage stage) : base(stage.Shape)
         {
@@ -78,7 +45,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IData
                 onPush: HandlePush,
                 onUpstreamFinish: () =>
                 {
-                    _requestQueue?.Complete();
+                    _requestWriter?.TryComplete();
                     CompleteStage();
                 });
 
@@ -92,7 +59,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IData
                 },
                 onDownstreamFinish: _ =>
                 {
-                    _requestQueue?.Complete();
+                    _requestWriter?.TryComplete();
                     CompleteStage();
                 });
         }
@@ -100,7 +67,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IData
         public override void PreStart()
         {
             // Callbacks created once, reused for every push/offer
-            _onResponse = GetAsyncCallback<IDataItem>(item =>
+            _onResponse = GetAsyncCallback<IInputItem>(item =>
             {
                 if (IsAvailable(_stage._outlet))
                 {
@@ -134,16 +101,17 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IData
             }
 
             var mat = Materializer;
+            var channel = Channel.CreateUnbounded<IOutputItem>();
+            _requestWriter = channel.Writer;
 
-            // Requests: inlet → Source.Queue → sinkRef.Sink
-            var queue = Source.Queue<ITransportItem>(256, OverflowStrategy.Backpressure)
+            // Requests: inlet → ChannelSource.FromReader → sinkRef.Sink
+            ChannelSource.FromReader(channel.Reader)
                 .ToMaterialized(refs.Sink.Sink, Keep.Left)
                 .Run(mat);
-            _requestQueue = queue;
 
             // Responses: sourceRef.Source → GetAsyncCallback → outlet
             refs.Source.Source.RunWith(
-                Sink.ForEach<IDataItem>(item => _onResponse!(item)),
+                Sink.ForEach<DataItem>(item => _onResponse!(item)),
                 mat);
 
             // Ready to receive
@@ -153,19 +121,19 @@ public sealed class ConnectionStage : GraphStage<FlowShape<ITransportItem, IData
         private void HandlePush()
         {
             var item = Grab(_stage._inlet);
-            _ = _requestQueue!.OfferAsync(item).ContinueWith(
-                _ => _onOfferDone!(),
+
+            if (item is DataItem data && data.Key.Equals(HostKey.Default))
+            {
+                item = data with { Key = _hostKey };
+            }
+
+            _ = _requestWriter!.WriteAsync(item).AsTask().ContinueWith(_ => _onOfferDone!(),
                 TaskContinuationOptions.ExecuteSynchronously);
         }
 
         public override void PostStop()
         {
-            _requestQueue?.Complete();
-
-            while (_pendingReads.TryDequeue(out var item))
-            {
-                item.Memory.Dispose();
-            }
+            _requestWriter?.TryComplete();
         }
     }
 }

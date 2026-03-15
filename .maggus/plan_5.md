@@ -33,11 +33,11 @@ What is unclear right now:
 **Description:** As a developer, I want to know exactly which stages are wired in `Engine.cs` and which only exist but are never used.
 
 **Acceptance Criteria:**
-- [ ] `Engine.cs` fully read — all paths (BasicPipeline, ExtendedPipeline, BuildConnectionFlow)
-- [ ] Table created: which stage is wired where? (ConnectionStage, ConnectionPoolStage, ConnectionReuseStage, etc.)
-- [ ] Clear answer: does `Engine.cs` use `ConnectionPoolStage` (Plan 4 Actor Pool)? Yes/No
-- [ ] Clear answer: is `ConnectionReuseStage` actively wired? Yes/No
-- [ ] Result documented in `.maggus/PROGRESS_7.md`
+- [x] `Engine.cs` fully read — all paths (BasicPipeline, ExtendedPipeline, BuildConnectionFlow)
+- [x] Table created: which stage is wired where? (ConnectionStage, ConnectionPoolStage, ConnectionReuseStage, etc.)
+- [x] Clear answer: does `Engine.cs` use `ConnectionPoolStage` (Plan 4 Actor Pool)? Yes/No
+- [x] Clear answer: is `ConnectionReuseStage` actively wired? Yes/No
+- [x] Result documented in `.maggus/PROGRESS_7.md`
 
 ---
 

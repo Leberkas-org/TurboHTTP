@@ -26,12 +26,12 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     ///   2. Request N from Out1 → _pending != null → stage pushes req[0].Message first,
     ///      then pulls In for each subsequent element.
     /// </summary>
-    private async Task<(IReadOnlyList<ITransportItem> options, IReadOnlyList<HttpRequestMessage> messages)>
+    private async Task<(IReadOnlyList<IOutputItem> options, IReadOnlyList<HttpRequestMessage> messages)>
         RunStageAsync(IEnumerable<RequestItem> requests)
     {
         var requestList = requests.ToList();
 
-        var probe0 = this.CreateManualSubscriberProbe<ITransportItem>();
+        var probe0 = this.CreateManualSubscriberProbe<IOutputItem>();
         var probe1 = this.CreateManualSubscriberProbe<HttpRequestMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -52,7 +52,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
         var sub0 = await probe0.ExpectSubscriptionAsync(CancellationToken.None);
         var sub1 = await probe1.ExpectSubscriptionAsync(CancellationToken.None);
 
-        var options = new List<ITransportItem>();
+        var options = new List<IOutputItem>();
         var messages = new List<HttpRequestMessage>();
 
         if (requestList.Count > 0)
@@ -144,7 +144,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
             .Select(i => MakeRequest($"http://example.com/{i}"))
             .ToArray();
 
-        var probe0 = this.CreateManualSubscriberProbe<ITransportItem>();
+        var probe0 = this.CreateManualSubscriberProbe<IOutputItem>();
         var probe1 = this.CreateManualSubscriberProbe<HttpRequestMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>

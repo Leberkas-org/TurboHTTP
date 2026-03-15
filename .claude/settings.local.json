@@ -16,7 +16,13 @@
       "Bash(read f:*)",
       "Bash(for i:*)",
       "Bash(cd:*)",
-      "Bash(while pgrep:*)"
+      "Bash(while pgrep:*)",
+      "Bash(powershell -Command \"Add-Type -Path '/c/Users/st0o0/.nuget/packages/akka.streams/1.5.60/lib/net6.0/Akka.Streams.dll'; [Akka.Streams.Stage.GraphStageLogic].GetNestedTypes\\([System.Reflection.BindingFlags]::Public -bor [System.Reflection.BindingFlags]::NonPublic\\) | ForEach-Object { \\\\$_.Name }\" 2>/dev/null)",
+      "Bash(dotnet add:*)",
+      "Read(//tmp/**)",
+      "Bash(sed -i 's/net6.0/net10.0/' subflow_inspect.csproj)",
+      "Bash(dotnet run:*)",
+      "Bash(sed:*)"
     ]
   },
   "enabledPlugins": {}

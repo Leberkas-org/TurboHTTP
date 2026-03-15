@@ -20,15 +20,15 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // Helpers
     // -----------------------------------------------------------------------
 
-    private static Flow<ITransportItem, IDataItem, NotUsed> Http11Flow(
+    private static Flow<IOutputItem, IInputItem, NotUsed> Http11Flow(
         Func<byte[]> responseFactory)
         => Flow.FromGraph(new EngineFakeConnectionStage(responseFactory));
 
-    private static Flow<ITransportItem, IDataItem, NotUsed> Http10Flow(
+    private static Flow<IOutputItem, IInputItem, NotUsed> Http10Flow(
         Func<byte[]> responseFactory)
         => Flow.FromGraph(new EngineFakeConnectionStage(responseFactory));
 
-    private static Flow<ITransportItem, IDataItem, NotUsed> NoOpH2Flow()
+    private static Flow<IOutputItem, IInputItem, NotUsed> NoOpH2Flow()
         => Flow.FromGraph(new H2EngineFakeConnectionStage());
 
     private static byte[] Ok11Response() =>

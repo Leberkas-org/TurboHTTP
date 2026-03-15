@@ -6,7 +6,8 @@ namespace TurboHttp.Hosting;
 
 public static class TurboClientServiceCollectionExtensions
 {
-    public static IServiceCollection AddTurboClient(this IServiceCollection services, Action<TurboClientOptions> configure)
+    public static IServiceCollection AddTurboClient(this IServiceCollection services,
+        Action<TurboClientOptions> configure)
     {
         services.Configure(configure);
         services.AddSingleton<ITurboHttpClientFactory, TurboHttpClientFactory>();

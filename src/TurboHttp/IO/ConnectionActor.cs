@@ -13,8 +13,6 @@ namespace TurboHttp.IO;
 
 public sealed class ConnectionActor : ReceiveActor
 {
-    public sealed record StreamRefsReady(ISinkRef<IDataItem> Sink, ISourceRef<IDataItem> Source);
-
     private readonly TcpOptions _options;
     private readonly IActorRef _clientManager;
 
@@ -27,7 +25,7 @@ public sealed class ConnectionActor : ReceiveActor
 
     private IActorRef? _runner;
 
-    private ISourceQueueWithComplete<IDataItem>? _responseQueue;
+    private ISourceQueueWithComplete<DataItem>? _responseQueue;
 
     public ConnectionActor(TcpOptions options, IActorRef clientManager)
     {
@@ -63,20 +61,20 @@ public sealed class ConnectionActor : ReceiveActor
 
         // ---------- RESPONSE STREAM (TCP inbound → SourceRef) ----------
         var responseMat =
-            Source.Queue<IDataItem>(1024, OverflowStrategy.Backpressure)
+            Source.Queue<DataItem>(1024, OverflowStrategy.Backpressure)
                 .PreMaterialize(mat);
 
         _responseQueue = responseMat.Item1;
 
         var sourceRef = await responseMat.Item2
-            .RunWith(StreamRefs.SourceRef<IDataItem>(), mat);
+            .RunWith(StreamRefs.SourceRef<DataItem>(), mat);
 
         // ---------- REQUEST STREAM (SinkRef → TCP outbound) ----------
-        var requestSink = Sink.ForEachAsync<IDataItem>(1, async x =>
+        var requestSink = Sink.ForEachAsync<DataItem>(1, async x =>
             await _outbound!.WriteAsync((x.Memory, x.Length)));
 
         var sinkRef = await requestSink
-            .RunWith(StreamRefs.SinkRef<IDataItem>(), mat);
+            .RunWith(StreamRefs.SinkRef<DataItem>(), mat);
 
         Context.Parent.Tell(new HostPoolActor.RegisterConnectionRefs(Self, sinkRef, sourceRef));
 

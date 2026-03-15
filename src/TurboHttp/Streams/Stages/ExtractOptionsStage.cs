@@ -10,16 +10,16 @@ public record HttpRequestOptions();
 
 public record RequestItem(HttpRequestOptions Options, HttpRequestMessage RequestMessage);
 
-internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<RequestItem, ITransportItem, HttpRequestMessage>>
+internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<RequestItem, IOutputItem, HttpRequestMessage>>
 {
-    private readonly Outlet<ITransportItem> _outletOptions = new("");
+    private readonly Outlet<IOutputItem> _outletOptions = new("");
     private readonly Outlet<HttpRequestMessage> _outletRequest = new("");
     private readonly Inlet<RequestItem> _inletRequest = new("");
-    public override FanOutShape<RequestItem, ITransportItem, HttpRequestMessage> Shape { get; }
+    public override FanOutShape<RequestItem, IOutputItem, HttpRequestMessage> Shape { get; }
 
     public ExtractOptionsStage()
     {
-        Shape = new FanOutShape<RequestItem, ITransportItem, HttpRequestMessage>(_inletRequest, _outletOptions,
+        Shape = new FanOutShape<RequestItem, IOutputItem, HttpRequestMessage>(_inletRequest, _outletOptions,
             _outletRequest);
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using Akka;
@@ -10,13 +11,14 @@ using Akka.Streams.Dsl;
 using Servus.Akka;
 using TurboHttp.IO.Stages;
 
-
 namespace TurboHttp.IO;
 
 public sealed class HostPoolActor : ReceiveActor
 {
+    public record HostPoolConfig(TcpOptions Options, PoolConfig Config, HostKey Key);
+
     // ── Private async-handshake messages ─────────────────────────────
-    private sealed record MergeHubReady(ISourceRef<IDataItem> SourceRef);
+    private sealed record MergeHubReady(ISourceRef<DataItem> SourceRef);
 
     private sealed record MergeHubFailed(Exception Error);
 
@@ -27,10 +29,10 @@ public sealed class HostPoolActor : ReceiveActor
 
     public sealed record RegisterConnectionRefs(
         IActorRef Connection,
-        ISinkRef<IDataItem> Sink,
-        ISourceRef<IDataItem> Source);
+        ISinkRef<DataItem> Sink,
+        ISourceRef<DataItem> Source);
 
-    public sealed record HostStreamRefsReady(HostKey Key, ISourceRef<IDataItem> Source);
+    public sealed record HostStreamRefsReady(HostKey Key, ISourceRef<DataItem> Source);
 
     public sealed record IdleCheck;
 
@@ -41,39 +43,42 @@ public sealed class HostPoolActor : ReceiveActor
     public sealed record MarkConnectionNoReuse(IActorRef Connection);
 
     // ── Fields ────────────────────────────────────────────────────────
+    private readonly HostKey _key;
     private readonly TcpOptions _options;
     private readonly PoolConfig _config;
+    private ICancelable? _scheduler;
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
 
     private readonly List<ConnectionState> _connections = [];
 
     /// <summary>Per-connection outbound request queues, keyed by ConnectionActor ref.</summary>
-    private readonly Dictionary<IActorRef, ISourceQueueWithComplete<IDataItem>> _connectionQueues = new();
+    private readonly Dictionary<IActorRef, ISourceQueueWithComplete<DataItem>> _connectionQueues = new();
 
     /// <summary>Requests waiting for a connection with an established queue.</summary>
     private readonly Queue<DataItem> _pending = new();
 
     private IMaterializer? _mat;
-    private Sink<IDataItem, NotUsed>? _mergeHubSink;
+    private Sink<DataItem, NotUsed>? _mergeHubSink;
 
-    public HostPoolActor(TcpOptions options, PoolConfig config)
+    public HostPoolActor(HostPoolConfig config)
     {
-        _options = options;
-        _config = config;
+        _options = config.Options;
+        _config = config.Config;
+        _key = config.Key;
 
         Receive<ConnectionIdle>(HandleIdle);
         Receive<ConnectionFailed>(HandleFailure);
         Receive<IdleCheck>(_ => EvictIdleConnections());
         Receive<Reconnect>(HandleReconnect);
-        Receive<StreamComplete>(HandleStreamComplete);
         Receive<MarkConnectionNoReuse>(HandleMarkNoReuse);
         Receive<RegisterConnectionRefs>(HandleRegisterConnectionRefs);
         Receive<DataItem>(HandleDataItem);
+        Receive<ISignalItem>(HandleSignalItem);
 
         Receive<MergeHubReady>(msg =>
         {
-            var key = new HostKey { Schema = "http", Host = _options.Host, Port = (ushort)_options.Port };
+            var key = HostKey.Default; // TODO: Over CTR
             Context.Parent.Tell(new HostStreamRefsReady(key, msg.SourceRef));
         });
 
@@ -82,7 +87,7 @@ public sealed class HostPoolActor : ReceiveActor
 
     protected override void PreStart()
     {
-        Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+        _scheduler = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
             _config.IdleCheckInterval,
             _config.IdleCheckInterval,
             Self,
@@ -91,14 +96,19 @@ public sealed class HostPoolActor : ReceiveActor
 
         _mat = Context.System.Materializer();
 
-        var (sink, source) = MergeHub.Source<IDataItem>().PreMaterialize(_mat);
+        var (sink, source) = MergeHub.Source<DataItem>().PreMaterialize(_mat);
         _mergeHubSink = sink;
 
-        source.RunWith(StreamRefs.SourceRef<IDataItem>(), _mat)
+        source.RunWith(StreamRefs.SourceRef<DataItem>(), _mat)
             .PipeTo(
                 Self,
                 success: sourceRef => new MergeHubReady(sourceRef),
                 failure: ex => new MergeHubFailed(ex));
+    }
+
+    protected override void PostStop()
+    {
+        _scheduler?.Cancel();
     }
 
     // ── Request routing ───────────────────────────────────────────────
@@ -106,20 +116,25 @@ public sealed class HostPoolActor : ReceiveActor
     private void HandleDataItem(DataItem item)
     {
         var conn = SelectConnectionWithQueue();
-
         if (conn != null)
         {
-            conn.MarkBusy();
             _ = _connectionQueues[conn.Actor].OfferAsync(item);
-        }
-        else if (_connections.Count < _config.MaxConnectionsPerHost)
-        {
-            SpawnConnection();
-            _pending.Enqueue(item);
         }
         else
         {
             _pending.Enqueue(item);
+            if (_connections.Count == 0)
+            {
+                SpawnConnection();
+            }
+        }
+    }
+
+    private void HandleSignalItem(ISignalItem _)
+    {
+        if (_connections.Count == 0)
+        {
+            SpawnConnection();
         }
     }
 
@@ -127,7 +142,7 @@ public sealed class HostPoolActor : ReceiveActor
     {
         // Create a per-connection request queue (buffer 128)
         var (queue, queueSource) =
-            Source.Queue<IDataItem>(128, OverflowStrategy.Backpressure)
+            Source.Queue<DataItem>(128, OverflowStrategy.Backpressure)
                 .PreMaterialize(_mat!);
 
         // Wire queue → SinkRef → ConnectionActor's TCP outbound
@@ -138,23 +153,15 @@ public sealed class HostPoolActor : ReceiveActor
 
         _connectionQueues[msg.Connection] = queue;
 
-        // Drain any pending requests now that a queue is available
-        DrainPending();
+        // Drain any pending items that were queued while waiting for a connection
+        DrainPending(queue);
     }
 
-    private void DrainPending()
+    private void DrainPending(ISourceQueueWithComplete<DataItem> queue)
     {
-        while (_pending.Count > 0)
+        while (_pending.TryDequeue(out var item))
         {
-            var conn = SelectConnectionWithQueue();
-
-            if (conn == null)
-            {
-                break;
-            }
-
-            conn.MarkBusy();
-            _ = _connectionQueues[conn.Actor].OfferAsync(_pending.Dequeue());
+            _ = queue.OfferAsync(item);
         }
     }
 
@@ -173,7 +180,6 @@ public sealed class HostPoolActor : ReceiveActor
             return _connections.FirstOrDefault(x =>
                 x is { Active: true } &&
                 x.HttpVersion == HttpVersion.Version20 &&
-                x.HasAvailableStreamCapacity &&
                 _connectionQueues.ContainsKey(x.Actor));
         }
 
@@ -212,7 +218,6 @@ public sealed class HostPoolActor : ReceiveActor
     {
         var conn = Find(msg.Connection);
         conn?.MarkIdle();
-        DrainPending();
     }
 
     private void HandleFailure(ConnectionFailed msg)
@@ -274,12 +279,6 @@ public sealed class HostPoolActor : ReceiveActor
                 _connections.Remove(conn);
             }
         }
-    }
-
-    private void HandleStreamComplete(StreamComplete msg)
-    {
-        var conn = Find(msg.Connection);
-        conn?.ReleaseStream();
     }
 
     private void HandleMarkNoReuse(MarkConnectionNoReuse msg)

@@ -12,21 +12,21 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.StreamTests;
 
-public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<ITransportItem, IDataItem>>
+public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
     private readonly Func<byte[]> _responseFactory;
 
-    public Channel<IDataItem> OutboundChannel { get; } = Channel.CreateUnbounded<IDataItem>();
+    public Channel<DataItem> OutboundChannel { get; } = Channel.CreateUnbounded<DataItem>();
 
-    public Inlet<ITransportItem> In { get; } = new("fake-tcp.in");
-    public Outlet<IDataItem> Out { get; } = new("fake-tcp.out");
+    public Inlet<IOutputItem> In { get; } = new("fake-tcp.in");
+    public Outlet<IInputItem> Out { get; } = new("fake-tcp.out");
 
-    public override FlowShape<ITransportItem, IDataItem> Shape { get; }
+    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
     public EngineFakeConnectionStage(Func<byte[]> responseFactory)
     {
         _responseFactory = responseFactory;
-        Shape = new FlowShape<ITransportItem, IDataItem>(In, Out);
+        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -45,7 +45,7 @@ public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<ITransportI
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is not DataItem(var owner, var length, _)) return;
+                    if (item is not DataItem(var owner, var length)) return;
 
                     var copy = new byte[length];
                     owner.Memory.Span[..length].CopyTo(copy);
@@ -158,26 +158,26 @@ public sealed class H2FakeConnectionStage : GraphStage<FlowShape<(IMemoryOwner<b
 }
 
 /// <summary>
-/// H2-aware fake TCP stage that accepts <see cref="ITransportItem"/> input (as produced by Http20Engine).
+/// H2-aware fake TCP stage that accepts <see cref="IOutputItem"/> input (as produced by Http20Engine).
 /// Inbound (In): captures outbound DataItem bytes for inspection, always pulls more.
 /// Outbound (Out): serves pre-queued server frames when downstream pulls.
 /// </summary>
-public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<ITransportItem, IDataItem>>
+public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
     private readonly IReadOnlyList<byte[]> _serverFrames;
 
     public Channel<(IMemoryOwner<byte>, int)> OutboundChannel { get; } =
         Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
 
-    public Inlet<ITransportItem> In { get; } = new("h2-engine-fake.in");
-    public Outlet<IDataItem> Out { get; } = new("h2-engine-fake.out");
+    public Inlet<IOutputItem> In { get; } = new("h2-engine-fake.in");
+    public Outlet<IInputItem> Out { get; } = new("h2-engine-fake.out");
 
-    public override FlowShape<ITransportItem, IDataItem> Shape { get; }
+    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
     public H2EngineFakeConnectionStage(params byte[][] serverFrames)
     {
         _serverFrames = serverFrames;
-        Shape = new FlowShape<ITransportItem, IDataItem>(In, Out);
+        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -195,7 +195,7 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<ITranspor
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is DataItem(var owner, var length, _))
+                    if (item is DataItem(var owner, var length))
                     {
                         var copy = new byte[length];
                         owner.Memory.Span[..length].CopyTo(copy);
@@ -235,13 +235,13 @@ public abstract class EngineTestBase : TestKit
     }
 
     protected async Task<(HttpResponseMessage Response, string RawRequest)> SendAsync(
-        BidiFlow<HttpRequestMessage, ITransportItem,
-            IDataItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, IOutputItem,
+            IInputItem, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         Func<byte[]> responseFactory)
     {
         var fake = new EngineFakeConnectionStage(responseFactory);
-        var flow = engine.Join(Flow.FromGraph<ITransportItem, IDataItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -261,13 +261,13 @@ public abstract class EngineTestBase : TestKit
     }
 
     protected async Task<(List<HttpResponseMessage> Responses, string RawRequests)> SendManyAsync(
-        BidiFlow<HttpRequestMessage, ITransportItem, IDataItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
         IEnumerable<HttpRequestMessage> requests,
         Func<byte[]> responseFactory,
         int expectedCount)
     {
         var fake = new EngineFakeConnectionStage(responseFactory);
-        var flow = engine.Join(Flow.FromGraph<ITransportItem, IDataItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -351,12 +351,12 @@ public abstract class EngineTestBase : TestKit
     /// Returns the decoded response and all outbound H2 frames.
     /// </summary>
     protected async Task<(HttpResponseMessage Response, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2EngineAsync(
-        BidiFlow<HttpRequestMessage, ITransportItem, IDataItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         params byte[][] serverFrames)
     {
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = engine.Join(Flow.FromGraph<ITransportItem, IDataItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -385,13 +385,13 @@ public abstract class EngineTestBase : TestKit
     /// </summary>
     protected async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
         SendH2EngineAsyncMany(
-            BidiFlow<HttpRequestMessage, ITransportItem, IDataItem, HttpResponseMessage, NotUsed> engine,
+            BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
             IEnumerable<HttpRequestMessage> requests,
             int expectedCount,
             params byte[][] serverFrames)
     {
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = engine.Join(Flow.FromGraph<ITransportItem, IDataItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();

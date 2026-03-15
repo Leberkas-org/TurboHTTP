@@ -10,7 +10,7 @@ namespace TurboHttp.Streams;
 
 public class Http10Engine : IHttpProtocolEngine
 {
-    public BidiFlow<HttpRequestMessage, ITransportItem, IDataItem, HttpResponseMessage, NotUsed> CreateFlow()
+    public BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> CreateFlow()
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
@@ -20,19 +20,20 @@ public class Http10Engine : IHttpProtocolEngine
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
-            var flowOut = b.Add(Flow.Create<(IMemoryOwner<byte>, int), ITransportItem>()
-                .Select(ITransportItem (x) => new DataItem(x.Item1, x.Item2)));
-            var flowIn = b.Add(Flow.Create<IDataItem>().Select(x => (x.Memory, x.Length)));
+            var flowOut = b.Add(Flow.Create<(IMemoryOwner<byte>, int), IOutputItem>()
+                .Select(IOutputItem (x) => new DataItem(x.Item1, x.Item2)));
+            var flowIn = b.Add(Flow.Create<IInputItem>()
+                .Select(x => (((DataItem)x).Memory, ((DataItem)x).Length)));
 
-            b.From(requestBCast).Via(encoder).To(flowOut.Inlet);
-            b.From(requestBCast).To(correlation.In0);
+            b.From(requestBCast.Out(0)).Via(encoder).To(flowOut.Inlet);
+            b.From(requestBCast.Out(1)).To(correlation.In0);
 
             b.From(flowIn.Outlet).Via(decoder).To(correlation.In1);
 
             return new BidiShape<
                 HttpRequestMessage,
-                ITransportItem,
-                IDataItem,
+                IOutputItem,
+                IInputItem,
                 HttpResponseMessage>(
                 requestBCast.In,
                 flowOut.Outlet,

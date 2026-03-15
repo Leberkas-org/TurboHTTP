@@ -11,10 +11,10 @@ using TurboHttp.Protocol.RFC9113;
 namespace TurboHttp.Streams.Stages;
 
 // ── RFC 7540 §3.5 — prepend connection preface to the first outbound bytes ──
-public sealed class PrependPrefaceStage : GraphStage<FlowShape<ITransportItem, ITransportItem>>
+public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOutputItem>>
 {
-    private readonly Inlet<ITransportItem> _inlet = new("preface.in");
-    private readonly Outlet<ITransportItem> _outlet = new("preface.out");
+    private readonly Inlet<IOutputItem> _inlet = new("preface.in");
+    private readonly Outlet<IOutputItem> _outlet = new("preface.out");
 
     private readonly int _initialWindowSize;
 
@@ -23,7 +23,7 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<ITransportItem, I
         _initialWindowSize = initialWindowSize;
     }
 
-    public override FlowShape<ITransportItem, ITransportItem> Shape
+    public override FlowShape<IOutputItem, IOutputItem> Shape
         => new(_inlet, _outlet);
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)

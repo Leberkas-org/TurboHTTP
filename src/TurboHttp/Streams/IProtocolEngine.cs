@@ -9,8 +9,8 @@ public interface IHttpProtocolEngine
 {
     BidiFlow<
         HttpRequestMessage,
-        ITransportItem,
-        IDataItem, 
+        IOutputItem,
+        IInputItem, 
         HttpResponseMessage,
         NotUsed> CreateFlow();
 }

@@ -10,7 +10,7 @@ namespace TurboHttp.StreamTests.Streams;
 
 public sealed class EngineVersionRoutingTests : EngineTestBase
 {
-    private static Flow<ITransportItem, IDataItem, NotUsed> NoOpTransportFlow()
+    private static Flow<IOutputItem, IInputItem, NotUsed> NoOpTransportFlow()
     {
         return Flow.FromGraph(new H2EngineFakeConnectionStage());
     }

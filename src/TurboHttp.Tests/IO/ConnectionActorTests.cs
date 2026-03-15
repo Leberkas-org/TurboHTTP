@@ -230,7 +230,7 @@ public sealed class ConnectionActorTests : TestKit
 
         // Subscribe to the SourceRef before stopping
         var mat = Sys.Materializer();
-        var itemsTask = refs.Source.Source.RunWith(Sink.Seq<IDataItem>(), mat);
+        var itemsTask = refs.Source.Source.RunWith(Sink.Seq<DataItem>(), mat);
 
         // Stop the actor — PostStop calls _responseQueue.Complete()
         Sys.Stop(connectionActor);
@@ -286,7 +286,7 @@ public sealed class ConnectionActorTests : TestKit
 
         // Subscribe to the SourceRef
         var mat = Sys.Materializer();
-        var resultChannel = Channel.CreateUnbounded<IDataItem>();
+        var resultChannel = Channel.CreateUnbounded<DataItem>();
         _ = refs.Source.Source.RunForeach(item => resultChannel.Writer.TryWrite(item), mat);
 
         // Give the subscription a moment to establish
@@ -326,7 +326,7 @@ public sealed class ConnectionActorTests : TestKit
         owner.Memory.Span[0] = 0xDE;
         var item = new DataItem(owner, 4);
 
-        Source.Single<IDataItem>(item)
+        Source.Single<DataItem>(item)
             .RunWith(refs.Sink.Sink, mat);
 
         // The ConnectionActor's ForEachAsync writes each item to the TCP outbound channel
