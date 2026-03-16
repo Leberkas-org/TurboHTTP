@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Net;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
@@ -15,10 +14,10 @@ public sealed class PoolRouterActorTests : TestKit
     private static HostKey MakeKey(TcpOptions options)
         => new ConnectItem(options, HttpVersion.Version11).Key;
 
-    // ── PR-001: EnsureHost creates a HostPoolActor and routes DataItems to it ──
+    // ── PR-001: EnsureHost creates a HostPoolActor ──────────────────────────
 
-    [Fact(DisplayName = "PR-001: EnsureHost creates a HostPoolActor and routes DataItems to it")]
-    public void PR_001_EnsureHost_CreatesHostPoolActorAndRoutesDataItem()
+    [Fact(DisplayName = "PR-001: EnsureHost creates a HostPoolActor and forwards the message")]
+    public void PR_001_EnsureHost_CreatesHostPoolActor()
     {
         var hostProbe = CreateTestProbe();
         var router = Sys.ActorOf(Props.Create(() =>
@@ -29,13 +28,8 @@ public sealed class PoolRouterActorTests : TestKit
 
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
 
-        // EnsureHost is now forwarded to the host actor (for ConnectionHandle replies)
+        // EnsureHost is forwarded to the host actor (for ConnectionHandle replies)
         hostProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
-
-        var owner = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(key, owner, 4));
-
-        hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
     }
 
     // ── PR-002: Same key reuses the existing HostPoolActor ────────────────────
@@ -58,18 +52,9 @@ public sealed class PoolRouterActorTests : TestKit
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
 
-        // EnsureHost is now forwarded to the host actor (for ConnectionHandle replies)
+        // Both EnsureHost messages forwarded to the same host probe
         hostProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
         hostProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
-
-        // Both DataItems should reach the same probe
-        var owner1 = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(key, owner1, 4));
-        hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
-
-        var owner2 = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(key, owner2, 4));
-        hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
         Assert.Equal(1, factoryCallCount);
     }
@@ -96,32 +81,10 @@ public sealed class PoolRouterActorTests : TestKit
         router.Tell(new PoolRouterActor.EnsureHost(keyA, optionsA));
         router.Tell(new PoolRouterActor.EnsureHost(keyB, optionsB));
 
-        // EnsureHost is now forwarded to the host actor (for ConnectionHandle replies)
+        // Each EnsureHost forwarded to its respective host probe
         probeA.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
         probeB.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
 
-        var ownerA = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(keyA, ownerA, 4));
-        probeA.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
-
-        var ownerB = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(keyB, ownerB, 4));
-        probeB.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
-
         Assert.Equal(2, callCount);
-    }
-
-    // ── PR-004: GetGlobalRefs returns initialized stream handles ──────────────
-
-    [Fact(DisplayName = "PR-004: GetGlobalRefs returns non-null RequestQueue and ResponseSource")]
-    public void PR_004_GetGlobalRefs_ReturnsValidRefs()
-    {
-        var router = Sys.ActorOf(Props.Create(() => new PoolRouterActor()));
-
-        router.Tell(new PoolRouterActor.GetGlobalRefs(), TestActor);
-
-        var refs = ExpectMsg<PoolRouterActor.GlobalRefs>(TimeSpan.FromSeconds(5));
-        Assert.NotNull(refs.RequestQueue);
-        Assert.NotNull(refs.ResponseSource);
     }
 }

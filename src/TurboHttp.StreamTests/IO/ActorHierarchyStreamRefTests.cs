@@ -32,10 +32,6 @@ public sealed class ActorHierarchyStreamRefTests : StreamTestBase
         var connectItem = new ConnectItem(options, HttpVersion.Version11);
         var key = connectItem.Key;
 
-        // GetGlobalRefs verifies the router is fully initialized after PreStart.
-        router.Tell(new PoolRouterActor.GetGlobalRefs(), TestActor);
-        await ExpectMsgAsync<PoolRouterActor.GlobalRefs>(TimeSpan.FromSeconds(5));
-
         // EnsureHost — PoolRouterActor creates a HostPoolActor which eagerly
         // spawns a ConnectionActor in PreStart(), triggering CreateTcpRunner.
         router.Tell(new PoolRouterActor.EnsureHost(key, options));

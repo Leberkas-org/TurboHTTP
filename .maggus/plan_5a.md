@@ -215,15 +215,15 @@ TASK-5A-013 (Update CLAUDE.md)
 **Size:** S
 
 **Acceptance Criteria:**
-- [ ] `_globalRequestQueue` (Source.Queue) removed from `PoolRouterActor`
-- [ ] `HandleDataItem()` method removed
-- [ ] `_globalResponseMerge` (MergeHub) removed
-- [ ] `GlobalRefs` message and handler removed
-- [ ] `RegisterHostResponseSource` handler simplified or removed
-- [ ] `PoolRouterActor` only handles: `EnsureHost` (lifecycle), `GetStatus` (diagnostics)
-- [ ] Existing lifecycle tests (`EnsureHost` creates `HostPoolActor`) remain green
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests pass
+- [x] `_globalRequestQueue` (Source.Queue) removed from `PoolRouterActor`
+- [x] `HandleDataItem()` method removed
+- [x] `_globalResponseMerge` (MergeHub) removed
+- [x] `GlobalRefs` message and handler removed
+- [x] `RegisterHostResponseSource` handler simplified or removed
+- [x] `PoolRouterActor` only handles: `EnsureHost` (lifecycle), `GetStatus` (diagnostics)
+- [x] Existing lifecycle tests (`EnsureHost` creates `HostPoolActor`) remain green
+- [x] `dotnet build ./src/TurboHttp.sln` — 0 errors
+- [x] `dotnet test ./src/TurboHttp.sln` — all tests pass
 
 **Key Files:**
 - `src/TurboHttp/IO/PoolRouterActor.cs`
