@@ -111,9 +111,9 @@ What is unclear right now:
 **Description:** As a developer, I want a prioritised list of all missing features for a production-ready client — based on the audit results and the architecture decision.
 
 **Acceptance Criteria:**
-- [ ] Gap list created in `.maggus/GAP_LIST.md`
-- [ ] Each gap has: title, priority (Critical/High/Medium/Low), estimated complexity (S/M/L), dependencies
-- [ ] At minimum, the following areas checked:
+- [x] Gap list created in `.maggus/GAP_LIST.md`
+- [x] Each gap has: title, priority (Critical/High/Medium/Low), estimated complexity (S/M/L), dependencies
+- [x] At minimum, the following areas checked:
   - Connection Reuse / Keep-Alive (critical per user input)
   - HTTP/2 Multiplexing over a shared pool
   - Error tolerance / Auto-Reconnect
@@ -123,7 +123,7 @@ What is unclear right now:
   - Missing integration tests for extended pipeline (Cookies + Cache + Retry + Redirect together)
   - HTTPS / TLS fully working?
   - Plan 5a/5b tasks still marked OPEN
-- [ ] List sorted by priority
+- [x] List sorted by priority
 
 ---
 
