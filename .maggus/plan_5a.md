@@ -191,15 +191,15 @@ TASK-5A-013 (Update CLAUDE.md)
 - `GetAsyncCallback` bridges the async Channel read into the GraphStage event loop
 
 **Acceptance Criteria:**
-- [ ] `ConnectionStage` no longer asks for `GlobalRefs` on `PreStart`
-- [ ] On `ConnectItem`: sends `EnsureHost`, awaits `ConnectionHandle` via `GetAsyncCallback`
-- [ ] On `DataItem` (outbound): writes directly to `ConnectionHandle.OutboundWriter`
-- [ ] Inbound: reads from `ConnectionHandle.InboundReader` via async pump with `GetAsyncCallback`
-- [ ] Old `GlobalRefs` / `_globalRequestQueue` / response subscription code removed
-- [ ] Existing `ConnectionStage` tests updated for new protocol
-- [ ] New stream test: verify end-to-end byte flow through `ConnectionStage` with stubbed channels
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests pass
+- [x] `ConnectionStage` no longer asks for `GlobalRefs` on `PreStart`
+- [x] On `ConnectItem`: sends `EnsureHost`, awaits `ConnectionHandle` via `GetAsyncCallback`
+- [x] On `DataItem` (outbound): writes directly to `ConnectionHandle.OutboundWriter`
+- [x] Inbound: reads from `ConnectionHandle.InboundReader` via async pump with `GetAsyncCallback`
+- [x] Old `GlobalRefs` / `_globalRequestQueue` / response subscription code removed
+- [x] Existing `ConnectionStage` tests updated for new protocol
+- [x] New stream test: verify end-to-end byte flow through `ConnectionStage` with stubbed channels
+- [x] `dotnet build ./src/TurboHttp.sln` — 0 errors
+- [x] `dotnet test ./src/TurboHttp.sln` — all tests pass
 
 **Key Files:**
 - `src/TurboHttp/IO/Stages/ConnectionStage.cs` — full rewrite of data flow
