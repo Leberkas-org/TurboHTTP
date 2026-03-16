@@ -33,8 +33,8 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
         //
         // Observable: both responses are correct — stream 3 data is not contaminated
         // by stream 1's buffer state (which was freed).
-        var headerBlock1 = _hpack.Encode(new[] { (":status", "200") });
-        var headerBlock3 = _hpack.Encode(new[] { (":status", "201") });
+        var headerBlock1 = _hpack.Encode([(":status", "200")]);
+        var headerBlock3 = _hpack.Encode([(":status", "201")]);
 
         var frames = new Http2Frame[]
         {
@@ -57,8 +57,8 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
         // Verify that after a DATA+END_STREAM response is emitted, state.Dispose() is called.
         // Stream 3 starts AFTER stream 1 is complete; if stream 1's pooled buffers corrupt
         // the pool and stream 3 gets wrong memory, the body comparison will fail.
-        var headerBlock1 = _hpack.Encode(new[] { (":status", "200") });
-        var headerBlock3 = _hpack.Encode(new[] { (":status", "200") });
+        var headerBlock1 = _hpack.Encode([(":status", "200")]);
+        var headerBlock3 = _hpack.Encode([(":status", "200")]);
         var body1 = new byte[64];
         var body3 = new byte[64];
         for (var i = 0; i < 64; i++)
@@ -100,7 +100,7 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
         //
         // If the Rent→Copy→Dispose cycle is broken (e.g. old data not copied), the final
         // body will be wrong or an exception will be thrown.
-        var headerBlock = _hpack.Encode(new[] { (":status", "200") });
+        var headerBlock = _hpack.Encode([(":status", "200")]);
         var chunk1 = MakeChunk(10, fillByte: 0x01);
         var chunk2 = MakeChunk(100, fillByte: 0x02);
         var chunk3 = MakeChunk(500, fillByte: 0x03);
@@ -132,7 +132,7 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
         // Total body: 16 KB.  Each growth must preserve all previously accumulated data.
         const int chunkSize = 2048;
         const int numChunks = 8;
-        var headerBlock = _hpack.Encode(new[] { (":status", "200") });
+        var headerBlock = _hpack.Encode([(":status", "200")]);
 
         // Build frames: HEADERS + 7 non-terminal DATA + 1 terminal DATA
         var frameList = new List<Http2Frame>
@@ -308,8 +308,8 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
         var encoder1 = new HpackEncoder(useHuffman: false);
         var encoder2 = new HpackEncoder(useHuffman: false);
 
-        var headerBlock1 = encoder1.Encode(new[] { (":status", "200") });
-        var headerBlock2 = encoder2.Encode(new[] { (":status", "404") });
+        var headerBlock1 = encoder1.Encode([(":status", "200")]);
+        var headerBlock2 = encoder2.Encode([(":status", "404")]);
 
         var frames = new Http2Frame[]
         {
@@ -336,8 +336,8 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
         var encoder1 = new HpackEncoder(useHuffman: false);
         var encoder2 = new HpackEncoder(useHuffman: false);
 
-        var headerBlock1 = encoder1.Encode(new[] { (":status", "200") });
-        var headerBlock2 = encoder2.Encode(new[] { (":status", "201") });
+        var headerBlock1 = encoder1.Encode([(":status", "200")]);
+        var headerBlock2 = encoder2.Encode([(":status", "201")]);
         var body1 = "first-response"u8.ToArray();
         var body2 = "second-response"u8.ToArray();
 
@@ -387,7 +387,7 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
             // Use a fresh encoder per cycle to avoid cross-cycle HPACK contamination.
             // All used values (:status 2xx/4xx/5xx) are in the static table.
             var encoder = new HpackEncoder(useHuffman: false);
-            var block = encoder.Encode(new[] { (":status", status) });
+            var block = encoder.Encode([(":status", status)]);
             frameList.Add(new HeadersFrame(streamId: 1, headerBlock: block, endStream: true, endHeaders: true));
         }
 

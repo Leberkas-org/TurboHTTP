@@ -7,18 +7,16 @@ namespace TurboHttp.IO;
 
 internal static class TcpOptionsFactory
 {
-    internal static bool IsTls(this HostKey value)
+    internal static bool IsTls(this Uri value)
     {
-        return string.Equals(value.Schema, "https", StringComparison.OrdinalIgnoreCase)
-               || string.Equals(value.Schema, "wss", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(value.Scheme, "https", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(value.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
     }
 
     internal static TcpOptions Build(Uri requestUri, TurboClientOptions clientOptions)
     {
         var host = requestUri.Host;
-        var scheme = requestUri.Scheme;
-        var isTls = string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(scheme, "wss", StringComparison.OrdinalIgnoreCase);
+        var isTls = requestUri.IsTls();
         int port;
         if (requestUri.Port is not -1)
         {

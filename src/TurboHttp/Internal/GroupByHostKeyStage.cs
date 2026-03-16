@@ -8,12 +8,12 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using TurboHttp.IO.Stages;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Internal;
 
-public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, NotUsed>>>
+internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, NotUsed>>>
 {
-    public Inlet<T> In { get; } = new("GroupByHostKey.In");
-    public Outlet<Source<T, NotUsed>> Out { get; } = new("GroupByHostKey.Out");
+    private readonly Inlet<T> _inlet = new("groupby.hostkey.in");
+    private readonly Outlet<Source<T, NotUsed>> _outlet = new("groupby.hostkey.in");
     public override FlowShape<T, Source<T, NotUsed>> Shape { get; }
 
     private readonly Func<T, HostKey> _keyFor;
@@ -23,7 +23,7 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
     {
         _keyFor = keyFor ?? throw new ArgumentNullException(nameof(keyFor));
         _maxSubstreams = maxSubstreams;
-        Shape = new FlowShape<T, Source<T, NotUsed>>(In, Out);
+        Shape = new FlowShape<T, Source<T, NotUsed>>(_inlet, _outlet);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -48,7 +48,7 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
         {
             _stage = stage;
 
-            SetHandler(stage.In,
+            SetHandler(stage._inlet,
                 onPush: HandlePush,
                 onUpstreamFinish: () =>
                 {
@@ -56,7 +56,7 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
                     TryFinish();
                 });
 
-            SetHandler(stage.Out, onPull: HandleOutPull);
+            SetHandler(stage._outlet, onPull: HandleOutPull);
         }
 
         public override void PreStart()
@@ -75,9 +75,9 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
                 {
                     TryFinish();
                 }
-                else if (!HasBeenPulled(_stage.In) && !IsClosed(_stage.In))
+                else if (!HasBeenPulled(_stage._inlet) && !IsClosed(_stage._inlet))
                 {
-                    Pull(_stage.In);
+                    Pull(_stage._inlet);
                 }
             });
         }
@@ -102,17 +102,17 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
         {
             if (_pendingSources.TryDequeue(out var bufferedSource))
             {
-                Push(_stage.Out, bufferedSource);
+                Push(_stage._outlet, bufferedSource);
             }
-            else if (!HasBeenPulled(_stage.In))
+            else if (!HasBeenPulled(_stage._inlet))
             {
-                Pull(_stage.In);
+                Pull(_stage._inlet);
             }
         }
 
         private void HandlePush()
         {
-            var item = Grab(_stage.In);
+            var item = Grab(_stage._inlet);
             var key = _stage._keyFor(item);
 
             if (_subflows.TryGetValue(key, out var existing))
@@ -138,9 +138,9 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
                 var state = new SubflowState(matQueue);
                 _subflows[key] = state;
 
-                if (IsAvailable(_stage.Out))
+                if (IsAvailable(_stage._outlet))
                 {
-                    Push(_stage.Out, source);
+                    Push(_stage._outlet, source);
                 }
                 else
                 {
@@ -151,9 +151,9 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
                 DrainPending(key, state);
             }
 
-            if (!HasBeenPulled(_stage.In) && _pendingSources.Count == 0)
+            if (!HasBeenPulled(_stage._inlet) && _pendingSources.Count == 0)
             {
-                Pull(_stage.In);
+                Pull(_stage._inlet);
             }
         }
 
@@ -167,9 +167,9 @@ public sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, N
             var item = state.Pending.Dequeue();
             state.Offering = true;
 
-            _ = state.Queue.OfferAsync(item).ContinueWith(
-                _ => _onOfferComplete!(key),
-                TaskContinuationOptions.ExecuteSynchronously);
+            _ = state.Queue
+                .OfferAsync(item)
+                .ContinueWith(_ => _onOfferComplete!(key), TaskContinuationOptions.ExecuteSynchronously);
         }
     }
 }

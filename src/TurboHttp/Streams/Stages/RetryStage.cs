@@ -20,8 +20,7 @@ namespace TurboHttp.Streams.Stages;
 /// matching the same demand contract used by <see cref="RedirectStage"/>.
 /// </para>
 /// </summary>
-internal sealed class RetryStage
-    : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage>>
+internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage>>
 {
     private readonly RetryPolicy _policy;
 

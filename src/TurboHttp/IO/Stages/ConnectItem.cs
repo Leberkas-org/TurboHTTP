@@ -2,13 +2,13 @@ using System;
 
 namespace TurboHttp.IO.Stages;
 
-public record ConnectItem(TcpOptions Options, Version HttpVersion) : ISignalItem
+public record ConnectItem(TcpOptions Options, Version Version) : IControlItem
 {
-    public HostKey Key { get; } = new HostKey
+    public HostKey Key { get; } = new()
     {
         Host = Options.Host,
         Port = (ushort)Options.Port,
-        Schema = Options is TlsOptions ? "https" : "http",
-        HttpVersion = HttpVersion
+        Scheme = Options is TlsOptions ? "https" : "http",
+        Version = Version
     };
 }

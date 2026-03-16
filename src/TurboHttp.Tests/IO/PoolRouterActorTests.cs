@@ -1,7 +1,5 @@
-using System;
 using System.Buffers;
 using System.Net;
-using System.Threading;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using TurboHttp.IO;
@@ -32,7 +30,7 @@ public sealed class PoolRouterActorTests : TestKit
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
 
         var owner = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(owner, 4) { Key = key });
+        router.Tell(new DataItem(key, owner, 4));
 
         hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
     }
@@ -59,11 +57,11 @@ public sealed class PoolRouterActorTests : TestKit
 
         // Both DataItems should reach the same probe
         var owner1 = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(owner1, 4) { Key = key });
+        router.Tell(new DataItem(key, owner1, 4));
         hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
         var owner2 = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(owner2, 4) { Key = key });
+        router.Tell(new DataItem(key, owner2, 4));
         hostProbe.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
         Assert.Equal(1, factoryCallCount);
@@ -92,11 +90,11 @@ public sealed class PoolRouterActorTests : TestKit
         router.Tell(new PoolRouterActor.EnsureHost(keyB, optionsB));
 
         var ownerA = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(ownerA, 4) { Key = keyA });
+        router.Tell(new DataItem(keyA, ownerA, 4));
         probeA.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
         var ownerB = MemoryPool<byte>.Shared.Rent(4);
-        router.Tell(new DataItem(ownerB, 4) { Key = keyB });
+        router.Tell(new DataItem(keyB, ownerB, 4));
         probeB.ExpectMsg<DataItem>(TimeSpan.FromSeconds(5));
 
         Assert.Equal(2, callCount);

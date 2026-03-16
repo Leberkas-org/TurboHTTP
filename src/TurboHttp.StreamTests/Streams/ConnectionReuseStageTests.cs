@@ -1,6 +1,8 @@
 using System.Net;
+using Akka.Streams;
 using Akka.Streams.Dsl;
-using TurboHttp.Protocol.RFC9112;
+using Akka.Streams.TestKit;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Streams;
@@ -9,17 +11,48 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 {
     // ── helpers ────────────────────────────────────────────────────────────────
 
-    private async Task<(IReadOnlyList<HttpResponseMessage> responses, IReadOnlyList<ConnectionReuseDecision> decisions)>
+    private async Task<(IReadOnlyList<HttpResponseMessage> responses, IReadOnlyList<ConnectionReuseItem> decisions)>
         RunAsync(Version httpVersion, bool bodyFullyConsumed = true, params HttpResponseMessage[] responses)
     {
-        var decisions = new List<ConnectionReuseDecision>();
-        var stage = new ConnectionReuseStage(httpVersion, d => decisions.Add(d), bodyFullyConsumed);
+        // Set version on each response so the stage can read it
+        foreach (var r in responses)
+        {
+            r.Version = httpVersion;
+        }
 
-        var results = await Source.From(responses)
-            .Via(Flow.FromGraph(stage))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+        var probe0 = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probe1 = this.CreateManualSubscriberProbe<IControlItem>();
 
-        return (results, decisions);
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var stage = b.Add(new ConnectionReuseStage(bodyFullyConsumed));
+            var src = b.Add(Source.From(responses));
+
+            b.From(src).To(stage.In);
+            b.From(stage.Out0).To(Sink.FromSubscriber(probe0));
+            b.From(stage.Out1).To(Sink.FromSubscriber(probe1));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var sub0 = await probe0.ExpectSubscriptionAsync(CancellationToken.None);
+        var sub1 = await probe1.ExpectSubscriptionAsync(CancellationToken.None);
+
+        var resultResponses = new List<HttpResponseMessage>();
+        var resultDecisions = new List<ConnectionReuseItem>();
+
+        // Request from both outlets for each response.
+        // Both must have demand before the stage pulls upstream.
+        for (var i = 0; i < responses.Length; i++)
+        {
+            sub0.Request(1);
+            sub1.Request(1);
+            resultResponses.Add(await probe0.ExpectNextAsync(CancellationToken.None));
+            var signal = await probe1.ExpectNextAsync(CancellationToken.None);
+            resultDecisions.Add((ConnectionReuseItem)signal);
+        }
+
+        return (resultResponses, resultDecisions);
     }
 
     private static HttpResponseMessage MakeResponse(
@@ -50,7 +83,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.True(decision.CanReuse);
+        Assert.True(decision.Decision.CanReuse);
     }
 
     // ── HTTP/1.1: persistent by default ───────────────────────────────────────
@@ -64,7 +97,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.True(decision.CanReuse);
+        Assert.True(decision.Decision.CanReuse);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REUSE-003: HTTP/1.1 Connection: close → CanReuse = false")]
@@ -76,7 +109,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.False(decision.CanReuse);
+        Assert.False(decision.Decision.CanReuse);
     }
 
     // ── HTTP/1.0: opt-in keep-alive ────────────────────────────────────────────
@@ -90,7 +123,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.True(decision.CanReuse);
+        Assert.True(decision.Decision.CanReuse);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "REUSE-005: HTTP/1.0 no Connection header → CanReuse = false (not persistent by default)")]
@@ -102,7 +135,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.False(decision.CanReuse);
+        Assert.False(decision.Decision.CanReuse);
     }
 
     // ── body not fully consumed ────────────────────────────────────────────────
@@ -116,7 +149,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.False(decision.CanReuse);
+        Assert.False(decision.Decision.CanReuse);
     }
 
     // ── 101 Switching Protocols ────────────────────────────────────────────────
@@ -130,7 +163,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.False(decision.CanReuse);
+        Assert.False(decision.Decision.CanReuse);
     }
 
     // ── response passes through unchanged ─────────────────────────────────────
@@ -160,9 +193,9 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Equal(3, results.Count);
         Assert.Equal(3, decisions.Count);
-        Assert.True(decisions[0].CanReuse);
-        Assert.False(decisions[1].CanReuse);
-        Assert.True(decisions[2].CanReuse);
+        Assert.True(decisions[0].Decision.CanReuse);
+        Assert.False(decisions[1].Decision.CanReuse);
+        Assert.True(decisions[2].Decision.CanReuse);
     }
 
     // ── Keep-Alive parameters ──────────────────────────────────────────────────
@@ -176,8 +209,8 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
         Assert.Single(results);
         var decision = Assert.Single(decisions);
-        Assert.True(decision.CanReuse);
-        Assert.Equal(TimeSpan.FromSeconds(30), decision.KeepAliveTimeout);
-        Assert.Equal(100, decision.MaxRequests);
+        Assert.True(decision.Decision.CanReuse);
+        Assert.Equal(TimeSpan.FromSeconds(30), decision.Decision.KeepAliveTimeout);
+        Assert.Equal(100, decision.Decision.MaxRequests);
     }
 }

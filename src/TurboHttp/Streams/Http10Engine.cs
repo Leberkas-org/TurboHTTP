@@ -21,7 +21,7 @@ public class Http10Engine : IHttpProtocolEngine
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
             var flowOut = b.Add(Flow.Create<(IMemoryOwner<byte>, int), IOutputItem>()
-                .Select(IOutputItem (x) => new DataItem(x.Item1, x.Item2)));
+                .Select(IOutputItem (x) => new DataItem(HostKey.Default, x.Item1, x.Item2)));
             var flowIn = b.Add(Flow.Create<IInputItem>()
                 .Select(x => (((DataItem)x).Memory, ((DataItem)x).Length)));
 

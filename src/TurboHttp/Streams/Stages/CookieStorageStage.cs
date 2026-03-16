@@ -14,8 +14,8 @@ internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMess
 {
     private readonly CookieJar? _cookieJar;
 
-    private readonly Inlet<HttpResponseMessage> _inlet = new("cookieStorage.in");
-    private readonly Outlet<HttpResponseMessage> _outlet = new("cookieStorage.out");
+    private readonly Inlet<HttpResponseMessage> _inlet = new("cookie.storage.in");
+    private readonly Outlet<HttpResponseMessage> _outlet = new("cookie.storage.out");
 
     public override FlowShape<HttpResponseMessage, HttpResponseMessage> Shape { get; }
 

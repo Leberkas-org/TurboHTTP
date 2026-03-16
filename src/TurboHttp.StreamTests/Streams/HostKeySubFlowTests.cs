@@ -1,12 +1,13 @@
 using Akka;
 using Akka.Streams.Dsl;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
-/// Tests for <see cref="FlowHostKeyGroupByExtensions.GroupBy{T,TMat}"/>.
+/// Tests for <see cref="FlowHostKeyGroupByExtensions.GroupByHostKey{T,TMat}"/>.
 ///
 /// Verifies that GroupByHostKey returns a real Akka SubFlow so that standard
 /// SubFlowOperations extension methods (Select, Where, Take, SelectMany) are
@@ -29,7 +30,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
             SubFlow<TOut, NotUsed, Sink<HttpRequestMessage, NotUsed>>> configure)
     {
         var subflow = Flow.Create<HttpRequestMessage>()
-            .GroupBy(HostKey.FromRequest, maxSubstreams: 16);
+            .GroupByHostKey(HostKey.FromRequest, maxSubstreams: 16);
 
         return (Flow<HttpRequestMessage, TOut, NotUsed>)
             configure(subflow).MergeSubstreams();
@@ -61,7 +62,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupBy(HostKey.FromRequest, maxSubstreams: 16)
+                .GroupByHostKey(HostKey.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         var results = await RunAsync(flow, requests);

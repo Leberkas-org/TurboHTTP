@@ -1,8 +1,6 @@
-using System;
 using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Hosting;
 using Akka.Streams;
@@ -70,14 +68,14 @@ public sealed class HostPoolActorTests : TestKit
         // Push one item from each connection's response queue
         var owner1 = MemoryPool<byte>.Shared.Rent(4);
         owner1.Memory.Span[0] = 0xAA;
-        await queue1.OfferAsync(new DataItem(owner1, 4));
+        await queue1.OfferAsync(new DataItem(HostKey.Default, owner1, 4));
 
         var owner2 = MemoryPool<byte>.Shared.Rent(4);
         owner2.Memory.Span[0] = 0xBB;
-        await queue2.OfferAsync(new DataItem(owner2, 4));
+        await queue2.OfferAsync(new DataItem(HostKey.Default, owner2, 4));
 
         // Both items must appear on the merged output (order is not guaranteed)
-        using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         var item1 = await resultChannel.Reader.ReadAsync(cts.Token);
         var item2 = await resultChannel.Reader.ReadAsync(cts.Token);
@@ -114,10 +112,10 @@ public sealed class HostPoolActorTests : TestKit
         // Send a DataItem to HostPoolActor — no connections have queues yet, so it enqueues as pending.
         var pendingOwner = MemoryPool<byte>.Shared.Rent(8);
         pendingOwner.Memory.Span[0] = 0xCC;
-        proxy.Tell(new DataItem(pendingOwner, 8));
+        proxy.Tell(new DataItem(HostKey.Default, pendingOwner, 8));
 
         // Capture the CreateTcpRunner that ConnectionActor sends to its clientManager.
-        var createMsg = clientManagerProbe.ExpectMsg<ClientManager.CreateTcpRunner>(TimeSpan.FromSeconds(5));
+        var createMsg = await clientManagerProbe.ExpectMsgAsync<ClientManager.CreateTcpRunner>(TimeSpan.FromSeconds(5));
         var connectionActor = createMsg.Handler;
 
         // Create inbound/outbound channels simulating a TCP connection
@@ -138,7 +136,7 @@ public sealed class HostPoolActorTests : TestKit
         connectionActor.Tell(connectedMsg, runnerProbe.Ref);
 
         // The pending DataItem should flow through to the TCP outbound channel
-        using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var (outboundMem, outboundLen) = await outbound.Reader.ReadAsync(cts.Token);
 
         Assert.Equal(8, outboundLen);
@@ -147,32 +145,24 @@ public sealed class HostPoolActorTests : TestKit
         outboundMem.Dispose();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Bidirectional proxy actor.
-    /// Messages from the HostPoolActor child (sender == _hostPool) are forwarded to <paramref name="forwardTo"/>.
-    /// All other messages are forwarded to the HostPoolActor child.
-    /// </summary>
     private sealed class HostPoolActorProxy : ReceiveActor
     {
-        private readonly IActorRef _hostPool;
-
         public HostPoolActorProxy(TcpOptions options, PoolConfig config, IActorRef forwardTo)
         {
-            _hostPool = Context.ActorOf(
-                Props.Create(() => new HostPoolActor(new HostPoolActor.HostPoolConfig(options, config, HostKey.Default))),
+            var hostPool = Context.ActorOf(
+                Props.Create(() =>
+                    new HostPoolActor(new HostPoolActor.HostPoolConfig(options, config, HostKey.Default))),
                 "host-pool");
 
             ReceiveAny(msg =>
             {
-                if (Sender.Equals(_hostPool))
+                if (Sender.Equals(hostPool))
                 {
                     forwardTo.Forward(msg);
                 }
                 else
                 {
-                    _hostPool.Forward(msg);
+                    hostPool.Forward(msg);
                 }
             });
         }

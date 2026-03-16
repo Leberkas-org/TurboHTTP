@@ -217,8 +217,8 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         // Response(3) arrives, no matching request for 3 yet.
         // Request(3) arrives → immediately matched with Response(3).
         // Then Response(1) arrives → matched with Request(1).
-        var requestSource = Source.From(new[] { (req1, 1), (req3, 3) });
-        var responseSource = Source.From(new[] { (res3, 3), (res1, 1) });
+        var requestSource = Source.From([(req1, 1), (req3, 3)]);
+        var responseSource = Source.From([(res3, 3), (res1, 1)]);
 
         var results = await RunStageAsync(requestSource, responseSource);
 

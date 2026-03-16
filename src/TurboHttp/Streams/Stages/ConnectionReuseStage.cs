@@ -1,57 +1,27 @@
-using System;
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Streams.Stages;
 
-/// <summary>
-/// RFC 9112 §9 — Evaluates whether the TCP connection can be reused after each HTTP response.
-/// <para>
-/// On each response the stage calls <see cref="ConnectionReuseEvaluator.Evaluate"/> and
-/// invokes <paramref name="onDecision"/> with the result so the connection pool can
-/// keep the connection alive or schedule it for close.  The response itself passes through
-/// the stage unchanged.
-/// </para>
-/// </summary>
-internal sealed class ConnectionReuseStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
+internal sealed class
+    ConnectionReuseStage : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, IControlItem>>
 {
-    private readonly Version _httpVersion;
-    private readonly Action<ConnectionReuseDecision> _onDecision;
     private readonly bool _bodyFullyConsumed;
 
-    private readonly Inlet<HttpResponseMessage> _inlet = new("connectionReuse.in");
-    private readonly Outlet<HttpResponseMessage> _outlet = new("connectionReuse.out");
+    private readonly Inlet<HttpResponseMessage> _inletResponse = new("connection.reuse.in.response");
+    private readonly Outlet<HttpResponseMessage> _outletResponse = new("connection.reuse.out.response");
+    private readonly Outlet<IControlItem> _outletSignalItem = new("connection.reuse.out.signal");
 
-    public override FlowShape<HttpResponseMessage, HttpResponseMessage> Shape { get; }
+    public override FanOutShape<HttpResponseMessage, HttpResponseMessage, IControlItem> Shape { get; }
 
-    /// <summary>
-    /// Creates a new <see cref="ConnectionReuseStage"/>.
-    /// </summary>
-    /// <param name="httpVersion">
-    ///     Negotiated HTTP version for this connection
-    ///     (<see cref="System.Net.HttpVersion.Version10"/>,
-    ///     <see cref="System.Net.HttpVersion.Version11"/>, or
-    ///     <see cref="System.Net.HttpVersion.Version20"/>).
-    /// </param>
-    /// <param name="onDecision">
-    ///     Callback invoked with the reuse decision after each response.
-    ///     Use this to signal the connection pool: keep the connection
-    ///     open when <see cref="ConnectionReuseDecision.CanReuse"/> is true,
-    ///     or schedule a close when it is false.
-    /// </param>
-    /// <param name="bodyFullyConsumed">
-    ///     Whether the response body was fully consumed before reaching this stage.
-    ///     Defaults to <c>true</c> (the normal case in a fully-decoded pipeline).
-    /// </param>
-    public ConnectionReuseStage(Version httpVersion, Action<ConnectionReuseDecision> onDecision,
-        bool bodyFullyConsumed = true)
+    public ConnectionReuseStage(bool bodyFullyConsumed = true)
     {
-        _httpVersion = httpVersion;
-        _onDecision = onDecision;
         _bodyFullyConsumed = bodyFullyConsumed;
-        Shape = new FlowShape<HttpResponseMessage, HttpResponseMessage>(_inlet, _outlet);
+        Shape = new FanOutShape<HttpResponseMessage, HttpResponseMessage, IControlItem>(
+            _inletResponse, _outletResponse, _outletSignalItem);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -60,28 +30,108 @@ internal sealed class ConnectionReuseStage : GraphStage<FlowShape<HttpResponseMe
     private sealed class Logic : GraphStageLogic
     {
         private readonly ConnectionReuseStage _stage;
+        private HttpResponseMessage? _pendingResponse;
+        private ConnectionReuseItem? _pendingSignal;
+        private bool _responseOutletDemand;
+        private bool _signalOutletDemand;
 
         public Logic(ConnectionReuseStage stage) : base(stage.Shape)
         {
             _stage = stage;
 
-            SetHandler(stage._inlet,
+            SetHandler(stage._inletResponse,
                 onPush: () =>
                 {
-                    var response = Grab(stage._inlet);
+                    var response = Grab(stage._inletResponse);
                     var decision = ConnectionReuseEvaluator.Evaluate(
-                        response,
-                        stage._httpVersion,
-                        stage._bodyFullyConsumed);
-                    stage._onDecision(decision);
-                    Push(stage._outlet, response);
+                        response, response.Version, stage._bodyFullyConsumed);
+
+                    _pendingResponse = response;
+                    _pendingSignal = new ConnectionReuseItem(HostKey.Default, decision);
+
+                    TryPushResponse();
+                    TryPushSignal();
                 },
-                onUpstreamFinish: CompleteStage,
+                onUpstreamFinish: () =>
+                {
+                    if (_pendingResponse is null && _pendingSignal is null)
+                    {
+                        CompleteStage();
+                    }
+                },
                 onUpstreamFailure: FailStage);
 
-            SetHandler(stage._outlet,
-                onPull: () => Pull(stage._inlet),
+            SetHandler(stage._outletResponse,
+                onPull: () =>
+                {
+                    _responseOutletDemand = true;
+                    TryPushResponse();
+                    TryPullIfReady();
+                },
                 onDownstreamFinish: _ => CompleteStage());
+
+            SetHandler(stage._outletSignalItem,
+                onPull: () =>
+                {
+                    _signalOutletDemand = true;
+                    TryPushSignal();
+                    TryPullIfReady();
+                },
+                onDownstreamFinish: _ => CompleteStage());
+        }
+
+        private void TryPushResponse()
+        {
+            if (_pendingResponse is null || !_responseOutletDemand)
+            {
+                return;
+            }
+
+            var response = _pendingResponse;
+            _pendingResponse = null;
+            _responseOutletDemand = false;
+
+            Push(_stage._outletResponse, response);
+            TryPullIfReady();
+        }
+
+        private void TryPushSignal()
+        {
+            if (_pendingSignal is null || !_signalOutletDemand)
+            {
+                return;
+            }
+
+            var signal = _pendingSignal;
+            _pendingSignal = null;
+            _signalOutletDemand = false;
+
+            Push(_stage._outletSignalItem, signal);
+            TryPullIfReady();
+        }
+
+        private void TryPullIfReady()
+        {
+            // Pull next element only once both outlets have been served
+            if (_pendingResponse is not null || _pendingSignal is not null)
+            {
+                return;
+            }
+
+            // Both outlets need demand before we pull upstream
+            if (!_responseOutletDemand || !_signalOutletDemand)
+            {
+                return;
+            }
+
+            if (IsClosed(_stage._inletResponse))
+            {
+                CompleteStage();
+            }
+            else if (!HasBeenPulled(_stage._inletResponse))
+            {
+                Pull(_stage._inletResponse);
+            }
         }
     }
 }

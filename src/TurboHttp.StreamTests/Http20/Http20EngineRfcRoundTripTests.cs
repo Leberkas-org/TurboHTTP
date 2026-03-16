@@ -22,7 +22,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
         => _hpack.Encode(headers);
 
     private static byte[] ServerSettings()
-        => new SettingsFrame(Array.Empty<(SettingsParameter, uint)>()).Serialize();
+        => new SettingsFrame([]).Serialize();
 
     // ── 20ENG-001: GET → 200 — SETTINGS + HEADERS round-trip ────────────────────
 
@@ -171,13 +171,13 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
         // with the shared decoder inside Http20StreamStage.
         var enc = new HpackEncoder(useHuffman: false);
         var h1 = new HeadersFrame(streamId: 1,
-            headerBlock: enc.Encode(new[] { (":status", "200") }),
+            headerBlock: enc.Encode([(":status", "200")]),
             endStream: true, endHeaders: true).Serialize();
         var h3 = new HeadersFrame(streamId: 3,
-            headerBlock: enc.Encode(new[] { (":status", "200") }),
+            headerBlock: enc.Encode([(":status", "200")]),
             endStream: true, endHeaders: true).Serialize();
         var h5 = new HeadersFrame(streamId: 5,
-            headerBlock: enc.Encode(new[] { (":status", "200") }),
+            headerBlock: enc.Encode([(":status", "200")]),
             endStream: true, endHeaders: true).Serialize();
 
         var (responses, outboundFrames) = await SendH2EngineAsyncMany(

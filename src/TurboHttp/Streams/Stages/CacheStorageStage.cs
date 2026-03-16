@@ -36,8 +36,8 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
 {
     private readonly HttpCacheStore _store;
 
-    private readonly Inlet<HttpResponseMessage> _inlet = new("cacheStorage.in");
-    private readonly Outlet<HttpResponseMessage> _outlet = new("cacheStorage.out");
+    private readonly Inlet<HttpResponseMessage> _inlet = new("cache.storage.in");
+    private readonly Outlet<HttpResponseMessage> _outlet = new("cache.storage.out");
 
     public override FlowShape<HttpResponseMessage, HttpResponseMessage> Shape { get; }
 

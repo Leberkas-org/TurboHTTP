@@ -6,20 +6,20 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Internal;
 
-public sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, NotUsed>, T>>
+internal sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, NotUsed>, T>>
 {
     private readonly int _maxConcurrent;
 
-    public Inlet<Source<T, NotUsed>> In { get; } = new("MergeSubstreams.In");
-    public Outlet<T> Out { get; } = new("MergeSubstreams.Out");
+    private readonly Inlet<Source<T, NotUsed>> _inlet = new("merge.substreams.in");
+    private readonly Outlet<T> _outlet = new("merge.substreams.out");
     public override FlowShape<Source<T, NotUsed>, T> Shape { get; }
 
     public MergeSubstreamsStage(int maxConcurrent)
     {
         _maxConcurrent = maxConcurrent;
-        Shape = new FlowShape<Source<T, NotUsed>, T>(In, Out);
+        Shape = new FlowShape<Source<T, NotUsed>, T>(_inlet, _outlet);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -41,15 +41,14 @@ public sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, Not
         {
             _stage = stage;
 
-            SetHandler(stage.In,
+            SetHandler(stage._inlet,
                 onPush: () =>
                 {
-                    var source = Grab(stage.In);
+                    var source = Grab(stage._inlet);
                     _active++;
 
-                    source.RunWith(
-                            Sink.ForEach<T>(elem => _onElement!(elem)),
-                            SubFusingMaterializer)
+                    source
+                        .RunWith(Sink.ForEach<T>(elem => _onElement!(elem)), SubFusingMaterializer)
                         .ContinueWith(
                             t =>
                             {
@@ -61,12 +60,11 @@ public sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, Not
                                 {
                                     _onSubstreamDone!();
                                 }
-                            },
-                            TaskContinuationOptions.ExecuteSynchronously);
+                            }, TaskContinuationOptions.ExecuteSynchronously);
 
-                    if (_active < _stage._maxConcurrent && !HasBeenPulled(stage.In))
+                    if (_active < _stage._maxConcurrent && !HasBeenPulled(stage._inlet))
                     {
-                        Pull(stage.In);
+                        Pull(stage._inlet);
                     }
                 },
                 onUpstreamFinish: () =>
@@ -80,17 +78,16 @@ public sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, Not
                 },
                 onUpstreamFailure: FailStage);
 
-            SetHandler(stage.Out,
+            SetHandler(stage._outlet,
                 onPull: () =>
                 {
                     if (_buffer.TryDequeue(out var elem))
                     {
-                        Push(stage.Out, elem);
+                        Push(stage._outlet, elem);
                     }
-                    else if (!_upstreamDone && !HasBeenPulled(stage.In) &&
-                             _active < _stage._maxConcurrent)
+                    else if (!_upstreamDone && !HasBeenPulled(stage._inlet) && _active < _stage._maxConcurrent)
                     {
-                        Pull(stage.In);
+                        Pull(stage._inlet);
                     }
                     // else: wait for next _onElement callback
                 });
@@ -100,9 +97,9 @@ public sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, Not
         {
             _onElement = GetAsyncCallback<T>(elem =>
             {
-                if (IsAvailable(_stage.Out))
+                if (IsAvailable(_stage._outlet))
                 {
-                    Push(_stage.Out, elem);
+                    Push(_stage._outlet, elem);
                 }
                 else
                 {
@@ -119,15 +116,15 @@ public sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, Not
                     case true when _active == 0 && _buffer.Count == 0:
                         CompleteStage();
                         return;
-                    case false when !HasBeenPulled(_stage.In) && _active < _stage._maxConcurrent:
-                        Pull(_stage.In);
+                    case false when !HasBeenPulled(_stage._inlet) && _active < _stage._maxConcurrent:
+                        Pull(_stage._inlet);
                         break;
                 }
             });
 
             _onSubstreamFailed = GetAsyncCallback<Exception>(FailStage);
 
-            Pull(_stage.In);
+            Pull(_stage._inlet);
         }
     }
 }

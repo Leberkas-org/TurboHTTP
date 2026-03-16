@@ -37,11 +37,11 @@ public class Http20Engine : IHttpProtocolEngine
             var connection = b.Add(new Http20ConnectionStage(windowSize));
 
             var flowOut = b.Add(Flow.Create<(IMemoryOwner<byte>, int), IOutputItem>()
-                .Select(IOutputItem (x) => new DataItem(x.Item1, x.Item2)));
+                .Select(IOutputItem (x) => new DataItem(HostKey.Default, x.Item1, x.Item2)));
             var flowIn = b.Add(Flow.Create<IInputItem>().Where(x => x is DataItem).Select(x =>
             {
                 var t = x as DataItem;
-                
+
                 return (t.Memory, t.Length);
             }));
 

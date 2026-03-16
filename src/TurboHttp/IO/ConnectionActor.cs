@@ -81,7 +81,7 @@ public sealed class ConnectionActor : ReceiveActor
             return;
         }
 
-        _ = _outbound.WriteAsync((item.Memory, item.Length)).AsTask();
+        _ = _outbound.WriteAsync((item.Memory, item.Length));
     }
 
     private async Task PumpInbound(CancellationToken token)
@@ -90,14 +90,15 @@ public sealed class ConnectionActor : ReceiveActor
         {
             await foreach (var item in _inbound!.ReadAllAsync(token))
             {
-                if (_responseQueue != null)
+                if (_responseQueue is not null)
                 {
-                    await _responseQueue.OfferAsync(new DataItem(item.Item1, item.Item2) { Key = _hostKey });
+                    await _responseQueue.OfferAsync(new DataItem(_hostKey, item.Item1, item.Item2));
                 }
             }
         }
         catch (OperationCanceledException)
         {
+            // noop
         }
         catch (Exception ex)
         {
@@ -113,11 +114,9 @@ public sealed class ConnectionActor : ReceiveActor
 
     private void HandleTerminated(Terminated msg)
     {
-        if (msg.ActorRef.Equals(_runner))
-        {
-            _log.Warning("ClientRunner terminated");
-            Reconnect();
-        }
+        if (!msg.ActorRef.Equals(_runner)) return;
+        _log.Warning("ClientRunner terminated");
+        Reconnect();
     }
 
     private void Reconnect()

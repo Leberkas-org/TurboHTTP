@@ -56,7 +56,7 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
                         var preface = BuildHttp2ConnectionPreface();
                         var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
                         ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
-                        EmitMultiple(stage._outlet, [item, new DataItem(owner, preface.Length)]);
+                        EmitMultiple(stage._outlet, [item, new DataItem(HostKey.Default, owner, preface.Length)]);
                         _prefaceSentHost[key] = true;
                     }
                     else

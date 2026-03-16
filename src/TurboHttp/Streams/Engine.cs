@@ -1,13 +1,12 @@
 using System;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Client;
-using TurboHttp.IO;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Protocol.RFC9110;
@@ -101,7 +100,7 @@ public class Engine
             requestTip = retryMerge.Out;
 
             // Cache lookup
-            var cacheLookup = builder.Add(new CacheLookupStage(cacheStore!, options.CachePolicy));
+            var cacheLookup = builder.Add(new CacheLookupStage(cacheStore, options.CachePolicy));
             builder.From(requestTip).To(cacheLookup.In);
 
             var engineRequest = cacheLookup.Out0; // cache miss
@@ -128,7 +127,7 @@ public class Engine
             responseTip = cookieStorage.Outlet;
 
             // Cache storage
-            var cacheStorage = builder.Add(new CacheStorageStage(cacheStore!));
+            var cacheStorage = builder.Add(new CacheStorageStage(cacheStore));
             builder.From(responseTip).To(cacheStorage.Inlet);
             responseTip = cacheStorage.Outlet;
 
@@ -168,61 +167,32 @@ public class Engine
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildEngineCoreGraph(
         IActorRef poolRouter,
         TurboClientOptions clientOptions,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http10Factory,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http11Factory,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory)
+        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http10Factory = null,
+        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http11Factory = null,
+        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory = null,
+        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http30Factory = null)
     {
-        if (http10Factory is not null)
+        return GraphDsl.Create(builder =>
         {
-            // Test mode: 3-port partition (no HTTP/3)
-            return GraphDsl.Create(builder =>
-            {
-                var partition = builder.Add(new Partition<HttpRequestMessage>(3, msg
-                    => msg.Version switch
-                    {
-                        { Major: 2, Minor: 0 } => 2,
-                        { Major: 1, Minor: 1 } => 1,
-                        { Major: 1, Minor: 0 } => 0,
-                        _ => throw new SwitchExpressionException(msg.Version)
-                    }));
-                var hub = builder.Add(new Merge<HttpResponseMessage>(3));
+            var partition = builder.Add(Router());
+            var hub = builder.Add(new Merge<HttpResponseMessage>(4));
 
-                var http10 = builder.Add(BuildProtocolFlow<Http10Engine>(16, ActorRefs.Nobody, http10Factory));
-                var http11 = builder.Add(BuildProtocolFlow<Http11Engine>(16, ActorRefs.Nobody, http11Factory!));
-                var http20 = builder.Add(BuildProtocolFlow<Http20Engine>(16, ActorRefs.Nobody, http20Factory!));
+            var http10 =
+                builder.Add(BuildProtocolFlow<Http10Engine>(256, poolRouter, http10Factory, clientOptions));
+            var http11 =
+                builder.Add(BuildProtocolFlow<Http11Engine>(256, poolRouter, http11Factory, clientOptions));
+            var http20 =
+                builder.Add(BuildProtocolFlow<Http20Engine>(64, poolRouter, http20Factory, clientOptions));
+            var http30 =
+                builder.Add(BuildProtocolFlow<Http30Engine>(32, poolRouter, http30Factory, clientOptions));
 
-                builder.From(partition.Out(0)).Via(http10).To(hub);
-                builder.From(partition.Out(1)).Via(http11).To(hub);
-                builder.From(partition.Out(2)).Via(http20).To(hub);
+            builder.From(partition.Out(0)).Via(http10).To(hub);
+            builder.From(partition.Out(1)).Via(http11).To(hub);
+            builder.From(partition.Out(2)).Via(http20).To(hub);
+            builder.From(partition.Out(3)).Via(http30).To(hub);
 
-                return new FlowShape<HttpRequestMessage, HttpResponseMessage>(partition.In, hub.Out);
-            });
-        }
-        else
-        {
-            // Production mode: 4-port partition
-            return GraphDsl.Create(builder =>
-            {
-                var partition = builder.Add(Router());
-                var hub = builder.Add(new Merge<HttpResponseMessage>(4));
-
-                var http10 =
-                    builder.Add(BuildProtocolFlow<Http10Engine>(256, poolRouter, clientOptions: clientOptions));
-                var http11 =
-                    builder.Add(BuildProtocolFlow<Http11Engine>(256, poolRouter, clientOptions: clientOptions));
-                var http20 =
-                    builder.Add(BuildProtocolFlow<Http20Engine>(64, poolRouter, clientOptions: clientOptions));
-                var http30 =
-                    builder.Add(BuildProtocolFlow<Http30Engine>(32, poolRouter, clientOptions: clientOptions));
-
-                builder.From(partition.Out(0)).Via(http10).To(hub);
-                builder.From(partition.Out(1)).Via(http11).To(hub);
-                builder.From(partition.Out(2)).Via(http20).To(hub);
-                builder.From(partition.Out(3)).Via(http30).To(hub);
-
-                return new FlowShape<HttpRequestMessage, HttpResponseMessage>(partition.In, hub.Out);
-            });
-        }
+            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(partition.In, hub.Out);
+        });
     }
 
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildProtocolFlow<TEngine>(
@@ -251,7 +221,7 @@ public class Engine
 
         return (Flow<HttpRequestMessage, HttpResponseMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupBy(HostKey.FromRequest, maxSubstreams)
+                .GroupByHostKey(HostKey.FromRequest, maxSubstreams)
                 .ViaSubFlow(connectionFlow)
                 .MergeSubstreams();
     }
@@ -267,33 +237,34 @@ public class Engine
             var bidi = b.Add(new TEngine().CreateFlow());
             var transportFlow = b.Add(transport);
 
-            var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
-
-            // Extract URI from the first request and create a ConnectItem.
-            // Take(1) completes after one element, causing Concat to switch to In(1).
-            var connectOnce = b.Add(
-                Flow.Create<HttpRequestMessage>()
-                    .Take(1)
-                    .Select(IOutputItem (req) =>
-                        new ConnectItem(TcpOptionsFactory.Build(req.RequestUri!, clientOptions), req.Version)));
+            // ExtractOptionsStage: first request → ConnectItem (Out0) + all requests (Out1)
+            // Replaces Broadcast + Buffer + Take(1).Select pattern.
+            // The stage internally buffers the first request and delivers it via Out1 on demand,
+            // eliminating the deadlock that required the explicit Buffer(1) decoupling.
+            var extract = b.Add(new ExtractOptionsStage(clientOptions));
 
             // Concat: first the ConnectItem (In 0), then all BidiFlow transport output (In 1)
             var concat = b.Add(Concat.Create<IOutputItem>(2));
 
-            // Buffer(1) decouples the Broadcast from the BidiFlow to prevent deadlock:
-            // Broadcast waits for all outputs to pull, but Concat only pulls In(1) after In(0)
-            // completes. The buffer absorbs the first request while Concat processes the ConnectItem.
-            var buffer = b.Add(
-                Flow.Create<HttpRequestMessage>().Buffer(1, OverflowStrategy.Backpressure));
+            // ConnectionReuseStage: evaluates keep-alive/close after each response
+            var connReuse = b.Add(new ConnectionReuseStage());
+            var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
-            b.From(requestBCast.Out(0)).Via(buffer).To(bidi.Inlet1);
-            b.From(requestBCast.Out(1)).Via(connectOnce).To(concat.In(0));
+            // Request path: extract splits first request into ConnectItem + request stream
+            b.From(extract.Out0).Via(Flow.Create<IControlItem>().Select(IOutputItem (x) => x)).To(concat.In(0));
+            b.From(extract.Out1).To(bidi.Inlet1);
+
+            // Transport path: BidiFlow encoded output + ConnectItem → transport → BidiFlow decode
             b.From(bidi.Outlet1).To(concat.In(1));
             b.From(concat.Out).To(transportFlow.Inlet);
             b.From(transportFlow.Outlet).To(bidi.Inlet2);
 
+            // Response path: decoded response → ConnectionReuseStage → response output + signal sink
+            b.From(bidi.Outlet2).To(connReuse.In);
+            b.From(connReuse.Out1).To(signalSink);
+
             return new FlowShape<HttpRequestMessage, HttpResponseMessage>(
-                requestBCast.In, bidi.Outlet2);
+                extract.In, connReuse.Out0);
         });
     }
 

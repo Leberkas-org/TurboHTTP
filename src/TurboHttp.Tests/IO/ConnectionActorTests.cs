@@ -1,8 +1,6 @@
-using System;
 using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -53,7 +51,7 @@ public sealed class ConnectionActorTests : TestKit
         Channel<(IMemoryOwner<byte>, int)> inbound,
         Channel<(IMemoryOwner<byte>, int)> outbound,
         ClientRunner.ClientConnected msg
-    ) MakeConnectedMessage()
+        ) MakeConnectedMessage()
     {
         var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
         var outbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
@@ -320,7 +318,7 @@ public sealed class ConnectionActorTests : TestKit
         // Tell a DataItem directly (simulates HostPoolActor routing a request to this connection)
         var owner = MemoryPool<byte>.Shared.Rent(4);
         owner.Memory.Span[0] = 0xDE;
-        var item = new DataItem(owner, 4);
+        var item = new DataItem(HostKey.Default, owner, 4);
         connectionActor.Tell(item);
 
         // ConnectionActor writes each DataItem to the TCP outbound channel

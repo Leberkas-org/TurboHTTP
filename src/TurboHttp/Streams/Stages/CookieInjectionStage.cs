@@ -13,8 +13,8 @@ internal sealed class CookieInjectionStage : GraphStage<FlowShape<HttpRequestMes
 {
     private readonly CookieJar? _cookieJar;
 
-    private readonly Inlet<HttpRequestMessage> _inlet = new("cookieInjection.in");
-    private readonly Outlet<HttpRequestMessage> _outlet = new("cookieInjection.out");
+    private readonly Inlet<HttpRequestMessage> _inlet = new("cookie.injection.in");
+    private readonly Outlet<HttpRequestMessage> _outlet = new("cookie.injection.out");
 
     public override FlowShape<HttpRequestMessage, HttpRequestMessage> Shape { get; }
 

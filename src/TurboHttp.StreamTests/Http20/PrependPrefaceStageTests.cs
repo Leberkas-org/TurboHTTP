@@ -1,5 +1,6 @@
 using System.Buffers;
 using Akka.Streams.Dsl;
+using Microsoft.Extensions.Hosting;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
@@ -21,7 +22,7 @@ public sealed class PrependPrefaceStageTests : StreamTestBase
         items.AddRange(inputs.Select(IOutputItem (b) =>
         {
             IMemoryOwner<byte> owner = new SimpleMemoryOwner(b);
-            return new DataItem(owner, b.Length);
+            return new DataItem(HostKey.Default, owner, b.Length);
         }));
 
         var source = Source.From(items);

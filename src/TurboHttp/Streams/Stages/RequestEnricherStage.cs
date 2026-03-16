@@ -7,8 +7,7 @@ using TurboHttp.Client;
 
 namespace TurboHttp.Streams.Stages;
 
-internal sealed class RequestEnricherStage
-    : GraphStage<FlowShape<HttpRequestMessage, HttpRequestMessage>>
+internal sealed class RequestEnricherStage : GraphStage<FlowShape<HttpRequestMessage, HttpRequestMessage>>
 {
     private readonly Func<TurboRequestOptions> _optionsFactory;
 
@@ -69,7 +68,8 @@ internal sealed class RequestEnricherStage
                 var baseAddress = options.BaseAddress;
                 if (baseAddress is null)
                 {
-                    throw new InvalidOperationException("RequestUri is null or relative but no BaseAddress is configured.");
+                    throw new InvalidOperationException(
+                        "RequestUri is null or relative but no BaseAddress is configured.");
                 }
 
                 request.RequestUri = request.RequestUri is null
@@ -91,8 +91,6 @@ internal sealed class RequestEnricherStage
                     request.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
             }
-            
-            
         }
     }
 }

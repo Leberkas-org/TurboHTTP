@@ -93,11 +93,9 @@ internal static class ClientByteMover
                 // tell the pipe we're done with this data
                 state.Pipe.Reader.AdvanceTo(buffer.End);
 
-                if (result.IsCompleted)
-                {
-                    runner.Tell(DoClose.Instance);
-                    return;
-                }
+                if (!result.IsCompleted) continue;
+                runner.Tell(DoClose.Instance);
+                return;
             }
             catch (OperationCanceledException)
             {

@@ -1,7 +1,5 @@
-using System;
 using System.Buffers;
 using System.Net;
-using System.Threading.Tasks;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
@@ -36,10 +34,7 @@ public sealed class ConnectionStageTests : StreamTestBase
                 Sender.Tell(new PoolRouterActor.GlobalRefs(requestQueue, responseSource));
             });
 
-            Receive<PoolRouterActor.EnsureHost>(msg =>
-            {
-                probe.Tell(msg);
-            });
+            Receive<PoolRouterActor.EnsureHost>(msg => { probe.Tell(msg); });
         }
     }
 
@@ -47,7 +42,7 @@ public sealed class ConnectionStageTests : StreamTestBase
     {
         var owner = MemoryPool<byte>.Shared.Rent(length);
         owner.Memory.Span[..length].Fill(value);
-        return new DataItem(owner, length);
+        return new DataItem(HostKey.Default, owner, length);
     }
 
     /// <summary>
@@ -60,7 +55,7 @@ public sealed class ConnectionStageTests : StreamTestBase
         Flow<IOutputItem, IInputItem, NotUsed> stageFlow,
         ISourceQueueWithComplete<DataItem> responseQueue,
         TestProbe routerProbe)
-    Build()
+        Build()
     {
         // Response side: Source.Queue that ConnectionStage will subscribe to
         var (responseQueue, responseSource) = Source

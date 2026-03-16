@@ -1,9 +1,10 @@
 using System;
+using System.Net;
 using System.Net.Http;
 
 namespace TurboHttp.IO.Stages;
 
-public record struct HostKey
+public readonly record struct HostKey
 {
     public static HostKey FromRequest(HttpRequestMessage request)
     {
@@ -14,20 +15,37 @@ public record struct HostKey
         {
             Host = request.RequestUri.Host,
             Port = (ushort)request.RequestUri.Port,
-            Schema = request.RequestUri.Scheme,
-            HttpVersion = request.Version
+            Scheme = request.RequestUri.Scheme,
+            Version = request.Version
         };
     }
 
     public static HostKey Default => new()
     {
-        Host = string.Empty, Port = ushort.MinValue, Schema = string.Empty, HttpVersion = System.Net.HttpVersion.Unknown
+        Host = string.Empty,
+        Port = ushort.MinValue,
+        Scheme = string.Empty,
+        Version = HttpVersion.Unknown
     };
 
-    public required string Schema { get; init; }
+    public required string Scheme { get; init; }
     public required string Host { get; init; }
     public required ushort Port { get; init; }
-    public required Version HttpVersion { get; init; }
+    public required Version Version { get; init; }
 
-    public string Key => $"{Host}:{Port}:{Schema}:{HttpVersion}";
+    public bool Equals(HostKey other) =>
+        string.Equals(Host, other.Host, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(Scheme, other.Scheme, StringComparison.OrdinalIgnoreCase) &&
+        Port == other.Port &&
+        Version == other.Version;
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Host, StringComparer.OrdinalIgnoreCase);
+        hash.Add(Scheme, StringComparer.OrdinalIgnoreCase);
+        hash.Add(Port);
+        hash.Add(Version);
+        return hash.ToHashCode();
+    }
 }

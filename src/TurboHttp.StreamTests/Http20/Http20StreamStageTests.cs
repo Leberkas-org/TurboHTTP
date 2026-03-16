@@ -262,7 +262,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
     {
         // Each theory case needs its own encoder to keep HPACK tables independent
         var encoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = encoder.Encode(new[] { (":status", statusValue) });
+        var headerBlock = encoder.Encode([(":status", statusValue)]);
 
         var frames = new Http2Frame[]
         {

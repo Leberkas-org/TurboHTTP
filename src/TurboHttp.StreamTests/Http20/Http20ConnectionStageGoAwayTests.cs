@@ -108,7 +108,7 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.8-20CG-002: GOAWAY frame is forwarded downstream")]
     public async Task GoAway_Forwarded_Downstream()
     {
-        var goAway = new GoAwayFrame(lastStreamId: 5, Http2ErrorCode.NoError, debugData: new byte[] { 0x01, 0x02 });
+        var goAway = new GoAwayFrame(lastStreamId: 5, Http2ErrorCode.NoError, debugData: [0x01, 0x02]);
 
         var (downstream, _) = await RunAsync(goAway);
 

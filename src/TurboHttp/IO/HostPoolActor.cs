@@ -104,7 +104,7 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void HandleDataItem(DataItem item)
     {
-        var conn = SelectConnectionWithQueue(item.Key.HttpVersion);
+        var conn = SelectConnectionWithQueue(item.Key.Version);
         if (conn != null)
         {
             _ = _connectionQueues[conn.Actor].OfferAsync(item);

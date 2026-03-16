@@ -15,7 +15,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
         new(new TcpOptions { Host = host, Port = port }, System.Net.HttpVersion.Version20);
 
     private static DataItem MakeData(byte[] data) =>
-        new(new SimpleMemoryOwner(data), data.Length);
+        new(HostKey.Default, new SimpleMemoryOwner(data), data.Length);
 
     /// <summary>
     /// Runs the PrependPrefaceStage with the given transport items and collects all output.
@@ -36,7 +36,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
         var bytes = new List<byte>();
         foreach (var item in items)
         {
-            if (item is DataItem(var owner, var length))
+            if (item is DataItem(_, var owner, var length))
             {
                 bytes.AddRange(owner.Memory.Span[..length].ToArray());
             }
@@ -53,7 +53,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     {
         var output = await RunAsync(
             MakeConnect(),
-            MakeData(new byte[] { 0x01, 0x02 }));
+            MakeData([0x01, 0x02]));
 
         var bytes = ExtractBytes(output);
 
@@ -69,7 +69,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     {
         var output = await RunAsync(
             MakeConnect(),
-            MakeData(new byte[] { 0x01, 0x02 }));
+            MakeData([0x01, 0x02]));
 
         var bytes = ExtractBytes(output);
 
@@ -98,7 +98,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     {
         var output = await RunAsync(
             MakeConnect(),
-            MakeData(new byte[] { 0x01 }));
+            MakeData([0x01]));
 
         var bytes = ExtractBytes(output);
         var frameHeader = bytes.AsSpan(24, 9);
@@ -134,9 +134,9 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
         // One connect followed by multiple data items — preface only on connect
         var output = await RunAsync(
             MakeConnect(),
-            MakeData(new byte[] { 0x01 }),
-            MakeData(new byte[] { 0x02 }),
-            MakeData(new byte[] { 0x03 }));
+            MakeData([0x01]),
+            MakeData([0x02]),
+            MakeData([0x03]));
 
         var allBytes = ExtractBytes(output);
 
@@ -164,7 +164,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     {
         var output = await RunAsync(
             MakeConnect(),
-            MakeData(new byte[] { 0x01 }));
+            MakeData([0x01]));
 
         var bytes = ExtractBytes(output);
         Assert.True(bytes.Length >= 24 + 9, "Preface must include magic + SETTINGS frame header");
@@ -181,7 +181,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     {
         var output = await RunAsync(
             MakeConnect(),
-            MakeData(new byte[] { 0x01 }));
+            MakeData([0x01]));
 
         var bytes = ExtractBytes(output);
         Assert.True(bytes.Length >= 24 + 9, "Preface must include magic + SETTINGS frame header");
