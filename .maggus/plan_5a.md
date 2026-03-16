@@ -334,15 +334,15 @@ TASK-5A-013 (Update CLAUDE.md)
 **Size:** M
 
 **Acceptance Criteria:**
-- [ ] `ConnectionActor.Reconnect()` sends `ConnectionFailed` to parent before attempting reconnect
-- [ ] Exponential backoff using `PoolConfig.ReconnectInterval` as base
-- [ ] `PoolConfig.MaxReconnectAttempts` respected — permanent failure after N tries
-- [ ] On reconnect success, new `ConnectionReady(handle)` sent to parent (new channels)
-- [ ] New unit test: `ConnectionFailed` sent on TCP drop
-- [ ] New unit test: backoff delay increases
-- [ ] New unit test: stops after max attempts
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests pass
+- [x] `ConnectionActor.Reconnect()` sends `ConnectionFailed` to parent before attempting reconnect
+- [x] Exponential backoff using `PoolConfig.ReconnectInterval` as base
+- [x] `PoolConfig.MaxReconnectAttempts` respected — permanent failure after N tries
+- [x] On reconnect success, new `ConnectionReady(handle)` sent to parent (new channels)
+- [x] New unit test: `ConnectionFailed` sent on TCP drop
+- [x] New unit test: backoff delay increases
+- [x] New unit test: stops after max attempts
+- [x] `dotnet build ./src/TurboHttp.sln` — 0 errors
+- [x] `dotnet test ./src/TurboHttp.sln` — all tests pass
 
 **Key Files:**
 - `src/TurboHttp/IO/ConnectionActor.cs` — `Reconnect()`, `HandleDisconnected`
