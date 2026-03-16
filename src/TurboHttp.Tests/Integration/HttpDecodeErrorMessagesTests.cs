@@ -17,7 +17,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-001: InvalidStatusLine — message contains RFC 9112 §4")]
     public void Should_Include_RfcReference_When_InvalidStatusLine()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidStatusLine);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidStatusLine);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§4", ex.Message);
     }
@@ -25,7 +25,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-002: InvalidHeader — message contains RFC 9112 §5.1")]
     public void Should_Include_RfcReference_When_InvalidHeader()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidHeader);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidHeader);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5.1", ex.Message);
     }
@@ -33,7 +33,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-003: InvalidContentLength — message contains RFC 9112 §6.3")]
     public void Should_Include_RfcReference_When_InvalidContentLength()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidContentLength);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidContentLength);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§6.3", ex.Message);
     }
@@ -41,7 +41,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-004: InvalidChunkedEncoding — message contains RFC 9112 §7.1")]
     public void Should_Include_RfcReference_When_InvalidChunkedEncoding()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidChunkedEncoding);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidChunkedEncoding);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§7.1", ex.Message);
     }
@@ -49,7 +49,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-005: LineTooLong — message contains RFC 9112 §2.3")]
     public void Should_Include_RfcReference_When_LineTooLong()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.LineTooLong);
+        var ex = new HttpDecoderException(HttpDecoderError.LineTooLong);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§2.3", ex.Message);
     }
@@ -57,7 +57,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-006: InvalidRequestLine — message contains RFC 9112 §3")]
     public void Should_Include_RfcReference_When_InvalidRequestLine()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidRequestLine);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidRequestLine);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§3", ex.Message);
     }
@@ -65,7 +65,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-007: InvalidMethodToken — message contains RFC 9112 §3.1")]
     public void Should_Include_RfcReference_When_InvalidMethodToken()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidMethodToken);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidMethodToken);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§3.1", ex.Message);
     }
@@ -73,7 +73,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-008: InvalidRequestTarget — message contains RFC 9112 §3.2")]
     public void Should_Include_RfcReference_When_InvalidRequestTarget()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidRequestTarget);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidRequestTarget);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§3.2", ex.Message);
     }
@@ -81,7 +81,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-009: InvalidHttpVersion — message contains RFC 9112 §2.3")]
     public void Should_Include_RfcReference_When_InvalidHttpVersion()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidHttpVersion);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidHttpVersion);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§2.3", ex.Message);
     }
@@ -89,7 +89,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-010: MissingHostHeader — message contains RFC 9112 §5.4")]
     public void Should_Include_RfcReference_When_MissingHostHeader()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.MissingHostHeader);
+        var ex = new HttpDecoderException(HttpDecoderError.MissingHostHeader);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5.4", ex.Message);
     }
@@ -97,7 +97,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-011: MultipleHostHeaders — message contains RFC 9112 §5.4")]
     public void Should_Include_RfcReference_When_MultipleHostHeaders()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.MultipleHostHeaders);
+        var ex = new HttpDecoderException(HttpDecoderError.MultipleHostHeaders);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5.4", ex.Message);
     }
@@ -105,7 +105,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-012: MultipleContentLengthValues — message contains RFC 9112 §6.3")]
     public void Should_Include_RfcReference_When_MultipleContentLengthValues()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.MultipleContentLengthValues);
+        var ex = new HttpDecoderException(HttpDecoderError.MultipleContentLengthValues);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§6.3", ex.Message);
     }
@@ -113,7 +113,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-013: InvalidFieldName — message contains RFC 9112 §5.1")]
     public void Should_Include_RfcReference_When_InvalidFieldName()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidFieldName);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidFieldName);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5.1", ex.Message);
     }
@@ -121,7 +121,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-014: InvalidFieldValue — message contains RFC 9112 §5.5")]
     public void Should_Include_RfcReference_When_InvalidFieldValue()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidFieldValue);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidFieldValue);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5.5", ex.Message);
     }
@@ -129,7 +129,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-015: ObsoleteFoldingDetected — message contains RFC 9112 §5.2")]
     public void Should_Include_RfcReference_When_ObsoleteFoldingDetected()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.ObsoleteFoldingDetected);
+        var ex = new HttpDecoderException(HttpDecoderError.ObsoleteFoldingDetected);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5.2", ex.Message);
     }
@@ -137,7 +137,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-016: ChunkedWithContentLength — message contains RFC 9112 §6.3")]
     public void Should_Include_RfcReference_When_ChunkedWithContentLength()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.ChunkedWithContentLength);
+        var ex = new HttpDecoderException(HttpDecoderError.ChunkedWithContentLength);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§6.3", ex.Message);
     }
@@ -145,7 +145,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-017: InvalidChunkSize — message contains RFC 9112 §7.1.1")]
     public void Should_Include_RfcReference_When_InvalidChunkSize()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidChunkSize);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidChunkSize);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§7.1.1", ex.Message);
     }
@@ -153,7 +153,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-018: ChunkDataTruncated — message contains RFC 9112 §7.1.3")]
     public void Should_Include_RfcReference_When_ChunkDataTruncated()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.ChunkDataTruncated);
+        var ex = new HttpDecoderException(HttpDecoderError.ChunkDataTruncated);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§7.1.3", ex.Message);
     }
@@ -161,7 +161,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-019: InvalidChunkExtension — message contains RFC 9112 §7.1.1")]
     public void Should_Include_RfcReference_When_InvalidChunkExtension()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidChunkExtension);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidChunkExtension);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§7.1.1", ex.Message);
     }
@@ -169,7 +169,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-020: TooManyHeaders — message contains Security note and RFC 9112 §5")]
     public void Should_Include_SecurityNote_When_TooManyHeaders()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.TooManyHeaders);
+        var ex = new HttpDecoderException(HttpDecoderError.TooManyHeaders);
         Assert.Contains("Security", ex.Message);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§5", ex.Message);
@@ -180,7 +180,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-021: InvalidStatusLine — message is not just enum name")]
     public void Should_NotBeJustEnumName_When_InvalidStatusLine()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidStatusLine);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidStatusLine);
         Assert.NotEqual("InvalidStatusLine", ex.Message);
         Assert.True(ex.Message.Length > 20, "Message should be descriptive, not just the enum name.");
     }
@@ -188,7 +188,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-022: TooManyHeaders — message is not just enum name")]
     public void Should_NotBeJustEnumName_When_TooManyHeaders()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.TooManyHeaders);
+        var ex = new HttpDecoderException(HttpDecoderError.TooManyHeaders);
         Assert.NotEqual("TooManyHeaders", ex.Message);
         Assert.True(ex.Message.Length > 20);
     }
@@ -199,14 +199,14 @@ public sealed class HttpDecodeErrorMessagesTests
     public void Should_IncludeContext_When_ContextProvided()
     {
         const string context = "Received 150 fields; limit is 100.";
-        var ex = new HttpDecoderException(HttpDecodeError.TooManyHeaders, context);
+        var ex = new HttpDecoderException(HttpDecoderError.TooManyHeaders, context);
         Assert.Contains(context, ex.Message);
     }
 
     [Fact(DisplayName = "34-msg-024: Context overload — default RFC message also present")]
     public void Should_StillIncludeDefaultMessage_When_ContextProvided()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.TooManyHeaders, "extra info");
+        var ex = new HttpDecoderException(HttpDecoderError.TooManyHeaders, "extra info");
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("extra info", ex.Message);
     }
@@ -214,15 +214,15 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-025: Context overload — DecodeError property preserved")]
     public void Should_PreserveDecodeError_When_ContextOverloadUsed()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidChunkSize, "Value: 'zz'.");
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidChunkSize, "Value: 'zz'.");
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
     [Fact(DisplayName = "34-msg-026: Default constructor — DecodeError property correct")]
     public void Should_PreserveDecodeError_When_DefaultConstructorUsed()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidStatusLine);
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidStatusLine);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     // ── Exception hierarchy ──────────────────────────────────────────────────────
@@ -230,7 +230,7 @@ public sealed class HttpDecodeErrorMessagesTests
     [Fact(DisplayName = "34-msg-027: HttpDecoderException inherits from System.Exception")]
     public void Should_InheritFromException()
     {
-        var ex = new HttpDecoderException(HttpDecodeError.InvalidStatusLine);
+        var ex = new HttpDecoderException(HttpDecoderError.InvalidStatusLine);
         Assert.IsAssignableFrom<Exception>(ex);
     }
 
@@ -249,7 +249,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = Encoding.ASCII.GetBytes(sb.ToString());
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.TooManyHeaders, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
         Assert.Contains("limit is 2", ex.Message);
     }
 
@@ -261,7 +261,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = "HTTP/1.1 200 OK\r\nX-Bad: val\rue\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidFieldValue, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidFieldValue, ex.DecodeError);
         Assert.Contains("X-Bad", ex.Message);
     }
 
@@ -272,7 +272,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 10\r\n\r\nHello"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.MultipleContentLengthValues, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
         Assert.Contains("5", ex.Message);
         Assert.Contains("10", ex.Message);
     }
@@ -287,7 +287,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = "INVALID\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
         Assert.Contains("INVALID", ex.Message);
     }
 
@@ -298,7 +298,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = "HTTP/1.0 200 OK\r\nContent-Length: notanumber\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidContentLength, ex.DecodeError);
         Assert.Contains("notanumber", ex.Message);
     }
 
@@ -309,7 +309,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\nContent-Length: 10\r\n\r\nHello"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.MultipleContentLengthValues, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
         Assert.Contains("5", ex.Message);
         Assert.Contains("10", ex.Message);
     }
@@ -324,7 +324,7 @@ public sealed class HttpDecodeErrorMessagesTests
         var raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nZZ\r\nbad\r\n0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("§7.1.1", ex.Message);
     }

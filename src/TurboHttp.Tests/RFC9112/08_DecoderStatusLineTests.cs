@@ -208,7 +208,7 @@ public sealed class Http11DecoderStatusLineTests
         var raw = "HTTP/1.1 600 Invalid\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC7231-6.1: Empty reason phrase is valid")]

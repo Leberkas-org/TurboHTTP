@@ -1,9 +1,9 @@
-namespace TurboHttp.Protocol.RFC9112;
+namespace TurboHttp.Protocol;
 
 /// <summary>
 /// HTTP decode error codes based on RFC 9112 (HTTP/1.1 Message Syntax).
 /// </summary>
-public enum HttpDecodeError
+public enum HttpDecoderError
 {
     // ── General Errors ──────────────────────────────────────────────────────────
 

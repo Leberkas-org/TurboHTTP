@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC1945;
-using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC1945;
 
@@ -114,7 +113,7 @@ public sealed class Http10DecoderStatusLineTests
         var data = BuildRawResponse("HTTP/1.0 ABC BadCode", "Content-Length: 0");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(data, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Theory(DisplayName = "RFC1945-6-SL-008: Common RFC1945 status codes parsed")]
@@ -162,7 +161,7 @@ public sealed class Http10DecoderStatusLineTests
         var data = BuildRawResponse("HTTP/1.0 99 TooLow", "Content-Length: 0");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(data, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-011: Status code 1000 (too high) rejected")]
@@ -172,7 +171,7 @@ public sealed class Http10DecoderStatusLineTests
         var data = BuildRawResponse("HTTP/1.0 1000 TooHigh", "Content-Length: 0");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(data, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-012: LF-only line endings accepted in HTTP/1.0")]
@@ -207,6 +206,6 @@ public sealed class Http10DecoderStatusLineTests
         var data = Bytes("\r\n\r\n");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(data, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 }

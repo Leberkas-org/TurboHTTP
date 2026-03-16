@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using TurboHttp.Protocol.RFC9110;
-using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Protocol.RFC1945;
 
@@ -102,12 +101,12 @@ public sealed class Http10Decoder
         var parts = statusLine.Split(' ', 3);
         if (parts.Length < 2 || !int.TryParse(parts[1], out var code))
         {
-            throw new HttpDecoderException(HttpDecodeError.InvalidStatusLine, $"Line: '{statusLine}'.");
+            throw new HttpDecoderException(HttpDecoderError.InvalidStatusLine, $"Line: '{statusLine}'.");
         }
 
         if (code is < 100 or > 999)
         {
-            throw new HttpDecoderException(HttpDecodeError.InvalidStatusLine,
+            throw new HttpDecoderException(HttpDecoderError.InvalidStatusLine,
                 $"Status code {code} is out of the valid range 100–999.");
         }
     }
@@ -138,7 +137,7 @@ public sealed class Http10Decoder
             {
                 if (!clValues[i].Equals(first, StringComparison.Ordinal))
                 {
-                    throw new HttpDecoderException(HttpDecodeError.MultipleContentLengthValues,
+                    throw new HttpDecoderException(HttpDecoderError.MultipleContentLengthValues,
                         $"Values '{first}' and '{clValues[i]}' conflict.");
                 }
             }
@@ -146,13 +145,13 @@ public sealed class Http10Decoder
 
         if (!int.TryParse(clValues[0], out var len))
         {
-            throw new HttpDecoderException(HttpDecodeError.InvalidContentLength,
+            throw new HttpDecoderException(HttpDecoderError.InvalidContentLength,
                 $"Value: '{clValues[0]}'.");
         }
 
         if (len < 0)
         {
-            throw new HttpDecoderException(HttpDecodeError.InvalidContentLength,
+            throw new HttpDecoderException(HttpDecoderError.InvalidContentLength,
                 $"Value {len} is negative.");
         }
 
@@ -183,7 +182,7 @@ public sealed class Http10Decoder
             var colon = rawLine.IndexOf(':');
             if (colon <= 0)
             {
-                throw new HttpDecoderException(HttpDecodeError.InvalidHeader);
+                throw new HttpDecoderException(HttpDecoderError.InvalidHeader);
             }
 
             var name = rawLine[..colon];
@@ -191,7 +190,7 @@ public sealed class Http10Decoder
             // Validate header name: no spaces allowed
             if (name.Contains(' '))
             {
-                throw new HttpDecoderException(HttpDecodeError.InvalidFieldName);
+                throw new HttpDecoderException(HttpDecoderError.InvalidFieldName);
             }
 
             name = name.Trim();

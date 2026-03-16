@@ -50,7 +50,7 @@ public sealed class Http11DecoderChunkedTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class Http11DecoderChunkedTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed class Http11DecoderChunkedTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC7230-4.1: Missing final chunk is NeedMoreData")]
@@ -173,7 +173,7 @@ public sealed class Http11DecoderChunkedTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-6: 1-byte chunk decoded")]

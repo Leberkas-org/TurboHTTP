@@ -267,7 +267,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-022: Double semicolon (empty name) — rejected")]
@@ -277,7 +277,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-023: Unclosed quoted string value — rejected")]
@@ -287,7 +287,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-024: Empty token value after equals — rejected")]
@@ -298,7 +298,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-025: Extension name starts with '=' — rejected")]
@@ -308,7 +308,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-026: Space embedded in extension name — rejected")]
@@ -319,7 +319,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-027: '@' character in token value — rejected")]
@@ -329,7 +329,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-028: Trailing invalid char after token value — rejected")]
@@ -340,7 +340,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-029: '@' character in extension name — rejected")]
@@ -350,7 +350,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-030: '/' character in extension name — rejected")]
@@ -360,7 +360,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-031: '[' character in extension name — rejected")]
@@ -370,7 +370,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-032: Text after name without equals or semicolon — rejected")]
@@ -381,7 +381,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-033: NUL byte in extension name — rejected")]
@@ -401,7 +401,7 @@ public sealed class Http11DecoderChunkExtensionTests
         chunkData.CopyTo(raw, prefix.Length + chunkLine.Length);
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-034: Second extension invalid in multi-extension — rejected")]
@@ -412,7 +412,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     [Fact(DisplayName = "9112-chunkext-035: Semicolon on second chunk is invalid — rejected")]
@@ -423,7 +423,7 @@ public sealed class Http11DecoderChunkExtensionTests
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkExtension, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────────

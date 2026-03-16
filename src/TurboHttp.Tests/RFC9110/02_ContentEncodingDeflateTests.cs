@@ -186,7 +186,7 @@ public sealed class ContentEncodingDeflateTests
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(responseBytes, out _));
 
-        Assert.Equal(HttpDecodeError.DecompressionFailed, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.DecompressionFailed, ex.DecodeError);
     }
 
     // ── HTTP/1.1 Brotli Tests ────────────────────────────────────────────────

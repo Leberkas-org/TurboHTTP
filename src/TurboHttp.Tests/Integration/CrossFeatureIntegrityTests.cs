@@ -371,7 +371,7 @@ public sealed class CrossFeatureIntegrityTests
 
         var ex = Assert.Throws<HttpDecoderException>(() => ContentEncodingDecoder.Decompress(body, "zstd"));
 
-        Assert.Equal(HttpDecodeError.DecompressionFailed, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.DecompressionFailed, ex.DecodeError);
     }
 
     [Fact(DisplayName = "CFI-027: Stacked gzip+identity decodes correctly (identity is no-op)")]

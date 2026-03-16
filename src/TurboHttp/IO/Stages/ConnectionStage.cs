@@ -13,8 +13,8 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 {
     private IActorRef PoolRouter { get; }
 
-    private readonly Inlet<IOutputItem> _inlet = new("pool.in");
-    private readonly Outlet<IInputItem> _outlet = new("pool.out");
+    private readonly Inlet<IOutputItem> _inlet = new("connection.in");
+    private readonly Outlet<IInputItem> _outlet = new("connection.out");
 
     public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 

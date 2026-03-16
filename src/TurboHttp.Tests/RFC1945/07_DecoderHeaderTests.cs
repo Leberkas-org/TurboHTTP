@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC1945;
-using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC1945;
 
@@ -155,7 +154,7 @@ public sealed class Http10DecoderHeaderTests
         const string raw = "HTTP/1.0 200 OK\r\nBadHeaderNoColon\r\nContent-Length: 0\r\n\r\n";
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(Bytes(raw), out _));
-        Assert.Equal(HttpDecodeError.InvalidHeader, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC1945-4-HDR-011: Case-insensitive Content-Length header matching")]
@@ -189,7 +188,7 @@ public sealed class Http10DecoderHeaderTests
         const string raw = "HTTP/1.0 200 OK\r\nBad Name: value\r\nContent-Length: 0\r\n\r\n";
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(Bytes(raw), out _));
-        Assert.Equal(HttpDecodeError.InvalidFieldName, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidFieldName, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC1945-4-HDR-014: Tab character in header value accepted")]

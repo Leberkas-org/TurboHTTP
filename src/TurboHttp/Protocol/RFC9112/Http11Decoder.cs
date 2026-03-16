@@ -101,7 +101,7 @@ public sealed class Http11Decoder : IDisposable
                     continue;
                 }
 
-                if (result.Error == HttpDecodeError.NeedMoreData)
+                if (result.Error == HttpDecoderError.NeedMoreData)
                 {
                     // Store remainder in pooled buffer
                     StoreRemainder(working[consumed..]);
@@ -185,7 +185,7 @@ public sealed class Http11Decoder : IDisposable
                     continue;
                 }
 
-                if (result.Error == HttpDecodeError.NeedMoreData)
+                if (result.Error == HttpDecoderError.NeedMoreData)
                 {
                     StoreRemainder(working[consumed..]);
                     break;
@@ -314,7 +314,7 @@ public sealed class Http11Decoder : IDisposable
 
         if (headerEnd > _maxHeaderSize)
         {
-            return HttpDecodeResult.Fail(HttpDecodeError.LineTooLong);
+            return HttpDecodeResult.Fail(HttpDecoderError.LineTooLong);
         }
 
         var headerSection = buffer[..(headerEnd + 2)];
@@ -322,13 +322,13 @@ public sealed class Http11Decoder : IDisposable
         var statusLineEnd = FindCrlf(headerSection, 0);
         if (statusLineEnd < 0)
         {
-            return HttpDecodeResult.Fail(HttpDecodeError.InvalidStatusLine);
+            return HttpDecodeResult.Fail(HttpDecoderError.InvalidStatusLine);
         }
 
         var statusLine = headerSection[..statusLineEnd];
         if (!TryParseStatusLine(statusLine, out var statusCode, out var reasonPhrase))
         {
-            return HttpDecodeResult.Fail(HttpDecodeError.InvalidStatusLine);
+            return HttpDecodeResult.Fail(HttpDecoderError.InvalidStatusLine);
         }
 
         var headersData = headerSection[(statusLineEnd + 2)..];
@@ -384,7 +384,7 @@ public sealed class Http11Decoder : IDisposable
         // Check header size limit
         if (headerEnd > _maxHeaderSize)
         {
-            return HttpDecodeResult.Fail(HttpDecodeError.LineTooLong);
+            return HttpDecodeResult.Fail(HttpDecoderError.LineTooLong);
         }
 
         // Include the CRLF that terminates the last header so FindCrlf/ParseHeaders work correctly.
@@ -394,13 +394,13 @@ public sealed class Http11Decoder : IDisposable
         var statusLineEnd = FindCrlf(headerSection, 0);
         if (statusLineEnd < 0)
         {
-            return HttpDecodeResult.Fail(HttpDecodeError.InvalidStatusLine);
+            return HttpDecodeResult.Fail(HttpDecoderError.InvalidStatusLine);
         }
 
         var statusLine = headerSection[..statusLineEnd];
         if (!TryParseStatusLine(statusLine, out var statusCode, out var reasonPhrase))
         {
-            return HttpDecodeResult.Fail(HttpDecodeError.InvalidStatusLine);
+            return HttpDecodeResult.Fail(HttpDecoderError.InvalidStatusLine);
         }
 
         // 3. Parse headers using span-based parsing
@@ -593,7 +593,7 @@ public sealed class Http11Decoder : IDisposable
             fieldCount++;
             if (fieldCount > _maxHeaderCount)
             {
-                throw new HttpDecoderException(HttpDecodeError.TooManyHeaders,
+                throw new HttpDecoderException(HttpDecoderError.TooManyHeaders,
                     $"Received {fieldCount} fields; limit is {_maxHeaderCount}.");
             }
 
@@ -604,7 +604,7 @@ public sealed class Http11Decoder : IDisposable
             // colonIdx == -1: no colon present; colonIdx == 0: empty field name — both are invalid.
             if (colonIdx <= 0)
             {
-                throw new HttpDecoderException(HttpDecodeError.InvalidHeader);
+                throw new HttpDecoderException(HttpDecoderError.InvalidHeader);
             }
 
             var name = WellKnownHeaders.TrimOws(line[..colonIdx]);
@@ -616,7 +616,7 @@ public sealed class Http11Decoder : IDisposable
             // RFC 9112 §5.5: Header field values MUST NOT contain CR, LF, or NUL characters.
             if (valueStr.IndexOfAny(['\r', '\n', '\0']) >= 0)
             {
-                throw new HttpDecoderException(HttpDecodeError.InvalidFieldValue,
+                throw new HttpDecoderException(HttpDecoderError.InvalidFieldValue,
                     $"Header '{nameStr}' contains a CR, LF, or NUL character in its value.");
             }
 
@@ -648,7 +648,7 @@ public sealed class Http11Decoder : IDisposable
             // to prevent HTTP request smuggling attacks.
             if (contentLength.HasValue)
             {
-                return (HttpDecodeResult.Fail(HttpDecodeError.ChunkedWithContentLength), null, 0, null);
+                return (HttpDecodeResult.Fail(HttpDecoderError.ChunkedWithContentLength), null, 0, null);
             }
 
             return ParseChunkedBody(data);
@@ -663,7 +663,7 @@ public sealed class Http11Decoder : IDisposable
 
         if (len > _maxBodySize)
         {
-            return (HttpDecodeResult.Fail(HttpDecodeError.InvalidContentLength), null, 0, null);
+            return (HttpDecodeResult.Fail(HttpDecoderError.InvalidContentLength), null, 0, null);
         }
 
         if (data.Length < len)
@@ -700,12 +700,12 @@ public sealed class Http11Decoder : IDisposable
 
             if (!TryParseChunkExtensions(extSpan))
             {
-                return (HttpDecodeResult.Fail(HttpDecodeError.InvalidChunkExtension), null, 0, null);
+                return (HttpDecodeResult.Fail(HttpDecoderError.InvalidChunkExtension), null, 0, null);
             }
 
             if (!TryParseHex(sizeSpan, out var chunkSize))
             {
-                return (HttpDecodeResult.Fail(HttpDecodeError.InvalidChunkSize), null, 0, null);
+                return (HttpDecodeResult.Fail(HttpDecoderError.InvalidChunkSize), null, 0, null);
             }
 
             pos = lineEnd + 2;
@@ -743,7 +743,7 @@ public sealed class Http11Decoder : IDisposable
             // Validate chunk size
             if (chunkSize > _maxBodySize || _bodyLength + chunkSize > _maxBodySize)
             {
-                return (HttpDecodeResult.Fail(HttpDecodeError.InvalidContentLength), null, 0, null);
+                return (HttpDecodeResult.Fail(HttpDecoderError.InvalidContentLength), null, 0, null);
             }
 
             // Need chunk data + CRLF
@@ -792,7 +792,7 @@ public sealed class Http11Decoder : IDisposable
                 if (!values[i].Equals(first, StringComparison.Ordinal))
                 {
                     throw new HttpDecoderException(
-                        HttpDecodeError.MultipleContentLengthValues,
+                        HttpDecoderError.MultipleContentLengthValues,
                         $"Values '{first}' and '{values[i]}' conflict.");
                 }
             }

@@ -81,7 +81,7 @@ public sealed class Http11DecoderBodyTests
             ("Content-Length", "999"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.ChunkedWithContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.ChunkedWithContentLength, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC7230-3.3: Multiple Content-Length values rejected")]
@@ -90,7 +90,7 @@ public sealed class Http11DecoderBodyTests
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 6\r\n\r\nHello"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.MultipleContentLengthValues, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC7230-3.3: Negative Content-Length is parse error")]
@@ -166,7 +166,7 @@ public sealed class Http11DecoderBodyTests
             ("Content-Length", "999"));
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.ChunkedWithContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.ChunkedWithContentLength, ex.DecodeError);
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class Http11DecoderBodyTests
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 6\r\n\r\nHello"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.MultipleContentLengthValues, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
     }
 
     [Fact]

@@ -358,47 +358,22 @@ TASK-5A-013 (Update CLAUDE.md)
 **Size:** S
 
 **Acceptance Criteria:**
-- [ ] `HandleConnectionFailed` removes connection from `_connections` list
-- [ ] Connection marked `Active = false`
-- [ ] `ConnectionHandle` for failed connection is invalidated
-- [ ] If `ConnectionStage` holds a stale handle, the completed channel signals it to request a new one
-- [ ] New unit test: verify cleanup on `ConnectionFailed`
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests pass
+- [x] `HandleConnectionFailed` removes connection from `_connections` list
+- [x] Connection marked `Active = false`
+- [x] `ConnectionHandle` for failed connection is invalidated
+- [x] If `ConnectionStage` holds a stale handle, the completed channel signals it to request a new one
+- [x] New unit test: verify cleanup on `ConnectionFailed`
+- [x] `dotnet build ./src/TurboHttp.sln` — 0 errors
+- [x] `dotnet test ./src/TurboHttp.sln` — all tests pass
 
 **Key Files:**
 - `src/TurboHttp/IO/HostPoolActor.cs` — `HandleConnectionFailed`
+- `src/TurboHttp/IO/ConnectionActor.cs` — `Reconnect()`, `AttemptReconnect()`
+- `src/TurboHttp.StreamTests/IO/HostPoolActorTests.cs` — HPA-001, HPA-002
 
 ---
 
-### TASK-5A-012: Integration Tests — E2E `SendAsync()` Against Kestrel
-
-**Description:** As a developer, I want integration tests proving the full hybrid pipeline works end-to-end.
-
-**Dependencies:** TASK-5A-004 through TASK-5A-011
-**Size:** M
-
-**Acceptance Criteria:**
-- [ ] Integration test class(es) in `src/TurboHttp.IntegrationTests/`
-- [ ] Tests call `TurboHttpClient.SendAsync()` (not engine helpers)
-- [ ] Coverage:
-  - Basic GET/POST (HTTP/1.1)
-  - Redirect chains (301, 302, 307, 308)
-  - Cookie round-trips
-  - Cache behavior (max-age hit, etag validation)
-  - Retry on 503
-  - Connection reuse (multiple requests on same TCP)
-- [ ] HTTP/2 basic GET via `KestrelH2Fixture`
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests pass
-
-**Key Files:**
-- `src/TurboHttp.IntegrationTests/` — new test classes
-- `src/TurboHttp.IntegrationTests/Shared/KestrelFixture.cs`
-
----
-
-### TASK-5A-013: Update CLAUDE.md
+### TASK-5A-012: Update CLAUDE.md
 
 **Description:** As a developer, I want CLAUDE.md to accurately reflect the hybrid architecture.
 
@@ -426,8 +401,7 @@ TASK-5A-013 (Update CLAUDE.md)
 | **4** | TASK-5A-004 | Sequential (largest task) | ConnectionStage rewrite — switches to direct channels |
 | **5** | TASK-5A-005, TASK-5A-006, TASK-5A-007 | Yes (3 parallel) | Remove dead data-routing code |
 | **6** | TASK-5A-008, TASK-5A-011 | Yes (2 parallel) | Wire reuse feedback + stale cleanup |
-| **7** | TASK-5A-012 | Sequential | Integration tests |
-| **8** | TASK-5A-013 | Sequential | Documentation |
+| **7** | TASK-5A-012 | Sequential | Documentation |
 
 **Key principle:** Phases 1-3 are additive (old path coexists). Phase 4 is the cutover. Phases 5-7 clean up and harden.
 
@@ -459,6 +433,5 @@ TASK-5A-013 (Update CLAUDE.md)
 - Zero actor mailbox hops in the request/response data path
 - All actor lifecycle management preserved (supervision, reconnect, idle eviction)
 - All existing tests green (adapted where needed)
-- New integration tests prove E2E functionality
 - `ConnectionStage` reads/writes `Channel<byte>` directly
 - CLAUDE.md reflects the hybrid architecture

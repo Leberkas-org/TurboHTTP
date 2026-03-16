@@ -26,8 +26,8 @@ public sealed class ConnectionActor : ReceiveActor
     private readonly HostKey _hostKey;
     private readonly TurboClientOptions _config;
 
-    private readonly Channel<(IMemoryOwner<byte>, int)> _out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
-    private readonly Channel<(IMemoryOwner<byte>, int)> _in = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+    private Channel<(IMemoryOwner<byte>, int)> _out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+    private Channel<(IMemoryOwner<byte>, int)> _in = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
 
@@ -90,6 +90,10 @@ public sealed class ConnectionActor : ReceiveActor
     {
         _runner = null;
 
+        // AC4: complete the inbound channel so any ConnectionStage holding the stale
+        // ConnectionHandle.InboundReader detects end-of-stream and re-requests a fresh handle.
+        _in.Writer.TryComplete();
+
         // Notify parent of connection failure
         Context.Parent.Tell(new HostPoolActor.ConnectionFailed(Self));
 
@@ -116,6 +120,9 @@ public sealed class ConnectionActor : ReceiveActor
 
     private void AttemptReconnect()
     {
+        // Create fresh channels — the previous _in.Writer was completed to signal stale handles.
+        _out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+        _in = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
         Connect();
     }
 

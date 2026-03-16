@@ -145,11 +145,12 @@ internal static class ClientByteMover
             }
             catch (OperationCanceledException)
             {
-                // we're being shut down
+                runner.Tell(DoClose.Instance);
                 return;
             }
             catch (Exception)
             {
+                runner.Tell(DoClose.Instance);
                 return;
             }
         }

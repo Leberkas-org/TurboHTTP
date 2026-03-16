@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Protocol.RFC9110;
 
@@ -16,7 +15,7 @@ internal static class ContentEncodingDecoder
     /// <summary>
     /// Decompresses <paramref name="body"/> according to the Content-Encoding token list.
     /// Returns the original bytes unchanged if encoding is null, empty, or "identity".
-    /// Throws <see cref="HttpDecoderException"/> with <see cref="HttpDecodeError.DecompressionFailed"/>
+    /// Throws <see cref="HttpDecoderException"/> with <see cref="HttpDecoderError.DecompressionFailed"/>
     /// on unknown encodings or decompression failures.
     /// </summary>
     /// <param name="body">The compressed response body bytes.</param>
@@ -77,7 +76,7 @@ internal static class ContentEncodingDecoder
             }
 
             // Unknown encoding: RFC 9110 §8.4 — client cannot process unknown response encoding.
-            throw new HttpDecoderException(HttpDecodeError.DecompressionFailed,
+            throw new HttpDecoderException(HttpDecoderError.DecompressionFailed,
                 $"RFC 9110 §8.4: Unknown Content-Encoding '{encoding}'; cannot decompress response.");
         }
         catch (HttpDecoderException)
@@ -86,7 +85,7 @@ internal static class ContentEncodingDecoder
         }
         catch (Exception ex)
         {
-            throw new HttpDecoderException(HttpDecodeError.DecompressionFailed,
+            throw new HttpDecoderException(HttpDecoderError.DecompressionFailed,
                 $"RFC 9110 §8.4: Decompression failed for encoding '{encoding}': {ex.Message}");
         }
     }

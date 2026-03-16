@@ -32,7 +32,7 @@ public sealed class Http11DecoderHeaderTests
         var raw = "HTTP/1.1 200 OK\r\nThisHeaderHasNoColon\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidHeader, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC7230-3.2: Standard header field Name: value parsed")]
@@ -99,7 +99,7 @@ public sealed class Http11DecoderHeaderTests
         var raw = "HTTP/1.1 200 OK\r\nThisHeaderHasNoColon\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidHeader, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC7230-3.2: Header name lookup case-insensitive")]

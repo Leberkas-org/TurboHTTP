@@ -26,7 +26,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithNHeaders(100); // 100 + Content-Length = 101
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.TooManyHeaders, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
     }
 
     [Fact(DisplayName = "SEC-001c: Custom header count limit respected")]
@@ -36,7 +36,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithNHeaders(5); // 5 + Content-Length = 6
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.TooManyHeaders, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
     }
 
     // ── HTTP/1.1 Header Block Size Limits ─────────────────────────────────────
@@ -61,7 +61,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithHeaderBlockPosition(8193);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.LineTooLong, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
     }
 
     [Fact(DisplayName = "SEC-002c: Single header value exceeding limit rejected")]
@@ -71,7 +71,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithLargeHeaderValue(9000);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.LineTooLong, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
     }
 
     // ── HTTP/1.1 Body Size Limits ─────────────────────────────────────────────
@@ -94,7 +94,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithContentLengthOnly(1025);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidContentLength, ex.DecodeError);
     }
 
     [Fact(DisplayName = "SEC-003c: Zero body limit rejects any body")]
@@ -104,7 +104,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithContentLengthOnly(1);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidContentLength, ex.DecodeError);
     }
 
     // ── HTTP Smuggling ────────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithTeAndCl();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.ChunkedWithContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.ChunkedWithContentLength, ex.DecodeError);
     }
 
     [Fact(DisplayName = "SEC-005b: CRLF injection in header value rejected")]
@@ -126,7 +126,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithBareCrInHeaderValue();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidFieldValue, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidFieldValue, ex.DecodeError);
     }
 
     [Fact(DisplayName = "SEC-005c: NUL byte in decoded header value rejected")]
@@ -136,7 +136,7 @@ public sealed class Http11SecurityTests
         var raw = BuildResponseWithNulInHeaderValue();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidFieldValue, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidFieldValue, ex.DecodeError);
     }
 
     // ── State Isolation ───────────────────────────────────────────────────────

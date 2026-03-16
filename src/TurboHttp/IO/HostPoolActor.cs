@@ -12,7 +12,8 @@ namespace TurboHttp.IO;
 
 public sealed class HostPoolActor : ReceiveActor
 {
-    public record HostPoolConfig(TcpOptions Options, TurboClientOptions Config, HostKey Key);
+    public record HostPoolConfig(TcpOptions Options, TurboClientOptions Config, HostKey Key,
+        Func<Props>? ConnectionFactory = null);
 
     // ── Public message protocol ───────────────────────────────────────
 
@@ -32,6 +33,7 @@ public sealed class HostPoolActor : ReceiveActor
     private readonly TcpOptions _options;
     private readonly TurboClientOptions _config;
     private readonly PerHostConnectionLimiter _limiter;
+    private readonly Func<Props>? _connectionFactory;
     private ICancelable? _scheduler;
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
@@ -53,6 +55,7 @@ public sealed class HostPoolActor : ReceiveActor
         _config = config.Config;
         _key = config.Key;
         _limiter = new PerHostConnectionLimiter();
+        _connectionFactory = config.ConnectionFactory;
 
         Receive<ConnectionIdle>(HandleIdle);
         Receive<ConnectionFailed>(HandleFailure);
@@ -125,8 +128,18 @@ public sealed class HostPoolActor : ReceiveActor
             return null;
         }
 
-        var clientManager = Context.GetActor<ClientManager>();
-        var actor = Context.ActorOf(Props.Create(() => new ConnectionActor(_options, clientManager, _key, _config)));
+        Props props;
+        if (_connectionFactory != null)
+        {
+            props = _connectionFactory();
+        }
+        else
+        {
+            var clientManager = Context.GetActor<ClientManager>();
+            props = Props.Create(() => new ConnectionActor(_options, clientManager, _key, _config));
+        }
+
+        var actor = Context.ActorOf(props);
 
         Context.Watch(actor);
 
@@ -151,8 +164,19 @@ public sealed class HostPoolActor : ReceiveActor
             return;
         }
 
+        // AC2: mark inactive before removal (for any in-flight observers)
         conn.MarkDead();
+
+        // AC1: remove stale connection state immediately
+        _connections.Remove(conn);
+
         _limiter.Release(HostIdentifier);
+
+        // AC3: invalidate the active handle if it belongs to the failed connection
+        if (_activeHandle?.ConnectionActor.Equals(msg.Connection) == true)
+        {
+            _activeHandle = null;
+        }
 
         Context.System.Scheduler.ScheduleTellOnceCancelable(
             _config.ReconnectInterval,
@@ -163,22 +187,9 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void HandleReconnect(Reconnect msg)
     {
-        var conn = Find(msg.Connection);
-
-        if (conn == null)
-        {
-            return;
-        }
-
-        var previousVersion = conn.HttpVersion;
-        _connections.Remove(conn);
-
-        var newConn = SpawnConnection();
-
-        if (newConn is not null)
-        {
-            newConn.HttpVersion = previousVersion;
-        }
+        // Connection was already removed from _connections in HandleFailure.
+        // Spawn a fresh replacement connection.
+        SpawnConnection();
     }
 
     private void EvictIdleConnections()

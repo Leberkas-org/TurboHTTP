@@ -2,7 +2,6 @@ using System.Buffers;
 using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Protocol;
-using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Stages;
@@ -150,6 +149,6 @@ public sealed class StageLifecycleTests : StreamTestBase
         Assert.IsType<HttpDecoderException>(inner);
 
         var decoderEx = (HttpDecoderException)inner;
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, decoderEx.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, decoderEx.DecodeError);
     }
 }

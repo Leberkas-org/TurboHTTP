@@ -22,7 +22,7 @@ public sealed class Http11NegativePathTests
         var raw = "HTTP/2.0 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-002: Non-HTTP protocol prefix in status-line rejected")]
@@ -33,7 +33,7 @@ public sealed class Http11NegativePathTests
         var raw = "HTTPS/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-003: Double space between HTTP-version and status code rejected")]
@@ -45,7 +45,7 @@ public sealed class Http11NegativePathTests
         var raw = "HTTP/1.1  200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-004: Two-digit status code rejected")]
@@ -56,7 +56,7 @@ public sealed class Http11NegativePathTests
         var raw = "HTTP/1.1 20 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-005: Non-digit character in status code rejected")]
@@ -67,7 +67,7 @@ public sealed class Http11NegativePathTests
         var raw = "HTTP/1.1 20A OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidStatusLine, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-006: Bare LF (no CR) line endings are not recognized as CRLF")]
@@ -94,7 +94,7 @@ public sealed class Http11NegativePathTests
         var raw = Encoding.ASCII.GetBytes($"HTTP/1.1 200 {longReason}\r\nContent-Length: 0\r\n\r\n");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.LineTooLong, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
     }
 
     // ── RFC 9112 §5 — Header Field Parsing ────────────────────────────────────
@@ -118,7 +118,7 @@ public sealed class Http11NegativePathTests
         var raw = Encoding.ASCII.GetBytes(response);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidHeader, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-5-HDR-002: Chunked trailer with empty field name rejected")]
@@ -138,7 +138,7 @@ public sealed class Http11NegativePathTests
         var raw = Encoding.ASCII.GetBytes(response);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidHeader, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
     // ── RFC 9112 §6 — Transfer-Encoding & Body Framing ────────────────────────
@@ -276,7 +276,7 @@ public sealed class Http11NegativePathTests
         var raw = Encoding.ASCII.GetBytes(response);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.MultipleContentLengthValues, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-9-SMUG-003: Transfer-Encoding + Content-Length combination rejected")]
@@ -295,7 +295,7 @@ public sealed class Http11NegativePathTests
         var raw = Encoding.ASCII.GetBytes(response);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.ChunkedWithContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.ChunkedWithContentLength, ex.DecodeError);
     }
 
     // ── RFC 9112 §7.1 — Chunked Transfer-Encoding ─────────────────────────────
@@ -314,7 +314,7 @@ public sealed class Http11NegativePathTests
         var raw = Encoding.ASCII.GetBytes(response);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecodeError.InvalidChunkSize, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-7-CHK-002: Chunked body with all-caps hex chunk size accepted")]

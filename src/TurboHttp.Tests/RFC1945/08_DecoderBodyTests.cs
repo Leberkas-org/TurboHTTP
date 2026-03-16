@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC1945;
-using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC1945;
 
@@ -127,7 +126,7 @@ public sealed class Http10DecoderBodyTests
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: -1");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(data, out _));
-        Assert.Equal(HttpDecodeError.InvalidContentLength, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.InvalidContentLength, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC1945-7-BODY-009: Two different Content-Length values rejected")]
@@ -137,7 +136,7 @@ public sealed class Http10DecoderBodyTests
         const string raw = "HTTP/1.0 200 OK\r\nContent-Length: 3\r\nContent-Length: 5\r\n\r\nHello";
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(Bytes(raw), out _));
-        Assert.Equal(HttpDecodeError.MultipleContentLengthValues, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC1945-7-BODY-010: Two identical Content-Length values accepted")]

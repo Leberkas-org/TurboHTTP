@@ -206,15 +206,38 @@
 - No `[Benchmark]` methods defined — cannot measure performance baseline
 - RFC compliance matrix: `RFC_COMPLIANCE.md` in repo root
 
+## HostPoolActor Stale State Cleanup (TASK-5A-011, 2026-03-16)
+
+### HandleFailure Changes
+- `MarkDead()` is called before `_connections.Remove(conn)` — removal is immediate, not deferred to Reconnect timer
+- `_activeHandle` is cleared in `HandleFailure` when the failed actor matches
+- `HandleReconnect` simplified: just calls `SpawnConnection()` (no `Find()` needed)
+- `HttpVersion` preservation across reconnects was dropped (replacement starts fresh)
+- `HostPoolConfig` has `ConnectionFactory: Func<Props>?` for testability (bypasses `Context.GetActor<ClientManager>()`)
+- Tests: `src/TurboHttp.StreamTests/IO/HostPoolActorTests.cs` (HPA-001, HPA-002)
+
+### ConnectionActor Channel Lifecycle
+- `_in` and `_out` are NOT readonly — reassigned on each reconnect
+- `Reconnect()` calls `_in.Writer.TryComplete()` to signal stale `ConnectionHandle.InboundReader`
+- `AttemptReconnect()` creates fresh `_in`/`_out` channels before calling `Connect()`
+- This ensures: ConnectionStage detects end-of-stream → `_handle = null` → next ConnectItem re-acquires
+
+## ConnectionActor Reconnect Logic (TASK-5A-010, 2026-03-16)
+
+### Current State (poc2 branch)
+- `ConnectionActor.Reconnect()` sends `HostPoolActor.ConnectionFailed(Self)` to parent
+- Exponential backoff: `ReconnectInterval * 2^_reconnectAttempt` (capped at 60s)
+- `_reconnectAttempt` increments on each failed reconnect, resets to 0 on `HandleConnected`
+- `MaxReconnectAttempts` guard: logs warning and returns without scheduling when limit hit
+- On reconnect success: `HandleConnected` sends `ConnectionReady(handle)` to parent
+- Tests: `src/TurboHttp.StreamTests/IO/ConnectionActorTests.cs` (CA-001 through CA-005)
+- `TestProbe` type requires `using Akka.TestKit;` (not just `using Akka.TestKit.Xunit2;`)
+
 ## TCP Error Tolerance Audit (TASK-AUD-004, 2026-03-15)
 
-### Key Findings
-- **`ConnectionActor.HandleDisconnected`** calls `Reconnect()` → `Connect()` **immediately** (zero delay) on `ClientDisconnected` or actor `Terminated`
-- **Stream graph survives** (MergeHub at `HostPoolActor` + `PoolRouterActor` level insulates individual drops); **in-flight requests on the dropped connection are silently lost**
-- **No failure propagation to parallel connections** — MergeHub isolation
-- **No exponential backoff** — `PoolConfig.ReconnectInterval` (5s) and `MaxReconnectAttempts = 3` are dead config; `ConnectionFailed` is **never sent** from `ConnectionActor` to `HostPoolActor`
-- `HostPoolActor.HandleFailure` is unreachable dead code in current implementation
-- During reconnect gap, stale `_connectionQueues[conn.Actor]` entry can receive new requests that will throw `NullReferenceException` (from null `_outbound`)
+### Key Findings (SUPERSEDED by TASK-5A-010)
+- Original finding: no backoff, ConnectionFailed never sent — FIXED in poc2
+- See "ConnectionActor Reconnect Logic" section above for current state
 
 ## Connection Reuse Audit (TASK-AUD-003, 2026-03-15)
 
