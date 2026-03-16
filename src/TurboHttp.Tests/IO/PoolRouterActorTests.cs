@@ -29,6 +29,9 @@ public sealed class PoolRouterActorTests : TestKit
 
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
 
+        // EnsureHost is now forwarded to the host actor (for ConnectionHandle replies)
+        hostProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
+
         var owner = MemoryPool<byte>.Shared.Rent(4);
         router.Tell(new DataItem(key, owner, 4));
 
@@ -54,6 +57,10 @@ public sealed class PoolRouterActorTests : TestKit
 
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
         router.Tell(new PoolRouterActor.EnsureHost(key, options));
+
+        // EnsureHost is now forwarded to the host actor (for ConnectionHandle replies)
+        hostProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
+        hostProbe.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
 
         // Both DataItems should reach the same probe
         var owner1 = MemoryPool<byte>.Shared.Rent(4);
@@ -88,6 +95,10 @@ public sealed class PoolRouterActorTests : TestKit
 
         router.Tell(new PoolRouterActor.EnsureHost(keyA, optionsA));
         router.Tell(new PoolRouterActor.EnsureHost(keyB, optionsB));
+
+        // EnsureHost is now forwarded to the host actor (for ConnectionHandle replies)
+        probeA.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
+        probeB.ExpectMsg<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(5));
 
         var ownerA = MemoryPool<byte>.Shared.Rent(4);
         router.Tell(new DataItem(keyA, ownerA, 4));

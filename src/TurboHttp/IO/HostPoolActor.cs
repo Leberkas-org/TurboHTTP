@@ -45,6 +45,12 @@ public sealed class HostPoolActor : ReceiveActor
 
     private readonly List<ConnectionState> _connections = [];
 
+    /// <summary>Active connection handle (from the most recent ConnectionReady).</summary>
+    private ConnectionHandle? _activeHandle;
+
+    /// <summary>Requesters waiting for a ConnectionHandle (queued when no active handle exists).</summary>
+    private readonly List<IActorRef> _pendingHandleRequesters = [];
+
     /// <summary>Per-connection outbound request queues, keyed by ConnectionActor ref.</summary>
     private readonly Dictionary<IActorRef, ISourceQueueWithComplete<DataItem>> _connectionQueues = new();
 
@@ -69,6 +75,8 @@ public sealed class HostPoolActor : ReceiveActor
         Receive<Reconnect>(HandleReconnect);
         Receive<MarkConnectionNoReuse>(HandleMarkNoReuse);
         Receive<RegisterConnectionRefs>(HandleRegisterConnectionRefs);
+        Receive<ConnectionActor.ConnectionReady>(HandleConnectionReady);
+        Receive<PoolRouterActor.EnsureHost>(HandleEnsureHost);
         Receive<DataItem>(HandleDataItem);
     }
 
@@ -140,6 +148,36 @@ public sealed class HostPoolActor : ReceiveActor
         // Drain any pending items that were queued while waiting for a connection
         DrainPending(connectionQueue);
     }
+
+    // ── ConnectionHandle forwarding ───────────────────────────────────
+
+    private void HandleConnectionReady(ConnectionActor.ConnectionReady msg)
+    {
+        _activeHandle = msg.Handle;
+
+        // Flush all pending requesters
+        foreach (var requester in _pendingHandleRequesters)
+        {
+            requester.Tell(msg.Handle);
+        }
+
+        _pendingHandleRequesters.Clear();
+    }
+
+    private void HandleEnsureHost(PoolRouterActor.EnsureHost msg)
+    {
+        // If we already have an active handle, reply immediately
+        if (_activeHandle is not null)
+        {
+            Sender.Tell(_activeHandle);
+            return;
+        }
+
+        // Otherwise queue the requester — they'll be served when ConnectionReady arrives
+        _pendingHandleRequesters.Add(Sender);
+    }
+
+    // ── Pending drain ──────────────────────────────────────────────────
 
     private void DrainPending(ISourceQueueWithComplete<DataItem> queue)
     {

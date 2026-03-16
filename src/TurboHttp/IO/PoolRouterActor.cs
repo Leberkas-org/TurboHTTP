@@ -87,7 +87,11 @@ public sealed class PoolRouterActor : ReceiveActor
 
     private void HandleEnsureHost(EnsureHost msg)
     {
-        EnsureHostActor(msg.Key, msg.Options);
+        var hostActor = EnsureHostActor(msg.Key, msg.Options);
+
+        // Forward preserves the original Sender so HostPoolActor can reply directly.
+        // Fire-and-forget callers simply ignore the reply (backward compat).
+        hostActor.Forward(msg);
     }
 
     private void HandleRegisterHostResponseSource(RegisterHostResponseSource msg)

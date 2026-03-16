@@ -159,16 +159,16 @@ TASK-5A-013 (Update CLAUDE.md)
 - If a connection already exists and is active, reply immediately with existing handle
 
 **Acceptance Criteria:**
-- [ ] `EnsureHost` message carries the requester `IActorRef` (or uses `Sender`)
-- [ ] `HostPoolActor` tracks pending requesters waiting for a `ConnectionHandle`
-- [ ] On `ConnectionReady(handle)` from `ConnectionActor`, `HostPoolActor` replies to pending requester with `ConnectionHandle`
-- [ ] If active connection exists, `HostPoolActor` replies immediately (no wait)
-- [ ] Existing fire-and-forget `EnsureHost` path still works (backward compat during migration)
-- [ ] New unit test: verify `ConnectionHandle` is returned to requester after TCP connect
-- [ ] New unit test: verify immediate reply when active connection exists
-- [ ] New unit test: verify multiple requesters are all served
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests pass
+- [x] `EnsureHost` message carries the requester `IActorRef` (or uses `Sender`)
+- [x] `HostPoolActor` tracks pending requesters waiting for a `ConnectionHandle`
+- [x] On `ConnectionReady(handle)` from `ConnectionActor`, `HostPoolActor` replies to pending requester with `ConnectionHandle`
+- [x] If active connection exists, `HostPoolActor` replies immediately (no wait)
+- [x] Existing fire-and-forget `EnsureHost` path still works (backward compat during migration)
+- [x] New unit test: verify `ConnectionHandle` is returned to requester after TCP connect
+- [x] New unit test: verify immediate reply when active connection exists
+- [x] New unit test: verify multiple requesters are all served
+- [x] `dotnet build ./src/TurboHttp.sln` — 0 errors
+- [x] `dotnet test ./src/TurboHttp.sln` — all tests pass
 
 **Key Files:**
 - `src/TurboHttp/IO/HostPoolActor.cs` — `HandleEnsureHost`, `HandleConnectionReady`
