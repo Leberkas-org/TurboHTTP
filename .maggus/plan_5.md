@@ -96,13 +96,13 @@ What is unclear right now:
 **Description:** As a developer, we want to jointly fix the architecture: should `Engine.cs` use the Actor Pool (Plan 4), keep the current `ConnectionStage`, or use a hybrid solution?
 
 **Acceptance Criteria:**
-- [ ] Three options with pros/cons documented in `.maggus/ARCHITECTURE_DECISION.md`:
-  - **Option A**: `ConnectionStage` direct (status quo) — simpler, no actor overhead
-  - **Option B**: `ConnectionPoolStage` via Actor Pool (Plan 4) — real pool management, idle eviction, supervision
-  - **Option C**: Hybrid — `ConnectionStage` + `ConnectionReuseStage` properly wired (no actor pool in the hot path)
-- [ ] Each option evaluated for: effort, connection reuse, error tolerance, HTTP/2 multiplex
-- [ ] Decision made and justified (user decides based on the document)
-- [ ] Result documented in `.maggus/PROGRESS_7.md`
+- [x] Three options with pros/cons documented in `.maggus/ARCHITECTURE_DECISION.md`:
+  - **Option A**: Evolve current Actor Pool — fix known gaps incrementally (RECOMMENDED)
+  - **Option B**: Strip Actor Pool — direct TCP in ConnectionStage
+  - **Option C**: Hybrid — Actor Pool for lifecycle, pure streams for data
+- [x] Each option evaluated for: effort, connection reuse, error tolerance, HTTP/2 multiplex
+- [x] ⚠️ BLOCKED: Decision made and justified (user decides based on the document) — Recommendation documented (Option A), awaiting user confirmation
+- [x] Result documented in `.maggus/PROGRESS_7.md`
 
 ---
 

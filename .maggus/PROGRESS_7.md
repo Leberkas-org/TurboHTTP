@@ -579,3 +579,47 @@ The following CLAUDE.md statements are **outdated** and should be updated:
 2. **Connection reuse** — `ConnectionReuseStage` is dead code, not wired into Engine.cs
 3. **Per-host connection limits** — `PerHostConnectionLimiter` is unit-tested but not integrated
 4. **CLAUDE.md is outdated** — Several "Current Limitations" statements no longer reflect reality
+
+---
+
+## TASK-DEC-001 — Architecture Decision: Engine.cs Transport Layer
+
+**Date:** 2026-03-16
+
+### Summary
+
+Three architecture options were evaluated for the Engine.cs transport layer:
+
+| Option | Description | Effort | Recommendation |
+|--------|-------------|--------|----------------|
+| **A** | Evolve current Actor Pool — fix known gaps incrementally | Low | ✅ **RECOMMENDED** |
+| **B** | Strip Actor Pool — direct TCP in ConnectionStage | High | ❌ Not recommended |
+| **C** | Hybrid — actors for lifecycle only, pure streams for data | Medium-High | ⚠️ Future option |
+
+### Key Insight from Audit
+
+The plan originally assumed the Actor Pool (Plan 4) might not be integrated. **The audit proved it IS fully integrated.** The complete path works: `TurboHttpClient.SendAsync()` → `TurboClientStreamManager` → `Engine.CreateFlow(poolRouter)` → `ConnectionStage(poolRouter)` → `PoolRouterActor` → `HostPoolActor` → `ConnectionActor` → TCP.
+
+This reframed the decision from "should we adopt the actor pool?" to "should we keep, strip, or restructure the actor pool?"
+
+### Recommendation: Option A (Evolve Current Architecture)
+
+**Justification:**
+1. The actor pool already works — MergeHub isolation, HTTP/2 multiplexing, and the full lifecycle are proven
+2. The gaps are small and isolated (6 tasks, S-M size each)
+3. The actor mailbox "bottleneck" is theoretical — no benchmark evidence
+4. Option B destroys ~500 lines of proven code and 19 tests for marginal gain
+5. Option C is premature optimisation — can be pursued later if benchmarks warrant it
+
+### Implementation Order (if Option A is confirmed)
+
+1. Wire `ConnectionReuseStage` into `BuildConnectionFlowPublic` (S)
+2. Fix `ConnectionActor.Reconnect()` — send `ConnectionFailed`, add backoff (M)
+3. Fix stale queue cleanup in `HostPoolActor` on `ConnectionFailed` (S)
+4. Wire `PerHostConnectionLimiter` in `HostPoolActor.SpawnConnection()` (S)
+5. Write integration tests against Kestrel fixtures (M)
+6. Update CLAUDE.md "Current Limitations" section (S)
+
+### Decision Status
+
+**⏳ AWAITING USER INPUT** — Full analysis in `.maggus/ARCHITECTURE_DECISION.md`
