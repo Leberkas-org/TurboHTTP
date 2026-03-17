@@ -381,10 +381,10 @@ TASK-5A-013 (Update CLAUDE.md)
 **Size:** S
 
 **Acceptance Criteria:**
-- [ ] "Current Limitations" updated — remove outdated claims
-- [ ] Architecture diagram updated to show direct Channel path
-- [ ] I/O Layer description updated (no more "3 actor hops")
-- [ ] `dotnet build ./src/TurboHttp.sln` — 0 errors
+- [x] "Current Limitations" updated — remove outdated claims
+- [x] Architecture diagram updated to show direct Channel path
+- [x] I/O Layer description updated (no more "3 actor hops")
+- [x] `dotnet build ./src/TurboHttp.sln` — 0 errors
 
 **Key Files:**
 - `CLAUDE.md`

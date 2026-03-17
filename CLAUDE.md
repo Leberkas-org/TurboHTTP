@@ -40,8 +40,16 @@ Streams Layer (TurboHttp/Streams/)
 Protocol Layer (TurboHttp/Protocol/)
     Encoders/Decoders, HPACK, RedirectHandler, RetryEvaluator, CookieJar
          ↓
-I/O Layer (TurboHttp/IO/)
-    ClientManager + ClientRunner + ClientByteMover (Akka actors + Channels)
+I/O Layer (TurboHttp/IO/) — Hybrid: actors for lifecycle, Channels for data
+    ┌─ Lifecycle (actor hierarchy) ──────────────────────────────┐
+    │  PoolRouterActor → HostPoolActor → ConnectionActor         │
+    │  (spawn, supervise, reconnect, idle eviction, per-host     │
+    │   limits — no data touches actor mailboxes)                │
+    └────────────────────────────────────────────────────────────┘
+    ┌─ Data path (zero actor hops) ─────────────────────────────┐
+    │  ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP│
+    │  (ConnectionHandle bundles ChannelWriter + ChannelReader)  │
+    └────────────────────────────────────────────────────────────┘
          ↓
 Network (TCP)
 ```
@@ -108,10 +116,24 @@ Network (TCP)
 
 ### I/O Layer (`TurboHttp/IO/`)
 
-- `ClientManager` — Akka actor supervisor for TCP connections
-- `ClientRunner` — per-connection lifecycle actor
-- `ClientState` — shared state (System.Threading.Channels + buffers)
-- `ClientByteMover` — async byte transfer between TCP and channels
+**Hybrid architecture**: actors manage connection lifecycle; data flows through `System.Threading.Channels` with zero actor mailbox hops.
+
+**Actor hierarchy (lifecycle only)**:
+- `PoolRouterActor` — routes `EnsureHost` to per-host actors, creates `HostPoolActor` on demand
+- `HostPoolActor` — pools connections per host, enforces `PerHostConnectionLimiter`, handles reconnect/idle eviction, delivers `ConnectionHandle` to requesters
+- `ConnectionActor` — owns TCP socket lifecycle, creates `Channel<(IMemoryOwner<byte>, int)>` pairs, spawns `ClientRunner`, sends `ConnectionReady(ConnectionHandle)` to parent on connect, exponential backoff on reconnect
+
+**Data path (zero actor hops)**:
+- `ConnectionHandle` — record bundling `OutboundWriter`, `InboundReader`, `HostKey`, and `ConnectionActor` ref; passed from actors to `ConnectionStage`
+- `ConnectionStage` — Akka `GraphStage` that writes outbound bytes directly to `ConnectionHandle.OutboundWriter` and reads inbound bytes from `ConnectionHandle.InboundReader` via async pump
+- `ClientByteMover` — three static async tasks per connection: TCP→Pipe, Pipe→InboundChannel, OutboundChannel→TCP
+- `ClientRunner` — per-connection actor that spawns the `ClientByteMover` tasks and signals lifecycle events
+- `ClientManager` — actor that spawns `ClientRunner` instances
+- `ClientState` — holds TCP stream, `System.IO.Pipelines.Pipe`, and channel reader/writers
+
+**Connection state tracking**:
+- `ConnectionState` — per-connection metadata (Active, Idle, Reusable, HttpVersion, stream capacity) tracked by `HostPoolActor`
+- `HostKey` — connection identity: Scheme + Host + Port + Version
 
 ### Client Layer (`TurboHttp/Client/`)
 
@@ -191,9 +213,8 @@ Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures
 
 ## Current Limitations
 
-- **Pipeline not fully wired**: Protocol handlers (RedirectHandler, CookieJar, RetryEvaluator, CacheFreshnessEvaluator, HttpCacheStore, etc.) have unit tests and exist as standalone classes but are NOT integrated into the Akka.Streams Engine pipeline. The Engine currently only does: encode → TCP → decode → correlate.
+- **Business logic stages not wired into pipeline**: Protocol handlers (RedirectHandler, CookieJar, RetryEvaluator, CacheFreshnessEvaluator, HttpCacheStore, etc.) have unit tests and exist as standalone classes but are NOT yet integrated as Akka.Streams stages in the Engine pipeline. The Engine currently does: encode → ConnectionStage (direct Channel I/O) → decode → correlate.
 - **Client graph not materialized**: `TurboClientStreamManager` has graph construction commented out. `TurboHttpClient.SendAsync` does not work end-to-end yet.
-- **No business logic stages**: Missing Akka.Streams stages for redirect looping, cookie injection/storage, retry, cache lookup/store, and decompression (except partial HTTP/2 decompression in `Http20StreamStage`).
 - **No end-to-end integration tests**: Kestrel fixtures are defined with 60+ routes but no test classes consume them.
 
 
