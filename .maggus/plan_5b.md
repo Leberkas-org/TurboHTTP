@@ -665,14 +665,14 @@ ConnectionActor), update the corresponding ConnectionState and drain the pending
 mirroring the existing `MarkConnectionNoReuse` forwarding pattern.
 
 **Acceptance Criteria:**
-- [ ] In constructor:
+- [x] In constructor:
   ```csharp
   Receive<HostPoolActor.StreamCompleted>(msg => Context.Parent.Tell(msg));
   Receive<HostPoolActor.StreamAcquired>(msg => Context.Parent.Tell(msg));
   Receive<HostPoolActor.UpdateMaxConcurrentStreams>(msg => Context.Parent.Tell(msg));
   ```
-- [ ] No other changes
-- [ ] Unit test: each message type sent to `ConnectionActor` → parent receives it
+- [x] No other changes
+- [x] Unit test: each message type sent to `ConnectionActor` → parent receives it
 
 ---
 

@@ -188,6 +188,64 @@ public sealed class ConnectionActorTests : TestKit
         clientManagerProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
+    // ── CA-006: StreamCompleted forwarded to parent ────────────────────────────
+
+    [Fact(DisplayName = "CA-006: StreamCompleted forwarded to parent")]
+    public void CA_006_StreamCompleted_ForwardedToParent()
+    {
+        var config = new TurboClientOptions
+        {
+            ReconnectInterval = TimeSpan.FromSeconds(60),
+            MaxReconnectAttempts = 3
+        };
+
+        var (_, connectionActor, _, parentProbe) = CreateActor(config);
+
+        connectionActor.Tell(new HostPoolActor.StreamCompleted(connectionActor));
+
+        var msg = parentProbe.ExpectMsg<HostPoolActor.StreamCompleted>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActor, msg.Connection);
+    }
+
+    // ── CA-007: StreamAcquired forwarded to parent ───────────────────────────
+
+    [Fact(DisplayName = "CA-007: StreamAcquired forwarded to parent")]
+    public void CA_007_StreamAcquired_ForwardedToParent()
+    {
+        var config = new TurboClientOptions
+        {
+            ReconnectInterval = TimeSpan.FromSeconds(60),
+            MaxReconnectAttempts = 3
+        };
+
+        var (_, connectionActor, _, parentProbe) = CreateActor(config);
+
+        connectionActor.Tell(new HostPoolActor.StreamAcquired(connectionActor));
+
+        var msg = parentProbe.ExpectMsg<HostPoolActor.StreamAcquired>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActor, msg.Connection);
+    }
+
+    // ── CA-008: UpdateMaxConcurrentStreams forwarded to parent ────────────────
+
+    [Fact(DisplayName = "CA-008: UpdateMaxConcurrentStreams forwarded to parent")]
+    public void CA_008_UpdateMaxConcurrentStreams_ForwardedToParent()
+    {
+        var config = new TurboClientOptions
+        {
+            ReconnectInterval = TimeSpan.FromSeconds(60),
+            MaxReconnectAttempts = 3
+        };
+
+        var (_, connectionActor, _, parentProbe) = CreateActor(config);
+
+        connectionActor.Tell(new HostPoolActor.UpdateMaxConcurrentStreams(connectionActor, 128));
+
+        var msg = parentProbe.ExpectMsg<HostPoolActor.UpdateMaxConcurrentStreams>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActor, msg.Connection);
+        Assert.Equal(128, msg.MaxStreams);
+    }
+
     // ── CA-005: ConnectionReady sent after reconnect succeeds ─────────────────
 
     [Fact(DisplayName = "CA-005: ConnectionReady sent to parent after successful reconnect")]

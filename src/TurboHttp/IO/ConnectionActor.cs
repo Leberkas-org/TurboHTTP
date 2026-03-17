@@ -47,6 +47,9 @@ public sealed class ConnectionActor : ReceiveActor
         Receive<Terminated>(HandleTerminated);
         Receive<DoReconnect>(_ => AttemptReconnect());
         Receive<HostPoolActor.MarkConnectionNoReuse>(msg => Context.Parent.Tell(msg));
+        Receive<HostPoolActor.StreamCompleted>(msg => Context.Parent.Tell(msg));
+        Receive<HostPoolActor.StreamAcquired>(msg => Context.Parent.Tell(msg));
+        Receive<HostPoolActor.UpdateMaxConcurrentStreams>(msg => Context.Parent.Tell(msg));
     }
 
     protected override void PreStart()
