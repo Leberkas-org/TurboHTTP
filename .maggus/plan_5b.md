@@ -331,10 +331,10 @@ as the signal source.
 **Description:** Mirror TASK-9-E01 for HTTP/1.0 (consistency; no signal merge needed).
 
 **Acceptance Criteria:**
-- [ ] Stage changes from `FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)>` to
+- [x] Stage changes from `FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)>` to
       `FlowShape<HttpRequestMessage, IOutputItem>`
-- [ ] Emits `new DataItem(HostKey.Default, memory, length)`
-- [ ] Existing tests pass; build succeeds
+- [x] Emits `new DataItem(HostKey.Default, memory, length)`
+- [x] Existing tests pass; build succeeds
 
 ---
 

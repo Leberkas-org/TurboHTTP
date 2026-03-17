@@ -3,21 +3,22 @@ using System.Buffers;
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Streams.Stages;
 
-public sealed class Http10EncoderStage : GraphStage<FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)>>
+public sealed class Http10EncoderStage : GraphStage<FlowShape<HttpRequestMessage, IOutputItem>>
 {
     private readonly Inlet<HttpRequestMessage> _inlet = new("http10.encoder.in");
-    private readonly Outlet<(IMemoryOwner<byte>, int)> _outlet = new("http10.encoder.out");
-
-    public override FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)> Shape { get; }
+    private readonly Outlet<IOutputItem> _outlet = new("http10.encoder.out");
 
     public Http10EncoderStage()
     {
-        Shape = new FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)>(_inlet, _outlet);
+        Shape = new FlowShape<HttpRequestMessage, IOutputItem>(_inlet, _outlet);
     }
+
+    public override FlowShape<HttpRequestMessage, IOutputItem> Shape { get; }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         => new Logic(this);
@@ -44,7 +45,7 @@ public sealed class Http10EncoderStage : GraphStage<FlowShape<HttpRequestMessage
 
                         var written = Http10Encoder.Encode(request, ref buffer);
 
-                        Push(stage._outlet, (owner, written));
+                        Push(stage._outlet, new DataItem(HostKey.Default, owner, written));
                     }
                     catch (Exception ex)
                     {
@@ -54,7 +55,9 @@ public sealed class Http10EncoderStage : GraphStage<FlowShape<HttpRequestMessage
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: FailStage);
 
-            SetHandler(stage._outlet, onPull: () => Pull(stage._inlet), onDownstreamFinish: _ => CompleteStage());
+            SetHandler(stage._outlet,
+                onPull: () => Pull(stage._inlet),
+                onDownstreamFinish: _ => CompleteStage());
         }
     }
 }
