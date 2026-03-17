@@ -1,338 +1,238 @@
-# Plan: Test Audit — RFC Compliance, Direct Production Code Testing, Http2ProtocolSession Removal
+# Plan 6: Akka.Streams Pipeline Performance Optimization
 
 ## Introduction
 
-The TurboHttp test suite has three structural problems:
+Optimize TurboHttp's Akka.Streams pipeline for balanced throughput, latency, and resource efficiency using Akka.NET stream primitives — async boundaries, `Batch`/`BatchWeighted`, buffer tuning, and fusing control. The scope starts minimal (Akka.Streams composition-level only), focusing on shared pipeline stages across all protocol versions while preserving all existing stage interfaces and shapes (no breaking changes).
 
-1. **`Http2ProtocolSession`** (700 lines, test-only) is a standalone mini HTTP/2 stack that tests production code _indirectly_ instead of directly. 24 test files in RFC9113 route through this wrapper instead of calling `Http2FrameDecoder`, `HpackDecoder`, and the Frame classes directly.
-2. **DisplayNames are missing RFC references** in Integration tests (`CM-001`, `RE-001`, `RH-001`), RFC9113 tests (`SEC-h2-003`), and almost all StreamTests (`COR1X-001`, `11D-CH-001`, `EROUTE-001`).
-3. **RFC folder structure is missing** in `TurboHttp.StreamTests/` (currently sorted by HTTP version) and in `TurboHttp.Tests/Integration/` (flat).
-
-Goal: tests exercise production code directly, all DisplayNames carry RFC references, all three projects are sorted into RFC folders, and `Http2ProtocolSession` is deleted.
-
----
+**Critical finding:** None of the 26 custom `GraphStage` implementations currently use `InitialAttributes` or read `inheritedAttributes` in `CreateLogic`. This means any `.WithAttributes()` calls at the composition level have no effect on stage-internal behavior. This must be fixed first before any buffer tuning can take effect.
 
 ## Goals
 
-- Audit report created and maintained as `docs/test-audit-report.md`
-- `Http2ProtocolSession.cs` and `Http2StreamLifecycleState.cs` deleted (after all dependent tests are migrated)
-- Every `[Fact]`/`[Theory]` test across all three projects has an RFC reference in its `DisplayName`
-- `TurboHttp.StreamTests/` restructured into RFC folders (RFC1945/, RFC9112/, RFC9113/, Streams/)
-- `TurboHttp.Tests/Integration/` dissolved into RFC folders (RFC6265/, RFC9110/, RFC9112/)
-- `dotnet test` runs green with 0 compile errors and 0 regressions
-- Progress tracked in `.maggus/PROGRESS_3.md` after every task
-
----
+- Fix the Attributes plumbing gap: stages must declare `InitialAttributes` and read `inheritedAttributes` where relevant
+- Reduce per-request overhead in the shared Engine pipeline (cookie, cache, redirect, retry, decompression stages)
+- Improve throughput by introducing async boundaries at CPU-intensive stage clusters
+- Lower memory pressure through buffer tuning and materializer configuration
+- Establish a hybrid benchmark baseline to measure improvements
+- Keep all existing `GraphStage` shapes and public APIs unchanged
 
 ## User Stories
 
-### TASK-ANA-001: Create the Audit Report
-**Description:** As a developer, I want a complete audit report of all tests so that I know which tests go through `Http2ProtocolSession`, which RFC references are missing, and how the folder structure needs to be corrected.
+### TASK-6-001: Smoke Benchmark Harness
+
+**Description:** As a developer, I want a lightweight benchmark harness that measures request throughput and p99 latency through the Engine pipeline so that I have a baseline before optimizing.
 
 **Acceptance Criteria:**
-- [x] File `docs/test-audit-report.md` created
-- [x] Section 1: All test files that use `Http2ProtocolSession`, listed with test count and which RFC sections they cover
-- [x] Section 2: Which RFC sections `Http2ProtocolSession` internally covers (§5.1 Stream States, §6.5 Settings, §6.7 Ping, §6.8 GoAway, §6.9 Flow Control, §8.2/§8.3 Headers/Pseudo-Headers)
-- [x] Section 3: List of all tests missing an RFC reference in DisplayName, grouped by project and file
-- [x] Section 4: Mapping table — which Integration test file belongs in which RFC folder
-- [x] Section 5: Mapping table — which StreamTests file belongs in which RFC folder
-- [x] `dotnet build` remains green (no code changes in this task)
-- [x] `.maggus/PROGRESS_3.md` created with the status of this task
+- [ ] BenchmarkDotNet project or benchmarks exist at `src/TurboHttp.Benchmarks/`
+- [ ] Benchmark exercises the full Engine graph (encode -> decode -> correlate) for HTTP/1.1 and HTTP/2
+- [ ] Measures: ops/sec, p50/p99 latency, allocations (bytes/op)
+- [ ] Benchmark runs against a loopback `Source`/`Sink` (no real TCP) to isolate stream overhead
+- [ ] Results captured as baseline in `.maggus/runs/benchmark_baseline_plan6.md`
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-002: Fix InitialAttributes in All GraphStages
 
-### TASK-PSS-001: Replace Http2ProtocolSession — Stream State Tests (RFC9113 §5.1)
-**Description:** As a developer, I want RFC9113-§5.1 stream state tests to call `Http2FrameDecoder` directly so that `Http2ProtocolSession` is no longer needed as an intermediary.
-
-Affected file: `03_StreamStateMachineTests.cs`
-
-**Background:** `Http2ProtocolSession.HandleHeaders()` and `HandleData()` track stream states. In production this logic lives in `Http20StreamStage` / `Http20ConnectionStage`. `Http2FrameDecoder` itself is stateless — it only decodes bytes → frames. Tests should verify: (a) the decoder produces correct frames, (b) invalid frames throw the correct exceptions.
+**Description:** As a developer, I want all custom `GraphStage` implementations to properly declare `InitialAttributes` and read `inheritedAttributes` where relevant, so that composition-level `.WithAttributes()` calls actually take effect.
 
 **Acceptance Criteria:**
-- [ ] `03_StreamStateMachineTests.cs` only calls production classes: `Http2FrameDecoder`, `Http2Frame` subclasses, `HpackDecoder`
-- [ ] No import of `Http2ProtocolSession` in this file
-- [ ] Every test DisplayName contains `RFC-9113-§5.1`
-- [ ] At minimum these RFC scenarios covered: Idle→Open (HEADERS), Open→Closed (DATA+END_STREAM), HEADERS on stream 0 → Exception, DATA on idle stream → Exception
-- [ ] `dotnet test --filter FullyQualifiedName~StreamStateMachine` green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] Every `GraphStage` subclass overrides `InitialAttributes` with a meaningful `Attributes.CreateName("stage-name")`
+- [ ] Stages that use internal buffer sizes (encoder min/max, decoder growth, GroupByHostKey queue size) read `inheritedAttributes.GetAttribute<Attributes.InputBuffer>(fallback)` in `CreateLogic` and use it to configure their buffers
+- [ ] Lightweight pass-through stages (CookieInjectionStage, CookieStorageStage, StreamIdAllocatorStage, RequestEnricherStage) declare `InitialAttributes` with name only (no buffer override needed — they don't buffer)
+- [ ] Stages affected: all 26 custom GraphStages listed below
+- [ ] No existing stage shapes or public APIs changed
+- [ ] All existing tests still pass
+- [ ] Unit tests verify that `inheritedAttributes` buffer config is respected (e.g., encoder uses custom buffer size when attribute is set)
 
----
+**Stages requiring `InitialAttributes` + buffer-aware `CreateLogic`:**
 
-### TASK-PSS-002: Replace Http2ProtocolSession — Settings Tests (RFC9113 §6.5)
-**Description:** As a developer, I want §6.5 SETTINGS tests to call `SettingsFrame` and `Http2FrameDecoder` directly.
+| Stage | Buffer Behavior | Attributes Needed |
+|-------|----------------|-------------------|
+| Http10EncoderStage | Min 4KB / Max 256KB rent | Read InputBuffer for rent sizing |
+| Http11EncoderStage | Min 4KB / Max 256KB rent | Read InputBuffer for rent sizing |
+| Http20EncoderStage | SerializedSize-based | Name only |
+| Http10DecoderStage | Stateful _decoder | Name only |
+| Http11DecoderStage | Stateful _decoder, EmitMultiple | Name only |
+| Http20DecoderStage | Dynamic doubling buffer | Read InputBuffer for initial/max cap |
+| Http20StreamStage | Per-stream header+body buffers | Read InputBuffer for pre-alloc sizing |
+| Http20ConnectionStage | Window tracking dict | Name only |
+| GroupByHostKeyStage | Queue(16) per substream | Read InputBuffer for queue capacity |
+| MergeSubstreamsStage | Queue buffer | Read InputBuffer for buffer sizing |
+| Request2FrameStage | Queue of pending frames | Name only |
+| Http1XCorrelationStage | Request+response queues | Name only |
+| ConnectionStage | Pending reads queue | Name only |
+| ExtractOptionsStage | Single buffered request | Name only |
+| ConnectionReuseStage | Pending response+signal | Name only |
+| DecompressionStage | Pooled read buffer | Name only |
+| CacheLookupStage | None (stateless) | Name only |
+| CacheStorageStage | Response + cache key | Name only |
+| CookieInjectionStage | None (pass-through) | Name only |
+| CookieStorageStage | Response reference | Name only |
+| RedirectStage | None | Name only |
+| RetryStage | Optional buffered request | Name only |
+| PrependPrefaceStage | First-element flag | Name only |
+| RequestEnricherStage | None (pass-through) | Name only |
+| StreamIdAllocatorStage | Counter only | Name only |
+| Http20CorrelationStage | Stream-ID-based dict | Name only |
 
-Affected file: `04_SettingsTests.cs`
+### TASK-6-003: Materializer Buffer Tuning
 
-**Background:** `Http2ProtocolSession.HandleSettings()` / `ApplySettingsParameters()` contains validation logic (MAX_FRAME_SIZE range, ENABLE_PUSH 0/1, INITIAL_WINDOW_SIZE ≤ 2^31-1). In production this validation belongs to `Http20ConnectionStage`. `Http2FrameDecoder` is the direct test candidate.
-
-**Acceptance Criteria:**
-- [ ] `04_SettingsTests.cs` only uses: `SettingsFrame`, `Http2FrameDecoder`, `SettingsParameter`
-- [ ] No import of `Http2ProtocolSession`
-- [ ] Every test DisplayName contains `RFC-9113-§6.5`
-- [ ] RFC scenarios covered: ACK flag, parameter parsing, MAX_FRAME_SIZE range, ENABLE_PUSH value, INITIAL_WINDOW_SIZE overflow
-- [ ] `dotnet test --filter FullyQualifiedName~SettingsTests` green
-- [ ] `.maggus/PROGRESS_3.md` updated
-
----
-
-### TASK-PSS-003: Replace Http2ProtocolSession — Flow Control Tests (RFC9113 §6.9)
-**Description:** As a developer, I want §6.9 flow control tests to call `WindowUpdateFrame` and `Http2FrameDecoder` directly.
-
-Affected files: `05_FlowControlTests.cs`, `13_DecoderStreamFlowControlTests.cs`
-
-**Background:** Flow control logic (window size, overflow checks) belongs to `Http20ConnectionStage`. The decoder only decodes `WindowUpdateFrame` bytes. Tests should exercise the decoder directly: correct frame fields, increment value, stream-0 vs stream-N.
-
-**Acceptance Criteria:**
-- [ ] Both files only use: `WindowUpdateFrame`, `DataFrame`, `Http2FrameDecoder`
-- [ ] No import of `Http2ProtocolSession`
-- [ ] Every test DisplayName contains `RFC-9113-§6.9`
-- [ ] RFC scenarios covered: connection window (stream 0), stream window (stream N), increment values
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
-
----
-
-### TASK-PSS-004: Replace Http2ProtocolSession — GoAway/Ping/RST Tests (RFC9113 §6.4/§6.7/§6.8)
-**Description:** As a developer, I want GoAway, Ping, and RST_STREAM tests to call the frame classes directly.
-
-Affected files: `07_ErrorHandlingTests.cs`, `08_GoAwayTests.cs`
-
-**Background:** `Http2ProtocolSession.HandleGoAway()`, `HandlePing()`, `HandleRst()` are test-only logic. In production: `Http20ConnectionStage`. Tests should verify: `GoAwayFrame`, `PingFrame`, `RstStreamFrame` decoded correctly, fields correct (LastStreamId, ErrorCode, Data).
+**Description:** As a developer, I want to configure the `ActorMaterializer` with explicit input buffer sizes so that small stages don't over-allocate and large stages get adequate buffering.
 
 **Acceptance Criteria:**
-- [ ] Both files only use: `GoAwayFrame`, `PingFrame`, `RstStreamFrame`, `Http2FrameDecoder`
-- [ ] No import of `Http2ProtocolSession`
-- [ ] DisplayNames: `RFC-9113-§6.8` (GoAway), `RFC-9113-§6.7` (Ping), `RFC-9113-§6.4` (RST_STREAM)
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] `TurboClientStreamManager` creates materializer with explicit `ActorMaterializerSettings.WithInputBuffer(initialSize: 4, maxSize: 16)` (down from Akka default 16/16)
+- [ ] In Engine.cs graph composition: encoder/decoder stage groups get `.WithAttributes(Attributes.CreateInputBuffer(16, 64))` to override the global default where throughput matters
+- [ ] Lightweight stages (cookie injection/storage, request enricher) inherit the smaller global default
+- [ ] Attributes actually propagate because TASK-6-002 fixed `InitialAttributes`
+- [ ] No existing stage shapes or public APIs changed
+- [ ] Existing stream tests still pass
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-004: Async Boundaries for CPU-Intensive Stage Clusters
 
-### TASK-PSS-005: Replace Http2ProtocolSession — Header/Pseudo-Header Tests (RFC9113 §8.2/§8.3)
-**Description:** As a developer, I want §8.2/§8.3 tests to call `HpackDecoder` and `HeadersFrame` directly.
-
-Affected files: `06_HeadersTests.cs`, `09_ContinuationFrameTests.cs`, `11_DecoderStreamValidationTests.cs`
-
-**Background:** Header validation (uppercase errors, forbidden connection headers, duplicate :status) is production logic in `Http20StreamStage`. `HpackDecoder` itself has RFC-7541 compliance. Tests should: exercise HPACK decoding directly, verify `HeadersFrame` fields.
+**Description:** As a developer, I want to insert async boundaries around CPU-heavy stage groups so that encoding/decoding work can run in parallel with I/O and lightweight pipeline stages.
 
 **Acceptance Criteria:**
-- [ ] All three files only use: `HpackDecoder`, `HpackEncoder`, `HeadersFrame`, `ContinuationFrame`, `Http2FrameDecoder`
-- [ ] No import of `Http2ProtocolSession`
-- [ ] DisplayNames: `RFC-9113-§8.2` or `RFC-9113-§8.3`
-- [ ] Scenarios covered: END_HEADERS flag, CONTINUATION chain, header block decoding
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] In `Engine.cs`: `.WithAttributes(Attributes.CreateAsyncBoundary())` inserted to create three fused islands:
+  1. **Pre-processing island:** RequestEnricherStage -> redirect merge -> CookieInjectionStage -> retry merge -> CacheLookupStage
+  2. **Protocol engine island:** EngineCore (all protocol engines) + DecompressionStage
+  3. **Post-processing island:** CookieStorageStage -> CacheStorageStage -> RetryStage -> CacheMerge -> RedirectStage
+- [ ] No `.Async()` / async boundary inside individual protocol engines (they stay fused internally for low overhead)
+- [ ] No existing stage shapes or public APIs changed
+- [ ] Existing stream tests still pass
+- [ ] Benchmark shows measurable improvement on multi-core (compare TASK-6-001 baseline)
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-005: GroupByHostKey Queue Size Tuning
 
-### TASK-PSS-006: Replace Http2ProtocolSession — Security/Fuzz/Concurrency Tests
-**Description:** As a developer, I want security, fuzz, and concurrency tests to call production classes directly.
-
-Affected files: `Http2SecurityTests.cs`, `Http2FuzzHarnessTests.cs`, `Http2ResourceExhaustionTests.cs`, `Http2HighConcurrencyTests.cs`, `Http2MaxConcurrentStreamsTests.cs`, `Http2CrossComponentValidationTests.cs`
-
-**Background:** These tests verify attack protection (CONTINUATION flood, RST Rapid Reset, PING flood, SETTINGS flood). In production this protection belongs to `Http20ConnectionStage`. Tests should use real stage tests (via `Http2StageTestHelper` or direct classes) or `Http2FrameDecoder` with explicit exception assertions.
+**Description:** As a developer, I want to increase the per-host substream queue capacity and make it configurable so that bursty request patterns don't cause excessive backpressure stalls.
 
 **Acceptance Criteria:**
-- [ ] All 6 files have no `Http2ProtocolSession` import
-- [ ] Security tests call `Http20ConnectionStage` or `Http2FrameDecoder` directly
-- [ ] DisplayNames contain RFC references (e.g. `RFC-9113-§6.5` for SETTINGS flood, `RFC-9113-§5.1` for RST Rapid Reset protection)
-- [ ] `SEC-h2-XXX` codes replaced or prefixed with RFC references
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] `GroupByHostKeyStage` queue size changed from hardcoded `16` to a constructor parameter with default `64`
+- [ ] Queue size is passed from `Engine.BuildProtocolFlow` — no public API changes on `ITurboHttpClient`
+- [ ] The queue size reads from `inheritedAttributes` (TASK-6-002) so it can be overridden via `.WithAttributes()` at composition level
+- [ ] No existing stage shapes changed
+- [ ] Existing stream tests still pass
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-006: Batch Encoding for HTTP/2 Frame Output
 
-### TASK-PSS-007: Delete Http2ProtocolSession and Http2StreamLifecycleState
-**Description:** As a developer, I want to delete `Http2ProtocolSession.cs` and `Http2StreamLifecycleState.cs` from the project after all dependent tests have been migrated.
-
-**Prerequisite:** TASK-PSS-001 through TASK-PSS-006 all completed.
+**Description:** As a developer, I want to batch multiple small HTTP/2 frames into a single write operation using Akka.NET's `Flow.BatchWeighted` so that TCP write syscalls are reduced under high multiplexing load.
 
 **Acceptance Criteria:**
-- [ ] `grep -r "Http2ProtocolSession" src/ --include="*.cs"` → 0 matches (excluding deleted file)
-- [ ] `src/TurboHttp.Tests/Http2ProtocolSession.cs` deleted
-- [ ] `src/TurboHttp.Tests/Http2StreamLifecycleState.cs` deleted
-- [ ] `dotnet build ./src/TurboHttp.sln` → 0 errors
-- [ ] `dotnet test ./src/TurboHttp.sln` → all tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] A `Flow.BatchWeighted` operator is inserted in `Http20Engine` between `Http20EncoderStage` output and the `FlowSelect` DataItem wrapper
+- [ ] Weight function uses the `int` (byte length) from the `(IMemoryOwner<byte>, int)` tuple
+- [ ] Max weight: 64 KB (approximately one TCP segment); seed creates initial buffer; aggregate concatenates
+- [ ] Falls through immediately if only one frame available (no artificial delay — this is built-in BatchWeighted behavior)
+- [ ] Batched frames are concatenated into a single `IMemoryOwner<byte>` buffer before emitting downstream
+- [ ] No existing stage shapes or public APIs changed
+- [ ] Existing HTTP/2 stream tests still pass
+- [ ] Unit tests for batch consolidation logic
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-007: Batch Encoding for HTTP/1.1 Pipelined Requests
 
-### TASK-DISP-001: Add RFC References to Integration Test DisplayNames
-**Description:** As a developer, I want all `TurboHttp.Tests/Integration/` tests to have RFC references in their DisplayName.
-
-**Mapping:**
-| File | RFC | Example prefix |
-|------|-----|----------------|
-| `CookieJarTests.cs` | RFC 6265 | `RFC-6265-§5.3-CJ-001:` |
-| `RetryEvaluatorTests.cs` | RFC 9110 §9.2 | `RFC-9110-§9.2-RE-001:` |
-| `RedirectHandlerTests.cs` | RFC 9110 §15.4 | `RFC-9110-§15.4-RH-001:` |
-| `ConnectionReuseEvaluatorTests.cs` | RFC 9112 §9 | `RFC-9112-§9-CM-001:` |
-| `TcpFragmentationTests.cs` | RFC 1945 / RFC 9112 | `RFC-1945-FRAG-001:` / `RFC-9112-FRAG-001:` |
-| `HttpDecodeErrorMessagesTests.cs` | RFC 9112 | `RFC-9112-§4-34-msg-001:` |
-| `PerHostConnectionLimiterTests.cs` | RFC 9110 | `RFC-9110-CONN-001:` |
-| `CrossFeatureIntegrityTests.cs` | RFC 9112 / RFC 9113 | appropriate RFC refs |
-| `Phase60ValidationGateTests.cs` | per content | appropriate RFC refs |
+**Description:** As a developer, I want to apply a similar batching strategy for HTTP/1.1 pipelined request encoding so that multiple small requests are coalesced into fewer TCP writes.
 
 **Acceptance Criteria:**
-- [ ] Every `[Fact]`/`[Theory]` in `Integration/` has an RFC reference in its DisplayName
-- [ ] Existing short codes (e.g. `CM-001`) are preserved; RFC prefix is prepended
-- [ ] `dotnet test --filter "FullyQualifiedName~Integration"` green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] A `Flow.Batch` operator inserted in `Http11Engine` between `Http11EncoderStage` and the DataItem wrapper
+- [ ] Max batch count: 8 requests or 64 KB total (via `BatchWeighted`), whichever comes first
+- [ ] Coalesces encoded byte buffers into single contiguous `IMemoryOwner<byte>`
+- [ ] No batching applied to HTTP/1.0 (connection-per-request, no benefit)
+- [ ] No existing stage shapes or public APIs changed
+- [ ] Existing HTTP/1.1 stream tests still pass
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-008: Redirect/Retry Feedback Buffer Optimization
 
-### TASK-DISP-002: Add RFC References to RFC9113 Tests Without Prefix
-**Description:** As a developer, I want all RFC9113 test files that lack an RFC prefix in their DisplayName (`Http2SecurityTests`, `Http2FrameTests`, `Http2EncoderSensitiveHeaderTests`, `Http2EncoderPseudoHeaderValidationTests`) to receive RFC references.
-
-**Mapping:**
-| File | RFC section |
-|------|-------------|
-| `Http2SecurityTests.cs` | RFC-9113-§6.5/§6.7/§6.8/§5.1 |
-| `Http2FrameTests.cs` | RFC-9113-§4.1 (frame format) |
-| `Http2EncoderSensitiveHeaderTests.cs` | RFC-7541-§7.1 |
-| `Http2EncoderPseudoHeaderValidationTests.cs` | RFC-9113-§8.3 |
+**Description:** As a developer, I want to tune the feedback loop buffers in the Engine so that redirect and retry cycles don't cause unnecessary backpressure on the main pipeline.
 
 **Acceptance Criteria:**
-- [ ] Every `[Fact]`/`[Theory]` in the listed files has an RFC reference in its DisplayName
-- [ ] `SEC-h2-XXX` codes receive an RFC prefix (e.g. `RFC-9113-§6.5-SEC-h2-003:`)
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [ ] Redirect feedback `Buffer(1)` increased to `Buffer(4)` to allow multiple in-flight redirects
+- [ ] Retry feedback `Buffer(1)` increased to `Buffer(4)` to allow multiple in-flight retries
+- [ ] `MergePreferred` priority inlet behavior verified: feedback items always processed before new requests
+- [ ] No deadlock risk introduced (cycle-breaking invariant maintained — analyze carefully)
+- [ ] No existing stage shapes or public APIs changed
+- [ ] Existing stream tests still pass
+- [ ] Unit tests are written and successful
 
----
+### TASK-6-009: Benchmark Validation Run
 
-### TASK-DISP-003: Add RFC References to StreamTests DisplayNames
-**Description:** As a developer, I want all `TurboHttp.StreamTests/` tests to have RFC references in their DisplayName.
-
-**Affected files missing RFC refs (excerpt):**
-- `Http11/CorrelationHttp1XStageTests.cs` → `COR1X-001` → `RFC-9112-§9.3-COR1X-001:`
-- `Http11/Http11DecoderStageChunkedRfcTests.cs` → `11D-CH-001` → `RFC-9112-§7.1-11D-CH-001:`
-- `Http11/Http11StageConnectionMgmtTests.cs` → RFC-9112-§9
-- `Http20/CorrelationHttp20StageTests.cs` → RFC-9113-§5.1
-- `Http20/PrependPrefaceStageTests.cs` → RFC-9113-§3.5
-- `Http20/StreamIdAllocatorStageTests.cs` → RFC-9113-§5.1.1
-- `Http20/Request2FrameStageTests.cs` → RFC-9113-§8.1
-- `Streams/EngineVersionRoutingTests.cs` → `EROUTE-001` → RFC-9112/RFC-9113 version selection
-- `Streams/RequestEnricherStageTests.cs` → RFC-9110-§7.1 (URI resolution)
+**Description:** As a developer, I want to run the benchmark suite after all optimizations to measure improvements against the TASK-6-001 baseline.
 
 **Acceptance Criteria:**
-- [ ] Every `[Fact]`/`[Theory]` in `TurboHttp.StreamTests/` has an RFC reference or at minimum an RFC-adjacent code (for purely internal stages)
-- [ ] Existing codes preserved; RFC prefix prepended
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
-
----
-
-### TASK-SORT-001: Move Integration Test Files into RFC Folders (TurboHttp.Tests)
-**Description:** As a developer, I want `TurboHttp.Tests/Integration/` dissolved and all files moved to their matching RFC folders.
-
-**Target structure:**
-```
-TurboHttp.Tests/
-  RFC6265/
-    CookieJarTests.cs
-  RFC9110/
-    (01_..03_ already present)
-    04_RetryEvaluatorTests.cs
-    05_RedirectHandlerTests.cs
-    06_PerHostConnectionLimiterTests.cs
-    07_CrossFeatureIntegrityTests.cs
-  RFC9112/
-    (01_..21_ already present)
-    22_ConnectionReuseEvaluatorTests.cs
-    23_HttpDecodeErrorMessagesTests.cs
-    24_TcpFragmentationTests.cs
-  RFC9113/
-    (already present)
-    22_Phase60ValidationGateTests.cs  ← or RFC9112 depending on content
-```
-
-**Acceptance Criteria:**
-- [ ] `TurboHttp.Tests/Integration/` folder no longer exists (empty or deleted)
-- [ ] All moved files: namespace updated to `TurboHttp.Tests` (without `.Integration`)
-- [ ] `dotnet build` → 0 errors
-- [ ] `dotnet test` → all tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
-
----
-
-### TASK-SORT-002: Restructure StreamTests into RFC Folders
-**Description:** As a developer, I want `TurboHttp.StreamTests/` sorted by RFC folder instead of by HTTP version.
-
-**Current → Target structure:**
-```
-Current:          Target:
-Http10/    →      RFC1945/
-Http11/    →      RFC9112/
-Http20/    →      RFC9113/
-Streams/   →      Streams/  (unchanged — internal stages without RFC mapping)
-```
-
-**Acceptance Criteria:**
-- [ ] Folders `Http10/`, `Http11/`, `Http20/` no longer exist
-- [ ] Folders `RFC1945/`, `RFC9112/`, `RFC9113/`, `Streams/` exist
-- [ ] All files moved, namespaces updated
-- [ ] No duplicate file names
-- [ ] `TurboHttp.StreamTests.csproj` contains no hard paths to old folders
-- [ ] `dotnet build ./src/TurboHttp.StreamTests/` → 0 errors
-- [ ] `dotnet test ./src/TurboHttp.StreamTests/` → all tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
-
----
-
-### TASK-SORT-003: Clean Up Loose Helper Files in TurboHttp.Tests Root
-**Description:** As a developer, I want root-level helper files in `TurboHttp.Tests/` moved into appropriate folders.
-
-**Affected files in the root of `TurboHttp.Tests/`:**
-- `Http2StageTestHelper.cs` → `RFC9113/` (helper for stage tests)
-- `Http2ProtocolSession.cs` → deleted (TASK-PSS-007)
-- `Http2StreamLifecycleState.cs` → deleted (TASK-PSS-007)
-
-**Acceptance Criteria:**
-- [ ] `Http2StageTestHelper.cs` moved to `RFC9113/Http2StageTestHelper.cs` (if still needed after PSS tasks)
-- [ ] No `.cs` files directly in the root of `TurboHttp.Tests/` except `GlobalUsings.cs` / `*.csproj`
-- [ ] `dotnet build` → 0 errors
-- [ ] `dotnet test` → all tests green
-- [ ] `.maggus/PROGRESS_3.md` final update (all tasks checked off)
-
----
+- [ ] All previous TASKs merged and building green
+- [ ] Benchmark harness from TASK-6-001 re-executed with identical parameters
+- [ ] Results saved to `.maggus/runs/benchmark_optimized_plan6.md`
+- [ ] Comparison table produced: baseline vs. optimized (ops/sec, p99, allocations)
+- [ ] Any regressions flagged and investigated
+- [ ] Summary written to `.maggus/runs/benchmark_comparison_plan6.md`
 
 ## Functional Requirements
 
-- FR-1: No test file may import `Http2ProtocolSession` after TASK-PSS-007 — the class will not exist
-- FR-2: Every `[Fact]` and `[Theory]` must have a `DisplayName` attribute containing an RFC reference (format: `RFC-XXXX-§Y.Z-TAG-NNN: description`)
-- FR-3: `TurboHttp.Tests/Integration/` must not exist after TASK-SORT-001
-- FR-4: `TurboHttp.StreamTests/Http10/`, `Http11/`, `Http20/` must not exist after TASK-SORT-002
-- FR-5: After each completed task `.maggus/PROGRESS_3.md` is updated with status, date, and a short note
-- FR-6: Tests that exercise production code directly must not use test-infrastructure classes as intermediaries — only production classes plus xUnit assertions
-- FR-7: `dotnet test ./src/TurboHttp.sln` runs green after every task — no regressions
+- FR-1: All optimizations must be backward-compatible — no changes to `GraphStage` shapes, inlet/outlet types, or public APIs
+- FR-2: Async boundaries must be placed at the Engine composition level (`Engine.cs`), not inside individual stages
+- FR-3: `BatchWeighted`/`Batch` operators must use Akka.NET built-in `Flow.BatchWeighted<T>()` / `Flow.Batch<T>()` — no custom reimplementation
+- FR-4: Buffer size changes must use `Attributes.CreateInputBuffer()` or explicit `Buffer()` stages — applied via `.WithAttributes()` at composition level
+- FR-5: All `GraphStage` subclasses must override `InitialAttributes` with at minimum a name attribute
+- FR-6: Stages with configurable internal buffers must read buffer config from `inheritedAttributes` in `CreateLogic`
+- FR-7: All benchmark results must include allocation metrics (GC gen0/gen1/gen2 counts) alongside throughput and latency
+- FR-8: GroupByHostKey queue size must be configurable via both constructor parameter and inherited attributes
 
 ## Non-Goals
 
-- No new features or production code changes in this plan
-- No deleting tests — every RFC section tested before must remain tested afterwards
-- No restructuring of `TurboHttp.IntegrationTests/` (Kestrel fixtures) — only `TurboHttp.Tests/` and `TurboHttp.StreamTests/`
-- No changes to the `RFC7541/` folder in `TurboHttp.Tests/` — already well structured
-- No changes to production classes (`Http2FrameDecoder`, `HpackDecoder`, etc.)
+- No stage-internal refactoring (streaming decompression, IBufferWriter rewrites, object pooling) — deferred to a follow-up plan
+- No I/O layer changes (Channel sizes, ConnectionStage pump, ClientByteMover) — out of scope
+- No new `GraphStage` implementations — only composition-level operators (`Batch`, `Buffer`, `.WithAttributes()`)
+- No changes to HPACK encoder/decoder internals
+- No HTTP/3 work
+- No changes to `ITurboHttpClient` public API
+- No custom Akka dispatchers or dispatcher configuration — use default Akka.NET dispatchers only
+- No custom Akka mailbox implementations
 
 ## Technical Considerations
 
-- **Order:** ANA-001 → PSS-001..006 (can run in parallel) → PSS-007 → DISP-001..003 (can run in parallel) → SORT-001..003 (sequential to avoid namespace conflicts)
-- **Http2StageTestHelper.cs:** Keep as a helper class; after PSS tasks verify whether it is still needed
-- **`Http2StreamLifecycleState`:** Enum with comment "Test-only copy" — if no test depends on it after PSS tasks, delete together with `Http2ProtocolSession`
-- **Namespace convention:** After moving, all tests use `namespace TurboHttp.Tests;` or `namespace TurboHttp.StreamTests;` (file-scoped, flat — verify against existing pattern before changing)
-- **RFC tag format:** The established format in StreamTests is `RFC-9113-§6.9-20CW-001:` — apply this same format across all tests
-- **Build after every task:** `dotnet build --configuration Release ./src/TurboHttp.sln` must produce 0 errors
+### Akka.NET Fusing Model
+- By default, all stages between async boundaries are fused into a single actor — this minimizes message passing overhead but means CPU work blocks the fusion island
+- `Attributes.CreateAsyncBoundary()` (applied via `.WithAttributes()`) creates actor boundaries — each island gets its own actor and mailbox, enabling true parallelism but adding per-element async message cost
+- The sweet spot is 2-3 islands: pre-processing, protocol engine, post-processing
+
+### Attributes Plumbing in Akka.NET GraphStages
+- `InitialAttributes` is a virtual property on `GraphStage<TShape>` — override it to declare stage-level defaults
+- `CreateLogic(Attributes inheritedAttributes)` receives the merged attributes (stage defaults + composition-level overrides)
+- To read buffer config: `inheritedAttributes.GetAttribute(new Attributes.InputBuffer(defaultInit, defaultMax))`
+- Without `InitialAttributes` override, the stage has no name in logs/debug and no default attributes
+- Without reading `inheritedAttributes`, any `.WithAttributes()` call at composition level is silently ignored for stage-internal behavior
+
+### BatchWeighted Semantics (Akka.NET)
+- `Flow.BatchWeighted<TOut, TAgg>(maxWeight, costFn, seed, aggregate)` accumulates elements while downstream has no demand
+- Does NOT add latency when downstream is pulling fast (single-element passthrough)
+- Only activates under backpressure — ideal for bursty TCP writes
+- Weight function must be cheap (O(1)) — use the byte length from the tuple
+- If a single element exceeds `maxWeight`, it is emitted immediately (no batching)
+
+### Buffer Strategy
+- Akka.NET default input buffer: 16 elements initial, 16 max
+- Reducing globally to 4/16 saves memory across 26+ stages in the pipeline
+- Encoder/decoder stages benefit from larger buffers (16/64) due to variable processing time
+- GroupByHostKey queue at 16 is a bottleneck for bursty traffic — 64 is a better default
+
+### Risks
+- Over-batching HTTP/2 frames could increase latency for single-request scenarios — mitigated by immediate passthrough when no backpressure
+- Too many async boundaries add per-element overhead that may exceed the parallelism benefit for small payloads — benchmark will validate
+- Increasing feedback buffers from 1 to 4 requires careful deadlock analysis of the cycle-breaking invariant
+- Changing `InitialAttributes` in stages could theoretically affect fusing behavior — test thoroughly
 
 ## Success Metrics
 
-- `grep -r "Http2ProtocolSession" src/ --include="*.cs"` → 0 matches
-- `grep -rn "DisplayName" src/ --include="*.cs" | grep -v "RFC-\|RFC " | wc -l` → 0 (all have RFC ref)
-- `dotnet test ./src/TurboHttp.sln` → all tests green, no new failures
-- `docs/test-audit-report.md` exists and is complete
-- `.maggus/PROGRESS_3.md` shows all tasks completed
+- Throughput (ops/sec) improved by >=15% on multi-core benchmark (4+ cores)
+- p99 latency not regressed by more than 5% for single-request scenarios
+- Memory allocations (bytes/op) reduced or stable (<=5% increase acceptable for throughput gains)
+- All 2,111+ existing tests remain green
+- No new test flakiness introduced by async boundaries
 
 ## Open Questions
 
-- Does `Phase60ValidationGateTests.cs` belong to RFC9112 or RFC9113? → determine in ANA-001
-- `EngineVersionRoutingTests.cs` tests internal routing logic without a direct RFC clause — is an internal code tag like `EROUTE-` sufficient, or should RFC-9112/RFC-9113 version negotiation be referenced?
-- Should `Http2StageTestHelper.cs` still exist after TASK-PSS-007, or can it also be deleted?
+1. Should `BatchWeighted` also be applied to the inbound (decode) path, or only outbound (encode)? Also applied on the inbound path
+2. Is the 64 KB max batch weight optimal, or should it match the TCP send buffer size of the platform? 64KB is optimal for first poc
+3. Should `EngineSettings` (for queue sizes, buffer sizes) be a new internal class or extend `TurboClientOptions`? new internal
+4. What is the target core count for benchmarks — developer laptop (4-8 cores) or CI server? 2 cores
+5. Should stages that use `EmitMultiple` (Http11DecoderStage, Http20DecoderStage) also benefit from output buffer attributes, or is the current behavior sufficient?
