@@ -572,12 +572,12 @@ idle connections while respecting per-connection limits.
 queued requesters.
 
 **Acceptance Criteria:**
-- [ ] Remove the `private ConnectionHandle? _activeHandle` field entirely
-- [ ] `HandleConnectionReady`:
+- [x] Remove the `private ConnectionHandle? _activeHandle` field entirely
+- [x] `HandleConnectionReady`:
   1. `Find(msg.Handle.ConnectionActor)?.SetHandle(msg.Handle)`
   2. Call `ServePendingRequesters()`
-- [ ] `_pendingHandleRequesters` remains `List<IActorRef>`
-- [ ] Zero references to `_activeHandle` remain in the file
+- [x] `_pendingHandleRequesters` remains `List<IActorRef>`
+- [x] Zero references to `_activeHandle` remain in the file
 
 ---
 

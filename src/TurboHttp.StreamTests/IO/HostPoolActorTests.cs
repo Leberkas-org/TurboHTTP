@@ -113,7 +113,7 @@ public sealed class HostPoolActorTests : TestKit
     public void HPA_002_QueuedRequester_ServedAfterReconnect()
     {
         var controlProbe = CreateTestProbe("control");
-        var pool = CreatePool(controlProbe, reconnectInterval: TimeSpan.FromSeconds(60));
+        var pool = CreatePool(controlProbe, reconnectInterval: TimeSpan.FromMilliseconds(200));
 
         // Capture the first fake actor spawned at startup.
         var fakeConn = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
@@ -125,16 +125,19 @@ public sealed class HostPoolActorTests : TestKit
         pool.Tell(new PoolRouterActor.EnsureHost(TestKey, TestOptions), TestActor);
         ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
 
-        // Drop the connection — clears _activeHandle.
+        // Drop the connection — removes the ConnectionState from _connections.
         pool.Tell(new HostPoolActor.ConnectionFailed(fakeConn));
 
         // Queue a requester while no handle is available.
         pool.Tell(new PoolRouterActor.EnsureHost(TestKey, TestOptions), TestActor);
-        ExpectNoMsg(TimeSpan.FromMilliseconds(200));
+        ExpectNoMsg(TimeSpan.FromMilliseconds(100));
 
-        // Simulate a fresh connection coming up and reporting ConnectionReady.
-        var handle2 = CreateHandle(fakeConn);
-        pool.Tell(new ConnectionActor.ConnectionReady(handle2), fakeConn);
+        // Reconnect fires after 200ms, spawning a new FakeConnectionActor.
+        var fakeConn2 = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
+
+        // Simulate the new connection reporting ConnectionReady.
+        var handle2 = CreateHandle(fakeConn2);
+        pool.Tell(new ConnectionActor.ConnectionReady(handle2), fakeConn2);
 
         // The queued requester should now receive the new handle.
         ExpectMsg<ConnectionHandle>(h => h == handle2, TimeSpan.FromSeconds(5));

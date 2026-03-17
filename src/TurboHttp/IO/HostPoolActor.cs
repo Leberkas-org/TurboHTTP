@@ -46,10 +46,7 @@ public sealed class HostPoolActor : ReceiveActor
 
     private readonly List<ConnectionState> _connections = [];
 
-    /// <summary>Active connection handle (from the most recent ConnectionReady).</summary>
-    private ConnectionHandle? _activeHandle;
-
-    /// <summary>Requesters waiting for a ConnectionHandle (queued when no active handle exists).</summary>
+    /// <summary>Requesters waiting for a ConnectionHandle (queued when no connection with a free slot exists).</summary>
     private readonly List<IActorRef> _pendingHandleRequesters = [];
 
     /// <summary>Host identifier used for the per-host connection limiter.</summary>
@@ -97,7 +94,15 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void HandleConnectionReady(ConnectionActor.ConnectionReady msg)
     {
-        _activeHandle = msg.Handle;
+        var conn = Find(msg.Handle.ConnectionActor);
+
+        if (conn is null)
+        {
+            _log.Warning("ConnectionReady received for unknown connection {0}", msg.Handle.ConnectionActor);
+            return;
+        }
+
+        conn.SetHandle(msg.Handle);
 
         // Flush all pending requesters
         foreach (var requester in _pendingHandleRequesters)
@@ -110,10 +115,12 @@ public sealed class HostPoolActor : ReceiveActor
 
     private void HandleEnsureHost(PoolRouterActor.EnsureHost msg)
     {
-        // If we already have an active handle, reply immediately
-        if (_activeHandle is not null)
+        // Try to find a connection with an available slot and a handle
+        var conn = SelectConnection();
+
+        if (conn?.Handle is not null)
         {
-            Sender.Tell(_activeHandle);
+            Sender.Tell(conn.Handle);
             return;
         }
 
@@ -181,12 +188,6 @@ public sealed class HostPoolActor : ReceiveActor
 
         _limiter.Release(HostIdentifier);
 
-        // AC3: invalidate the active handle if it belongs to the failed connection
-        if (_activeHandle?.ConnectionActor.Equals(msg.Connection) == true)
-        {
-            _activeHandle = null;
-        }
-
         Context.System.Scheduler.ScheduleTellOnceCancelable(
             _config.ReconnectInterval,
             Self,
@@ -221,16 +222,10 @@ public sealed class HostPoolActor : ReceiveActor
             conn.Actor.Tell(PoisonPill.Instance);
             _connections.Remove(conn);
             _limiter.Release(HostIdentifier);
-
-            // Invalidate active handle if this was the active connection
-            if (_activeHandle?.ConnectionActor.Equals(conn.Actor) == true)
-            {
-                _activeHandle = null;
-            }
         }
 
-        // Try to serve pending requesters by spawning new connections if slots freed
-        if (_activeHandle is null && _pendingHandleRequesters.Count > 0)
+        // Try to serve pending requesters by spawning new connections if no slots available
+        if (_pendingHandleRequesters.Count > 0 && SelectConnection()?.Handle is null)
         {
             SpawnConnection();
         }
@@ -248,15 +243,7 @@ public sealed class HostPoolActor : ReceiveActor
         conn?.MarkIdle();
 
         // A stream freed up — try to serve queued requesters
-        if (_activeHandle is not null && _pendingHandleRequesters.Count > 0)
-        {
-            foreach (var requester in _pendingHandleRequesters)
-            {
-                requester.Tell(_activeHandle);
-            }
-
-            _pendingHandleRequesters.Clear();
-        }
+        ServeQueuedRequesters();
     }
 
     private void HandleStreamAcquired(StreamAcquired msg)
@@ -273,6 +260,31 @@ public sealed class HostPoolActor : ReceiveActor
         {
             conn.Handle.UpdateMaxConcurrentStreams(msg.MaxStreams);
         }
+    }
+
+    /// <summary>
+    /// Attempts to serve all queued requesters using the best available connection.
+    /// </summary>
+    private void ServeQueuedRequesters()
+    {
+        if (_pendingHandleRequesters.Count == 0)
+        {
+            return;
+        }
+
+        var conn = SelectConnection();
+
+        if (conn?.Handle is null)
+        {
+            return;
+        }
+
+        foreach (var requester in _pendingHandleRequesters)
+        {
+            requester.Tell(conn.Handle);
+        }
+
+        _pendingHandleRequesters.Clear();
     }
 
     /// <summary>
