@@ -1,82 +1,117 @@
-using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
+/// <summary>
+/// RFC 9113 §6.9 — WINDOW_UPDATE Frame: decoder-level stream flow control tests.
+///
+/// Verifies that <see cref="Http2FrameDecoder"/> decodes WINDOW_UPDATE frames and
+/// DATA frames correctly and enforces RFC-mandated wire constraints.
+///
+/// Covered:
+///   §6.9  : WINDOW_UPDATE decoded — connection window (stream 0)
+///   §6.9  : WINDOW_UPDATE decoded — stream window (stream N)
+///   §6.9  : Zero increment → PROTOCOL_ERROR
+///   §6.9  : Wrong payload size → FRAME_SIZE_ERROR
+///   §6.9  : DATA frame fields preserved on decode
+///   §6.9  : Increment preserved exactly by decoder
+/// </summary>
 public sealed class Http2DecoderStreamFlowControlTests
 {
-    [Fact(DisplayName = "7540-5.2-dec-001: New stream initial window is 65535")]
-    public void FlowControl_InitialConnectionReceiveWindow_Is65535()
-    {
-        var session = new Http2ProtocolSession();
-        Assert.Equal(65535, session.ConnectionReceiveWindow);
-    }
-
-    [Fact(DisplayName = "7540-5.2-dec-002: WINDOW_UPDATE decoded and window updated")]
-    public void FlowControl_WindowUpdateDecoded_WindowUpdated()
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 0 (connection window) decoded correctly
+    [Fact(DisplayName = "RFC-9113-§6.9-dec-001: WINDOW_UPDATE on stream 0 decoded correctly")]
+    public void WindowUpdate_Stream0_DecodedCorrectly()
     {
         var frame = new WindowUpdateFrame(0, 32768).Serialize();
-        var session = new Http2ProtocolSession();
-        session.Process(frame);
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(frame);
 
-        // Connection-level WINDOW_UPDATE (stream 0) updates the connection send window.
-        Assert.Equal(65535 + 32768, session.ConnectionSendWindow);
+        Assert.Single(frames);
+        var wu = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(0, wu.StreamId);
+        Assert.Equal(32768, wu.Increment);
     }
 
-    [Fact(DisplayName = "7540-5.2-dec-003: Peer DATA beyond window causes FLOW_CONTROL_ERROR")]
-    public void FlowControl_PeerDataExceedsReceiveWindow_ThrowsFlowControlError()
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream N (stream window) decoded correctly
+    [Fact(DisplayName = "RFC-9113-§6.9-dec-002: WINDOW_UPDATE on stream N decoded correctly")]
+    public void WindowUpdate_StreamN_DecodedCorrectly()
     {
-        var hpack = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpack.Encode([(":status", "200")]);
-        var headersFrame = new HeadersFrame(1, headerBlock, endStream: false, endHeaders: true).Serialize();
+        var frame = new WindowUpdateFrame(3, 8192).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(frame);
 
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame);
-
-        // Reduce connection receive window to 4 bytes.
-        session.SetConnectionReceiveWindow(4);
-
-        // Send 10 bytes of data — exceeds the window.
-        var dataFrame = new DataFrame(1, new byte[10], endStream: false).Serialize();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
+        Assert.Single(frames);
+        var wu = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(3, wu.StreamId);
+        Assert.Equal(8192, wu.Increment);
     }
 
-    [Fact(DisplayName = "7540-5.2-dec-004: WINDOW_UPDATE overflow causes FLOW_CONTROL_ERROR")]
-    public void FlowControl_WindowUpdateOverflow_ThrowsFlowControlError()
+    /// RFC 9113 §6.9 — Zero-increment WINDOW_UPDATE on stream 0 causes PROTOCOL_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.9-dec-003: Zero-increment WINDOW_UPDATE causes PROTOCOL_ERROR")]
+    public void WindowUpdate_ZeroIncrement_ThrowsProtocolError()
     {
-        // The connection send window starts at 65535. Sending increment = 0x7FFFFFFF
-        // would produce 65535 + 2147483647 = 2147549182 > 0x7FFFFFFF → overflow.
-        var overflowFrame = new byte[13]; // 9 + 4
-        overflowFrame[0] = 0; overflowFrame[1] = 0; overflowFrame[2] = 4; // length=4
-        overflowFrame[3] = 0x08; // WINDOW_UPDATE
-        overflowFrame[4] = 0x00; // flags
-        // stream = 0
-        overflowFrame[5] = 0; overflowFrame[6] = 0; overflowFrame[7] = 0; overflowFrame[8] = 0;
-        // increment = 0x7FFFFFFF
-        overflowFrame[9]  = 0x7F;
-        overflowFrame[10] = 0xFF;
-        overflowFrame[11] = 0xFF;
-        overflowFrame[12] = 0xFF;
-
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(overflowFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-    }
-
-    [Fact(DisplayName = "7540-5.2-dec-008: WINDOW_UPDATE increment=0 causes PROTOCOL_ERROR")]
-    public void FlowControl_WindowUpdateIncrementZero_ThrowsProtocolError()
-    {
-        // Build raw WINDOW_UPDATE with increment = 0.
-        var frame = new byte[13];
-        frame[0] = 0; frame[1] = 0; frame[2] = 4; // length=4
-        frame[3] = 0x08; // WINDOW_UPDATE
-        frame[4] = 0x00; // flags
-        // stream = 0 (bytes 5–8 are zero)
-        // increment = 0 (bytes 9–12 are zero)
-
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
+        var rawFrame = new byte[]
+        {
+            0x00, 0x00, 0x04, // length = 4
+            0x08,             // WINDOW_UPDATE
+            0x00,             // flags
+            0x00, 0x00, 0x00, 0x00, // stream = 0
+            0x00, 0x00, 0x00, 0x00, // increment = 0 — illegal
+        };
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
+    }
+
+    /// RFC 9113 §6.9 — WINDOW_UPDATE with wrong payload size causes FRAME_SIZE_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.9-dec-004: WINDOW_UPDATE with wrong payload size causes FRAME_SIZE_ERROR")]
+    public void WindowUpdate_WrongPayloadSize_ThrowsFrameSizeError()
+    {
+        // Payload must be exactly 4 bytes; use 5 bytes.
+        var rawFrame = new byte[]
+        {
+            0x00, 0x00, 0x05, // length = 5 (must be 4)
+            0x08,             // WINDOW_UPDATE
+            0x00,             // flags
+            0x00, 0x00, 0x00, 0x00, // stream = 0
+            0x00, 0x00, 0x01, 0x00, 0x00, // 5 payload bytes
+        };
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
+        Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
+    }
+
+    /// RFC 9113 §6.9 — DATA frame decoded with correct StreamId, payload and EndStream
+    [Fact(DisplayName = "RFC-9113-§6.9-dec-005: DATA frame decoded with correct fields")]
+    public void DataFrame_DecodedWithCorrectFields()
+    {
+        var data = new byte[] { 0x01, 0x02, 0x03 };
+        var frame = new DataFrame(1, data, endStream: true).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(frame);
+
+        Assert.Single(frames);
+        var df = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(1, df.StreamId);
+        Assert.Equal(data, df.Data.ToArray());
+        Assert.True(df.EndStream);
+    }
+
+    /// RFC 9113 §6.9 — WINDOW_UPDATE increment preserved exactly by decoder
+    [Fact(DisplayName = "RFC-9113-§6.9-dec-006: WINDOW_UPDATE increment preserved exactly by decoder")]
+    public void WindowUpdate_IncrementPreservedExactly()
+    {
+        // Test several distinct increment values
+        var increments = new[] { 1, 100, 65535, 65536, 0x7FFFFFFE, 0x7FFFFFFF };
+        foreach (var increment in increments)
+        {
+            var bytes = new WindowUpdateFrame(1, increment).Serialize();
+            var decoder = new Http2FrameDecoder();
+            var frames = decoder.Decode(bytes);
+
+            Assert.Single(frames);
+            var wu = Assert.IsType<WindowUpdateFrame>(frames[0]);
+            Assert.Equal(increment, wu.Increment);
+        }
     }
 }

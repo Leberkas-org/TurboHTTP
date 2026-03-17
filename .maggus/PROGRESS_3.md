@@ -46,13 +46,30 @@
 
 ---
 
+---
+
+## TASK-PSS-003: Replace Http2ProtocolSession — Flow Control Tests (RFC9113 §6.9)
+**Status:** COMPLETE | **Date:** 2026-03-17
+
+**Changes:**
+- Rewrote `src/TurboHttp.Tests/RFC9113/05_FlowControlTests.cs`
+- Rewrote `src/TurboHttp.Tests/RFC9113/13_DecoderStreamFlowControlTests.cs`
+- Both files now use only `WindowUpdateFrame`, `DataFrame`, `Http2FrameDecoder`
+- No `Http2ProtocolSession` references remain in either file
+- 38 + 4 old tests → 26 + 6 new tests; all DisplayNames contain `RFC-9113-§6.9`
+- Scenarios covered: WINDOW_UPDATE stream 0 (FC-WU-001..006), stream N (FC-WU-007..012), increment edge cases (FC-WU-013..016), error cases — zero increment PROTOCOL_ERROR (FC-WU-017..018), wrong payload size FRAME_SIZE_ERROR (FC-WU-019), DATA frame decoding (FC-DF-001..007), decoder stream tests (dec-001..006)
+- Reserved high-bit stripping, TCP fragmentation, round-trips all covered
+- Build: 0 errors, 0 warnings; 32 new tests all green; 1 pre-existing RH-015 failure unchanged
+
+---
+
 ## Remaining Tasks
 
 | Task | Status | Description |
 |------|--------|-------------|
 | TASK-PSS-001 | COMPLETE | Replace Http2ProtocolSession — Stream State Tests (§5.1) |
 | TASK-PSS-002 | COMPLETE | Replace Http2ProtocolSession — Settings Tests (§6.5) |
-| TASK-PSS-003 | PENDING | Replace Http2ProtocolSession — Flow Control Tests (§6.9) |
+| TASK-PSS-003 | COMPLETE | Replace Http2ProtocolSession — Flow Control Tests (§6.9) |
 | TASK-PSS-004 | PENDING | Replace Http2ProtocolSession — GoAway/Ping/RST (§6.4/§6.7/§6.8) |
 | TASK-PSS-005 | PENDING | Replace Http2ProtocolSession — Header/Pseudo-Header Tests (§8.2/§8.3) |
 | TASK-PSS-006 | PENDING | Replace Http2ProtocolSession — Security/Fuzz/Concurrency |

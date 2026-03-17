@@ -1,572 +1,455 @@
 using System.Buffers.Binary;
-using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
 /// <summary>
-/// Phase 10-11: HTTP/2 Flow Control Engine
-/// RFC 7540 §5.2 — Flow Control
+/// RFC 9113 §6.9 — WINDOW_UPDATE Frame
 /// RFC 7540 §6.9 — WINDOW_UPDATE Frame
-/// RFC 7540 §6.9.1 — Flow-Control Window
-/// RFC 7540 §6.9.2 — Initial Flow-Control Window Size
+///
+/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes WINDOW_UPDATE and
+/// DATA frames and enforces wire-format constraints as specified in §6.9.
+///
+/// Covered:
+///   §6.9  : WINDOW_UPDATE on stream 0 (connection-level) — StreamId and Increment fields
+///   §6.9  : WINDOW_UPDATE on stream N (stream-level) — StreamId and Increment fields
+///   §6.9  : Multiple WINDOW_UPDATE frames in a single Decode call
+///   §6.9  : Increment value edge cases — minimum (1), large values, maximum (0x7FFFFFFF)
+///   §6.9  : Reserved bit in increment field stripped (high bit ignored)
+///   §6.9  : Zero increment → PROTOCOL_ERROR (connection error)
+///   §6.9  : Wrong payload size → FRAME_SIZE_ERROR (connection error)
+///   §6.9  : DATA frame — StreamId, Data, EndStream decoded correctly
+///   §6.9  : Round-trip: serialize then decode preserves all fields
 /// </summary>
 public sealed class Http2FlowControlTests
 {
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // =========================================================================
+    // FC-WU-001..006: WINDOW_UPDATE Decoding — Connection Level (Stream 0)
+    // =========================================================================
 
-    private static byte[] BuildRawFrame(byte frameType, byte flags, int streamId, byte[] payload)
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 0 decoded with correct StreamId
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-001: WINDOW_UPDATE on stream 0 decoded with correct StreamId")]
+    public void WindowUpdate_Stream0_HasCorrectStreamId()
     {
-        var frame = new byte[9 + payload.Length];
-        frame[0] = (byte)(payload.Length >> 16);
-        frame[1] = (byte)(payload.Length >> 8);
-        frame[2] = (byte)payload.Length;
-        frame[3] = frameType;
-        frame[4] = flags;
-        BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), (uint)streamId & 0x7FFFFFFFu);
-        payload.CopyTo(frame, 9);
-        return frame;
+        var bytes = new WindowUpdateFrame(0, 1000).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(0, frame.StreamId);
     }
 
-    private static Http2ProtocolSession OpenStreamWithHeaders(int streamId)
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 0 decoded with correct Increment
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-002: WINDOW_UPDATE on stream 0 decoded with correct Increment")]
+    public void WindowUpdate_Stream0_HasCorrectIncrement()
     {
-        var session = new Http2ProtocolSession();
-        // Minimal HPACK: 0x88 = indexed :status: 200 (static table index 8).
-        var headersPayload = new byte[] { 0x88 };
-        // END_HEADERS flag (0x4) — no END_STREAM so the stream stays open.
-        var headersFrame = BuildRawFrame(0x1, 0x04, streamId, headersPayload);
-        session.Process(headersFrame);
-        return session;
+        var bytes = new WindowUpdateFrame(0, 32768).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(32768, frame.Increment);
     }
 
-    private static byte[] BuildWindowUpdate(int streamId, int increment)
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 0 has correct FrameType
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-003: WINDOW_UPDATE on stream 0 has correct FrameType")]
+    public void WindowUpdate_Stream0_HasCorrectFrameType()
     {
-        var payload = new byte[4];
-        BinaryPrimitives.WriteUInt32BigEndian(payload, (uint)increment & 0x7FFFFFFFu);
-        return BuildRawFrame(0x8, 0x0, streamId, payload);
+        var bytes = new WindowUpdateFrame(0, 1).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(FrameType.WindowUpdate, frames[0].Type);
     }
 
-    private static byte[] BuildDataFrame(int streamId, byte[] data, bool endStream = false)
+    /// RFC 9113 §6.9 — Multiple connection-level WINDOW_UPDATEs decoded as independent frames
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-004: Multiple connection-level WINDOW_UPDATEs decoded independently")]
+    public void WindowUpdate_MultipleStream0_DecodedAsIndependentFrames()
     {
-        return BuildRawFrame(0x0, endStream ? (byte)0x01 : (byte)0x00, streamId, data);
-    }
-
-    private static byte[] BuildSettingsFrame(List<(SettingsParameter Param, uint Value)> settings)
-    {
-        var payload = new byte[settings.Count * 6];
-        for (var i = 0; i < settings.Count; i++)
-        {
-            BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), (ushort)settings[i].Param);
-            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), settings[i].Value);
-        }
-
-        return BuildRawFrame(0x4, 0x0, 0, payload);
-    }
-
-    // ── FC-001..005: Connection Receive Window Tracking ───────────────────────
-
-    /// RFC 7540 §5.2 — Initial connection receive window is 65535
-    [Fact(DisplayName = "FC-001: Initial connection receive window is 65535")]
-    public void Should_HaveDefaultConnectionReceiveWindow_When_DecoderCreated()
-    {
-        var session = new Http2ProtocolSession();
-        Assert.Equal(65535, session.ConnectionReceiveWindow);
-    }
-
-    /// RFC 7540 §5.2 — Connection receive window decrements after DATA received
-    [Fact(DisplayName = "FC-002: Connection receive window decrements after DATA received")]
-    public void Should_DecrementConnectionReceiveWindow_When_DataFrameReceived()
-    {
-        var session = OpenStreamWithHeaders(1);
-
-        var data = new byte[1000];
-        var dataFrame = BuildDataFrame(1, data, endStream: true);
-        session.Process(dataFrame);
-
-        // Window decrements; caller restores it via SetConnectionReceiveWindow after sending WINDOW_UPDATE.
-        Assert.Equal(65535 - 1000, session.ConnectionReceiveWindow);
-    }
-
-    /// RFC 7540 §5.2 — FlowControlError when DATA exceeds connection receive window
-    [Fact(DisplayName = "FC-003: FlowControlError when DATA exceeds connection receive window")]
-    public void Should_ThrowFlowControlError_When_DataExceedsConnectionWindow()
-    {
-        var session = OpenStreamWithHeaders(1);
-        session.SetConnectionReceiveWindow(500);
-
-        var data = new byte[501];
-        var dataFrame = BuildDataFrame(1, data);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    /// RFC 7540 §5.2 — FlowControlError when DATA exceeds stream window but not connection window
-    [Fact(DisplayName = "FC-004: FlowControlError when DATA exceeds stream window but not connection window")]
-    public void Should_ThrowFlowControlError_When_DataExceedsStreamWindowButNotConnectionWindow()
-    {
-        var session = OpenStreamWithHeaders(1);
-        session.SetConnectionReceiveWindow(600);
-        session.SetStreamReceiveWindow(1, 300);
-
-        var data = new byte[400]; // 400 <= 600 (connection) but 400 > 300 (stream)
-        var dataFrame = BuildDataFrame(1, data);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(1, ex.StreamId);
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-    }
-
-    /// RFC 7540 §5.2 — No FlowControlError when DATA is exactly at connection window limit
-    [Fact(DisplayName = "FC-005: No FlowControlError when DATA is exactly at connection window limit")]
-    public void Should_AcceptData_When_DataEqualsConnectionWindow()
-    {
-        var session = OpenStreamWithHeaders(1);
-        session.SetConnectionReceiveWindow(100);
-        session.SetStreamReceiveWindow(1, 1000);
-
-        var data = new byte[100];
-        var dataFrame = BuildDataFrame(1, data, endStream: true);
-
-        // Must not throw.
-        session.Process(dataFrame);
-    }
-
-    // ── FC-006..010: Stream Receive Window Tracking ───────────────────────────
-
-    /// RFC 7540 §5.2 — Initial stream receive window is 65535
-    [Fact(DisplayName = "FC-006: Initial stream receive window is 65535")]
-    public void Should_HaveDefaultStreamReceiveWindow_When_StreamOpened()
-    {
-        var session = OpenStreamWithHeaders(1);
-        Assert.Equal(65535, session.GetStreamReceiveWindow(1));
-    }
-
-    /// RFC 7540 §5.2 — Connection receive window decrements by DATA size
-    [Fact(DisplayName = "FC-007: Connection receive window decrements by DATA size")]
-    public void Should_DecrementConnectionWindowByDataSize_When_LargeDataFrameReceived()
-    {
-        var session = OpenStreamWithHeaders(1);
-
-        var data = new byte[2000];
-        var dataFrame = BuildDataFrame(1, data, endStream: true);
-        session.Process(dataFrame);
-
-        // Window decrements; caller restores via SetConnectionReceiveWindow after sending WINDOW_UPDATE.
-        Assert.Equal(65535 - 2000, session.ConnectionReceiveWindow);
-    }
-
-    /// RFC 7540 §5.2 — FlowControlError when DATA exceeds stream receive window
-    [Fact(DisplayName = "FC-008: FlowControlError when DATA exceeds stream receive window")]
-    public void Should_ThrowFlowControlError_When_DataExceedsStreamWindow()
-    {
-        var session = OpenStreamWithHeaders(1);
-        session.SetStreamReceiveWindow(1, 200);
-
-        var data = new byte[201];
-        var dataFrame = BuildDataFrame(1, data);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(1, ex.StreamId);
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-    }
-
-    /// RFC 7540 §5.2 — SetStreamReceiveWindow updates stream window correctly
-    [Fact(DisplayName = "FC-009: SetStreamReceiveWindow updates stream window correctly")]
-    public void Should_UpdateStreamWindow_When_SetStreamReceiveWindowCalled()
-    {
-        var session = OpenStreamWithHeaders(1);
-        session.SetStreamReceiveWindow(1, 999);
-        Assert.Equal(999, session.GetStreamReceiveWindow(1));
-    }
-
-    /// RFC 7540 §5.2 — Unknown stream receive window defaults to 65535
-    [Fact(DisplayName = "FC-010: Unknown stream receive window defaults to 65535")]
-    public void Should_Return65535_When_StreamReceiveWindowRequestedForUnknownStream()
-    {
-        var session = new Http2ProtocolSession();
-        Assert.Equal(65535, session.GetStreamReceiveWindow(99));
-    }
-
-    // ── FC-011..015: Connection Send Window (WINDOW_UPDATE from server) ───────
-
-    /// RFC 7540 §5.2 — Initial connection send window is 65535
-    [Fact(DisplayName = "FC-011: Initial connection send window is 65535")]
-    public void Should_HaveDefaultConnectionSendWindow_When_DecoderCreated()
-    {
-        var session = new Http2ProtocolSession();
-        Assert.Equal(65535L, session.ConnectionSendWindow);
-    }
-
-    /// RFC 7540 §5.2 — WINDOW UPDATE on stream 0 increases connection send window
-    [Fact(DisplayName = "FC-012: WINDOW_UPDATE on stream 0 increases connection send window")]
-    public void Should_IncreaseConnectionSendWindow_When_WindowUpdateReceivedOnStream0()
-    {
-        var session = new Http2ProtocolSession();
-        var wuFrame = BuildWindowUpdate(0, 1000);
-        session.Process(wuFrame);
-        Assert.Equal(65535L + 1000, session.ConnectionSendWindow);
-    }
-
-    /// RFC 7540 §5.2 — Multiple WINDOW UPDATEs on stream 0 accumulate
-    [Fact(DisplayName = "FC-013: Multiple WINDOW_UPDATEs on stream 0 accumulate")]
-    public void Should_AccumulateConnectionSendWindow_When_MultipleWindowUpdatesReceived()
-    {
-        var session = new Http2ProtocolSession();
-        var wu1 = BuildWindowUpdate(0, 1000);
-        var wu2 = BuildWindowUpdate(0, 500);
+        var wu1 = new WindowUpdateFrame(0, 1000).Serialize();
+        var wu2 = new WindowUpdateFrame(0, 500).Serialize();
         var combined = wu1.Concat(wu2).ToArray();
-        session.Process(combined);
-        Assert.Equal(65535L + 1500, session.ConnectionSendWindow);
+
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(combined);
+
+        Assert.Equal(2, frames.Count);
+        var frame1 = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        var frame2 = Assert.IsType<WindowUpdateFrame>(frames[1]);
+        Assert.Equal(0, frame1.StreamId);
+        Assert.Equal(1000, frame1.Increment);
+        Assert.Equal(0, frame2.StreamId);
+        Assert.Equal(500, frame2.Increment);
     }
 
-    /// RFC 7540 §5.2 — FlowControlError when connection send window overflows 2^31-1
-    [Fact(DisplayName = "FC-014: FlowControlError when connection send window overflows 2^31-1")]
-    public void Should_ThrowFlowControlError_When_ConnectionSendWindowWouldOverflow()
+    /// RFC 9113 §6.9 — Connection WINDOW_UPDATE with minimum valid increment (1) accepted
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-005: Connection WINDOW_UPDATE with increment=1 accepted")]
+    public void WindowUpdate_Stream0_IncrementOne_Accepted()
     {
-        var session = new Http2ProtocolSession();
-        // Window starts at 65535. Increment by (2^31-1 - 65535 + 1) to overflow.
-        var increment = 0x7FFFFFFF - 65535 + 1;
-        var wuFrame = BuildWindowUpdate(0, increment);
+        var bytes = new WindowUpdateFrame(0, 1).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wuFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.True(ex.IsConnectionError);
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(1, frame.Increment);
     }
 
-    /// RFC 7540 §5.2 — Connection send window at exactly 2^31-1 is accepted
-    [Fact(DisplayName = "FC-015: Connection send window at exactly 2^31-1 is accepted")]
-    public void Should_AcceptWindowUpdate_When_ConnectionSendWindowReachesMaxExactly()
+    /// RFC 9113 §6.9 — Connection WINDOW_UPDATE with maximum valid increment (0x7FFFFFFF) accepted
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-006: Connection WINDOW_UPDATE with max increment accepted")]
+    public void WindowUpdate_Stream0_MaxIncrement_Accepted()
     {
-        var session = new Http2ProtocolSession();
-        var increment = 0x7FFFFFFF - 65535; // exactly reaches max
-        var wuFrame = BuildWindowUpdate(0, increment);
+        var bytes = new WindowUpdateFrame(0, 0x7FFFFFFF).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        // Must not throw.
-        session.Process(wuFrame);
-        Assert.Equal(0x7FFFFFFFL, session.ConnectionSendWindow);
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(0x7FFFFFFF, frame.Increment);
     }
 
-    // ── FC-016..020: Stream Send Window (WINDOW_UPDATE for stream > 0) ────────
+    // =========================================================================
+    // FC-WU-007..012: WINDOW_UPDATE Decoding — Stream Level (Stream N)
+    // =========================================================================
 
-    /// RFC 7540 §5.2 — Initial stream send window defaults to SETTINGS INITIAL WINDOW SIZE (65535)
-    [Fact(DisplayName = "FC-016: Initial stream send window defaults to SETTINGS_INITIAL_WINDOW_SIZE (65535)")]
-    public void Should_ReturnInitialWindowSize_When_StreamSendWindowRequestedBeforeAnyUpdate()
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 1 decoded with correct StreamId
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-007: WINDOW_UPDATE on stream 1 decoded with correct StreamId")]
+    public void WindowUpdate_Stream1_HasCorrectStreamId()
     {
-        var session = new Http2ProtocolSession();
-        Assert.Equal(65535L, session.GetStreamSendWindow(1));
+        var bytes = new WindowUpdateFrame(1, 2000).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
     }
 
-    /// RFC 7540 §5.2 — WINDOW UPDATE on stream N increases that stream's send window
-    [Fact(DisplayName = "FC-017: WINDOW_UPDATE on stream N increases that stream's send window")]
-    public void Should_IncreaseStreamSendWindow_When_WindowUpdateReceivedForStream()
+    /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 3 decoded with correct Increment
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-008: WINDOW_UPDATE on stream 3 decoded with correct Increment")]
+    public void WindowUpdate_Stream3_HasCorrectIncrement()
     {
-        var session = new Http2ProtocolSession();
-        var wuFrame = BuildWindowUpdate(1, 2000);
-        session.Process(wuFrame);
-        Assert.Equal(65535L + 2000, session.GetStreamSendWindow(1));
+        var bytes = new WindowUpdateFrame(3, 65535).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(3, frame.StreamId);
+        Assert.Equal(65535, frame.Increment);
     }
 
-    /// RFC 7540 §5.2 — Multiple stream WINDOW UPDATEs accumulate independently per stream
-    [Fact(DisplayName = "FC-018: Multiple stream WINDOW_UPDATEs accumulate independently per stream")]
-    public void Should_TrackSendWindowsIndependently_When_MultipleStreamsUpdated()
+    /// RFC 9113 §6.9 — Mixed stream-0 and stream-N WINDOW_UPDATEs decoded independently
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-009: Mixed stream-0 and stream-N WINDOW_UPDATEs decoded independently")]
+    public void WindowUpdate_Mixed_Stream0AndStreamN_DecodedIndependently()
     {
-        var session = new Http2ProtocolSession();
-        var wu1 = BuildWindowUpdate(1, 100);
-        var wu3 = BuildWindowUpdate(3, 200);
-        var combined = wu1.Concat(wu3).ToArray();
-        session.Process(combined);
+        var wu0 = new WindowUpdateFrame(0, 100).Serialize();
+        var wu1 = new WindowUpdateFrame(1, 200).Serialize();
+        var wu3 = new WindowUpdateFrame(3, 300).Serialize();
+        var combined = wu0.Concat(wu1).Concat(wu3).ToArray();
 
-        Assert.Equal(65535L + 100, session.GetStreamSendWindow(1));
-        Assert.Equal(65535L + 200, session.GetStreamSendWindow(3));
-        Assert.Equal(65535L, session.GetStreamSendWindow(5)); // untouched stream
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(combined);
+
+        Assert.Equal(3, frames.Count);
+        var f0 = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        var f1 = Assert.IsType<WindowUpdateFrame>(frames[1]);
+        var f3 = Assert.IsType<WindowUpdateFrame>(frames[2]);
+        Assert.Equal(0, f0.StreamId);
+        Assert.Equal(100, f0.Increment);
+        Assert.Equal(1, f1.StreamId);
+        Assert.Equal(200, f1.Increment);
+        Assert.Equal(3, f3.StreamId);
+        Assert.Equal(300, f3.Increment);
     }
 
-    /// RFC 7540 §5.2 — FlowControlError when stream send window overflows 2^31-1
-    [Fact(DisplayName = "FC-019: FlowControlError when stream send window overflows 2^31-1")]
-    public void Should_ThrowFlowControlError_When_StreamSendWindowWouldOverflow()
+    /// RFC 9113 §6.9 — Stream WINDOW_UPDATE with large stream ID decoded correctly
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-010: Stream WINDOW_UPDATE with large stream ID decoded correctly")]
+    public void WindowUpdate_LargeStreamId_DecodedCorrectly()
     {
-        var session = new Http2ProtocolSession();
-        var increment = 0x7FFFFFFF - 65535 + 1; // one over max
-        var wuFrame = BuildWindowUpdate(1, increment);
+        var bytes = new WindowUpdateFrame(0x7FFFFFFE, 1024).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wuFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Contains("stream 1", ex.Message);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(1, ex.StreamId);
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(0x7FFFFFFE, frame.StreamId);
+        Assert.Equal(1024, frame.Increment);
     }
 
-    /// RFC 7540 §5.2 — Stream send window at exactly 2^31-1 is accepted
-    [Fact(DisplayName = "FC-020: Stream send window at exactly 2^31-1 is accepted")]
-    public void Should_AcceptStreamWindowUpdate_When_StreamSendWindowReachesMaxExactly()
+    /// RFC 9113 §6.9 — Stream WINDOW_UPDATE with minimum increment (1) accepted
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-011: Stream WINDOW_UPDATE with increment=1 accepted")]
+    public void WindowUpdate_StreamN_IncrementOne_Accepted()
     {
-        var session = new Http2ProtocolSession();
-        var increment = 0x7FFFFFFF - 65535; // exactly reaches max
-        var wuFrame = BuildWindowUpdate(1, increment);
+        var bytes = new WindowUpdateFrame(5, 1).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        session.Process(wuFrame);
-        Assert.Equal(0x7FFFFFFFL, session.GetStreamSendWindow(1));
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(5, frame.StreamId);
+        Assert.Equal(1, frame.Increment);
     }
 
-    // ── FC-021..023: WINDOW_UPDATE Validation ─────────────────────────────────
-
-    /// RFC 7540 §5.2 — Zero-increment WINDOW UPDATE on stream 0 is a PROTOCOL ERROR
-    [Fact(DisplayName = "FC-021: Zero-increment WINDOW_UPDATE on stream 0 is a PROTOCOL_ERROR")]
-    public void Should_ThrowProtocolError_When_ConnectionWindowUpdateIncrementIsZero()
+    /// RFC 9113 §6.9 — Stream WINDOW_UPDATE with maximum increment (0x7FFFFFFF) accepted
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-012: Stream WINDOW_UPDATE with max increment accepted")]
+    public void WindowUpdate_StreamN_MaxIncrement_Accepted()
     {
-        var session = new Http2ProtocolSession();
-        var payload = new byte[4]; // 4 zero bytes = increment of 0
-        var wuFrame = BuildRawFrame(0x8, 0x0, 0, payload);
+        var bytes = new WindowUpdateFrame(7, 0x7FFFFFFF).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wuFrame));
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(7, frame.StreamId);
+        Assert.Equal(0x7FFFFFFF, frame.Increment);
+    }
+
+    // =========================================================================
+    // FC-WU-013..016: Reserved bit handling and increment values
+    // =========================================================================
+
+    /// RFC 9113 §6.9 — Reserved high bit of increment field is stripped on decode
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-013: Reserved high bit of increment field stripped on decode")]
+    public void WindowUpdate_ReservedHighBit_StrippedOnDecode()
+    {
+        // Build raw WINDOW_UPDATE with high bit set: 0x80000001 → increment should be 1
+        var rawFrame = new byte[]
+        {
+            0x00, 0x00, 0x04, // length = 4
+            0x08,             // WINDOW_UPDATE
+            0x00,             // flags
+            0x00, 0x00, 0x00, 0x01, // stream = 1
+            0x80, 0x00, 0x00, 0x01, // increment with high bit set → stripped to 1
+        };
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(rawFrame);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(1, frame.Increment); // high bit stripped
+    }
+
+    /// RFC 9113 §6.9 — WINDOW_UPDATE round-trip on stream 0 preserves all fields
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-014: WINDOW_UPDATE round-trip on stream 0 preserves fields")]
+    public void WindowUpdate_RoundTrip_Stream0_PreservesFields()
+    {
+        var original = new WindowUpdateFrame(0, 131072);
+        var bytes = original.Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var decoded = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(0, decoded.StreamId);
+        Assert.Equal(131072, decoded.Increment);
+    }
+
+    /// RFC 9113 §6.9 — WINDOW_UPDATE round-trip on stream N preserves all fields
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-015: WINDOW_UPDATE round-trip on stream N preserves fields")]
+    public void WindowUpdate_RoundTrip_StreamN_PreservesFields()
+    {
+        var original = new WindowUpdateFrame(9, 4096);
+        var bytes = original.Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var decoded = Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.Equal(9, decoded.StreamId);
+        Assert.Equal(4096, decoded.Increment);
+    }
+
+    /// RFC 9113 §6.9 — TCP-fragmented WINDOW_UPDATE decoded correctly across two calls
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-016: TCP-fragmented WINDOW_UPDATE decoded across two calls")]
+    public void WindowUpdate_TcpFragmented_DecodedAcrossTwoCalls()
+    {
+        var bytes = new WindowUpdateFrame(0, 8192).Serialize(); // 13 bytes total
+        var part1 = bytes[..7];
+        var part2 = bytes[7..];
+
+        var decoder = new Http2FrameDecoder();
+        var frames1 = decoder.Decode(part1);
+        var frames2 = decoder.Decode(part2);
+
+        Assert.Empty(frames1); // incomplete
+        Assert.Single(frames2);
+        var frame = Assert.IsType<WindowUpdateFrame>(frames2[0]);
+        Assert.Equal(0, frame.StreamId);
+        Assert.Equal(8192, frame.Increment);
+    }
+
+    // =========================================================================
+    // FC-WU-017..019: Error cases — PROTOCOL_ERROR and FRAME_SIZE_ERROR
+    // =========================================================================
+
+    /// RFC 9113 §6.9 — Zero increment on stream 0 is connection PROTOCOL_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-017: Zero increment on stream 0 is connection PROTOCOL_ERROR")]
+    public void WindowUpdate_ZeroIncrement_Stream0_IsProtocolError()
+    {
+        var rawFrame = new byte[]
+        {
+            0x00, 0x00, 0x04, // length = 4
+            0x08,             // WINDOW_UPDATE
+            0x00,             // flags
+            0x00, 0x00, 0x00, 0x00, // stream = 0
+            0x00, 0x00, 0x00, 0x00, // increment = 0 — MUST be > 0
+        };
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
 
-    /// RFC 7540 §5.2 — Zero-increment WINDOW UPDATE on stream N is a PROTOCOL ERROR
-    [Fact(DisplayName = "FC-022: Zero-increment WINDOW_UPDATE on stream N is a PROTOCOL_ERROR")]
-    public void Should_ThrowProtocolError_When_StreamWindowUpdateIncrementIsZero()
+    /// RFC 9113 §6.9 — Zero increment on stream N is connection PROTOCOL_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-018: Zero increment on stream N is connection PROTOCOL_ERROR")]
+    public void WindowUpdate_ZeroIncrement_StreamN_IsProtocolError()
     {
-        var session = new Http2ProtocolSession();
-        var payload = new byte[4]; // increment of 0
-        var wuFrame = BuildRawFrame(0x8, 0x0, 1, payload);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wuFrame));
+        var rawFrame = new byte[]
+        {
+            0x00, 0x00, 0x04, // length = 4
+            0x08,             // WINDOW_UPDATE
+            0x00,             // flags
+            0x00, 0x00, 0x00, 0x01, // stream = 1
+            0x00, 0x00, 0x00, 0x00, // increment = 0 — MUST be > 0
+        };
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
 
-    /// RFC 7540 §5.2 — WINDOW UPDATE with wrong payload size is a FRAME SIZE ERROR
-    [Fact(DisplayName = "FC-023: WINDOW_UPDATE with wrong payload size is a FRAME_SIZE_ERROR")]
-    public void Should_ThrowFrameSizeError_When_WindowUpdatePayloadIsNot4Bytes()
+    /// RFC 9113 §6.9 — WINDOW_UPDATE with wrong payload size is FRAME_SIZE_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-WU-019: WINDOW_UPDATE with wrong payload size is FRAME_SIZE_ERROR")]
+    public void WindowUpdate_WrongPayloadSize_IsFrameSizeError()
     {
-        var session = new Http2ProtocolSession();
-        var payload = new byte[3]; // wrong size
-        var wuFrame = BuildRawFrame(0x8, 0x0, 0, payload);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wuFrame));
+        var rawFrame = new byte[]
+        {
+            0x00, 0x00, 0x03, // length = 3 (must be 4)
+            0x08,             // WINDOW_UPDATE
+            0x00,             // flags
+            0x00, 0x00, 0x00, 0x00, // stream = 0
+            0x00, 0x00, 0x01, // only 3 payload bytes
+        };
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── FC-024..028: Receive Window Tracking for DATA Frames ──────────────────
+    // =========================================================================
+    // FC-DF-001..007: DATA Frame Decoding
+    // =========================================================================
 
-    /// RFC 7540 §5.2 — Connection and stream receive windows both decrement after DATA received
-    [Fact(DisplayName = "FC-024: Connection and stream receive windows decrement after DATA received")]
-    public void Should_DecrementBothReceiveWindows_When_DataFrameReceived()
+    /// RFC 9113 §6.9 — DATA frame decoded with correct stream ID and payload
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-001: DATA frame decoded with correct StreamId and data")]
+    public void DataFrame_DecodedWithCorrectStreamIdAndData()
     {
-        var session = OpenStreamWithHeaders(1);
+        var data = new byte[] { 1, 2, 3, 4, 5 };
+        var bytes = new DataFrame(1, data).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var data = new byte[500];
-        var dataFrame = BuildDataFrame(1, data, endStream: true);
-        session.Process(dataFrame);
-
-        Assert.Equal(65535 - 500, session.ConnectionReceiveWindow);
-        Assert.Equal(65535 - 500, session.GetStreamReceiveWindow(1));
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+        Assert.Equal(data, frame.Data.ToArray());
     }
 
-    /// RFC 7540 §5.2 — Connection receive window decrements by exact DATA payload size
-    [Fact(DisplayName = "FC-025: Connection receive window decrements by exact DATA payload size")]
-    public void Should_DecrementConnectionWindowByExactPayloadSize_When_DataReceived()
+    /// RFC 9113 §6.9 — DATA frame with END_STREAM decoded with EndStream=true
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-002: DATA frame with END_STREAM decoded with EndStream=true")]
+    public void DataFrame_WithEndStream_DecodedAsEndStream()
     {
-        var session = OpenStreamWithHeaders(1);
+        var data = new byte[10];
+        var bytes = new DataFrame(3, data, endStream: true).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var data = new byte[1234];
-        var dataFrame = BuildDataFrame(1, data, endStream: true);
-        session.Process(dataFrame);
-
-        Assert.Equal(65535 - 1234, session.ConnectionReceiveWindow);
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.True(frame.EndStream);
+        Assert.Equal(3, frame.StreamId);
     }
 
-    /// RFC 7540 §5.2 — Stream receive window decrements by exact DATA payload size
-    [Fact(DisplayName = "FC-026: Stream receive window decrements by exact DATA payload size")]
-    public void Should_DecrementStreamWindowByExactPayloadSize_When_DataReceived()
+    /// RFC 9113 §6.9 — DATA frame without END_STREAM decoded with EndStream=false
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-003: DATA frame without END_STREAM decoded with EndStream=false")]
+    public void DataFrame_WithoutEndStream_DecodedAsNotEndStream()
     {
-        var session = OpenStreamWithHeaders(3);
+        var data = new byte[10];
+        var bytes = new DataFrame(5, data, endStream: false).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var data = new byte[777];
-        var dataFrame = BuildDataFrame(3, data, endStream: true);
-        session.Process(dataFrame);
-
-        Assert.Equal(65535 - 777, session.GetStreamReceiveWindow(3));
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.False(frame.EndStream);
     }
 
-    /// RFC 7540 §5.2 — Zero-length DATA does not decrement receive windows
-    [Fact(DisplayName = "FC-027: Zero-length DATA does not decrement receive windows")]
-    public void Should_NotDecrementReceiveWindows_When_ZeroLengthDataReceived()
+    /// RFC 9113 §6.9 — Zero-length DATA frame decoded correctly
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-004: Zero-length DATA frame decoded correctly")]
+    public void DataFrame_ZeroLength_DecodedCorrectly()
     {
-        var session = OpenStreamWithHeaders(1);
-        var dataFrame = BuildDataFrame(1, [], endStream: false); // zero-length DATA, no END_STREAM
-        session.Process(dataFrame);
+        var bytes = new DataFrame(1, ReadOnlyMemory<byte>.Empty, endStream: true).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        Assert.Equal(65535, session.ConnectionReceiveWindow);
-        Assert.Equal(65535, session.GetStreamReceiveWindow(1));
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(0, frame.Data.Length);
+        Assert.True(frame.EndStream);
     }
 
-    /// RFC 7540 §5.2 — Multiple DATA frames cumulatively decrement receive windows
-    [Fact(DisplayName = "FC-028: Multiple DATA frames cumulatively decrement receive windows")]
-    public void Should_CumulativelyDecrementReceiveWindows_When_MultipleDataFramesReceived()
+    /// RFC 9113 §6.9 — DATA frame round-trip preserves StreamId, Data, and EndStream
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-005: DATA frame round-trip preserves all fields")]
+    public void DataFrame_RoundTrip_PreservesAllFields()
     {
-        var session = OpenStreamWithHeaders(1);
+        var data = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+        var original = new DataFrame(7, data, endStream: true);
+        var bytes = original.Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        var dataFrame1 = BuildDataFrame(1, new byte[100]);
-        var dataFrame2 = BuildDataFrame(1, new byte[200], endStream: true);
-        var combined = dataFrame1.Concat(dataFrame2).ToArray();
-
-        session.Process(combined);
-
-        Assert.Equal(65535 - 300, session.ConnectionReceiveWindow);
-        Assert.Equal(65535 - 300, session.GetStreamReceiveWindow(1));
+        Assert.Single(frames);
+        var decoded = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(7, decoded.StreamId);
+        Assert.Equal(data, decoded.Data.ToArray());
+        Assert.True(decoded.EndStream);
     }
 
-    // ── FC-029..032: SETTINGS_INITIAL_WINDOW_SIZE ─────────────────────────────
-
-    /// RFC 7540 §5.2 — SETTINGS INITIAL WINDOW SIZE updates default send window for unknown streams
-    [Fact(DisplayName = "FC-029: SETTINGS_INITIAL_WINDOW_SIZE updates default send window for unknown streams")]
-    public void Should_UseNewInitialWindowSize_When_SettingsUpdatesInitialWindowSize()
+    /// RFC 9113 §6.9 — WINDOW_UPDATE followed by DATA decoded as two frames in order
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-006: WINDOW_UPDATE followed by DATA decoded as two frames in order")]
+    public void WindowUpdateThenDataFrame_DecodedInOrder()
     {
-        var session = new Http2ProtocolSession();
-        var settingsFrame = BuildSettingsFrame(
-            new List<(SettingsParameter, uint)> { (SettingsParameter.InitialWindowSize, 32768u) });
-        session.Process(settingsFrame);
+        var wu = new WindowUpdateFrame(1, 65535).Serialize();
+        var df = new DataFrame(1, new byte[] { 0x42 }, endStream: true).Serialize();
+        var combined = wu.Concat(df).ToArray();
 
-        // Unknown streams should return the updated initial window size as default.
-        Assert.Equal(32768L, session.GetStreamSendWindow(99));
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(combined);
+
+        Assert.Equal(2, frames.Count);
+        Assert.IsType<WindowUpdateFrame>(frames[0]);
+        Assert.IsType<DataFrame>(frames[1]);
     }
 
-    /// RFC 7540 §5.2 — SETTINGS INITIAL WINDOW SIZE applies delta to existing open streams
-    [Fact(DisplayName = "FC-030: SETTINGS_INITIAL_WINDOW_SIZE applies delta to existing open streams")]
-    public void Should_ApplyDeltaToOpenStreams_When_InitialWindowSizeSettingChanges()
+    /// RFC 9113 §6.9 — Large DATA payload decoded with correct length
+    [Fact(DisplayName = "RFC-9113-§6.9-FC-DF-007: Large DATA payload decoded with correct length")]
+    public void DataFrame_LargePayload_DecodedCorrectly()
     {
-        var session = OpenStreamWithHeaders(1);
-        // Stream 1 is now open with default send window 65535.
+        var data = new byte[16384]; // 16 KB
+        for (var i = 0; i < data.Length; i++) { data[i] = (byte)(i & 0xFF); }
 
-        // Change initial window size to 32768 (delta = -32767).
-        var settingsFrame = BuildSettingsFrame(
-            new List<(SettingsParameter, uint)> { (SettingsParameter.InitialWindowSize, 32768u) });
-        session.Process(settingsFrame);
+        var bytes = new DataFrame(1, data).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        Assert.Equal(32768L, session.GetStreamSendWindow(1));
-    }
-
-    /// RFC 7540 §5.2 — SETTINGS INITIAL WINDOW SIZE increase applies positive delta to open streams
-    [Fact(DisplayName = "FC-031: SETTINGS_INITIAL_WINDOW_SIZE increase applies positive delta to open streams")]
-    public void Should_IncreaseOpenStreamsWindowByDelta_When_InitialWindowSizeIncreased()
-    {
-        var session = OpenStreamWithHeaders(1);
-        // Stream 1 is open with default 65535.
-
-        // Apply a stream WINDOW_UPDATE to make stream 1's window differ from default.
-        var wu = BuildWindowUpdate(1, 1000);
-        session.Process(wu);
-        Assert.Equal(65535L + 1000, session.GetStreamSendWindow(1));
-
-        // Now increase initial window size by 10000 (75535 - 65535 = 10000 delta).
-        var settingsFrame = BuildSettingsFrame(
-            new List<(SettingsParameter, uint)> { (SettingsParameter.InitialWindowSize, 75535u) });
-        session.Process(settingsFrame);
-
-        // Delta = +10000 applied to stream 1's explicit window (66535 + 10000 = 76535).
-        Assert.Equal(65535L + 1000 + 10000, session.GetStreamSendWindow(1));
-    }
-
-    /// RFC 7540 §5.2 — SETTINGS INITIAL WINDOW SIZE value > 2^31-1 causes FLOW CONTROL ERROR
-    [Fact(DisplayName = "FC-032: SETTINGS_INITIAL_WINDOW_SIZE value > 2^31-1 causes FLOW_CONTROL_ERROR")]
-    public void Should_ThrowFlowControlError_When_InitialWindowSizeExceedsMax()
-    {
-        var session = new Http2ProtocolSession();
-        var settingsFrame = BuildSettingsFrame(
-            new List<(SettingsParameter, uint)> { (SettingsParameter.InitialWindowSize, 0x80000000u) });
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(settingsFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    // ── FC-033..035: Reset Clears All Flow Control State ──────────────────────
-
-    /// RFC 7540 §5.2 — Reset restores connection receive window to 65535
-    [Fact(DisplayName = "FC-033: Reset restores connection receive window to 65535")]
-    public void Should_RestoreConnectionReceiveWindowTo65535_When_ResetCalled()
-    {
-        var session = OpenStreamWithHeaders(1);
-        session.SetConnectionReceiveWindow(100);
-        session.Reset();
-        Assert.Equal(65535, session.ConnectionReceiveWindow);
-    }
-
-    /// RFC 7540 §5.2 — Reset restores connection send window to 65535
-    [Fact(DisplayName = "FC-034: Reset restores connection send window to 65535")]
-    public void Should_RestoreConnectionSendWindowTo65535_When_ResetCalled()
-    {
-        var session = new Http2ProtocolSession();
-        var wu = BuildWindowUpdate(0, 5000);
-        session.Process(wu);
-        session.Reset();
-        Assert.Equal(65535L, session.ConnectionSendWindow);
-    }
-
-    /// RFC 7540 §5.2 — Reset clears stream send windows back to default
-    [Fact(DisplayName = "FC-035: Reset clears stream send windows back to default")]
-    public void Should_ClearStreamSendWindows_When_ResetCalled()
-    {
-        var session = new Http2ProtocolSession();
-        var wu = BuildWindowUpdate(1, 9999);
-        session.Process(wu);
-        Assert.NotEqual(65535L, session.GetStreamSendWindow(1));
-
-        session.Reset();
-        Assert.Equal(65535L, session.GetStreamSendWindow(1));
-    }
-
-    // ── FC-036..038: Window Update Result Reporting ───────────────────────────
-
-    /// RFC 7540 §5.2 — Received WINDOW_UPDATE is reported in session.WindowUpdates
-    [Fact(DisplayName = "FC-036: Received WINDOW_UPDATE is reported in session.WindowUpdates")]
-    public void Should_ReportWindowUpdateInResult_When_WindowUpdateFrameReceived()
-    {
-        var session = new Http2ProtocolSession();
-        var wu = BuildWindowUpdate(1, 4096);
-        session.Process(wu);
-
-        Assert.Single(session.WindowUpdates);
-        Assert.Equal((1, 4096), session.WindowUpdates[0]);
-    }
-
-    /// RFC 7540 §5.2 — Connection WINDOW_UPDATE tracked separately from stream WINDOW_UPDATEs
-    [Fact(DisplayName = "FC-037: Connection WINDOW_UPDATE tracked separately from stream WINDOW_UPDATEs")]
-    public void Should_TrackConnectionAndStreamWindowUpdatesSeparately_When_MultipleWindowUpdateFramesReceived()
-    {
-        var session = new Http2ProtocolSession();
-        var wu1 = BuildWindowUpdate(0, 100);
-        var wu2 = BuildWindowUpdate(1, 200);
-        var wu3 = BuildWindowUpdate(3, 300);
-        var combined = wu1.Concat(wu2).Concat(wu3).ToArray();
-        session.Process(combined);
-
-        // Stream-level WINDOW_UPDATEs accumulate in WindowUpdates.
-        Assert.Equal(2, session.WindowUpdates.Count);
-        Assert.Contains((1, 200), session.WindowUpdates);
-        Assert.Contains((3, 300), session.WindowUpdates);
-        // Connection-level WINDOW_UPDATE tracked in ConnectionSendWindow.
-        Assert.Equal(65535L + 100, session.ConnectionSendWindow);
-    }
-
-    /// RFC 7540 §5.2 — Zero-length DATA with END_STREAM does not decrement receive windows
-    [Fact(DisplayName = "FC-038: Zero-length DATA with END_STREAM does not decrement receive windows")]
-    public void Should_NotDecrementReceiveWindows_When_ZeroLengthDataWithEndStreamReceived()
-    {
-        var session = OpenStreamWithHeaders(1);
-        // END_STREAM on zero-length DATA closes stream without decrementing receive windows.
-        var dataFrame = BuildDataFrame(1, [], endStream: true);
-        session.Process(dataFrame);
-
-        Assert.Equal(65535, session.ConnectionReceiveWindow);
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(16384, frame.Data.Length);
+        Assert.Equal(data, frame.Data.ToArray());
     }
 }

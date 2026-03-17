@@ -83,12 +83,12 @@ Affected files: `05_FlowControlTests.cs`, `13_DecoderStreamFlowControlTests.cs`
 **Background:** Flow control logic (window size, overflow checks) belongs to `Http20ConnectionStage`. The decoder only decodes `WindowUpdateFrame` bytes. Tests should exercise the decoder directly: correct frame fields, increment value, stream-0 vs stream-N.
 
 **Acceptance Criteria:**
-- [ ] Both files only use: `WindowUpdateFrame`, `DataFrame`, `Http2FrameDecoder`
-- [ ] No import of `Http2ProtocolSession`
-- [ ] Every test DisplayName contains `RFC-9113-§6.9`
-- [ ] RFC scenarios covered: connection window (stream 0), stream window (stream N), increment values
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [x] Both files only use: `WindowUpdateFrame`, `DataFrame`, `Http2FrameDecoder`
+- [x] No import of `Http2ProtocolSession`
+- [x] Every test DisplayName contains `RFC-9113-§6.9`
+- [x] RFC scenarios covered: connection window (stream 0), stream window (stream N), increment values
+- [x] Tests green
+- [x] `.maggus/PROGRESS_3.md` updated
 
 ---
 
