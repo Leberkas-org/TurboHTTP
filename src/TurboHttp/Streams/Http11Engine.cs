@@ -19,13 +19,10 @@ public class Http11Engine : IHttpProtocolEngine
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
-            var flowIn = b.Add(Flow.Create<IInputItem>()
-                .Select(x => (((DataItem)x).Memory, ((DataItem)x).Length)));
-
             b.From(requestBCast.Out(0)).To(encoder.Inlet);
             b.From(requestBCast.Out(1)).To(correlation.In0);
 
-            b.From(flowIn.Outlet).Via(decoder).To(correlation.In1);
+            b.From(decoder.Outlet).To(correlation.In1);
 
             return new BidiShape<
                 HttpRequestMessage,
@@ -34,7 +31,7 @@ public class Http11Engine : IHttpProtocolEngine
                 HttpResponseMessage>(
                 requestBCast.In,
                 encoder.Outlet,
-                flowIn.Inlet,
+                decoder.Inlet,
                 correlation.Out);
         }));
     }

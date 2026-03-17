@@ -276,12 +276,12 @@ into the `IOutputItem` output stream using `MergePreferred<IOutputItem>`.
 **Description:** Mirror TASK-9-E02 for HTTP/1.1.
 
 **Acceptance Criteria:**
-- [ ] Stage changes from `FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage>` to
+- [x] Stage changes from `FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage>` to
       `FlowShape<IInputItem, HttpResponseMessage>`
-- [ ] Internally casts to `DataItem` and extracts `(Memory, Length)` before the existing parser
-- [ ] Non-`DataItem` items dropped
-- [ ] Existing stream tests pass (input type updated)
-- [ ] Build succeeds
+- [x] Internally casts to `DataItem` and extracts `(Memory, Length)` before the existing parser
+- [x] Non-`DataItem` items dropped
+- [x] Existing stream tests pass (input type updated)
+- [x] Build succeeds
 
 ---
 

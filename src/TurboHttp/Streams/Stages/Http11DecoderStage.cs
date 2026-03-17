@@ -1,23 +1,24 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Streams.Stages;
 
-public sealed class Http11DecoderStage : GraphStage<FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage>>
+public sealed class Http11DecoderStage : GraphStage<FlowShape<IInputItem, HttpResponseMessage>>
     {
-        private readonly Inlet<(IMemoryOwner<byte>, int)> _inlet = new("http10.decoder.in");
-        private readonly Outlet<HttpResponseMessage> _outlet = new("http10.decoder.out");
+        private readonly Inlet<IInputItem> _inlet = new("http11.decoder.in");
+        private readonly Outlet<HttpResponseMessage> _outlet = new("http11.decoder.out");
 
         public Http11DecoderStage()
         {
-            Shape = new FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage>(_inlet, _outlet);
+            Shape = new FlowShape<IInputItem, HttpResponseMessage>(_inlet, _outlet);
         }
 
-        public override FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage> Shape { get; }
+        public override FlowShape<IInputItem, HttpResponseMessage> Shape { get; }
 
         protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         {
@@ -33,27 +34,33 @@ public sealed class Http11DecoderStage : GraphStage<FlowShape<(IMemoryOwner<byte
                 SetHandler(stage._inlet,
                     onPush: () =>
                     {
-                        var (owner, length) = Grab(stage._inlet);
+                        var item = Grab(stage._inlet);
+
+                        if (item is not DataItem dataItem)
+                        {
+                            Pull(stage._inlet);
+                            return;
+                        }
 
                         try
                         {
-                            var data = owner.Memory[..length];
+                            var data = dataItem.Memory.Memory[..dataItem.Length];
 
                             if (_decoder.TryDecode(data, out var response))
                             {
-                                owner.Dispose();
+                                dataItem.Memory.Dispose();
                                 EmitMultiple(stage._outlet, response);
                             }
                             else
                             {
                                 // Not enough data yet – return the buffer and wait for more
-                                owner.Dispose();
+                                dataItem.Memory.Dispose();
                                 Pull(stage._inlet);
                             }
                         }
                         catch (Exception ex)
                         {
-                            owner.Dispose();
+                            dataItem.Memory.Dispose();
                             FailStage(ex);
                         }
                     },

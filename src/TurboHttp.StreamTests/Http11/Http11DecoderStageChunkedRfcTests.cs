@@ -1,6 +1,6 @@
-using System.Buffers;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http11;
@@ -10,10 +10,10 @@ namespace TurboHttp.StreamTests.Http11;
 /// </summary>
 public sealed class Http11DecoderStageChunkedRfcTests : StreamTestBase
 {
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
     private async Task<HttpResponseMessage> DecodeAsync(params string[] chunks)

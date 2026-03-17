@@ -1,17 +1,17 @@
-using System.Buffers;
 using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http11;
 
 public sealed class Http11DecoderStageTests : StreamTestBase
 {
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
     private async Task<HttpResponseMessage> DecodeAsync(params string[] chunks)
@@ -54,9 +54,10 @@ public sealed class Http11DecoderStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§4: Two pipelined responses decoded as two messages")]
     public async Task ST_11_DEC_004_Pipelined_Responses_Decoded()
     {
-        var source = Source.From([
+        var source = Source.From(new[]
+        {
             Chunk("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\nHTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n")
-        ]);
+        });
 
         var responses = await source
             .Via(Flow.FromGraph(new Http11DecoderStage()))

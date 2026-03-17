@@ -21,10 +21,10 @@ public sealed class StageLifecycleTests : StreamTestBase
             Version = System.Net.HttpVersion.Version11
         };
 
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
     private static Exception Unwrap(Exception ex)
@@ -52,7 +52,7 @@ public sealed class StageLifecycleTests : StreamTestBase
     {
         // An empty source completes immediately (upstream finish).
         // The decoder stage must propagate completion cleanly.
-        var results = await Source.Empty<(IMemoryOwner<byte>, int)>()
+        var results = await Source.Empty<IInputItem>()
             .Via(Flow.FromGraph(new Http11DecoderStage()))
             .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
 
@@ -91,7 +91,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         // Feed a valid HTTP/1.1 response into the decoder; Sink.First cancels after first message.
         // The decoder stage must not throw when downstream cancels.
         const string rawResponse = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK";
-        var fragments = new List<(IMemoryOwner<byte>, int)> { Chunk(rawResponse) };
+        var fragments = new List<IInputItem> { Chunk(rawResponse) };
 
         var response = await Source.From(fragments)
             .Via(Flow.FromGraph(new Http11DecoderStage()))
@@ -138,7 +138,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         // must cause Http11Decoder to throw HttpDecoderException(InvalidStatusLine).
         // The decoder stage catches it, calls FailStage(), and the stream fails.
         // We verify the inner exception is exactly HttpDecoderException.
-        var garbage = Chunk("GARBAGE DATA\r\n\r\n");
+        IInputItem garbage = Chunk("GARBAGE DATA\r\n\r\n");
 
         var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
             await Source.Single(garbage)

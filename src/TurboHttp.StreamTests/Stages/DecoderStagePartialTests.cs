@@ -18,20 +18,20 @@ public sealed class DecoderStagePartialTests : StreamTestBase
 {
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static (IMemoryOwner<byte>, int) Chunk(byte[] data)
-        => (new SimpleMemoryOwner(data), data.Length);
+    private static IInputItem Chunk(byte[] data)
+        => new DataItem(HostKey.Default, new SimpleMemoryOwner(data), data.Length);
 
     private static IInputItem H2Chunk(byte[] data)
         => new DataItem(HostKey.Default, new SimpleMemoryOwner(data), data.Length);
 
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
     private async Task<HttpResponseMessage> Decode11Async(
-        IEnumerable<(IMemoryOwner<byte>, int)> fragments)
+        IEnumerable<IInputItem> fragments)
     {
         return await Source.From(fragments)
             .Via(Flow.FromGraph(new Http11DecoderStage()))
@@ -61,7 +61,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
         const string partialHeaders = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n";
         const string headerTerminatorAndBody = "\r\nHello";
 
-        var fragments = new List<(IMemoryOwner<byte>, int)>
+        var fragments = new List<IInputItem>
         {
             Chunk(partialHeaders),
             Chunk(headerTerminatorAndBody)
@@ -83,7 +83,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
         // Split inside the status line, before \r\n
         //   Chunk 1: "HTTP/1.1 20"
         //   Chunk 2: "0 OK\r\nContent-Length: 3\r\n\r\nABC"
-        var fragments = new List<(IMemoryOwner<byte>, int)>
+        var fragments = new List<IInputItem>
         {
             Chunk("HTTP/1.1 20"),
             Chunk("0 OK\r\nContent-Length: 3\r\n\r\nABC")
@@ -107,7 +107,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
         // all 15 bytes have been received.
         const string bodyText = "AAAAABBBBBCCCCC"; // 15 bytes
 
-        var fragments = new List<(IMemoryOwner<byte>, int)>
+        var fragments = new List<IInputItem>
         {
             Chunk($"HTTP/1.1 200 OK\r\nContent-Length: {bodyText.Length}\r\n\r\n"),
             Chunk("AAAAA"),   // first 5 bytes — decoder must not emit yet
@@ -132,7 +132,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
         // Send a 4-byte body one byte per TCP chunk to stress the accumulation logic.
         const string bodyText = "Test";
 
-        var fragments = new List<(IMemoryOwner<byte>, int)>
+        var fragments = new List<IInputItem>
         {
             Chunk($"HTTP/1.1 200 OK\r\nContent-Length: {bodyText.Length}\r\n\r\n")
         };

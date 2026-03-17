@@ -1,7 +1,7 @@
-using System.Buffers;
 using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http11;
@@ -14,18 +14,18 @@ namespace TurboHttp.StreamTests.Http11;
 /// </summary>
 public sealed class Http11StageFragmentationTests : StreamTestBase
 {
-    private static (IMemoryOwner<byte>, int) Chunk(byte[] data)
-        => (new SimpleMemoryOwner(data), data.Length);
+    private static IInputItem Chunk(byte[] data)
+        => new DataItem(HostKey.Default, new SimpleMemoryOwner(data), data.Length);
 
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
-    private static List<(IMemoryOwner<byte>, int)> SplitIntoChunks(byte[] data, int[] splitPoints)
+    private static List<IInputItem> SplitIntoChunks(byte[] data, int[] splitPoints)
     {
-        var chunks = new List<(IMemoryOwner<byte>, int)>();
+        var chunks = new List<IInputItem>();
         var offset = 0;
         foreach (var splitPoint in splitPoints)
         {
@@ -47,9 +47,9 @@ public sealed class Http11StageFragmentationTests : StreamTestBase
         return chunks;
     }
 
-    private static List<(IMemoryOwner<byte>, int)> SplitIntoSingleBytes(byte[] data)
+    private static List<IInputItem> SplitIntoSingleBytes(byte[] data)
     {
-        var chunks = new List<(IMemoryOwner<byte>, int)>();
+        var chunks = new List<IInputItem>();
         foreach (var b in data)
         {
             chunks.Add(Chunk([b]));
@@ -58,9 +58,9 @@ public sealed class Http11StageFragmentationTests : StreamTestBase
         return chunks;
     }
 
-    private static List<(IMemoryOwner<byte>, int)> SplitIntoSmallFragments(byte[] data, int fragmentSize)
+    private static List<IInputItem> SplitIntoSmallFragments(byte[] data, int fragmentSize)
     {
-        var chunks = new List<(IMemoryOwner<byte>, int)>();
+        var chunks = new List<IInputItem>();
         for (var i = 0; i < data.Length; i += fragmentSize)
         {
             var length = Math.Min(fragmentSize, data.Length - i);
@@ -73,7 +73,7 @@ public sealed class Http11StageFragmentationTests : StreamTestBase
     }
 
     private async Task<HttpResponseMessage> DecodeFragmentsAsync(
-        List<(IMemoryOwner<byte>, int)> fragments)
+        List<IInputItem> fragments)
     {
         var source = Source.From(fragments);
         return await source
@@ -110,7 +110,7 @@ public sealed class Http11StageFragmentationTests : StreamTestBase
     public async Task ST_11F_001b_Chunked_Each_Chunk_Separate_Segment()
     {
         // Headers in one segment, each chunk data in its own segment, terminator in last
-        var fragments = new List<(IMemoryOwner<byte>, int)>
+        var fragments = new List<IInputItem>
         {
             Chunk("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"),
             Chunk("3\r\nfoo\r\n"),
