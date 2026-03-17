@@ -259,31 +259,32 @@ public sealed class HostPoolActor : ReceiveActor
         {
             conn.Handle.UpdateMaxConcurrentStreams(msg.MaxStreams);
         }
+
+        // Limit may have increased — try to serve queued requesters
+        ServeQueuedRequesters();
     }
 
     /// <summary>
-    /// Attempts to serve all queued requesters using the best available connection.
+    /// Drains the pending requester queue one-at-a-time, selecting the best connection
+    /// for each requester and marking it busy before serving the next.
+    /// Stops when no connection with a free slot is available.
     /// </summary>
     private void ServeQueuedRequesters()
     {
-        if (_pendingHandleRequesters.Count == 0)
+        while (_pendingHandleRequesters.Count > 0)
         {
-            return;
-        }
+            var conn = SelectConnection();
 
-        var conn = SelectConnection();
+            if (conn?.Handle is null)
+            {
+                break;
+            }
 
-        if (conn?.Handle is null)
-        {
-            return;
-        }
-
-        foreach (var requester in _pendingHandleRequesters)
-        {
+            var requester = _pendingHandleRequesters[0];
+            _pendingHandleRequesters.RemoveAt(0);
+            conn.MarkBusy();
             requester.Tell(conn.Handle);
         }
-
-        _pendingHandleRequesters.Clear();
     }
 
     /// <summary>

@@ -63,7 +63,7 @@ internal sealed class ConnectionState
     /// <summary>
     /// Whether this connection can accept another request.
     /// </summary>
-    public bool HasAvailableSlot => Active && Reusable && PendingRequests < MaxConcurrentStreams;
+    public bool HasAvailableSlot => Active && Reusable && Handle is not null && PendingRequests < MaxConcurrentStreams;
 
     public ConnectionState(IActorRef actor)
     {

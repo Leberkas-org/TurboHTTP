@@ -613,16 +613,16 @@ and attempt to spawn a new connection.
 ConnectionActor), update the corresponding ConnectionState and drain the pending queue.
 
 **Acceptance Criteria:**
-- [ ] `HandleStreamCompleted(StreamCompleted msg)`:
+- [x] `HandleStreamCompleted(StreamCompleted msg)`:
   1. `Find(msg.Connection)?.MarkIdle()`
   2. Call `ServePendingRequesters()`
-- [ ] `HandleStreamAcquired(StreamAcquired msg)`:
+- [x] `HandleStreamAcquired(StreamAcquired msg)`:
   1. `Find(msg.Connection)?.MarkBusy()`
-- [ ] `HandleUpdateMaxConcurrentStreams(UpdateMaxConcurrentStreams msg)`:
+- [x] `HandleUpdateMaxConcurrentStreams(UpdateMaxConcurrentStreams msg)`:
   1. `var conn = Find(msg.Connection)`
   2. `conn?.Handle?.UpdateMaxConcurrentStreams(msg.MaxStreams)`
   3. Call `ServePendingRequesters()` (limit may have increased)
-- [ ] `ServePendingRequesters()`:
+- [x] `ServePendingRequesters()`:
   ```
   while _pendingHandleRequesters.Count > 0:
       conn = SelectConnection()
@@ -632,7 +632,7 @@ ConnectionActor), update the corresponding ConnectionState and drain the pending
       conn.MarkBusy()
       requester.Tell(conn.Handle!)
   ```
-- [ ] Unit tests:
+- [x] Unit tests:
   - `StreamCompleted` → slot freed → queued requester served
   - `StreamCompleted` → no eligible connection → queue unchanged
   - Multiple queued requesters drained in FIFO order
