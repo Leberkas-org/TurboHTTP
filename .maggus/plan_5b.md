@@ -393,12 +393,12 @@ actor hierarchy.
 so that `SelectConnection` can make routing decisions.
 
 **Acceptance Criteria:**
-- [ ] Add `private volatile int _maxConcurrentStreams = 100`
-- [ ] Public getter: `public int MaxConcurrentStreams => _maxConcurrentStreams`
-- [ ] Public mutator: `public void UpdateMaxConcurrentStreams(int value) => Volatile.Write(ref _maxConcurrentStreams, value)`
-- [ ] Field is NOT part of the primary constructor and does NOT affect record equality/hash
-- [ ] No `#nullable enable` directive added
-- [ ] Unit test: concurrent writes and reads do not throw; value is eventually consistent
+- [x] Add `private volatile int _maxConcurrentStreams = 100`
+- [x] Public getter: `public int MaxConcurrentStreams => _maxConcurrentStreams`
+- [x] Public mutator: `public void UpdateMaxConcurrentStreams(int value) => Volatile.Write(ref _maxConcurrentStreams, value)`
+- [x] Field is NOT part of the primary constructor and does NOT affect record equality/hash
+- [x] No `#nullable enable` directive added
+- [x] Unit test: concurrent writes and reads do not throw; value is eventually consistent
 
 ---
 
