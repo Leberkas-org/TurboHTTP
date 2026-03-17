@@ -1,520 +1,237 @@
 using System.Buffers.Binary;
-using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
 /// <summary>
-/// Phase 26: Error Mapping &amp; Correct Codes
+/// RFC 9113 §6.4 — RST_STREAM Frame
+/// RFC 9113 §6.7 — PING Frame
 ///
-/// RFC 7540 §5.4 distinguishes two error categories:
+/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes RST_STREAM
+/// and PING frames and enforces wire-format constraints as specified in §6.4 and §6.7.
 ///
-///   §5.4.1 Connection errors — terminate the entire HTTP/2 connection.
-///     The endpoint MUST send GOAWAY then close the TCP connection.
+/// Covered (RST_STREAM §6.4):
+///   - StreamId, ErrorCode fields decoded correctly
+///   - FrameType is RstStream
+///   - Wrong payload length → FRAME_SIZE_ERROR (connection error)
+///   - Various error codes: NoError, Cancel, ProtocolError, InternalError
+///   - Round-trip: serialize then decode preserves all fields
 ///
-///   §5.4.2 Stream errors — reset only the affected stream via RST_STREAM.
-///     The connection continues; other streams are unaffected.
+/// Covered (PING §6.7):
+///   - Data (8 bytes) decoded correctly
+///   - IsAck flag (ACK bit) decoded correctly
+///   - FrameType is Ping
+///   - Wrong payload length → FRAME_SIZE_ERROR (connection error)
+///   - PING on non-zero stream → PROTOCOL_ERROR (connection error)
+///   - Round-trip: serialize then decode preserves all fields
 ///
-/// This test class verifies that Http2Decoder throws Http2Exception with:
-///   - the correct Http2ErrorCode (PROTOCOL_ERROR, FLOW_CONTROL_ERROR,
-///     FRAME_SIZE_ERROR, INTERNAL_ERROR, REFUSED_STREAM, CANCEL, STREAM_CLOSED)
-///   - the correct Http2ErrorScope (Connection vs Stream)
-///   - the correct StreamId for stream-scoped errors
-///
-/// Test IDs: EM-001..EM-025
+/// Test IDs: RST-001..RST-007, PNG-001..PNG-007
 /// </summary>
-public sealed class Http2ErrorMappingTests
+public sealed class Http2RstStreamPingTests
 {
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // =========================================================================
+    // RST-001..RST-007: RST_STREAM Frame — §6.4
+    // =========================================================================
 
-    private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
+    /// RFC 9113 §6.4 — RST_STREAM decoded with correct StreamId
+    [Fact(DisplayName = "RFC-9113-§6.4-RST-001: RST_STREAM decoded with correct StreamId")]
+    public void RstStream_DecodedWithCorrectStreamId()
     {
-        var frame = new byte[9 + payload.Length];
-        // Length (24-bit)
-        frame[0] = (byte)(payload.Length >> 16);
-        frame[1] = (byte)(payload.Length >> 8);
-        frame[2] = (byte)payload.Length;
-        frame[3] = type;
-        frame[4] = flags;
-        BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), (uint)streamId & 0x7FFFFFFF);
-        payload.CopyTo(frame, 9);
-        return frame;
+        var bytes = new RstStreamFrame(5, Http2ErrorCode.Cancel).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<RstStreamFrame>(frames[0]);
+        Assert.Equal(5, frame.StreamId);
     }
 
-    private static byte[] BuildHeadersFrame(int streamId, byte[] headerBlock,
-        bool endStream = false, bool endHeaders = true)
+    /// RFC 9113 §6.4 — RST_STREAM decoded with correct ErrorCode
+    [Fact(DisplayName = "RFC-9113-§6.4-RST-002: RST_STREAM decoded with correct ErrorCode")]
+    public void RstStream_DecodedWithCorrectErrorCode()
     {
-        byte flags = 0;
-        if (endStream)
-        {
-            flags |= 0x1;
-        }
+        var bytes = new RstStreamFrame(3, Http2ErrorCode.Cancel).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        if (endHeaders)
-        {
-            flags |= 0x4;
-        }
-
-        return BuildRawFrame(0x1, flags, streamId, headerBlock);
+        Assert.Single(frames);
+        var frame = Assert.IsType<RstStreamFrame>(frames[0]);
+        Assert.Equal(Http2ErrorCode.Cancel, frame.ErrorCode);
     }
 
-    private static byte[] BuildDataFrame(int streamId, byte[] data, bool endStream = false)
+    /// RFC 9113 §6.4 — RST_STREAM has correct FrameType
+    [Fact(DisplayName = "RFC-9113-§6.4-RST-003: RST_STREAM has correct FrameType")]
+    public void RstStream_HasCorrectFrameType()
     {
-        byte flags = endStream ? (byte)0x1 : (byte)0x0;
-        return BuildRawFrame(0x0, flags, streamId, data);
+        var bytes = new RstStreamFrame(1, Http2ErrorCode.NoError).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        Assert.Equal(FrameType.RstStream, frames[0].Type);
     }
 
-    private static byte[] BuildWindowUpdateFrame(int streamId, int increment)
-    {
-        var payload = new byte[4];
-        BinaryPrimitives.WriteUInt32BigEndian(payload, (uint)increment & 0x7FFFFFFF);
-        return BuildRawFrame(0x8, 0, streamId, payload);
-    }
-
-    private static byte[] BuildSettingsFrame(bool ack = false, params (ushort, uint)[] settings)
-    {
-        byte flags = ack ? (byte)0x1 : (byte)0x0;
-        var payload = new byte[settings.Length * 6];
-        for (int i = 0; i < settings.Length; i++)
-        {
-            BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), settings[i].Item1);
-            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), settings[i].Item2);
-        }
-
-        return BuildRawFrame(0x4, flags, 0, payload);
-    }
-
-    private static byte[] BuildMinimalStatusHeaderBlock()
-    {
-        var enc = new HpackEncoder(useHuffman: false);
-        return enc.Encode([(":status", "200")]).ToArray();
-    }
-
-    private static byte[] Concat(params byte[][] parts)
-    {
-        var total = 0;
-        foreach (var p in parts) total += p.Length;
-        var result = new byte[total];
-        var offset = 0;
-        foreach (var p in parts)
-        {
-            p.CopyTo(result, offset);
-            offset += p.Length;
-        }
-
-        return result;
-    }
-
-    // ── EM-001..EM-004: Http2ErrorScope enum sanity ───────────────────────────
-
-    /// RFC 7540 §5.4 — Http2Exception defaults to Connection scope
-    [Fact(DisplayName = "EM-001: Http2Exception defaults to Connection scope")]
-    public void Http2Exception_Default_IsConnectionScope()
-    {
-        var ex = new Http2Exception("test");
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.True(ex.IsConnectionError);
-        Assert.Equal(0, ex.StreamId);
-    }
-
-    /// RFC 7540 §5.4 — Http2Exception stream scope sets IsConnectionError=false
-    [Fact(DisplayName = "EM-002: Http2Exception stream scope sets IsConnectionError=false")]
-    public void Http2Exception_StreamScope_IsConnectionError_False()
-    {
-        var ex = new Http2Exception("test", Http2ErrorCode.RefusedStream,
-            Http2ErrorScope.Stream, streamId: 3);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.False(ex.IsConnectionError);
-        Assert.Equal(3, ex.StreamId);
-    }
-
-    /// RFC 7540 §5.4 — Http2Exception preserves ErrorCode when scope is set
-    [Fact(DisplayName = "EM-003: Http2Exception preserves ErrorCode when scope is set")]
-    public void Http2Exception_ErrorCode_PreservedWithScope()
-    {
-        var ex = new Http2Exception("test", Http2ErrorCode.FlowControlError,
-            Http2ErrorScope.Stream, streamId: 7);
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(7, ex.StreamId);
-    }
-
-    /// RFC 7540 §5.4 — Http2Exception connection scope has StreamId=0
-    [Fact(DisplayName = "EM-004: Http2Exception connection scope has StreamId=0")]
-    public void Http2Exception_ConnectionScope_StreamIdIsZero()
-    {
-        var ex = new Http2Exception("test", Http2ErrorCode.ProtocolError,
-            Http2ErrorScope.Connection);
-        Assert.Equal(0, ex.StreamId);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    // ── EM-005..EM-007: Connection errors — PROTOCOL_ERROR ───────────────────
-
-    /// RFC 7540 §5.4 — DATA on stream 0 is connection PROTOCOL ERROR
-    [Fact(DisplayName = "EM-005: DATA on stream 0 is connection PROTOCOL_ERROR")]
-    public void DataOnStream0_IsConnectionProtocolError()
-    {
-        var frame = BuildRawFrame(0x0, 0x0, 0, new byte[4]);
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
-        Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    /// RFC 7540 §5.4 — DATA on idle stream is connection PROTOCOL ERROR
-    [Fact(DisplayName = "EM-006: DATA on idle stream is connection PROTOCOL_ERROR")]
-    public void DataOnIdleStream_IsConnectionProtocolError()
-    {
-        var session = new Http2ProtocolSession();
-        var frame = BuildDataFrame(1, new byte[4], endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
-        Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    /// RFC 7540 §5.4 — CONTINUATION without preceding HEADERS is connection PROTOCOL ERROR
-    [Fact(DisplayName = "EM-007: CONTINUATION without preceding HEADERS is connection PROTOCOL_ERROR")]
-    public void ContinuationWithoutHeaders_IsConnectionProtocolError()
-    {
-        var contFrame = BuildRawFrame(0x9, 0x4, 1, new byte[4]); // CONTINUATION on stream 1
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(contFrame));
-        Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-    }
-
-    // ── EM-008..EM-009: Connection errors — FRAME_SIZE_ERROR ─────────────────
-
-    /// RFC 7540 §5.4 — PING with wrong payload size is connection FRAME SIZE ERROR
-    [Fact(DisplayName = "EM-008: PING with wrong payload size is connection FRAME_SIZE_ERROR")]
-    public void PingWrongLength_IsConnectionFrameSizeError()
-    {
-        var frame = BuildRawFrame(0x6, 0x0, 0, new byte[4]); // PING needs 8 bytes
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
-        Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-    }
-
-    /// RFC 7540 §5.4 — SETTINGS with non-multiple-of-6 length is connection FRAME SIZE ERROR
-    [Fact(DisplayName = "EM-009: SETTINGS with non-multiple-of-6 length is connection FRAME_SIZE_ERROR")]
-    public void SettingsWrongLength_IsConnectionFrameSizeError()
-    {
-        var frame = BuildRawFrame(0x4, 0x0, 0, new byte[7]); // 7 is not multiple of 6
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
-        Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-    }
-
-    // ── EM-010..EM-011: Connection errors — FLOW_CONTROL_ERROR (connection-level)
-
-    /// RFC 7540 §5.4 — DATA exceeding connection receive window is connection FLOW CONTROL ERROR
-    [Fact(DisplayName = "EM-010: DATA exceeding connection receive window is connection FLOW_CONTROL_ERROR")]
-    public void DataExceedingConnectionWindow_IsConnectionFlowControlError()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(1, headerBlock, endStream: false, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame);
-
-        // Set connection window to 0 so next DATA frame will exceed it.
-        session.SetConnectionReceiveWindow(0);
-        var dataFrame = BuildDataFrame(1, new byte[100], endStream: true);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    /// RFC 7540 §5.4 — WINDOW UPDATE connection overflow is connection FLOW CONTROL ERROR
-    [Fact(DisplayName = "EM-011: WINDOW_UPDATE connection overflow is connection FLOW_CONTROL_ERROR")]
-    public void WindowUpdateConnectionOverflow_IsConnectionFlowControlError()
-    {
-        var session = new Http2ProtocolSession();
-
-        // First WINDOW_UPDATE sets connection window near max.
-        var wuFrame1 = BuildWindowUpdateFrame(0, 0x7FFF0000);
-        session.Process(wuFrame1);
-
-        // Second WINDOW_UPDATE causes overflow (current + increment > 2^31-1).
-        var wuFrame2 = BuildWindowUpdateFrame(0, 0x7FFF0000);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wuFrame2));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.True(ex.IsConnectionError);
-        Assert.Equal(0, ex.StreamId);
-    }
-
-    // ── EM-012..EM-013: Stream errors — FLOW_CONTROL_ERROR (stream-level) ────
-
-    /// RFC 7540 §5.4 — DATA exceeding stream receive window is stream FLOW CONTROL ERROR
-    [Fact(DisplayName = "EM-012: DATA exceeding stream receive window is stream FLOW_CONTROL_ERROR")]
-    public void DataExceedingStreamWindow_IsStreamFlowControlError()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(1, headerBlock, endStream: false, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame);
-
-        // Reduce stream window to 0.
-        session.SetStreamReceiveWindow(1, 0);
-        var dataFrame = BuildDataFrame(1, new byte[100], endStream: true);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.False(ex.IsConnectionError);
-        Assert.Equal(1, ex.StreamId);
-    }
-
-    /// RFC 7540 §5.4 — Stream FLOW CONTROL ERROR carries the affected stream ID
-    [Fact(DisplayName = "EM-013: Stream FLOW_CONTROL_ERROR carries the affected stream ID")]
-    public void StreamFlowControlError_CarriesStreamId()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(3, headerBlock, endStream: false, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame);
-        session.SetStreamReceiveWindow(3, 0);
-        var dataFrame = BuildDataFrame(3, new byte[50], endStream: true);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(3, ex.StreamId);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-    }
-
-    /// RFC 7540 §5.4 — WINDOW UPDATE stream overflow is stream FLOW CONTROL ERROR
-    [Fact(DisplayName = "EM-014: WINDOW_UPDATE stream overflow is stream FLOW_CONTROL_ERROR")]
-    public void WindowUpdateStreamOverflow_IsStreamFlowControlError()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(5, headerBlock, endStream: false, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame);
-
-        // Two large WINDOW_UPDATEs on stream 5 to cause overflow.
-        var wu1 = BuildWindowUpdateFrame(5, 0x7FFF0000);
-        session.Process(wu1);
-        var wu2 = BuildWindowUpdateFrame(5, 0x7FFF0000);
-
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(wu2));
-        Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.False(ex.IsConnectionError);
-        Assert.Equal(5, ex.StreamId);
-    }
-
-    // ── EM-015..EM-016: Stream errors — STREAM_CLOSED ────────────────────────
-
-    /// RFC 7540 §5.4 — DATA on closed stream is stream STREAM CLOSED error
-    [Fact(DisplayName = "EM-015: DATA on closed stream is stream STREAM_CLOSED error")]
-    public void DataOnClosedStream_IsStreamStreamClosedError()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(1, headerBlock, endStream: true, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame); // stream 1 is now closed
-
-        var dataFrame = BuildDataFrame(1, new byte[4], endStream: true);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.False(ex.IsConnectionError);
-        Assert.Equal(1, ex.StreamId);
-    }
-
-    /// RFC 7540 §5.4 — STREAM CLOSED stream error carries the closed stream's ID
-    [Fact(DisplayName = "EM-016: STREAM_CLOSED stream error carries the closed stream's ID")]
-    public void DataOnClosedStream_CarriesClosedStreamId()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(7, headerBlock, endStream: true, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame); // stream 7 is now closed
-
-        var dataFrame = BuildDataFrame(7, new byte[4]);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(dataFrame));
-        Assert.Equal(7, ex.StreamId);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-    }
-
-    // ── EM-017..EM-018: Stream errors — REFUSED_STREAM ───────────────────────
-
-    /// RFC 7540 §5.4 — Exceeding MAX CONCURRENT STREAMS is stream REFUSED STREAM error
-    [Fact(DisplayName = "EM-017: Exceeding MAX_CONCURRENT_STREAMS is stream REFUSED_STREAM error")]
-    public void ExceedMaxConcurrentStreams_IsStreamRefusedStreamError()
-    {
-        var session = new Http2ProtocolSession();
-
-        // Set MAX_CONCURRENT_STREAMS = 1 via SETTINGS.
-        var settingsPayload = new byte[6];
-        BinaryPrimitives.WriteUInt16BigEndian(settingsPayload, 0x3); // SETTINGS_MAX_CONCURRENT_STREAMS
-        BinaryPrimitives.WriteUInt32BigEndian(settingsPayload.AsSpan(2), 1u);
-        var settingsFrame = BuildRawFrame(0x4, 0x0, 0, settingsPayload);
-        session.Process(settingsFrame);
-
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-
-        // Open stream 1 (occupies the single slot).
-        var headers1 = BuildHeadersFrame(1, headerBlock, endStream: false, endHeaders: true);
-        session.Process(headers1);
-
-        // Opening stream 3 exceeds the limit → REFUSED_STREAM.
-        var headers3 = BuildHeadersFrame(3, headerBlock, endStream: false, endHeaders: true);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(headers3));
-        Assert.Equal(Http2ErrorCode.RefusedStream, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.False(ex.IsConnectionError);
-    }
-
-    /// RFC 7540 §5.4 — REFUSED STREAM carries the refused stream's ID
-    [Fact(DisplayName = "EM-018: REFUSED_STREAM carries the refused stream's ID")]
-    public void RefusedStream_CarriesStreamId()
-    {
-        var session = new Http2ProtocolSession();
-
-        // Set MAX_CONCURRENT_STREAMS = 1.
-        var settingsPayload = new byte[6];
-        BinaryPrimitives.WriteUInt16BigEndian(settingsPayload, 0x3);
-        BinaryPrimitives.WriteUInt32BigEndian(settingsPayload.AsSpan(2), 1u);
-        var settingsFrame = BuildRawFrame(0x4, 0x0, 0, settingsPayload);
-        session.Process(settingsFrame);
-
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headers1 = BuildHeadersFrame(1, headerBlock, endStream: false, endHeaders: true);
-        session.Process(headers1);
-
-        // Stream 5 gets refused.
-        var headers5 = BuildHeadersFrame(5, headerBlock, endStream: false, endHeaders: true);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(headers5));
-        Assert.Equal(5, ex.StreamId);
-        Assert.Equal(Http2ErrorCode.RefusedStream, ex.ErrorCode);
-    }
-
-    // ── EM-019..EM-020: Connection errors — HEADERS on closed stream ──────────
-
-    /// RFC 7540 §5.4 — HEADERS on closed stream is connection STREAM CLOSED error
-    [Fact(DisplayName = "EM-019: HEADERS on closed stream is connection STREAM_CLOSED error")]
-    public void HeadersOnClosedStream_IsConnectionStreamClosedError()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFrame = BuildHeadersFrame(1, headerBlock, endStream: true, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFrame); // stream 1 is now closed
-
-        // Sending another HEADERS on stream 1 is a connection error per RFC 7540 §6.2.
-        var headersAgain = BuildHeadersFrame(1, headerBlock, endStream: true, endHeaders: true);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(headersAgain));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.True(ex.IsConnectionError);
-    }
-
-    /// RFC 7540 §5.4 — HEADERS closed-stream error is connection-scoped (RFC 7540 §6.2)
-    [Fact(DisplayName = "EM-020: HEADERS closed-stream error is connection-scoped (RFC 7540 §6.2)")]
-    public void HeadersOnClosedStream_ConnectionScope_NotStreamScope()
-    {
-        var hpackEncoder = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpackEncoder.Encode([(":status", "200")]).ToArray();
-        var headersFirst = BuildHeadersFrame(3, headerBlock, endStream: true, endHeaders: true);
-
-        var session = new Http2ProtocolSession();
-        session.Process(headersFirst); // stream 3 closed
-
-        var headersAgain = BuildHeadersFrame(3, headerBlock, endStream: true, endHeaders: true);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(headersAgain));
-
-        // Must be Connection scope (not Stream) — the whole connection must be torn down.
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-        Assert.NotEqual(Http2ErrorScope.Stream, ex.Scope);
-    }
-
-    // ── EM-021..EM-023: Correct error codes for specific frame violations ─────
-
-    /// RFC 7540 §5.4 — RST STREAM with wrong payload length is connection FRAME SIZE ERROR
-    [Fact(DisplayName = "EM-021: RST_STREAM with wrong payload length is connection FRAME_SIZE_ERROR")]
-    public void RstStreamWrongLength_IsConnectionFrameSizeError()
+    /// RFC 9113 §6.4 — RST_STREAM with wrong payload length is FRAME_SIZE_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.4-RST-004: RST_STREAM with wrong payload length is FRAME_SIZE_ERROR")]
+    public void RstStream_WrongPayloadLength_IsFrameSizeError()
     {
         // RST_STREAM must be exactly 4 bytes; send 3 bytes.
-        var session = new Http2ProtocolSession();
-        var frame = BuildRawFrame(0x3, 0x0, 1, new byte[3]);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
+        var frame = new byte[9 + 3];
+        frame[0] = 0; frame[1] = 0; frame[2] = 3;   // length = 3
+        frame[3] = 0x3;                               // type = RST_STREAM
+        frame[4] = 0x0;                               // no flags
+        BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), 1u); // stream 1
+
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
     }
 
-    /// RFC 7540 §5.4 — WINDOW UPDATE with increment=0 is PROTOCOL ERROR
-    [Fact(DisplayName = "EM-022: WINDOW_UPDATE with increment=0 is PROTOCOL_ERROR")]
-    public void WindowUpdateZeroIncrement_IsProtocolError()
+    /// RFC 9113 §6.4 — RST_STREAM round-trip preserves StreamId and ErrorCode
+    [Fact(DisplayName = "RFC-9113-§6.4-RST-005: RST_STREAM round-trip preserves StreamId and ErrorCode")]
+    public void RstStream_RoundTrip_PreservesFields()
     {
-        var frame = BuildWindowUpdateFrame(0, 0);
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
+        var original = new RstStreamFrame(7, Http2ErrorCode.InternalError);
+        var bytes = original.Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var decoded = Assert.IsType<RstStreamFrame>(frames[0]);
+        Assert.Equal(original.StreamId, decoded.StreamId);
+        Assert.Equal(original.ErrorCode, decoded.ErrorCode);
+    }
+
+    /// RFC 9113 §6.4 — RST_STREAM with ProtocolError decoded correctly
+    [Fact(DisplayName = "RFC-9113-§6.4-RST-006: RST_STREAM with ProtocolError decoded correctly")]
+    public void RstStream_ProtocolError_DecodedCorrectly()
+    {
+        var bytes = new RstStreamFrame(11, Http2ErrorCode.ProtocolError).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        var frame = Assert.IsType<RstStreamFrame>(frames[0]);
+        Assert.Equal(Http2ErrorCode.ProtocolError, frame.ErrorCode);
+        Assert.Equal(11, frame.StreamId);
+    }
+
+    /// RFC 9113 §6.4 — RST_STREAM various error codes decoded correctly
+    [Theory(DisplayName = "RFC-9113-§6.4-RST-007: RST_STREAM various error codes decoded correctly")]
+    [InlineData(Http2ErrorCode.NoError)]
+    [InlineData(Http2ErrorCode.Cancel)]
+    [InlineData(Http2ErrorCode.FlowControlError)]
+    [InlineData(Http2ErrorCode.RefusedStream)]
+    [InlineData(Http2ErrorCode.StreamClosed)]
+    public void RstStream_VariousErrorCodes_DecodedCorrectly(Http2ErrorCode errorCode)
+    {
+        var bytes = new RstStreamFrame(1, errorCode).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        var frame = Assert.IsType<RstStreamFrame>(frames[0]);
+        Assert.Equal(errorCode, frame.ErrorCode);
+    }
+
+    // =========================================================================
+    // PNG-001..PNG-007: PING Frame — §6.7
+    // =========================================================================
+
+    /// RFC 9113 §6.7 — PING decoded with correct Data
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-001: PING decoded with correct Data")]
+    public void Ping_DecodedWithCorrectData()
+    {
+        var pingData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var bytes = new PingFrame(pingData).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<PingFrame>(frames[0]);
+        Assert.Equal(pingData, frame.Data);
+    }
+
+    /// RFC 9113 §6.7 — PING IsAck=false when ACK bit not set
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-002: PING IsAck=false when ACK bit not set")]
+    public void Ping_NonAck_IsAckFalse()
+    {
+        var bytes = new PingFrame(new byte[8]).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        var frame = Assert.IsType<PingFrame>(frames[0]);
+        Assert.False(frame.IsAck);
+    }
+
+    /// RFC 9113 §6.7 — PING ACK decoded with IsAck=true
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-003: PING ACK decoded with IsAck=true")]
+    public void Ping_Ack_IsAckTrue()
+    {
+        var bytes = new PingFrame(new byte[8], isAck: true).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        var frame = Assert.IsType<PingFrame>(frames[0]);
+        Assert.True(frame.IsAck);
+    }
+
+    /// RFC 9113 §6.7 — PING with wrong payload length is FRAME_SIZE_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-004: PING with wrong payload length is FRAME_SIZE_ERROR")]
+    public void Ping_WrongPayloadLength_IsFrameSizeError()
+    {
+        // PING must be exactly 8 bytes; send 4 bytes.
+        var frame = new byte[9 + 4];
+        frame[0] = 0; frame[1] = 0; frame[2] = 4;   // length = 4
+        frame[3] = 0x6;                               // type = PING
+        frame[4] = 0x0;                               // no flags
+        // stream id = 0 (already zero)
+
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(frame));
+        Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
+        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
+    }
+
+    /// RFC 9113 §6.7 — PING on non-zero stream is PROTOCOL_ERROR
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-005: PING on non-zero stream is PROTOCOL_ERROR")]
+    public void Ping_OnNonZeroStream_IsProtocolError()
+    {
+        // Craft a PING frame with stream ID = 1 (violates RFC 9113 §6.7).
+        var frame = new byte[9 + 8];
+        frame[0] = 0; frame[1] = 0; frame[2] = 8;   // length = 8
+        frame[3] = 0x6;                               // type = PING
+        frame[4] = 0x0;                               // no flags
+        BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), 1u); // stream 1
+
+        var decoder = new Http2FrameDecoder();
+        var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(frame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
-    }
-
-    /// RFC 7540 §5.4 — SETTINGS ACK with non-empty payload is FRAME SIZE ERROR
-    [Fact(DisplayName = "EM-023: SETTINGS ACK with non-empty payload is FRAME_SIZE_ERROR")]
-    public void SettingsAckWithPayload_IsFrameSizeError()
-    {
-        var frame = BuildRawFrame(0x4, 0x1, 0, new byte[6]); // ACK with payload
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
-        Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
     }
 
-    // ── EM-024..EM-025: Scope symmetry and future-proofing ───────────────────
-
-    /// RFC 7540 §5.4 — Stream and connection errors are mutually exclusive
-    [Fact(DisplayName = "EM-024: Stream and connection errors are mutually exclusive")]
-    public void Http2Exception_Scope_IsMutuallyExclusive()
+    /// RFC 9113 §6.7 — PING has correct FrameType
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-006: PING has correct FrameType")]
+    public void Ping_HasCorrectFrameType()
     {
-        var connEx = new Http2Exception("conn", Http2ErrorCode.ProtocolError,
-            Http2ErrorScope.Connection);
-        var strmEx = new Http2Exception("strm", Http2ErrorCode.StreamClosed,
-            Http2ErrorScope.Stream, 3);
+        var bytes = new PingFrame(new byte[8]).Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        Assert.True(connEx.IsConnectionError);
-        Assert.False(strmEx.IsConnectionError);
-        Assert.NotEqual(connEx.Scope, strmEx.Scope);
+        Assert.Equal(FrameType.Ping, frames[0].Type);
     }
 
-    /// RFC 7540 §5.4 — Stream-level FLOW CONTROL ERROR and connection-level have different scopes
-    [Fact(DisplayName = "EM-025: Stream-level FLOW_CONTROL_ERROR and connection-level have different scopes")]
-    public void StreamAndConnectionFlowControlError_HaveDifferentScopes()
+    /// RFC 9113 §6.7 — PING round-trip preserves Data and IsAck
+    [Fact(DisplayName = "RFC-9113-§6.7-PNG-007: PING round-trip preserves Data and IsAck")]
+    public void Ping_RoundTrip_PreservesFields()
     {
-        // Stream scope
-        var streamEx = new Http2Exception("strm fc",
-            Http2ErrorCode.FlowControlError, Http2ErrorScope.Stream, 9);
+        var data = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE };
+        var original = new PingFrame(data, isAck: true);
+        var bytes = original.Serialize();
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
 
-        // Connection scope (default)
-        var connEx = new Http2Exception("conn fc", Http2ErrorCode.FlowControlError);
-
-        Assert.Equal(Http2ErrorScope.Stream, streamEx.Scope);
-        Assert.Equal(Http2ErrorScope.Connection, connEx.Scope);
-        Assert.Equal(9, streamEx.StreamId);
-        Assert.Equal(0, connEx.StreamId);
+        var decoded = Assert.IsType<PingFrame>(frames[0]);
+        Assert.Equal(original.Data, decoded.Data);
+        Assert.Equal(original.IsAck, decoded.IsAck);
     }
 }

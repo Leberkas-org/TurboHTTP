@@ -100,11 +100,11 @@ Affected files: `07_ErrorHandlingTests.cs`, `08_GoAwayTests.cs`
 **Background:** `Http2ProtocolSession.HandleGoAway()`, `HandlePing()`, `HandleRst()` are test-only logic. In production: `Http20ConnectionStage`. Tests should verify: `GoAwayFrame`, `PingFrame`, `RstStreamFrame` decoded correctly, fields correct (LastStreamId, ErrorCode, Data).
 
 **Acceptance Criteria:**
-- [ ] Both files only use: `GoAwayFrame`, `PingFrame`, `RstStreamFrame`, `Http2FrameDecoder`
-- [ ] No import of `Http2ProtocolSession`
-- [ ] DisplayNames: `RFC-9113-§6.8` (GoAway), `RFC-9113-§6.7` (Ping), `RFC-9113-§6.4` (RST_STREAM)
-- [ ] Tests green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [x] Both files only use: `GoAwayFrame`, `PingFrame`, `RstStreamFrame`, `Http2FrameDecoder`
+- [x] No import of `Http2ProtocolSession`
+- [x] DisplayNames: `RFC-9113-§6.8` (GoAway), `RFC-9113-§6.7` (Ping), `RFC-9113-§6.4` (RST_STREAM)
+- [x] Tests green
+- [x] `.maggus/PROGRESS_3.md` updated
 
 ---
 

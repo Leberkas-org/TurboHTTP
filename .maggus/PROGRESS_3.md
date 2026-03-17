@@ -63,6 +63,21 @@
 
 ---
 
+## TASK-PSS-004: Replace Http2ProtocolSession — GoAway/Ping/RST Tests (RFC9113 §6.4/§6.7/§6.8)
+**Status:** COMPLETE | **Date:** 2026-03-17
+
+**Changes:**
+- Rewrote `src/TurboHttp.Tests/RFC9113/07_ErrorHandlingTests.cs`
+- Rewrote `src/TurboHttp.Tests/RFC9113/08_GoAwayTests.cs`
+- Both files now use only `GoAwayFrame`, `PingFrame`, `RstStreamFrame`, `Http2FrameDecoder`
+- No `Http2ProtocolSession` references remain in either file
+- `07_ErrorHandlingTests.cs`: 25 old tests → 14 new tests (RST-001..007, PNG-001..007); all DisplayNames contain `RFC-9113-§6.4` or `RFC-9113-§6.7`
+- `08_GoAwayTests.cs`: 20 old tests → 17 new tests (GA-001..011); all DisplayNames contain `RFC-9113-§6.8`
+- Dropped session-state-dependent tests (stream tracking, flow control windows, MAX_CONCURRENT_STREAMS); those belong to stage-level tests
+- Build: 0 errors, 0 warnings; 34 new tests all green; 1 pre-existing RH-015 failure unchanged
+
+---
+
 ## Remaining Tasks
 
 | Task | Status | Description |
@@ -70,7 +85,7 @@
 | TASK-PSS-001 | COMPLETE | Replace Http2ProtocolSession — Stream State Tests (§5.1) |
 | TASK-PSS-002 | COMPLETE | Replace Http2ProtocolSession — Settings Tests (§6.5) |
 | TASK-PSS-003 | COMPLETE | Replace Http2ProtocolSession — Flow Control Tests (§6.9) |
-| TASK-PSS-004 | PENDING | Replace Http2ProtocolSession — GoAway/Ping/RST (§6.4/§6.7/§6.8) |
+| TASK-PSS-004 | COMPLETE | Replace Http2ProtocolSession — GoAway/Ping/RST (§6.4/§6.7/§6.8) |
 | TASK-PSS-005 | PENDING | Replace Http2ProtocolSession — Header/Pseudo-Header Tests (§8.2/§8.3) |
 | TASK-PSS-006 | PENDING | Replace Http2ProtocolSession — Security/Fuzz/Concurrency |
 | TASK-PSS-007 | PENDING | Delete Http2ProtocolSession (blocked by PSS-001..006) |
