@@ -554,11 +554,11 @@ track pending counts and serve queued requesters.
 idle connections while respecting per-connection limits.
 
 **Acceptance Criteria:**
-- [ ] Private method `SelectConnection(): ConnectionState?`
-- [ ] Returns the connection from `_connections` where `conn.HasAvailableSlot == true`,
+- [x] Private method `SelectConnection(): ConnectionState?`
+- [x] Returns the connection from `_connections` where `conn.HasAvailableSlot == true`,
   ordered descending by `conn.LastActivity` (MRU first)
-- [ ] Returns `null` when no eligible connection exists
-- [ ] Unit tests cover:
+- [x] Returns `null` when no eligible connection exists
+- [x] Unit tests cover:
   - All connections at capacity → returns `null`
   - Multiple eligible connections → returns most recently active
   - Dead / non-reusable connections skipped

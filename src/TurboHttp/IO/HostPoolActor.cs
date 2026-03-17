@@ -275,6 +275,34 @@ public sealed class HostPoolActor : ReceiveActor
         }
     }
 
+    /// <summary>
+    /// Selects the most-recently-used connection that has a free stream slot.
+    /// MRU ordering minimises the number of idle connections by packing requests
+    /// onto the most recently active connection first.
+    /// </summary>
+    /// <returns>The best eligible <see cref="ConnectionState"/>, or <c>null</c> if none qualify.</returns>
+    internal static ConnectionState? SelectConnection(List<ConnectionState> connections)
+    {
+        ConnectionState? best = null;
+
+        foreach (var conn in connections)
+        {
+            if (!conn.HasAvailableSlot)
+            {
+                continue;
+            }
+
+            if (best is null || conn.LastActivity > best.LastActivity)
+            {
+                best = conn;
+            }
+        }
+
+        return best;
+    }
+
+    private ConnectionState? SelectConnection() => SelectConnection(_connections);
+
     private ConnectionState? Find(IActorRef actor)
         => _connections.Find(x => x.Actor.Equals(actor));
 }
