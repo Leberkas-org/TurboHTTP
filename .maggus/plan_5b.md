@@ -453,20 +453,21 @@ emit a `MaxConcurrentStreamsItem` on `OutletSignal` and update the internal limi
 backpressure decisions (TASK-9-007).
 
 **Acceptance Criteria:**
-- [ ] Add field `private int _maxConcurrentStreams = 100` (default per RFC 9113 §6.5.2)
-- [ ] `HandleSettings` reads `SettingsParameter.MaxConcurrentStreams` (key = 3):
+- [x] Add field `private int _maxConcurrentStreams = 100` (default per RFC 9113 §6.5.2)
+- [x] `HandleSettings` reads `SettingsParameter.MaxConcurrentStreams` (key = 3):
   ```
   if key == MaxConcurrentStreams:
       _maxConcurrentStreams = (int)value
       Emit(OutletSignal, new MaxConcurrentStreamsItem((int)value))
   ```
-- [ ] After updating `_maxConcurrentStreams`, re-evaluate pull state:
+- [x] After updating `_maxConcurrentStreams`, re-evaluate pull state:
   if `_activeStreams < _maxConcurrentStreams` and `_inletRequest` not pulled → `Pull(_inletRequest)`
-- [ ] Existing `InitialWindowSize` handling unchanged
-- [ ] SETTINGS ACK (`isAck: true`) frames are still ignored
-- [ ] `OutletSignal` handler registered (`onPull: () => { }` — demand-driven by `Emit`)
-- [ ] Unit test: SETTINGS frame with `MAX_CONCURRENT_STREAMS = 50` → `OutletSignal` emits `MaxConcurrentStreamsItem(50)`
-- [ ] Unit test: SETTINGS ACK → no emission on `OutletSignal`
+  *(Note: `_activeStreams` does not exist yet — pull re-evaluation is a no-op until TASK-9-007 adds stream counting and pull gating)*
+- [x] Existing `InitialWindowSize` handling unchanged
+- [x] SETTINGS ACK (`isAck: true`) frames are still ignored
+- [x] `OutletSignal` handler registered (`onPull: () => { }` — demand-driven by `Emit`)
+- [x] Unit test: SETTINGS frame with `MAX_CONCURRENT_STREAMS = 50` → `OutletSignal` emits `MaxConcurrentStreamsItem(50)`
+- [x] Unit test: SETTINGS ACK → no emission on `OutletSignal`
 
 ---
 

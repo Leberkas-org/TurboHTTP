@@ -47,6 +47,43 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
         return (downstream, serverBound);
     }
 
+    /// <summary>
+    /// Runs the Http20ConnectionStage and captures OutletSignal emissions alongside standard outputs.
+    /// </summary>
+    private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunWithSignalsAsync(
+        params Http2Frame[] serverFrames)
+    {
+        var downstreamSink = Sink.Seq<Http2Frame>();
+        var serverBoundSink = Sink.Seq<Http2Frame>();
+        var signalSeqSink = Sink.Seq<IControlItem>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink, signalSeqSink,
+                (m1, m2, m3) => (m1, m2, m3),
+                (b, dsSink, sbSink, sigSink) =>
+                {
+                    var stage = b.Add(new Http20ConnectionStage());
+                    var serverSource = b.Add(Source.From(serverFrames));
+                    var requestSource = b.Add(Source.Never<Http2Frame>());
+
+                    b.From(serverSource).To(stage.ServerIn);
+                    b.From(stage.AppOut).To(dsSink);
+                    b.From(requestSource).To(stage.AppIn);
+                    b.From(stage.ServerOut).To(sbSink);
+                    b.From(stage.OutletSignal).To(sigSink);
+
+                    return ClosedShape.Instance;
+                }));
+
+        var (downstreamTask, serverBoundTask, signalTask) = graph.Run(Materializer);
+
+        var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5));
+        var serverBound = await serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5));
+        var signals = await signalTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        return (downstream, serverBound, signals);
+    }
+
     // ─── 20CS-001: Server SETTINGS received → SETTINGS ACK sent ─────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-001: Server SETTINGS received produces SETTINGS ACK")]
@@ -160,5 +197,32 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
             Assert.True(sf.IsAck);
             Assert.Empty(sf.Parameters);
         });
+    }
+
+    // ─── 20CS-006: MAX_CONCURRENT_STREAMS → OutletSignal emits MaxConcurrentStreamsItem ─
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5.2-20CS-006: SETTINGS MAX_CONCURRENT_STREAMS emits MaxConcurrentStreamsItem on OutletSignal")]
+    public async Task Settings_MaxConcurrentStreams_Emits_Signal()
+    {
+        var settings = new SettingsFrame(
+            [(SettingsParameter.MaxConcurrentStreams, 50u)]);
+
+        var (_, _, signals) = await RunWithSignalsAsync(settings);
+
+        var signal = Assert.Single(signals);
+        var item = Assert.IsType<MaxConcurrentStreamsItem>(signal);
+        Assert.Equal(50, item.MaxStreams);
+    }
+
+    // ─── 20CS-007: SETTINGS ACK → no emission on OutletSignal ────────────────────
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5.2-20CS-007: SETTINGS ACK does not emit on OutletSignal")]
+    public async Task Settings_Ack_Does_Not_Emit_Signal()
+    {
+        var settingsAck = new SettingsFrame([], isAck: true);
+
+        var (_, _, signals) = await RunWithSignalsAsync(settingsAck);
+
+        Assert.Empty(signals);
     }
 }

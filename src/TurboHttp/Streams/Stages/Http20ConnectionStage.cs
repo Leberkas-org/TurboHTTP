@@ -84,6 +84,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
         private int _connectionWindow;
         private int _initialRecvStreamWindow;
         private int _initialSendStreamWindow = 65535;
+        private int _maxConcurrentStreams = 100;
         private bool _goAwayReceived;
 
         private readonly Dictionary<int, int> _streamWindows = new();
@@ -180,7 +181,8 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 
                 if (key == SettingsParameter.MaxConcurrentStreams)
                 {
-                    Emit(_stage._outletSignal, new MaxConcurrentStreamsItem((int)value));
+                    _maxConcurrentStreams = (int)value;
+                    Emit(_stage._outletSignal, new MaxConcurrentStreamsItem(_maxConcurrentStreams));
                 }
             }
 
