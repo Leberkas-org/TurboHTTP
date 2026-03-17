@@ -359,10 +359,10 @@ speak `IOutputItem`/`IInputItem` natively. No signal outlet is added (HTTP/1.0 u
 per connection; `ConnectionReuseItem` already enforces the limit).
 
 **Acceptance Criteria:**
-- [ ] `flowOut` and `flowIn` adapter lambdas deleted
-- [ ] Encoder wired directly to BidiFlow outlet; decoder directly from BidiFlow inlet
-- [ ] No `MergePreferred` added (HTTP/1.0 needs no signal)
-- [ ] Build succeeds; existing Http10Engine round-trip tests pass
+- [x] `flowOut` and `flowIn` adapter lambdas deleted
+- [x] Encoder wired directly to BidiFlow outlet; decoder directly from BidiFlow inlet
+- [x] No `MergePreferred` added (HTTP/1.0 needs no signal)
+- [x] Build succeeds; existing Http10Engine round-trip tests pass
 
 ---
 

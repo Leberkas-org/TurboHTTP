@@ -19,14 +19,13 @@ public class Http10Engine : IHttpProtocolEngine
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
-            b.From(requestBCast.Out(0)).Via(encoder);
+            b.From(requestBCast.Out(0)).To(encoder.Inlet);
             b.From(requestBCast.Out(1)).To(correlation.RequestIn);
 
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
             b.From(correlation.OutletSignal).To(signalSink);
 
-            var flowIn = b.Add(Flow.Create<IInputItem>());
-            b.From(flowIn.Outlet).Via(decoder).To(correlation.ResponseIn);
+            b.From(decoder.Outlet).To(correlation.ResponseIn);
 
             return new BidiShape<
                 HttpRequestMessage,
@@ -35,7 +34,7 @@ public class Http10Engine : IHttpProtocolEngine
                 HttpResponseMessage>(
                 requestBCast.In,
                 encoder.Outlet,
-                flowIn.Inlet,
+                decoder.Inlet,
                 correlation.Out);
         }));
     }
