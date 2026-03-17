@@ -221,11 +221,11 @@ public sealed class ConnectionStageTests : StreamTestBase
         Assert.Equal(0x02, inbound.Memory.Memory.Span[0]);
     }
 
-    // ── CS-005: ConnectionReuseItem CanReuse=false sends MarkConnectionNoReuse ─
+    // ── CS-005: ConnectionReuseItem CanReuse=false sends MarkConnectionNoReuse + StreamCompleted ─
 
     [Fact(Timeout = 15_000,
-        DisplayName = "CS-005: ConnectionReuseItem with CanReuse=false sends MarkConnectionNoReuse to ConnectionActor")]
-    public async Task CS_005_ConnectionReuseItem_NoReuse_SendsMarkConnectionNoReuse()
+        DisplayName = "CS-005: ConnectionReuseItem with CanReuse=false sends MarkConnectionNoReuse and StreamCompleted")]
+    public async Task CS_005_ConnectionReuseItem_NoReuse_SendsMarkAndStreamCompleted()
     {
         var connectionActorProbe = CreateTestProbe();
         var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
@@ -246,18 +246,22 @@ public sealed class ConnectionStageTests : StreamTestBase
         var reuseItem = new ConnectionReuseItem(TestKey, decision);
         await inputQueue.OfferAsync(reuseItem);
 
-        // Verify that MarkConnectionNoReuse is sent to the connection actor
+        // Verify that MarkConnectionNoReuse is sent first
         var markMsg = connectionActorProbe.ExpectMsg<HostPoolActor.MarkConnectionNoReuse>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActorProbe.Ref, markMsg.Connection);
+
+        // Verify that StreamCompleted is sent second
+        var streamMsg = connectionActorProbe.ExpectMsg<HostPoolActor.StreamCompleted>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActorProbe.Ref, streamMsg.Connection);
 
         inboundWriter.Complete();
     }
 
-    // ── CS-006: ConnectionReuseItem CanReuse=true does NOT send MarkConnectionNoReuse ─
+    // ── CS-006: ConnectionReuseItem CanReuse=true sends only StreamCompleted ─
 
     [Fact(Timeout = 15_000,
-        DisplayName = "CS-006: ConnectionReuseItem with CanReuse=true does not send MarkConnectionNoReuse")]
-    public async Task CS_006_ConnectionReuseItem_Reuse_NoMessage()
+        DisplayName = "CS-006: ConnectionReuseItem with CanReuse=true sends only StreamCompleted (no MarkNoReuse)")]
+    public async Task CS_006_ConnectionReuseItem_Reuse_OnlyStreamCompleted()
     {
         var connectionActorProbe = CreateTestProbe();
         var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
@@ -278,8 +282,73 @@ public sealed class ConnectionStageTests : StreamTestBase
         var reuseItem = new ConnectionReuseItem(TestKey, decision);
         await inputQueue.OfferAsync(reuseItem);
 
-        // Verify that NO MarkConnectionNoReuse is sent
+        // Verify that only StreamCompleted is sent (no MarkConnectionNoReuse)
+        var streamMsg = connectionActorProbe.ExpectMsg<HostPoolActor.StreamCompleted>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActorProbe.Ref, streamMsg.Connection);
+
+        // No further messages (specifically no MarkConnectionNoReuse)
         connectionActorProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(500));
+
+        inboundWriter.Complete();
+    }
+
+    // ── CS-007: MaxConcurrentStreamsItem forwarded to ConnectionActor ─
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "CS-007: MaxConcurrentStreamsItem(50) forwarded as UpdateMaxConcurrentStreams to ConnectionActor")]
+    public async Task CS_007_MaxConcurrentStreamsItem_ForwardedToActor()
+    {
+        var connectionActorProbe = CreateTestProbe();
+        var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
+        var options = new TcpOptions { Host = "localhost", Port = 8080 };
+        var connectItem = new ConnectItem(options, HttpVersion.Version11);
+
+        var (inputQueue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
+            .Via(stageFlow)
+            .ToMaterialized(Sink.Ignore<IInputItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Connect first — stage needs a handle
+        await inputQueue.OfferAsync(connectItem);
+        await Task.Delay(300);
+
+        // Push MaxConcurrentStreamsItem
+        await inputQueue.OfferAsync(new MaxConcurrentStreamsItem(50));
+
+        // Verify UpdateMaxConcurrentStreams is sent to the connection actor
+        var msg = connectionActorProbe.ExpectMsg<HostPoolActor.UpdateMaxConcurrentStreams>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActorProbe.Ref, msg.Connection);
+        Assert.Equal(50, msg.MaxStreams);
+
+        inboundWriter.Complete();
+    }
+
+    // ── CS-008: StreamAcquireItem forwarded to ConnectionActor ─
+
+    [Fact(Timeout = 15_000,
+        DisplayName = "CS-008: StreamAcquireItem forwarded as StreamAcquired to ConnectionActor")]
+    public async Task CS_008_StreamAcquireItem_ForwardedToActor()
+    {
+        var connectionActorProbe = CreateTestProbe();
+        var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
+        var options = new TcpOptions { Host = "localhost", Port = 8080 };
+        var connectItem = new ConnectItem(options, HttpVersion.Version11);
+
+        var (inputQueue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
+            .Via(stageFlow)
+            .ToMaterialized(Sink.Ignore<IInputItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Connect first — stage needs a handle
+        await inputQueue.OfferAsync(connectItem);
+        await Task.Delay(300);
+
+        // Push StreamAcquireItem
+        await inputQueue.OfferAsync(new StreamAcquireItem());
+
+        // Verify StreamAcquired is sent to the connection actor
+        var msg = connectionActorProbe.ExpectMsg<HostPoolActor.StreamAcquired>(TimeSpan.FromSeconds(5));
+        Assert.Equal(connectionActorProbe.Ref, msg.Connection);
 
         inboundWriter.Complete();
     }

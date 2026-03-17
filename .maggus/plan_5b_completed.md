@@ -686,20 +686,20 @@ to the actor hierarchy without storing any protocol state. No version checks, no
 no MaxConcurrentStreams tracking.
 
 **Acceptance Criteria:**
-- [ ] **No new fields** — no `_activeH2Streams`, no `_lastOptions`, no version tracking
-- [ ] On `MaxConcurrentStreamsItem`:
+- [x] **No new fields** — no `_activeH2Streams`, no `_lastOptions`, no version tracking
+- [x] On `MaxConcurrentStreamsItem`:
   ```csharp
   _handle?.ConnectionActor.Tell(
       new HostPoolActor.UpdateMaxConcurrentStreams(_handle.ConnectionActor, item.MaxStreams));
   Pull(_stage._inlet);  // signal consumed, ready for next
   ```
-- [ ] On `StreamAcquireItem`:
+- [x] On `StreamAcquireItem`:
   ```csharp
   _handle?.ConnectionActor.Tell(
       new HostPoolActor.StreamAcquired(_handle.ConnectionActor));
   Pull(_stage._inlet);  // signal consumed, ready for next
   ```
-- [ ] On `ConnectionReuseItem`:
+- [x] On `ConnectionReuseItem`:
   ```csharp
   if (!reuseItem.Decision.CanReuse)
       _handle?.ConnectionActor.Tell(new HostPoolActor.MarkConnectionNoReuse(_handle.ConnectionActor));
@@ -707,23 +707,23 @@ no MaxConcurrentStreams tracking.
       new HostPoolActor.StreamCompleted(_handle.ConnectionActor));
   Pull(_stage._inlet);  // signal consumed, ready for next
   ```
-- [ ] On inbound channel complete (`_onInboundComplete`):
+- [x] On inbound channel complete (`_onInboundComplete`):
   ```csharp
   _handle = null;
   // Connection dropped — re-acquire on demand.
   // Next ConnectItem (from ExtractOptionsStage on new substream) or
   // next DataItem (if substream still alive) triggers re-acquire.
   ```
-- [ ] On `DataItem` when `_handle is null`:
+- [x] On `DataItem` when `_handle is null`:
   send `EnsureHost` to `PoolRouter` via `_stageActor` and buffer the `DataItem`
   (or fail the stage — see design note)
-- [ ] Unit test: `MaxConcurrentStreamsItem(50)` received → `ConnectionActor` receives
+- [x] Unit test: `MaxConcurrentStreamsItem(50)` received → `ConnectionActor` receives
   `UpdateMaxConcurrentStreams(_, 50)`
-- [ ] Unit test: `StreamAcquireItem` received → `ConnectionActor` receives `StreamAcquired`
-- [ ] Unit test: `ConnectionReuseItem{CanReuse=false}` → both `MarkConnectionNoReuse` and
+- [x] Unit test: `StreamAcquireItem` received → `ConnectionActor` receives `StreamAcquired`
+- [x] Unit test: `ConnectionReuseItem{CanReuse=false}` → both `MarkConnectionNoReuse` and
   `StreamCompleted` sent
-- [ ] Unit test: `ConnectionReuseItem{CanReuse=true}` → only `StreamCompleted` sent (no MarkNoReuse)
-- [ ] **Zero protocol-awareness**: no `if (version == HTTP/2)` branches in the file
+- [x] Unit test: `ConnectionReuseItem{CanReuse=true}` → only `StreamCompleted` sent (no MarkNoReuse)
+- [x] **Zero protocol-awareness**: no `if (version == HTTP/2)` branches in the file
 
 **Design Note — handle loss recovery:**
 When the inbound channel completes (TCP drop), `_handle` becomes null. For HTTP/2, the

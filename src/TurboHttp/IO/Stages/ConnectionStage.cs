@@ -139,28 +139,33 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         {
             var item = Grab(_stage._inlet);
 
-            if (item is ConnectionReuseItem { Decision.CanReuse: false } && _handle is not null)
+            if (item is MaxConcurrentStreamsItem maxStreams)
             {
-                // Signal the HostPoolActor (via ConnectionActor → parent forwarding)
-                // that this connection should not be reused.
-                _handle.ConnectionActor.Tell(new HostPoolActor.MarkConnectionNoReuse(_handle.ConnectionActor));
-
-                if (!IsClosed(_stage._inlet) && !HasBeenPulled(_stage._inlet))
-                {
-                    Pull(_stage._inlet);
-                }
-
+                _handle?.ConnectionActor.Tell(
+                    new HostPoolActor.UpdateMaxConcurrentStreams(_handle.ConnectionActor, maxStreams.MaxStreams));
+                TryPull();
                 return;
             }
 
-            if (item is ConnectionReuseItem)
+            if (item is StreamAcquireItem)
             {
-                // CanReuse = true — no action needed, just pull next.
-                if (!IsClosed(_stage._inlet) && !HasBeenPulled(_stage._inlet))
+                _handle?.ConnectionActor.Tell(
+                    new HostPoolActor.StreamAcquired(_handle.ConnectionActor));
+                TryPull();
+                return;
+            }
+
+            if (item is ConnectionReuseItem reuseItem)
+            {
+                if (!reuseItem.Decision.CanReuse)
                 {
-                    Pull(_stage._inlet);
+                    _handle?.ConnectionActor.Tell(
+                        new HostPoolActor.MarkConnectionNoReuse(_handle.ConnectionActor));
                 }
 
+                _handle?.ConnectionActor.Tell(
+                    new HostPoolActor.StreamCompleted(_handle.ConnectionActor));
+                TryPull();
                 return;
             }
 
@@ -175,13 +180,29 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 return;
             }
 
-            if (item is DataItem dataItem && _handle is not null)
+            if (item is DataItem dataItem)
             {
+                if (_handle is null)
+                {
+                    FailStage(new InvalidOperationException(
+                        "DataItem received but no ConnectionHandle is available. " +
+                        "A ConnectItem must precede data items."));
+                    return;
+                }
+
                 // Write directly to the connection's outbound channel.
                 _ = _handle.OutboundWriter
                     .WriteAsync(new ValueTuple<IMemoryOwner<byte>, int>(dataItem.Memory, dataItem.Length))
                     .AsTask()
                     .ContinueWith(_ => _onOutboundWriteDone!(), TaskContinuationOptions.ExecuteSynchronously);
+            }
+        }
+
+        private void TryPull()
+        {
+            if (!IsClosed(_stage._inlet) && !HasBeenPulled(_stage._inlet))
+            {
+                Pull(_stage._inlet);
             }
         }
 
