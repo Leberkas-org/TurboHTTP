@@ -377,10 +377,10 @@ per connection; `ConnectionReuseItem` already enforces the limit).
 actor hierarchy.
 
 **Acceptance Criteria:**
-- [ ] `public record MaxConcurrentStreamsItem(int MaxStreams) : IControlItem`
-- [ ] `public record StreamAcquireItem : IControlItem` (no payload needed)
-- [ ] Both placed in namespace `TurboHttp.IO.Stages`
-- [ ] Build succeeds with zero errors
+- [x] `public record MaxConcurrentStreamsItem(int MaxStreams) : IControlItem`
+- [x] `public record StreamAcquireItem : IControlItem` (no payload needed)
+- [x] Both placed in namespace `TurboHttp.IO.Stages`
+- [x] Build succeeds with zero errors
 
 ---
 
