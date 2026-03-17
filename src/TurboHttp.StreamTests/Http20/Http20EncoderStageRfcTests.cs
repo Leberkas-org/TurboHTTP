@@ -1,5 +1,5 @@
-using System.Buffers;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages;
 
@@ -9,12 +9,13 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
 {
     private async Task<byte[]> EncodeAsync(Http2Frame frame)
     {
-        var chunk = await Source.Single(frame)
+        var item = await Source.Single(frame)
             .Via(Flow.FromGraph(new Http20EncoderStage()))
-            .RunWith(Sink.First<(IMemoryOwner<byte>, int)>(), Materializer);
+            .RunWith(Sink.First<IOutputItem>(), Materializer);
 
-        var bytes = chunk.Item1.Memory.Span[..chunk.Item2].ToArray();
-        chunk.Item1.Dispose();
+        var dataItem = (DataItem)item;
+        var bytes = dataItem.Memory.Memory.Span[..dataItem.Length].ToArray();
+        dataItem.Memory.Dispose();
         return bytes;
     }
 

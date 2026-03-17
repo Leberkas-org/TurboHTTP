@@ -208,12 +208,12 @@ currently exist inside each engine's `GraphDsl.Create()` block, making room for 
 so that `Http20Engine` can eliminate its `flowOut` adapter.
 
 **Acceptance Criteria:**
-- [ ] Stage changes from `FlowShape<Http2Frame, (IMemoryOwner<byte>, int)>` to
+- [x] Stage changes from `FlowShape<Http2Frame, (IMemoryOwner<byte>, int)>` to
       `FlowShape<Http2Frame, IOutputItem>`
-- [ ] Each serialised frame is emitted as `new DataItem(HostKey.Default, memory, length)`
-- [ ] No cast at the call site is required
-- [ ] Existing stream tests for `Http20EncoderStage` pass unchanged (output type updated in tests)
-- [ ] Build succeeds with zero errors
+- [x] Each serialised frame is emitted as `new DataItem(HostKey.Default, memory, length)`
+- [x] No cast at the call site is required
+- [x] Existing stream tests for `Http20EncoderStage` pass unchanged (output type updated in tests)
+- [x] Build succeeds with zero errors
 
 ---
 

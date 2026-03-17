@@ -1,16 +1,17 @@
-﻿using System.Buffers;
+using System.Buffers;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages;
 
-public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, (IMemoryOwner<byte>, int)>>
+public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, IOutputItem>>
 {
     private readonly Inlet<Http2Frame> _inlet = new("frameEncoder.in");
-    private readonly Outlet<(IMemoryOwner<byte>, int)> _outlet = new("frameEncoder.out");
+    private readonly Outlet<IOutputItem> _outlet = new("frameEncoder.out");
 
-    public override FlowShape<Http2Frame, (IMemoryOwner<byte>, int)> Shape =>
+    public override FlowShape<Http2Frame, IOutputItem> Shape =>
         new(_inlet, _outlet);
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -30,7 +31,7 @@ public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, (IMemo
 
                 frame.WriteTo(ref span);
 
-                Push(stage._outlet, (owner, frame.SerializedSize));
+                Push(stage._outlet, new DataItem(HostKey.Default, owner, frame.SerializedSize));
             });
 
             SetHandler(stage._outlet, () => Pull(stage._inlet));
