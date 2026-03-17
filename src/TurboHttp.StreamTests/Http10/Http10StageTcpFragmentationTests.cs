@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http10;
@@ -13,18 +14,18 @@ namespace TurboHttp.StreamTests.Http10;
 /// </summary>
 public sealed class Http10StageTcpFragmentationTests : StreamTestBase
 {
-    private static (IMemoryOwner<byte>, int) Chunk(byte[] data)
-        => (new SimpleMemoryOwner(data), data.Length);
+    private static IInputItem Chunk(byte[] data)
+        => new DataItem(HostKey.Default, new SimpleMemoryOwner(data), data.Length);
 
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
-    private static List<(IMemoryOwner<byte>, int)> SplitIntoChunks(byte[] data, int[] splitPoints)
+    private static List<IInputItem> SplitIntoChunks(byte[] data, int[] splitPoints)
     {
-        var chunks = new List<(IMemoryOwner<byte>, int)>();
+        var chunks = new List<IInputItem>();
         var offset = 0;
         foreach (var splitPoint in splitPoints)
         {
@@ -46,9 +47,9 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
         return chunks;
     }
 
-    private static List<(IMemoryOwner<byte>, int)> SplitIntoSingleBytes(byte[] data)
+    private static List<IInputItem> SplitIntoSingleBytes(byte[] data)
     {
-        var chunks = new List<(IMemoryOwner<byte>, int)>();
+        var chunks = new List<IInputItem>();
         foreach (var b in data)
         {
             chunks.Add(Chunk(new[] { b }));
@@ -58,7 +59,7 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
     }
 
     private async Task<HttpResponseMessage> DecodeFragmentsAsync(
-        List<(IMemoryOwner<byte>, int)> fragments)
+        List<IInputItem> fragments)
     {
         var source = Source.From(fragments);
         return await source

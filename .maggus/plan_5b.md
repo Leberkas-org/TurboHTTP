@@ -344,10 +344,10 @@ as the signal source.
 **Description:** Mirror TASK-9-E02 for HTTP/1.0 (consistency; no signal merge needed).
 
 **Acceptance Criteria:**
-- [ ] Stage changes from `FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage>` to
+- [x] Stage changes from `FlowShape<(IMemoryOwner<byte>, int), HttpResponseMessage>` to
       `FlowShape<IInputItem, HttpResponseMessage>`
-- [ ] Non-`DataItem` items dropped
-- [ ] Existing tests pass; build succeeds
+- [x] Non-`DataItem` items dropped
+- [x] Existing tests pass; build succeeds
 
 ---
 

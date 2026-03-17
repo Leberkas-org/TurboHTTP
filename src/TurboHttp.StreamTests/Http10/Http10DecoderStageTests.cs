@@ -2,16 +2,17 @@ using System.Buffers;
 using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http10;
 
 public sealed class Http10DecoderStageTests : StreamTestBase
 {
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
     private async Task<HttpResponseMessage> DecodeAsync(params string[] chunks)

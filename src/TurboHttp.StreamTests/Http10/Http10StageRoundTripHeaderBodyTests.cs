@@ -48,13 +48,13 @@ public sealed class Http10StageRoundTripHeaderBodyTests : StreamTestBase
         return ms.ToArray();
     }
 
-    private static (IMemoryOwner<byte>, int) Chunk(byte[] data)
-        => (new SimpleMemoryOwner(data), data.Length);
+    private static IInputItem Chunk(byte[] data)
+        => new DataItem(HostKey.Default, new SimpleMemoryOwner(data), data.Length);
 
-    private static (IMemoryOwner<byte>, int) Chunk(string ascii)
+    private static IInputItem Chunk(string ascii)
     {
         var bytes = Encoding.Latin1.GetBytes(ascii);
-        return (new SimpleMemoryOwner(bytes), bytes.Length);
+        return new DataItem(HostKey.Default, new SimpleMemoryOwner(bytes), bytes.Length);
     }
 
     private async Task<HttpResponseMessage> DecodeAsync(params string[] chunks)
