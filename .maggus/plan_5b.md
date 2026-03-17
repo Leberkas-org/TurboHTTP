@@ -647,12 +647,12 @@ ConnectionActor), update the corresponding ConnectionState and drain the pending
 `ServePendingRequesters` after eviction to unblock any waiting requesters.
 
 **Acceptance Criteria:**
-- [ ] Remove block: `if (_activeHandle?.ConnectionActor.Equals(conn.Actor) == true) _activeHandle = null;`
-- [ ] Replace end-of-method spawn logic with `ServePendingRequesters()`
-- [ ] `HandleReconnect`: remove `previousVersion` capture and `newConn.HttpVersion = previousVersion`
+- [x] Remove block: `if (_activeHandle?.ConnectionActor.Equals(conn.Actor) == true) _activeHandle = null;`
+- [x] Replace end-of-method spawn logic with `ServePendingRequesters()`
+- [x] `HandleReconnect`: remove `previousVersion` capture and `newConn.HttpVersion = previousVersion`
   assignment (version is now derived from the handle once it arrives)
-- [ ] Eviction still respects `IdleTimeout` and `_connections.Count > 1` minimum
-- [ ] `_limiter.Release` still called per evicted connection
+- [x] Eviction still respects `IdleTimeout` and `_connections.Count > 1` minimum
+- [x] `_limiter.Release` still called per evicted connection
 
 ---
 

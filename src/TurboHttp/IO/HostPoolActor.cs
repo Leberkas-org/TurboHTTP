@@ -223,11 +223,7 @@ public sealed class HostPoolActor : ReceiveActor
             _limiter.Release(HostIdentifier);
         }
 
-        // Try to serve pending requesters by spawning new connections if no slots available
-        if (_pendingHandleRequesters.Count > 0 && SelectConnection()?.Handle is null)
-        {
-            SpawnConnection();
-        }
+        ServeQueuedRequesters();
     }
 
     private void HandleMarkNoReuse(MarkConnectionNoReuse msg)
