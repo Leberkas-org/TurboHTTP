@@ -431,17 +431,17 @@ so I can read the live stream limit and route to the correct channel.
 `MergePreferred<IOutputItem>` inside `Http20Engine.CreateFlow()` (TASK-9-E03).
 
 **Acceptance Criteria:**
-- [ ] Define `public sealed class Http20ConnectionShape : Shape` with 5 ports:
-  - `Inlet<Http2Frame> InletRaw`
-  - `Outlet<Http2Frame> OutletStream`
-  - `Inlet<Http2Frame> InletRequest`
-  - `Outlet<Http2Frame> OutletRaw`
+- [x] Define `public sealed class Http20ConnectionShape : Shape` with 5 ports:
+  - `Inlet<Http2Frame> ServerIn`
+  - `Outlet<Http2Frame> AppOut`
+  - `Inlet<Http2Frame> AppIn`
+  - `Outlet<Http2Frame> ServerOut`
   - `Outlet<IControlItem> OutletSignal`
-- [ ] `Http20ConnectionStage` changes to `GraphStage<Http20ConnectionShape>`
-- [ ] `Shape` property returns an `Http20ConnectionShape` instance
-- [ ] All existing port variables renamed to use the shape's properties for consistency
-- [ ] Constructor and `_initialRecvWindowSize` parameter unchanged
-- [ ] Build succeeds; no existing tests broken
+- [x] `Http20ConnectionStage` changes to `GraphStage<Http20ConnectionShape>`
+- [x] `Shape` property returns an `Http20ConnectionShape` instance
+- [x] All existing port variables renamed to use the shape's properties for consistency
+- [x] Constructor and `_initialRecvWindowSize` parameter unchanged
+- [x] Build succeeds; no existing tests broken
 
 ---
 

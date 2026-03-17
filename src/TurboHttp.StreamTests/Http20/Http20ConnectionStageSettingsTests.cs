@@ -10,9 +10,9 @@ namespace TurboHttp.StreamTests.Http20;
 public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 {
     /// <summary>
-    /// Runs the Http20ConnectionStage with the given server frames (arriving on Inlet1/inletRaw).
-    /// Returns (downstream frames from Outlet1/outletStream, server-bound frames from Outlet2/outletRaw).
-    /// Inlet2 (inletRequest) is fed Source.Never so the stage stays alive until inletRaw finishes.
+    /// Runs the Http20ConnectionStage with the given server frames (arriving on ServerIn).
+    /// Returns (downstream frames from AppOut, server-bound frames from ServerOut).
+    /// AppIn is fed Source.Never so the stage stays alive until inletRaw finishes.
     /// </summary>
     private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
         params Http2Frame[] serverFrames)
@@ -30,10 +30,10 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
                     var requestSource = b.Add(Source.Never<Http2Frame>());
                     var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
-                    b.From(serverSource).To(stage.Inlet1);
-                    b.From(stage.Outlet1).To(dsSink);
-                    b.From(requestSource).To(stage.Inlet2);
-                    b.From(stage.Outlet2).To(sbSink);
+                    b.From(serverSource).To(stage.ServerIn);
+                    b.From(stage.AppOut).To(dsSink);
+                    b.From(requestSource).To(stage.AppIn);
+                    b.From(stage.ServerOut).To(sbSink);
                     b.From(stage.OutletSignal).To(signalSink);
 
                     return ClosedShape.Instance;

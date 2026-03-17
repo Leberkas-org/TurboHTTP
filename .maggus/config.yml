@@ -1,0 +1,9 @@
+agent: claude
+model: ""
+include: []
+worktree: false
+notifications:
+    sound: true
+    on_task_complete: null
+    on_run_complete: null
+    on_error: null

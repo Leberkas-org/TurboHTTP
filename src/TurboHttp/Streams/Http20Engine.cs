@@ -37,10 +37,10 @@ public class Http20Engine : IHttpProtocolEngine
             var signalMerge = b.Add(new MergePreferred<IOutputItem>(1));
 
             b.From(streamIdAllocator.Outlet).To(requestToFrame.Inlet);
-            b.From(requestToFrame.Outlet).To(connection.Inlet2);
-            b.From(connection.Outlet2).To(frameEncoder.Inlet);
-            b.From(frameDecoder.Outlet).To(connection.Inlet1);
-            b.From(connection.Outlet1).To(streamDecoder.Inlet);
+            b.From(requestToFrame.Outlet).To(connection.AppIn);
+            b.From(connection.ServerOut).To(frameEncoder.Inlet);
+            b.From(frameDecoder.Outlet).To(connection.ServerIn);
+            b.From(connection.AppOut).To(streamDecoder.Inlet);
 
             var signalCast = b.Add(Flow.Create<IControlItem>().Select(IOutputItem (x) => x));
 

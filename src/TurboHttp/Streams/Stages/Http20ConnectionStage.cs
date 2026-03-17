@@ -10,39 +10,39 @@ namespace TurboHttp.Streams.Stages;
 
 public sealed class Http20ConnectionShape : Shape
 {
-    public Inlet<Http2Frame> Inlet1 { get; }
-    public Outlet<Http2Frame> Outlet1 { get; }
-    public Inlet<Http2Frame> Inlet2 { get; }
-    public Outlet<Http2Frame> Outlet2 { get; }
+    public Inlet<Http2Frame> ServerIn { get; }
+    public Outlet<Http2Frame> AppOut { get; }
+    public Inlet<Http2Frame> AppIn { get; }
+    public Outlet<Http2Frame> ServerOut { get; }
     public Outlet<IControlItem> OutletSignal { get; }
 
     public Http20ConnectionShape(
-        Inlet<Http2Frame> inlet1,
-        Outlet<Http2Frame> outlet1,
-        Inlet<Http2Frame> inlet2,
-        Outlet<Http2Frame> outlet2,
+        Inlet<Http2Frame> serverIn,
+        Outlet<Http2Frame> appOut,
+        Inlet<Http2Frame> appIn,
+        Outlet<Http2Frame> serverOut,
         Outlet<IControlItem> outletSignal)
     {
-        Inlet1 = inlet1;
-        Outlet1 = outlet1;
-        Inlet2 = inlet2;
-        Outlet2 = outlet2;
+        ServerIn = serverIn;
+        AppOut = appOut;
+        AppIn = appIn;
+        ServerOut = serverOut;
         OutletSignal = outletSignal;
     }
 
     public override ImmutableArray<Inlet> Inlets =>
-        ImmutableArray.Create<Inlet>(Inlet1, Inlet2);
+        ImmutableArray.Create<Inlet>(ServerIn, AppIn);
 
     public override ImmutableArray<Outlet> Outlets =>
-        ImmutableArray.Create<Outlet>(Outlet1, Outlet2, OutletSignal);
+        ImmutableArray.Create<Outlet>(AppOut, ServerOut, OutletSignal);
 
     public override Shape DeepCopy()
     {
         return new Http20ConnectionShape(
-            (Inlet<Http2Frame>)Inlet1.CarbonCopy(),
-            (Outlet<Http2Frame>)Outlet1.CarbonCopy(),
-            (Inlet<Http2Frame>)Inlet2.CarbonCopy(),
-            (Outlet<Http2Frame>)Outlet2.CarbonCopy(),
+            (Inlet<Http2Frame>)ServerIn.CarbonCopy(),
+            (Outlet<Http2Frame>)AppOut.CarbonCopy(),
+            (Inlet<Http2Frame>)AppIn.CarbonCopy(),
+            (Outlet<Http2Frame>)ServerOut.CarbonCopy(),
             (Outlet<IControlItem>)OutletSignal.CarbonCopy());
     }
 
