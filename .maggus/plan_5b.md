@@ -409,16 +409,16 @@ so that `SelectConnection` can make routing decisions.
 so I can read the live stream limit and route to the correct channel.
 
 **Acceptance Criteria:**
-- [ ] Add `public ConnectionHandle? Handle { get; private set; }`
-- [ ] Add `public void SetHandle(ConnectionHandle handle)` — stores handle, updates `LastActivity`
-- [ ] `HttpVersion` becomes computed: `public Version HttpVersion => Handle?.Key.Version ?? System.Net.HttpVersion.Version11`
-- [ ] `MaxConcurrentStreams` property returns version-dependent default when handle is absent:
+- [x] Add `public ConnectionHandle? Handle { get; private set; }`
+- [x] Add `public void SetHandle(ConnectionHandle handle)` — stores handle, updates `LastActivity`
+- [x] `HttpVersion` becomes computed: `public Version HttpVersion => Handle?.Key.Version ?? System.Net.HttpVersion.Version11`
+- [x] `MaxConcurrentStreams` property returns version-dependent default when handle is absent:
   - HTTP/1.0 (`Major == 1 && Minor == 0`): `1`
   - HTTP/1.1: `6` (pipeline depth default)
   - HTTP/2+: `Handle?.MaxConcurrentStreams ?? 100`
-- [ ] `public bool HasAvailableSlot => Active && Reusable && PendingRequests < MaxConcurrentStreams`
-- [ ] No existing public methods removed
-- [ ] Unit tests cover all three version branches and `HasAvailableSlot` edge cases
+- [x] `public bool HasAvailableSlot => Active && Reusable && PendingRequests < MaxConcurrentStreams`
+- [x] No existing public methods removed
+- [x] Unit tests cover all three version branches and `HasAvailableSlot` edge cases
 
 ---
 
