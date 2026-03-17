@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using System.Net.Http;
+﻿using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -20,12 +19,10 @@ public class Http11Engine : IHttpProtocolEngine
 
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
-            var flowOut = b.Add(Flow.Create<(IMemoryOwner<byte>, int), IOutputItem>()
-                .Select(IOutputItem (x) => new DataItem(HostKey.Default, x.Item1, x.Item2)));
             var flowIn = b.Add(Flow.Create<IInputItem>()
                 .Select(x => (((DataItem)x).Memory, ((DataItem)x).Length)));
 
-            b.From(requestBCast.Out(0)).Via(encoder).To(flowOut.Inlet);
+            b.From(requestBCast.Out(0)).To(encoder.Inlet);
             b.From(requestBCast.Out(1)).To(correlation.In0);
 
             b.From(flowIn.Outlet).Via(decoder).To(correlation.In1);
@@ -36,7 +33,7 @@ public class Http11Engine : IHttpProtocolEngine
                 IInputItem,
                 HttpResponseMessage>(
                 requestBCast.In,
-                flowOut.Outlet,
+                encoder.Outlet,
                 flowIn.Inlet,
                 correlation.Out);
         }));

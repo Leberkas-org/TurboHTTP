@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol;
 using TurboHttp.Streams.Stages;
 
@@ -39,7 +40,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         // The encoder stage must propagate the completion signal without throwing.
         var results = await Source.Empty<HttpRequestMessage>()
             .Via(Flow.FromGraph(new Http11EncoderStage()))
-            .RunWith(Sink.Seq<(IMemoryOwner<byte>, int)>(), Materializer);
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
         // Empty input → no output → stage completed cleanly
         Assert.Empty(results);
@@ -69,17 +70,17 @@ public sealed class StageLifecycleTests : StreamTestBase
         // The stage must call CompleteStage() — no exception must escape.
         var result = await Source.Repeat(ValidRequest())
             .Via(Flow.FromGraph(new Http11EncoderStage()))
-            .RunWith(Sink.First<(IMemoryOwner<byte>, int)>(), Materializer);
+            .RunWith(Sink.First<IOutputItem>(), Materializer);
 
-        var (owner, written) = result;
+        var data = (DataItem)result;
         try
         {
             // Confirm a real response was emitted before cancel
-            Assert.True(written > 0, "Expected at least one byte before downstream cancel");
+            Assert.True(data.Length > 0, "Expected at least one byte before downstream cancel");
         }
         finally
         {
-            owner.Dispose();
+            data.Memory.Dispose();
         }
     }
 
@@ -117,7 +118,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
             await Source.Single(badRequest)
                 .Via(Flow.FromGraph(new Http11EncoderStage()))
-                .RunWith(Sink.Seq<(IMemoryOwner<byte>, int)>(), Materializer));
+                .RunWith(Sink.Seq<IOutputItem>(), Materializer));
 
         var inner = Unwrap(ex);
 

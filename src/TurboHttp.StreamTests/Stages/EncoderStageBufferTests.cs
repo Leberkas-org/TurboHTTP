@@ -1,5 +1,5 @@
-using System.Buffers;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Stages;
@@ -10,17 +10,18 @@ public sealed class EncoderStageBufferTests : StreamTestBase
 
     private async Task<(byte[] bytes, int written)> Encode11Async(HttpRequestMessage request)
     {
-        var chunks = await Source.Single(request)
+        var items = await Source.Single(request)
             .Via(Flow.FromGraph(new Http11EncoderStage()))
-            .RunWith(Sink.Seq<(IMemoryOwner<byte>, int)>(), Materializer);
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
         var written = 0;
         var allBytes = new List<byte>();
-        foreach (var (owner, length) in chunks)
+        foreach (var item in items)
         {
-            allBytes.AddRange(owner.Memory.Span[..length].ToArray());
-            written += length;
-            owner.Dispose();
+            var data = (DataItem)item;
+            allBytes.AddRange(data.Memory.Memory.Span[..data.Length].ToArray());
+            written += data.Length;
+            data.Memory.Dispose();
         }
 
         return (allBytes.ToArray(), written);
@@ -114,25 +115,25 @@ public sealed class EncoderStageBufferTests : StreamTestBase
                 Version = System.Net.HttpVersion.Version11
             };
 
-            var chunks = await Source.Single(request)
+            var items = await Source.Single(request)
                 .Via(Flow.FromGraph(new Http11EncoderStage()))
-                .RunWith(Sink.Seq<(IMemoryOwner<byte>, int)>(), Materializer);
+                .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-            Assert.Single(chunks);
+            Assert.Single(items);
 
-            var (owner, written) = chunks[0];
+            var data = (DataItem)items[0];
             try
             {
-                Assert.True(written > 0, $"Request {i}: expected non-zero written bytes");
+                Assert.True(data.Length > 0, $"Request {i}: expected non-zero written bytes");
 
                 // Verify the correct path appears in this request's encoded output
-                var encoded = System.Text.Encoding.ASCII.GetString(owner.Memory.Span[..written]);
+                var encoded = System.Text.Encoding.ASCII.GetString(data.Memory.Memory.Span[..data.Length]);
                 Assert.Contains(path, encoded);
             }
             finally
             {
                 // Explicit disposal returns buffer to pool — demonstrates clean reuse
-                owner.Dispose();
+                data.Memory.Dispose();
             }
         }
     }

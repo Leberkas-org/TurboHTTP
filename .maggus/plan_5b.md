@@ -262,11 +262,11 @@ into the `IOutputItem` output stream using `MergePreferred<IOutputItem>`.
 **Description:** Mirror TASK-9-E01 for HTTP/1.1.
 
 **Acceptance Criteria:**
-- [ ] Stage changes from `FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)>` to
+- [x] Stage changes from `FlowShape<HttpRequestMessage, (IMemoryOwner<byte>, int)>` to
       `FlowShape<HttpRequestMessage, IOutputItem>`
-- [ ] Each serialised request is emitted as `new DataItem(HostKey.Default, memory, length)`
-- [ ] Existing stream tests pass (output type updated)
-- [ ] Build succeeds
+- [x] Each serialised request is emitted as `new DataItem(HostKey.Default, memory, length)`
+- [x] Existing stream tests pass (output type updated)
+- [x] Build succeeds
 
 ---
 

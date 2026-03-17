@@ -1,6 +1,6 @@
-using System.Buffers;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Http11;
@@ -13,15 +13,16 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)
     {
-        var chunks = await Source.Single(request)
+        var items = await Source.Single(request)
             .Via(Flow.FromGraph(new Http11EncoderStage()))
-            .RunWith(Sink.Seq<(IMemoryOwner<byte>, int)>(), Materializer);
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
         var sb = new StringBuilder();
-        foreach (var (owner, length) in chunks)
+        foreach (var item in items)
         {
-            sb.Append(Encoding.Latin1.GetString(owner.Memory.Span[..length]));
-            owner.Dispose();
+            var data = (DataItem)item;
+            sb.Append(Encoding.Latin1.GetString(data.Memory.Memory.Span[..data.Length]));
+            data.Memory.Dispose();
         }
 
         return sb.ToString();
