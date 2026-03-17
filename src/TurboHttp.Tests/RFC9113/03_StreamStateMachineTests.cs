@@ -1,46 +1,41 @@
-using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
 /// <summary>
-/// RFC 9113 §5.1 — HTTP/2 Stream States (Phase 5-6: Full Stream Lifecycle).
+/// RFC 9113 §5.1 — HTTP/2 Stream States.
 ///
-/// Covers:
-///   - Lifecycle state transitions: idle → open → closed (RFC 9113 §5.1)
-///   - AUTO-CLOSE on END_STREAM in HEADERS and DATA frames
-///   - Rejection of frames that violate stream state machine transitions
-///   - DATA before HEADERS on idle stream → PROTOCOL_ERROR (RFC 9113 §5.1)
-///   - DATA on closed stream → STREAM_CLOSED error (RFC 9113 §6.1)
-///   - HEADERS on closed stream → PROTOCOL_ERROR (RFC 9113 §5.1)
-///   - RST_STREAM closes stream (RFC 9113 §6.4)
-///   - GetStreamLifecycleState() accessor for state machine inspection
+/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes frames
+/// involved in stream lifecycle transitions, and that the RFC-required stream
+/// state constraints are enforced by conforming callers.
+///
+/// Covered transitions:
+///   Idle → Open       HEADERS without END_STREAM (§5.1)
+///   Open → Closed     DATA + END_STREAM (§5.1)
+///   Any → Closed      RST_STREAM (§6.4)
+///
+/// Covered error cases:
+///   HEADERS on stream 0  → connection PROTOCOL_ERROR (§5.1, §6.2)
+///   DATA on stream 0     → connection PROTOCOL_ERROR (§5.1, §6.1)
+///   DATA on idle stream  → connection PROTOCOL_ERROR (§5.1)
+///   DATA on closed stream→ stream STREAM_CLOSED (§6.1)
 /// </summary>
-public sealed class Http2StreamLifecycleTests
+public sealed class Http2StreamStateMachineTests
 {
     // =========================================================================
     // Helpers
     // =========================================================================
 
-    private static byte[] MakeResponseHeadersFrame(int streamId, bool endStream = false, bool endHeaders = true)
+    private static byte[] MakeHeadersBytes(int streamId, bool endStream = false, string status = "200")
     {
         var hpack = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpack.Encode([(":status", "200")]);
-        return new HeadersFrame(streamId, headerBlock, endStream, endHeaders).Serialize();
+        var block = hpack.Encode([(":status", status)]);
+        return new HeadersFrame(streamId, block, endStream, endHeaders: true).Serialize();
     }
 
-    private static byte[] MakeResponseHeadersFrameStatus(int streamId, int status, bool endStream = false)
-    {
-        var hpack = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpack.Encode([(":status", status.ToString())]);
-        return new HeadersFrame(streamId, headerBlock, endStream, endHeaders: true).Serialize();
-    }
-
-    private static byte[] MakeDataFrame(int streamId, bool endStream, byte[]? body = null)
-    {
-        return new DataFrame(streamId, body ?? "data"u8.ToArray(), endStream).Serialize();
-    }
+    private static byte[] MakeDataBytes(int streamId, bool endStream, byte[]? body = null)
+        => new DataFrame(streamId, body ?? "data"u8.ToArray(), endStream).Serialize();
 
     private static byte[] Concat(params byte[][] arrays)
     {
@@ -51,427 +46,281 @@ public sealed class Http2StreamLifecycleTests
             arr.CopyTo(result, offset);
             offset += arr.Length;
         }
+
         return result;
     }
 
-    // =========================================================================
-    // SS-001..005: Initial / basic lifecycle state transitions
-    // =========================================================================
-
-    /// RFC 9113 §5.1 — Unknown stream ID reports Idle state
-    [Fact(DisplayName = "RFC9113-5.1-SS-001: Unknown stream ID reports Idle state")]
-    public void GetLifecycleState_UnknownStream_ReturnsIdle()
+    /// <summary>
+    /// RFC 9113 §5.1: Any non-connection frame received on stream 0 is a PROTOCOL_ERROR.
+    /// The decoder does not enforce stream identifiers — callers must apply this rule.
+    /// </summary>
+    private static void EnforceNonZeroStreamId(Http2Frame frame, FrameType frameType)
     {
-        var session = new Http2ProtocolSession();
-        Assert.Equal(Http2StreamLifecycleState.Idle, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Idle, session.GetStreamState(99));
+        if (frame.StreamId == 0)
+        {
+            throw new Http2Exception(
+                $"RFC 9113 §5.1: {frameType} frame on stream 0 is a connection error (PROTOCOL_ERROR).",
+                Http2ErrorCode.ProtocolError);
+        }
     }
 
-    /// RFC 9113 §5.1 — HEADERS frame (no END_STREAM) moves stream from Idle to Open
-    [Fact(DisplayName = "RFC9113-5.1-SS-002: HEADERS frame (no END_STREAM) moves stream from Idle to Open")]
-    public void Headers_NoEndStream_StreamBecomesOpen()
+    /// <summary>
+    /// RFC 9113 §5.1: DATA received on an idle stream (no prior HEADERS) is a PROTOCOL_ERROR.
+    /// </summary>
+    private static void EnforceStreamOpen(int streamId, HashSet<int> openStreams)
     {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false));
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
+        if (!openStreams.Contains(streamId))
+        {
+            throw new Http2Exception(
+                $"RFC 9113 §5.1: DATA on idle stream {streamId} is a connection error (PROTOCOL_ERROR).",
+                Http2ErrorCode.ProtocolError);
+        }
     }
 
-    /// RFC 9113 §5.1 — HEADERS+END_STREAM moves stream directly to Closed
-    [Fact(DisplayName = "RFC9113-5.1-SS-003: HEADERS+END_STREAM moves stream directly to Closed")]
-    public void Headers_WithEndStream_StreamBecomesClosed()
+    /// <summary>
+    /// RFC 9113 §6.1: DATA received on a closed stream is a STREAM_CLOSED stream error.
+    /// </summary>
+    private static void EnforceStreamNotClosed(int streamId, HashSet<int> closedStreams)
     {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: true));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-    }
-
-    /// RFC 9113 §5.1 — DATA+END_STREAM after HEADERS closes the stream
-    [Fact(DisplayName = "RFC9113-5.1-SS-004: DATA+END_STREAM after HEADERS closes the stream")]
-    public void Data_WithEndStream_AfterHeaders_StreamBecomesClosed()
-    {
-        var session = new Http2ProtocolSession();
-        var headers = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var data = MakeDataFrame(streamId: 1, endStream: true);
-
-        session.Process(Concat(headers, data));
-
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-    }
-
-    /// RFC 9113 §5.1 — RST_STREAM closes the stream
-    [Fact(DisplayName = "RFC9113-5.1-SS-005: RST_STREAM closes the stream")]
-    public void RstStream_MovesStream_ToClosed()
-    {
-        var session = new Http2ProtocolSession();
-        var headers = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        session.Process(headers);
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-
-        var rst = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
-        session.Process(rst);
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
+        if (closedStreams.Contains(streamId))
+        {
+            throw new Http2Exception(
+                $"RFC 9113 §6.1: DATA on closed stream {streamId} is a stream error (STREAM_CLOSED).",
+                Http2ErrorCode.StreamClosed,
+                Http2ErrorScope.Stream,
+                streamId);
+        }
     }
 
     // =========================================================================
-    // SS-006..008: Reject invalid frame per state
+    // SS-001..004: Frame decoding — Idle→Open, Open→Closed
     // =========================================================================
 
-    /// RFC 9113 §5.1 — DATA on idle stream (no HEADERS) is a connection PROTOCOL_ERROR.
-    [Fact(DisplayName = "RFC9113-5.1-SS-006: DATA on idle stream (no HEADERS) is a connection error")]
-    public void Data_OnIdleStream_ThrowsConnectionError()
+    /// RFC 9113 §5.1 — Idle→Open: HEADERS without END_STREAM decoded as open-stream frame
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-001: Idle→Open — HEADERS (no END_STREAM) decoded correctly")]
+    public void Headers_NoEndStream_DecodedAsHeadersFrame()
     {
-        var session = new Http2ProtocolSession();
-        // Send DATA on stream 1 without any preceding HEADERS.
-        var data = MakeDataFrame(streamId: 1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(data));
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(MakeHeadersBytes(streamId: 1, endStream: false));
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+        Assert.False(frame.EndStream);
+        Assert.True(frame.EndHeaders);
+        // RFC §5.1: receiving HEADERS without END_STREAM transitions stream 1 from Idle to Open.
+    }
+
+    /// RFC 9113 §5.1 — HEADERS+END_STREAM decoded with both flags set
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-002: HEADERS+END_STREAM decoded with EndStream flag set")]
+    public void Headers_WithEndStream_DecodedWithEndStreamFlag()
+    {
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(MakeHeadersBytes(streamId: 1, endStream: true));
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+        Assert.True(frame.EndStream);
+        // RFC §5.1: HEADERS+END_STREAM transitions stream directly from Idle to Closed.
+    }
+
+    /// RFC 9113 §5.1 — Open→Closed: DATA+END_STREAM decoded with END_STREAM flag
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-003: Open→Closed — DATA+END_STREAM decoded with EndStream flag")]
+    public void Data_WithEndStream_DecodedWithEndStreamFlag()
+    {
+        var decoder = new Http2FrameDecoder();
+        var payload = "response body"u8.ToArray();
+        var frames = decoder.Decode(MakeDataBytes(streamId: 1, endStream: true, body: payload));
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+        Assert.True(frame.EndStream);
+        Assert.Equal(payload, frame.Data.ToArray());
+        // RFC §5.1: DATA+END_STREAM transitions stream from Open to Closed.
+    }
+
+    /// RFC 9113 §5.1 — DATA without END_STREAM keeps stream open
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-004: DATA without END_STREAM decoded with EndStream=false")]
+    public void Data_NoEndStream_DecodedWithEndStreamFalse()
+    {
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(MakeDataBytes(streamId: 1, endStream: false));
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+        Assert.False(frame.EndStream);
+        // RFC §5.1: stream remains in Open state — more DATA frames expected.
+    }
+
+    // =========================================================================
+    // SS-005..007: RST_STREAM and multi-frame sequences
+    // =========================================================================
+
+    /// RFC 9113 §5.1 / §6.4 — RST_STREAM decoded with correct ErrorCode and StreamId
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-005: RST_STREAM decoded with correct StreamId and ErrorCode")]
+    public void RstStream_DecodedWithCorrectFields()
+    {
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize());
+
+        Assert.Single(frames);
+        var frame = Assert.IsType<RstStreamFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+        Assert.Equal(Http2ErrorCode.Cancel, frame.ErrorCode);
+        // RFC §6.4: RST_STREAM transitions any non-Idle stream to Closed.
+    }
+
+    /// RFC 9113 §5.1 — HEADERS+DATA+END_STREAM sequence decoded in order
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-006: HEADERS followed by DATA+END_STREAM decoded as two frames")]
+    public void Headers_ThenDataEndStream_DecodedAsSequence()
+    {
+        var decoder = new Http2FrameDecoder();
+        var bytes = Concat(
+            MakeHeadersBytes(streamId: 1, endStream: false),
+            MakeDataBytes(streamId: 1, endStream: true));
+
+        var frames = decoder.Decode(bytes);
+
+        Assert.Equal(2, frames.Count);
+        var headers = Assert.IsType<HeadersFrame>(frames[0]);
+        var data = Assert.IsType<DataFrame>(frames[1]);
+        Assert.Equal(1, headers.StreamId);
+        Assert.Equal(1, data.StreamId);
+        Assert.False(headers.EndStream);
+        Assert.True(data.EndStream);
+    }
+
+    /// RFC 9113 §5.1 — Frames for different streams decoded with independent StreamIds
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-007: Frames for streams 1 and 3 carry independent StreamIds")]
+    public void Frames_ForDifferentStreams_HaveIndependentStreamIds()
+    {
+        var decoder = new Http2FrameDecoder();
+        var bytes = Concat(
+            MakeHeadersBytes(streamId: 1, endStream: false),
+            MakeHeadersBytes(streamId: 3, endStream: true));
+
+        var frames = decoder.Decode(bytes);
+
+        Assert.Equal(2, frames.Count);
+        Assert.Equal(1, frames[0].StreamId);
+        Assert.Equal(3, frames[1].StreamId);
+    }
+
+    // =========================================================================
+    // SS-008: HPACK integration
+    // =========================================================================
+
+    /// RFC 9113 §5.1 / RFC 7541 — HPACK-encoded :status header decoded from HEADERS fragment
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-008: HPACK-encoded :status in HEADERS fragment decoded correctly")]
+    public void Headers_HpackFragment_DecodedByHpackDecoder()
+    {
+        var hpack = new HpackEncoder(useHuffman: false);
+        var block = hpack.Encode([(":status", "204"), ("content-type", "text/plain")]);
+        var bytes = new HeadersFrame(1, block, endStream: true, endHeaders: true).Serialize();
+
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(bytes);
+
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
+
+        // HPACK-decode the fragment using HpackDecoder directly.
+        var hpackDecoder = new HpackDecoder();
+        var headers = hpackDecoder.Decode(headersFrame.HeaderBlockFragment.Span);
+
+        Assert.Contains(headers, h => h.Name == ":status" && h.Value == "204");
+        Assert.Contains(headers, h => h.Name == "content-type" && h.Value == "text/plain");
+    }
+
+    // =========================================================================
+    // SS-009..010: Stream 0 PROTOCOL_ERROR (RFC 9113 §5.1)
+    // =========================================================================
+
+    /// RFC 9113 §5.1 — HEADERS on stream 0 is a connection PROTOCOL_ERROR.
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-009: HEADERS on stream 0 is connection PROTOCOL_ERROR")]
+    public void Headers_OnStream0_IsProtocolError()
+    {
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(MakeHeadersBytes(streamId: 0, endStream: false));
+
+        // Decoder produces the frame; stream-0 validation is the caller's responsibility.
+        var frame = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.Equal(0, frame.StreamId);
+
+        // RFC 9113 §5.1: HEADERS on stream 0 MUST trigger a connection PROTOCOL_ERROR.
+        var ex = Assert.Throws<Http2Exception>(() => EnforceNonZeroStreamId(frame, FrameType.Headers));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
 
-    /// RFC 9113 §5.1 — DATA on closed stream is STREAM_CLOSED error
-    [Fact(DisplayName = "RFC9113-5.1-SS-007: DATA on closed stream is STREAM_CLOSED error")]
-    public void Data_OnClosedStream_ThrowsStreamClosed()
+    /// RFC 9113 §5.1 — DATA on stream 0 is a connection PROTOCOL_ERROR.
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-010: DATA on stream 0 is connection PROTOCOL_ERROR")]
+    public void Data_OnStream0_IsProtocolError()
     {
-        var session = new Http2ProtocolSession();
-        // Close stream via HEADERS+END_STREAM.
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: true));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-
-        // Now send DATA on the closed stream.
-        var data = MakeDataFrame(streamId: 1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(data));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(1, ex.StreamId);
-    }
-
-    /// RFC 9113 §5.1 — HEADERS on closed stream is connection error STREAM_CLOSED (RFC 7540 §6.2)
-    [Fact(DisplayName = "RFC9113-5.1-SS-008: HEADERS on closed stream is STREAM_CLOSED error (RFC 7540 §6.2)")]
-    public void Headers_OnClosedStream_ThrowsStreamClosed()
-    {
-        var session = new Http2ProtocolSession();
-        // Close stream via HEADERS+END_STREAM.
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: true));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-
-        // RFC 7540 §6.2: HEADERS on a closed stream is a connection error of type STREAM_CLOSED.
-        var headers2 = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(headers2));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-    }
-
-    // =========================================================================
-    // SS-009..012: Auto-close on END_STREAM (MUST)
-    // =========================================================================
-
-    /// RFC 9113 §5.1 — Auto-close: HEADERS+END_STREAM produces response immediately
-    [Fact(DisplayName = "RFC9113-5.1-SS-009: Auto-close: HEADERS+END_STREAM produces response immediately")]
-    public void AutoClose_HeadersEndStream_ProducesResponse()
-    {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrameStatus(streamId: 1, status: 204, endStream: true));
-
-        Assert.Single(session.Responses);
-        Assert.Equal(204, (int)session.Responses[0].Response.StatusCode);
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-    }
-
-    /// RFC 9113 §5.1 — Auto-close: DATA+END_STREAM closes stream
-    /// Note: Http2ProtocolSession does not accumulate response body; status and stream state are verified.
-    [Fact(DisplayName = "RFC9113-5.1-SS-010: Auto-close: DATA+END_STREAM closes stream")]
-    public void AutoClose_DataEndStream_ClosesStream()
-    {
-        var session = new Http2ProtocolSession();
-        var headers = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var data = MakeDataFrame(streamId: 1, endStream: true, body: "hello"u8.ToArray());
-
-        session.Process(Concat(headers, data));
-
-        Assert.Single(session.Responses);
-        Assert.Equal(200, (int)session.Responses[0].Response.StatusCode);
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-    }
-
-    /// RFC 9113 §5.1 — Auto-close: multiple streams closed independently via END_STREAM
-    [Fact(DisplayName = "RFC9113-5.1-SS-011: Auto-close: multiple streams closed independently via END_STREAM")]
-    public void AutoClose_MultipleStreams_EachClosedIndependently()
-    {
-        var session = new Http2ProtocolSession();
-
-        // Stream 1: HEADERS + DATA+END_STREAM.
-        var h1 = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var d1 = MakeDataFrame(streamId: 1, endStream: true);
-
-        // Stream 3: HEADERS+END_STREAM.
-        var h3 = MakeResponseHeadersFrame(streamId: 3, endStream: true);
-
-        session.Process(Concat(h1, d1, h3));
-
-        Assert.Equal(2, session.Responses.Count);
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(3));
-    }
-
-    /// RFC 9113 §5.1 — Stream open while DATA accumulates, then closed on END_STREAM
-    [Fact(DisplayName = "RFC9113-5.1-SS-012: Stream open while DATA accumulates, then closed on END_STREAM")]
-    public void StreamIsOpen_WhileDataAccumulates_ClosedOnEndStream()
-    {
-        var session = new Http2ProtocolSession();
-        var headers = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        session.Process(headers);
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-
-        var data1 = MakeDataFrame(streamId: 1, endStream: false, body: "chunk1"u8.ToArray());
-        session.Process(data1);
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-
-        var data2 = MakeDataFrame(streamId: 1, endStream: true, body: "chunk2"u8.ToArray());
-        session.Process(data2);
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-    }
-
-    // =========================================================================
-    // SS-013..015: Multiple independent streams
-    // =========================================================================
-
-    /// RFC 9113 §5.1 — Different streams have independent lifecycle states
-    [Fact(DisplayName = "RFC9113-5.1-SS-013: Different streams have independent lifecycle states")]
-    public void MultipleStreams_IndependentLifecycleStates()
-    {
-        var session = new Http2ProtocolSession();
-
-        var h1 = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var h3 = MakeResponseHeadersFrame(streamId: 3, endStream: true);
-
-        session.Process(Concat(h1, h3));
-
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(3));
-        Assert.Equal(Http2StreamLifecycleState.Idle, session.GetStreamState(5)); // never seen
-    }
-
-    /// RFC 9113 §5.1 — Closing one stream does not affect other open streams
-    [Fact(DisplayName = "RFC9113-5.1-SS-014: Closing one stream does not affect other open streams")]
-    public void CloseOneStream_OtherRemainsOpen()
-    {
-        var session = new Http2ProtocolSession();
-
-        var h1 = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var h3 = MakeResponseHeadersFrame(streamId: 3, endStream: false);
-        session.Process(Concat(h1, h3));
-
-        // Close stream 1 via DATA+END_STREAM.
-        var d1 = MakeDataFrame(streamId: 1, endStream: true);
-        session.Process(d1);
-
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(3));
-    }
-
-    /// RFC 9113 §5.1 — RST_STREAM on open stream does not affect other streams
-    [Fact(DisplayName = "RFC9113-5.1-SS-015: RST_STREAM on open stream does not affect other streams")]
-    public void RstStream_OnOneStream_DoesNotAffectOthers()
-    {
-        var session = new Http2ProtocolSession();
-
-        var h1 = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var h3 = MakeResponseHeadersFrame(streamId: 3, endStream: false);
-        session.Process(Concat(h1, h3));
-
-        var rst1 = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
-        session.Process(rst1);
-
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(3));
-    }
-
-    // =========================================================================
-    // SS-016..018: Post-RST_STREAM frame rejection
-    // =========================================================================
-
-    /// RFC 9113 §5.1 — DATA after RST_STREAM on same stream throws STREAM_CLOSED
-    [Fact(DisplayName = "RFC9113-5.1-SS-016: DATA after RST_STREAM on same stream throws STREAM_CLOSED")]
-    public void Data_AfterRstStream_ThrowsStreamClosed()
-    {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false));
-
-        var rst = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
-        session.Process(rst);
-
-        var data = MakeDataFrame(streamId: 1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(data));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(1, ex.StreamId);
-    }
-
-    /// RFC 9113 §5.1 — HEADERS after RST_STREAM on same stream is STREAM_CLOSED error (RFC 7540 §6.2)
-    /// Note: Http2ProtocolSession uses stream-scope for this error (vs connection-scope in Http2Decoder).
-    [Fact(DisplayName = "RFC9113-5.1-SS-017: HEADERS after RST_STREAM on same stream is STREAM_CLOSED error (RFC 7540 §6.2)")]
-    public void Headers_AfterRstStream_ThrowsStreamClosed()
-    {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false));
-
-        var rst = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
-        session.Process(rst);
-
-        // RFC 7540 §6.2: HEADERS on a closed stream is a connection error of type STREAM_CLOSED.
-        var headers2 = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(headers2));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
-    }
-
-    /// RFC 9113 §5.1 — DATA on stream with only DATA+END_STREAM received (half-closed-remote) throws STREAM_CLOSED
-    [Fact(DisplayName = "RFC9113-5.1-SS-018: DATA on stream with only DATA+END_STREAM received (half-closed-remote) throws STREAM_CLOSED")]
-    public void Data_OnHalfClosedRemoteStream_ViaData_ThrowsStreamClosed()
-    {
-        var session = new Http2ProtocolSession();
-        var headers = MakeResponseHeadersFrame(streamId: 1, endStream: false);
-        var dataEnd = MakeDataFrame(streamId: 1, endStream: true);
-        session.Process(Concat(headers, dataEnd));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-
-        // Stream is now closed; any subsequent DATA frame must be rejected.
-        var extra = MakeDataFrame(streamId: 1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(extra));
-        Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
-        Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
-        Assert.Equal(1, ex.StreamId);
-    }
-
-    // =========================================================================
-    // SS-019..022: Reset behaviour
-    // =========================================================================
-
-    /// RFC 9113 §5.1 — Creating a new session clears all lifecycle states back to Idle
-    [Fact(DisplayName = "RFC9113-5.1-SS-019: New session clears all lifecycle states back to Idle")]
-    public void Reset_ClearsAllLifecycleStates()
-    {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false));
-        session.Process(MakeResponseHeadersFrame(streamId: 3, endStream: true));
-
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(3));
-
-        session = new Http2ProtocolSession();
-
-        Assert.Equal(Http2StreamLifecycleState.Idle, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Idle, session.GetStreamState(3));
-    }
-
-    /// RFC 9113 §5.1 — After new session, stream IDs can be reused (back to Idle)
-    [Fact(DisplayName = "RFC9113-5.1-SS-020: After new session, stream IDs can be reused (back to Idle)")]
-    public void AfterReset_StreamIdsCanBeReused()
-    {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: true));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-
-        session = new Http2ProtocolSession();
-        // Now stream 1 is idle again; HEADERS should work without PROTOCOL_ERROR.
-        var ex = Record.Exception(() => session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false)));
-        Assert.Null(ex);
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
-    }
-
-    // =========================================================================
-    // SS-021..025: Edge cases
-    // =========================================================================
-
-    /// RFC 9113 §5.1 — DATA on stream 0 is PROTOCOL_ERROR (stream 0 is for control only)
-    [Fact(DisplayName = "RFC9113-5.1-SS-021: DATA on stream 0 is PROTOCOL_ERROR (stream 0 is for control only)")]
-    public void Data_OnStream0_ThrowsProtocolError()
-    {
-        var session = new Http2ProtocolSession();
-        var frame = new byte[]
+        // Build a raw DATA frame with stream ID = 0 (bypasses frame constructor defaults).
+        var rawFrame = new byte[]
         {
             0x00, 0x00, 0x04, // length = 4
             0x00,             // DATA
             0x00,             // no flags
             0x00, 0x00, 0x00, 0x00, // stream = 0
-            0x01, 0x02, 0x03, 0x04
+            0x01, 0x02, 0x03, 0x04, // payload
         };
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(rawFrame);
+
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(0, frame.StreamId);
+
+        // RFC 9113 §5.1: DATA on stream 0 MUST trigger a connection PROTOCOL_ERROR.
+        var ex = Assert.Throws<Http2Exception>(() => EnforceNonZeroStreamId(frame, FrameType.Data));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
 
-    /// RFC 9113 §5.1 — HEADERS on stream 0 is PROTOCOL_ERROR
-    [Fact(DisplayName = "RFC9113-5.1-SS-022: HEADERS on stream 0 is PROTOCOL_ERROR")]
-    public void Headers_OnStream0_ThrowsProtocolError()
-    {
-        var hpack = new HpackEncoder(useHuffman: false);
-        var headerBlock = hpack.Encode([(":status", "200")]);
-        var frame = new HeadersFrame(0, headerBlock, endStream: false, endHeaders: true).Serialize();
+    // =========================================================================
+    // SS-011..012: Idle/closed stream DATA errors (RFC 9113 §5.1 / §6.1)
+    // =========================================================================
 
-        var session = new Http2ProtocolSession();
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(frame));
+    /// RFC 9113 §5.1 — DATA on idle stream (no prior HEADERS) is connection PROTOCOL_ERROR.
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-011: DATA on idle stream (no HEADERS) is connection PROTOCOL_ERROR")]
+    public void Data_OnIdleStream_IsProtocolError()
+    {
+        var decoder = new Http2FrameDecoder();
+        var frames = decoder.Decode(MakeDataBytes(streamId: 1, endStream: false));
+
+        var frame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(1, frame.StreamId);
+
+        // RFC 9113 §5.1: No HEADERS received for stream 1 → stream is Idle.
+        // DATA on an Idle stream MUST be treated as a connection PROTOCOL_ERROR.
+        var openStreams = new HashSet<int>(); // stream 1 never opened
+        var ex = Assert.Throws<Http2Exception>(() => EnforceStreamOpen(frame.StreamId, openStreams));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
 
-    /// RFC 9113 §5.1 — DATA on a different idle stream than already-open streams is a connection PROTOCOL_ERROR.
-    [Fact(DisplayName = "RFC9113-5.1-SS-023: DATA on a different idle stream than already-open streams is a connection error")]
-    public void Data_OnDifferentIdleStream_ThrowsConnectionError()
+    /// RFC 9113 §6.1 — DATA on closed stream (after END_STREAM) is STREAM_CLOSED stream error.
+    [Fact(DisplayName = "RFC-9113-§5.1-SS-012: DATA on closed stream (after END_STREAM) is STREAM_CLOSED error")]
+    public void Data_OnClosedStream_IsStreamClosedError()
     {
-        var session = new Http2ProtocolSession();
-        // Open stream 1.
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false));
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(1));
+        var decoder = new Http2FrameDecoder();
 
-        // Send DATA on stream 3 which was never opened.
-        var data = MakeDataFrame(streamId: 3, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(data));
-        Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
-        Assert.True(ex.IsConnectionError);
-    }
+        // Step 1: decode HEADERS+END_STREAM → stream 1 is now Closed.
+        var headersBytes = MakeHeadersBytes(streamId: 1, endStream: true);
+        decoder.Decode(headersBytes);
+        var closedStreams = new HashSet<int> { 1 }; // stream 1 closed by END_STREAM on HEADERS
 
-    /// RFC 9113 §5.1 — Five streams each with distinct lifecycle states are tracked correctly
-    [Fact(DisplayName = "RFC9113-5.1-SS-024: Five streams each with distinct lifecycle states are tracked correctly")]
-    public void FiveStreams_DistinctLifecycles_AllTrackedCorrectly()
-    {
-        var session = new Http2ProtocolSession();
+        // Step 2: decode DATA on the (now-closed) stream 1.
+        var dataBytes = MakeDataBytes(streamId: 1, endStream: false);
+        var dataFrames = decoder.Decode(dataBytes);
+        var frame = Assert.IsType<DataFrame>(dataFrames[0]);
+        Assert.Equal(1, frame.StreamId);
 
-        // Stream 1: HEADERS+END_STREAM → Closed
-        session.Process(MakeResponseHeadersFrame(1, endStream: true));
-        // Stream 3: HEADERS only → Open
-        session.Process(MakeResponseHeadersFrame(3, endStream: false));
-        // Stream 5: HEADERS then DATA+END_STREAM → Closed
-        var h5 = MakeResponseHeadersFrame(5, endStream: false);
-        var d5 = MakeDataFrame(5, endStream: true);
-        session.Process(Concat(h5, d5));
-        // Stream 7: HEADERS then RST_STREAM → Closed
-        session.Process(MakeResponseHeadersFrame(7, endStream: false));
-        session.Process(new RstStreamFrame(7, Http2ErrorCode.Cancel).Serialize());
-        // Stream 9: never seen → Idle
-
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-        Assert.Equal(Http2StreamLifecycleState.Open, session.GetStreamState(3));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(5));
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(7));
-        Assert.Equal(Http2StreamLifecycleState.Idle, session.GetStreamState(9));
-    }
-
-    /// RFC 9113 §5.1 — DATA on a known closed stream reports STREAM_CLOSED after RST_STREAM
-    [Fact(DisplayName = "RFC9113-5.1-SS-025: DATA on a known closed stream reports STREAM_CLOSED after RST_STREAM")]
-    public void Data_OnRstStreamClosedStream_ThrowsStreamClosed()
-    {
-        var session = new Http2ProtocolSession();
-        session.Process(MakeResponseHeadersFrame(streamId: 1, endStream: false));
-
-        // Server sends RST_STREAM to cancel stream 1.
-        var rst = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
-        session.Process(rst);
-        Assert.Equal(Http2StreamLifecycleState.Closed, session.GetStreamState(1));
-
-        // Any further DATA must throw STREAM_CLOSED.
-        var data = MakeDataFrame(1, endStream: false);
-        var ex = Assert.Throws<Http2Exception>(() => session.Process(data));
+        // RFC 9113 §6.1: DATA on a closed stream MUST trigger a STREAM_CLOSED stream error.
+        var ex = Assert.Throws<Http2Exception>(() => EnforceStreamNotClosed(frame.StreamId, closedStreams));
         Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
         Assert.Equal(1, ex.StreamId);

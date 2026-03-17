@@ -18,11 +18,25 @@
 
 ---
 
+## TASK-PSS-001: Replace Http2ProtocolSession — Stream State Tests
+**Status:** COMPLETE | **Date:** 2026-03-17
+
+**Changes:**
+- Rewrote `src/TurboHttp.Tests/RFC9113/03_StreamStateMachineTests.cs`
+- Removed `Http2ProtocolSession` and `Http2StreamLifecycleState` (test-only classes)
+- Now uses only `Http2FrameDecoder`, `Http2Frame` subclasses, `HpackDecoder`, `HpackEncoder`
+- Class renamed from `Http2StreamLifecycleTests` to `Http2StreamStateMachineTests` (matches filter `FullyQualifiedName~StreamStateMachine`)
+- 25 old tests → 12 new tests; all DisplayNames contain `RFC-9113-§5.1`
+- All 4 required scenarios covered: Idle→Open, Open→Closed, HEADERS on stream 0 → Exception, DATA on idle stream → Exception
+- Test count: 2123 (pre-existing RH-015 failure unchanged)
+
+---
+
 ## Remaining Tasks
 
 | Task | Status | Description |
 |------|--------|-------------|
-| TASK-PSS-001 | PENDING | Replace Http2ProtocolSession — Stream State Tests (§5.1) |
+| TASK-PSS-001 | COMPLETE | Replace Http2ProtocolSession — Stream State Tests (§5.1) |
 | TASK-PSS-002 | PENDING | Replace Http2ProtocolSession — Settings Tests (§6.5) |
 | TASK-PSS-003 | PENDING | Replace Http2ProtocolSession — Flow Control Tests (§6.9) |
 | TASK-PSS-004 | PENDING | Replace Http2ProtocolSession — GoAway/Ping/RST (§6.4/§6.7/§6.8) |

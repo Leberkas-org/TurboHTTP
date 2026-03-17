@@ -49,12 +49,12 @@ Affected file: `03_StreamStateMachineTests.cs`
 **Background:** `Http2ProtocolSession.HandleHeaders()` and `HandleData()` track stream states. In production this logic lives in `Http20StreamStage` / `Http20ConnectionStage`. `Http2FrameDecoder` itself is stateless — it only decodes bytes → frames. Tests should verify: (a) the decoder produces correct frames, (b) invalid frames throw the correct exceptions.
 
 **Acceptance Criteria:**
-- [ ] `03_StreamStateMachineTests.cs` only calls production classes: `Http2FrameDecoder`, `Http2Frame` subclasses, `HpackDecoder`
-- [ ] No import of `Http2ProtocolSession` in this file
-- [ ] Every test DisplayName contains `RFC-9113-§5.1`
-- [ ] At minimum these RFC scenarios covered: Idle→Open (HEADERS), Open→Closed (DATA+END_STREAM), HEADERS on stream 0 → Exception, DATA on idle stream → Exception
-- [ ] `dotnet test --filter FullyQualifiedName~StreamStateMachine` green
-- [ ] `.maggus/PROGRESS_3.md` updated
+- [x] `03_StreamStateMachineTests.cs` only calls production classes: `Http2FrameDecoder`, `Http2Frame` subclasses, `HpackDecoder`
+- [x] No import of `Http2ProtocolSession` in this file
+- [x] Every test DisplayName contains `RFC-9113-§5.1`
+- [x] At minimum these RFC scenarios covered: Idle→Open (HEADERS), Open→Closed (DATA+END_STREAM), HEADERS on stream 0 → Exception, DATA on idle stream → Exception
+- [x] `dotnet test --filter FullyQualifiedName~StreamStateMachine` green
+- [x] `.maggus/PROGRESS_3.md` updated
 
 ---
 

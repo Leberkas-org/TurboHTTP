@@ -1,6 +1,6 @@
 # Production-Readiness Gap List
 
-**Date:** 2026-03-16
+**Date:** 2026-03-17 (updated: GAP-001 closed after verification)
 **Based on:** TASK-AUD-001 through AUD-005, TASK-DEC-001 (Option A recommended)
 **Architecture:** Evolve current Actor Pool incrementally
 
@@ -10,28 +10,29 @@
 
 | Priority | Count |
 |----------|-------|
-| Critical | 3 |
+| Critical | 2 |
 | High | 5 |
 | Medium | 4 |
 | Low | 3 |
-| **Total** | **15** |
+| **Total** | **14** |
+| ~~Closed~~ | ~~1 (GAP-001)~~ |
 
 ---
 
 ## Critical Priority
 
-### GAP-001: Connection Reuse — Wire `ConnectionReuseStage` into Engine
+### ~~GAP-001: Connection Reuse — Wire `ConnectionReuseStage` into Engine~~ ✅ CLOSED
 
-**Priority:** Critical
-**Complexity:** S
-**Dependencies:** None
+**Priority:** ~~Critical~~ → **Closed**
+**Closed:** 2026-03-17 (verified via code inspection)
 
-`ConnectionReuseStage` exists and has 10 passing stream tests, but is **dead code** — never referenced in `Engine.cs`. Without it, HTTP/1.1 connections are never evaluated for keep-alive vs close, meaning every request potentially creates a new TCP connection.
+`ConnectionReuseStage` is **already wired** in `Engine.BuildConnectionFlowPublic()` (`Engine.cs` lines 249–277):
+- Instantiated at line 250
+- Response path feeds into `connReuse.In` at line 267
+- `CanReuse=false` feedback routed via Buffer → `MergePreferred` back to transport at lines 271–274
+- `connReuse.Out0` is the final response output of the flow at line 277
 
-**What to do:**
-- Wire `ConnectionReuseStage` into `BuildConnectionFlowPublic` after the BidiFlow decode output
-- Feed `ConnectionReuseDecision` back to `HostPoolActor` via a `MarkConnectionNoReuse` message
-- Verify with existing `ConnectionReuseStageTests` + new integration test against `/conn/keep-alive`
+This gap was based on outdated audit findings. No action required.
 
 **Source:** AUD-001, AUD-003
 
@@ -164,7 +165,7 @@ The audit (AUD-005) found that 4 out of 5 "Current Limitations" statements in CL
 
 **What to do:**
 - Rewrite "Current Limitations" to reflect the actual state discovered by the audit
-- Keep accurate limitations: no integration tests, `ConnectionReuseStage` not wired, `PerHostConnectionLimiter` not wired
+- Keep accurate limitations: no integration tests, `PerHostConnectionLimiter` not wired
 - Update as each gap is closed
 
 **Source:** AUD-005
@@ -215,15 +216,14 @@ There are zero references to `ILogger`, `Meter`, `ActivitySource`, or OpenTeleme
 **Complexity:** S
 **Dependencies:** GAP-001 (after `ConnectionReuseStage` is wired, reassess)
 
-Four stages exist as dead code:
-- `ExtractOptionsStage` — role superseded by `RequestEnricherStage`
+Two stages exist as dead code (GAP-001 closed — `ConnectionReuseStage` is live):
 - `GroupByHostKeyStage` — Engine uses built-in `.GroupBy()` DSL
 - `MergeSubstreamsStage` — Engine uses built-in `.MergeSubstreams()` DSL
-- `ConnectionReuseStage` — dead code (becomes live after GAP-001)
+
+`ExtractOptionsStage` is still actively used in `BuildConnectionFlowPublic()` — do NOT delete.
 
 **What to do:**
-- After GAP-001, delete `ExtractOptionsStage`, `GroupByHostKeyStage`, `MergeSubstreamsStage` and their tests
-- Keep `ConnectionReuseStage` (wired after GAP-001)
+- Delete `GroupByHostKeyStage`, `MergeSubstreamsStage` and their tests
 
 **Source:** AUD-001
 
@@ -294,14 +294,15 @@ Four stages exist as dead code:
 ## Dependency Graph
 
 ```
-GAP-001 (ConnectionReuseStage)  ──────────────────────┐
-GAP-002 (Reconnect fix)  → GAP-003 (Stale queue)      ├──→ GAP-004 (Integration tests)
-GAP-005 (Graceful shutdown)                            │         ↓
-GAP-006 (Per-host limits)  ────────────────────────────┘    GAP-007 (TLS E2E)
-GAP-008 (CLAUDE.md update) ← depends on all above          GAP-009 (H2 multiplex E2E)
+✅ GAP-001 (ConnectionReuseStage) — CLOSED
+GAP-002 (Reconnect fix)  → GAP-003 (Stale queue)  ──┐
+GAP-005 (Graceful shutdown)                          ├──→ GAP-004 (Integration tests)
+GAP-006 (Per-host limits)  ──────────────────────────┘         ↓
+GAP-008 (CLAUDE.md update) ← depends on all above        GAP-007 (TLS E2E)
+                                                          GAP-009 (H2 multiplex E2E)
 
 GAP-010 (Observability)     — independent
-GAP-011 (Dead code cleanup) — after GAP-001
+GAP-011 (Dead code cleanup) — independent (GAP-001 already closed)
 GAP-012 (HTTP/3)            — independent, future
 GAP-013 (IHttpClientFactory) — after GAP-005
 GAP-014 (Config validation)  — independent
@@ -314,7 +315,7 @@ GAP-015 (Dead config)        — after GAP-002
 
 | Phase | Gaps | Goal |
 |-------|------|------|
-| **Phase 1: Core Fixes** | GAP-001, GAP-002, GAP-003, GAP-006 | Connection reuse + error tolerance + limits |
+| **Phase 1: Core Fixes** | ~~GAP-001~~, GAP-002, GAP-003, GAP-006 | Error tolerance + limits (GAP-001 already done) |
 | **Phase 2: Client Completeness** | GAP-005, GAP-008 | Disposal + accurate documentation |
 | **Phase 3: Validation** | GAP-004, GAP-007, GAP-009 | Integration tests prove everything works |
 | **Phase 4: Polish** | GAP-010, GAP-011, GAP-014, GAP-015 | Observability, cleanup, validation |
