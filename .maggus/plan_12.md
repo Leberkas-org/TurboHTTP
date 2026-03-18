@@ -146,13 +146,13 @@ Optimize TurboHttp's Akka.Streams pipeline for balanced throughput, latency, and
 **Description:** As a developer, I want to tune the feedback loop buffers in the Engine so that redirect and retry cycles don't cause unnecessary backpressure on the main pipeline.
 
 **Acceptance Criteria:**
-- [ ] Redirect feedback `Buffer(1)` increased to `Buffer(4)` to allow multiple in-flight redirects
-- [ ] Retry feedback `Buffer(1)` increased to `Buffer(4)` to allow multiple in-flight retries
-- [ ] `MergePreferred` priority inlet behavior verified: feedback items always processed before new requests
-- [ ] No deadlock risk introduced (cycle-breaking invariant maintained — analyze carefully)
-- [ ] No existing stage shapes or public APIs changed
-- [ ] Existing stream tests still pass
-- [ ] Unit tests are written and successful
+- [x] Redirect feedback `Buffer(1)` increased to `Buffer(4)` to allow multiple in-flight redirects
+- [x] Retry feedback `Buffer(1)` increased to `Buffer(4)` to allow multiple in-flight retries
+- [x] `MergePreferred` priority inlet behavior verified: feedback items always processed before new requests
+- [x] No deadlock risk introduced (cycle-breaking invariant maintained — analyze carefully)
+- [x] No existing stage shapes or public APIs changed
+- [x] Existing stream tests still pass
+- [x] Unit tests are written and successful
 
 ### TASK-12-009: Benchmark Validation Run
 

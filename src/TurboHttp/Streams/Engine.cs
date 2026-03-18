@@ -130,13 +130,15 @@ public class Engine
             builder.From(cacheHit).To(postProcess.CacheHitIn);
 
             // Feedback loops: cross from post-processing island back to pre-processing island.
-            // Buffer(1) breaks the cycle and decouples backpressure across island boundaries.
+            // Buffer(4) breaks the cycle and allows multiple in-flight redirects/retries
+            // without back-pressuring the main pipeline. MergePreferred ensures feedback
+            // items are always processed before new requests from the source.
             builder.From(postProcess.RetryFeedbackOut)
-                .Via(Flow.Create<HttpRequestMessage>().Buffer(1, OverflowStrategy.Backpressure))
+                .Via(Flow.Create<HttpRequestMessage>().Buffer(4, OverflowStrategy.Backpressure))
                 .To(retryMerge.Preferred);
 
             builder.From(postProcess.RedirectFeedbackOut)
-                .Via(Flow.Create<HttpRequestMessage>().Buffer(1, OverflowStrategy.Backpressure))
+                .Via(Flow.Create<HttpRequestMessage>().Buffer(4, OverflowStrategy.Backpressure))
                 .To(redirectMerge.Preferred);
 
             return new FlowShape<HttpRequestMessage, HttpResponseMessage>(
