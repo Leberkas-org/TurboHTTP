@@ -181,23 +181,27 @@ Network (TCP)
 
 ## Test Organisation
 
+> See [`RFC_COVERAGE.md`](RFC_COVERAGE.md) for the full RFC compliance matrix, gap table, and per-file mapping.
+
 Tests live in `src/TurboHttp.Tests/` organised by RFC:
 
-| Folder | RFC | Coverage |
-|--------|-----|----------|
-| `RFC1945/` (01–17) | HTTP/1.0 | Encoder, Decoder, RoundTrip |
-| `RFC9112/` (01–21 + 3 preserved) | HTTP/1.1 | Encoder, Decoder, RoundTrip |
-| `RFC9113/` (01–20 + preserved) | HTTP/2 | Decoder, RoundTrip, Encoder |
-| `RFC7541/` (01–06 + HpackTests) | HPACK | Static table, encoding, dynamic table |
-| `RFC9110/` (01–03) | Content encoding | gzip, deflate/brotli, integration |
-| `RFC9111/` (01–05) | Caching | CacheControlParser, CacheFreshnessEvaluator, ConditionalRequest, CacheStore, Integration |
-| `Integration/` | Cross-layer | CookieJar, RedirectHandler, RetryEvaluator, ConnectionReuse, TcpFragmentation |
+| Folder | RFC | Files | Tests |
+|--------|-----|-------|-------|
+| `RFC1945/` (01–17) | HTTP/1.0 | 17 | 232 |
+| `RFC9112/` (01–23 + 3 preserved) | HTTP/1.1 | 26 | 379 |
+| `RFC9113/` (01–29 + Http2FrameTests) | HTTP/2 | 28 | 580 |
+| `RFC7541/` (01–06 + HpackTests) | HPACK | 6 | 384 |
+| `RFC9110/` (01–03) | HTTP Semantics | 3 | 118 |
+| `RFC9111/` (01–05) | Caching | 5 | 75 |
+| `RFC6265/` (01) | Cookies | 1 | 59 |
 
 Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and stage behaviour. Organised by protocol version:
 - `Http10/` — encoder/decoder/roundtrip stage tests + TCP fragmentation
 - `Http11/` — encoder/decoder/chunked/correlation/pipeline/connection management stage tests
-- `Http20/` — encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control stage tests
-- `Streams/` — `RequestEnricherStage`, `ExtractOptionsStage`, `EngineVersionRoutingTests`
+- `Http20/` — encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control/correlation stage tests
+- `Streams/` — `RequestEnricherStage`, `ExtractOptionsStage`, Decompression, Cache, Cookie, Redirect, Retry, ConnectionReuse, Engine routing
+- `IO/` — ConnectionActor, HostPoolActor, ConnectionState, ConnectionHandle
+- `Stages/` — Encoder/decoder buffer lifecycle
 - Base classes: `StreamTestBase` (extends `TestKit`, creates `IMaterializer`), `EngineTestBase` (full engine round-trip helper)
 
 Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures (`KestrelFixture`, `KestrelH2Fixture`, `KestrelTlsFixture`) with 60+ routes registered. No end-to-end test classes yet — fixtures are infrastructure-only, ready for future integration tests.

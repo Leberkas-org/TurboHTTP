@@ -229,14 +229,14 @@ Both are currently covered only indirectly through pipeline tests.
 **Description:** As a developer, I want a single `RFC_COVERAGE.md` that replaces both `RFC_COMPLIANCE.md` and `RFC_TEST_MATRIX.md` with accurate, post-Plan-11 data.
 
 **Acceptance Criteria:**
-- [ ] New file `RFC_COVERAGE.md` created in the repository root
-- [ ] Contains: compliance summary table (per RFC: sections covered, coverage %, unit / stream / integration test counts — updated to post-Plan-11 numbers)
-- [ ] Contains: compact gap table listing only gaps that remain open after Plan 11
-- [ ] Contains: test structure convention description (`NN_<ThemaTests>.cs`, `DisplayName` format, exceptions list)
-- [ ] Contains: folder → RFC section → test file mapping
-- [ ] `RFC_COMPLIANCE.md` deleted
-- [ ] `RFC_TEST_MATRIX.md` deleted
-- [ ] `CLAUDE.md` "Test Organisation" section references `RFC_COVERAGE.md` instead of the old files
+- [x] New file `RFC_COVERAGE.md` created in the repository root
+- [x] Contains: compliance summary table (per RFC: sections covered, coverage %, unit / stream / integration test counts — updated to post-Plan-11 numbers)
+- [x] Contains: compact gap table listing only gaps that remain open after Plan 11
+- [x] Contains: test structure convention description (`NN_<ThemaTests>.cs`, `DisplayName` format, exceptions list)
+- [x] Contains: folder → RFC section → test file mapping
+- [x] `RFC_COMPLIANCE.md` deleted
+- [x] `RFC_TEST_MATRIX.md` deleted
+- [x] `CLAUDE.md` "Test Organisation" section references `RFC_COVERAGE.md` instead of the old files
 
 ---
 
