@@ -171,15 +171,15 @@ After all moves and deletions the `Integration/` folder will be **empty and remo
 **Context:** RFC 9113 §6.1 (DATA): when `PADDED` is set, the frame contains a Pad Length byte followed by padding that must be stripped. RFC 9113 §6.2 (HEADERS): same padding pattern, plus optional priority data when `PRIORITY` is also set.
 
 **Acceptance Criteria:**
-- [ ] New tests added to `RFC9113/10_DecoderBasicFrameTests.cs`, or in a new file `16_DecoderPaddingTests.cs` if the existing file is too large
-- [ ] Test: `DATA` frame with `PADDED` flag → padding stripped, payload correct
-- [ ] Test: `DATA` frame with maximum pad length (254 bytes of padding)
-- [ ] Test: `DATA` frame where Pad-Length > Frame-Length → `PROTOCOL_ERROR`
-- [ ] Test: `HEADERS` frame with `PADDED` flag → padding stripped, header block correct
-- [ ] Test: `HEADERS` frame with `PRIORITY` flag → priority fields skipped, headers correct
-- [ ] Test: `HEADERS` frame with `PADDED` + `PRIORITY` combined
-- [ ] All tests use RFC tags (`"RFC9113-6.1-PAD-001"`, `"RFC9113-6.2-PAD-001"`, etc.)
-- [ ] Build: 0 errors
+- [x] New tests added to `RFC9113/10_DecoderBasicFrameTests.cs`, or in a new file `16_DecoderPaddingTests.cs` if the existing file is too large
+- [x] Test: `DATA` frame with `PADDED` flag → padding stripped, payload correct
+- [x] Test: `DATA` frame with maximum pad length (254 bytes of padding)
+- [x] Test: `DATA` frame where Pad-Length > Frame-Length → `PROTOCOL_ERROR`
+- [x] Test: `HEADERS` frame with `PADDED` flag → padding stripped, header block correct
+- [x] Test: `HEADERS` frame with `PRIORITY` flag → priority fields skipped, headers correct
+- [x] Test: `HEADERS` frame with `PADDED` + `PRIORITY` combined
+- [x] All tests use RFC tags (`"RFC9113-6.1-PAD-001"`, `"RFC9113-6.2-PAD-001"`, etc.)
+- [x] Build: 0 errors
 
 ---
 

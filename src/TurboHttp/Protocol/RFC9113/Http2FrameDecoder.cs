@@ -59,10 +59,7 @@ public sealed class Http2FrameDecoder
     {
         return type switch
         {
-            FrameType.Data => new DataFrame(
-                streamId,
-                payload.ToArray(),
-                (flags & (byte)DataFlags.EndStream) != 0),
+            FrameType.Data => ParseDataFrame(flags, streamId, payload),
 
             FrameType.Headers => ParseHeadersFrame(flags, streamId, payload),
 
@@ -99,6 +96,32 @@ public sealed class Http2FrameDecoder
         };
     }
 
+    private static DataFrame ParseDataFrame(byte flags, int streamId, ReadOnlyMemory<byte> payload)
+    {
+        var endStream = (flags & (byte)DataFlags.EndStream) != 0;
+        var data = payload;
+
+        if ((flags & (byte)DataFlags.Padded) != 0)
+        {
+            if (data.IsEmpty)
+            {
+                throw new Http2Exception("DATA PADDED frame: payload is empty",
+                    Http2ErrorCode.ProtocolError);
+            }
+
+            var padLen = data.Span[0];
+            if (1 + padLen > data.Length)
+            {
+                throw new Http2Exception("DATA PADDED frame: pad_length exceeds payload size",
+                    Http2ErrorCode.ProtocolError);
+            }
+
+            data = data.Slice(1, data.Length - 1 - padLen);
+        }
+
+        return new DataFrame(streamId, data.ToArray(), endStream);
+    }
+
     private static HeadersFrame ParseHeadersFrame(byte flags, int streamId, ReadOnlyMemory<byte> payload)
     {
         var endStream = (flags & (byte)Headers.EndStream) != 0;
@@ -109,13 +132,15 @@ public sealed class Http2FrameDecoder
         {
             if (data.IsEmpty)
             {
-                throw new Http2Exception("HEADERS PADDED frame: payload is empty");
+                throw new Http2Exception("HEADERS PADDED frame: payload is empty",
+                    Http2ErrorCode.ProtocolError);
             }
 
             var padLen = data.Span[0];
             if (1 + padLen > data.Length)
             {
-                throw new Http2Exception("HEADERS PADDED frame: pad_length exceeds payload size");
+                throw new Http2Exception("HEADERS PADDED frame: pad_length exceeds payload size",
+                    Http2ErrorCode.ProtocolError);
             }
 
             data = data.Slice(1, data.Length - 1 - padLen);
