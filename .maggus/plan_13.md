@@ -43,11 +43,11 @@ instead of raw `(IMemoryOwner<byte>, int)` tuples. The stream-test infrastructur
 contains active infrastructure.
 
 **Acceptance Criteria:**
-- [ ] `H2FakeConnectionStage` class (lines 101–161 in current file) is deleted.
-- [ ] `SendH2Async` method is deleted.
-- [ ] `SendH2ManyAsync` method is deleted.
-- [ ] No compilation errors remain after deletion (confirm with `csharp-lsp`).
-- [ ] `dotnet build` produces 0 errors.
+- [x] `H2FakeConnectionStage` class (lines 101–161 in current file) is deleted.
+- [x] `SendH2Async` method is deleted.
+- [x] `SendH2ManyAsync` method is deleted.
+- [x] No compilation errors remain after deletion (confirm with `csharp-lsp`).
+- [x] `dotnet build` produces 0 errors.
 
 ---
 
