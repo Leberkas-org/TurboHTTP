@@ -420,3 +420,26 @@ Production mode: `GroupBy(HostKey.FromRequest, maxSubstreams)` → per-host subs
 6. Update CLAUDE.md "Current Limitations" section (S)
 
 ### Full analysis in `.maggus/ARCHITECTURE_DECISION.md`
+
+## RFC Test Reorganisation (plan_6)
+
+### Status (as of TASK-RFC-004)
+- `Integration/RedirectHandlerTests.cs` → `RFC9110/01_RedirectHandlerTests.cs` ✅
+- `Integration/RetryEvaluatorTests.cs` → `RFC9110/02_RetryEvaluatorTests.cs` ✅
+- `Integration/ConnectionReuseEvaluatorTests.cs` → `RFC9112/22_ConnectionReuseTests.cs` ✅
+- `Integration/PerHostConnectionLimiterTests.cs` → `RFC9112/23_PerHostLimiterTests.cs` ✅
+- `Integration/CookieJarTests.cs` → `RFC6265/01_CookieJarTests.cs` ✅
+- `Integration/CrossFeatureIntegrityTests.cs` → DELETED ✅
+- `Integration/HttpDecodeErrorMessagesTests.cs` → DELETED ✅
+- `Integration/Phase60ValidationGateTests.cs` → DELETED ✅
+- `Integration/TurboClientOptionsTests.cs` → DELETED ✅
+- **`src/TurboHttp.Tests/Integration/` folder DOES NOT EXIST** ✅
+- Namespace for RFC9110 pair: `TurboHttp.Tests.RFC9110`
+- Namespace for RFC9112 pair: `TurboHttp.Tests.RFC9112`
+- Namespace for RFC6265: `TurboHttp.Tests.RFC6265`
+- New folder `src/TurboHttp.Tests/RFC6265/` contains 59 cookie tests (CM-001..CM-042)
+
+### RFC9110 Test Coverage
+- `01_RedirectHandlerTests.cs` — RFC 9110 §15.4 redirects (51 tests, RH-001..051)
+- `02_RetryEvaluatorTests.cs` — RFC 9110 §9.2 retries (40 tests, RE-001..040)
+- `03_ContentEncodingIntegrationTests.cs` — stacked encodings (27 tests)

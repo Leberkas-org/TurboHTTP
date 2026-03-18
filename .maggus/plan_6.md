@@ -109,11 +109,11 @@ After all moves and deletions the `Integration/` folder will be **empty and remo
 | `Integration/TurboClientOptionsTests.cs` | Tests client configuration classes; no RFC governs `TurboClientOptions` |
 
 **Acceptance Criteria:**
-- [ ] All 4 files deleted
-- [ ] `src/TurboHttp.Tests/Integration/` folder no longer exists
-- [ ] No other test file references these deleted types or helper methods
-- [ ] `dotnet test ./src/TurboHttp.sln` → 0 failures (deletions remove no essential coverage)
-- [ ] Build: 0 errors
+- [x] All 4 files deleted
+- [x] `src/TurboHttp.Tests/Integration/` folder no longer exists
+- [x] No other test file references these deleted types or helper methods
+- [x] `dotnet test ./src/TurboHttp.sln` → 0 failures (deletions remove no essential coverage)
+- [x] Build: 0 errors
 
 ---
 

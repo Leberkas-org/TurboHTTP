@@ -712,7 +712,7 @@ public sealed class Http2EncoderSensitiveHeaderTests
     private static string ReadHpackStringRaw(ReadOnlySpan<byte> data, ref int pos)
     {
         var len = ReadHpackInt(data, ref pos, 7); // H-bit is 7th bit; value = lower 7 bits
-        var str = Encoding.UTF8.GetString(data.Slice(pos, len));
+        var str = System.Text.Encoding.UTF8.GetString(data.Slice(pos, len));
         pos += len;
         return str;
     }
