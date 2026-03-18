@@ -1,13 +1,13 @@
 using System.Net;
 using TurboHttp.Protocol.RFC9112;
 
-namespace TurboHttp.Tests.Integration;
+namespace TurboHttp.Tests.RFC9112;
 
 /// <summary>
 /// Tests for <see cref="ConnectionReuseEvaluator"/>.
 /// RFC 9112 §9 — Persistent Connections.
 /// </summary>
-public sealed class ConnectionReuseEvaluatorTests
+public sealed class ConnectionReuseTests
 {
     // ── HTTP/1.0 — default is close ──────────────────────────────────────────────
 

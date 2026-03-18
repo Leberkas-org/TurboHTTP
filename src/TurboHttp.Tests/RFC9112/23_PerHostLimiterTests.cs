@@ -1,12 +1,12 @@
 using TurboHttp.Protocol.RFC9112;
 
-namespace TurboHttp.Tests.Integration;
+namespace TurboHttp.Tests.RFC9112;
 
 /// <summary>
 /// Tests for <see cref="PerHostConnectionLimiter"/>.
 /// RFC 9112 §9.4 — per-host connection limiting for HTTP/1.x.
 /// </summary>
-public sealed class PerHostConnectionLimiterTests
+public sealed class PerHostLimiterTests
 {
     // ── Construction ─────────────────────────────────────────────────────────────
 

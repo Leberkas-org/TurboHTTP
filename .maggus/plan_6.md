@@ -70,13 +70,13 @@ After all moves and deletions the `Integration/` folder will be **empty and remo
 **Description:** As a developer, I want `ConnectionReuseEvaluatorTests.cs` and `PerHostConnectionLimiterTests.cs` moved from `Integration/` to `RFC9112/`, so that RFC 9112 §9 (Connection Management) is fully contained in its RFC folder.
 
 **Acceptance Criteria:**
-- [ ] `Integration/ConnectionReuseEvaluatorTests.cs` → `RFC9112/22_ConnectionReuseTests.cs`
-- [ ] `Integration/PerHostConnectionLimiterTests.cs` → `RFC9112/23_PerHostLimiterTests.cs`
-- [ ] Namespace of both files: `namespace TurboHttp.Tests.RFC9112;`
-- [ ] All existing `DisplayName` values preserved
-- [ ] Source files in `Integration/` deleted
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9112"` returns all connection management tests
-- [ ] Build: 0 errors
+- [x] `Integration/ConnectionReuseEvaluatorTests.cs` → `RFC9112/22_ConnectionReuseTests.cs`
+- [x] `Integration/PerHostConnectionLimiterTests.cs` → `RFC9112/23_PerHostLimiterTests.cs`
+- [x] Namespace of both files: `namespace TurboHttp.Tests.RFC9112;`
+- [x] All existing `DisplayName` values preserved
+- [x] Source files in `Integration/` deleted
+- [x] `dotnet test --filter "FullyQualifiedName~RFC9112"` returns all connection management tests
+- [x] Build: 0 errors
 
 ---
 
