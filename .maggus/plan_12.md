@@ -118,15 +118,15 @@ Optimize TurboHttp's Akka.Streams pipeline for balanced throughput, latency, and
 **Description:** As a developer, I want to batch multiple small HTTP/2 frames into a single write operation using Akka.NET's `Flow.BatchWeighted` so that TCP write syscalls are reduced under high multiplexing load.
 
 **Acceptance Criteria:**
-- [ ] A `Flow.BatchWeighted` operator is inserted in `Http20Engine` between `Http20EncoderStage` output and the `FlowSelect` DataItem wrapper
-- [ ] Weight function uses the `int` (byte length) from the `(IMemoryOwner<byte>, int)` tuple
-- [ ] Max weight: 64 KB (approximately one TCP segment); seed creates initial buffer; aggregate concatenates
-- [ ] Falls through immediately if only one frame available (no artificial delay — this is built-in BatchWeighted behavior)
-- [ ] Batched frames are concatenated into a single `IMemoryOwner<byte>` buffer before emitting downstream
-- [ ] No existing stage shapes or public APIs changed
-- [ ] Existing HTTP/2 stream tests still pass
-- [ ] Unit tests for batch consolidation logic
-- [ ] Unit tests are written and successful
+- [x] A `Flow.BatchWeighted` operator is inserted in `Http20Engine` between `Http20EncoderStage` output and the `FlowSelect` DataItem wrapper
+- [x] Weight function uses the `int` (byte length) from the `(IMemoryOwner<byte>, int)` tuple
+- [x] Max weight: 64 KB (approximately one TCP segment); seed creates initial buffer; aggregate concatenates
+- [x] Falls through immediately if only one frame available (no artificial delay — this is built-in BatchWeighted behavior)
+- [x] Batched frames are concatenated into a single `IMemoryOwner<byte>` buffer before emitting downstream
+- [x] No existing stage shapes or public APIs changed
+- [x] Existing HTTP/2 stream tests still pass
+- [x] Unit tests for batch consolidation logic
+- [x] Unit tests are written and successful
 
 ### TASK-12-007: Batch Encoding for HTTP/1.1 Pipelined Requests
 

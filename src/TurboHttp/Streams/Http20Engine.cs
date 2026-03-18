@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net.Http;
 using Akka;
 using Akka.Streams;
@@ -10,6 +11,8 @@ namespace TurboHttp.Streams;
 
 public class Http20Engine : IHttpProtocolEngine
 {
+    internal const long MaxBatchWeight = 65_536;
+
     private readonly int _initialWindowSize;
 
     public Http20Engine() : this(65535)
@@ -45,7 +48,15 @@ public class Http20Engine : IHttpProtocolEngine
 
             var signalCast = b.Add(Flow.Create<IControlItem>().Select(IOutputItem (x) => x));
 
-            b.From(frameEncoder.Outlet).To(signalMerge.In(0));
+            var batchFlow = b.Add(
+                Flow.Create<IOutputItem>()
+                    .BatchWeighted(
+                        MaxBatchWeight,
+                        item => item is DataItem d ? d.Length : 0L,
+                        item => item,
+                        BatchConsolidate));
+
+            b.From(frameEncoder.Outlet).Via(batchFlow).To(signalMerge.In(0));
             b.From(signalMerge.Out).To(prependPreface.Inlet);
             b.From(connection.OutletSignal).Via(signalCast).To(signalMerge.Preferred);
 
@@ -59,5 +70,21 @@ public class Http20Engine : IHttpProtocolEngine
                 frameDecoder.Inlet,
                 streamDecoder.Outlet);
         }));
+    }
+
+    internal static IOutputItem BatchConsolidate(IOutputItem accumulated, IOutputItem next)
+    {
+        if (accumulated is DataItem accData && next is DataItem nextData)
+        {
+            var totalLength = accData.Length + nextData.Length;
+            var owner = MemoryPool<byte>.Shared.Rent(totalLength);
+            accData.Memory.Memory[..accData.Length].CopyTo(owner.Memory);
+            nextData.Memory.Memory[..nextData.Length].CopyTo(owner.Memory.Slice(accData.Length));
+            accData.Memory.Dispose();
+            nextData.Memory.Dispose();
+            return new DataItem(owner, totalLength) { Key = accData.Key };
+        }
+
+        return next;
     }
 }
