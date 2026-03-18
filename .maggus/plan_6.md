@@ -214,13 +214,13 @@ Both are currently covered only indirectly through pipeline tests.
 **Description:** As a developer, I want a dedicated stream-test file for `StreamIdAllocatorStage`, so that odd-ID allocation (RFC 9113 §5.1.1) is verifiable in isolation.
 
 **Acceptance Criteria:**
-- [ ] New file: `src/TurboHttp.StreamTests/Http20/StreamIdAllocatorStageTests.cs`
-- [ ] Test: first allocated ID = 1
-- [ ] Test: IDs are odd and strictly ascending (1, 3, 5, 7, …)
-- [ ] Test: after N requests, next stream ID = 2N+1
-- [ ] Test: overflow behaviour when max stream ID (2^31−1) is reached
-- [ ] Minimum 4 tests, class extends `StreamTestBase`
-- [ ] Build: 0 errors
+- [x] New file: `src/TurboHttp.StreamTests/Http20/StreamIdAllocatorStageTests.cs`
+- [x] Test: first allocated ID = 1
+- [x] Test: IDs are odd and strictly ascending (1, 3, 5, 7, …)
+- [x] Test: after N requests, next stream ID = 2N+1
+- [x] Test: overflow behaviour when max stream ID (2^31−1) is reached
+- [x] Minimum 4 tests, class extends `StreamTestBase`
+- [x] Build: 0 errors
 
 ---
 

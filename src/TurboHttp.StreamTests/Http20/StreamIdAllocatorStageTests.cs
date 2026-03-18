@@ -67,6 +67,41 @@ public sealed class StreamIdAllocatorStageTests : StreamTestBase
         }
     }
 
+    [Theory(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-SID-007: After N requests, next stream ID = 2N+1")]
+    [InlineData(1)]
+    [InlineData(5)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task SID_007_After_N_Requests_Next_Id_Is_2N_Plus_1(int n)
+    {
+        var requests = Enumerable.Range(0, n).Select(i => MakeRequest($"/{i}")).ToArray();
+
+        var results = await RunAsync(requests);
+
+        Assert.Equal(n, results.Count);
+        for (var i = 0; i < n; i++)
+        {
+            Assert.Equal(2 * i + 1, results[i].StreamId);
+        }
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-SID-008: Overflow when max stream ID (2^31-1) is reached")]
+    public async Task SID_008_Overflow_At_Max_Stream_Id()
+    {
+        // Start at int.MaxValue (2^31-1 = 2147483647), which is the last valid odd stream ID.
+        // The stage should emit this ID, then the next allocation wraps to a negative value.
+        var stage = new StreamIdAllocatorStage(startStreamId: int.MaxValue);
+
+        var results = await Source.From(new[] { MakeRequest("/last"), MakeRequest("/overflow") })
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.Seq<(HttpRequestMessage, int)>(), Materializer);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(int.MaxValue, results[0].Item2);
+        // After int.MaxValue, unchecked int overflow wraps to int.MinValue + 1
+        Assert.Equal(unchecked(int.MaxValue + 2), results[1].Item2);
+    }
+
     [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-SID-005: Request object passed through unchanged (reference equality)")]
     public async Task SID_005_Request_Object_Reference_Equality()
     {

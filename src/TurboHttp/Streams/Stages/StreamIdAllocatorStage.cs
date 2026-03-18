@@ -8,11 +8,13 @@ public sealed class StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequestMes
 {
     private readonly Inlet<HttpRequestMessage> _in = new("allocator.in");
     private readonly Outlet<(HttpRequestMessage, int)> _out = new("allocator.out");
+    private readonly int _startStreamId;
 
     public override FlowShape<HttpRequestMessage, (HttpRequestMessage, int)> Shape { get; }
 
-    public StreamIdAllocatorStage()
+    public StreamIdAllocatorStage(int startStreamId = 1)
     {
+        _startStreamId = startStreamId;
         Shape = new FlowShape<HttpRequestMessage, (HttpRequestMessage, int)>(_in, _out);
     }
 
@@ -21,10 +23,11 @@ public sealed class StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequestMes
 
     private sealed class Logic : GraphStageLogic
     {
-        private int _nextStreamId = 1;
+        private int _nextStreamId;
 
         public Logic(StreamIdAllocatorStage stage) : base(stage.Shape)
         {
+            _nextStreamId = stage._startStreamId;
             SetHandler(stage._in,
                 onPush: () =>
                 {
