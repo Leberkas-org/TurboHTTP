@@ -74,8 +74,8 @@ Create a set of architecture diagrams for TurboHttp that serve two purposes: (1)
 **Description:** As an external user or reviewer, I want a stream graph of the per-connection flow (`BuildConnectionFlowPublic`) so that I can understand how TCP connections are managed within each substream.
 
 **Acceptance Criteria:**
-- [ ] Mermaid file created at `docs/connection-flow-graph.md`
-- [ ] Shows the full graph from `Engine.BuildConnectionFlowPublic`:
+- [x] Mermaid file created at `docs/connection-flow-graph.md`
+- [x] Shows the full graph from `Engine.BuildConnectionFlowPublic`:
   - ExtractOptionsStage (fan-out: request stream Out0 -> BidiFlow inlet, ConnectItem Out1 -> Concat)
   - BidiFlow (protocol engine) with two inlets and two outlets
   - Concat(2): ConnectItem (In0) + BidiFlow transport output (In1)
@@ -83,8 +83,8 @@ Create a set of architecture diagrams for TurboHttp that serve two purposes: (1)
   - ConnectionStage -> BidiFlow decode inlet
   - ConnectionReuseStage (fan-out: response Out0, ConnectionReuseItem Out1)
   - Feedback loop: ConnectionReuseItem -> Select -> Buffer(1) -> MergePreferred.Preferred
-- [ ] ConnectionStage shown as the bridge to TCP (external boundary)
-- [ ] Diagram renders correctly in GitHub Markdown preview
+- [x] ConnectionStage shown as the bridge to TCP (external boundary)
+- [x] Diagram renders correctly in GitHub Markdown preview
 
 ### TASK-7-005: I/O Actor Hierarchy Diagram
 
