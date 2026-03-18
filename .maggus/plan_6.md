@@ -194,18 +194,18 @@ After all moves and deletions the `Integration/` folder will be **empty and remo
 Both are currently covered only indirectly through pipeline tests.
 
 **Acceptance Criteria:**
-- [ ] New file: `src/TurboHttp.StreamTests/Http11/CorrelationHttp1XStageTests.cs`
-  - [ ] Test: single request-response correlation
-  - [ ] Test: multiple pipelined requests arrive and are matched in FIFO order
-  - [ ] Test: response arriving before any request is registered is handled gracefully
-  - [ ] Minimum 5 tests
-- [ ] New file: `src/TurboHttp.StreamTests/Http20/CorrelationHttp20StageTests.cs`
-  - [ ] Test: single stream-ID correlation
-  - [ ] Test: multiple concurrent streams correlated by stream ID
-  - [ ] Test: unknown stream-ID response does not crash the stage
-  - [ ] Minimum 5 tests
-- [ ] Both files extend `StreamTestBase`
-- [ ] Build: 0 errors, `dotnet test` green
+- [x] New file: `src/TurboHttp.StreamTests/Http11/CorrelationHttp1XStageTests.cs` (existing as `Http1XCorrelationStageTests.cs` — 9 tests)
+  - [x] Test: single request-response correlation (COR1X-001)
+  - [x] Test: multiple pipelined requests arrive and are matched in FIFO order (COR1X-002)
+  - [x] Test: response arriving before any request is registered is handled gracefully (COR1X-004)
+  - [x] Minimum 5 tests (9 tests)
+- [x] New file: `src/TurboHttp.StreamTests/Http20/CorrelationHttp20StageTests.cs` (existing — 7 tests)
+  - [x] Test: single stream-ID correlation (COR20-001)
+  - [x] Test: multiple concurrent streams correlated by stream ID (COR20-002, COR20-005)
+  - [x] Test: unknown stream-ID response does not crash the stage (COR20-003)
+  - [x] Minimum 5 tests (7 tests)
+- [x] Both files extend `StreamTestBase`
+- [x] Build: 0 errors, `dotnet test` green (21/21 correlation tests pass)
 
 ---
 
