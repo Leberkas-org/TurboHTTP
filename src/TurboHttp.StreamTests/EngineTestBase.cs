@@ -119,8 +119,12 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
 
     private sealed class Logic : GraphStageLogic
     {
+        private static ReadOnlySpan<byte> H2Preface => "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8;
+
         private readonly H2EngineFakeConnectionStage _stage;
         private int _serverFrameIndex;
+        private int _unlockedFrames;
+        private bool _downstreamWaiting;
 
         public Logic(H2EngineFakeConnectionStage stage) : base(stage.Shape)
         {
@@ -130,12 +134,31 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is DataItem(var owner, var length))
+                    if (item is ConnectItem)
                     {
-                        var copy = new byte[length];
-                        owner.Memory.Span[..length].CopyTo(copy);
-                        stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), length));
+                        Unlock();
+                    }
+                    else if (item is DataItem(var owner, var length))
+                    {
+                        var span = owner.Memory.Span[..length];
+                        if (length >= 24 && span[..24].SequenceEqual(H2Preface))
+                        {
+                            var remainder = span[24..];
+                            if (remainder.Length > 0)
+                            {
+                                var copy = remainder.ToArray();
+                                stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), copy.Length));
+                            }
+                        }
+                        else
+                        {
+                            var copy = new byte[length];
+                            span.CopyTo(copy);
+                            stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), length));
+                        }
+
                         owner.Dispose();
+                        Unlock();
                     }
 
                     Pull(stage.In);
@@ -146,14 +169,37 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
             SetHandler(stage.Out,
                 onPull: () =>
                 {
-                    if (_serverFrameIndex < _stage._serverFrames.Count)
+                    if (_unlockedFrames > 0 && _serverFrameIndex < _stage._serverFrames.Count)
                     {
-                        var frameBytes = _stage._serverFrames[_serverFrameIndex++];
-                        IMemoryOwner<byte> frameOwner = new SimpleMemoryOwner(frameBytes);
-                        Push(stage.Out, new DataItem(frameOwner, frameBytes.Length) { Key = RequestEndpoint.Default });
+                        _unlockedFrames--;
+                        PushNextFrame();
+                    }
+                    else
+                    {
+                        _downstreamWaiting = true;
                     }
                 },
                 onDownstreamFinish: _ => CompleteStage());
+        }
+
+        private void Unlock()
+        {
+            if (_downstreamWaiting && _serverFrameIndex < _stage._serverFrames.Count)
+            {
+                _downstreamWaiting = false;
+                PushNextFrame();
+            }
+            else
+            {
+                _unlockedFrames++;
+            }
+        }
+
+        private void PushNextFrame()
+        {
+            var frameBytes = _stage._serverFrames[_serverFrameIndex++];
+            IMemoryOwner<byte> frameOwner = new SimpleMemoryOwner(frameBytes);
+            Push(_stage.Out, new DataItem(frameOwner, frameBytes.Length) { Key = RequestEndpoint.Default });
         }
 
         public override void PreStart() => Pull(_stage.In);

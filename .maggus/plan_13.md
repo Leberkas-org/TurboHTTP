@@ -88,13 +88,13 @@ when the response eventually arrives and `tcs.SetResult` is called, all correspo
 bytes are already in `OutboundChannel`.
 
 **Acceptance Criteria:**
-- [ ] `H2EngineFakeConnectionStage.onPush(In)` handles `ConnectItem`, preface-magic `DataItem`,
+- [x] `H2EngineFakeConnectionStage.onPush(In)` handles `ConnectItem`, preface-magic `DataItem`,
   and ordinary `DataItem` as described above.
-- [ ] `H2EngineFakeConnectionStage.onPull(Out)` only pushes a server frame when `_unlockedFrames > 0`.
-- [ ] `H2EngineFakeConnectionStage` constructor signature is unchanged (`params byte[][] serverFrames`).
-- [ ] `SendH2EngineAsync` and `SendH2EngineAsyncMany` require **no** additional delays or retries
+- [x] `H2EngineFakeConnectionStage.onPull(Out)` only pushes a server frame when `_unlockedFrames > 0`.
+- [x] `H2EngineFakeConnectionStage` constructor signature is unchanged (`params byte[][] serverFrames`).
+- [x] `SendH2EngineAsync` and `SendH2EngineAsyncMany` require **no** additional delays or retries
   to read complete outbound frames.
-- [ ] `dotnet build` produces 0 errors.
+- [x] `dotnet build` produces 0 errors.
 
 ---
 
