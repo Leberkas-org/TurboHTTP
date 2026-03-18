@@ -54,19 +54,20 @@ Create a set of architecture diagrams for TurboHttp that serve two purposes: (1)
 **Description:** As an external user or reviewer, I want separate stream graph diagrams for each protocol engine so that I can understand the internal structure of HTTP/1.0, HTTP/1.1, and HTTP/2 processing.
 
 **Acceptance Criteria:**
-- [ ] Mermaid file created at `docs/protocol-engine-graphs.md` containing three sub-diagrams
-- [ ] **HTTP/1.0 Engine** graph shows:
-  - Broadcast(2) -> Http10EncoderStage -> FlowSelect (DataItem wrapper) -> IOutputItem out
-  - IInputItem in -> FlowSelect (unwrap) -> Http10DecoderStage -> Http1XCorrelationStage -> HttpResponseMessage
+- [x] Mermaid file created at `docs/protocol-engine-graphs.md` containing three sub-diagrams
+- [x] **HTTP/1.0 Engine** graph shows:
+  - Broadcast(2) -> Http10EncoderStage -> IOutputItem out
+  - IInputItem in -> Http10DecoderStage -> Http1XCorrelationStage -> HttpResponseMessage
   - Correlation stage with two inlets (request from Broadcast, response from decoder)
-- [ ] **HTTP/1.1 Engine** graph shows same structure as HTTP/1.0 but with Http7Encoder/DecoderStage
-- [ ] **HTTP/2 Engine** graph shows:
-  - StreamIdAllocatorStage -> Request2FrameStage -> Http20ConnectionStage (inlet 2) -> Http20EncoderStage -> FlowSelect -> IOutputItem
-  - IInputItem -> FlowSelect -> Http20DecoderStage -> Http20ConnectionStage (inlet 1) -> Http20StreamStage -> HttpResponseMessage
-  - Bidirectional flow control arrows on Http20ConnectionStage
-- [ ] All graphs show the GroupByHostKey / MergeSubstreams wrapping
-- [ ] Each stage labeled with class name
-- [ ] Diagrams render correctly in GitHub Markdown preview
+  - Signal outlet -> Sink.Ignore (matches actual code — no FlowSelect wrappers in Http10Engine)
+- [x] **HTTP/1.1 Engine** graph shows same structure as HTTP/1.0 but with Http11Encoder/DecoderStage and MergePreferred for signal feedback
+- [x] **HTTP/2 Engine** graph shows:
+  - StreamIdAllocatorStage -> Request2FrameStage -> Http20ConnectionStage (AppIn) -> Http20EncoderStage -> MergePreferred -> IOutputItem
+  - IInputItem -> Http20DecoderStage -> Http20ConnectionStage (ServerIn) -> Http20StreamStage -> HttpResponseMessage
+  - Bidirectional flow control via Http20ConnectionStage with 5 ports (AppIn, ServerOut, ServerIn, AppOut, OutletSignal)
+- [x] All graphs show the GroupByHostKey / MergeSubstreams wrapping
+- [x] Each stage labeled with class name
+- [x] Diagrams render correctly in GitHub Markdown preview
 
 ### TASK-7-004: Connection Flow Sub-Graph
 
