@@ -1,0 +1,47 @@
+// TurboHttp — Architecture Views
+// Top-level and layer-scoped static views.
+
+views {
+  view index {
+    title 'TurboHttp — System Overview'
+    description 'Top-level view: the application, TurboHttp system, and TCP network'
+    include *
+    style turbohttp { color green }
+    style tcp { color muted }
+    style user { color primary }
+  }
+
+  view of turbohttp {
+    title 'TurboHttp — Container View'
+    description 'Four architectural layers: Client, Streams, Protocol, I/O'
+    include user
+    include turbohttp
+    include turbohttp.*
+    include tcp
+  }
+
+  view clientLayer of turbohttp.client {
+    title 'TurboHttp — Client Layer'
+    description 'Public API, stream materialisation, and configuration'
+    include user
+    include turbohttp.client.*
+    include turbohttp.streams.Engine
+    include turbohttp.streams.RequestEnricherStage
+  }
+
+  view streamsLayer of turbohttp.streams {
+    title 'TurboHttp — Streams Layer'
+    description 'All Akka.Streams GraphStages: request enrichment, protocol engines, response pipeline'
+    include turbohttp.client.ITurboHttpClient
+    include turbohttp.streams.*
+    include turbohttp.io.PoolRouterActor
+  }
+
+  view ioLayer of turbohttp.io {
+    title 'TurboHttp — IO Layer'
+    description 'Actor lifecycle hierarchy and zero-copy channel data path'
+    include turbohttp.streams.ConnectionStage
+    include turbohttp.io.*
+    include tcp
+  }
+}

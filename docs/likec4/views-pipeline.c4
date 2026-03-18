@@ -1,0 +1,58 @@
+// TurboHttp — Pipeline Flow View
+// Full request/response pipeline with feedback loops.
+
+views {
+  view pipelineFlow {
+    title 'TurboHttp — Full Pipeline Flow'
+    description 'Request chain, response chain, and feedback loops. Green = forward flow. Red dashed = feedback (retry, redirect, cache-hit bypass).'
+
+    // Entry / exit
+    include user
+    include turbohttp.client.ITurboHttpClient
+
+    // Request chain
+    include turbohttp.streams.RequestEnricherStage
+    include turbohttp.streams.CookieInjectionStage
+    include turbohttp.streams.CacheLookupStage
+
+    // Engine (version demux)
+    include turbohttp.streams.Engine
+    include turbohttp.streams.Http10Engine
+    include turbohttp.streams.Http11Engine
+    include turbohttp.streams.Http20Engine
+
+    // Transport
+    include turbohttp.streams.ConnectionStage
+    include tcp
+
+    // I/O actor pool (connection lifecycle)
+    include turbohttp.io.PoolRouterActor
+    include turbohttp.io.HostPoolActor
+    include turbohttp.io.ConnectionActor
+    include turbohttp.io.ClientManager
+    include turbohttp.io.ClientRunner
+    include turbohttp.io.ClientByteMover
+
+    // Response chain
+    include turbohttp.streams.DecompressionStage
+    include turbohttp.streams.CookieStorageStage
+    include turbohttp.streams.CacheStorageStage
+    include turbohttp.streams.RetryStage
+    include turbohttp.streams.RedirectStage
+
+    style turbohttp.streams.RequestEnricherStage { color green }
+    style turbohttp.streams.CookieInjectionStage { color green }
+    style turbohttp.streams.CacheLookupStage { color amber }
+    style turbohttp.streams.Engine { color blue }
+    style turbohttp.streams.Http10Engine { color sky }
+    style turbohttp.streams.Http11Engine { color sky }
+    style turbohttp.streams.Http20Engine { color sky }
+    style turbohttp.streams.DecompressionStage { color green }
+    style turbohttp.streams.CookieStorageStage { color green }
+    style turbohttp.streams.CacheStorageStage { color amber }
+    style turbohttp.streams.RetryStage { color red }
+    style turbohttp.streams.RedirectStage { color red }
+    style turbohttp.streams.ConnectionStage { color secondary }
+    style tcp { color muted }
+  }
+}

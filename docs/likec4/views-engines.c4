@@ -1,0 +1,38 @@
+// TurboHttp — Engine Views
+// Per-version engine internals and protocol subsystem views.
+
+views {
+  view http10Engine of turbohttp.streams.Http10Engine {
+    title 'TurboHttp — HTTP/1.0 Engine Internals'
+    description 'Encode → TCP → decode. No keep-alive; correlation signals discarded.'
+    include turbohttp.streams.Http10Engine
+    include turbohttp.streams.Http10EncoderStage
+    include turbohttp.streams.Http10DecoderStage
+    include turbohttp.streams.Http1XCorrelationStage
+    include turbohttp.streams.ConnectionStage
+  }
+
+  view http11Engine of turbohttp.streams.Http11Engine {
+    title 'TurboHttp — HTTP/1.1 Engine Internals'
+    description 'Encode → TCP → decode. Correlation signals merged (MergePreferred) into transport for keep-alive control.'
+    include turbohttp.streams.Http11Engine
+    include turbohttp.streams.Http11EncoderStage
+    include turbohttp.streams.Http11DecoderStage
+    include turbohttp.streams.Http1XCorrelationStage
+    include turbohttp.streams.ConnectionReuseStage
+    include turbohttp.streams.ConnectionStage
+  }
+
+  view http2Engine of turbohttp.streams.Http20Engine {
+    title 'TurboHttp — HTTP/2 Engine Internals'
+    description 'Stream-multiplexed HTTP/2: assign stream ID → HPACK-encode frames → bidirectional connection stage → HPACK-decode frames → assemble response.'
+    include turbohttp.streams.Http20Engine
+    include turbohttp.streams.StreamIdAllocatorStage
+    include turbohttp.streams.Request2FrameStage
+    include turbohttp.streams.Http20ConnectionStage
+    include turbohttp.streams.Http20EncoderStage
+    include turbohttp.streams.Http20DecoderStage
+    include turbohttp.streams.Http20StreamStage
+    include turbohttp.streams.ConnectionStage
+  }
+}

@@ -1,0 +1,69 @@
+// TurboHttp — Specification
+// Element kinds, tags, and custom relationship types shared across all views.
+
+specification {
+  element person {
+    style {
+      shape person
+      color primary
+    }
+  }
+
+  element system {
+    style {
+      color green
+    }
+  }
+
+  element externalSystem {
+    style {
+      color muted
+    }
+  }
+
+  element container {
+    style {
+      color blue
+    }
+  }
+
+  element component {
+    style {
+      color sky
+    }
+  }
+
+  element actor {
+    style {
+      color amber
+    }
+  }
+
+  // Tags for visual grouping
+  tag graphstage
+  tag staticClass
+  tag protocol
+  tag http2
+  tag cache
+  tag cookie
+  tag api
+
+  // ── Custom relationship kinds ────────────────────────────────────────
+  // flows    — ordered pipeline data flow (request chain or response chain)
+  // feedback — cycle-back path (retry / redirect / cache-hit bypass)
+  // delegates — stage delegates to a stateless protocol helper
+
+  relationship flows {
+    color green
+  }
+
+  relationship feedback {
+    color red
+    line dashed
+  }
+
+  relationship delegates {
+    color secondary
+    line dotted
+  }
+}
