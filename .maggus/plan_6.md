@@ -85,13 +85,13 @@ After all moves and deletions the `Integration/` folder will be **empty and remo
 **Description:** As a developer, I want a new `RFC6265/` test folder with `CookieJarTests.cs` moved into it, so that RFC 6265 cookie tests are organised consistently with all other RFC folders.
 
 **Acceptance Criteria:**
-- [ ] New folder `src/TurboHttp.Tests/RFC6265/` created
-- [ ] `Integration/CookieJarTests.cs` → `RFC6265/01_CookieJarTests.cs`
-- [ ] Namespace: `namespace TurboHttp.Tests.RFC6265;`
-- [ ] All existing `DisplayName` values preserved
-- [ ] Source file in `Integration/` deleted
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC6265"` returns all cookie tests
-- [ ] Build: 0 errors
+- [x] New folder `src/TurboHttp.Tests/RFC6265/` created
+- [x] `Integration/CookieJarTests.cs` → `RFC6265/01_CookieJarTests.cs`
+- [x] Namespace: `namespace TurboHttp.Tests.RFC6265;`
+- [x] All existing `DisplayName` values preserved
+- [x] Source file in `Integration/` deleted
+- [x] `dotnet test --filter "FullyQualifiedName~RFC6265"` returns all cookie tests
+- [x] Build: 0 errors
 
 ---
 

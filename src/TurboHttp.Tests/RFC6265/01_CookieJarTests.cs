@@ -1,7 +1,7 @@
 using System.Net;
 using TurboHttp.Protocol.RFC6265;
 
-namespace TurboHttp.Tests.Integration;
+namespace TurboHttp.Tests.RFC6265;
 
 /// <summary>
 /// RFC 6265 — Cookie management tests.
