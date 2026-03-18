@@ -103,11 +103,11 @@ bytes are already in `OutboundChannel`.
 race fix, so that the test suite is stable.
 
 **Acceptance Criteria:**
-- [ ] Run `dotnet test --filter "FullyQualifiedName~Http20EngineRfcRoundTripTests"` **five times**
+- [x] Run `dotnet test --filter "FullyQualifiedName~Http20EngineRfcRoundTripTests"` **five times**
   consecutively; all six tests pass every time.
-- [ ] ENG-002 asserts both `HeadersFrame` and `DataFrame` in `outboundFrames`.
-- [ ] ENG-004 asserts a `SettingsFrame` with `IsAck = true` in `outboundFrames`.
-- [ ] ENG-005 asserts three `HeadersFrame`s with stream IDs 1, 3, 5 in `outboundFrames`.
+- [x] ENG-002 asserts both `HeadersFrame` and `DataFrame` in `outboundFrames`.
+- [x] ENG-004 asserts a `SettingsFrame` with `IsAck = true` in `outboundFrames`.
+- [x] ENG-005 asserts three `HeadersFrame`s with stream IDs 1, 3, 5 in `outboundFrames`.
 
 ---
 

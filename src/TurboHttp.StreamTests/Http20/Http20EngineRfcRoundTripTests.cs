@@ -117,12 +117,18 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
             data: compressedBody,
             endStream: true).Serialize();
 
+        // Concatenate headers + data into a single server frame buffer so that
+        // the fake stage can serve them in one push (only 2 unlock events available
+        // for a GET: client HEADERS + SETTINGS ACK).
+        var responseFrames = new byte[headersFrame.Length + dataFrame.Length];
+        headersFrame.CopyTo(responseFrames, 0);
+        dataFrame.CopyTo(responseFrames, headersFrame.Length);
+
         var (response, _) = await SendH2EngineAsync(
             Engine.CreateFlow(),
             request,
             ServerSettings(),
-            headersFrame,
-            dataFrame);
+            responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content!.ReadAsByteArrayAsync();
