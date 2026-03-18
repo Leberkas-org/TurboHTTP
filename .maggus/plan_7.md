@@ -91,13 +91,13 @@ Create a set of architecture diagrams for TurboHttp that serve two purposes: (1)
 **Description:** As an external user or reviewer, I want a diagram showing the Akka actor hierarchy in the I/O layer so that I can understand the supervision tree and message flow for TCP connection management.
 
 **Acceptance Criteria:**
-- [ ] Mermaid file created at `docs/io-actor-hierarchy.md`
-- [ ] Shows actor supervision tree:
+- [x] Mermaid file created at `docs/io-actor-hierarchy.md`
+- [x] Shows actor supervision tree:
   - ActorSystem -> PoolRouterActor -> HostPoolActor (per host:port:scheme) -> ConnectionActor (per TCP connection)
-- [ ] Shows message flow between actors (ConnectRequest, ConnectionHandle, Disconnect, etc.)
-- [ ] Shows the bridge between ConnectionStage (Akka.Streams) and ConnectionActor (Akka actors) via System.Threading.Channels
-- [ ] ClientByteMover and ClientState shown as non-actor components owned by ConnectionActor
-- [ ] Diagram renders correctly in GitHub Markdown preview
+- [x] Shows message flow between actors (ConnectRequest, ConnectionHandle, Disconnect, etc.)
+- [x] Shows the bridge between ConnectionStage (Akka.Streams) and ConnectionActor (Akka actors) via System.Threading.Channels
+- [x] ClientByteMover and ClientState shown as non-actor components owned by ConnectionActor
+- [x] Diagram renders correctly in GitHub Markdown preview
 
 ### TASK-7-006: Validation Against Codebase
 
