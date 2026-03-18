@@ -152,15 +152,15 @@ After all moves and deletions the `Integration/` folder will be **empty and remo
 **Context:** RFC 9113 §5.1.1: a server may send `PUSH_PROMISE`, which moves the promised stream into the `reserved (remote)` state. The client can reject that stream with `RST_STREAM` (CANCEL) or receive it passively. Currently `PUSH_PROMISE` is parsed (covered by RT-2-013), but the state-machine transition `idle → reserved(remote)` has no dedicated test.
 
 **Acceptance Criteria:**
-- [ ] New file: `RFC9113/15_DecoderPushPromiseTests.cs` (`public sealed class Http2DecoderPushPromiseTests`)
-- [ ] Namespace: `namespace TurboHttp.Tests.RFC9113;`
-- [ ] Test: `PUSH_PROMISE` received → promised stream enters `reserved(remote)` state (`DisplayName: "RFC9113-5.1.1-PP-001: PUSH_PROMISE moves stream to reserved(remote) state"`)
-- [ ] Test: client rejects `reserved(remote)` stream with `RST_STREAM` CANCEL
-- [ ] Test: `PUSH_PROMISE` on stream ID 0 → `PROTOCOL_ERROR`
-- [ ] Test: `PUSH_PROMISE` with an even promised-stream-ID is decodable
-- [ ] Test: `PUSH_PROMISE` referencing an invalid/already-open stream → `PROTOCOL_ERROR`
-- [ ] Minimum 5 tests with RFC tags (`"RFC9113-5.1.1-PP-XXX: ..."`)
-- [ ] Build: 0 errors
+- [x] New file: `RFC9113/15_DecoderPushPromiseTests.cs` (`public sealed class Http2DecoderPushPromiseTests`)
+- [x] Namespace: `namespace TurboHttp.Tests.RFC9113;`
+- [x] Test: `PUSH_PROMISE` received → promised stream enters `reserved(remote)` state (`DisplayName: "RFC9113-5.1.1-PP-001: PUSH_PROMISE moves stream to reserved(remote) state"`)
+- [x] Test: client rejects `reserved(remote)` stream with `RST_STREAM` CANCEL
+- [x] Test: `PUSH_PROMISE` on stream ID 0 → `PROTOCOL_ERROR`
+- [x] Test: `PUSH_PROMISE` with an even promised-stream-ID is decodable
+- [x] Test: `PUSH_PROMISE` referencing an invalid/already-open stream → `PROTOCOL_ERROR`
+- [x] Minimum 5 tests with RFC tags (`"RFC9113-5.1.1-PP-XXX: ..."`)
+- [x] Build: 0 errors
 
 ---
 
