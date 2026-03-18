@@ -104,12 +104,12 @@ Create a set of architecture diagrams for TurboHttp that serve two purposes: (1)
 **Description:** As a developer, I want all diagrams to be verified against the actual source code so that no stage, actor, or connection is missing or incorrectly represented.
 
 **Acceptance Criteria:**
-- [ ] Each stage in `src/TurboHttp/Streams/Stages/` appears in at least one diagram
-- [ ] Each actor in `src/TurboHttp/IO/` appears in the actor hierarchy diagram
-- [ ] Graph wiring in diagrams matches `Engine.cs` `BuildExtendedPipeline` and `BuildConnectionFlowPublic`
-- [ ] Protocol engine diagrams match `Http10Engine.cs`, `Http11Engine.cs`, `Http20Engine.cs`
-- [ ] No invented/aspirational components — only what exists in code today
-- [ ] A checklist in `docs/diagram-validation.md` maps each diagram element to its source file and line number
+- [x] Each stage in `src/TurboHttp/Streams/Stages/` appears in at least one diagram
+- [x] Each actor in `src/TurboHttp/IO/` appears in the actor hierarchy diagram
+- [x] Graph wiring in diagrams matches `Engine.cs` `BuildExtendedPipeline` and `BuildConnectionFlowPublic`
+- [x] Protocol engine diagrams match `Http10Engine.cs`, `Http11Engine.cs`, `Http20Engine.cs`
+- [x] No invented/aspirational components — only what exists in code today
+- [x] A checklist in `docs/diagram-validation.md` maps each diagram element to its source file and line number
 
 ## Functional Requirements
 

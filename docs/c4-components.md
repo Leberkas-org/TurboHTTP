@@ -26,7 +26,7 @@ C4Component
         Component(Http11EncoderStage, "Http11EncoderStage", "GraphStage", "Serialises HttpRequestMessage to HTTP/1.1 bytes")
         Component(Http10DecoderStage, "Http10DecoderStage", "GraphStage", "Parses HTTP/1.0 bytes to HttpResponseMessage")
         Component(Http11DecoderStage, "Http11DecoderStage", "GraphStage", "Parses HTTP/1.1 bytes to HttpResponseMessage")
-        Component(CorrelationHttp1XStage, "CorrelationHttp1XStage", "GraphStage", "FIFO request-response matching for HTTP/1.x")
+        Component(Http1XCorrelationStage, "Http1XCorrelationStage", "GraphStage", "FIFO request-response matching for HTTP/1.x")
 
         Component(StreamIdAllocatorStage, "StreamIdAllocatorStage", "GraphStage", "Allocates client stream IDs (1, 3, 5, …)")
         Component(Request2FrameStage, "Request2FrameStage", "GraphStage", "Converts (HttpRequestMessage, streamId) to Http2Frame list")
@@ -34,8 +34,8 @@ C4Component
         Component(Http20DecoderStage, "Http20DecoderStage", "GraphStage", "Parses bytes to Http2Frame")
         Component(Http20ConnectionStage, "Http20ConnectionStage", "GraphStage", "Flow control, SETTINGS/PING/GOAWAY handling")
         Component(Http20StreamStage, "Http20StreamStage", "GraphStage", "Assembles frames into HttpResponseMessage")
-        Component(PrependPrefaceStage, "PrependPrefaceStage", "GraphStage", "Injects HTTP/2 connection preface")
-        Component(CorrelationHttp20Stage, "CorrelationHttp20Stage", "GraphStage", "Stream-ID-based request-response matching")
+        Component(PrependPrefaceStage, "PrependPrefaceStage", "GraphStage", "Injects HTTP/2 connection preface (implemented, not yet wired)")
+        Component(Http20CorrelationStage, "Http20CorrelationStage", "GraphStage", "Stream-ID-based request-response matching (implemented, not yet wired)")
 
         Component(DecompressionStage, "DecompressionStage", "GraphStage", "gzip/deflate/brotli response decompression")
         Component(CacheLookupStage, "CacheLookupStage", "GraphStage", "Checks cache before forwarding to engine")
@@ -103,11 +103,12 @@ C4Component
     %% HTTP/1.0 engine internals
     Rel(Http10Engine, Http10EncoderStage, "Encodes requests")
     Rel(Http10Engine, Http10DecoderStage, "Decodes responses")
+    Rel(Http10Engine, Http1XCorrelationStage, "Correlates request-response pairs")
 
     %% HTTP/1.1 engine internals
     Rel(Http11Engine, Http11EncoderStage, "Encodes requests")
     Rel(Http11Engine, Http11DecoderStage, "Decodes responses")
-    Rel(Http11Engine, CorrelationHttp1XStage, "Correlates request-response pairs")
+    Rel(Http11Engine, Http1XCorrelationStage, "Correlates request-response pairs")
 
     %% HTTP/2 engine internals
     Rel(Http20Engine, StreamIdAllocatorStage, "Allocates stream IDs")
@@ -116,8 +117,7 @@ C4Component
     Rel(Http20Engine, Http20DecoderStage, "Parses bytes to frames")
     Rel(Http20Engine, Http20ConnectionStage, "Manages connection-level flow control")
     Rel(Http20Engine, Http20StreamStage, "Assembles response from frames")
-    Rel(Http20Engine, PrependPrefaceStage, "Injects connection preface")
-    Rel(Http20Engine, CorrelationHttp20Stage, "Correlates by stream ID")
+    %% PrependPrefaceStage and Http20CorrelationStage are implemented but not yet wired into Http20Engine
 
     %% Response pipeline stages
     Rel(Engine, DecompressionStage, "Decompresses response bodies")
