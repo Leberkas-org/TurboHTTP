@@ -35,19 +35,19 @@ Create a set of architecture diagrams for TurboHttp that serve two purposes: (1)
 **Description:** As an external user or reviewer, I want an Akka.Streams-style graph diagram of the complete `Engine.BuildExtendedPipeline` so that I can understand the full request/response data flow, including feedback loops.
 
 **Acceptance Criteria:**
-- [ ] Mermaid file created at `docs/engine-stream-graph.md`
-- [ ] Shows the complete pipeline from `Engine.cs` `BuildExtendedPipeline`:
+- [x] Mermaid file created at `docs/engine-stream-graph.md`
+- [x] Shows the complete pipeline from `Engine.cs` `BuildExtendedPipeline`:
   - **Request chain:** RequestEnricherStage -> MergePreferred (redirect feedback) -> CookieInjectionStage -> MergePreferred (retry feedback) -> CacheLookupStage (fan-out: miss/hit)
   - **Engine core:** Partition (4-way by HTTP version) -> Http10Engine / Http11Engine / Http20Engine / Http30Engine -> Merge (4-way)
   - **Response chain:** DecompressionStage -> CookieStorageStage -> CacheStorageStage -> RetryStage (fan-out: final/retry) -> Merge (cache hit + final) -> RedirectStage (fan-out: final/redirect)
   - **Feedback loops:** RetryStage.Out1 -> Buffer(1) -> retryMerge.Preferred; RedirectStage.Out1 -> Buffer(1) -> redirectMerge.Preferred
-- [ ] Each stage is labeled with its class name
-- [ ] Fan-out stages show labeled outlets (e.g., "cache miss", "cache hit", "retry", "final", "redirect")
-- [ ] Buffer stages on feedback loops shown explicitly
-- [ ] MergePreferred inlets labeled (preferred vs. normal)
-- [ ] Data types on edges shown where helpful (HttpRequestMessage, HttpResponseMessage)
-- [ ] Diagram renders correctly in GitHub Markdown preview
-- [ ] Visual style inspired by the Akka.NET reference image (boxes for stages, arrows for flow)
+- [x] Each stage is labeled with its class name
+- [x] Fan-out stages show labeled outlets (e.g., "cache miss", "cache hit", "retry", "final", "redirect")
+- [x] Buffer stages on feedback loops shown explicitly
+- [x] MergePreferred inlets labeled (preferred vs. normal)
+- [x] Data types on edges shown where helpful (HttpRequestMessage, HttpResponseMessage)
+- [x] Diagram renders correctly in GitHub Markdown preview
+- [x] Visual style inspired by the Akka.NET reference image (boxes for stages, arrows for flow)
 
 ### TASK-7-003: Protocol Engine Sub-Graphs
 
