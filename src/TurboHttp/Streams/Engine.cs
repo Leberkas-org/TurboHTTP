@@ -177,14 +177,22 @@ public class Engine
             var partition = builder.Add(Router());
             var hub = builder.Add(new Merge<HttpResponseMessage>(4));
 
+            // Encoder/decoder stage groups get larger input buffers for throughput.
+            // Lightweight stages (cookie, cache, enricher) inherit the smaller global default (4/16).
+            var highThroughputBuffer = Attributes.CreateInputBuffer(16, 64);
+
             var http10 =
-                builder.Add(BuildProtocolFlow<Http10Engine>(256, poolRouter, http10Factory, clientOptions));
+                builder.Add(BuildProtocolFlow<Http10Engine>(256, poolRouter, http10Factory, clientOptions)
+                    .WithAttributes(highThroughputBuffer));
             var http11 =
-                builder.Add(BuildProtocolFlow<Http11Engine>(256, poolRouter, http11Factory, clientOptions));
+                builder.Add(BuildProtocolFlow<Http11Engine>(256, poolRouter, http11Factory, clientOptions)
+                    .WithAttributes(highThroughputBuffer));
             var http20 =
-                builder.Add(BuildProtocolFlow<Http20Engine>(64, poolRouter, http20Factory, clientOptions));
+                builder.Add(BuildProtocolFlow<Http20Engine>(64, poolRouter, http20Factory, clientOptions)
+                    .WithAttributes(highThroughputBuffer));
             var http30 =
-                builder.Add(BuildProtocolFlow<Http30Engine>(32, poolRouter, http30Factory, clientOptions));
+                builder.Add(BuildProtocolFlow<Http30Engine>(32, poolRouter, http30Factory, clientOptions)
+                    .WithAttributes(highThroughputBuffer));
 
             builder.From(partition.Out(0)).Via(http10).To(hub);
             builder.From(partition.Out(1)).Via(http11).To(hub);

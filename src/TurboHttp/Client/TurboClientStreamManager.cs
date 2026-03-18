@@ -56,10 +56,16 @@ internal sealed class TurboClientStreamManager
         var sink = Sink.ForEachAsync<HttpResponseMessage>(1, async r => await responseWriter.WriteAsync(r));
         // Materialise the graph:
         //   Source.Queue → Engine flow → Sink.ForEach (writes to response channel)
+        var materializerSettings = ActorMaterializerSettings.Create(system)
+            .WithInputBuffer(initialSize: 4, maxSize: 16);
+        var materializer = system.Materializer(
+            settings: materializerSettings,
+            namePrefix: $"stream-manager-{streamManagerId}");
+
         var (queue, sinkTask) = Source.Queue<HttpRequestMessage>(256, OverflowStrategy.Backpressure)
             .Via(engineFlow)
             .ToMaterialized(sink, Keep.Both)
-            .Run(system.Materializer(namePrefix: $"stream-manager-{streamManagerId}"));
+            .Run(materializer);
 
         _ = sinkTask!.ContinueWith(task =>
         {

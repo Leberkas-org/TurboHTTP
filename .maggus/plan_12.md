@@ -78,13 +78,13 @@ Optimize TurboHttp's Akka.Streams pipeline for balanced throughput, latency, and
 **Description:** As a developer, I want to configure the `ActorMaterializer` with explicit input buffer sizes so that small stages don't over-allocate and large stages get adequate buffering.
 
 **Acceptance Criteria:**
-- [ ] `TurboClientStreamManager` creates materializer with explicit `ActorMaterializerSettings.WithInputBuffer(initialSize: 4, maxSize: 16)` (down from Akka default 16/16)
-- [ ] In Engine.cs graph composition: encoder/decoder stage groups get `.WithAttributes(Attributes.CreateInputBuffer(16, 64))` to override the global default where throughput matters
-- [ ] Lightweight stages (cookie injection/storage, request enricher) inherit the smaller global default
-- [ ] Attributes actually propagate because TASK-6-002 fixed `InitialAttributes`
-- [ ] No existing stage shapes or public APIs changed
-- [ ] Existing stream tests still pass
-- [ ] Unit tests are written and successful
+- [x] `TurboClientStreamManager` creates materializer with explicit `ActorMaterializerSettings.WithInputBuffer(initialSize: 4, maxSize: 16)` (down from Akka default 16/16)
+- [x] In Engine.cs graph composition: encoder/decoder stage groups get `.WithAttributes(Attributes.CreateInputBuffer(16, 64))` to override the global default where throughput matters
+- [x] Lightweight stages (cookie injection/storage, request enricher) inherit the smaller global default
+- [x] Attributes actually propagate because TASK-6-002 fixed `InitialAttributes`
+- [x] No existing stage shapes or public APIs changed
+- [x] Existing stream tests still pass
+- [x] Unit tests are written and successful
 
 ### TASK-12-004: Async Boundaries for CPU-Intensive Stage Clusters
 
