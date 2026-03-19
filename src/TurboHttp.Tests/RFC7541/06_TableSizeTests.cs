@@ -56,7 +56,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should DecodeHeaders When NoLimitConfigured
     [Fact(DisplayName = "RFC7541-4.1-HLS-001: Should_DecodeHeaders_When_NoLimitConfigured")]
-    public void HLS_001_Default_NoLimit_ManyHeadersSucceed()
+    public void Should_DecodeHeaders_When_NoLimitConfigured()
     {
         var decoder = NewDecoder();
 
@@ -74,7 +74,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When LimitIsZeroAndAnyHeaderDecoded
     [Fact(DisplayName = "RFC7541-4.1-HLS-002: Should_Throw_When_LimitIsZeroAndAnyHeaderDecoded")]
-    public void HLS_002_LimitZero_AnyHeaderThrows()
+    public void Should_Throw_When_LimitIsZeroAndAnyHeaderDecoded()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(0);
@@ -90,7 +90,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Succeed When HeaderSizeExactlyEqualsLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-010: Should_Succeed_When_HeaderSizeExactlyEqualsLimit")]
-    public void HLS_010_HeaderSizeEqualsLimit_Succeeds()
+    public void Should_Succeed_When_HeaderSizeExactlyEqualsLimit()
     {
         var decoder = NewDecoder();
         var limit = EntrySize("name", "value"); // 4+5+32 = 41
@@ -106,7 +106,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When HeaderSizeOneBelowLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-011: Should_Throw_When_HeaderSizeOneBelowLimit")]
-    public void HLS_011_HeaderSizeBelowLimitByOne_Throws()
+    public void Should_Throw_When_HeaderSizeOneBelowLimit()
     {
         var decoder = NewDecoder();
         var limit = EntrySize("name", "value") - 1; // 40
@@ -120,7 +120,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Succeed When TwoHeadersSumToExactLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-012: Should_Succeed_When_TwoHeadersSumToExactLimit")]
-    public void HLS_012_TwoHeadersExactlyAtLimit_Succeeds()
+    public void Should_Succeed_When_TwoHeadersSumToExactLimit()
     {
         var decoder = NewDecoder();
         var oneSize = EntrySize("a", "b"); // 1+1+32 = 34
@@ -134,7 +134,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When SecondHeaderExceedsLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-013: Should_Throw_When_SecondHeaderExceedsLimit")]
-    public void HLS_013_SecondHeaderExceedsLimit_Throws()
+    public void Should_Throw_When_SecondHeaderExceedsLimit()
     {
         var decoder = NewDecoder();
         var oneSize = EntrySize("a", "b"); // 34
@@ -150,7 +150,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountIndexedStaticHeader Toward Limit
     [Fact(DisplayName = "RFC7541-4.1-HLS-020: Should_CountIndexedStaticHeader_Toward_Limit")]
-    public void HLS_020_IndexedStaticHeader_CountedTowardLimit()
+    public void Should_CountIndexedStaticHeader_When_TowardLimit()
     {
         // Static index 8 = ":status" / "200" → 7+3+32 = 42 bytes
         var decoder = NewDecoder();
@@ -166,7 +166,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountIndexedStaticHeader WhenExactlyAtLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-021: Should_CountIndexedStaticHeader_WhenExactlyAtLimit")]
-    public void HLS_021_IndexedStaticHeader_AtExactLimit_Succeeds()
+    public void Should_Succeed_When_IndexedStaticHeaderAtExactLimit()
     {
         // Static index 8 = ":status" / "200" → 42 bytes
         var decoder = NewDecoder();
@@ -182,7 +182,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountLiteralIncrementalIndexing Toward Limit
     [Fact(DisplayName = "RFC7541-4.1-HLS-022: Should_CountLiteralIncrementalIndexing_Toward_Limit")]
-    public void HLS_022_LiteralIncrementalIndexing_CountedTowardLimit()
+    public void Should_CountLiteralIncrementalIndexing_When_TowardLimit()
     {
         var decoder = NewDecoder();
         var limit = EntrySize("x", "y") - 1; // 33
@@ -196,7 +196,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountLiteralNeverIndex Toward Limit
     [Fact(DisplayName = "RFC7541-4.1-HLS-023: Should_CountLiteralNeverIndex_Toward_Limit")]
-    public void HLS_023_LiteralNeverIndex_CountedTowardLimit()
+    public void Should_CountLiteralNeverIndex_When_TowardLimit()
     {
         var decoder = NewDecoder();
         var limit = EntrySize("secret", "token") - 1;
@@ -210,7 +210,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountIndexedDynamicHeader Toward Limit
     [Fact(DisplayName = "RFC7541-4.1-HLS-024: Should_CountIndexedDynamicHeader_Toward_Limit")]
-    public void HLS_024_IndexedDynamicHeader_CountedTowardLimit()
+    public void Should_CountIndexedDynamicHeader_When_TowardLimit()
     {
         var decoder = NewDecoder();
 
@@ -233,7 +233,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountLiteralNoIndexing Toward Limit
     [Fact(DisplayName = "RFC7541-4.1-HLS-025: Should_CountLiteralNoIndexing_Toward_Limit")]
-    public void HLS_025_LiteralNoIndexing_CountedTowardLimit()
+    public void Should_CountLiteralNoIndexing_When_TowardLimit()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(EntrySize("foo", "bar") - 1);
@@ -248,7 +248,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should AccumulateSizeAcrossAllHeaders
     [Fact(DisplayName = "RFC7541-4.1-HLS-030: Should_AccumulateSizeAcrossAllHeaders")]
-    public void HLS_030_CumulativeSizeAcrossMultipleHeaders()
+    public void Should_AccumulateSizeAcrossAllHeaders_When_MultipleHeaders()
     {
         var decoder = NewDecoder();
         var oneSize = EntrySize("k", "v"); // 1+1+32 = 34
@@ -270,7 +270,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should ResetCumulativeSize BetweenDecodeInvocations
     [Fact(DisplayName = "RFC7541-4.1-HLS-031: Should_ResetCumulativeSize_BetweenDecodeInvocations")]
-    public void HLS_031_CumulativeResets_BetweenDecodeInvocations()
+    public void Should_ResetCumulativeSize_When_BetweenDecodeInvocations()
     {
         var decoder = NewDecoder();
         var oneSize = EntrySize("a", "b"); // 34
@@ -289,7 +289,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When SingleLargeValueExceedsLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-032: Should_Throw_When_SingleLargeValueExceedsLimit")]
-    public void HLS_032_LargeValueHeader_ExceedsLimit()
+    public void Should_Throw_When_SingleLargeValueExceedsLimit()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(100); // small limit
@@ -305,7 +305,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When NegativeSizeProvided
     [Fact(DisplayName = "RFC7541-4.1-HLS-040: Should_Throw_When_NegativeSizeProvided")]
-    public void HLS_040_NegativeSize_ThrowsHpackException()
+    public void Should_Throw_When_NegativeSizeProvided()
     {
         var decoder = NewDecoder();
 
@@ -315,7 +315,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Accept ZeroSizeLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-041: Should_Accept_ZeroSizeLimit")]
-    public void HLS_041_ZeroSize_IsValidAndEnforced()
+    public void Should_Accept_When_ZeroSizeLimit()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(0); // valid: no headers accepted
@@ -326,7 +326,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Accept MaxIntSizeLimit AsUnlimited
     [Fact(DisplayName = "RFC7541-4.1-HLS-042: Should_Accept_MaxIntSizeLimit_AsUnlimited")]
-    public void HLS_042_MaxIntSize_EffectivelyUnlimited()
+    public void Should_Accept_When_MaxIntSizeLimitAsUnlimited()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(int.MaxValue); // explicit set to max
@@ -343,7 +343,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should RaiseLimit AllowingPreviouslyFailingDecodes
     [Fact(DisplayName = "RFC7541-4.1-HLS-043: Should_RaiseLimit_AllowingPreviouslyFailingDecodes")]
-    public void HLS_043_RaiseLimit_PreviouslyFailingDecodesNowSucceed()
+    public void Should_RaiseLimit_When_AllowingPreviouslyFailingDecodes()
     {
         var decoder = NewDecoder();
         var oneSize = EntrySize("a", "b"); // 34
@@ -365,7 +365,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should ThrowWithRfcReference InExceptionMessage
     [Fact(DisplayName = "RFC7541-4.1-HLS-050: Should_ThrowWithRfcReference_InExceptionMessage")]
-    public void HLS_050_ExceptionMessage_ContainsRfcReference()
+    public void Should_ThrowWithRfcReference_When_LimitExceeded()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(0);
@@ -379,7 +379,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should ThrowWithCompressionError InExceptionMessage
     [Fact(DisplayName = "RFC7541-4.1-HLS-051: Should_ThrowWithCompressionError_InExceptionMessage")]
-    public void HLS_051_ExceptionMessage_ContainsCompressionError()
+    public void Should_ThrowWithCompressionError_When_LimitExceeded()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(0);
@@ -391,7 +391,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Handle EmptyHeaderBlock UnderAnyLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-052: Should_Handle_EmptyHeaderBlock_UnderAnyLimit")]
-    public void HLS_052_EmptyBlock_AlwaysSucceeds()
+    public void Should_Handle_When_EmptyHeaderBlockUnderAnyLimit()
     {
         var decoder = NewDecoder();
         decoder.SetMaxHeaderListSize(0); // even with zero limit
@@ -403,7 +403,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should CountStaticEntry UsingCorrectOctetSize
     [Fact(DisplayName = "RFC7541-4.1-HLS-053: Should_CountStaticEntry_UsingCorrectOctetSize")]
-    public void HLS_053_StaticEntry_SizeCorrectlyCalculated()
+    public void Should_CountStaticEntry_When_UsingCorrectOctetSize()
     {
         // Index 2 = ":method" / "GET" → 7+3+32 = 42
         var decoder = NewDecoder();
@@ -419,7 +419,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When StaticEntryExceedsExactLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-054: Should_Throw_When_StaticEntryExceedsExactLimit")]
-    public void HLS_054_StaticEntry_ExceedsExactLimit_Throws()
+    public void Should_Throw_When_StaticEntryExceedsExactLimit()
     {
         // Index 2 = ":method" / "GET" → 42; limit 41 → throws
         var decoder = NewDecoder();
@@ -432,7 +432,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Succeed When MixedRepresentationsUnderLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-055: Should_Succeed_When_MixedRepresentationsUnderLimit")]
-    public void HLS_055_MixedRepresentations_UnderLimit_Succeeds()
+    public void Should_Succeed_When_MixedRepresentationsUnderLimit()
     {
         var decoder = NewDecoder();
 
@@ -451,7 +451,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7541 §5.2 — SetMaxStringLength with a negative value must throw HpackException.
     [Fact(DisplayName = "RFC7541-4.1-HLS-057: SetMaxStringLength with negative value throws HpackException")]
-    public void HLS_057_SetMaxStringLength_NegativeValue_ThrowsHpackException()
+    public void Should_ThrowHpackException_When_SetMaxStringLengthIsNegative()
     {
         var decoder = NewDecoder();
         var ex = Assert.Throws<HpackException>(() => decoder.SetMaxStringLength(-1));
@@ -460,7 +460,7 @@ public sealed class HpackHeaderListSizeTests
 
     /// RFC 7540 §6.5.2 — Should Throw When MixedRepresentationsExceedLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-056: Should_Throw_When_MixedRepresentationsExceedLimit")]
-    public void HLS_056_MixedRepresentations_ExceedLimit_Throws()
+    public void Should_Throw_When_MixedRepresentationsExceedLimit()
     {
         var decoder = NewDecoder();
 
