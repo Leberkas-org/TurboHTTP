@@ -7,6 +7,10 @@ namespace TurboHttp.Tests.RFC9111;
 /// RFC 9111 §4 — Full end-to-end cache lifecycle integration tests.
 /// Exercises: lookup → conditional request building → store → freshnesseval → invalidation.
 /// </summary>
+/// <remarks>
+/// Classes under test: <see cref="HttpCacheStore"/>, <see cref="CacheFreshnessEvaluator"/>, and <see cref="CacheValidationRequestBuilder"/>.
+/// RFC 9111 §4: The cache pipeline integrates storage, freshness evaluation, and conditional revalidation.
+/// </remarks>
 public sealed class CacheIntegrationTests
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 6, 1, 12, 0, 0, TimeSpan.Zero);

@@ -7,6 +7,10 @@ namespace TurboHttp.Tests.RFC9110;
 /// Tests for <see cref="RetryEvaluator"/> and <see cref="RetryPolicy"/>.
 /// RFC 9110 §9.2 — Idempotency-constrained automatic retry policy.
 /// </summary>
+/// <remarks>
+/// Classes under test: <see cref="RetryEvaluator"/> and <see cref="RetryPolicy"/>.
+/// RFC 9110 §9.2: Only idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS, TRACE) may be automatically retried.
+/// </remarks>
 public sealed class RetryEvaluatorTests
 {
 

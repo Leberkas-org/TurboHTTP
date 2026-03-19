@@ -2,6 +2,15 @@ using TurboHttp.Protocol.RFC9111;
 
 namespace TurboHttp.Tests.RFC9111;
 
+/// <summary>
+/// RFC 9111 §5.2 — Cache-Control header parsing tests.
+/// Covers all standard directives: max-age, s-maxage, no-cache, no-store,
+/// must-revalidate, proxy-revalidate, public, private, and unknown directives.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="CacheControlParser"/>.
+/// RFC 9111 §5.2: Cache-Control directives control cacheability and freshness behaviour.
+/// </remarks>
 public sealed class CacheControlParserTests
 {
     [Fact(DisplayName = "RFC9111-5.2-CC-001: null input returns null")]

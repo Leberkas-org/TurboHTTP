@@ -10,6 +10,10 @@ namespace TurboHttp.Tests.RFC9110;
 /// loop detection, max redirect enforcement, cross-origin security, and
 /// HTTPS-to-HTTP downgrade protection.
 /// </summary>
+/// <remarks>
+/// Class under test: <see cref="RedirectHandler"/>.
+/// RFC 9110 §15.4: Redirect responses (301/302/303/307/308) require method rewriting and loop detection.
+/// </remarks>
 public sealed class RedirectHandlerTests
 {
 

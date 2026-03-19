@@ -10,6 +10,10 @@ namespace TurboHttp.Tests.RFC9110;
 /// Covers stacked (multiple) encodings, Accept-Encoding header injection,
 /// and encoder/decoder cross-version compatibility.
 /// </summary>
+/// <remarks>
+/// Class under test: <see cref="ContentEncodingDecoder"/>.
+/// RFC 9110 §8.4: Content-Encoding indicates transformations applied to the representation body (gzip, deflate, brotli).
+/// </remarks>
 public sealed class ContentEncodingIntegrationTests
 {
 

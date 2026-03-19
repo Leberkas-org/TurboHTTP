@@ -3,6 +3,15 @@ using TurboHttp.Protocol.RFC9111;
 
 namespace TurboHttp.Tests.RFC9111;
 
+/// <summary>
+/// RFC 9111 §4.2 — Cache freshness calculation tests.
+/// Covers s-maxage, max-age, Expires headers, heuristic freshness,
+/// Age header correction, and current-age calculation.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="CacheFreshnessEvaluator"/>.
+/// RFC 9111 §4.2: A cached response is fresh if its remaining lifetime exceeds its current age.
+/// </remarks>
 public sealed class CacheFreshnessTests
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);

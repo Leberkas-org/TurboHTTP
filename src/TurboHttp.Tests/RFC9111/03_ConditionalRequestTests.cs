@@ -3,6 +3,15 @@ using TurboHttp.Protocol.RFC9111;
 
 namespace TurboHttp.Tests.RFC9111;
 
+/// <summary>
+/// RFC 9111 §4.3 — Cache validation and conditional request tests.
+/// Covers If-None-Match and If-Modified-Since header injection,
+/// 304 Not Modified response merging, and stale-entry revalidation.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="CacheValidationRequestBuilder"/>.
+/// RFC 9111 §4.3: Stale cached responses may be revalidated using conditional requests.
+/// </remarks>
 public sealed class ConditionalRequestTests
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);

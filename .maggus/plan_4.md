@@ -421,8 +421,8 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.Tests/RFC9110/` (3) + `src/TurboHttp.Tests/RFC9111/` (5)
 
 **Acceptance Criteria:**
-- [ ] Every test class has `<summary>` + `<remarks>`
-- [ ] Build green
+- [x] Every test class has `<summary>` + `<remarks>`
+- [x] Build green
 
 ---
 
