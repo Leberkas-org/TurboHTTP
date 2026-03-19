@@ -113,9 +113,9 @@ RFC{number}-{section}-{CAT}-{NNN}: {description}
 **Description:** As a developer, I want cookie tests to include the RFC prefix for consistency.
 
 **Acceptance Criteria:**
-- [ ] `CM-001` becomes `RFC6265-5.3-CM-001: ...` (§5.3 = Storage Model)
-- [ ] Domain matching (CM-036+) gets section `5.1.3`, path matching gets `5.1.4`
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC6265"` passes with 0 failures
+- [x] `CM-001` becomes `RFC6265-5.3-CM-001: ...` (§5.3 = Storage Model)
+- [x] Domain matching (CM-036+) gets section `5.1.3`, path matching gets `5.1.4`
+- [x] `dotnet test --filter "FullyQualifiedName~RFC6265"` passes with 0 failures
 
 ### TASK-008: StreamTests — Unify format where RFC-applicable (~200+ DisplayNames)
 **Description:** As a developer, I want StreamTests that test RFC-defined behavior to use the same `RFC{N}-{section}-{CAT}-{NNN}` format. Implementation-only tests (ConnectionActor, HostPoolActor, etc.) keep their current category-based format.
