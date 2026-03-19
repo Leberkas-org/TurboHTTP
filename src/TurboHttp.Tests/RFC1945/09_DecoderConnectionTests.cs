@@ -17,7 +17,7 @@ public sealed class Http10DecoderConnectionTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-8-CONN-001: HTTP/1.0 default connection is close")]
+    [Fact(DisplayName = "RFC1945-8-CN-001: HTTP/1.0 default connection is close")]
     public void Should_DefaultToClose_When_NoConnectionHeader()
     {
         var decoder = new Http10Decoder();
@@ -30,7 +30,7 @@ public sealed class Http10DecoderConnectionTests
         Assert.Equal(new Version(1, 0), response.Version);
     }
 
-    [Fact(DisplayName = "RFC1945-8-CONN-002: Connection: keep-alive recognized in HTTP/1.0")]
+    [Fact(DisplayName = "RFC1945-8-CN-002: Connection: keep-alive recognized in HTTP/1.0")]
     public void Should_RecognizeKeepAlive_When_ConnectionHeaderPresent()
     {
         var decoder = new Http10Decoder();
@@ -43,7 +43,7 @@ public sealed class Http10DecoderConnectionTests
         Assert.Contains("keep-alive", values);
     }
 
-    [Fact(DisplayName = "RFC1945-8-CONN-003: Keep-Alive timeout and max parameters parsed")]
+    [Fact(DisplayName = "RFC1945-8-CN-003: Keep-Alive timeout and max parameters parsed")]
     public void Should_ParseKeepAliveParams_When_KeepAliveHeader()
     {
         var decoder = new Http10Decoder();
@@ -58,7 +58,7 @@ public sealed class Http10DecoderConnectionTests
         Assert.Contains("max=100", value);
     }
 
-    [Fact(DisplayName = "RFC1945-8-CONN-004: Connection: close signals close after response")]
+    [Fact(DisplayName = "RFC1945-8-CN-004: Connection: close signals close after response")]
     public void Should_SignalClose_When_ConnectionCloseHeader()
     {
         var decoder = new Http10Decoder();
@@ -71,7 +71,7 @@ public sealed class Http10DecoderConnectionTests
         Assert.Contains("close", values);
     }
 
-    [Fact(DisplayName = "RFC1945-8-CONN-005: HTTP/1.0 does not default to keep-alive")]
+    [Fact(DisplayName = "RFC1945-8-CN-005: HTTP/1.0 does not default to keep-alive")]
     public void Should_NotDefaultToKeepAlive_When_Http10()
     {
         var decoder = new Http10Decoder();

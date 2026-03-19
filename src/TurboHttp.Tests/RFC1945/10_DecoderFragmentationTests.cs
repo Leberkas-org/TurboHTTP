@@ -31,7 +31,7 @@ public sealed class Http10DecoderFragmentationTests
         return -1;
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-001: Headers split across two chunks reassembled")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-001: Headers split across two chunks reassembled")]
     public void Fragmentation_HeadersSplitAcrossTwoChunks_ReassembledCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -50,7 +50,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-002: Body split across two chunks reassembled")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-002: Body split across two chunks reassembled")]
     public async Task Fragmentation_BodySplitAcrossTwoChunks_ReassembledCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -69,7 +69,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal("1234567890", body);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-003: Single byte chunks eventually decoded")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-003: Single byte chunks eventually decoded")]
     public void Fragmentation_SingleByteChunks_EventuallyDecodes()
     {
         var decoder = new Http10Decoder();
@@ -93,7 +93,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-004: Multiple responses decoded independently")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-004: Multiple responses decoded independently")]
     public void Fragmentation_MultipleResponses_DecodedIndependently()
     {
         var decoder = new Http10Decoder();
@@ -108,7 +108,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.NotFound, r2!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-005: Incomplete header returns false and buffers")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-005: Incomplete header returns false and buffers")]
     public void Fragmentation_IncompleteHeader_ReturnsFalseAndBuffers()
     {
         var decoder = new Http10Decoder();
@@ -120,7 +120,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-006: Incomplete body returns false and buffers")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-006: Incomplete body returns false and buffers")]
     public void Fragmentation_IncompleteBody_ReturnsFalseAndBuffers()
     {
         var decoder = new Http10Decoder();
@@ -132,7 +132,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-007: Three chunks decoded correctly")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-007: Three chunks decoded correctly")]
     public async Task Fragmentation_ThreeChunks_DecodesCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -153,7 +153,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal("ABCDEFGHI", body);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-008: Status-line split at byte 1 reassembled")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-008: Status-line split at byte 1 reassembled")]
     public void Should_Reassemble_When_StatusLineSplitAtByte1()
     {
         var decoder = new Http10Decoder();
@@ -164,7 +164,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-009: Status-line split inside version reassembled")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-009: Status-line split inside version reassembled")]
     public void Should_Reassemble_When_StatusLineSplitInsideVersion()
     {
         var decoder = new Http10Decoder();
@@ -176,7 +176,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-010: Header name split across two reads")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-010: Header name split across two reads")]
     public void Should_Reassemble_When_HeaderNameSplit()
     {
         var decoder = new Http10Decoder();
@@ -188,7 +188,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-011: Header value split across two reads")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-011: Header value split across two reads")]
     public void Should_Reassemble_When_HeaderValueSplit()
     {
         var decoder = new Http10Decoder();
@@ -200,7 +200,7 @@ public sealed class Http10DecoderFragmentationTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-FRAG-012: Body split mid-content reassembled")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-012: Body split mid-content reassembled")]
     public async Task Should_Reassemble_When_BodySplitMidContent()
     {
         var decoder = new Http10Decoder();

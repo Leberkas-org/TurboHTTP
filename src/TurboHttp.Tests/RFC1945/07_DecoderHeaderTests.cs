@@ -19,7 +19,7 @@ public sealed class Http10DecoderHeaderTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-001: Single header parsed correctly")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-001: Single header parsed correctly")]
     public void Headers_SingleHeader_ParsedCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -36,7 +36,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("text/plain", values);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-002: Custom header parsed correctly")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-002: Custom header parsed correctly")]
     public void Headers_CustomHeader_ParsedCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -49,7 +49,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("my-value", values);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-003: Multiple custom headers all parsed")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-003: Multiple custom headers all parsed")]
     public void Headers_MultipleCustomHeaders_AllParsed()
     {
         var decoder = new Http10Decoder();
@@ -64,7 +64,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("value-b", b);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-004: Header names are case-insensitive")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-004: Header names are case-insensitive")]
     public void Headers_NamesAreCaseInsensitive()
     {
         var decoder = new Http10Decoder();
@@ -78,7 +78,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("lower-case", values);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-005: Obs-fold continuation accepted")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-005: Obs-fold continuation accepted")]
     public void Headers_FoldedHeader_IsContinuedCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -93,7 +93,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("continued", combined);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-006: Header with leading/trailing spaces trimmed")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-006: Header with leading/trailing spaces trimmed")]
     public void Headers_HeaderWithLeadingTrailingSpaces_AreTrimmed()
     {
         var decoder = new Http10Decoder();
@@ -106,7 +106,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("trimmed-value", values);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-007: LF-only line endings accepted in headers")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-007: LF-only line endings accepted in headers")]
     public void Headers_LfOnlyLineEnding_ParsedCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -118,7 +118,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.NotNull(response);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-008: Obs-fold with multiple continuation lines merged")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-008: Obs-fold with multiple continuation lines merged")]
     public void Should_MergeDoubleObsFold_When_TwoContinuationLines()
     {
         var decoder = new Http10Decoder();
@@ -133,7 +133,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("part3", combined);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-009: Duplicate response headers both accessible")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-009: Duplicate response headers both accessible")]
     public void Should_PreserveBothHeaders_When_DuplicateNonContentLength()
     {
         var decoder = new Http10Decoder();
@@ -147,7 +147,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("second", list);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-010: Header without colon causes parse error")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-010: Header without colon causes parse error")]
     public void Should_ThrowInvalidHeader_When_NoColon()
     {
         var decoder = new Http10Decoder();
@@ -157,7 +157,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-011: Case-insensitive Content-Length header matching")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-011: Case-insensitive Content-Length header matching")]
     public void Should_MatchCaseInsensitive_When_UppercaseHeaderName()
     {
         var decoder = new Http10Decoder();
@@ -169,7 +169,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Equal(5, response!.Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-012: Header value whitespace trimmed")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-012: Header value whitespace trimmed")]
     public void Should_TrimWhitespace_When_HeaderValueHasExtraSpaces()
     {
         var decoder = new Http10Decoder();
@@ -181,7 +181,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Equal("hello world", values.First());
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-013: Space in header name causes parse error")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-013: Space in header name causes parse error")]
     public void Should_ThrowInvalidFieldName_When_SpaceInHeaderName()
     {
         var decoder = new Http10Decoder();
@@ -191,7 +191,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Equal(HttpDecoderError.InvalidFieldName, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-014: Tab character in header value accepted")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-014: Tab character in header value accepted")]
     public void Should_AcceptTab_When_HeaderValueContainsTab()
     {
         var decoder = new Http10Decoder();
@@ -204,7 +204,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Contains("before\tafter", values);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-015: Response with no headers except status-line accepted")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-015: Response with no headers except status-line accepted")]
     public void Should_AcceptResponse_When_ZeroHeaders()
     {
         var decoder = new Http10Decoder();
@@ -216,7 +216,7 @@ public sealed class Http10DecoderHeaderTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-4-HDR-016: Empty header value skipped safely")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-016: Empty header value skipped safely")]
     public void EdgeCase_HeaderWithoutValue_SkippedSafely()
     {
         var decoder = new Http10Decoder();

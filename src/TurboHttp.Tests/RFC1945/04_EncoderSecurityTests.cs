@@ -10,7 +10,7 @@ public sealed class Http10EncoderSecurityTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-001: CR in header value throws ArgumentException")]
     public void HeaderInjection_CrInValue_ThrowsArgumentException()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -22,7 +22,7 @@ public sealed class Http10EncoderSecurityTests
             Http10Encoder.Encode(request, ref buffer));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-002: LF in header value throws ArgumentException")]
     public void HeaderInjection_LfInValue_ThrowsArgumentException()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -34,7 +34,7 @@ public sealed class Http10EncoderSecurityTests
             Http10Encoder.Encode(request, ref buffer));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-003: CRLF in header value throws ArgumentException")]
     public void HeaderInjection_CrLfInValue_ThrowsArgumentException()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -46,7 +46,7 @@ public sealed class Http10EncoderSecurityTests
             Http10Encoder.Encode(request, ref buffer));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-004: Header injection exception contains header name")]
     public void HeaderInjection_Exception_ContainsHeaderName()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -60,7 +60,7 @@ public sealed class Http10EncoderSecurityTests
         Assert.Contains("X-Dangerous", ex.Message);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-005: Normal header value does not throw")]
     public void HeaderInjection_NormalValue_DoesNotThrow()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -72,7 +72,7 @@ public sealed class Http10EncoderSecurityTests
         Assert.Null(ex);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-006: Buffer too small for headers throws")]
     public void BufferOverflow_BufferTooSmallForHeaders_ThrowsInvalidOperationException()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -82,7 +82,7 @@ public sealed class Http10EncoderSecurityTests
             Http10Encoder.Encode(request, ref buffer));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-007: Buffer too small for body throws")]
     public void BufferOverflow_BufferTooSmallForBody_ThrowsInvalidOperationException()
     {
         var largeBody = new byte[1000];
@@ -97,7 +97,7 @@ public sealed class Http10EncoderSecurityTests
             Http10Encoder.Encode(request, ref buffer));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-008: Exact size buffer does not throw")]
     public void BufferOverflow_ExactSizeBuffer_DoesNotThrow()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -111,7 +111,7 @@ public sealed class Http10EncoderSecurityTests
         Assert.Null(ex);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-12-SC-009: Empty buffer throws")]
     public void BufferOverflow_EmptyBuffer_ThrowsInvalidOperationException()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");

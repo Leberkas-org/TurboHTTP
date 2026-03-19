@@ -22,7 +22,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// Original uses Source.Single → Http10EncoderStage → Sink.Seq via Akka Materializer.
     /// This version calls Http10Encoder.Encode directly — same assertion, no ActorSystem.
     /// </summary>
-    [Fact(DisplayName = "RFC-1945-§5.1: Request-Line is METHOD SP path SP HTTP/1.0 CRLF (plain unit test)")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-001: Request-Line is METHOD SP path SP HTTP/1.0 CRLF (plain unit test)")]
     public void ST_10_ENC_001_Plain_RequestLine_Format()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/index.html")
@@ -38,7 +38,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// <summary>
     /// Mirrors <c>Http10EncoderStageTests.ST_10_ENC_002_CustomHeader_Forwarded</c>.
     /// </summary>
-    [Fact(DisplayName = "RFC-1945-§7.1: Custom header is forwarded verbatim (plain unit test)")]
+    [Fact(DisplayName = "RFC1945-7.1-HD-001: Custom header is forwarded verbatim (plain unit test)")]
     public void ST_10_ENC_002_Plain_CustomHeader_Forwarded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -55,7 +55,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// <summary>
     /// Mirrors <c>Http10EncoderStageTests.ST_10_ENC_003_NoHostHeader</c>.
     /// </summary>
-    [Fact(DisplayName = "RFC-1945-§D.1: No Host header emitted (plain unit test)")]
+    [Fact(DisplayName = "RFC1945-D.1-HD-002: No Host header emitted (plain unit test)")]
     public void ST_10_ENC_003_Plain_NoHostHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -71,7 +71,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// <summary>
     /// Mirrors <c>Http10EncoderStageTests.ST_10_ENC_005_PostBody_FollowsHeaders</c>.
     /// </summary>
-    [Fact(DisplayName = "RFC-1945-§D.1: POST body bytes follow headers after double-CRLF (plain unit test)")]
+    [Fact(DisplayName = "RFC1945-D.1-BD-001: POST body bytes follow headers after double-CRLF (plain unit test)")]
     public void ST_10_ENC_005_Plain_PostBody_FollowsHeaders()
     {
         var body = "hello"u8.ToArray();

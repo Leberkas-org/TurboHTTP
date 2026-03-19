@@ -48,7 +48,7 @@ public sealed class Http10EncoderBodyTests
         return -1;
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-001: POST body Content-Length is correct")]
     public void Body_PostWithBody_ContentLengthIsCorrect()
     {
         const string bodyText = "Hello, World!";
@@ -64,7 +64,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal($"Content-Length: {Encoding.ASCII.GetByteCount(bodyText)}", contentLength);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-002: POST body is correctly written")]
     public void Body_PostWithBody_BodyIsCorrectlyWritten()
     {
         const string bodyText = "Hello, World!";
@@ -78,7 +78,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(bodyText, Encoding.ASCII.GetString(body));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-003: GET with no body has no Content-Length")]
     public void Body_GetWithNoBody_ContentLengthAbsent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -88,7 +88,7 @@ public sealed class Http10EncoderBodyTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-004: GET with no body has no Content-Type")]
     public void Body_GetWithNoBody_ContentTypeAbsent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -98,7 +98,7 @@ public sealed class Http10EncoderBodyTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Content-Type:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-005: Binary POST body bytes exactly preserved")]
     public void Body_PostWithBinaryBody_BytesExactlyPreserved()
     {
         var bodyBytes = new byte[] { 0x00, 0x01, 0x02, 0xFF, 0xFE, 0x7F };
@@ -118,7 +118,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(bodyBytes, actualBody);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-006: Empty POST body has Content-Length 0")]
     public void Body_PostWithEmptyBody_ContentLengthIsZero()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -135,7 +135,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Empty(body);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-007: Large POST body Content-Length matches body size")]
     public void Body_PostWithLargeBody_ContentLengthMatchesBodySize()
     {
         var largeBody = new byte[4096];
@@ -158,7 +158,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(4096, reportedLength);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-7.2-BD-008: Body appears after header separator")]
     public void Body_PostWithBody_BodyAppearsAfterHeaderSeparator()
     {
         const string bodyText = "BODY_CONTENT";
@@ -174,7 +174,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(bodyText, bodyPart);
     }
 
-    [Fact(DisplayName = "1945-enc-005: Content-Length present for POST body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-009: Content-Length present for POST body")]
     public void Should_SetContentLength_When_PostHasBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -188,7 +188,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal("Content-Length: 6", cl);
     }
 
-    [Fact(DisplayName = "1945-enc-006: Content-Length absent for bodyless GET")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-010: Content-Length absent for bodyless GET")]
     public void Should_OmitContentLength_When_GetHasNoBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -198,7 +198,7 @@ public sealed class Http10EncoderBodyTests
             h => h.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact(DisplayName = "1945-enc-008: Binary POST body encoded verbatim")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-011: Binary POST body encoded verbatim")]
     public void Should_EncodeBinaryBodyVerbatim_When_PostWithBinaryContent()
     {
         var bodyBytes = new byte[] { 0x00, 0x01, 0xFF, 0xFE, 0x7F, 0x80 };
@@ -218,7 +218,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(bodyBytes, actualBody);
     }
 
-    [Fact(DisplayName = "1945-enc-009: UTF-8 JSON body encoded correctly")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-012: UTF-8 JSON body encoded correctly")]
     public void Should_EncodeUtf8JsonBody_When_PostWithJsonContent()
     {
         const string json = "{\"name\":\"value\",\"count\":42}";
@@ -238,7 +238,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(json, actualBody);
     }
 
-    [Fact(DisplayName = "enc1-body-001: Body with null bytes not truncated")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-013: Body with null bytes not truncated")]
     public void Should_NotTruncateBody_When_BodyContainsNullBytes()
     {
         var bodyBytes = new byte[] { 0x41, 0x00, 0x42, 0x00, 0x00, 0x43 };
@@ -259,7 +259,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(bodyBytes, actualBody);
     }
 
-    [Fact(DisplayName = "enc1-body-002: 2 MB body encoded with correct Content-Length")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-014: 2 MB body encoded with correct Content-Length")]
     public void Should_EncodeWithCorrectContentLength_When_BodyIs2MB()
     {
         var bodyBytes = new byte[2 * 1024 * 1024];
@@ -282,7 +282,7 @@ public sealed class Http10EncoderBodyTests
         Assert.Equal(2 * 1024 * 1024, reportedLength);
     }
 
-    [Fact(DisplayName = "enc1-body-003: CRLFCRLF separates headers from body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-015: CRLFCRLF separates headers from body")]
     public void Should_SeparateHeadersFromBody_When_EncodingWithBody()
     {
         const string body = "BODY";

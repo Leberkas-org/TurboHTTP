@@ -30,7 +30,7 @@ public sealed class Http10RoundTripHeaderTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H01: Content-Type header preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-001: Content-Type header preserved")]
     public void Should_PreserveContentTypeHeader_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -42,7 +42,7 @@ public sealed class Http10RoundTripHeaderTests
         Assert.True(response!.Content.Headers.ContentType?.MediaType == "application/json");
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H02: Content-Length header preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-002: Content-Length header preserved")]
     public void Should_PreserveContentLengthHeader_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -55,7 +55,7 @@ public sealed class Http10RoundTripHeaderTests
         Assert.Equal(13, response.Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H03: Custom X-Custom header preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-003: Custom X-Custom header preserved")]
     public void Should_PreserveCustomHeader_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -68,7 +68,7 @@ public sealed class Http10RoundTripHeaderTests
         Assert.Equal("CustomValue", response.Headers.GetValues("X-Custom-Header").First());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H04: Location header preserved in redirect")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-004: Location header preserved in redirect")]
     public void Should_PreserveLocationHeader_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -82,7 +82,7 @@ public sealed class Http10RoundTripHeaderTests
             response.Headers.GetValues("Location").First());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H05: Multiple custom headers preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-005: Multiple custom headers preserved")]
     public void Should_PreserveMultipleCustomHeaders_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -99,7 +99,7 @@ public sealed class Http10RoundTripHeaderTests
         Assert.Equal("Value3", response.Headers.GetValues("X-Header-3").First());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H06: Server header preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-006: Server header preserved")]
     public void Should_PreserveServerHeader_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -112,7 +112,7 @@ public sealed class Http10RoundTripHeaderTests
         Assert.Equal("TestServer/1.0", response.Headers.GetValues("Server").First());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H07: Date header preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-007: Date header preserved")]
     public void Should_PreserveDateHeader_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -126,7 +126,7 @@ public sealed class Http10RoundTripHeaderTests
         Assert.Equal(dateValue, response.Headers.GetValues("Date").First());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-H08: Header values with special characters preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-008: Header values with special characters preserved")]
     public void Should_PreserveHeaderWithSpecialChars_When_RoundTrip()
     {
         var decoder = new Http10Decoder();

@@ -33,7 +33,7 @@ public sealed class Http10RoundTripMethodTests
         return Encoding.ASCII.GetBytes(sb.ToString());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M01: GET method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-001: GET method preserved in round-trip")]
     public void Should_PreserveGetMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -43,7 +43,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("GET /resource HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M02: POST method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-002: POST method preserved in round-trip")]
     public void Should_PreservePostMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")
@@ -56,7 +56,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("POST /submit HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M03: PUT method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-003: PUT method preserved in round-trip")]
     public void Should_PreservePutMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Put, "http://example.com/resource")
@@ -69,7 +69,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("PUT /resource HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M04: DELETE method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-004: DELETE method preserved in round-trip")]
     public void Should_PreserveDeleteMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, "http://example.com/resource");
@@ -79,7 +79,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("DELETE /resource HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M05: PATCH method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-005: PATCH method preserved in round-trip")]
     public void Should_PreservePatchMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Patch, "http://example.com/resource")
@@ -92,7 +92,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("PATCH /resource HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M06: OPTIONS method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-006: OPTIONS method preserved in round-trip")]
     public void Should_PreserveOptionsMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, "http://example.com/");
@@ -102,7 +102,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("OPTIONS / HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M07: HEAD method preserved in round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-007: HEAD method preserved in round-trip")]
     public void Should_PreserveHeadMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Head, "http://example.com/resource");
@@ -112,7 +112,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("HEAD /resource HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M08: GET with query string round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-008: GET with query string round-trip")]
     public void Should_PreserveQueryString_When_GetRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?q=test&page=1");
@@ -122,7 +122,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.Contains("GET /search?q=test&page=1 HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M09: POST with body round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-009: POST with body round-trip")]
     public void Should_PreservePostBody_When_PostRoundTrip()
     {
         var bodyContent = "field1=value1&field2=value2";
@@ -137,7 +137,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.Contains(bodyContent, rawStr);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M10: Multiple requests with different methods")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-010: Multiple requests with different methods")]
     public void Should_PreserveMethodsConsistently_When_MultipleRequests()
     {
         var methods = new[] { HttpMethod.Get, HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete };
@@ -156,7 +156,7 @@ public sealed class Http10RoundTripMethodTests
         }
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M11: TRACE method (extension) round-trip")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-011: TRACE method (extension) round-trip")]
     public void Should_PreserveTraceMethod_When_RoundTrip()
     {
         var request = new HttpRequestMessage(new HttpMethod("TRACE"), "http://example.com/");
@@ -166,7 +166,7 @@ public sealed class Http10RoundTripMethodTests
         Assert.StartsWith("TRACE / HTTP/1.0", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-M12: Method case sensitivity (uppercase required)")]
+    [Fact(DisplayName = "RFC1945-5.1-MT-012: Method case sensitivity (uppercase required)")]
     public void Should_PreserveUppercaseMethod_When_Encoded()
     {
         var request = new HttpRequestMessage(new HttpMethod("CUSTOM"), "http://example.com/");

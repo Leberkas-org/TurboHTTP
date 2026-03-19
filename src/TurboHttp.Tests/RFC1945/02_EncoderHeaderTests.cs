@@ -37,7 +37,7 @@ public sealed class Http10EncoderHeaderTests
         return Encoding.ASCII.GetString(buffer.Span[..written]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-001: Host header removed for HTTP/1.0")]
     public void Headers_HostHeader_IsRemovedForHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -46,7 +46,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Host:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-002: Connection header removed")]
     public void Headers_ConnectionHeader_IsRemoved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -57,7 +57,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Connection:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-003: Keep-Alive header removed")]
     public void Headers_KeepAliveHeader_IsRemoved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -68,7 +68,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Keep-Alive:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-004: Transfer-Encoding header removed")]
     public void Headers_TransferEncodingHeader_IsRemoved()
     {
         // Transfer-Encoding ist HTTP/1.1 (RFC 2616 §14.41)
@@ -80,7 +80,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Transfer-Encoding:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-005: Custom header preserved")]
     public void Headers_CustomHeader_IsPreserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -91,7 +91,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Contains(headerLines, h => h == "X-Custom-Header: my-value");
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-006: Multiple custom headers all preserved")]
     public void Headers_MultipleCustomHeaders_AllPreserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -104,7 +104,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Contains(headerLines, h => h == "X-Header-B: value-b");
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-007: Header format is name: value")]
     public void Headers_HeaderFormat_IsNameColonSpaceValue()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -116,7 +116,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Equal("X-Test: test-value", header);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-008: Each header ends with CRLF")]
     public void Headers_EachHeaderEndsWithCrLf()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -131,7 +131,7 @@ public sealed class Http10EncoderHeaderTests
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-009: Multi-value header each value on separate line")]
     public void Headers_MultiValueHeader_EachValueOnSeparateLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -144,7 +144,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Equal(2, acceptLines.Length);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-010: Accept header preserved")]
     public void Headers_AcceptHeader_IsPreserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -155,7 +155,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Contains(headerLines, h => h.StartsWith("Accept:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-011: Request with no custom headers has no suppressed headers")]
     public void Headers_RequestWithNoCustomHeaders_OnlyContainsRfcMandatoryHeaders()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -166,7 +166,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Transfer-Encoding:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-4.2-HD-012: Header separator is double CRLF")]
     public void Headers_HeaderSeparator_IsDoubleCrLf()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -175,7 +175,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Contains("\r\n\r\n", raw);
     }
 
-    [Fact(DisplayName = "1945-enc-002: Host header absent in HTTP/1.0 request")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-013: Host header absent in HTTP/1.0 request")]
     public void Should_OmitHostHeader_When_EncodingHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -184,7 +184,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Host:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact(DisplayName = "1945-enc-003: Transfer-Encoding absent in HTTP/1.0 request")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-014: Transfer-Encoding absent in HTTP/1.0 request")]
     public void Should_OmitTransferEncoding_When_EncodingHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -195,7 +195,7 @@ public sealed class Http10EncoderHeaderTests
             h => h.StartsWith("Transfer-Encoding:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact(DisplayName = "1945-enc-004: Connection header absent in HTTP/1.0 request")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-015: Connection header absent in HTTP/1.0 request")]
     public void Should_OmitConnectionHeader_When_EncodingHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -206,7 +206,7 @@ public sealed class Http10EncoderHeaderTests
             h => h.StartsWith("Connection:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact(DisplayName = "enc1-hdr-001: Every header line terminated with CRLF")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-016: Every header line terminated with CRLF")]
     public void Should_TerminateEveryHeaderWithCrlf_When_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -219,7 +219,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.DoesNotContain("\n", headerSection.Replace("\r\n", ""));
     }
 
-    [Fact(DisplayName = "enc1-hdr-002: Custom header name casing preserved")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-017: Custom header name casing preserved")]
     public void Should_PreserveHeaderNameCasing_When_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -230,7 +230,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Contains(headerLines, h => h.StartsWith("X-My-Custom-Header:"));
     }
 
-    [Fact(DisplayName = "enc1-hdr-003: Multiple custom headers all emitted")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-018: Multiple custom headers all emitted")]
     public void Should_EmitAllCustomHeaders_When_MultiplePresent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -245,7 +245,7 @@ public sealed class Http10EncoderHeaderTests
         Assert.Contains(headerLines, h => h == "X-Third: c");
     }
 
-    [Fact(DisplayName = "enc1-hdr-004: Semicolon in header value preserved verbatim")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-019: Semicolon in header value preserved verbatim")]
     public void Should_PreserveSemicolon_When_InHeaderValue()
     {
         var content = new ByteArrayContent("x"u8.ToArray());
@@ -262,7 +262,7 @@ public sealed class Http10EncoderHeaderTests
                  && h.Contains(";"));
     }
 
-    [Fact(DisplayName = "enc1-hdr-005: NUL byte in header value throws exception")]
+    [Fact(DisplayName = "RFC1945-4.2-HD-020: NUL byte in header value throws exception")]
     public void Should_ThrowArgumentException_When_HeaderValueContainsNul()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");

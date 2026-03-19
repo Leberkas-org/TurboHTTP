@@ -36,7 +36,7 @@ public sealed class Http10EncoderRequestLineTests
         return (requestLine, headerLines, Encoding.ASCII.GetBytes(bodyString));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-5.1-RL-001: Request-line contains exactly one space between parts")]
     public void RequestLine_ContainsExactlyOneSpaceBetweenParts()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -46,7 +46,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal(3, parts.Length);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-5.1-RL-002: Protocol version is HTTP/1.0")]
     public void RequestLine_ProtocolVersionIsHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -55,7 +55,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.EndsWith("HTTP/1.0", requestLine);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-5.1-RL-003: Request-line ends with CRLF")]
     public void RequestLine_EndsWithCrLf()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -64,7 +64,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.StartsWith("GET / HTTP/1.0\r\n", raw);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-5.1-RL-004: Query string included in request-target")]
     public void RequestLine_WithQueryString_IncludesQueryInUri()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?q=hello&page=2");
@@ -73,7 +73,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal("GET /search?q=hello&page=2 HTTP/1.0", requestLine);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-5.1-RL-005: Root path normalized to /")]
     public void RequestLine_RootPath_IsForwardSlash()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
@@ -82,7 +82,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal("GET / HTTP/1.0", requestLine);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC1945-5.1-RL-006: Deep path preserved in request-target")]
     public void RequestLine_DeepPath_IsPreserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a/b/c/d");
@@ -91,7 +91,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal("GET /a/b/c/d HTTP/1.0", requestLine);
     }
 
-    [Fact(DisplayName = "1945-enc-001: Request-line uses HTTP/1.0")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-007: Request-line uses HTTP/1.0")]
     public void Should_UseHttp10Version_When_EncodingRequestLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
@@ -100,7 +100,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal("GET /path HTTP/1.0", requestLine);
     }
 
-    [Fact(DisplayName = "1945-enc-007: Path-and-query preserved in request-line")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-008: Path-and-query preserved in request-line")]
     public void Should_PreservePathAndQuery_When_EncodingRequestLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api/data?key=val&x=1");
@@ -109,7 +109,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal("GET /api/data?key=val&x=1 HTTP/1.0", requestLine);
     }
 
-    [Fact(DisplayName = "1945-5.1-004: Lowercase method rejected by HTTP/1.0 encoder")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-009: Lowercase method rejected by HTTP/1.0 encoder")]
     public void Should_ThrowArgumentException_When_MethodIsLowercase()
     {
         var request = new HttpRequestMessage(new HttpMethod("get"), "http://example.com/");
@@ -118,7 +118,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Throws<ArgumentException>(() => Http10Encoder.Encode(request, ref buffer));
     }
 
-    [Fact(DisplayName = "1945-5.1-005: Absolute URI encoded in request-line")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-010: Absolute URI encoded in request-line")]
     public void Should_EncodeAbsoluteUri_When_AbsoluteFormRequested()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path?q=1");
@@ -129,7 +129,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.StartsWith("GET http://example.com/path?q=1 HTTP/1.0\r\n", raw);
     }
 
-    [Theory(DisplayName = "enc1-m-001: All HTTP methods produce correct uppercase request-line")]
+    [Theory(DisplayName = "RFC1945-5.1-RL-011: All HTTP methods produce correct uppercase request-line")]
     [InlineData("GET", "/path")]
     [InlineData("POST", "/submit")]
     [InlineData("PUT", "/res")]
@@ -151,7 +151,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal($"{method} {path} HTTP/1.0", requestLine);
     }
 
-    [Fact(DisplayName = "enc1-uri-001: Missing path normalized to /")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-012: Missing path normalized to /")]
     public void Should_NormalizeToSlash_When_PathIsMissing()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
@@ -160,7 +160,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Equal("GET / HTTP/1.0", requestLine);
     }
 
-    [Fact(DisplayName = "enc1-uri-002: Query string preserved in request-target")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-013: Query string preserved in request-target")]
     public void Should_PreserveQueryString_When_EncodingRequestTarget()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/?a=1&b=2&c=3");
@@ -169,7 +169,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.Contains("?a=1&b=2&c=3", requestLine);
     }
 
-    [Fact(DisplayName = "enc1-uri-003: Percent-encoded chars not double-encoded")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-014: Percent-encoded chars not double-encoded")]
     public void Should_NotDoubleEncode_When_PathContainsPercentEncoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
@@ -180,7 +180,7 @@ public sealed class Http10EncoderRequestLineTests
         Assert.DoesNotContain("%2520", requestLine);
     }
 
-    [Fact(DisplayName = "enc1-uri-004: URI fragment stripped from request-target")]
+    [Fact(DisplayName = "RFC1945-5.1-RL-015: URI fragment stripped from request-target")]
     public void Should_StripFragment_When_UriContainsFragment()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page#section");

@@ -21,7 +21,7 @@ public sealed class Http10RoundTripFragmentationTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-F01: Fragmented at status line")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-001: Fragmented at status line")]
     public async Task Should_HandleFragmentationAtStatusLine_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -44,7 +44,7 @@ public sealed class Http10RoundTripFragmentationTests
         Assert.Equal("Hello", await response2.Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-F02: Fragmented at header boundary")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-002: Fragmented at header boundary")]
     public void Should_HandleFragmentationAtHeaderBoundary_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -66,7 +66,7 @@ public sealed class Http10RoundTripFragmentationTests
         Assert.NotNull(response2);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-F03: Fragmented at CRLF CRLF boundary")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-003: Fragmented at CRLF CRLF boundary")]
     public async Task Should_HandleFragmentationAtHeaderEndBoundary_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -88,7 +88,7 @@ public sealed class Http10RoundTripFragmentationTests
         Assert.Equal("FooBar", await response2!.Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC1945-RT-F04: Fragmented body delivery")]
+    [Fact(DisplayName = "RFC1945-7.2-FG-004: Fragmented body delivery")]
     public async Task Should_HandleBodyFragmentation_When_RoundTrip()
     {
         var decoder = new Http10Decoder();

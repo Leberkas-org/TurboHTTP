@@ -31,7 +31,7 @@ public sealed class Http10RoundTripProtocolTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P01: HTTP/1.0 version invariant")]
+    [Fact(DisplayName = "RFC1945-4-RT-001: HTTP/1.0 version invariant")]
     public void Should_EncodeHttp10Version_When_RequestEncoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -43,7 +43,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.DoesNotContain("HTTP/2", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P02: Request line format invariant")]
+    [Fact(DisplayName = "RFC1945-4-RT-002: Request line format invariant")]
     public void Should_FormatRequestLineCorrectly_When_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
@@ -56,7 +56,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Matches(@"^[A-Z]+ /\S* HTTP/1\.0$", firstLine);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P03: CRLF line endings required")]
+    [Fact(DisplayName = "RFC1945-4-RT-003: CRLF line endings required")]
     public void Should_UseCrlfLineEndings_When_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -67,7 +67,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Contains("\r\n", raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P04: Status code must be 3 digits")]
+    [Fact(DisplayName = "RFC1945-4-RT-004: Status code must be 3 digits")]
     public void Should_DecodeThreeDigitStatusCode_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -79,7 +79,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P05: Decoder state reset between requests")]
+    [Fact(DisplayName = "RFC1945-4-RT-005: Decoder state reset between requests")]
     public void Should_ResetDecoderState_When_Called()
     {
         var decoder = new Http10Decoder();
@@ -100,7 +100,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Equal(HttpStatusCode.NotFound, response2!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P06: Multiple decoders independent")]
+    [Fact(DisplayName = "RFC1945-4-RT-006: Multiple decoders independent")]
     public void Should_MaintainIndependentDecoderStates_When_MultipleDecodersUsed()
     {
         var decoder1 = new Http10Decoder();
@@ -116,7 +116,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Equal(HttpStatusCode.NotFound, response2!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P07: Reason phrase can be custom")]
+    [Fact(DisplayName = "RFC1945-4-RT-007: Reason phrase can be custom")]
     public void Should_PreserveCustomReasonPhrase_When_Decoded()
     {
         var decoder = new Http10Decoder();
@@ -127,7 +127,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Equal("Everything is fine", response!.ReasonPhrase);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P08: Headers case-insensitive")]
+    [Fact(DisplayName = "RFC1945-4-RT-008: Headers case-insensitive")]
     public void Should_HandleCaseInsensitiveHeaders_When_Decoded()
     {
         var decoder = new Http10Decoder();
@@ -141,7 +141,7 @@ public sealed class Http10RoundTripProtocolTests
                     response.Content.Headers.Contains("content-type"));
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P09: Request encoding deterministic")]
+    [Fact(DisplayName = "RFC1945-4-RT-009: Request encoding deterministic")]
     public void Should_ProduceDeterministicEncoding_When_SameRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/test");
@@ -156,7 +156,7 @@ public sealed class Http10RoundTripProtocolTests
         Assert.Equal(bytes1, bytes2);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-P10: Content-Length required for request bodies")]
+    [Fact(DisplayName = "RFC1945-4-RT-010: Content-Length required for request bodies")]
     public void Should_IncludeContentLength_When_RequestHasBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")

@@ -22,7 +22,7 @@ public sealed class Http10RoundTripStatusCodeTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S01: 200 OK status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-001: 200 OK status code round-trip")]
     public void Should_Decode200Ok_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -34,7 +34,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S02: 201 Created status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-002: 201 Created status code round-trip")]
     public void Should_Decode201Created_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -46,7 +46,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.Created, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S03: 204 No Content status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-003: 204 No Content status code round-trip")]
     public void Should_Decode204NoContent_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -58,7 +58,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.NoContent, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S04: 301 Moved Permanently status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-004: 301 Moved Permanently status code round-trip")]
     public void Should_Decode301MovedPermanently_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -71,7 +71,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.MovedPermanently, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S05: 302 Found status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-005: 302 Found status code round-trip")]
     public void Should_Decode302Found_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -84,7 +84,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.Found, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S06: 304 Not Modified status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-006: 304 Not Modified status code round-trip")]
     public void Should_Decode304NotModified_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -97,7 +97,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.NotModified, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S07: 400 Bad Request status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-007: 400 Bad Request status code round-trip")]
     public void Should_Decode400BadRequest_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -110,7 +110,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.BadRequest, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S08: 401 Unauthorized status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-008: 401 Unauthorized status code round-trip")]
     public void Should_Decode401Unauthorized_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -123,7 +123,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.Unauthorized, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S09: 404 Not Found status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-009: 404 Not Found status code round-trip")]
     public void Should_Decode404NotFound_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -136,7 +136,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.NotFound, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S10: 500 Internal Server Error status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-010: 500 Internal Server Error status code round-trip")]
     public void Should_Decode500InternalServerError_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -149,7 +149,7 @@ public sealed class Http10RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.InternalServerError, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-S11: 503 Service Unavailable status code round-trip")]
+    [Fact(DisplayName = "RFC1945-6.1-SC-011: 503 Service Unavailable status code round-trip")]
     public void Should_Decode503ServiceUnavailable_When_RoundTrip()
     {
         var decoder = new Http10Decoder();

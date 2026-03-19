@@ -33,7 +33,7 @@ public sealed class Http10RoundTripBodyTests
         return result;
     }
 
-    [Fact(DisplayName = "RFC1945-RT-B01: Content-Length with text body round-trip")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-001: Content-Length with text body round-trip")]
     public async Task Should_PreserveTextBody_When_ContentLengthRoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -48,7 +48,7 @@ public sealed class Http10RoundTripBodyTests
         Assert.Equal(bodyText, content);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-B02: Binary body with correct Content-Length")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-002: Binary body with correct Content-Length")]
     public async Task Should_PreserveBinaryBody_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -63,7 +63,7 @@ public sealed class Http10RoundTripBodyTests
         Assert.Equal(binaryBody, content);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-B03: UTF-8 encoded body round-trip")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-003: UTF-8 encoded body round-trip")]
     public async Task Should_PreserveUtf8Body_When_RoundTrip()
     {
         var decoder = new Http10Decoder();
@@ -80,7 +80,7 @@ public sealed class Http10RoundTripBodyTests
         Assert.Equal(bodyText, content);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-B04: Empty body with Content-Length 0")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-004: Empty body with Content-Length 0")]
     public async Task Should_DecodeEmptyBody_When_ContentLengthZero()
     {
         var decoder = new Http10Decoder();
@@ -94,7 +94,7 @@ public sealed class Http10RoundTripBodyTests
         Assert.Empty(content);
     }
 
-    [Fact(DisplayName = "RFC1945-RT-B05: Large body (1MB) round-trip")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-005: Large body (1MB) round-trip")]
     public async Task Should_PreserveLargeBody_When_1MbRoundTrip()
     {
         var decoder = new Http10Decoder();

@@ -17,7 +17,7 @@ public sealed class Http10DecoderStateTests
         return Bytes(raw);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-001: TryDecodeEof with buffered data returns true")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-001: TryDecodeEof with buffered data returns true")]
     public void TryDecodeEof_WithBufferedData_ReturnsTrue()
     {
         var decoder = new Http10Decoder();
@@ -34,7 +34,7 @@ public sealed class Http10DecoderStateTests
         Assert.NotNull(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-002: TryDecodeEof with empty buffer returns false")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-002: TryDecodeEof with empty buffer returns false")]
     public void TryDecodeEof_WithEmptyBuffer_ReturnsFalse()
     {
         var decoder = new Http10Decoder();
@@ -45,7 +45,7 @@ public sealed class Http10DecoderStateTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-003: TryDecodeEof with incomplete header returns false")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-003: TryDecodeEof with incomplete header returns false")]
     public void TryDecodeEof_WithIncompleteHeader_ReturnsFalse()
     {
         var decoder = new Http10Decoder();
@@ -58,7 +58,7 @@ public sealed class Http10DecoderStateTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-004: TryDecodeEof clears remainder")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-004: TryDecodeEof clears remainder")]
     public void TryDecodeEof_ClearsRemainder()
     {
         var decoder = new Http10Decoder();
@@ -72,7 +72,7 @@ public sealed class Http10DecoderStateTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-005: Reset clears buffered data")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-005: Reset clears buffered data")]
     public void Reset_ClearsBufferedData()
     {
         var decoder = new Http10Decoder();
@@ -86,7 +86,7 @@ public sealed class Http10DecoderStateTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-006: Reset allows decoding new response")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-006: Reset allows decoding new response")]
     public void Reset_AfterReset_DecodesNewResponseCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -102,7 +102,7 @@ public sealed class Http10DecoderStateTests
         Assert.Equal(System.Net.HttpStatusCode.Created, response!.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-007: Reset called multiple times does not throw")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-007: Reset called multiple times does not throw")]
     public void Reset_CalledMultipleTimes_DoesNotThrow()
     {
         var decoder = new Http10Decoder();
@@ -117,7 +117,7 @@ public sealed class Http10DecoderStateTests
         Assert.Null(ex);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-008: Empty input returns false")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-008: Empty input returns false")]
     public void EdgeCase_EmptyInput_ReturnsFalse()
     {
         var decoder = new Http10Decoder();
@@ -128,7 +128,7 @@ public sealed class Http10DecoderStateTests
         Assert.Null(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-009: Decoder state preserved across partial decodes")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-009: Decoder state preserved across partial decodes")]
     public void EdgeCase_StatePreservedAcrossPartials()
     {
         var decoder = new Http10Decoder();
@@ -149,7 +149,7 @@ public sealed class Http10DecoderStateTests
         Assert.Contains("value", values);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-010: Decoder reusable after successful decode")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-010: Decoder reusable after successful decode")]
     public void EdgeCase_DecoderReusableAfterDecode()
     {
         var decoder = new Http10Decoder();
@@ -167,7 +167,7 @@ public sealed class Http10DecoderStateTests
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response2.StatusCode);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-011: Multiple Reset calls idempotent")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-011: Multiple Reset calls idempotent")]
     public void EdgeCase_MultipleResetIdempotent()
     {
         var decoder = new Http10Decoder();
@@ -185,7 +185,7 @@ public sealed class Http10DecoderStateTests
         Assert.NotNull(response);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-012: Decoder maintains state through multiple fragments")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-012: Decoder maintains state through multiple fragments")]
     public void EdgeCase_StateMaintenanceMultipleFragments()
     {
         var decoder = new Http10Decoder();
@@ -208,7 +208,7 @@ public sealed class Http10DecoderStateTests
         Assert.NotNull(finalResponse);
     }
 
-    [Fact(DisplayName = "RFC1945-STATE-013: TryDecodeEof called after successful decode returns false")]
+    [Fact(DisplayName = "RFC1945-7.2-ST-013: TryDecodeEof called after successful decode returns false")]
     public void EdgeCase_TryDecodeEofAfterSuccess()
     {
         var decoder = new Http10Decoder();

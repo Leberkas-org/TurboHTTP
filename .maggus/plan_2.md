@@ -76,10 +76,10 @@ RFC{number}-{section}-{CAT}-{NNN}: {description}
 **Description:** As a developer, I want HTTP/1.0 tests to follow the same `RFC1945-{section}-{CAT}-{NNN}` format, including tests that currently lack DisplayNames.
 
 **Acceptance Criteria:**
-- [ ] Existing DisplayNames like `enc1-m-001` converted to `RFC1945-{section}-{CAT}-{NNN}`
-- [ ] DisplayNames added to files 04 (Security) and 05 (Integration) where RFC section is clear
-- [ ] Category codes: RL=RequestLine, HD=Headers, BD=Body, SC=Security, IT=Integration, SL=StatusLine, CN=Connection, FG=Fragmentation, ST=State, MT=Methods, SC=StatusCodes, RT=RoundTrip
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC1945"` passes with 0 failures
+- [x] Existing DisplayNames like `enc1-m-001` converted to `RFC1945-{section}-{CAT}-{NNN}`
+- [x] DisplayNames added to files 04 (Security) and 05 (Integration) where RFC section is clear
+- [x] Category codes: RL=RequestLine, HD=Headers, BD=Body, SC=Security, IT=Integration, SL=StatusLine, CN=Connection, FG=Fragmentation, ST=State, MT=Methods, SC=StatusCodes, RT=RoundTrip
+- [x] `dotnet test --filter "FullyQualifiedName~RFC1945"` passes with 0 failures
 
 ### TASK-004: RFC 7541 — Unify HPACK format (6 files, ~228 DisplayNames)
 **Description:** As a developer, I want HPACK tests to use the canonical `RFC7541-{section}-{CAT}-{NNN}` format consistently.

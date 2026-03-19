@@ -31,7 +31,7 @@ public sealed class Http10DecoderBodyTests
         return result;
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-001: Content-Length body decoded to exact byte count")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-001: Content-Length body decoded to exact byte count")]
     public async Task Body_WithContentLength_BodyReadCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -45,7 +45,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(body, actualBody);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-002: Content-Length exact bytes read")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-002: Content-Length exact bytes read")]
     public async Task Body_WithContentLength_ExactBytesRead()
     {
         var decoder = new Http10Decoder();
@@ -59,7 +59,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal("ABC", Encoding.ASCII.GetString(bytes));
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-003: Zero Content-Length produces empty body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-003: Zero Content-Length produces empty body")]
     public void Body_WithZeroContentLength_EmptyBody()
     {
         var decoder = new Http10Decoder();
@@ -70,7 +70,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(0, response!.Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-004: Body without Content-Length read until EOF")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-004: Body without Content-Length read until EOF")]
     public async Task Body_WithoutContentLength_ReadsUntilEndOfData()
     {
         var decoder = new Http10Decoder();
@@ -83,7 +83,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(body, actualBody);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-005: Binary content preserved exactly")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-005: Binary content preserved exactly")]
     public async Task Body_BinaryContent_PreservedExactly()
     {
         var bodyBytes = new byte[] { 0x00, 0x01, 0x7F, 0x80, 0xFE, 0xFF };
@@ -97,7 +97,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(bodyBytes, actualBody);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-006: Content-Length header set on content")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-006: Content-Length header set on content")]
     public void Body_ContentLengthHeader_SetOnContent()
     {
         var decoder = new Http10Decoder();
@@ -108,7 +108,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(5, response!.Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-007: 204 No Content has no body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-007: 204 No Content has no body")]
     public void Body_NoBody_ResponseContentIsNull()
     {
         var decoder = new Http10Decoder();
@@ -119,7 +119,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(0, response!.Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-008: Negative Content-Length rejected")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-008: Negative Content-Length rejected")]
     public void EdgeCase_ContentLengthNegative_ThrowsDecoderException()
     {
         var decoder = new Http10Decoder();
@@ -129,7 +129,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(HttpDecoderError.InvalidContentLength, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-009: Two different Content-Length values rejected")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-009: Two different Content-Length values rejected")]
     public void Should_ThrowMultipleContentLength_When_DifferentValues()
     {
         var decoder = new Http10Decoder();
@@ -139,7 +139,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-010: Two identical Content-Length values accepted")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-010: Two identical Content-Length values accepted")]
     public async Task Should_AcceptIdenticalContentLength_When_DuplicateValues()
     {
         var decoder = new Http10Decoder();
@@ -152,7 +152,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal("Hello", body);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-011: 304 Not Modified ignores Content-Length body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-011: 304 Not Modified ignores Content-Length body")]
     public async Task Should_HaveEmptyBody_When_304WithContentLength()
     {
         var decoder = new Http10Decoder();
@@ -166,7 +166,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Empty(bodyBytes);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-012: 304 Not Modified without Content-Length has empty body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-012: 304 Not Modified without Content-Length has empty body")]
     public async Task Should_HaveEmptyBody_When_304WithoutContentLength()
     {
         var decoder = new Http10Decoder();
@@ -180,7 +180,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Empty(bodyBytes);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-013: 204 No Content has empty body")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-013: 204 No Content has empty body")]
     public async Task Should_HaveEmptyBody_When_204NoContent()
     {
         var decoder = new Http10Decoder();
@@ -194,7 +194,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Empty(bodyBytes);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-014: Body with null bytes preserved")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-014: Body with null bytes preserved")]
     public async Task Should_PreserveNullBytes_When_BodyContainsThem()
     {
         var bodyBytes = new byte[] { 0x48, 0x00, 0x65, 0x00, 0x6C };
@@ -208,7 +208,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(bodyBytes, actual);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-015: 2 MB body decoded with correct Content-Length")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-015: 2 MB body decoded with correct Content-Length")]
     public async Task Should_Decode2MbBody_When_LargeContentLength()
     {
         var bodyBytes = new byte[2 * 1024 * 1024];
@@ -225,7 +225,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(bodyBytes, actual);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-016: Very large header handled correctly")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-016: Very large header handled correctly")]
     public void EdgeCase_VeryLargeHeader_HandledCorrectly()
     {
         var decoder = new Http10Decoder();
@@ -239,7 +239,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(longValue, values.First());
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-017: Transfer-Encoding chunked treated as raw body in HTTP/1.0")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-017: Transfer-Encoding chunked treated as raw body in HTTP/1.0")]
     public async Task Should_TreatChunkedAsRawBody_When_Http10()
     {
         var decoder = new Http10Decoder();
@@ -255,7 +255,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal(chunkedBody, body);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-018: Body without Content-Length via TryDecodeEof")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-018: Body without Content-Length via TryDecodeEof")]
     public async Task Should_ReadBodyViaEof_When_NoContentLength()
     {
         var decoder = new Http10Decoder();
@@ -268,7 +268,7 @@ public sealed class Http10DecoderBodyTests
         Assert.Equal("EOF body data", body);
     }
 
-    [Fact(DisplayName = "RFC1945-7-BODY-019: Empty input returns false")]
+    [Fact(DisplayName = "RFC1945-7.2-BD-019: Empty input returns false")]
     public void EdgeCase_EmptyInput_ReturnsFalse()
     {
         var decoder = new Http10Decoder();
