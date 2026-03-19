@@ -51,7 +51,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-001: All flags false — HTTP/1.1 request routes correctly")]
-    public async Task AllFlagsFalse_Http11RequestRoutesCorrectly()
+    public async Task Should_RouteHttp11Correctly_When_AllFlagsFalse()
     {
         var engine = new TurboHttp.Streams.Engine();
         var flow = engine.CreateFlow(
@@ -76,7 +76,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-002: EnableCookies — cookies are injected into outgoing requests")]
-    public async Task EnableCookies_CookiesAreInjectedIntoOutgoingRequests()
+    public async Task Should_CompletePipelineWithoutError_When_EnableCookiesIsTrue()
     {
         // Pre-populate a cookie jar so injection has something to inject
         var cookieJar = new CookieJar();
@@ -118,7 +118,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-003: EnableDecompression — gzip response body is decompressed")]
-    public async Task EnableDecompression_GzipBodyIsDecompressed()
+    public async Task Should_DecompressGzipBody_When_EnableDecompressionIsTrue()
     {
         const string originalText = "Hello, compressed world!";
 
@@ -173,7 +173,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-004: EnableCaching — pipeline assembles without error")]
-    public async Task EnableCaching_PipelineAssemblesWithoutError()
+    public async Task Should_AssemblePipelineWithoutError_When_EnableCachingIsTrue()
     {
         var options = new TurboClientOptions();
         var engine = new TurboHttp.Streams.Engine();
@@ -199,7 +199,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-005: EnableRetry — pipeline assembles with retry cycle wired")]
-    public async Task EnableRetry_PipelineAssemblesWithRetryCycle()
+    public async Task Should_AssemblePipelineWithRetryCycle_When_EnableRetryIsTrue()
     {
         // A non-retryable response (200) so the request goes through once
         var options = new TurboClientOptions();
@@ -226,7 +226,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-006: EnableRedirectHandling — non-redirect response passes through")]
-    public async Task EnableRedirectHandling_NonRedirectResponsePassesThrough()
+    public async Task Should_PassThroughNonRedirectResponse_When_EnableRedirectHandlingIsTrue()
     {
         var options = new TurboClientOptions();
         var engine = new TurboHttp.Streams.Engine();
@@ -253,7 +253,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "EPIPE-007: All flags true — full pipeline assembles and processes a request")]
-    public async Task AllFlagsTrue_FullPipelineAssemblesAndProcessesRequest()
+    public async Task Should_AssembleAndProcessRequest_When_AllFlagsTrue()
     {
         var options = new TurboClientOptions();
 
@@ -280,7 +280,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-008: CreateFlow with null options routes HTTP/1.1 correctly")]
-    public async Task CreateFlowWithNullOptions_RoutesHttp11Correctly()
+    public async Task Should_RouteHttp11Correctly_When_OptionsIsNull()
     {
         var engine = new TurboHttp.Streams.Engine();
         var flow = engine.CreateFlow(
