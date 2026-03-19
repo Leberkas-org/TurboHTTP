@@ -191,21 +191,25 @@ Tests live in `src/TurboHttp.Tests/` organised by RFC:
 
 | Folder | RFC | Files | Unit Tests |
 |--------|-----|-------|------------|
-| `RFC1945/` (01–18) | HTTP/1.0 | 18 | 232 |
-| `RFC9112/` (01–23 + 3 preserved) | HTTP/1.1 | 26 | 379 |
-| `RFC9113/` (01–29 + Http2FrameTests) | HTTP/2 | 27 | 580 |
-| `RFC7541/` (01–07 + HpackTests) | HPACK | 7 | 384 |
-| `RFC9110/` (01–03) | HTTP Semantics | 3 | 118 |
-| `RFC9111/` (01–05) | Caching | 5 | 75 |
-| `RFC6265/` (01) | Cookies | 1 | 59 |
+| `RFC1945/` (01–17) | HTTP/1.0 | 17 | 233 |
+| `RFC9112/` (01–26) | HTTP/1.1 | 26 | 374 |
+| `RFC9113/` (01–27) | HTTP/2 | 27 | 545 |
+| `RFC7541/` (01–07) | HPACK | 7 | 419 |
+| `RFC9110/` (01–02) | HTTP Semantics | 2 | 123 |
+| `RFC9111/` (01–04) | Caching | 4 | 75 |
+| `RFC6265/` (01–02) | Cookies | 2 | 66 |
 
-Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and stage behaviour. Organised by protocol version:
-- `Http10/` — encoder/decoder/roundtrip stage tests + TCP fragmentation
-- `Http11/` — encoder/decoder/chunked/correlation/pipeline/connection management stage tests
-- `Http20/` — encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control/correlation stage tests
-- `Streams/` — `RequestEnricherStage`, `ExtractOptionsStage`, Decompression, Cache, Cookie, Redirect, Retry, ConnectionReuse, Engine routing
+Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and stage behaviour. Organised by RFC (mirroring `TurboHttp.Tests`):
+- `RFC1945/` — HTTP/1.0 encoder/decoder/roundtrip stages, TCP fragmentation
+- `RFC6265/` — Cookie injection and storage stage tests
+- `RFC7541/` — HPACK stream integration tests
+- `RFC9110/` — Decompression, redirect, retry stage tests
+- `RFC9111/` — Cache lookup and storage stage tests
+- `RFC9112/` — HTTP/1.1 encoder/decoder/chunked/correlation/pipeline/connection stages
+- `RFC9113/` — HTTP/2 encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control/correlation stages
+- `Streams/` — stage infrastructure: connection, engine routing, enricher, buffer lifecycle, pipeline wiring
 - `IO/` — ConnectionActor, HostPoolActor, ConnectionState, ConnectionHandle
-- `Stages/` — Encoder/decoder buffer lifecycle
+- File naming: RFC subfolder files use descriptive names (`Http11EncoderStageTests.cs`); `Streams/` uses `NN_` prefix for ordered tests
 - Base classes: `StreamTestBase` (extends `TestKit`, creates `IMaterializer`), `EngineTestBase` (full engine round-trip helper)
 
 Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures (`KestrelFixture`, `KestrelH2Fixture`, `KestrelTlsFixture`) with 60+ routes registered. No end-to-end test classes yet — fixtures are infrastructure-only, ready for future integration tests.

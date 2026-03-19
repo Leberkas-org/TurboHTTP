@@ -482,10 +482,10 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 - `src/TurboHttp.Tests/RFC9111/05_CacheIntegrationTests.cs`
 
 **Acceptance Criteria:**
-- [ ] All 3 files deleted
-- [ ] Build green
-- [ ] Remaining tests all green
-- [ ] Numbering gaps closed by renaming if needed
+- [x] All 3 files deleted
+- [x] Build green
+- [x] Remaining tests all green
+- [x] Numbering gaps closed by renaming if needed
 
 ---
 
@@ -494,9 +494,9 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Description:** Update CLAUDE.md and RFC_COVERAGE.md to reflect the new state.
 
 **Acceptance Criteria:**
-- [ ] `CLAUDE.md` — Test table: file counts corrected, StreamTests structure documented, naming convention mentioned
-- [ ] `RFC_COVERAGE.md` — test counts corrected
-- [ ] Build green
+- [x] `CLAUDE.md` — Test table: file counts corrected, StreamTests structure documented, naming convention mentioned
+- [x] `RFC_COVERAGE.md` — test counts corrected
+- [x] Build green
 
 ---
 
