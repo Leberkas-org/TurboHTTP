@@ -210,10 +210,10 @@ public class Engine
         }
 
         public override ImmutableArray<Inlet> Inlets =>
-            ImmutableArray.Create<Inlet>(ResponseIn, CacheHitIn);
+            [ResponseIn, CacheHitIn];
 
         public override ImmutableArray<Outlet> Outlets =>
-            ImmutableArray.Create<Outlet>(ResponseOut, RetryFeedbackOut, RedirectFeedbackOut);
+            [ResponseOut, RetryFeedbackOut, RedirectFeedbackOut];
 
         public override Shape DeepCopy() => new PostProcessShape(
             (Inlet<HttpResponseMessage>)ResponseIn.CarbonCopy(),

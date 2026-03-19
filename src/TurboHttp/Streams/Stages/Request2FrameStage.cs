@@ -2,6 +2,7 @@
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages;
@@ -34,8 +35,19 @@ public sealed class Request2FrameStage : GraphStage<FlowShape<(HttpRequestMessag
                 var (request, streamId) = Grab(stage._inlet);
                 var (_, frames) = stage._encoder.Encode(request, streamId);
 
+                var endpoint = request.RequestUri is not null && request.Version is not null
+                    ? RequestEndpoint.FromRequest(request)
+                    : RequestEndpoint.Default;
+                var first = true;
+
                 foreach (var f in frames)
                 {
+                    if (first)
+                    {
+                        f.Endpoint = endpoint;
+                        first = false;
+                    }
+
                     _pending.Enqueue(f);
                 }
 

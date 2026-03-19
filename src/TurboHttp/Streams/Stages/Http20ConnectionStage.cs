@@ -91,6 +91,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
         private int _activeStreams;
         private bool _goAwayReceived;
 
+        private RequestEndpoint _endpoint;
         private readonly Dictionary<int, int> _streamWindows = new();
         private readonly HashSet<int> _activeStreamIds = new();
         private readonly Queue<Http2Frame> _outboundQueue = new();
@@ -167,7 +168,15 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                     case HeadersFrame headers:
                         _activeStreams++;
                         _activeStreamIds.Add(headers.StreamId);
-                        Emit(stage._outletSignal, new StreamAcquireItem()); // TODO: Set RequestEndpoint
+                        if (_endpoint == default && headers.Endpoint.HasValue)
+                        {
+                            _endpoint = headers.Endpoint.Value;
+                        }
+
+                        Emit(stage._outletSignal, new StreamAcquireItem
+                        {
+                            Key = _endpoint
+                        });
                         break;
 
                     case DataFrame data:
@@ -230,7 +239,10 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 if (key == SettingsParameter.MaxConcurrentStreams)
                 {
                     _maxConcurrentStreams = (int)value;
-                    Emit(_stage._outletSignal, new MaxConcurrentStreamsItem(_maxConcurrentStreams));
+                    Emit(_stage._outletSignal, new MaxConcurrentStreamsItem(_maxConcurrentStreams)
+                    {
+                        Key = _endpoint
+                    });
                 }
             }
 

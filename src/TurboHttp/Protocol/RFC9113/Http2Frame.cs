@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Protocol.RFC9113;
 
@@ -103,6 +104,12 @@ public abstract class Http2Frame(int streamId)
 {
     public int StreamId { get; } = streamId;
     public abstract FrameType Type { get; }
+
+    /// <summary>
+    /// Optional routing metadata set by Request2FrameStage on the first frame of each request.
+    /// Does not affect serialization (WriteTo / SerializedSize).
+    /// </summary>
+    public RequestEndpoint? Endpoint { get; set; }
 
     public abstract int SerializedSize { get; }
 

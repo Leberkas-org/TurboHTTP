@@ -291,15 +291,15 @@ if (frame.Endpoint.HasValue && _capturedEndpoint == default)
 ```
 
 **Acceptance Criteria:**
-- [ ] `Http2Frame` has an optional `RequestEndpoint? Endpoint` property (or equivalent mechanism)
-- [ ] `Request2FrameStage` sets the endpoint from `HttpRequestMessage` on the first emitted frame
-- [ ] No constructor injection of `RequestEndpoint` in any stage
-- [ ] `Http20ConnectionStage` captures endpoint from pipeline (used in TASK-006)
-- [ ] `Http20EncoderStage` captures endpoint from pipeline (used in TASK-007)
-- [ ] `Http2Frame.Endpoint` does not affect serialization (`WriteTo`) or `SerializedSize`
-- [ ] No breaking changes to public APIs
-- [ ] Build compiles without errors
-- [ ] All existing stream tests stay green
+- [x] `Http2Frame` has an optional `RequestEndpoint? Endpoint` property (or equivalent mechanism)
+- [x] `Request2FrameStage` sets the endpoint from `HttpRequestMessage` on the first emitted frame
+- [x] No constructor injection of `RequestEndpoint` in any stage
+- [x] `Http20ConnectionStage` captures endpoint from pipeline (used in TASK-006)
+- [x] `Http20EncoderStage` captures endpoint from pipeline (used in TASK-007)
+- [x] `Http2Frame.Endpoint` does not affect serialization (`WriteTo`) or `SerializedSize`
+- [x] No breaking changes to public APIs
+- [x] Build compiles without errors
+- [x] All existing stream tests stay green
 
 ---
 
@@ -331,13 +331,13 @@ Emit(stage._outletSignal, new StreamAcquireItem { Key = _endpoint });
 **Depends on:** TASK-005 (pipeline-based endpoint threading)
 
 **Acceptance Criteria:**
-- [ ] `RequestEndpoint` is captured from the pipeline, NOT via constructor injection
-- [ ] `Http20ConnectionStage` captures the endpoint from the first tagged frame
-- [ ] `StreamAcquireItem` is emitted with correct `Key`
-- [ ] Check whether `MaxConcurrentStreamsItem` also needs a Key (analysis required)
-- [ ] Unit tests: Verify Key on StreamAcquireItem when processing HEADERS frame
-- [ ] Existing Http20ConnectionStage tests stay green
-- [ ] Build compiles without errors
+- [x] `RequestEndpoint` is captured from the pipeline, NOT via constructor injection
+- [x] `Http20ConnectionStage` captures the endpoint from the first tagged frame
+- [x] `StreamAcquireItem` is emitted with correct `Key`
+- [x] Check whether `MaxConcurrentStreamsItem` also needs a Key (analysis required)
+- [x] Unit tests: Verify Key on StreamAcquireItem when processing HEADERS frame
+- [x] Existing Http20ConnectionStage tests stay green
+- [x] Build compiles without errors
 
 ---
 

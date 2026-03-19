@@ -30,7 +30,10 @@ public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, IOutpu
 
                 frame.WriteTo(ref span);
 
-                Push(stage._outlet, new DataItem(owner, frame.SerializedSize));
+                Push(stage._outlet, new DataItem(owner, frame.SerializedSize)
+                {
+                    Key = frame.Endpoint ?? RequestEndpoint.Default
+                });
             });
 
             SetHandler(stage._outlet, () => Pull(stage._inlet));
