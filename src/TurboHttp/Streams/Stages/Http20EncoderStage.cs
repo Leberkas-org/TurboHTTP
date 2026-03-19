@@ -19,11 +19,18 @@ public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, IOutpu
 
     private sealed class Logic : GraphStageLogic
     {
+        private RequestEndpoint _endpoint;
+
         public Logic(Http20EncoderStage stage) : base(stage.Shape)
         {
             SetHandler(stage._inlet, () =>
             {
                 var frame = Grab(stage._inlet);
+
+                if (_endpoint == default && frame.Endpoint.HasValue)
+                {
+                    _endpoint = frame.Endpoint.Value;
+                }
 
                 var owner = MemoryPool<byte>.Shared.Rent(frame.SerializedSize);
                 var span = owner.Memory.Span;
@@ -32,7 +39,7 @@ public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, IOutpu
 
                 Push(stage._outlet, new DataItem(owner, frame.SerializedSize)
                 {
-                    Key = frame.Endpoint ?? RequestEndpoint.Default
+                    Key = _endpoint
                 });
             });
 

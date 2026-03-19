@@ -356,12 +356,12 @@ Emit(stage._outletSignal, new StreamAcquireItem { Key = _endpoint });
 **Depends on:** TASK-005 (pipeline-based endpoint threading)
 
 **Acceptance Criteria:**
-- [ ] `RequestEndpoint` flows through the HTTP/2 frame pipeline, NOT via constructor injection
-- [ ] `Http20EncoderStage` captures the endpoint from the first frame in the substream
-- [ ] Every emitted `DataItem` has `Key = capturedEndpoint`
-- [ ] Unit tests: Verify Key on DataItem after encoding
-- [ ] Existing Http20EncoderStage tests stay green
-- [ ] Build compiles without errors
+- [x] `RequestEndpoint` flows through the HTTP/2 frame pipeline, NOT via constructor injection
+- [x] `Http20EncoderStage` captures the endpoint from the first frame in the substream
+- [x] Every emitted `DataItem` has `Key = capturedEndpoint`
+- [x] Unit tests: Verify Key on DataItem after encoding
+- [x] Existing Http20EncoderStage tests stay green
+- [x] Build compiles without errors
 
 ---
 

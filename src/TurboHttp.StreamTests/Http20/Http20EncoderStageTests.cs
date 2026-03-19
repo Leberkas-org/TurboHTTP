@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http;
 using Akka.Streams.Dsl;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
@@ -7,6 +9,14 @@ namespace TurboHttp.StreamTests.Http20;
 
 public sealed class Http20EncoderStageTests : StreamTestBase
 {
+    private static readonly RequestEndpoint TestEndpoint = new()
+    {
+        Scheme = "https",
+        Host = "example.com",
+        Port = 443,
+        Version = HttpVersion.Version20
+    };
+
     private async Task<byte[]> EncodeAsync(Http2Frame frame)
     {
         var item = await Source.Single(frame)
@@ -17,6 +27,64 @@ public sealed class Http20EncoderStageTests : StreamTestBase
         var bytes = dataItem.Memory.Memory.Span[..dataItem.Length].ToArray();
         dataItem.Memory.Dispose();
         return bytes;
+    }
+
+    private async Task<List<DataItem>> EncodeMultipleAsync(params Http2Frame[] frames)
+    {
+        var items = await Source.From(frames)
+            .Via(Flow.FromGraph(new Http20EncoderStage()))
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
+
+        return items.Cast<DataItem>().ToList();
+    }
+
+    // ─── Key propagation tests ──────────────────────────────────────────────────
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-005: DataItem Key is set from frame Endpoint")]
+    public async Task ST_20_FENC_005_DataItem_Key_Set_From_Frame_Endpoint()
+    {
+        var frame = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endStream: false)
+        {
+            Endpoint = TestEndpoint
+        };
+
+        var items = await EncodeMultipleAsync(frame);
+
+        Assert.Single(items);
+        Assert.Equal(TestEndpoint, items[0].Key);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-006: Captured endpoint propagates to subsequent frames without Endpoint")]
+    public async Task ST_20_FENC_006_Captured_Endpoint_Propagates_To_Subsequent_Frames()
+    {
+        var headers = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endStream: false)
+        {
+            Endpoint = TestEndpoint
+        };
+        var data = new DataFrame(streamId: 1, data: new byte[] { 0x01, 0x02 }, endStream: true);
+        // data.Endpoint is null — should inherit captured endpoint
+
+        var items = await EncodeMultipleAsync(headers, data);
+
+        Assert.Equal(2, items.Count);
+        Assert.Equal(TestEndpoint, items[0].Key);
+        Assert.Equal(TestEndpoint, items[1].Key);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-007: Multiple data frames all receive captured endpoint")]
+    public async Task ST_20_FENC_007_Multiple_Data_Frames_All_Receive_Captured_Endpoint()
+    {
+        var headers = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endStream: false)
+        {
+            Endpoint = TestEndpoint
+        };
+        var data1 = new DataFrame(streamId: 1, data: new byte[] { 0x01 }, endStream: false);
+        var data2 = new DataFrame(streamId: 1, data: new byte[] { 0x02 }, endStream: true);
+
+        var items = await EncodeMultipleAsync(headers, data1, data2);
+
+        Assert.Equal(3, items.Count);
+        Assert.All(items, item => Assert.Equal(TestEndpoint, item.Key));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-001: HEADERS frame has 9-byte header + HPACK payload")]
