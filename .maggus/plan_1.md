@@ -99,14 +99,14 @@ mislead me about coverage and does not waste CI time.
 declared once and all four `HostPoolActor*` files contain only test-relevant logic.
 
 **Acceptance Criteria:**
-- [ ] Create `TurboHttp.StreamTests/IO/IoActorTestBase.cs` (or `IoTestFixture`) containing:
+- [x] Create `TurboHttp.StreamTests/IO/IoActorTestBase.cs` (or `IoTestFixture`) containing:
   - `FakeConnectionActor` (sealed inner class)
   - `CreatePool(TestProbe, TimeSpan)` helper
   - `CreateHandle(IActorRef)` helper
-- [ ] All four `HostPoolActor*` test classes inherit from or use the shared type
-- [ ] Duplicate declarations of the above helpers are removed from each file
-- [ ] All 17 tests in the four files still pass
-- [ ] Each test method body is ≤ 20 lines excluding comments
+- [x] All four `HostPoolActor*` test classes inherit from or use the shared type
+- [x] Duplicate declarations of the above helpers are removed from each file
+- [x] All 17 tests in the four files still pass
+- [x] Each test method body is ≤ 20 lines excluding comments
 
 ---
 

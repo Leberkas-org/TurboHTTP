@@ -1,10 +1,5 @@
-using System.Buffers;
-using System.Net;
-using System.Threading.Channels;
 using Akka.Actor;
 using Akka.TestKit;
-using Akka.TestKit.Xunit2;
-using TurboHttp.Client;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
 
@@ -15,80 +10,8 @@ namespace TurboHttp.StreamTests.IO;
 /// <see cref="HostPoolActor.StreamCompleted"/>, <see cref="HostPoolActor.StreamAcquired"/>,
 /// <see cref="HostPoolActor.UpdateMaxConcurrentStreams"/>, and ServeQueuedRequesters.
 /// </summary>
-public sealed class HostPoolActorStreamLifecycleTests : TestKit
+public sealed class HostPoolActorStreamLifecycleTests : IoActorTestBase
 {
-    private static readonly TcpOptions TestOptions = new() { Host = "localhost", Port = 8080 };
-
-    private static readonly RequestEndpoint Key10 = new()
-    {
-        Host = "localhost", Port = 8080, Scheme = "http", Version = HttpVersion.Version10
-    };
-
-    private static readonly RequestEndpoint Key11 = new()
-    {
-        Host = "localhost", Port = 8080, Scheme = "http", Version = HttpVersion.Version11
-    };
-
-    private static readonly RequestEndpoint Key20 = new()
-    {
-        Host = "localhost", Port = 8080, Scheme = "http", Version = HttpVersion.Version20
-    };
-
-    // ── Helpers ─────────────────────────────────────────────────────────────
-
-    private sealed class FakeConnectionActor : ReceiveActor
-    {
-        private readonly IActorRef _controlProbe;
-
-        public FakeConnectionActor(IActorRef controlProbe)
-        {
-            _controlProbe = controlProbe;
-        }
-
-        protected override void PreStart()
-        {
-            _controlProbe.Tell(Self);
-        }
-    }
-
-    private IActorRef CreatePool(TestProbe controlProbe, RequestEndpoint key)
-    {
-        var config = new TurboClientOptions
-        {
-            ReconnectInterval = TimeSpan.FromSeconds(60),
-            IdleTimeout = TimeSpan.FromSeconds(60),
-            MaxReconnectAttempts = 3
-        };
-
-        var hostConfig = new HostPoolActor.HostPoolConfig(
-            TestOptions,
-            config,
-            key,
-            ConnectionFactory: () => Props.Create(() => new FakeConnectionActor(controlProbe.Ref)));
-
-        return Sys.ActorOf(Props.Create(() => new HostPoolActor(hostConfig)));
-    }
-
-    private static ConnectionHandle CreateHandle(IActorRef connectionActor, RequestEndpoint key)
-    {
-        var outbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
-        var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
-        return new ConnectionHandle(outbound.Writer, inbound.Reader, key, connectionActor);
-    }
-
-    /// <summary>
-    /// Creates a pool, waits for the eagerly-spawned connection, makes it ready, and returns all pieces.
-    /// </summary>
-    private (IActorRef Pool, IActorRef FakeConn, ConnectionHandle Handle) SetupReadyPool(
-        TestProbe controlProbe, RequestEndpoint key)
-    {
-        var pool = CreatePool(controlProbe, key);
-        var fakeConn = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
-        var handle = CreateHandle(fakeConn, key);
-        pool.Tell(new ConnectionActor.ConnectionReady(handle), fakeConn);
-        return (pool, fakeConn, handle);
-    }
-
     // ── SLC-001: StreamCompleted frees slot, queued requester served ────────
 
     [Fact(DisplayName = "SLC-001: StreamCompleted frees slot and serves queued requester")]

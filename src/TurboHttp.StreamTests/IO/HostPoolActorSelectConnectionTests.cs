@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
-using Akka.TestKit.Xunit2;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
 
@@ -11,7 +10,7 @@ namespace TurboHttp.StreamTests.IO;
 /// Unit tests for <see cref="HostPoolActor.SelectConnection"/> — MRU ordering,
 /// capacity filtering, and dead/non-reusable connection skipping.
 /// </summary>
-public sealed class HostPoolActorSelectConnectionTests : TestKit
+public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
 {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
