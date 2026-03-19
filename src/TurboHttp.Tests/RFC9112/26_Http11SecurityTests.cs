@@ -6,8 +6,6 @@ namespace TurboHttp.Tests.RFC9112;
 
 public sealed class Http11SecurityTests
 {
-    // ── HTTP/1.1 Header Count Limits ──────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-SC-001: 100 headers accepted at default limit")]
     public void Should_Accept100Headers_When_AtDefaultLimit()
     {
@@ -38,8 +36,6 @@ public sealed class Http11SecurityTests
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
         Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
     }
-
-    // ── HTTP/1.1 Header Block Size Limits ─────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-SC-004: Header block below 8KB limit accepted")]
     public void Should_AcceptHeaderBlock_When_Below8KBLimit()
@@ -74,8 +70,6 @@ public sealed class Http11SecurityTests
         Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
     }
 
-    // ── HTTP/1.1 Body Size Limits ─────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-SC-007: Body at configurable limit accepted")]
     public void Should_AcceptBody_When_AtConfigurableLimit()
     {
@@ -107,8 +101,6 @@ public sealed class Http11SecurityTests
         Assert.Equal(HttpDecoderError.InvalidContentLength, ex.DecodeError);
     }
 
-    // ── HTTP Smuggling ────────────────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-SC-010: Transfer-Encoding + Content-Length rejected")]
     public void Should_RejectResponse_When_BothTransferEncodingAndContentLengthPresent()
     {
@@ -138,8 +130,6 @@ public sealed class Http11SecurityTests
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
         Assert.Equal(HttpDecoderError.InvalidFieldValue, ex.DecodeError);
     }
-
-    // ── State Isolation ───────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-SC-013: Reset() after partial headers restores clean state")]
     public void Should_DecodeCleanly_When_ResetAfterPartialHeaders()
@@ -182,8 +172,6 @@ public sealed class Http11SecurityTests
         Assert.True(decoded);
         Assert.Single(responses);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Build a response with <paramref name="extraCount"/> extra X-Header-N headers

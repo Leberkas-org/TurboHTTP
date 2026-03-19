@@ -3,10 +3,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 Round-Trip Method Tests
-/// Verifies that HTTP request methods are preserved through encode→decode cycle
-/// </summary>
 public sealed class Http10RoundTripMethodTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

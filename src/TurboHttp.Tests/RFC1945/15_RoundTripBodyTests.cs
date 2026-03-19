@@ -3,10 +3,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 Round-Trip Body Tests
-/// Verifies that body content is preserved through encode→decode cycles
-/// </summary>
 public sealed class Http10RoundTripBodyTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

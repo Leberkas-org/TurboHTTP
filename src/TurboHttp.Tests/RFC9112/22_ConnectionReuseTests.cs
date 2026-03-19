@@ -3,14 +3,8 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
-/// <summary>
-/// Tests for <see cref="ConnectionReuseEvaluator"/>.
-/// RFC 9112 §9 — Persistent Connections.
-/// </summary>
 public sealed class ConnectionReuseTests
 {
-    // ── HTTP/1.0 — default is close ──────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-CR-001: Should_Close_When_Http10_And_No_Connection_Header")]
     public void Should_Close_When_Http10_And_No_Connection_Header()
     {
@@ -57,8 +51,6 @@ public sealed class ConnectionReuseTests
         Assert.Contains("Connection: close", decision.Reason);
     }
 
-    // ── HTTP/1.1 — default is keep-alive ────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-CR-006: Should_KeepAlive_When_Http11_And_No_Connection_Header")]
     public void Should_KeepAlive_When_Http11_And_No_Connection_Header()
     {
@@ -95,8 +87,6 @@ public sealed class ConnectionReuseTests
         var decision = ConnectionReuseEvaluator.Evaluate(response, HttpVersion.Version11);
         Assert.True(decision.CanReuse);
     }
-
-    // ── Keep-Alive header parameter parsing ─────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-CR-010: Should_ParseTimeout_When_Http11_And_KeepAlive_Timeout")]
     public void Should_ParseTimeout_When_Http11_And_KeepAlive_Timeout()
@@ -152,8 +142,6 @@ public sealed class ConnectionReuseTests
         Assert.Equal(50, decision.MaxRequests);
     }
 
-    // ── Body / error flags ───────────────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-CR-015: Should_Close_When_Http11_And_Body_Not_Fully_Consumed")]
     public void Should_Close_When_Http11_And_Body_Not_Fully_Consumed()
     {
@@ -184,8 +172,6 @@ public sealed class ConnectionReuseTests
         Assert.False(decision.CanReuse);
     }
 
-    // ── Status code: 101 Switching Protocols ────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-CR-018: Should_Close_When_101_Switching_Protocols")]
     public void Should_Close_When_101_Switching_Protocols()
     {
@@ -194,8 +180,6 @@ public sealed class ConnectionReuseTests
         Assert.False(decision.CanReuse);
         Assert.Contains("101", decision.Reason);
     }
-
-    // ── HTTP/2 — always keep-alive at this layer ─────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-CR-019: Should_KeepAlive_When_Http2_No_Headers")]
     public void Should_KeepAlive_When_Http2_No_Headers()
@@ -237,8 +221,6 @@ public sealed class ConnectionReuseTests
         var decision = ConnectionReuseEvaluator.Evaluate(response, HttpVersion.Version20);
         Assert.True(decision.CanReuse);
     }
-
-    // ── Reason string quality ────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-CR-023: Should_Have_NonEmpty_Reason_On_KeepAlive")]
     public void Should_Have_NonEmpty_Reason_On_KeepAlive()

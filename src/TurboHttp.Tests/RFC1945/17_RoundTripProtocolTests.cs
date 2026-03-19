@@ -4,10 +4,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 Round-Trip Protocol Tests
-/// Verifies protocol conformance and state handling in encode→decode cycles
-/// </summary>
 public sealed class Http10RoundTripProtocolTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

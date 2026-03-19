@@ -2,14 +2,8 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
-/// <summary>
-/// Tests for <see cref="PerHostConnectionLimiter"/>.
-/// RFC 9112 §9.4 — per-host connection limiting for HTTP/1.x.
-/// </summary>
 public sealed class PerHostLimiterTests
 {
-    // ── Construction ─────────────────────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-PH-001: Default_MaxConnectionsPerHost_Is_6")]
     public void Should_DefaultTo6_When_MaxConnectionsPerHostNotSpecified()
     {
@@ -30,8 +24,6 @@ public sealed class PerHostLimiterTests
         Assert.Throws<ArgumentOutOfRangeException>(
             () => new PerHostConnectionLimiter(maxConnectionsPerHost: -1));
     }
-
-    // ── TryAcquire ───────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-PH-004: TryAcquire_Returns_True_For_First_Connection")]
     public void Should_ReturnTrue_When_FirstConnectionAcquired()
@@ -77,8 +69,6 @@ public sealed class PerHostLimiterTests
         Assert.False(limiter.TryAcquire("example.com"));
     }
 
-    // ── Release ──────────────────────────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-PH-009: Release_Decrements_Active_Count")]
     public void Should_DecrementActiveCount_When_Released()
     {
@@ -118,8 +108,6 @@ public sealed class PerHostLimiterTests
         Assert.Equal(0, limiter.GetActiveConnections("example.com"));
     }
 
-    // ── GetActiveConnections ─────────────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-PH-013: GetActiveConnections_Returns_Zero_For_Unknown_Host")]
     public void Should_ReturnZero_When_UnknownHostQueried()
     {
@@ -146,8 +134,6 @@ public sealed class PerHostLimiterTests
         Assert.Equal(1, limiter.GetActiveConnections("EXAMPLE.COM"));
     }
 
-    // ── Acquire up to limit exactly ──────────────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-9-PH-016: Can_Fill_Exactly_To_MaxConnectionsPerHost")]
     public void Should_AllowFill_When_ExactlyAtMaxConnectionsPerHost()
     {
@@ -163,8 +149,6 @@ public sealed class PerHostLimiterTests
         Assert.False(limiter.TryAcquire("example.com"));
         Assert.Equal(max, limiter.GetActiveConnections("example.com"));
     }
-
-    // ── ConnectionPolicy integration ─────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-PH-017: ConnectionPolicy_Default_MaxConnectionsPerHost_Is_6")]
     public void Should_DefaultTo6_When_ConnectionPolicyMaxConnections()

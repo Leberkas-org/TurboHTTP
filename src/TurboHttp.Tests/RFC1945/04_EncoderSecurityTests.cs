@@ -2,10 +2,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 — Security tests for HTTP/1.0 encoder.
-/// Verifies header injection prevention and buffer overflow protection.
-/// </summary>
 public sealed class Http10EncoderSecurityTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

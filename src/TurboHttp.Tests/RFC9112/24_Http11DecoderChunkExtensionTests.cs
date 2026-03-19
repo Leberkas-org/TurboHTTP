@@ -4,15 +4,9 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
-/// <summary>
-/// Tests for RFC 9112 §7.1.1 chunk-ext parsing in Http11Decoder.
-/// chunk-ext = *( BWS ";" BWS chunk-ext-name [ BWS "=" BWS chunk-ext-val ] )
-/// </summary>
 public sealed class Http11DecoderChunkExtensionTests
 {
     private readonly Http11Decoder _decoder = new();
-
-    // ── Group 1: No extension — baseline ───────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-7-CE-001: No extension — body decoded correctly")]
     public async Task Should_DecodeBody_When_NoExtensionPresent()
@@ -73,8 +67,6 @@ public sealed class Http11DecoderChunkExtensionTests
         Assert.True(responses[0].TrailingHeaders.TryGetValues("X-Trailer", out var values));
         Assert.Equal("value", values.Single());
     }
-
-    // ── Group 2: Valid single extension ────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-7-CE-006: Name-only extension — accepted and body intact")]
     public async Task Should_AcceptExtension_When_NameOnlyNoValue()
@@ -196,8 +188,6 @@ public sealed class Http11DecoderChunkExtensionTests
         Assert.Equal("Hello", await responses[0].Content.ReadAsStringAsync());
     }
 
-    // ── Group 3: Valid multiple extensions ─────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-7-CE-016: Two name-only extensions — accepted")]
     public async Task Should_AcceptExtensions_When_TwoNameOnlyExtensions()
     {
@@ -257,8 +247,6 @@ public sealed class Http11DecoderChunkExtensionTests
         Assert.True(decoded);
         Assert.Equal("Hello", await responses[0].Content.ReadAsStringAsync());
     }
-
-    // ── Group 4: Invalid extensions — must throw InvalidChunkExtension ──────────
 
     [Fact(DisplayName = "RFC9112-7-CE-021: BWS with no name following — rejected")]
     public void Should_ThrowInvalidChunkExtension_When_BWSWithNoNameFollowing()
@@ -425,8 +413,6 @@ public sealed class Http11DecoderChunkExtensionTests
         var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
-
-    // ── Helper ─────────────────────────────────────────────────────────────────
 
     private static ReadOnlyMemory<byte> BuildRaw(int code, string reason, string rawBody,
         params (string Name, string Value)[] headers)

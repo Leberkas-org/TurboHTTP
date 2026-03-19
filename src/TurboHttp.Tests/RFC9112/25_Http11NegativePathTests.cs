@@ -4,15 +4,8 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
-/// <summary>
-/// RFC 9112 negative path hardening tests — Phase 70 Step 7.
-/// Verifies the HTTP/1.1 decoder correctly rejects malformed or invalid messages,
-/// covering start-line parsing, header parsing, transfer-encoding, and smuggling protection.
-/// </summary>
 public sealed class Http11NegativePathTests
 {
-    // ── RFC 9112 §4 — Start-Line Parsing ──────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-4-SL-001: HTTP/2.0 version in status-line rejected")]
     public void Should_RejectStatusLine_When_Http20Version()
     {
@@ -97,8 +90,6 @@ public sealed class Http11NegativePathTests
         Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
     }
 
-    // ── RFC 9112 §5 — Header Field Parsing ────────────────────────────────────
-
     [Fact(DisplayName = "RFC9112-5-HDR-001: Chunked trailer without colon rejected")]
     public void Should_RejectTrailer_When_ChunkedTrailerWithoutColon()
     {
@@ -140,8 +131,6 @@ public sealed class Http11NegativePathTests
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
         Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
-
-    // ── RFC 9112 §6 — Transfer-Encoding & Body Framing ────────────────────────
 
     [Fact(DisplayName =
         "RFC9112-6-TE-001: Transfer-Encoding: gzip (non-chunked) with no Content-Length yields empty body")]
@@ -197,8 +186,6 @@ public sealed class Http11NegativePathTests
         Assert.Equal("Bye"u8.ToArray(), body2);
     }
 
-    // ── RFC 9110 §15 — No-Body Status Codes ───────────────────────────────────
-
     [Fact(DisplayName =
         "RFC9110-15-204-001: 204 No Content always produces empty body regardless of Content-Length header")]
     public async Task Should_HaveEmptyBody_When_Response204()
@@ -235,8 +222,6 @@ public sealed class Http11NegativePathTests
         var body = await responses[0].Content.ReadAsByteArrayAsync();
         Assert.Empty(body);
     }
-
-    // ── RFC 9112 §9 — Request/Response Smuggling Protection ───────────────────
 
     [Fact(DisplayName = "RFC9112-9-SMUG-001: Multiple Content-Length with same value is accepted per RFC 9112 §6.3")]
     public async Task Should_Accept_When_MultipleContentLengthSameValue()
@@ -297,8 +282,6 @@ public sealed class Http11NegativePathTests
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
         Assert.Equal(HttpDecoderError.ChunkedWithContentLength, ex.DecodeError);
     }
-
-    // ── RFC 9112 §7.1 — Chunked Transfer-Encoding ─────────────────────────────
 
     [Fact(DisplayName = "RFC9112-7-CHK-001: Chunk size of zero with extra data in line rejected as parse error")]
     public void Should_Reject_When_ChunkedZeroSizeNonNumericCharacters()

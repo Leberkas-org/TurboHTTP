@@ -326,10 +326,10 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.Tests/RFC1945/` + `src/TurboHttp.Tests/RFC9112/`
 
 **Acceptance Criteria:**
-- [ ] No comments duplicating DisplayName/method name
-- [ ] No section header comments
-- [ ] Technical comments preserved
-- [ ] Build + tests green
+- [x] No comments duplicating DisplayName/method name
+- [x] No section header comments
+- [x] Technical comments preserved
+- [x] Build + tests green
 
 ---
 

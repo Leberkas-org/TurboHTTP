@@ -3,10 +3,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 — Integration tests for HTTP/1.0 encoder.
-/// Verifies URI handling, Content-Type handling, bytes written tracking, idempotency, and end-to-end scenarios.
-/// </summary>
 public sealed class Http10EncoderIntegrationTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

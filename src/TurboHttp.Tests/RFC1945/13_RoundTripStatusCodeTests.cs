@@ -4,10 +4,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 Round-Trip Status Code Tests
-/// Verifies that HTTP/1.0 status codes are preserved through decode cycle
-/// </summary>
 public sealed class Http10RoundTripStatusCodeTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

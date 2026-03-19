@@ -3,10 +3,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 §7.2 — Body encoding tests.
-/// Verifies HTTP/1.0 request body encoding with Content-Length.
-/// </summary>
 public sealed class Http10EncoderBodyTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

@@ -3,10 +3,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 Round-Trip Fragmentation Tests
-/// Verifies that fragmented messages decode correctly after encode
-/// </summary>
 public sealed class Http10RoundTripFragmentationTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

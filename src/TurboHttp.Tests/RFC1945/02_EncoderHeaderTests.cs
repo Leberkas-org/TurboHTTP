@@ -4,10 +4,6 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
-/// <summary>
-/// RFC 1945 §4 — Header encoding and suppression tests.
-/// Verifies HTTP/1.0 header field encoding and suppression of HTTP/1.1-only headers.
-/// </summary>
 public sealed class Http10EncoderHeaderTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];
