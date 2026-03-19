@@ -190,12 +190,12 @@ public sealed class CookieJar
 ```
 
 **Acceptance Criteria:**
-- [ ] All public methods of `CookieJar` are synchronized with `lock`
-- [ ] Pattern matches `HttpCacheStore` locking approach
-- [ ] Unit tests: Concurrent read + write doesn't throw or corrupt
-- [ ] Unit tests: Verify cookie injection and storage work correctly under contention
-- [ ] Existing CookieJar tests stay green
-- [ ] Build compiles without errors
+- [x] All public methods of `CookieJar` are synchronized with `lock`
+- [x] Pattern matches `HttpCacheStore` locking approach
+- [x] Unit tests: Concurrent read + write doesn't throw or corrupt
+- [x] Unit tests: Verify cookie injection and storage work correctly under contention
+- [x] Existing CookieJar tests stay green
+- [x] Build compiles without errors
 
 ---
 

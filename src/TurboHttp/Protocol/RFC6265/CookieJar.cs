@@ -52,12 +52,14 @@ internal sealed record CookieEntry(
 /// </summary>
 public sealed class CookieJar
 {
+    private readonly object _lock = new();
     private readonly List<CookieEntry> _cookies = [];
 
     /// <summary>
     /// Processes all Set-Cookie headers in <paramref name="response"/>, updating the cookie jar.
     /// Existing cookies with the same name, domain, and path are replaced.
     /// Cookies with Max-Age=0 or past expiry are removed.
+    /// Thread-safe: synchronized with lock to support concurrent access from different async boundary islands.
     /// </summary>
     public void ProcessResponse(Uri requestUri, HttpResponseMessage response)
     {
@@ -71,24 +73,27 @@ public sealed class CookieJar
             return;
         }
 
-        foreach (var header in setCookieValues)
+        lock (_lock)
         {
-            var entry = CookieParser.Parse(header, requestUri, now);
-            if (entry is null)
+            foreach (var header in setCookieValues)
             {
-                continue;
-            }
+                var entry = CookieParser.Parse(header, requestUri, now);
+                if (entry is null)
+                {
+                    continue;
+                }
 
-            // RFC 6265 §5.3 step 11: Remove existing cookie with same name+domain+path
-            _cookies.RemoveAll(c =>
-                string.Equals(c.Name, entry.Name, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(c.Domain, entry.Domain, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(c.Path, entry.Path, StringComparison.Ordinal));
+                // RFC 6265 §5.3 step 11: Remove existing cookie with same name+domain+path
+                _cookies.RemoveAll(c =>
+                    string.Equals(c.Name, entry.Name, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(c.Domain, entry.Domain, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(c.Path, entry.Path, StringComparison.Ordinal));
 
-            // If cookie is already expired (Max-Age=0 or past Expires), do not add
-            if (!IsExpired(entry, now))
-            {
-                _cookies.Add(entry);
+                // If cookie is already expired (Max-Age=0 or past Expires), do not add
+                if (!IsExpired(entry, now))
+                {
+                    _cookies.Add(entry);
+                }
             }
         }
     }
@@ -96,6 +101,7 @@ public sealed class CookieJar
     /// <summary>
     /// Adds applicable cookies from the jar to the request's Cookie header.
     /// Applies domain matching, path matching, Secure, and expiry rules.
+    /// Thread-safe: synchronized with lock to support concurrent access from different async boundary islands.
     /// </summary>
     public void AddCookiesToRequest(Uri requestUri, ref HttpRequestMessage request)
     {
@@ -109,32 +115,35 @@ public sealed class CookieJar
 
         var applicable = new List<CookieEntry>();
 
-        foreach (var cookie in _cookies)
+        lock (_lock)
         {
-            if (IsExpired(cookie, now))
+            foreach (var cookie in _cookies)
             {
-                continue;
-            }
+                if (IsExpired(cookie, now))
+                {
+                    continue;
+                }
 
-            // RFC 6265 §5.4 step 1: Secure attribute — only send over HTTPS
-            if (cookie.Secure && !isHttps)
-            {
-                continue;
-            }
+                // RFC 6265 §5.4 step 1: Secure attribute — only send over HTTPS
+                if (cookie.Secure && !isHttps)
+                {
+                    continue;
+                }
 
-            // RFC 6265 §5.4 step 2: Domain matching
-            if (!DomainMatches(cookie.Domain, cookie.IsHostOnly, requestHost))
-            {
-                continue;
-            }
+                // RFC 6265 §5.4 step 2: Domain matching
+                if (!DomainMatches(cookie.Domain, cookie.IsHostOnly, requestHost))
+                {
+                    continue;
+                }
 
-            // RFC 6265 §5.4 step 3: Path matching
-            if (!PathMatches(cookie.Path, requestPath))
-            {
-                continue;
-            }
+                // RFC 6265 §5.4 step 3: Path matching
+                if (!PathMatches(cookie.Path, requestPath))
+                {
+                    continue;
+                }
 
-            applicable.Add(cookie);
+                applicable.Add(cookie);
+            }
         }
 
         if (applicable.Count == 0)
@@ -164,10 +173,25 @@ public sealed class CookieJar
     }
 
     /// <summary>Gets the number of cookies currently stored (including potentially expired ones not yet evicted).</summary>
-    public int Count => _cookies.Count;
+    public int Count
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _cookies.Count;
+            }
+        }
+    }
 
     /// <summary>Removes all cookies from the jar.</summary>
-    public void Clear() => _cookies.Clear();
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _cookies.Clear();
+        }
+    }
 
     // ── RFC 6265 §5.1.3 Domain Matching ──────────────────────────────────────
 
