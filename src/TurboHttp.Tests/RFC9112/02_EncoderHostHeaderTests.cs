@@ -7,7 +7,7 @@ namespace TurboHttp.Tests.RFC9112;
 public sealed class Http11EncoderHostHeaderTests
 {
     [Fact(DisplayName = "RFC9112-5.4-HH-001: Host header mandatory in HTTP/1.1")]
-    public void Test_Host_Always_Present()
+    public void Should_IncludeHostHeader_When_AnyRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var result = Encode(request);
@@ -15,7 +15,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5.4-HH-002: Host header emitted exactly once")]
-    public void Test_Host_Emitted_Once()
+    public void Should_EmitHostOnce_When_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var result = Encode(request);
@@ -24,7 +24,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5.4-HH-003: Host with non-standard port includes port")]
-    public void Test_Non_Standard_Port()
+    public void Should_IncludePort_When_NonStandardPort()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/");
         var result = Encode(request);
@@ -32,7 +32,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5.4-HH-004: IPv6 host literal bracketed correctly")]
-    public void Test_IPv6_Bracketed()
+    public void Should_BracketIPv6_When_IPv6Host()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://[::1]:8080/");
         var result = Encode(request);
@@ -40,7 +40,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5.4-HH-005: Default port 80 omitted from Host header")]
-    public void Test_Default_Port_Omitted()
+    public void Should_OmitDefaultPort_When_Port80()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:80/");
         var result = Encode(request);
@@ -49,7 +49,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact]
-    public void Get_ContainsHostHeader_Port80_NoPort()
+    public void Should_OmitPort_When_HttpPort80()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:80/");
         var result = Encode(request);
@@ -57,7 +57,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact]
-    public void Get_ContainsHostHeader_Port443_NoPort()
+    public void Should_OmitPort_When_HttpsPort443()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure");
         var result = Encode(request);
@@ -65,7 +65,7 @@ public sealed class Http11EncoderHostHeaderTests
     }
 
     [Fact]
-    public void Get_NonStandardPort_IncludesPortInHost()
+    public void Should_IncludePortInHost_When_NonStandardPort()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/");
         var result = Encode(request);

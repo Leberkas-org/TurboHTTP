@@ -7,7 +7,7 @@ namespace TurboHttp.Tests.RFC9112;
 public sealed class Http11EncoderConnectionTests
 {
     [Fact(DisplayName = "RFC9112-9-CN-001: Connection keep-alive default in HTTP/1.1")]
-    public void Test_Default_Keep_Alive()
+    public void Should_DefaultToKeepAlive_When_Http11()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var result = Encode(request);
@@ -15,7 +15,7 @@ public sealed class Http11EncoderConnectionTests
     }
 
     [Fact(DisplayName = "RFC9112-9-CN-002: Connection close encoded when set")]
-    public void Test_Connection_Close()
+    public void Should_EncodeConnectionClose_When_ExplicitlySet()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
@@ -27,7 +27,7 @@ public sealed class Http11EncoderConnectionTests
     }
 
     [Fact(DisplayName = "RFC9112-9-CN-003: Multiple Connection tokens encoded")]
-    public void Test_Multiple_Connection_Tokens()
+    public void Should_EncodeMultipleTokens_When_ConnectionUpgrade()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         request.Headers.Connection.Add("upgrade");
@@ -36,7 +36,7 @@ public sealed class Http11EncoderConnectionTests
     }
 
     [Fact(DisplayName = "RFC9112-9-CN-004: Connection-specific headers stripped")]
-    public void Test_Connection_Specific_Headers_Stripped()
+    public void Should_StripConnectionSpecificHeaders_When_Present()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         request.Headers.TryAddWithoutValidation("TE", "trailers");
@@ -49,7 +49,7 @@ public sealed class Http11EncoderConnectionTests
     }
 
     [Fact]
-    public void Get_DefaultConnectionHeader_IsKeepAlive()
+    public void Should_SetKeepAlive_When_DefaultConnectionHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var result = Encode(request);
@@ -57,7 +57,7 @@ public sealed class Http11EncoderConnectionTests
     }
 
     [Fact]
-    public void Get_ExplicitConnectionClose_IsPreserved()
+    public void Should_PreserveConnectionClose_When_ExplicitlySet()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {

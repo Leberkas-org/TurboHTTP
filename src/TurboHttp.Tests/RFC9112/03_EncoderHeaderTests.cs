@@ -7,7 +7,7 @@ namespace TurboHttp.Tests.RFC9112;
 public sealed class Http11EncoderHeaderTests
 {
     [Fact(DisplayName = "RFC9112-5-HD-001: Header field format is Name: SP value CRLF")]
-    public void Test_Header_Format()
+    public void Should_FormatHeader_When_CustomHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
@@ -18,7 +18,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-002: No spurious whitespace added to header values")]
-    public void Test_No_Spurious_Whitespace()
+    public void Should_OmitSpuriousWhitespace_When_EncodingHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
@@ -30,7 +30,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-003: Header name casing preserved in output")]
-    public void Test_Header_Name_Casing_Preserved()
+    public void Should_PreserveCasing_When_EncodingHeaderName()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         request.Headers.TryAddWithoutValidation("X-Custom-Header", "value");
@@ -39,7 +39,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-004: NUL byte in header value throws exception")]
-    public void Test_NUL_Byte_Rejected()
+    public void Should_Throw_When_NulByteInHeaderValue()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         request.Headers.TryAddWithoutValidation("X-Bad", "value\0bad");
@@ -53,7 +53,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-005: Content-Type with charset parameter preserved")]
-    public void Test_Content_Type_With_Charset()
+    public void Should_PreserveCharsetParameter_When_ContentType()
     {
         var content = new StringContent("test", Encoding.UTF8, "text/html");
         var request = new HttpRequestMessage(HttpMethod.Post, "https://example.com/")
@@ -65,7 +65,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-006: All custom headers appear in output")]
-    public void Test_Custom_Headers_Appear()
+    public void Should_IncludeAllHeaders_When_MultipleCustomHeaders()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
@@ -83,7 +83,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-007: Accept-Encoding gzip,deflate encoded")]
-    public void Test_Accept_Encoding()
+    public void Should_EncodeAcceptEncoding_When_GzipDeflate()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         request.Headers.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
@@ -92,7 +92,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-008: Authorization header preserved verbatim")]
-    public void Test_Authorization_Preserved()
+    public void Should_PreserveAuthorization_When_BearerToken()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
@@ -103,7 +103,7 @@ public sealed class Http11EncoderHeaderTests
     }
 
     [Fact]
-    public void BearerToken_SetsAuthorizationHeader()
+    public void Should_SetAuthorizationHeader_When_BearerToken()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/protected")
         {
