@@ -14,7 +14,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.StartsWith("GET /index.html HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: Request-line uses HTTP/1.1")]
+    [Fact(DisplayName = "RFC9112-3-RL-001: Request-line uses HTTP/1.1")]
     public void Test_9112_RequestLine_UsesHttp11()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -22,7 +22,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.Contains("GET / HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7230-3.1.1: Lowercase method rejected by HTTP/1.1 encoder")]
+    [Fact(DisplayName = "RFC9112-3-RL-002: Lowercase method rejected by HTTP/1.1 encoder")]
     public void Test_Lowercase_Method_Rejected()
     {
         var request = new HttpRequestMessage(new HttpMethod("get"), "https://example.com/");
@@ -34,7 +34,7 @@ public sealed class Http11EncoderRequestLineTests
         });
     }
 
-    [Fact(DisplayName = "RFC7230-3.1.1: Every request-line ends with CRLF")]
+    [Fact(DisplayName = "RFC9112-3-RL-003: Every request-line ends with CRLF")]
     public void Test_RequestLine_Ends_With_CRLF()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/test");
@@ -42,7 +42,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.Contains("GET /test HTTP/1.1\r\n", result);
     }
 
-    [Theory(DisplayName = "RFC9112-4: All HTTP methods produce correct request-line [{method}]")]
+    [Theory(DisplayName = "RFC9112-3-RL-004: All HTTP methods produce correct request-line [{method}]")]
     [InlineData("GET")]
     [InlineData("POST")]
     [InlineData("PUT")]
@@ -59,7 +59,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.StartsWith($"{method} /resource HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: OPTIONS * HTTP/1.1 encoded correctly")]
+    [Fact(DisplayName = "RFC9112-3-RL-005: OPTIONS * HTTP/1.1 encoded correctly")]
     public void Test_OPTIONS_Star()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, "https://example.com/*");
@@ -67,7 +67,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.Contains("OPTIONS * HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: Absolute-URI preserved for proxy request")]
+    [Fact(DisplayName = "RFC9112-3-RL-006: Absolute-URI preserved for proxy request")]
     public void Test_Absolute_URI_For_Proxy()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com:8443/path?query=value");
@@ -75,7 +75,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.Contains("GET https://example.com:8443/path?query=value HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: Missing path normalized to /")]
+    [Fact(DisplayName = "RFC9112-3-RL-007: Missing path normalized to /")]
     public void Test_Missing_Path_Normalized()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com");
@@ -83,7 +83,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.Contains("GET / HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: Query string preserved verbatim")]
+    [Fact(DisplayName = "RFC9112-3-RL-008: Query string preserved verbatim")]
     public void Test_Query_String_Preserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/search?q=hello+world&lang=en");
@@ -91,7 +91,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.Contains("GET /search?q=hello+world&lang=en HTTP/1.1\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: Fragment stripped from request-target")]
+    [Fact(DisplayName = "RFC9112-3-RL-009: Fragment stripped from request-target")]
     public void Test_Fragment_Stripped()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/page#section");
@@ -100,7 +100,7 @@ public sealed class Http11EncoderRequestLineTests
         Assert.DoesNotContain("#section", result);
     }
 
-    [Fact(DisplayName = "RFC9112-4: Existing percent-encoding not re-encoded")]
+    [Fact(DisplayName = "RFC9112-3-RL-010: Existing percent-encoding not re-encoded")]
     public void Test_Percent_Encoding_Not_Re_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/path%20with%20spaces");

@@ -6,7 +6,7 @@ namespace TurboHttp.Tests.RFC9112;
 
 public sealed class Http11EncoderRangeRequestTests
 {
-    [Fact(DisplayName = "RFC7233-2.1: Range: bytes=0-499 encoded")]
+    [Fact(DisplayName = "RFC9112-5-RR-001: Range: bytes=0-499 encoded")]
     public void Test_Range_Bytes_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
@@ -15,7 +15,7 @@ public sealed class Http11EncoderRangeRequestTests
         Assert.Contains("Range: bytes=0-499\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7233-2.1: Range: bytes=-500 suffix encoded")]
+    [Fact(DisplayName = "RFC9112-5-RR-002: Range: bytes=-500 suffix encoded")]
     public void Test_Range_Suffix_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
@@ -24,7 +24,7 @@ public sealed class Http11EncoderRangeRequestTests
         Assert.Contains("Range: bytes=-500\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7233-2.1: Range: bytes=500- open range encoded")]
+    [Fact(DisplayName = "RFC9112-5-RR-003: Range: bytes=500- open range encoded")]
     public void Test_Range_OpenEnded_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
@@ -33,7 +33,7 @@ public sealed class Http11EncoderRangeRequestTests
         Assert.Contains("Range: bytes=500-\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7233-2.1: Multi-range bytes=0-499,1000-1499 encoded")]
+    [Fact(DisplayName = "RFC9112-5-RR-004: Multi-range bytes=0-499,1000-1499 encoded")]
     public void Test_Range_MultiRange_Encoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
@@ -47,7 +47,7 @@ public sealed class Http11EncoderRangeRequestTests
         Assert.Contains("1000-1499", result);
     }
 
-    [Fact(DisplayName = "RFC7233-2.1: Invalid range bytes=abc-xyz rejected")]
+    [Fact(DisplayName = "RFC9112-5-RR-005: Invalid range bytes=abc-xyz rejected")]
     public void Test_Invalid_Range_Rejected()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");

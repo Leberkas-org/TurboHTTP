@@ -7,7 +7,7 @@ public sealed class Http11DecoderFragmentationTests
 {
     private readonly Http11Decoder _decoder = new();
 
-    [Fact(DisplayName = "RFC9112: Status-line split byte 1 reassembled")]
+    [Fact(DisplayName = "RFC9112-6-FG-001: Status-line split byte 1 reassembled")]
     public async Task StatusLine_SplitAtByte1_Reassembled()
     {
         var full = BuildResponse(200, "OK", "body", ("Content-Length", "4"));
@@ -23,7 +23,7 @@ public sealed class Http11DecoderFragmentationTests
         Assert.Equal("body", result);
     }
 
-    [Fact(DisplayName = "RFC9112: Status-line split inside HTTP/1.1 version")]
+    [Fact(DisplayName = "RFC9112-6-FG-002: Status-line split inside HTTP/1.1 version")]
     public async Task StatusLine_SplitInsideVersion_Reassembled()
     {
         var full = BuildResponse(200, "OK", "data", ("Content-Length", "4"));
@@ -39,7 +39,7 @@ public sealed class Http11DecoderFragmentationTests
         Assert.Equal("data", result);
     }
 
-    [Fact(DisplayName = "RFC9112: Header name:value split at colon")]
+    [Fact(DisplayName = "RFC9112-6-FG-003: Header name:value split at colon")]
     public async Task Header_SplitAtColon_Reassembled()
     {
         var full = BuildResponse(200, "OK", "test", ("Content-Length", "4"), ("X-Custom", "value"));
@@ -56,7 +56,7 @@ public sealed class Http11DecoderFragmentationTests
         Assert.Equal("test", result);
     }
 
-    [Fact(DisplayName = "RFC9112: Split at CRLFCRLF header-body boundary")]
+    [Fact(DisplayName = "RFC9112-6-FG-004: Split at CRLFCRLF header-body boundary")]
     public async Task Split_AtHeaderBodyBoundary_Reassembled()
     {
         const string body = "complete";
@@ -74,7 +74,7 @@ public sealed class Http11DecoderFragmentationTests
         Assert.Equal(body, result);
     }
 
-    [Fact(DisplayName = "RFC9112: Chunk-size line split across two reads")]
+    [Fact(DisplayName = "RFC9112-6-FG-005: Chunk-size line split across two reads")]
     public async Task ChunkSize_SplitAcrossReads_Reassembled()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
@@ -93,7 +93,7 @@ public sealed class Http11DecoderFragmentationTests
         Assert.Equal("Hello", result);
     }
 
-    [Fact(DisplayName = "RFC9112: Response delivered 1 byte at a time assembles correctly")]
+    [Fact(DisplayName = "RFC9112-6-FG-006: Response delivered 1 byte at a time assembles correctly")]
     public async Task Response_OneByteAtATime_AssemblesCorrectly()
     {
         const string body = "OK";

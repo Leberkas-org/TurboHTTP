@@ -20,7 +20,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("Hello World", result);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Single chunk body decoded")]
+    [Fact(DisplayName = "RFC9112-7-CH-001: Single chunk body decoded")]
     public async Task SingleChunk_Decoded()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
@@ -33,7 +33,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("Hello", result);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Multiple chunks concatenated")]
+    [Fact(DisplayName = "RFC9112-7-CH-002: Multiple chunks concatenated")]
     public async Task MultipleChunks_Concatenated()
     {
         const string chunkedBody = "3\r\nfoo\r\n3\r\nbar\r\n3\r\nbaz\r\n0\r\n\r\n";
@@ -46,7 +46,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("foobarbaz", result);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Chunk extension silently ignored")]
+    [Fact(DisplayName = "RFC9112-7-CH-003: Chunk extension silently ignored")]
     public async Task ChunkExtension_SilentlyIgnored()
     {
         const string chunkedBody = "5;ext=value\r\nHello\r\n0\r\n\r\n";
@@ -59,7 +59,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("Hello", result);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Trailer fields after final chunk")]
+    [Fact(DisplayName = "RFC9112-7-CH-004: Trailer fields after final chunk")]
     public void TrailerFields_AfterFinalChunk_Accessible()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\nX-Trailer: value\r\n\r\n";
@@ -72,7 +72,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("value", values.Single());
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Non-hex chunk size is parse error")]
+    [Fact(DisplayName = "RFC9112-7-CH-005: Non-hex chunk size is parse error")]
     public void NonHex_ChunkSize_IsError()
     {
         const string chunkedBody = "xyz\r\nHello\r\n0\r\n\r\n";
@@ -82,7 +82,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Missing final chunk is NeedMoreData")]
+    [Fact(DisplayName = "RFC9112-7-CH-006: Missing final chunk is NeedMoreData")]
     public void MissingFinalChunk_NeedMoreData()
     {
         const string partial = "5\r\nHel";
@@ -93,7 +93,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.False(decoded);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: 0\\r\\n\\r\\n terminates chunked body")]
+    [Fact(DisplayName = "RFC9112-7-CH-007: 0\\r\\n\\r\\n terminates chunked body")]
     public async Task ZeroChunk_TerminatesChunkedBody()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
@@ -106,7 +106,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("Hello", result);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Chunk size overflow is parse error")]
+    [Fact(DisplayName = "RFC9112-7-CH-008: Chunk size overflow is parse error")]
     public void ChunkSize_Overflow_IsError()
     {
         const string chunkedBody = "999999999999\r\ndata\r\n0\r\n\r\n";
@@ -116,7 +116,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC9112-6: 1-byte chunk decoded")]
+    [Fact(DisplayName = "RFC9112-7-CH-009: 1-byte chunk decoded")]
     public async Task OneByte_Chunk_Decoded()
     {
         const string chunkedBody = "1\r\nX\r\n0\r\n\r\n";
@@ -129,7 +129,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("X", result);
     }
 
-    [Fact(DisplayName = "RFC9112-6: Uppercase hex chunk size accepted")]
+    [Fact(DisplayName = "RFC9112-7-CH-010: Uppercase hex chunk size accepted")]
     public async Task Uppercase_HexChunkSize_Accepted()
     {
         const string chunkedBody = "A\r\n0123456789\r\n0\r\n\r\n";
@@ -142,7 +142,7 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("0123456789", result);
     }
 
-    [Fact(DisplayName = "RFC9112-6: Empty chunk (0 data bytes) before terminator accepted")]
+    [Fact(DisplayName = "RFC9112-7-CH-011: Empty chunk (0 data bytes) before terminator accepted")]
     public async Task EmptyChunk_BeforeTerminator_Accepted()
     {
         // Test an empty chunked body: only the terminator chunk (0\r\n\r\n) with no data chunks

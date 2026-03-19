@@ -35,7 +35,7 @@ public sealed class Http11RoundTripNoBodyTests
         return result;
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: 304 Not Modified with ETag — no body, ETag header preserved")]
+    [Fact(DisplayName = "RFC9112-6-NB-001: 304 Not Modified with ETag — no body, ETag header preserved")]
     public void Should_Return304NoBody_When_NotModifiedWithETagRoundTrip()
     {
         var raw = BuildResponse(304, "Not Modified", "",
@@ -51,7 +51,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Equal("\"abc123\"", etag.Single());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: 204 No Content after DELETE — empty body")]
+    [Fact(DisplayName = "RFC9112-6-NB-002: 204 No Content after DELETE — empty body")]
     public async Task Should_Return204EmptyBody_When_DeleteReturnsNoContent()
     {
         var decoder = new Http11Decoder();
@@ -63,7 +63,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Empty(await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Pipelined 304 → 200 — body only in 200 decoded")]
+    [Fact(DisplayName = "RFC9112-6-NB-003: Pipelined 304 → 200 — body only in 200 decoded")]
     public async Task Should_DecodeBodyOf200_When_304PrecededIt()
     {
         var r304 = BuildResponse(304, "Not Modified", "");
@@ -78,7 +78,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Equal("fresh", await responses[1].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: 204 with Content-Type header — empty body returned")]
+    [Fact(DisplayName = "RFC9112-6-NB-004: 204 with Content-Type header — empty body returned")]
     public async Task Should_ReturnEmptyBody_When_204HasContentTypeHeader()
     {
         var raw = BuildResponse(204, "No Content", "",
@@ -92,7 +92,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Empty(await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Pipelined 204 → 200 → 204 — no-body responses handled")]
+    [Fact(DisplayName = "RFC9112-6-NB-005: Pipelined 204 → 200 → 204 — no-body responses handled")]
     public async Task Should_DecodeAll_When_PipelineContainsNoBodyResponses()
     {
         var r1 = BuildResponse(204, "No Content", "", ("Content-Length", "0"));
@@ -109,7 +109,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Equal(HttpStatusCode.NoContent, responses[2].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC9110-8.3.4: TryDecodeHead — Content-Length present but body not consumed")]
+    [Fact(DisplayName = "RFC9112-6-NB-006: TryDecodeHead — Content-Length present but body not consumed")]
     public async Task Should_ReturnEmptyBody_When_HeadResponseHasContentLength()
     {
         const string rawResponse =
@@ -128,7 +128,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Empty(await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC9110-8.3.4: TryDecodeHead 404 — empty body returned")]
+    [Fact(DisplayName = "RFC9112-6-NB-007: TryDecodeHead 404 — empty body returned")]
     public async Task Should_Return404EmptyBody_When_HeadResponseIs404()
     {
         const string rawResponse = "HTTP/1.1 404 Not Found\r\nContent-Length: 50\r\n\r\n";
@@ -142,7 +142,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Empty(await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC9110-8.3.4: Two pipelined HEAD responses via TryDecodeHead")]
+    [Fact(DisplayName = "RFC9112-6-NB-008: Two pipelined HEAD responses via TryDecodeHead")]
     public async Task Should_DecodeBothHeads_When_TwoHeadResponsesPipelined()
     {
         const string rawResponse =
@@ -158,7 +158,7 @@ public sealed class Http11RoundTripNoBodyTests
         Assert.Empty(await responses[1].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC9110-8.3.4: HEAD 200 then GET 200 on same decoder instance")]
+    [Fact(DisplayName = "RFC9112-6-NB-009: HEAD 200 then GET 200 on same decoder instance")]
     public async Task Should_DecodeGetAfterHead_When_SameDecoderUsedForBoth()
     {
         var decoder = new Http11Decoder();

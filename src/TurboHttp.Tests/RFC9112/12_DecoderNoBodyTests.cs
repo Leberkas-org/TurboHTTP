@@ -8,7 +8,7 @@ public sealed class Http11DecoderNoBodyTests
 {
     private readonly Http11Decoder _decoder = new();
 
-    [Fact(DisplayName = "RFC9110: 204 No Content has empty body")]
+    [Fact(DisplayName = "RFC9112-6-NB-001: 204 No Content has empty body")]
     public void Response_204_NoContent_EmptyBody()
     {
         var raw = "HTTP/1.1 204 No Content\r\n\r\n"u8.ToArray();
@@ -20,7 +20,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC9110: 304 Not Modified has empty body")]
+    [Fact(DisplayName = "RFC9112-6-NB-002: 304 Not Modified has empty body")]
     public void Response_304_NotModified_EmptyBody()
     {
         var raw = "HTTP/1.1 304 Not Modified\r\nETag: \"abc\"\r\n\r\n"u8.ToArray();
@@ -32,7 +32,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Theory(DisplayName = "RFC9110: Status {code} always has empty body")]
+    [Theory(DisplayName = "RFC9112-6-NB-003: Status {code} always has empty body")]
     [InlineData(204, "No Content")]
     [InlineData(205, "Reset Content")]
     [InlineData(304, "Not Modified")]
@@ -47,7 +47,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC9110: HEAD response has Content-Length header but empty body")]
+    [Fact(DisplayName = "RFC9112-6-NB-004: HEAD response has Content-Length header but empty body")]
     public void HEAD_Response_HasContentLength_ButEmptyBody()
     {
         // Simulating HEAD response: status-line and headers indicate body length,
@@ -66,7 +66,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.False(decoded); // Decoder expects 1234 bytes but none are present
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Connection: close signals connection close")]
+    [Fact(DisplayName = "RFC9112-9-NB-005: Connection: close signals connection close")]
     public void Connection_Close_Signals_ConnectionClose()
     {
         var raw = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -77,7 +77,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.Contains("close", responses[0].Headers.Connection);
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Connection: keep-alive signals reuse")]
+    [Fact(DisplayName = "RFC9112-9-NB-006: Connection: keep-alive signals reuse")]
     public void Connection_KeepAlive_Signals_Reuse()
     {
         var raw = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -88,7 +88,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.Contains("keep-alive", responses[0].Headers.Connection);
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: HTTP/1.1 default connection is keep-alive")]
+    [Fact(DisplayName = "RFC9112-9-NB-007: HTTP/1.1 default connection is keep-alive")]
     public void Http11_DefaultConnection_IsKeepAlive()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -101,7 +101,7 @@ public sealed class Http11DecoderNoBodyTests
         Assert.Equal(new Version(1, 1), responses[0].Version);
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: HTTP/1.0 connection defaults to close")]
+    [Fact(DisplayName = "RFC9112-9-NB-008: HTTP/1.0 connection defaults to close")]
     public void Http10_DefaultConnection_IsClose()
     {
         var raw = "HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -114,7 +114,7 @@ public sealed class Http11DecoderNoBodyTests
         // For HTTP/1.0 responses, a separate Http10Decoder would be used
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Multiple Connection tokens all recognized")]
+    [Fact(DisplayName = "RFC9112-9-NB-009: Multiple Connection tokens all recognized")]
     public void Multiple_ConnectionTokens_AllRecognized()
     {
         var raw = "HTTP/1.1 200 OK\r\nConnection: keep-alive, Upgrade\r\nContent-Length: 0\r\n\r\n"u8.ToArray();

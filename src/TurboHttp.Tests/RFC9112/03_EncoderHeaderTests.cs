@@ -6,7 +6,7 @@ namespace TurboHttp.Tests.RFC9112;
 
 public sealed class Http11EncoderHeaderTests
 {
-    [Fact(DisplayName = "RFC7230-3.2: Header field format is Name: SP value CRLF")]
+    [Fact(DisplayName = "RFC9112-5-HD-001: Header field format is Name: SP value CRLF")]
     public void Test_Header_Format()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
@@ -17,7 +17,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.Contains("X-Custom: test-value\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: No spurious whitespace added to header values")]
+    [Fact(DisplayName = "RFC9112-5-HD-002: No spurious whitespace added to header values")]
     public void Test_No_Spurious_Whitespace()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
@@ -29,7 +29,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.DoesNotContain("X-Test:  value", result);
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Header name casing preserved in output")]
+    [Fact(DisplayName = "RFC9112-5-HD-003: Header name casing preserved in output")]
     public void Test_Header_Name_Casing_Preserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -38,7 +38,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.Contains("X-Custom-Header: value\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: NUL byte in header value throws exception")]
+    [Fact(DisplayName = "RFC9112-5-HD-004: NUL byte in header value throws exception")]
     public void Test_NUL_Byte_Rejected()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -52,7 +52,7 @@ public sealed class Http11EncoderHeaderTests
         });
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: Content-Type with charset parameter preserved")]
+    [Fact(DisplayName = "RFC9112-5-HD-005: Content-Type with charset parameter preserved")]
     public void Test_Content_Type_With_Charset()
     {
         var content = new StringContent("test", Encoding.UTF8, "text/html");
@@ -64,7 +64,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.Contains("Content-Type: text/html; charset=utf-8\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: All custom headers appear in output")]
+    [Fact(DisplayName = "RFC9112-5-HD-006: All custom headers appear in output")]
     public void Test_Custom_Headers_Appear()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
@@ -82,7 +82,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.Contains("X-Third: value3\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: Accept-Encoding gzip,deflate encoded")]
+    [Fact(DisplayName = "RFC9112-5-HD-007: Accept-Encoding gzip,deflate encoded")]
     public void Test_Accept_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -91,7 +91,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.Contains("Accept-Encoding: gzip, deflate\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: Authorization header preserved verbatim")]
+    [Fact(DisplayName = "RFC9112-5-HD-008: Authorization header preserved verbatim")]
     public void Test_Authorization_Preserved()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")

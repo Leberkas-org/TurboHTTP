@@ -40,7 +40,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(reason, responses[0].ReasonPhrase);
     }
 
-    [Theory(DisplayName = "RFC7231-6.1: 2xx status code {code} parsed correctly")]
+    [Theory(DisplayName = "RFC9112-4-SL-001: 2xx status code {code} parsed correctly")]
     [InlineData(200, "OK", HttpStatusCode.OK)]
     [InlineData(201, "Created", HttpStatusCode.Created)]
     [InlineData(202, "Accepted", HttpStatusCode.Accepted)]
@@ -58,7 +58,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(reason, responses[0].ReasonPhrase);
     }
 
-    [Theory(DisplayName = "RFC7231-6.1: 3xx status code {code} parsed correctly")]
+    [Theory(DisplayName = "RFC9112-4-SL-002: 3xx status code {code} parsed correctly")]
     [InlineData(300, "Multiple Choices", HttpStatusCode.MultipleChoices)]
     [InlineData(301, "Moved Permanently", HttpStatusCode.MovedPermanently)]
     [InlineData(302, "Found", HttpStatusCode.Found)]
@@ -75,7 +75,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(reason, responses[0].ReasonPhrase);
     }
 
-    [Theory(DisplayName = "RFC7231-6.1: 4xx status code {code} parsed correctly")]
+    [Theory(DisplayName = "RFC9112-4-SL-003: 4xx status code {code} parsed correctly")]
     [InlineData(400, "Bad Request", HttpStatusCode.BadRequest)]
     [InlineData(401, "Unauthorized", HttpStatusCode.Unauthorized)]
     [InlineData(403, "Forbidden", HttpStatusCode.Forbidden)]
@@ -97,7 +97,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(reason, responses[0].ReasonPhrase);
     }
 
-    [Theory(DisplayName = "RFC7231-6.1: 5xx status code {code} parsed correctly")]
+    [Theory(DisplayName = "RFC9112-4-SL-004: 5xx status code {code} parsed correctly")]
     [InlineData(500, "Internal Server Error", HttpStatusCode.InternalServerError)]
     [InlineData(501, "Not Implemented", HttpStatusCode.NotImplemented)]
     [InlineData(502, "Bad Gateway", HttpStatusCode.BadGateway)]
@@ -112,7 +112,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(reason, responses[0].ReasonPhrase);
     }
 
-    [Fact(DisplayName = "RFC7231-6.1: 1xx Informational response has no body")]
+    [Fact(DisplayName = "RFC9112-4-SL-005: 1xx Informational response has no body")]
     public void Informational_1xx_HasNoBody()
     {
         var raw = "HTTP/1.1 103 Early Hints\r\nLink: </style.css>; rel=preload\r\n\r\n"u8.ToArray();
@@ -129,7 +129,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 
-    [Theory(DisplayName = "RFC9110: 1xx code {code} parsed with no body")]
+    [Theory(DisplayName = "RFC9112-4-SL-006: 1xx code {code} parsed with no body")]
     [InlineData(100, "Continue")]
     [InlineData(101, "Switching Protocols")]
     [InlineData(102, "Processing")]
@@ -150,7 +150,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC7231-6.1: 100 Continue before 200 OK decoded correctly")]
+    [Fact(DisplayName = "RFC9112-4-SL-007: 100 Continue before 200 OK decoded correctly")]
     public void Continue_100_Before_200_DecodedCorrectly()
     {
         var raw100 = "HTTP/1.1 100 Continue\r\n\r\n"u8.ToArray();
@@ -167,7 +167,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC9110: Multiple 1xx interim responses before 200")]
+    [Fact(DisplayName = "RFC9112-4-SL-008: Multiple 1xx interim responses before 200")]
     public async Task Multiple_1xx_Then_200_AllProcessed()
     {
         var raw100 = "HTTP/1.1 100 Continue\r\n\r\n"u8.ToArray();
@@ -190,7 +190,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal("final", body);
     }
 
-    [Fact(DisplayName = "RFC7231-6.1: Custom status code 599 parsed")]
+    [Fact(DisplayName = "RFC9112-4-SL-009: Custom status code 599 parsed")]
     public void Custom_Status_599_Parsed()
     {
         var raw = "HTTP/1.1 599 Custom\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -202,7 +202,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal("Custom", responses[0].ReasonPhrase);
     }
 
-    [Fact(DisplayName = "RFC7231-6.1: Status code >599 is a parse error")]
+    [Fact(DisplayName = "RFC9112-4-SL-010: Status code >599 is a parse error")]
     public void Status_GreaterThan_599_IsError()
     {
         var raw = "HTTP/1.1 600 Invalid\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -211,7 +211,7 @@ public sealed class Http11DecoderStatusLineTests
         Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC7231-6.1: Empty reason phrase is valid")]
+    [Fact(DisplayName = "RFC9112-4-SL-011: Empty reason phrase is valid")]
     public void Empty_ReasonPhrase_IsValid()
     {
         var raw = "HTTP/1.1 200 \r\nContent-Length: 0\r\n\r\n"u8.ToArray();

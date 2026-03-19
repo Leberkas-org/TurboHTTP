@@ -29,7 +29,7 @@ public sealed class Http11RoundTripMethodTests
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 GET → 200 OK round-trip")]
+    [Fact(DisplayName = "RFC9112-3-MT-001: HTTP/1.1 GET → 200 OK round-trip")]
     public async Task Should_Return200_When_GetRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api");
@@ -46,7 +46,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Equal("hello", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 POST JSON → 201 Created round-trip")]
+    [Fact(DisplayName = "RFC9112-3-MT-002: HTTP/1.1 POST JSON → 201 Created round-trip")]
     public void Should_Return201Created_When_PostJsonRoundTrip()
     {
         const string json = "{\"name\":\"Alice\"}";
@@ -70,7 +70,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Equal("/users/42", loc.Single());
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 PUT → 204 No Content round-trip")]
+    [Fact(DisplayName = "RFC9112-3-MT-003: HTTP/1.1 PUT → 204 No Content round-trip")]
     public void Should_Return204NoContent_When_PutRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Put, "http://example.com/resource/1")
@@ -89,7 +89,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Equal(HttpStatusCode.NoContent, responses[0].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 DELETE → 200 OK round-trip")]
+    [Fact(DisplayName = "RFC9112-3-MT-004: HTTP/1.1 DELETE → 200 OK round-trip")]
     public void Should_Return200_When_DeleteRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, "http://example.com/resource/5");
@@ -105,7 +105,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 PATCH → 200 OK round-trip")]
+    [Fact(DisplayName = "RFC9112-3-MT-005: HTTP/1.1 PATCH → 200 OK round-trip")]
     public async Task Should_Return200_When_PatchRoundTrip()
     {
         const string patch = "{\"op\":\"replace\",\"path\":\"/name\",\"value\":\"Bob\"}";
@@ -129,7 +129,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Equal(responseBody, await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 HEAD → Content-Length but no body")]
+    [Fact(DisplayName = "RFC9112-3-MT-006: HTTP/1.1 HEAD → Content-Length but no body")]
     public void Should_ReturnContentLengthHeader_When_HeadRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Head, "http://example.com/resource");
@@ -148,7 +148,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 OPTIONS → 200 with Allow header")]
+    [Fact(DisplayName = "RFC9112-3-MT-007: HTTP/1.1 OPTIONS → 200 with Allow header")]
     public void Should_ReturnAllowHeader_When_OptionsRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, "http://example.com/resource");
@@ -168,7 +168,7 @@ public sealed class Http11RoundTripMethodTests
         Assert.Contains("GET", string.Join(",", allowVals));
     }
 
-    [Fact(DisplayName = "RFC9112-3.1: HTTP/1.1 request URL with query string preserved")]
+    [Fact(DisplayName = "RFC9112-3-MT-008: HTTP/1.1 request URL with query string preserved")]
     public void Should_EncodeQueryString_When_RequestHasQueryStringRoundTrip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,

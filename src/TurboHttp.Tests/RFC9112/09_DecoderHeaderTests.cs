@@ -35,7 +35,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Standard header field Name: value parsed")]
+    [Fact(DisplayName = "RFC9112-5-HD-001: Standard header field Name: value parsed")]
     public void Standard_HeaderField_Parsed()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -46,7 +46,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal("text/plain", responses[0].Content.Headers.ContentType?.MediaType);
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: OWS trimmed from header value")]
+    [Fact(DisplayName = "RFC9112-5-HD-002: OWS trimmed from header value")]
     public void OWS_TrimmedFromHeaderValue()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Foo:   bar   \r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -58,7 +58,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal("bar", values.Single());
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Empty header value accepted")]
+    [Fact(DisplayName = "RFC9112-5-HD-003: Empty header value accepted")]
     public void Empty_HeaderValue_Accepted()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Empty:\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -70,7 +70,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal("", values.Single());
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Multiple same-name headers both accessible")]
+    [Fact(DisplayName = "RFC9112-5-HD-004: Multiple same-name headers both accessible")]
     public void Multiple_SameName_Headers_Preserved()
     {
         var raw = "HTTP/1.1 200 OK\r\nAccept: text/html\r\nAccept: application/json\r\nContent-Length: 0\r\n\r\n"u8
@@ -85,7 +85,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Contains("application/json", list);
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Obs-fold rejected in HTTP/1.1")]
+    [Fact(DisplayName = "RFC9112-5-HD-005: Obs-fold rejected in HTTP/1.1")]
     public void ObsFold_RejectedInHttp11()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Foo: bar\r\n baz\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -93,7 +93,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Header without colon is parse error")]
+    [Fact(DisplayName = "RFC9112-5-HD-006: Header without colon is parse error")]
     public void Header_WithoutColon_IsError()
     {
         var raw = "HTTP/1.1 200 OK\r\nThisHeaderHasNoColon\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -102,7 +102,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC7230-3.2: Header name lookup case-insensitive")]
+    [Fact(DisplayName = "RFC9112-5-HD-007: Header name lookup case-insensitive")]
     public void HeaderName_Lookup_CaseInsensitive()
     {
         var raw = "HTTP/1.1 200 OK\r\nHOST: example.com\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -114,7 +114,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal("example.com", values.Single());
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: Tab character in header value accepted")]
+    [Fact(DisplayName = "RFC9112-5-HD-008: Tab character in header value accepted")]
     public void Tab_InHeaderValue_Accepted()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Tab: before\ttab\tafter\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -126,7 +126,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal("before\ttab\tafter", values.Single());
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: Quoted-string header value parsed")]
+    [Fact(DisplayName = "RFC9112-5-HD-009: Quoted-string header value parsed")]
     public void QuotedString_HeaderValue_Parsed()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Quoted: \"quoted value\"\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -138,7 +138,7 @@ public sealed class Http11DecoderHeaderTests
         Assert.Equal("\"quoted value\"", values.Single());
     }
 
-    [Fact(DisplayName = "RFC9112-3.2: Content-Type: text/html; charset=utf-8 accessible")]
+    [Fact(DisplayName = "RFC9112-5-HD-010: Content-Type: text/html; charset=utf-8 accessible")]
     public void ContentType_WithParameters_Parsed()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 0\r\n\r\n"u8.ToArray();

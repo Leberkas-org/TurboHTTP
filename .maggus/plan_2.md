@@ -66,11 +66,11 @@ RFC{number}-{section}-{CAT}-{NNN}: {description}
 **Description:** As a developer, I want HTTP/1.1 tests to reference RFC 9112 consistently so that mixed RFC7230/RFC9112 citations disappear.
 
 **Acceptance Criteria:**
-- [ ] All `RFC7230-` references in DisplayName replaced with `RFC9112-`
-- [ ] Bare `RFC9112-4` format extended to `RFC9112-{section}-{CAT}-{NNN}: {description}`
-- [ ] Category codes assigned where missing (e.g. RL=RequestLine, HH=HostHeader, HD=Headers, CN=Connection, BD=Body, RR=RangeRequest, SL=StatusLine, CH=Chunked, NB=NoBody, FG=Fragmentation, MT=Methods, PL=Pipelining, CR=ConnectionReuse, PH=PerHostLimiter)
-- [ ] Legacy/preserved files (Http11DecoderChunkExtensionTests, Http11NegativePathTests, Http11SecurityTests) also updated
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9112"` passes with 0 failures
+- [x] All `RFC7230-` references in DisplayName replaced with `RFC9112-`
+- [x] Bare `RFC9112-4` format extended to `RFC9112-{section}-{CAT}-{NNN}: {description}`
+- [x] Category codes assigned where missing (e.g. RL=RequestLine, HH=HostHeader, HD=Headers, CN=Connection, BD=Body, RR=RangeRequest, SL=StatusLine, CH=Chunked, NB=NoBody, FG=Fragmentation, MT=Methods, PL=Pipelining, CR=ConnectionReuse, PH=PerHostLimiter)
+- [x] Legacy/preserved files (Http11DecoderChunkExtensionTests, Http11NegativePathTests, Http11SecurityTests) also updated
+- [x] `dotnet test --filter "FullyQualifiedName~RFC9112"` passes with 0 failures
 
 ### TASK-003: RFC 1945 — Unify format & add missing DisplayNames (17 files, ~153 existing)
 **Description:** As a developer, I want HTTP/1.0 tests to follow the same `RFC1945-{section}-{CAT}-{NNN}` format, including tests that currently lack DisplayNames.

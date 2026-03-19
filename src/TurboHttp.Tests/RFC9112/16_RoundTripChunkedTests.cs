@@ -45,7 +45,7 @@ public sealed class Http11RoundTripChunkedTests
         return result;
     }
 
-    [Fact(DisplayName = "RFC9112-6: HTTP/1.1 GET → 200 chunked response round-trip")]
+    [Fact(DisplayName = "RFC9112-7-CH-001: HTTP/1.1 GET → 200 chunked response round-trip")]
     public async Task Should_AssembleChunkedBody_When_ChunkedRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -56,7 +56,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("Hello, World!", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: HTTP/1.1 GET → response with 5 chunks round-trip")]
+    [Fact(DisplayName = "RFC9112-7-CH-002: HTTP/1.1 GET → response with 5 chunks round-trip")]
     public async Task Should_ConcatenateChunks_When_FiveChunksRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -67,7 +67,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("onetwothreefourfive", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: HTTP/1.1 chunked response with trailer round-trip")]
+    [Fact(DisplayName = "RFC9112-7-CH-003: HTTP/1.1 chunked response with trailer round-trip")]
     public async Task Should_AccessTrailer_When_ChunkedWithTrailerRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -82,7 +82,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("abc123", trailerVals.Single());
     }
 
-    [Fact(DisplayName = "RFC9112-6: Single 1-byte chunk decoded correctly")]
+    [Fact(DisplayName = "RFC9112-7-CH-004: Single 1-byte chunk decoded correctly")]
     public async Task Should_DecodeOneByte_When_SingleByteChunkRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -93,7 +93,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("A", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: Uppercase hex chunk size decoded correctly")]
+    [Fact(DisplayName = "RFC9112-7-CH-005: Uppercase hex chunk size decoded correctly")]
     public async Task Should_DecodeBody_When_UppercaseHexChunkSizeRoundTrip()
     {
         const string rawResponse =
@@ -113,7 +113,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("0123456789", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: 20 single-character chunks concatenated correctly")]
+    [Fact(DisplayName = "RFC9112-7-CH-006: 20 single-character chunks concatenated correctly")]
     public async Task Should_ConcatenateAllChunks_When_TwentyTinyChunksRoundTrip()
     {
         var chars = Enumerable.Range(0, 20).Select(i => ((char)('a' + i)).ToString()).ToArray();
@@ -126,7 +126,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal(expected, await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: 32KB single chunk decoded correctly")]
+    [Fact(DisplayName = "RFC9112-7-CH-007: 32KB single chunk decoded correctly")]
     public async Task Should_Preserve32KbChunk_When_LargeChunkRoundTrip()
     {
         var body = new string('X', 32768);
@@ -140,7 +140,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.All(decoded, c => Assert.Equal('X', c));
     }
 
-    [Fact(DisplayName = "RFC9112-6: Chunk with extension token — body decoded correctly")]
+    [Fact(DisplayName = "RFC9112-7-CH-008: Chunk with extension token — body decoded correctly")]
     public async Task Should_DecodeBody_When_ChunkHasExtensionRoundTrip()
     {
         const string rawResponse =
@@ -162,7 +162,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("Hello World", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: Pipelined chunked then Content-Length response decoded")]
+    [Fact(DisplayName = "RFC9112-7-CH-009: Pipelined chunked then Content-Length response decoded")]
     public async Task Should_DecodeBoth_When_ChunkedThenContentLengthPipelined()
     {
         var chunked = BuildChunkedResponse(200, "OK", ["chunk-data"]);
@@ -182,7 +182,7 @@ public sealed class Http11RoundTripChunkedTests
         Assert.Equal("fixed", await responses[1].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: Chunked body with two trailer headers round-trip")]
+    [Fact(DisplayName = "RFC9112-7-CH-010: Chunked body with two trailer headers round-trip")]
     public async Task Should_AccessBothTrailers_When_TwoTrailerHeadersRoundTrip()
     {
         var decoder = new Http11Decoder();

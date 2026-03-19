@@ -5,7 +5,7 @@ namespace TurboHttp.Tests.RFC9112;
 
 public sealed class Http11RoundTripFragmentationTests
 {
-    [Fact(DisplayName = "RFC9112-4: TCP fragment split after status line CRLF — response assembled")]
+    [Fact(DisplayName = "RFC9112-4-FG-001: TCP fragment split after status line CRLF — response assembled")]
     public async Task Should_AssembleResponse_When_SplitAfterStatusLine()
     {
         const string full = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello";
@@ -26,7 +26,7 @@ public sealed class Http11RoundTripFragmentationTests
         Assert.Equal("hello", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-4: TCP fragment split at header-body boundary — response assembled")]
+    [Fact(DisplayName = "RFC9112-4-FG-002: TCP fragment split at header-body boundary — response assembled")]
     public async Task Should_AssembleResponse_When_SplitAtHeaderBodyBoundary()
     {
         var headerBytes = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n"u8.ToArray();
@@ -40,7 +40,7 @@ public sealed class Http11RoundTripFragmentationTests
         Assert.Equal("hello", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-4: TCP fragment split mid-body — body assembled correctly")]
+    [Fact(DisplayName = "RFC9112-4-FG-003: TCP fragment split mid-body — body assembled correctly")]
     public async Task Should_AssembleBody_When_SplitMidBody()
     {
         const string full = "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n0123456789";
@@ -60,7 +60,7 @@ public sealed class Http11RoundTripFragmentationTests
         Assert.Equal("0123456789", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-4: Single-byte TCP delivery assembles complete response")]
+    [Fact(DisplayName = "RFC9112-4-FG-004: Single-byte TCP delivery assembles complete response")]
     public async Task Should_AssembleResponse_When_SingleByteTcpDelivery()
     {
         const string full = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc";
@@ -82,7 +82,7 @@ public sealed class Http11RoundTripFragmentationTests
         Assert.Equal("abc", await finalResponse.Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9112-6: TCP fragment split between two chunks — body assembled correctly")]
+    [Fact(DisplayName = "RFC9112-7-FG-005: TCP fragment split between two chunks — body assembled correctly")]
     public async Task Should_AssembleChunkedBody_When_SplitBetweenChunks()
     {
         var part1 = (ReadOnlyMemory<byte>)"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nfoo\r\n"u8.ToArray();

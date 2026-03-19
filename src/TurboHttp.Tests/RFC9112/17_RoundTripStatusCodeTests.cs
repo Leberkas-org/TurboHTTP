@@ -21,7 +21,7 @@ public sealed class Http11RoundTripStatusCodeTests
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
-    [Fact(DisplayName = "RFC7231-6.3: HTTP/1.1 GET → 301 with Location round-trip")]
+    [Fact(DisplayName = "RFC9112-4-SC-001: HTTP/1.1 GET → 301 with Location round-trip")]
     public void Should_Return301WithLocation_When_GetRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -36,7 +36,7 @@ public sealed class Http11RoundTripStatusCodeTests
         Assert.Contains("new-path", loc.Single());
     }
 
-    [Fact(DisplayName = "RFC7231-6.5: HTTP/1.1 GET → 404 Not Found round-trip")]
+    [Fact(DisplayName = "RFC9112-4-SC-002: HTTP/1.1 GET → 404 Not Found round-trip")]
     public async Task Should_Return404_When_ResourceMissingRoundTrip()
     {
         const string body = "Not Found";
@@ -49,7 +49,7 @@ public sealed class Http11RoundTripStatusCodeTests
         Assert.Equal("Not Found", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7231-6.6: HTTP/1.1 GET → 500 Internal Server Error round-trip")]
+    [Fact(DisplayName = "RFC9112-4-SC-003: HTTP/1.1 GET → 500 Internal Server Error round-trip")]
     public void Should_Return500_When_ServerErrorRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -60,7 +60,7 @@ public sealed class Http11RoundTripStatusCodeTests
         Assert.Equal(HttpStatusCode.InternalServerError, responses[0].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC7231-6.6: HTTP/1.1 503 Service Unavailable with Retry-After")]
+    [Fact(DisplayName = "RFC9112-4-SC-004: HTTP/1.1 503 Service Unavailable with Retry-After")]
     public void Should_Return503WithRetryAfter_When_ServiceUnavailableRoundTrip()
     {
         var decoder = new Http11Decoder();

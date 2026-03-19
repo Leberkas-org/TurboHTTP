@@ -60,7 +60,7 @@ public sealed class Http11RoundTripBodyTests
         return result;
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: HTTP/1.1 POST binary → 200 binary response round-trip")]
+    [Fact(DisplayName = "RFC9112-6-BD-001: HTTP/1.1 POST binary → 200 binary response round-trip")]
     public async Task Should_PreserveBinaryBody_When_PostBinaryRoundTrip()
     {
         var binary = new byte[256];
@@ -83,7 +83,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(binary, await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: HTTP/1.1 1 MB body round-trip")]
+    [Fact(DisplayName = "RFC9112-6-BD-002: HTTP/1.1 1 MB body round-trip")]
     public async Task Should_Preserve1MbBody_When_LargeBodyRoundTrip()
     {
         const int oneMb = 1024 * 1024;
@@ -107,7 +107,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(body, await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: HTTP/1.1 binary body with null bytes round-trip")]
+    [Fact(DisplayName = "RFC9112-6-BD-003: HTTP/1.1 binary body with null bytes round-trip")]
     public async Task Should_PreserveNullBytes_When_BinaryBodyRoundTrip()
     {
         var body = new byte[] { 0x00, 0x01, 0x00, 0xFF, 0x00, 0x7F, 0x00 };
@@ -126,7 +126,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(body, await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Content-Length 0 — empty body decoded")]
+    [Fact(DisplayName = "RFC9112-6-BD-004: Content-Length 0 — empty body decoded")]
     public async Task Should_ReturnEmptyBody_When_ContentLengthZeroRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -137,7 +137,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Empty(await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Content-Length matches UTF-8 byte count exactly")]
+    [Fact(DisplayName = "RFC9112-6-BD-005: Content-Length matches UTF-8 byte count exactly")]
     public async Task Should_DecodeUtf8Body_When_ContentLengthMatchesBytes()
     {
         const string text = "日本語テスト";
@@ -152,7 +152,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(bodyBytes, await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: 64KB body round-trip with Content-Length")]
+    [Fact(DisplayName = "RFC9112-6-BD-006: 64KB body round-trip with Content-Length")]
     public async Task Should_Preserve64KbBody_When_ContentLengthRoundTrip()
     {
         var body = new byte[65536];
@@ -166,7 +166,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(body, await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Three pipelined Content-Length responses decoded in order")]
+    [Fact(DisplayName = "RFC9112-6-BD-007: Three pipelined Content-Length responses decoded in order")]
     public async Task Should_DecodeAll_When_ThreePipelinedContentLengthRoundTrip()
     {
         var r1 = BuildResponse(200, "OK", "one", ("Content-Length", "3"));
@@ -183,7 +183,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal("three", await responses[2].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Content-Length 1 — single byte body decoded")]
+    [Fact(DisplayName = "RFC9112-6-BD-008: Content-Length 1 — single byte body decoded")]
     public async Task Should_DecodeOneByte_When_ContentLengthOneRoundTrip()
     {
         var body = new byte[] { 0x42 };
@@ -195,7 +195,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(body, await responses[0].Content.ReadAsByteArrayAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Reset decoder — second Content-Length response decoded after reset")]
+    [Fact(DisplayName = "RFC9112-6-BD-009: Reset decoder — second Content-Length response decoded after reset")]
     public async Task Should_DecodeAfterReset_When_ContentLengthRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -211,7 +211,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal("second", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Keep-alive — varying body sizes all decoded correctly")]
+    [Fact(DisplayName = "RFC9112-6-BD-010: Keep-alive — varying body sizes all decoded correctly")]
     public async Task Should_DecodeAllSizes_When_KeepAliveVaryingBodySizes()
     {
         var decoder = new Http11Decoder();
@@ -228,7 +228,7 @@ public sealed class Http11RoundTripBodyTests
         }
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Content-Type: application/json; charset=utf-8 preserved")]
+    [Fact(DisplayName = "RFC9112-6-BD-011: Content-Type: application/json; charset=utf-8 preserved")]
     public void Should_PreserveContentType_When_JsonCharsetRoundTrip()
     {
         const string json = "{\"key\":\"value\"}";
@@ -252,7 +252,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal("utf-8", responses[0].Content.Headers.ContentType!.CharSet);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: UTF-8 body preserved byte-for-byte round-trip")]
+    [Fact(DisplayName = "RFC9112-6-BD-012: UTF-8 body preserved byte-for-byte round-trip")]
     public async Task Should_PreserveUtf8Bytes_When_Utf8BodyRoundTrip()
     {
         const string text = "Hello, 世界! Привет мир!";
@@ -269,7 +269,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal(text, decoded);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: ETag with quotes and Cache-Control preserved exactly")]
+    [Fact(DisplayName = "RFC9112-6-BD-013: ETag with quotes and Cache-Control preserved exactly")]
     public void Should_PreserveETagAndCacheControl_When_ETagResponseRoundTrip()
     {
         var raw = BuildResponse(200, "OK", "data",
@@ -287,7 +287,7 @@ public sealed class Http11RoundTripBodyTests
         Assert.Equal("max-age=3600", cc.Single());
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Response with 10 custom headers — all preserved")]
+    [Fact(DisplayName = "RFC9112-6-BD-014: Response with 10 custom headers — all preserved")]
     public void Should_PreserveAllHeaders_When_ResponseHasTenCustomHeaders()
     {
         var headers = new (string Name, string Value)[11];

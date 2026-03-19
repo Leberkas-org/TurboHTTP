@@ -46,7 +46,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(body, result);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Content-Length body decoded to exact byte count")]
+    [Fact(DisplayName = "RFC9112-6-BD-001: Content-Length body decoded to exact byte count")]
     public async Task ContentLength_Body_DecodedToExactByteCount()
     {
         const string body = "Hello, World!";
@@ -60,7 +60,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(body.Length, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Zero Content-Length produces empty body")]
+    [Fact(DisplayName = "RFC9112-6-BD-002: Zero Content-Length produces empty body")]
     public void Zero_ContentLength_EmptyBody()
     {
         var raw = BuildResponse(200, "OK", "", ("Content-Length", "0"));
@@ -71,7 +71,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Transfer-Encoding + Content-Length conflict rejected")]
+    [Fact(DisplayName = "RFC9112-6-BD-003: Transfer-Encoding + Content-Length conflict rejected")]
     public void TransferEncoding_And_ContentLength_Conflict_Rejected()
     {
         // RFC 9112 §6.3 / Security: TE+CL combination is rejected to prevent HTTP smuggling.
@@ -84,7 +84,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(HttpDecoderError.ChunkedWithContentLength, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Multiple Content-Length values rejected")]
+    [Fact(DisplayName = "RFC9112-6-BD-004: Multiple Content-Length values rejected")]
     public void Multiple_ContentLength_DifferentValues_Rejected()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 6\r\n\r\nHello"u8.ToArray();
@@ -93,7 +93,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(HttpDecoderError.MultipleContentLengthValues, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Negative Content-Length is parse error")]
+    [Fact(DisplayName = "RFC9112-6-BD-005: Negative Content-Length is parse error")]
     public void Negative_ContentLength_HandledGracefully()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\n"u8.ToArray();
@@ -104,7 +104,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Response without body framing has empty body")]
+    [Fact(DisplayName = "RFC9112-6-BD-006: Response without body framing has empty body")]
     public void NoBodyFraming_EmptyBody()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Custom: test\r\n\r\n"u8.ToArray();
@@ -115,7 +115,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact(DisplayName = "RFC9112-6: 10 MB body decoded with correct Content-Length")]
+    [Fact(DisplayName = "RFC9112-6-BD-007: 10 MB body decoded with correct Content-Length")]
     public async Task LargeBody_10MB_DecodedCorrectly()
     {
         // Create 10 MB body
@@ -137,7 +137,7 @@ public sealed class Http11DecoderBodyTests
         Assert.Equal(bodySize, result.Length);
     }
 
-    [Fact(DisplayName = "RFC9112-6: Binary body with null bytes intact")]
+    [Fact(DisplayName = "RFC9112-6-BD-008: Binary body with null bytes intact")]
     public async Task BinaryBody_WithNullBytes_Intact()
     {
         var binaryBody = new byte[] { 0x00, 0x01, 0xFF, 0x00, 0xAB, 0xCD };

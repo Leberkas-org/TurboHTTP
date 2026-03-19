@@ -35,7 +35,7 @@ public sealed class Http11RoundTripPipeliningTests
         return result;
     }
 
-    [Fact(DisplayName = "RFC7230-5.1: Two pipelined requests and responses round-trip")]
+    [Fact(DisplayName = "RFC9112-9-PL-001: Two pipelined requests and responses round-trip")]
     public async Task Should_DecodeBothResponses_When_TwoPipelinedRequestsRoundTrip()
     {
         var resp1 = BuildResponse(200, "OK", "alpha", ("Content-Length", "5"));
@@ -52,7 +52,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Equal("beta", await responses[1].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-5.1: Three pipelined responses decoded in order")]
+    [Fact(DisplayName = "RFC9112-9-PL-002: Three pipelined responses decoded in order")]
     public async Task Should_DecodeAllThree_When_ThreePipelinedResponsesRoundTrip()
     {
         var r1 = BuildResponse(200, "OK", "alpha", ("Content-Length", "5"));
@@ -69,7 +69,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Equal("gamma", await responses[2].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-5.1: Five pipelined responses all decoded correctly")]
+    [Fact(DisplayName = "RFC9112-9-PL-003: Five pipelined responses all decoded correctly")]
     public async Task Should_DecodeAllFive_When_FivePipelinedResponsesRoundTrip()
     {
         var parts = Enumerable.Range(1, 5)
@@ -87,7 +87,7 @@ public sealed class Http11RoundTripPipeliningTests
         }
     }
 
-    [Fact(DisplayName = "RFC7230-5.1: Pipelined 200 → 404 → 200 — status codes preserved")]
+    [Fact(DisplayName = "RFC9112-9-PL-004: Pipelined 200 → 404 → 200 — status codes preserved")]
     public void Should_PreserveStatusCodes_When_MixedStatusPipelined()
     {
         var r1 = BuildResponse(200, "OK", "ok", ("Content-Length", "2"));
@@ -104,7 +104,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Equal(HttpStatusCode.OK, responses[2].StatusCode);
     }
 
-    [Fact(DisplayName = "RFC7230-5.1: HTTP/1.1 1xx status skipped, final status returned")]
+    [Fact(DisplayName = "RFC9112-9-PL-005: HTTP/1.1 1xx status skipped, final status returned")]
     public async Task Should_SkipContinue_And_Return200_When_100ContinueRoundTrip()
     {
         var continue100 = "HTTP/1.1 100 Continue\r\n\r\n"u8.ToArray();
@@ -126,7 +126,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Equal("done", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-5.1: 102 Processing skipped — only 200 OK returned")]
+    [Fact(DisplayName = "RFC9112-9-PL-006: 102 Processing skipped — only 200 OK returned")]
     public async Task Should_Skip102_When_FollowedBy200RoundTrip()
     {
         const string combined =
@@ -142,7 +142,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Equal("done", await responses[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Two sequential keep-alive responses decoded correctly")]
+    [Fact(DisplayName = "RFC9112-9-PL-007: Two sequential keep-alive responses decoded correctly")]
     public async Task Should_DecodeSecondResponse_When_KeepAliveRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -161,7 +161,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Equal("second", await responses2[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Three sequential keep-alive responses decoded correctly")]
+    [Fact(DisplayName = "RFC9112-9-PL-008: Three sequential keep-alive responses decoded correctly")]
     public async Task Should_DecodeAllThree_When_SequentialKeepAliveRoundTrip()
     {
         var decoder = new Http11Decoder();
@@ -179,7 +179,7 @@ public sealed class Http11RoundTripPipeliningTests
         }
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Connection: close header preserved in decoded response")]
+    [Fact(DisplayName = "RFC9112-9-PL-009: Connection: close header preserved in decoded response")]
     public void Should_ReturnConnectionClose_When_ResponseHasConnectionCloseHeader()
     {
         var raw = BuildResponse(200, "OK", "data",
@@ -194,7 +194,7 @@ public sealed class Http11RoundTripPipeliningTests
         Assert.Contains("close", conn.Single(), StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Pipelined chunked → Content-Length → 204 all decoded")]
+    [Fact(DisplayName = "RFC9112-9-PL-010: Pipelined chunked → Content-Length → 204 all decoded")]
     public async Task Should_DecodeAll_When_MixedEncodingsPipelined()
     {
         var sb1 = new StringBuilder();

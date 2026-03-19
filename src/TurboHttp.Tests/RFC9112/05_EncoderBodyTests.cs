@@ -6,7 +6,7 @@ namespace TurboHttp.Tests.RFC9112;
 
 public sealed class Http11EncoderBodyTests
 {
-    [Fact(DisplayName = "RFC7230-3.3: No Content-Length for bodyless GET")]
+    [Fact(DisplayName = "RFC9112-6-BD-001: No Content-Length for bodyless GET")]
     public void Test_No_Content_Length_For_GET()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -14,7 +14,7 @@ public sealed class Http11EncoderBodyTests
         Assert.DoesNotContain("Content-Length:", result);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3: Content-Length set for POST body")]
+    [Fact(DisplayName = "RFC9112-6-BD-002: Content-Length set for POST body")]
     public void Test_Content_Length_For_POST()
     {
         var content = new StringContent("test data");
@@ -26,7 +26,7 @@ public sealed class Http11EncoderBodyTests
         Assert.Contains("Content-Length:", result);
     }
 
-    [Theory(DisplayName = "RFC9112-6: {method} with body gets Content-Length [{method}]")]
+    [Theory(DisplayName = "RFC9112-6-BD-003: {method} with body gets Content-Length [{method}]")]
     [InlineData("POST")]
     [InlineData("PUT")]
     [InlineData("PATCH")]
@@ -41,7 +41,7 @@ public sealed class Http11EncoderBodyTests
         Assert.Contains("Content-Length: 5\r\n", result);
     }
 
-    [Theory(DisplayName = "RFC9112-6: {method} without body omits Content-Length [{method}]")]
+    [Theory(DisplayName = "RFC9112-6-BD-004: {method} without body omits Content-Length [{method}]")]
     [InlineData("GET")]
     [InlineData("HEAD")]
     [InlineData("DELETE")]
@@ -52,7 +52,7 @@ public sealed class Http11EncoderBodyTests
         Assert.DoesNotContain("Content-Length:", result);
     }
 
-    [Fact(DisplayName = "RFC9112-6: Empty line separates headers from body")]
+    [Fact(DisplayName = "RFC9112-6-BD-005: Empty line separates headers from body")]
     public void Test_Empty_Line_Separator()
     {
         var content = new StringContent("body content");
@@ -66,7 +66,7 @@ public sealed class Http11EncoderBodyTests
         Assert.StartsWith("body content", result[(separatorIdx + 4)..]);
     }
 
-    [Fact(DisplayName = "RFC9112-6: Binary body with null bytes preserved")]
+    [Fact(DisplayName = "RFC9112-6-BD-006: Binary body with null bytes preserved")]
     public void Test_Binary_Body_Preserved()
     {
         var binaryData = new byte[] { 0x00, 0x01, 0x02, 0xFF, 0xFE, 0x00, 0x03 };
@@ -97,7 +97,7 @@ public sealed class Http11EncoderBodyTests
         Assert.Equal(binaryData, body);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Chunked Transfer-Encoding for streamed body")]
+    [Fact(DisplayName = "RFC9112-7-BD-007: Chunked Transfer-Encoding for streamed body")]
     public void Test_Chunked_Transfer_Encoding()
     {
         var content = new StringContent("Hello World");
@@ -127,7 +127,7 @@ public sealed class Http11EncoderBodyTests
         Assert.StartsWith("b\r\nHello World\r\n", bodyPart);
     }
 
-    [Fact(DisplayName = "RFC7230-4.1: Chunked body terminated with final 0-chunk")]
+    [Fact(DisplayName = "RFC9112-7-BD-008: Chunked body terminated with final 0-chunk")]
     public void Test_Chunked_Body_Terminator()
     {
         var content = new StringContent("Test");
@@ -148,7 +148,7 @@ public sealed class Http11EncoderBodyTests
         Assert.EndsWith("0\r\n\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7230-3.3.2: Content-Length absent when Transfer-Encoding is chunked")]
+    [Fact(DisplayName = "RFC9112-7-BD-009: Content-Length absent when Transfer-Encoding is chunked")]
     public void Test_No_Content_Length_When_Chunked()
     {
         var content = new StringContent("Some data here");

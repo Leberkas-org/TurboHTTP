@@ -6,7 +6,7 @@ namespace TurboHttp.Tests.RFC9112;
 
 public sealed class Http11EncoderConnectionTests
 {
-    [Fact(DisplayName = "RFC7230-6.1: Connection keep-alive default in HTTP/1.1")]
+    [Fact(DisplayName = "RFC9112-9-CN-001: Connection keep-alive default in HTTP/1.1")]
     public void Test_Default_Keep_Alive()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -14,7 +14,7 @@ public sealed class Http11EncoderConnectionTests
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Connection close encoded when set")]
+    [Fact(DisplayName = "RFC9112-9-CN-002: Connection close encoded when set")]
     public void Test_Connection_Close()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
@@ -26,7 +26,7 @@ public sealed class Http11EncoderConnectionTests
         Assert.DoesNotContain("keep-alive", result);
     }
 
-    [Fact(DisplayName = "RFC7230-6.1: Multiple Connection tokens encoded")]
+    [Fact(DisplayName = "RFC9112-9-CN-003: Multiple Connection tokens encoded")]
     public void Test_Multiple_Connection_Tokens()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -35,7 +35,7 @@ public sealed class Http11EncoderConnectionTests
         Assert.Contains("Connection: upgrade, keep-alive\r\n", result);
     }
 
-    [Fact(DisplayName = "RFC9112-6.1: Connection-specific headers stripped")]
+    [Fact(DisplayName = "RFC9112-9-CN-004: Connection-specific headers stripped")]
     public void Test_Connection_Specific_Headers_Stripped()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");

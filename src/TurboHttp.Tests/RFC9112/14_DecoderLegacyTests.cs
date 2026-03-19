@@ -8,7 +8,7 @@ public sealed class Http11DecoderLegacyTests
 {
     private readonly Http11Decoder _decoder = new();
 
-    [Fact(DisplayName = "RFC7231-7.1.1: IMF-fixdate Date header parsed")]
+    [Fact(DisplayName = "RFC9112-5-LG-001: IMF-fixdate Date header parsed")]
     public void Should_ParseImfFixdateToDateTimeOffset_When_DateHeaderPresent()
     {
         // IMF-fixdate format: Sun, 06 Nov 1994 08:49:37 GMT
@@ -26,7 +26,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal(expected, responses[0].Headers.Date);
     }
 
-    [Fact(DisplayName = "RFC7231-7.1.1: RFC 850 Date format accepted")]
+    [Fact(DisplayName = "RFC9112-5-LG-002: RFC 850 Date format accepted")]
     public void Should_ParseRfc850ObsoleteFormat_When_DateHeaderPresent()
     {
         // RFC 850 obsolete format: Sunday, 06-Nov-94 08:49:37 GMT
@@ -47,7 +47,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal(expected, responses[0].Headers.Date);
     }
 
-    [Fact(DisplayName = "RFC7231-7.1.1: ANSI C asctime Date format accepted")]
+    [Fact(DisplayName = "RFC9112-5-LG-003: ANSI C asctime Date format accepted")]
     public void Should_ParseAnsiCAsctimeFormat_When_DateHeaderPresent()
     {
         // ANSI C asctime format: Sun Nov  6 08:49:37 1994
@@ -68,7 +68,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal(expected, responses[0].Headers.Date);
     }
 
-    [Fact(DisplayName = "RFC7231-7.1.1: Non-GMT timezone in Date rejected")]
+    [Fact(DisplayName = "RFC9112-5-LG-004: Non-GMT timezone in Date rejected")]
     public void Should_HandleNonGmtTimezone_When_DateHeaderPresent()
     {
         // Non-GMT timezone should be rejected per RFC 7231
@@ -86,7 +86,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.NotNull(dateValues);
     }
 
-    [Fact(DisplayName = "RFC7231-7.1.1: Invalid Date header value rejected")]
+    [Fact(DisplayName = "RFC9112-5-LG-005: Invalid Date header value rejected")]
     public void Should_HandleInvalidDateGracefully_When_DateHeaderMalformed()
     {
         // Completely invalid date value
@@ -105,7 +105,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Null(responses[0].Headers.Date);
     }
 
-    [Fact(DisplayName = "RFC7230: Two pipelined responses decoded")]
+    [Fact(DisplayName = "RFC9112-9-LG-006: Two pipelined responses decoded")]
     public async Task TwoPipelinedResponses_InSameBuffer_BothDecoded()
     {
         var resp1 = BuildResponse(200, "OK", "first", ("Content-Length", "5"));
@@ -125,7 +125,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal("second", await responses[1].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7230: Partial second response held in remainder")]
+    [Fact(DisplayName = "RFC9112-9-LG-007: Partial second response held in remainder")]
     public async Task TwoPipelinedResponses_SecondPartial_RemainderBuffered()
     {
         var resp1 = BuildResponse(200, "OK", "first", ("Content-Length", "5"));
@@ -153,7 +153,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal("done", await responses2[0].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC9113: Three pipelined responses decoded in order")]
+    [Fact(DisplayName = "RFC9112-9-LG-008: Three pipelined responses decoded in order")]
     public async Task ThreePipelinedResponses_InSameBuffer_DecodedInOrder()
     {
         var resp1 = BuildResponse(200, "OK", "alpha", ("Content-Length", "5"));
@@ -177,7 +177,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal("gamma", await responses[2].Content.ReadAsStringAsync());
     }
 
-    [Fact(DisplayName = "RFC7233-4.1: Content-Range: bytes 0-499/1000 accessible")]
+    [Fact(DisplayName = "RFC9112-6-LG-009: Content-Range: bytes 0-499/1000 accessible")]
     public void Test_ContentRange_Accessible()
     {
         var raw = BuildResponse(206, "Partial Content", "first 500 bytes",
@@ -193,7 +193,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Contains("bytes 0-14/1000", crValues);
     }
 
-    [Fact(DisplayName = "RFC7233-4.1: 206 Partial Content with Content-Range decoded")]
+    [Fact(DisplayName = "RFC9112-6-LG-010: 206 Partial Content with Content-Range decoded")]
     public async Task Test_PartialContent_Decoded()
     {
         const string partialBody = "Hello";
@@ -210,7 +210,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Equal(partialBody, body);
     }
 
-    [Fact(DisplayName = "RFC7233-4.1: 206 multipart/byteranges body decoded")]
+    [Fact(DisplayName = "RFC9112-6-LG-011: 206 multipart/byteranges body decoded")]
     public async Task Test_Multipart_ByteRanges_Decoded()
     {
         // RFC 7233 §4.1: A server may return multiple ranges in a single multipart/byteranges response.
@@ -243,7 +243,7 @@ public sealed class Http11DecoderLegacyTests
         Assert.Contains("World", body);
     }
 
-    [Fact(DisplayName = "RFC7233-4.1: Content-Range: bytes 0-499/* unknown total")]
+    [Fact(DisplayName = "RFC9112-6-LG-012: Content-Range: bytes 0-499/* unknown total")]
     public void Test_ContentRange_UnknownTotal_Accepted()
     {
         // RFC 7233 §4.2: The "*" token indicates an unknown total length.
