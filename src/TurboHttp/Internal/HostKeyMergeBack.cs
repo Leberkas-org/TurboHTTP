@@ -18,7 +18,8 @@ internal sealed class HostKeyMergeBack<TIn, TMat> : IMergeBack<TIn, TMat>
     private readonly int _maxSubstreams;
     private readonly int _queueSize;
 
-    public HostKeyMergeBack(IFlow<TIn, TMat> baseFlow, Func<TIn, RequestEndpoint> keyFunction, int maxSubstreams, int queueSize = 64)
+    public HostKeyMergeBack(IFlow<TIn, TMat> baseFlow, Func<TIn, RequestEndpoint> keyFunction, int maxSubstreams,
+        int queueSize = 64)
     {
         _baseFlow = baseFlow;
         _keyFunction = keyFunction;
@@ -27,9 +28,9 @@ internal sealed class HostKeyMergeBack<TIn, TMat> : IMergeBack<TIn, TMat>
     }
 
     // Called by SubFlowImpl.MergeSubstreamsWithParallelism(breadth).
-    // `innerFlow` is the accumulated per-substream Flow built up via
+    // `flow` is the accumulated per-substream Flow built up via
     // SubFlowImpl.Via() calls (starts as identity, grows with each operator).
-    public IFlow<TOut, TMat> Apply<TOut>(Flow<TIn, TOut, TMat> innerFlow, int breadth)
+    public IFlow<TOut, TMat> Apply<TOut>(Flow<TIn, TOut, TMat> flow, int breadth)
     {
         var effectiveBreadth = breadth is <= 0 or int.MaxValue
             ? _maxSubstreams
@@ -38,7 +39,7 @@ internal sealed class HostKeyMergeBack<TIn, TMat> : IMergeBack<TIn, TMat>
         return _baseFlow
             .Via(new GroupByHostKeyStage<TIn>(_keyFunction, _maxSubstreams, _queueSize))
             .Via(Flow.Create<Source<TIn, NotUsed>>()
-                .Select(src => src.Via(innerFlow)))
+                .Select(src => src.Via(flow)))
             .Via(new MergeSubstreamsStage<TOut>(effectiveBreadth));
     }
 }

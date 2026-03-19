@@ -167,7 +167,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                     case HeadersFrame headers:
                         _activeStreams++;
                         _activeStreamIds.Add(headers.StreamId);
-                        Emit(stage._outletSignal, new StreamAcquireItem());
+                        Emit(stage._outletSignal, new StreamAcquireItem()); // TODO: Set RequestEndpoint
                         break;
 
                     case DataFrame data:

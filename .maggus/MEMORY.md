@@ -264,6 +264,23 @@ Tests decode first, then call helpers, then assert `Http2Exception`.
 - No `[Benchmark]` methods defined — cannot measure performance baseline
 - RFC compliance matrix: `RFC_COMPLIANCE.md` in repo root
 
+## StreamTest Infrastructure Audit (TASK-006, plan_1, 2026-03-19)
+
+- `docs/test-infrastructure-audit.md` — full audit of Http10/ and Http11/ StreamTests
+- 77 of 117 tests are pure encode/decode wrapped in ActorSystem — conversion candidates
+- 38 tests legitimately exercise stream pipeline behaviour (engine round-trip, correlation, timing)
+- Conversion pattern: replace `Source.Single(req).Via(EncoderStage).RunWith(Sink, Materializer)` with direct `Http10Encoder.Encode()` call
+- Example conversions: `src/TurboHttp.Tests/RFC1945/18_EncoderStageConversionExampleTests.cs` (4 tests)
+- Measured overhead: ~342 ms per test class for ActorSystem.Create(); plain tests < 1 ms
+- `StreamTestBase` and `EngineTestBase` both extend `Akka.TestKit.Xunit2.TestKit`
+
+## IO Actor Test Base Class (TASK-002, plan_1, 2026-03-19)
+
+- `src/TurboHttp.StreamTests/IO/IoActorTestBase.cs` — abstract base class for all `HostPoolActor*` tests
+- Provides: `TestOptions`, `Key10`/`Key11`/`Key20` (`RequestEndpoint`), `FakeConnectionActor` (inner class), `CreatePool(TestProbe, RequestEndpoint, TimeSpan?)`, `CreateHandle(IActorRef, RequestEndpoint)`, `SetupReadyPool(TestProbe, RequestEndpoint, TimeSpan?)`
+- `HostPoolActorSelectConnectionTests` keeps its own `CreateHandle(Version)` overload (different signature — tests `SelectConnection` directly without a full pool actor)
+- All four `HostPoolActor*` files inherit from `IoActorTestBase`; test count remains 17
+
 ## HostPoolActor Stale State Cleanup (TASK-5A-011, 2026-03-16)
 
 ### HandleFailure Changes
@@ -454,6 +471,15 @@ Production mode: `GroupBy(HostKey.FromRequest, maxSubstreams)` → per-host subs
 - `01_RedirectHandlerTests.cs` — RFC 9110 §15.4 redirects (51 tests, RH-001..051)
 - `02_RetryEvaluatorTests.cs` — RFC 9110 §9.2 retries (40 tests, RE-001..040)
 - `03_ContentEncodingIntegrationTests.cs` — stacked encodings (27 tests)
+
+## RFC9113 Single-Layer Test Pattern (TASK-005, plan_1, 2026-03-19)
+
+- Frame structure tests: use `encoder.Encode(request, streamId)` → assert on frame object properties (EndStream, EndHeaders, IsType)
+- Header content tests: use `encoder.EncodeToHpackBlock(request)` → `HpackDecoder.Decode()` for verification
+- Flow control tests: `frames.OfType<DataFrame>().Sum(df => df.Data.Length)` instead of manual byte parsing
+- HPACK-specific tests (NeverIndex, dynamic table, raw byte walker): belong in RFC7541/, not RFC9113/
+- 35 tests moved from `RFC9113/23_EncoderSensitiveHeaderTests.cs` → `RFC7541/07_SensitiveHeaderTests.cs`
+- Multi-layer helpers (`Encode()` serialize-to-bytes, `ExtractFirstHeaderBlock()`, byte-level `DecodeHeaderList()`) replaced with `EncodeToFrames()` and `DecodeHeaders()` single-layer helpers
 
 ## H2EngineFakeConnectionStage Unlock Constraint (TASK-003, 2026-03-18)
 

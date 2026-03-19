@@ -1,7 +1,5 @@
 using System.Buffers;
-using System.Buffers.Binary;
 using System.Text;
-using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
@@ -33,8 +31,8 @@ public sealed class Http2EncoderStreamSettingsTests
     {
         var ack = Http2FrameUtils.EncodeSettingsAck();
         Assert.Equal((byte)FrameType.Settings, ack[3]);         // type = 0x04
-        Assert.Equal((byte)Settings.Ack, ack[4]);          // flags = 0x01
-        var streamId = BinaryPrimitives.ReadUInt32BigEndian(ack.AsSpan(5)) & 0x7FFFFFFFu;
+        Assert.Equal((byte)Settings.Ack, ack[4]);               // flags = 0x01
+        var streamId = (uint)((ack[5] << 24) | (ack[6] << 16) | (ack[7] << 8) | ack[8]) & 0x7FFFFFFFu;
         Assert.Equal(0u, streamId);                             // stream = 0
     }
 
@@ -94,25 +92,11 @@ public sealed class Http2EncoderStreamSettingsTests
         var body = new string('X', 65535); // exactly fills the default window
         var request = CreatePostRequest("example.com", "/api", body);
 
-        using var owner = MemoryPool<byte>.Shared.Rent(1 << 20);
-        var buf = owner.Memory;
-        var (_, n) = encoder.Encode(request, ref buf);
-        var data = owner.Memory.Span[..n];
+        // Encoder layer: returns frames directly
+        var (_, frames) = encoder.Encode(request, 1);
 
-        // Sum all DATA frame payload bytes
-        var headersLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var offset = 9 + headersLen;
-        long totalData = 0;
-        while (offset < data.Length)
-        {
-            var len = (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
-            if (data[offset + 3] == (byte)FrameType.Data)
-            {
-                totalData += len;
-            }
-
-            offset += 9 + len;
-        }
+        // Sum all DATA frame payloads
+        var totalData = frames.OfType<DataFrame>().Sum(df => (long)df.Data.Length);
 
         Assert.Equal(65535L, totalData);
     }
@@ -123,10 +107,8 @@ public sealed class Http2EncoderStreamSettingsTests
         var encoder = new Http2RequestEncoder(useHuffman: false);
 
         // Drain the initial connection window (65535) with stream 1
-        using var drainOwner = MemoryPool<byte>.Shared.Rent(1 << 20);
-        var drainBuf = drainOwner.Memory;
         var drainReq = CreatePostRequest("example.com", "/drain", new string('X', 65535));
-        encoder.Encode(drainReq, ref drainBuf); // connection window now = 0
+        encoder.Encode(drainReq, 1); // connection window now = 0
 
         // Simulate server WINDOW_UPDATE: give 50000 more bytes on the connection
         encoder.UpdateConnectionWindow(50000);
@@ -134,25 +116,10 @@ public sealed class Http2EncoderStreamSettingsTests
         // Stream 3 uses default stream window (65535), connection window is now 50000
         // effective = min(50000, 65535) = 50000 → 50000 bytes can be sent
         var request = CreatePostRequest("example.com", "/api", new string('Y', 60000));
+        var (_, frames) = encoder.Encode(request, 3);
 
-        using var owner = MemoryPool<byte>.Shared.Rent(1 << 20);
-        var buf = owner.Memory;
-        var (_, n) = encoder.Encode(request, ref buf);
-        var data = owner.Memory.Span[..n];
-
-        var headersLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var offset = 9 + headersLen;
-        long totalData = 0;
-        while (offset < data.Length)
-        {
-            var len = (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
-            if (data[offset + 3] == (byte)FrameType.Data)
-            {
-                totalData += len;
-            }
-
-            offset += 9 + len;
-        }
+        // Sum all DATA frame payloads
+        var totalData = frames.OfType<DataFrame>().Sum(df => (long)df.Data.Length);
 
         // Without the WINDOW_UPDATE, 0 bytes could be sent; now 50000 should be sent
         Assert.Equal(50000L, totalData);
@@ -164,31 +131,15 @@ public sealed class Http2EncoderStreamSettingsTests
         var encoder = new Http2RequestEncoder(useHuffman: false);
 
         // Drain the full connection window with stream 1
-        using var drainOwner = MemoryPool<byte>.Shared.Rent(1 << 20);
-        var drainBuf = drainOwner.Memory;
         var drainReq = CreatePostRequest("example.com", "/drain", new string('X', 65535));
-        encoder.Encode(drainReq, ref drainBuf); // connection window = 0
+        encoder.Encode(drainReq, 1); // connection window = 0
 
         // With zero window, no DATA should be emitted for the next request
         var request = CreatePostRequest("example.com", "/api", "blocked body");
-        using var owner = MemoryPool<byte>.Shared.Rent(65536);
-        var buf = owner.Memory;
-        var (_, n) = encoder.Encode(request, ref buf);
-        var data = owner.Memory.Span[..n];
+        var (_, frames) = encoder.Encode(request, 3);
 
-        var headersLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var offset = 9 + headersLen;
-        var hasNonEmptyData = false;
-        while (offset < data.Length)
-        {
-            var len = (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
-            if (data[offset + 3] == (byte)FrameType.Data && len > 0)
-            {
-                hasNonEmptyData = true;
-            }
-
-            offset += 9 + len;
-        }
+        // Check that no non-empty DATA frames are present
+        var hasNonEmptyData = frames.OfType<DataFrame>().Any(df => df.Data.Length > 0);
 
         Assert.False(hasNonEmptyData, "Encoder must not emit DATA when connection window is zero");
     }
@@ -199,34 +150,18 @@ public sealed class Http2EncoderStreamSettingsTests
         var encoder = new Http2RequestEncoder(useHuffman: false);
 
         // Drain the full connection window with stream 1
-        using var drainOwner = MemoryPool<byte>.Shared.Rent(1 << 20);
-        var drainBuf = drainOwner.Memory;
         var drainReq = CreatePostRequest("example.com", "/drain", new string('X', 65535));
-        encoder.Encode(drainReq, ref drainBuf); // connection window = 0
+        encoder.Encode(drainReq, 1); // connection window = 0
 
         // Give exactly 100 bytes of connection window back
         encoder.UpdateConnectionWindow(100);
 
         // Stream 3 wants to send 500 bytes, but connection window = 100
         var request = CreatePostRequest("example.com", "/api", new string('Y', 500));
-        using var owner = MemoryPool<byte>.Shared.Rent(65536);
-        var buf = owner.Memory;
-        var (_, n) = encoder.Encode(request, ref buf);
-        var data = owner.Memory.Span[..n];
+        var (_, frames) = encoder.Encode(request, 3);
 
-        var headersLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var offset = 9 + headersLen;
-        long totalData = 0;
-        while (offset < data.Length)
-        {
-            var len = (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
-            if (data[offset + 3] == (byte)FrameType.Data)
-            {
-                totalData += len;
-            }
-
-            offset += 9 + len;
-        }
+        // Sum all DATA frame payloads
+        var totalData = frames.OfType<DataFrame>().Sum(df => (long)df.Data.Length);
 
         Assert.True(totalData <= 100, $"Connection window (100) exceeded: {totalData} bytes sent");
         Assert.Equal(100L, totalData); // exactly 100 bytes sent
@@ -246,24 +181,10 @@ public sealed class Http2EncoderStreamSettingsTests
         encoder.UpdateStreamWindow(1, 50);
 
         var request = CreatePostRequest("example.com", "/api", new string('Y', 500));
-        using var owner = MemoryPool<byte>.Shared.Rent(65536);
-        var buf = owner.Memory;
-        var (_, n) = encoder.Encode(request, ref buf);
-        var data = owner.Memory.Span[..n];
+        var (_, frames) = encoder.Encode(request, 1);
 
-        var headersLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var offset = 9 + headersLen;
-        long totalData = 0;
-        while (offset < data.Length)
-        {
-            var len = (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
-            if (data[offset + 3] == (byte)FrameType.Data)
-            {
-                totalData += len;
-            }
-
-            offset += 9 + len;
-        }
+        // Sum all DATA frame payloads
+        var totalData = frames.OfType<DataFrame>().Sum(df => (long)df.Data.Length);
 
         Assert.True(totalData <= 50, $"Per-stream window (50) exceeded: {totalData} bytes sent");
         Assert.Equal(50L, totalData); // exactly 50 bytes sent
@@ -283,27 +204,5 @@ public sealed class Http2EncoderStreamSettingsTests
         var request = new HttpRequestMessage(HttpMethod.Post, uri);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         return request;
-    }
-
-    private static (int StreamId, byte[] Data) Encode(HttpRequestMessage request, bool useHuffman = false)
-    {
-        var encoder = new Http2RequestEncoder(useHuffman);
-        using var owner = MemoryPool<byte>.Shared.Rent(4096);
-        var buffer = owner.Memory;
-        var (streamId, written) = encoder.Encode(request, ref buffer);
-        return (streamId, owner.Memory.Span[..written].ToArray());
-    }
-
-    private static byte[] ExtractFirstHeaderBlock(ReadOnlySpan<byte> data)
-    {
-        var payloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        return data[9..(9 + payloadLen)].ToArray();
-    }
-
-    private static List<HpackHeader> DecodeHeaderList(byte[] data)
-    {
-        var payloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var headerBlock = data[9..(9 + payloadLen)];
-        return new HpackDecoder().Decode(headerBlock).ToList();
     }
 }

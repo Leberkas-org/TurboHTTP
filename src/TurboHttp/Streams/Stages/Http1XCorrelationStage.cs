@@ -82,8 +82,10 @@ internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape
                 {
                     if (_pending.Count == 0)
                     {
-                        _pending.Enqueue(Grab(stage._requestIn));
-                        Emit(stage._outletSignal, new StreamAcquireItem());
+                        var request = Grab(stage._requestIn);
+                        _pending.Enqueue(request);
+                        var key = RequestEndpoint.FromRequest(request);
+                        Emit(stage._outletSignal, new StreamAcquireItem { Key = key });
                         TryCorrelateAndEmit(stage);
                     }
 

@@ -3,7 +3,7 @@ using System.Text;
 using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 
-namespace TurboHttp.Tests.RFC9113;
+namespace TurboHttp.Tests.RFC7541;
 
 /// <summary>
 /// Phase 31: Http2RequestEncoder — Sensitive Header Handling (RFC 7541 §7.1.3).
@@ -18,7 +18,7 @@ namespace TurboHttp.Tests.RFC9113;
 ///   3. Preserve their value exactly through encode/decode round-trip
 ///   4. Be detected regardless of header name casing
 /// </summary>
-public sealed class Http2EncoderSensitiveHeaderTests
+public sealed class HpackSensitiveHeaderTests
 {
     // =========================================================================
     // Category 1: Core Sensitive Headers Are NeverIndexed (8 tests)

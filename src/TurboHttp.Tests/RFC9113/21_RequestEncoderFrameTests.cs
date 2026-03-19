@@ -56,13 +56,7 @@ public sealed class Http2RequestEncoderFrameTests
         var encoder = new Http2RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/v1/data?q=1");
 
-        var (_, frames) = encoder.Encode(request, 1);
-
-        var hf = Assert.IsType<HeadersFrame>(frames[0]);
-
-        // Decode the header block to verify pseudo-headers
-        var hpackDecoder = new HpackDecoder();
-        var headers = hpackDecoder.Decode(hf.HeaderBlockFragment.Span);
+        var headers = new HpackDecoder().Decode(encoder.EncodeToHpackBlock(request));
 
         Assert.Contains(headers, h => h is { Name: ":method", Value: "GET" });
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/v1/data?q=1" });
@@ -76,11 +70,7 @@ public sealed class Http2RequestEncoderFrameTests
         var encoder = new Http2RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?term=foo&page=2");
 
-        var (_, frames) = encoder.Encode(request, 1);
-
-        var hf = Assert.IsType<HeadersFrame>(frames[0]);
-        var hpackDecoder = new HpackDecoder();
-        var headers = hpackDecoder.Decode(hf.HeaderBlockFragment.Span);
+        var headers = new HpackDecoder().Decode(encoder.EncodeToHpackBlock(request));
 
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/search?term=foo&page=2" });
     }
@@ -95,11 +85,7 @@ public sealed class Http2RequestEncoderFrameTests
         request.Headers.TryAddWithoutValidation("connection", "keep-alive");
         request.Headers.TryAddWithoutValidation("x-custom", "value");
 
-        var (_, frames) = encoder.Encode(request, 1);
-
-        var hf = Assert.IsType<HeadersFrame>(frames[0]);
-        var hpackDecoder = new HpackDecoder();
-        var headers = hpackDecoder.Decode(hf.HeaderBlockFragment.Span);
+        var headers = new HpackDecoder().Decode(encoder.EncodeToHpackBlock(request));
 
         Assert.DoesNotContain(headers, h => h.Name == "connection");
         Assert.Contains(headers, h => h.Name == "x-custom");

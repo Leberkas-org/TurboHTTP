@@ -1,5 +1,3 @@
-using System.Buffers;
-using System.Buffers.Binary;
 using System.Text;
 using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
@@ -30,10 +28,10 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreateGetRequest("example.com", "/index.html");
 
-        var data = Encode(request);
+        var frames = EncodeToFrames(request);
 
-        Assert.True(data.Length > 9);
-        Assert.Equal((byte)FrameType.Headers, data[3]);
+        Assert.NotEmpty(frames);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact]
@@ -41,11 +39,11 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreateGetRequest("example.com", "/");
 
-        var data = Encode(request);
+        var frames = EncodeToFrames(request);
 
-        var flags = (Headers)data[4];
-        Assert.True(flags.HasFlag(Headers.EndStream));
-        Assert.True(flags.HasFlag(Headers.EndHeaders));
+        var hf = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.True(hf.EndStream);
+        Assert.True(hf.EndHeaders);
     }
 
     [Fact]
@@ -60,11 +58,8 @@ public sealed class Http2EncoderBaselineTests
             }
         };
 
-        var data = Encode(request);
-
-        var headerBlock = ExtractFirstHeaderBlock(data);
-        var decoded = new HpackDecoder().Decode(headerBlock);
-        var names = decoded.Select(h => h.Name).ToList();
+        var headers = DecodeHeaders(request);
+        var names = headers.Select(h => h.Name).ToList();
 
         Assert.DoesNotContain("connection", names);
         Assert.DoesNotContain("keep-alive", names);
@@ -79,11 +74,8 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreateGetRequest("example.com", "/v1/data", 443, isHttps: true);
 
-        var data = Encode(request);
-
-        var headerBlock = ExtractFirstHeaderBlock(data);
-        var dict = new HpackDecoder().Decode(headerBlock)
-            .ToDictionary(h => h.Name, h => h.Value);
+        var headers = DecodeHeaders(request);
+        var dict = headers.ToDictionary(h => h.Name, h => h.Value);
 
         Assert.Equal("GET", dict[":method"]);
         Assert.Equal("/v1/data", dict[":path"]);
@@ -96,10 +88,8 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreateGetRequest("example.com", "/", 8080);
 
-        var data = Encode(request);
-
-        var dict = new HpackDecoder().Decode(ExtractFirstHeaderBlock(data))
-            .ToDictionary(h => h.Name, h => h.Value);
+        var headers = DecodeHeaders(request);
+        var dict = headers.ToDictionary(h => h.Name, h => h.Value);
 
         Assert.Equal("example.com:8080", dict[":authority"]);
     }
@@ -109,13 +99,11 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreatePostRequest("example.com", "/api", "{\"key\":\"value\"}");
 
-        var data = Encode(request);
+        var frames = EncodeToFrames(request);
 
-        var headersPayloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var dataFrameOffset = 9 + headersPayloadLen;
-
-        Assert.True(data.Length > dataFrameOffset + 9);
-        Assert.Equal((byte)FrameType.Data, data[dataFrameOffset + 3]);
+        Assert.Equal(2, frames.Count);
+        Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.IsType<DataFrame>(frames[1]);
     }
 
     [Fact]
@@ -123,11 +111,11 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreatePostRequest("example.com", "/api", "{}");
 
-        var data = Encode(request);
+        var frames = EncodeToFrames(request);
 
-        var flags = (Headers)data[4];
-        Assert.False(flags.HasFlag(Headers.EndStream));
-        Assert.True(flags.HasFlag(Headers.EndHeaders));
+        var hf = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.False(hf.EndStream);
+        Assert.True(hf.EndHeaders);
     }
 
     [Fact]
@@ -135,13 +123,10 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreatePostRequest("example.com", "/api", "{\"x\":1}");
 
-        var data = Encode(request);
+        var frames = EncodeToFrames(request);
 
-        var headersPayloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var dataFrameOffset = 9 + headersPayloadLen;
-        var dataFlags = (DataFlags)data[dataFrameOffset + 4];
-
-        Assert.True(dataFlags.HasFlag(DataFlags.EndStream));
+        var df = Assert.IsType<DataFrame>(frames[1]);
+        Assert.True(df.EndStream);
     }
 
     [Fact]
@@ -150,10 +135,8 @@ public sealed class Http2EncoderBaselineTests
         const string json = "{\"name\":\"test\"}";
         var request = CreatePostRequest("example.com", "/users", json);
 
-        var data = Encode(request);
-
-        var dict = new HpackDecoder().Decode(ExtractFirstHeaderBlock(data))
-            .ToDictionary(h => h.Name, h => h.Value);
+        var headers = DecodeHeaders(request);
+        var dict = headers.ToDictionary(h => h.Name, h => h.Value);
 
         Assert.Equal("application/json; charset=utf-8", dict["content-type"]);
     }
@@ -163,15 +146,11 @@ public sealed class Http2EncoderBaselineTests
     {
         var request = CreatePostRequest("example.com", "/api", "");
 
-        var data = Encode(request);
+        var frames = EncodeToFrames(request);
 
-        var headersPayloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var dataFrameOffset = 9 + headersPayloadLen;
-
-        Assert.Equal((byte)FrameType.Data, data[dataFrameOffset + 3]);
-        var dataPayloadLen = (data[dataFrameOffset] << 16) | (data[dataFrameOffset + 1] << 8) |
-                             data[dataFrameOffset + 2];
-        Assert.Equal(0, dataPayloadLen);
+        var df = Assert.IsType<DataFrame>(frames[1]);
+        Assert.Equal(0, df.Data.Length);
+        Assert.True(df.EndStream);
     }
 
     [Fact]
@@ -221,7 +200,7 @@ public sealed class Http2EncoderBaselineTests
         var frame = Http2FrameUtils.EncodeWindowUpdate(streamId: 1, increment: 65535);
 
         Assert.Equal((byte)FrameType.WindowUpdate, frame[3]);
-        var increment = BinaryPrimitives.ReadUInt32BigEndian(frame.AsSpan(9)) & 0x7FFFFFFF;
+        var increment = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(frame.AsSpan(9)) & 0x7FFFFFFF;
         Assert.Equal(65535u, increment);
     }
 
@@ -231,7 +210,7 @@ public sealed class Http2EncoderBaselineTests
         var frame = Http2FrameUtils.EncodeRstStream(streamId: 3, Http2ErrorCode.Cancel);
 
         Assert.Equal((byte)FrameType.RstStream, frame[3]);
-        var errorCode = BinaryPrimitives.ReadUInt32BigEndian(frame.AsSpan(9));
+        var errorCode = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(frame.AsSpan(9));
         Assert.Equal((uint)Http2ErrorCode.Cancel, errorCode);
     }
 
@@ -261,10 +240,8 @@ public sealed class Http2EncoderBaselineTests
         encoder.ApplyServerSettings([(SettingsParameter.MaxFrameSize, 32768u)]);
 
         var request = CreateGetRequest("example.com", "/");
-        using var owner = MemoryPool<byte>.Shared.Rent(4096);
-        var buffer = owner.Memory;
-        var (_, written) = encoder.Encode(request, ref buffer);
-        Assert.True(written > 0);
+        var frames = EncodeToFrames(request);
+        Assert.NotEmpty(frames);
     }
 
     [Fact]
@@ -274,7 +251,7 @@ public sealed class Http2EncoderBaselineTests
         encoder.ApplyServerSettings([(SettingsParameter.InitialWindowSize, 65535u)]);
 
         var request = CreateGetRequest("example.com", "/");
-        var (_, frames) = encoder.Encode(request, 1);
+        var frames = EncodeToFrames(request);
         Assert.NotEmpty(frames);
     }
 
@@ -295,26 +272,14 @@ public sealed class Http2EncoderBaselineTests
 
         var (_, frames) = encoder.Encode(request, 1);
 
-        // Serialize frames to check structure
-        var totalSize = frames.Sum(f => f.SerializedSize);
-        var buffer = new byte[totalSize];
-        var offset = 0;
+        Assert.True(frames.Count >= 2);
+        Assert.IsType<HeadersFrame>(frames[0]);
 
-        foreach (var frame in frames)
-        {
-            var frameBytes = frame.Serialize();
-            frameBytes.CopyTo(buffer, offset);
-            offset += frameBytes.Length;
-        }
+        var hf = (HeadersFrame)frames[0];
+        Assert.False(hf.EndHeaders);
 
-        var data = (ReadOnlySpan<byte>)buffer;
-        Assert.Equal((byte)FrameType.Headers, data[3]);
-        var firstFlags = (Headers)data[4];
-        Assert.False(firstFlags.HasFlag(Headers.EndHeaders));
-
-        var firstPayloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var nextOffset = 9 + firstPayloadLen;
-        Assert.Equal((byte)FrameType.Continuation, data[nextOffset + 3]);
+        var continuationFrames = frames.Where(f => f.Type == FrameType.Continuation).ToList();
+        Assert.NotEmpty(continuationFrames);
     }
 
     private static HttpRequestMessage CreateGetRequest(string host, string path, int port = 80, bool isHttps = false)
@@ -333,36 +298,17 @@ public sealed class Http2EncoderBaselineTests
         return request;
     }
 
-    private static byte[] Encode(HttpRequestMessage request, bool useHuffman = false)
+    private static IReadOnlyList<Http2Frame> EncodeToFrames(HttpRequestMessage request, bool useHuffman = false)
     {
         var encoder = new Http2RequestEncoder(useHuffman);
-        var (streamId, frames) = encoder.Encode(request, 1);
-
-        // Serialize all frames to bytes
-        var totalSize = frames.Sum(f => f.SerializedSize);
-        var buffer = new byte[totalSize];
-        var offset = 0;
-
-        foreach (var frame in frames)
-        {
-            var frameBytes = frame.Serialize();
-            frameBytes.CopyTo(buffer, offset);
-            offset += frameBytes.Length;
-        }
-
-        return buffer;
+        var (_, frames) = encoder.Encode(request, 1);
+        return frames;
     }
 
-    private static byte[] ExtractFirstHeaderBlock(ReadOnlySpan<byte> data)
+    private static List<HpackHeader> DecodeHeaders(HttpRequestMessage request, bool useHuffman = false)
     {
-        var payloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        return data[9..(9 + payloadLen)].ToArray();
-    }
-
-    private static List<HpackHeader> DecodeHeaderList(byte[] data)
-    {
-        var payloadLen = (data[0] << 16) | (data[1] << 8) | data[2];
-        var headerBlock = data[9..(9 + payloadLen)];
-        return new HpackDecoder().Decode(headerBlock).ToList();
+        var encoder = new Http2RequestEncoder(useHuffman);
+        var block = encoder.EncodeToHpackBlock(request);
+        return new HpackDecoder().Decode(block).ToList();
     }
 }

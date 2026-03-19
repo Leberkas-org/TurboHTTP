@@ -207,13 +207,13 @@ internal sealed class LoopbackHttp20Stage : GraphStage<FlowShape<IOutputItem, II
         {
             while (bytes.Length >= 9)
             {
-                int payloadLen = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
-                byte frameType = bytes[3];
-                int streamId = (int)(((uint)bytes[5] & 0x7Fu) << 24
+                var payloadLen = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
+                var frameType = bytes[3];
+                var streamId = (int)(((uint)bytes[5] & 0x7Fu) << 24
                                      | ((uint)bytes[6]) << 16
                                      | ((uint)bytes[7]) << 8
                                      | (uint)bytes[8]);
-                int totalFrameLen = 9 + payloadLen;
+                var totalFrameLen = 9 + payloadLen;
 
                 if (bytes.Length < totalFrameLen)
                 {

@@ -46,7 +46,7 @@ I/O Layer (TurboHttp/IO/) — Hybrid: actors for lifecycle, Channels for data
     │  (spawn, supervise, reconnect, idle eviction, per-host     │
     │   limits — no data touches actor mailboxes)                │
     └────────────────────────────────────────────────────────────┘
-    ┌─ Data path (zero actor hops) ─────────────────────────────┐
+    ┌─ Data path (zero actor hops) ──────────────────────────────┐
     │  ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP│
     │  (ConnectionHandle bundles ChannelWriter + ChannelReader)  │
     └────────────────────────────────────────────────────────────┘

@@ -144,13 +144,13 @@ into `[Theory]` groups so the file is readable and gaps are visible at a glance.
 that a test failure immediately identifies which component is broken.
 
 **Acceptance Criteria:**
-- [ ] Identify all tests in `RFC9113/` that combine ≥2 of: HpackEncoder, Http2Frame serialization,
+- [x] Identify all tests in `RFC9113/` that combine ≥2 of: HpackEncoder, Http2Frame serialization,
   decoder reassembly, HPACK decoding
-- [ ] For each identified test: split into separate test methods, one per layer
-- [ ] Shared encode/decode helpers are kept private; each test calls only the layer it targets
-- [ ] New tests follow RFC DisplayName convention
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9113"` all pass
-- [ ] No RFC7541 logic remains in RFC9113 test methods (and vice versa)
+- [x] For each identified test: split into separate test methods, one per layer
+- [x] Shared encode/decode helpers are kept private; each test calls only the layer it targets
+- [x] New tests follow RFC DisplayName convention
+- [x] `dotnet test --filter "FullyQualifiedName~RFC9113"` all pass
+- [x] No RFC7541 logic remains in RFC9113 test methods (and vice versa)
 
 ---
 
@@ -159,14 +159,14 @@ that a test failure immediately identifies which component is broken.
 ActorSystem purely to test protocol encoding/decoding, so we can decide whether to convert them.
 
 **Acceptance Criteria:**
-- [ ] Read all files in `StreamTests/Http10/` and `StreamTests/Http11/`
-- [ ] For each test file: note whether the test exercises actor messaging / backpressure OR only
+- [x] Read all files in `StreamTests/Http10/` and `StreamTests/Http11/`
+- [x] For each test file: note whether the test exercises actor messaging / backpressure OR only
   calls encode/decode and checks bytes
-- [ ] Produce `docs/test-infrastructure-audit.md` with a table: File | Test | Uses Actor Behaviour?
+- [x] Produce `docs/test-infrastructure-audit.md` with a table: File | Test | Uses Actor Behaviour?
   | Recommendation
-- [ ] At least one concrete example of a StreamTest converted to a plain `[Fact]` without
+- [x] At least one concrete example of a StreamTest converted to a plain `[Fact]` without
   ActorSystem to demonstrate the pattern
-- [ ] Converted test must produce the same assertion result and run faster (verified with
+- [x] Converted test must produce the same assertion result and run faster (verified with
   `dotnet test --verbosity detailed`)
 
 ---
