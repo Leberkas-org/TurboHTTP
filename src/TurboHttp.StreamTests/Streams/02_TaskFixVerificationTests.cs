@@ -28,7 +28,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK001-VFY-001: Retry attempt count stored in HttpRequestMessage.Options")]
-    public async Task T001_VFY_001_RetryAttemptCount_StoredInOptions()
+    public async Task Should_StoreRetryAttemptCountInOptions_When_RetryOccurs()
     {
         // After a retry, the original request's Options should contain the updated attempt count.
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -46,7 +46,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     }
 
     [Fact(DisplayName = "TASK001-VFY-002: Fresh request has no attempt count in Options (defaults to 1)")]
-    public void T001_VFY_002_FreshRequest_NoAttemptCountInOptions()
+    public void Should_HaveNoAttemptCountInOptions_When_RequestIsFresh()
     {
         // A new request should NOT have the attempt count key in Options (stage treats as attempt 1).
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/new");
@@ -56,7 +56,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK001-VFY-003: Pre-seeded attempt count 2 on MaxRetries=3 still retries")]
-    public async Task T001_VFY_003_PreSeededAttemptCount_StillRetries()
+    public async Task Should_StillRetry_When_PreSeededAttemptCountBelowMaxRetries()
     {
         var policy = new RetryPolicy { MaxRetries = 3 };
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -75,7 +75,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK001-VFY-004: Pre-seeded attempt count at MaxRetries is forwarded as final")]
-    public async Task T001_VFY_004_PreSeededAttemptCount_AtMax_ForwardedAsFinal()
+    public async Task Should_ForwardAsFinal_When_PreSeededAttemptCountAtMaxRetries()
     {
         var policy = new RetryPolicy { MaxRetries = 3 };
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -97,7 +97,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     // ═══════════════════════════════════════════════════════════════════════════
 
     [Fact(DisplayName = "TASK002-VFY-001: RedirectHandler.BuildRedirectRequest preserves HTTP/2 Version")]
-    public void T002_VFY_001_RedirectHandler_PreservesHttp2Version()
+    public void Should_PreserveHttp2Version_When_BuildingRedirectRequest()
     {
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old")
@@ -113,7 +113,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     }
 
     [Fact(DisplayName = "TASK002-VFY-002: RedirectHandler.BuildRedirectRequest preserves HTTP/1.0 Version")]
-    public void T002_VFY_002_RedirectHandler_PreservesHttp10Version()
+    public void Should_PreserveHttp10Version_When_BuildingRedirectRequest()
     {
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Get, "http://legacy.com/old")
@@ -130,7 +130,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK002-VFY-003: Redirect handler via Options reuses same instance across chain")]
-    public async Task T002_VFY_003_RedirectHandler_ReusesSameInstanceAcrossChain()
+    public async Task Should_ReuseHandlerAcrossChain_When_RedirectRequestHandledViaOptions()
     {
         // First redirect creates a handler and stores it in Options.
         // When the redirect request comes back as a response (second redirect), the SAME handler
@@ -165,7 +165,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     }
 
     [Fact(DisplayName = "TASK002-VFY-004: Cross-scheme redirect preserves Version")]
-    public void T002_VFY_004_CrossSchemeRedirect_PreservesVersion()
+    public void Should_PreserveVersion_When_CrossSchemeRedirectOccurs()
     {
         var handler = new RedirectHandler(new RedirectPolicy { AllowHttpsToHttpDowngrade = true });
         var original = new HttpRequestMessage(HttpMethod.Get, "https://secure.com/resource")
@@ -187,7 +187,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK003-VFY-001: Concurrent ProcessResponse and AddCookiesToRequest do not throw")]
-    public async Task T003_VFY_001_ConcurrentReadWrite_DoesNotThrow()
+    public async Task Should_NotThrow_When_ConcurrentCookieJarReadWriteOccurs()
     {
         var jar = new CookieJar();
         var uri = new Uri("http://example.com/path");
@@ -249,7 +249,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK003-VFY-002: CookieJar.Count is thread-safe")]
-    public async Task T003_VFY_002_CountProperty_ThreadSafe()
+    public async Task Should_BeThreadSafe_When_AccessingCookieJarCountProperty()
     {
         var jar = new CookieJar();
         var uri = new Uri("http://example.com/");
@@ -281,7 +281,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK003-VFY-003: CookieJar.Clear is thread-safe")]
-    public async Task T003_VFY_003_Clear_ThreadSafe()
+    public async Task Should_BeThreadSafe_When_CallingCookieJarClear()
     {
         var jar = new CookieJar();
         var uri = new Uri("http://example.com/");
@@ -330,7 +330,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK004-VFY-001: ConnectionReuseItem Key matches RequestEndpoint.FromRequest")]
-    public async Task T004_VFY_001_Key_Matches_FromRequest()
+    public async Task Should_MatchRequestEndpointFromRequest_When_ConnectionReuseItemCreated()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.test.com:9090/data")
         {
@@ -373,7 +373,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     // ═══════════════════════════════════════════════════════════════════════════
 
     [Fact(DisplayName = "TASK005-VFY-001: Http2Frame.Endpoint does not change SerializedSize")]
-    public void T005_VFY_001_Endpoint_DoesNotAffect_SerializedSize()
+    public void Should_NotAffectSerializedSize_When_Http2FrameHasEndpoint()
     {
         var frameWithout = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endStream: true);
         var frameWith = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endStream: true)
@@ -391,7 +391,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     }
 
     [Fact(DisplayName = "TASK005-VFY-002: Http2Frame.Endpoint does not change WriteTo output")]
-    public void T005_VFY_002_Endpoint_DoesNotAffect_WriteTo()
+    public void Should_NotAffectWriteToOutput_When_Http2FrameHasEndpoint()
     {
         var block = new byte[] { 0x82, 0x84, 0x86 };
         var frameWithout = new HeadersFrame(streamId: 3, headerBlock: block, endStream: false);
@@ -414,7 +414,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK005-VFY-003: Request2FrameStage sets Endpoint on first frame only")]
-    public async Task T005_VFY_003_Request2FrameStage_SetsEndpoint_OnFirstFrame()
+    public async Task Should_SetEndpointOnFirstFrameOnly_When_Request2FrameStageProcessesRequest()
     {
         var encoder = new Http2RequestEncoder();
         var stage = new Request2FrameStage(encoder);
@@ -447,7 +447,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK006-VFY-001: Two HEADERS frames → both StreamAcquireItems have same captured endpoint")]
-    public async Task T006_VFY_001_TwoHeaders_BothAcquireItems_SameEndpoint()
+    public async Task Should_HaveSameEndpointOnBothAcquireItems_When_TwoHeaderFramesSent()
     {
         var endpoint = new RequestEndpoint
         {
@@ -479,7 +479,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK007-VFY-001: Frame without Endpoint before any tagged frame → Key is default")]
-    public async Task T007_VFY_001_FrameWithoutEndpoint_KeyIsDefault()
+    public async Task Should_HaveDefaultKey_When_Http2FrameHasNoEndpoint()
     {
         var frame = new DataFrame(streamId: 1, data: new byte[] { 0x01 }, endStream: true);
         // No Endpoint set on any frame
@@ -499,7 +499,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK008-VFY-001: StreamContent body stored via async path")]
-    public async Task T008_VFY_001_StreamContent_StoredViaAsyncPath()
+    public async Task Should_StoreBodyViaAsyncPath_When_ContentIsStreamContent()
     {
         var store = new HttpCacheStore();
         var bodyBytes = "async-content-test"u8.ToArray();
@@ -525,7 +525,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "TASK008-VFY-002: Multiple responses cached — sync and async paths both work")]
-    public async Task T008_VFY_002_MultipleResponses_BothPathsWork()
+    public async Task Should_CacheBothSyncAndAsyncResponses_When_MultipleResponsesProcessed()
     {
         var store = new HttpCacheStore();
 
@@ -566,7 +566,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "CROSS-VFY-001: Retry then redirect — independent state tracking")]
-    public async Task Cross_VFY_001_RetryThenRedirect_IndependentState()
+    public async Task Should_TrackStateIndependently_When_RetryAndRedirectInSequence()
     {
         // A response that is NOT retryable (200 OK) but IS a redirect (301)
         // should pass through RetryStage to final, then RedirectStage picks it up.
@@ -617,7 +617,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "CROSS-VFY-002: CookieStorage then CacheStorage — both run on same response")]
-    public async Task Cross_VFY_002_CookieStorage_Then_CacheStorage()
+    public async Task Should_StoreCookieAndCache_When_CookieStorageThenCacheStorageInSequence()
     {
         var jar = new CookieJar();
         var store = new HttpCacheStore();
@@ -647,7 +647,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "CROSS-VFY-003: Http2Frame Endpoint survives encode round-trip")]
-    public async Task Cross_VFY_003_Http2Frame_Endpoint_SurvivesEncodeRoundTrip()
+    public async Task Should_PreserveEndpointAsKey_When_Http2FrameEncodedWithEndpoint()
     {
         // The Endpoint property is metadata — it should be set on the frame
         // before encoding and the encoded bytes should NOT be affected by it.

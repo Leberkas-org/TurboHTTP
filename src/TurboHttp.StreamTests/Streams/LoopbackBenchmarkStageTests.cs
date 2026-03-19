@@ -46,7 +46,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
     }
 
     [Fact]
-    public async Task PersistentHttp11Pipeline_FirstRequest_ReturnsOk()
+    public async Task Should_ReturnOk_When_FirstRequestSentToPersistentHttp11Pipeline()
     {
         var (queue, responses) = BuildPersistentHttp11Pipeline();
 
@@ -62,7 +62,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
     }
 
     [Fact]
-    public async Task PersistentHttp11Pipeline_ReusedAcrossMultipleRequests_AllReturnOk()
+    public async Task Should_ReturnOkForAllRequests_When_PersistentHttp11PipelineReused()
     {
         const int count = 3;
         var (queue, responses) = BuildPersistentHttp11Pipeline();
@@ -81,7 +81,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
     }
 
     [Fact]
-    public async Task PersistentHttp11Pipeline_QueueComplete_StreamTerminatesCleanly()
+    public async Task Should_TerminateCleanly_When_PersistentHttp11PipelineQueueCompleted()
     {
         var (queue, responses) = BuildPersistentHttp11Pipeline();
 

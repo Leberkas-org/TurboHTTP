@@ -29,7 +29,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     // ── URI enrichment ─────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "ENR-001: Null URI + BaseAddress → RequestUri becomes BaseAddress root")]
-    public async Task ENR_001_NullUri_WithBaseAddress_BecomesBaseAddress()
+    public async Task Should_SetRequestUriToBaseAddress_When_RequestUriIsNull()
     {
         var baseAddress = new Uri("http://a.test/");
         var (holder, defaultHeaders) = CreateDefaultHeaders();
@@ -52,7 +52,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-002: Relative URI \"/ping\" + BaseAddress \"http://a.test\" → \"http://a.test/ping\"")]
-    public async Task ENR_002_RelativeUri_WithBaseAddress_Combined()
+    public async Task Should_CombineRelativeUriWithBaseAddress_When_BaseAddressSet()
     {
         var baseAddress = new Uri("http://a.test/");
         var (holder, defaultHeaders) = CreateDefaultHeaders();
@@ -74,7 +74,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "ENR-003: Absolute URI → RequestUri unchanged even when BaseAddress is set")]
-    public async Task ENR_003_AbsoluteUri_NotChanged()
+    public async Task Should_NotChangeAbsoluteUri_When_BaseAddressIsSet()
     {
         var baseAddress = new Uri("http://a.test/");
         var (holder, defaultHeaders) = CreateDefaultHeaders();
@@ -98,7 +98,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-004: Null URI, null BaseAddress → stage fails with InvalidOperationException")]
-    public async Task ENR_004_NullUri_NullBaseAddress_Fails()
+    public async Task Should_ThrowInvalidOperationException_When_UriAndBaseAddressAreNull()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -123,7 +123,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-005: Relative URI, null BaseAddress → stage fails with InvalidOperationException")]
-    public async Task ENR_005_RelativeUri_NullBaseAddress_Fails()
+    public async Task Should_ThrowInvalidOperationException_When_RelativeUriAndBaseAddressIsNull()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -149,7 +149,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-006: request.Version == 1.1 (default), defaultVersion == 2.0 → version becomes 2.0")]
-    public async Task ENR_006_DefaultVersion_11_DefaultIs20_BecomesV20()
+    public async Task Should_SetVersionTo20_When_RequestVersionIs11AndDefaultIs20()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -174,7 +174,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-007: request.Version == 1.1 (default), defaultVersion == 1.1 → version unchanged")]
-    public async Task ENR_007_DefaultVersion_11_DefaultIs11_Unchanged()
+    public async Task Should_NotChangeVersion_When_RequestVersionIs11AndDefaultIs11()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -199,7 +199,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-008: request.Version explicitly set to 1.0 → unchanged regardless of defaultVersion")]
-    public async Task ENR_008_ExplicitV10_NotOverridden()
+    public async Task Should_NotOverrideVersion_When_ExplicitV10Set()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -224,7 +224,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-009: request.Version explicitly set to 2.0 → unchanged regardless of defaultVersion")]
-    public async Task ENR_009_ExplicitV20_NotOverridden()
+    public async Task Should_NotOverrideVersion_When_ExplicitV20Set()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -250,7 +250,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     // ── Header enrichment ──────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "ENR-010: DefaultRequestHeaders has X-Foo:bar → merged into request")]
-    public async Task ENR_010_DefaultHeader_Merged()
+    public async Task Should_MergeDefaultHeader_When_DefaultRequestHeadersContainsXFoo()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -274,7 +274,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-011: Request already has X-Foo:existing → not overridden; existing value kept")]
-    public async Task ENR_011_RequestHeaderNotOverridden()
+    public async Task Should_PreserveExistingHeader_When_DefaultAndRequestHaveSameHeader()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -299,7 +299,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "ENR-012: DefaultRequestHeaders has two headers → both merged")]
-    public async Task ENR_012_TwoDefaultHeaders_BothMerged()
+    public async Task Should_MergeBothHeaders_When_TwoDefaultHeadersPresent()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -323,7 +323,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "ENR-013: DefaultRequestHeaders empty → no headers added; request unchanged")]
-    public async Task ENR_013_EmptyDefaults_NoHeadersAdded()
+    public async Task Should_AddNoHeaders_When_DefaultRequestHeadersEmpty()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -346,7 +346,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "ENR-014: Same header name, different casing in request vs defaults → treated as same; not doubled")]
-    public async Task ENR_014_HeaderCaseInsensitive_NotDoubled()
+    public async Task Should_NotDoubleHeader_When_HeaderNameDiffersOnlyInCase()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -373,7 +373,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "ENR-015: DefaultRequestHeaders has multiple values for one name → all values added as one entry")]
-    public async Task ENR_015_MultipleValuesForOneName_AllAdded()
+    public async Task Should_AddAllValues_When_DefaultHeaderHasMultipleValues()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -399,7 +399,7 @@ public sealed class RequestEnricherStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "ENR-016: 3 requests in sequence → all 3 enriched independently, order preserved")]
-    public async Task ENR_016_ThreeRequests_AllEnriched_OrderPreserved()
+    public async Task Should_EnrichAllRequestsInOrder_When_ThreeRequestsInSequence()
     {
         var baseAddress = new Uri("http://a.test/");
         var (holder, defaultHeaders) = CreateDefaultHeaders();

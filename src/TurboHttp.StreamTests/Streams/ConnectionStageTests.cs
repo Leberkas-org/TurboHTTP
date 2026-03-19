@@ -89,7 +89,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "CS-001: ConnectItem pushed into inlet triggers EnsureHost to PoolRouter")]
-    public async Task CS_001_ConnectItem_TriggersEnsureHost()
+    public async Task Should_TriggerEnsureHost_When_ConnectItemPushedToInlet()
     {
         var (stageFlow, _, inboundWriter, routerProbe) = Build();
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
@@ -115,7 +115,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "CS-002: Inbound data from ConnectionHandle.InboundReader appears at outlet")]
-    public async Task CS_002_InboundDataReachesOutlet()
+    public async Task Should_ReachOutlet_When_InboundDataWrittenToChannel()
     {
         var (stageFlow, _, inboundWriter, _) = Build();
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
@@ -151,7 +151,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "CS-003: DataItem pushed to inlet is written to ConnectionHandle.OutboundWriter")]
-    public async Task CS_003_OutboundDataWrittenToChannel()
+    public async Task Should_WriteToOutboundChannel_When_DataItemPushedToInlet()
     {
         var (stageFlow, outboundReader, inboundWriter, _) = Build();
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
@@ -187,7 +187,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "CS-004: Full round-trip — outbound DataItem written, inbound data read")]
-    public async Task CS_004_EndToEndByteFlow()
+    public async Task Should_CompleteRoundTrip_When_OutboundWrittenAndInboundRead()
     {
         var (stageFlow, outboundReader, inboundWriter, _) = Build();
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
@@ -240,7 +240,7 @@ public sealed class ConnectionStageTests : StreamTestBase
     [Fact(Timeout = 15_000,
         DisplayName =
             "CS-005: ConnectionReuseItem with CanReuse=false sends MarkConnectionNoReuse and StreamCompleted")]
-    public async Task CS_005_ConnectionReuseItem_NoReuse_SendsMarkAndStreamCompleted()
+    public async Task Should_SendMarkNoReuseAndStreamCompleted_When_ConnectionReuseItemCanReuseIsFalse()
     {
         var connectionActorProbe = CreateTestProbe();
         var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
@@ -281,7 +281,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "CS-006: ConnectionReuseItem with CanReuse=true sends only StreamCompleted (no MarkNoReuse)")]
-    public async Task CS_006_ConnectionReuseItem_Reuse_OnlyStreamCompleted()
+    public async Task Should_SendOnlyStreamCompleted_When_ConnectionReuseItemCanReuseIsTrue()
     {
         var connectionActorProbe = CreateTestProbe();
         var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
@@ -321,7 +321,7 @@ public sealed class ConnectionStageTests : StreamTestBase
     [Fact(Timeout = 15_000,
         DisplayName =
             "CS-007: MaxConcurrentStreamsItem(50) forwarded as UpdateMaxConcurrentStreams to ConnectionActor")]
-    public async Task CS_007_MaxConcurrentStreamsItem_ForwardedToActor()
+    public async Task Should_ForwardUpdateMaxConcurrentStreams_When_MaxConcurrentStreamsItemReceived()
     {
         var connectionActorProbe = CreateTestProbe();
         var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
@@ -357,7 +357,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "CS-008: StreamAcquireItem forwarded as StreamAcquired to ConnectionActor")]
-    public async Task CS_008_StreamAcquireItem_ForwardedToActor()
+    public async Task Should_ForwardStreamAcquired_When_StreamAcquireItemReceived()
     {
         var connectionActorProbe = CreateTestProbe();
         var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);

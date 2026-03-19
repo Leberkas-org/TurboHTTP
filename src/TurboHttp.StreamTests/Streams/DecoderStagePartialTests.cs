@@ -47,7 +47,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "RFC-9112-§6-PART-001: Incomplete HTTP/1.x header → decoder waits, emits only after full header arrives")]
-    public async Task PART_001_Http1x_IncompleteHeader_WaitsForNextChunk()
+    public async Task Should_WaitForNextChunk_When_Http1xHeaderIsIncomplete()
     {
         // The response header is sent in two chunks:
         //   Chunk 1: "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n"  ← no \r\n\r\n yet
@@ -76,7 +76,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "RFC-9112-§6-PART-001b: Header split mid-field → decoder accumulates and correctly parses full header")]
-    public async Task PART_001b_Http1x_HeaderSplitMidField_DecodesCorrectly()
+    public async Task Should_DecodeHeaderCorrectly_When_Http1xHeaderSplitMidField()
     {
         // Split inside the status line, before \r\n
         //   Chunk 1: "HTTP/1.1 20"
@@ -98,7 +98,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC-9112-§6-PART-002: HTTP/1.x body fragment → accumulates until Content-Length reached")]
-    public async Task PART_002_Http1x_BodyFragment_AccumulatesUntilContentLengthReached()
+    public async Task Should_AccumulateBodyFragments_When_Http1xBodyIncomplete()
     {
         // Full body is 15 bytes "AAAAABBBBBCCCCC", sent as 3 separate body fragments.
         // The decoder must NOT emit after partial body fragments; it emits only when
@@ -125,7 +125,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC-9112-§6-PART-002b: HTTP/1.x body arrives byte-by-byte → decoder accumulates all bytes")]
-    public async Task PART_002b_Http1x_BodyArrivesOneByteAtATime_FullBodyAccumulated()
+    public async Task Should_AccumulateFullBody_When_Http1xBodyArrivesOneByteAtATime()
     {
         // Send a 4-byte body one byte per TCP chunk to stress the accumulation logic.
         const string bodyText = "Test";
@@ -152,7 +152,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "RFC-9113-§4.1-PART-003: HTTP/2 frame header split at byte 5 → decoder waits for remaining 4 bytes")]
-    public async Task PART_003_Http2_FiveOfNineHeaderBytes_WaitsForRemainder()
+    public async Task Should_WaitForRemainingHeaderBytes_When_Http2FrameHeaderSplitAtByte5()
     {
         // An HTTP/2 frame header is exactly 9 bytes.
         // Sending only bytes 0..4 (5 bytes) must NOT cause the decoder to emit a frame.
@@ -188,7 +188,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "RFC-9113-§4.1-PART-003b: HTTP/2 DATA frame header split at byte 1 → decoder waits for 8 more header bytes")]
-    public async Task PART_003b_Http2_OneByteOfHeader_WaitsForRemainder()
+    public async Task Should_WaitForRemainingHeaderBytes_When_Http2FrameHeaderHasOneByte()
     {
         // Send only the very first byte of the 9-byte frame header, then the rest.
         var body = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
@@ -216,7 +216,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC-9113-§4.1-PART-004: HTTP/2 frame payload spread across 3 chunks → correctly reassembled")]
-    public async Task PART_004_Http2_FramePayloadThreeChunks_CorrectlyReassembled()
+    public async Task Should_ReassembleFrame_When_Http2PayloadSpreadAcrossThreeChunks()
     {
         // A DATA frame with a 12-byte payload is split as:
         //   Chunk 1: 9-byte frame header (complete)
@@ -253,7 +253,7 @@ public sealed class DecoderStagePartialTests : StreamTestBase
     [Fact(Timeout = 10_000,
         DisplayName =
             "RFC-9113-§4.1-PART-004b: HTTP/2 HEADERS frame payload in 3 single-byte chunks + header → reassembled")]
-    public async Task PART_004b_Http2_HeadersPayloadBytewiseChunks_CorrectlyReassembled()
+    public async Task Should_ReassembleHeadersFrame_When_Http2PayloadArrivesBytewise()
     {
         // HEADERS frame with 3-byte HPACK payload sent as:
         //   Chunk 1: full 9-byte frame header

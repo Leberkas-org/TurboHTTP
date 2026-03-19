@@ -58,7 +58,7 @@ public sealed class AsyncBoundaryTests : TestKit
     // ── ABND-001: HTTP/1.1 request completes with async boundaries ──────
 
     [Fact(Timeout = 15_000, DisplayName = "ABND-001: HTTP/1.1 request completes with async boundary islands")]
-    public async Task ABND_001_Http11_CompletesWithAsyncBoundaries()
+    public async Task Should_CompleteRequest_When_Http11UsesAsyncBoundaryIslands()
     {
         var engine = new TurboHttp.Streams.Engine();
         var flow = engine.CreateFlow(
@@ -81,7 +81,7 @@ public sealed class AsyncBoundaryTests : TestKit
     // ── ABND-002: HTTP/1.0 request completes with async boundaries ──────
 
     [Fact(Timeout = 15_000, DisplayName = "ABND-002: HTTP/1.0 request completes with async boundary islands")]
-    public async Task ABND_002_Http10_CompletesWithAsyncBoundaries()
+    public async Task Should_CompleteRequest_When_Http10UsesAsyncBoundaryIslands()
     {
         var engine = new TurboHttp.Streams.Engine();
         var flow = engine.CreateFlow(
@@ -104,7 +104,7 @@ public sealed class AsyncBoundaryTests : TestKit
     // ── ABND-003: Multiple sequential requests complete ──────────────────
 
     [Fact(Timeout = 15_000, DisplayName = "ABND-003: Multiple sequential requests complete with async boundaries")]
-    public async Task ABND_003_MultipleRequests_CompleteWithAsyncBoundaries()
+    public async Task Should_CompleteAllRequests_When_MultipleRequestsSentWithAsyncBoundaries()
     {
         var engine = new TurboHttp.Streams.Engine();
         var flow = engine.CreateFlow(
@@ -128,7 +128,7 @@ public sealed class AsyncBoundaryTests : TestKit
     // ── ABND-004: Reduced materializer buffer with async boundaries ──────
 
     [Fact(Timeout = 15_000, DisplayName = "ABND-004: Reduced materializer buffer 4/16 works with async boundaries")]
-    public async Task ABND_004_ReducedMaterializerBuffer_WorksWithAsyncBoundaries()
+    public async Task Should_CompleteRequest_When_ReducedMaterializerBufferUsedWithAsyncBoundaries()
     {
         var settings = ActorMaterializerSettings.Create(Sys)
             .WithInputBuffer(initialSize: 4, maxSize: 16);
@@ -154,7 +154,7 @@ public sealed class AsyncBoundaryTests : TestKit
     // ── ABND-005: Full pipeline with TurboClientOptions ──────────────────
 
     [Fact(Timeout = 15_000, DisplayName = "ABND-005: Full pipeline with TurboClientOptions completes with async boundaries")]
-    public async Task ABND_005_FullPipeline_WithOptions_CompletesWithAsyncBoundaries()
+    public async Task Should_CompleteRequest_When_FullPipelineWithOptionsAndAsyncBoundaries()
     {
         var options = new TurboClientOptions();
         var engine = new TurboHttp.Streams.Engine();
@@ -178,7 +178,7 @@ public sealed class AsyncBoundaryTests : TestKit
     // ── ABND-006: Null options overload works with async boundaries ──────
 
     [Fact(Timeout = 15_000, DisplayName = "ABND-006: CreateFlow with null options works with async boundaries")]
-    public async Task ABND_006_NullOptions_WorksWithAsyncBoundaries()
+    public async Task Should_CompleteRequest_When_CreateFlowCalledWithNullOptionsAndAsyncBoundaries()
     {
         var engine = new TurboHttp.Streams.Engine();
         var flow = engine.CreateFlow(

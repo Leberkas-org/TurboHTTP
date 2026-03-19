@@ -34,7 +34,7 @@ public sealed class StageLifecycleTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-001: UpstreamFinish → encoder stage completes without exception")]
-    public async Task LIFE_001_EncoderStage_UpstreamFinish_CompletesCleanly()
+    public async Task Should_CompleteCleanly_When_EncoderStageUpstreamFinishes()
     {
         // An empty source completes immediately (upstream finish).
         // The encoder stage must propagate the completion signal without throwing.
@@ -48,7 +48,7 @@ public sealed class StageLifecycleTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-001b: UpstreamFinish → decoder stage completes without exception")]
-    public async Task LIFE_001b_DecoderStage_UpstreamFinish_CompletesCleanly()
+    public async Task Should_CompleteCleanly_When_DecoderStageUpstreamFinishes()
     {
         // An empty source completes immediately (upstream finish).
         // The decoder stage must propagate completion cleanly.
@@ -63,7 +63,7 @@ public sealed class StageLifecycleTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-002: DownstreamCancel → encoder stage shuts down cleanly")]
-    public async Task LIFE_002_EncoderStage_DownstreamCancel_ShutsDownCleanly()
+    public async Task Should_ShutDownCleanly_When_EncoderStageDownstreamCancels()
     {
         // Source.Repeat produces an infinite stream. Sink.First takes exactly one element
         // and then cancels downstream, triggering onDownstreamFinish on the stage.
@@ -86,7 +86,7 @@ public sealed class StageLifecycleTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-002b: DownstreamCancel → decoder stage shuts down cleanly")]
-    public async Task LIFE_002b_DecoderStage_DownstreamCancel_ShutsDownCleanly()
+    public async Task Should_ShutDownCleanly_When_DecoderStageDownstreamCancels()
     {
         // Feed a valid HTTP/1.1 response into the decoder; Sink.First cancels after first message.
         // The decoder stage must not throw when downstream cancels.
@@ -104,7 +104,7 @@ public sealed class StageLifecycleTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-003: Exception in encoder → stage fails with meaningful error message")]
-    public async Task LIFE_003_EncoderStage_InvalidRequest_FailsWithMeaningfulMessage()
+    public async Task Should_FailWithMeaningfulMessage_When_EncoderStageReceivesInvalidRequest()
     {
         // A request with null RequestUri causes Http11Encoder to throw ArgumentNullException.
         // The encoder stage catches the exception, calls FailStage(), and the stream fails.
@@ -132,7 +132,7 @@ public sealed class StageLifecycleTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-004: Exception in decoder → stage fails with HttpDecoderException")]
-    public async Task LIFE_004_DecoderStage_MalformedData_FailsWithHttpDecoderException()
+    public async Task Should_FailWithHttpDecoderException_When_DecoderStageReceivesMalformedData()
     {
         // Sending bytes that are not a valid HTTP response (no "HTTP/1.x" status-line)
         // must cause Http11Decoder to throw HttpDecoderException(InvalidStatusLine).

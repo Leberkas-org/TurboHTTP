@@ -74,7 +74,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EXT-001: First request → Out0 emits ConnectItem, Out1 emits HttpRequestMessage")]
-    public async Task First_Request_Emits_ConnectItem_And_RequestMessage()
+    public async Task Should_EmitConnectItemAndRequestMessage_When_FirstRequestArrives()
     {
         var req = MakeRequest();
 
@@ -87,7 +87,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EXT-002: Second request → only Out1 emits (no repeated signal)")]
-    public async Task Second_Request_Does_Not_Emit_Signal()
+    public async Task Should_NotEmitConnectItemAgain_When_SecondRequestArrives()
     {
         var req1 = MakeRequest("http://example.com/1");
         var req2 = MakeRequest("http://example.com/2");
@@ -99,7 +99,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EXT-003: 5 requests → exactly 1× Out0, 5× Out1")]
-    public async Task Five_Requests_One_Signal_Five_Messages()
+    public async Task Should_EmitOneSignalAndFiveMessages_When_FiveRequestsArriveInSequence()
     {
         var requests = Enumerable.Range(1, 5)
             .Select(i => MakeRequest($"http://example.com/{i}"))
@@ -112,7 +112,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EXT-004: ConnectItem extracted only on very first request (_initialSent flag)")]
-    public async Task ConnectItem_Extracted_Only_On_First_Request()
+    public async Task Should_ExtractConnectItemOnlyOnce_When_MultipleRequestsArrive()
     {
         var requests = Enumerable.Range(1, 5)
             .Select(i => MakeRequest($"http://example.com/{i}"))
@@ -126,7 +126,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EXT-005: UpstreamFinish → stage terminates cleanly")]
-    public async Task UpstreamFinish_Stage_Terminates_Cleanly()
+    public async Task Should_TerminateCleanly_When_UpstreamFinishes()
     {
         // Uses a completing source (no Concat Never) so that after all 3 requests are consumed
         // the source completes → onUpstreamFinish → CompleteStage() → both outlets complete.
@@ -168,7 +168,7 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EXT-006: Pending request after ConnectItem correctly delivered via Out1")]
-    public async Task Pending_Request_Correctly_Delivered_After_ConnectItem()
+    public async Task Should_DeliverPendingRequest_When_ConnectItemEmittedFirst()
     {
         var req = MakeRequest("http://example.com/pending");
 

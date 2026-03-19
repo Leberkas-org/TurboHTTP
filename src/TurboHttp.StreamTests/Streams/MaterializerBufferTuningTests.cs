@@ -59,7 +59,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
     // ── MBUF-001 ────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "MBUF-001: Materializer with 4/16 input buffer — HTTP/1.1 pipeline completes")]
-    public async Task MBUF_001_MaterializerWith4_16_Pipeline_Completes()
+    public async Task Should_CompleteHttp11Pipeline_When_MaterializerBufferIs4_16()
     {
         // Simulate the production materializer settings from TurboClientStreamManager
         var settings = ActorMaterializerSettings.Create(Sys)
@@ -87,7 +87,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
     // ── MBUF-002 ────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "MBUF-002: Materializer with 4/16 input buffer — HTTP/1.0 pipeline completes")]
-    public async Task MBUF_002_MaterializerWith4_16_Http10_Completes()
+    public async Task Should_CompleteHttp10Pipeline_When_MaterializerBufferIs4_16()
     {
         var settings = ActorMaterializerSettings.Create(Sys)
             .WithInputBuffer(initialSize: 4, maxSize: 16);
@@ -114,7 +114,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
     // ── MBUF-003 ────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "MBUF-003: Protocol flows with high-throughput buffer — multiple requests complete")]
-    public async Task MBUF_003_ProtocolFlows_HighThroughputBuffer_MultipleRequests()
+    public async Task Should_CompleteMultipleRequests_When_ProtocolFlowsHaveHighThroughputBuffer()
     {
         // Use the reduced global default to verify the protocol flow override (16/64) is sufficient
         var settings = ActorMaterializerSettings.Create(Sys)
@@ -144,7 +144,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
     // ── MBUF-004 ────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "MBUF-004: Lightweight stages inherit global default — pipeline with cookies completes")]
-    public async Task MBUF_004_LightweightStages_InheritGlobalDefault()
+    public async Task Should_CompletePipelineWithCookies_When_LightweightStagesInheritGlobalBuffer()
     {
         // Enable cookies so CookieInjectionStage and CookieStorageStage are in the pipeline.
         // These lightweight stages should work fine with the reduced 4/16 global default.
@@ -174,7 +174,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
     // ── MBUF-005 ────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "MBUF-005: Engine flow with InputBuffer attribute applied at protocol level")]
-    public async Task MBUF_005_EngineFlow_WithInputBufferAttribute_AtProtocolLevel()
+    public async Task Should_CompleteEndToEnd_When_InputBufferAttributeAppliedAtProtocolLevel()
     {
         // Verify that applying .WithAttributes at protocol flow level doesn't break the pipeline.
         // The Engine.BuildEngineCoreGraph applies InputBuffer(16,64) to each protocol flow.
@@ -204,7 +204,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
     // ── MBUF-006 ────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "MBUF-006: Default materializer (16/16) still works — backward compatibility")]
-    public async Task MBUF_006_DefaultMaterializer_StillWorks()
+    public async Task Should_CompletePipeline_When_DefaultMaterializerUsed()
     {
         // Verify that using the default materializer (no custom settings) still works.
         // This ensures backward compatibility for tests and external consumers.

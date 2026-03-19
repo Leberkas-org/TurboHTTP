@@ -46,7 +46,7 @@ public sealed class EncoderStageBufferTests : StreamTestBase
     // ── BUF-001 ───────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "BUF-001: Small request (< 4 KB) → adaptive buffer starts small")]
-    public async Task BUF_001_SmallRequest_WrittenBytesAreSmall()
+    public async Task Should_WriteSmallByteCount_When_RequestIsSmall()
     {
         // A bare GET with no body — encoded size is just a few dozen bytes
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path")
@@ -67,7 +67,7 @@ public sealed class EncoderStageBufferTests : StreamTestBase
     // ── BUF-002 ───────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "BUF-002: Large request (> 64 KB) → buffer grows (no overflow)")]
-    public async Task BUF_002_LargeRequest_EncodesWithoutOverflow()
+    public async Task Should_EncodeWithoutOverflow_When_RequestBodyIsLarge()
     {
         // 70 KB body — forces the stage to allocate a larger buffer (4 KB base + 70 KB body)
         const int bodySize = 70 * 1024;
@@ -103,7 +103,7 @@ public sealed class EncoderStageBufferTests : StreamTestBase
     // ── BUF-003 ───────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "BUF-003: Sequential requests → buffer reuse (no memory leak)")]
-    public async Task BUF_003_SequentialRequests_AllEncodeCorrectly()
+    public async Task Should_EncodeAllRequestsCorrectly_When_RequestsAreSequential()
     {
         // Encode 10 sequential requests; verify each succeeds and owners are disposed.
         // The MemoryPool will reuse pooled buffers across rentals when owners are disposed,
@@ -144,7 +144,7 @@ public sealed class EncoderStageBufferTests : StreamTestBase
     // ── BUF-004 ───────────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "BUF-004: Binary body → bytes passed through correctly")]
-    public async Task BUF_004_BinaryBody_PassedThroughCorrectly()
+    public async Task Should_PassThroughBodyUnchanged_When_ContentIsBinary()
     {
         // Build a 512-byte body containing the full 0x00-0xFF byte range repeated twice
         const int bodySize = 512;
@@ -181,7 +181,7 @@ public sealed class EncoderStageBufferTests : StreamTestBase
     // ── BUF-007 ───────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "BUF-007: Http11EncoderStage with custom InputBuffer attribute encodes correctly")]
-    public async Task BUF_007_Http11Encoder_CustomInputBuffer_EncodesCorrectly()
+    public async Task Should_EncodeCorrectly_When_Http11EncoderHasCustomInputBuffer()
     {
         // 512-byte body — fits well within a custom max of 8 KB
         const int bodySize = 512;
@@ -224,7 +224,7 @@ public sealed class EncoderStageBufferTests : StreamTestBase
     // ── BUF-008 ───────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "BUF-008: Http10EncoderStage with custom InputBuffer attribute encodes correctly")]
-    public async Task BUF_008_Http10Encoder_CustomInputBuffer_EncodesCorrectly()
+    public async Task Should_EncodeCorrectly_When_Http10EncoderHasCustomInputBuffer()
     {
         const int bodySize = 256;
         var bodyBytes = new byte[bodySize];

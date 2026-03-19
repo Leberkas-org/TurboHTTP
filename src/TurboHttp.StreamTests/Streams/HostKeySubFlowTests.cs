@@ -51,7 +51,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "HKSF-001: GroupByHostKey + MergeSubstreams passes all elements through unchanged")]
-    public async Task HKSF_001_IdentityPassThrough()
+    public async Task Should_PassAllElementsThrough_When_GroupByHostKeyAndMergeSubstreamsApplied()
     {
         var requests = new[]
         {
@@ -78,7 +78,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "HKSF-002: Select on SubFlow transforms each element per-substream")]
-    public async Task HKSF_002_SelectTransformsElements()
+    public async Task Should_TransformEachElement_When_SelectAppliedOnSubFlow()
     {
         var requests = new[]
         {
@@ -100,7 +100,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "HKSF-003: Where on SubFlow filters elements within each substream")]
-    public async Task HKSF_003_WhereFiltersElements()
+    public async Task Should_FilterElements_When_WhereAppliedOnSubFlow()
     {
         var requests = new[]
         {
@@ -125,7 +125,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "HKSF-004: Take on SubFlow limits elements per-substream")]
-    public async Task HKSF_004_TakeLimitsPerSubstream()
+    public async Task Should_LimitElementsPerSubstream_When_TakeApplied()
     {
         // 3 requests to host-a, 2 requests to host-b
         var requests = new[]
@@ -152,7 +152,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "HKSF-005: Select and Where can be chained on the SubFlow")]
-    public async Task HKSF_005_SelectAndWhereChained()
+    public async Task Should_ApplyChainedOperations_When_SelectAndWhereChained()
     {
         var requests = new[]
         {
@@ -176,7 +176,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "HKSF-006: Each host gets its own independent substream")]
-    public async Task HKSF_006_EachHostGetsOwnSubstream()
+    public async Task Should_CreateIndependentSubstream_When_MultipleHostsPresent()
     {
         // Interleave requests across 3 hosts
         var requests = new[]

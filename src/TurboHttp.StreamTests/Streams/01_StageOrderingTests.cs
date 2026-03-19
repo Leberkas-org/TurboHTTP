@@ -132,7 +132,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-001: INV-2 CookieInjection before CacheLookup — request has cookies when reaching cache")]
-    public async Task SORD_001_CookieInjection_Before_CacheLookup()
+    public async Task Should_HaveCookieHeaderWhenReachingCacheLookup_When_CookieInjectionRunsBeforeCacheLookup()
     {
         // Setup: cookie jar has a cookie for example.com, cache is empty.
         // If CookieInjection runs before CacheLookup, the miss request will have the Cookie header.
@@ -175,7 +175,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-002: INV-7 Redirected request gets fresh cookies for new domain")]
-    public async Task SORD_002_RedirectFeedback_Gets_FreshCookies()
+    public async Task Should_InjectFreshCookies_When_RedirectRequestEntersPipelineBeforeCookieInjection()
     {
         // Simulate: a redirect request to new-domain.com passes through CookieInjection.
         // Cookies for new-domain.com should be injected (proving the redirect enters before CookieInjection).
@@ -200,7 +200,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-003: INV-8 Retried request preserves original cookies (retry merge after CookieInjection)")]
-    public async Task SORD_003_RetryFeedback_Preserves_OriginalCookies()
+    public async Task Should_PreserveOriginalCookies_When_RetryFeedbackIsAfterCookieInjection()
     {
         // RetryStage emits the original request on Out1. Since retry merge is AFTER CookieInjection,
         // the retried request already has cookies from the first pass. Verify RetryStage preserves them.
@@ -244,7 +244,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-004: INV-9 RequestEnricherStage overrides default Version — redirect skips this")]
-    public async Task SORD_004_RequestEnricher_Overrides_DefaultVersion()
+    public async Task Should_OverrideDefaultVersion_When_RequestEnricherStageProcessesRequest()
     {
         // Prove that RequestEnricherStage overrides Version when it's the 1.1 default
         // and DefaultRequestVersion differs. Since redirect enters AFTER enricher,
@@ -283,7 +283,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-005: INV-3 CookieStorage before CacheStorage — cookies stored before response cached")]
-    public async Task SORD_005_CookieStorage_Before_CacheStorage()
+    public async Task Should_StoreCookiesBeforeCachingResponse_When_CookieStorageRunsBeforeCacheStorage()
     {
         // Wire: CookieStorage → CacheStorage. Send response with Set-Cookie + Cache-Control.
         // After pipeline completes: jar has cookie AND cache has response.
@@ -317,7 +317,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-006: INV-4 CacheStorage before RetryStage — 200 cached and passed through as final")]
-    public async Task SORD_006_CacheStorage_Before_RetryStage()
+    public async Task Should_CacheResponseBeforeRetryEvaluation_When_CacheStorageRunsBeforeRetryStage()
     {
         // Wire: CacheStorage → RetryStage. Send cacheable 200 OK.
         // Verify: response cached AND passed through on Out0 (not retried).
@@ -363,7 +363,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-007: INV-5 RetryStage before RedirectStage — 200 passes through both as final")]
-    public async Task SORD_007_RetryStage_Before_RedirectStage()
+    public async Task Should_PassThrough200Ok_When_RetryStageRunsBeforeRedirectStage()
     {
         // Wire: RetryStage → Merge → RedirectStage.
         // Send 200 OK. Verify: passes through both stages to RedirectStage.Out0.
@@ -411,7 +411,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-008: INV-10 Cache hits bypass RetryStage — merge after retry, before redirect")]
-    public async Task SORD_008_CacheHits_Bypass_RetryStage()
+    public async Task Should_BypassRetryStage_When_ResponseIsCacheHit()
     {
         // Wire: RetryStage → Merge(0) + CacheHitSource → Merge(1) → RedirectStage.
         // Send a cache hit (200) on Merge(1). It should bypass retry and reach RedirectStage.Out0.
@@ -463,7 +463,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-009: INV-1 ConnectionReuse signals before post-processing — response flows through both")]
-    public async Task SORD_009_ConnectionReuse_Before_PostProcessing()
+    public async Task Should_SignalConnectionReuseBeforePostProcessing_When_ResponseFlowsThrough()
     {
         // Compose: ConnectionReuseStage → CookieStorageStage → CacheStorageStage.
         // This mirrors the cross-island boundary: engine island emits response (with reuse signal),
@@ -519,7 +519,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-010: INV-6 Decompression before CacheStorage — cached body is decompressed")]
-    public async Task SORD_010_Decompression_Before_CacheStorage()
+    public async Task Should_CacheDecompressedBody_When_DecompressionRunsBeforeCacheStorage()
     {
         // Wire: DecompressionStage → CacheStorageStage.
         // Send gzip-compressed response with Cache-Control.
@@ -555,7 +555,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-011: INTG-1 Full pipeline: cookie injection occurs before cache lookup")]
-    public async Task SORD_011_FullPipeline_CookieInjection_Before_CacheLookup()
+    public async Task Should_CompleteRequest_When_FullPipelineWithCookieInjectionBeforeCacheLookup()
     {
         // Full engine pipeline: send a GET request to a domain with cookies in jar.
         // The response should arrive successfully, proving the pipeline wired correctly
@@ -582,7 +582,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-012: INTG-2 Full pipeline: response reaches post-processing after engine island")]
-    public async Task SORD_012_FullPipeline_ResponseReaches_PostProcessing()
+    public async Task Should_ReachPostProcessing_When_FullPipelineResponseFromEngineIsland()
     {
         // Verify that the full pipeline successfully processes a response through
         // all three islands: pre-processing → engine → post-processing.
@@ -611,7 +611,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-013: INTG-3 Full pipeline: gzip response decompressed before reaching client")]
-    public async Task SORD_013_FullPipeline_DecompressedBody_ReachesClient()
+    public async Task Should_DeliverDecompressedBodyToClient_When_FullPipelineWithGzipResponse()
     {
         // Full engine pipeline with gzip response: DecompressionStage (engine island)
         // decompresses before the response enters post-processing.
@@ -650,7 +650,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "SORD-014: INTG-4 Full pipeline: redirect produces new request through pipeline")]
-    public async Task SORD_014_FullPipeline_Redirect_ProducesNewRequest()
+    public async Task Should_ProduceNewRequestAfterRedirect_When_FullPipelineWith301Response()
     {
         // First request → 301 redirect, second request (from redirect) → 200 OK.
         // This proves the redirect feedback loop works: redirect → redirectMerge → CookieInjection → pipeline.
@@ -688,7 +688,7 @@ public sealed class StageOrderingTests : EngineTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "SORD-015: INTG-5 Full pipeline: non-retryable response passes through entire pipeline")]
-    public async Task SORD_015_FullPipeline_NonRetryable_PassesThrough()
+    public async Task Should_PassThroughFullPostProcessingChain_When_ResponseIsNonRetryable()
     {
         // A 200 OK response is not retryable (not 408/503) and not a redirect (not 3xx).
         // It should pass through RetryStage → Merge → RedirectStage to the final output.

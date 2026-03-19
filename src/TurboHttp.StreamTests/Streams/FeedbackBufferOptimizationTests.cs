@@ -82,7 +82,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "FBUF-001: Single 301 redirect completes via feedback buffer")]
-    public async Task SingleRedirectCompletesViaFeedbackBuffer()
+    public async Task Should_CompleteViaFeedbackBuffer_When_Single301RedirectOccurs()
     {
         var options = new TurboClientOptions();
         var engine = new TurboHttp.Streams.Engine();
@@ -108,7 +108,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "FBUF-002: Three chained 301 redirects complete without deadlock")]
-    public async Task ThreeChainedRedirectsCompleteWithoutDeadlock()
+    public async Task Should_CompleteWithoutDeadlock_When_ThreeChainedRedirectsOccur()
     {
         var options = new TurboClientOptions
         {
@@ -141,7 +141,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "FBUF-003: Single 408 retry completes via feedback buffer")]
-    public async Task SingleRetryCompletesViaFeedbackBuffer()
+    public async Task Should_CompleteViaFeedbackBuffer_When_Single408RetryOccurs()
     {
         var options = new TurboClientOptions
         {
@@ -170,7 +170,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "FBUF-004: Two 408 retries then 200 OK completes")]
-    public async Task MultipleRetriesThenSuccess()
+    public async Task Should_CompleteSuccessfully_When_TwoRetriesThenOkReceived()
     {
         var options = new TurboClientOptions
         {
@@ -199,7 +199,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "FBUF-005: 307 redirect preserves original HTTP method")]
-    public async Task Redirect307PreservesMethodViaFeedbackLoop()
+    public async Task Should_PreserveOriginalMethod_When_307RedirectViaFeedbackLoop()
     {
         var options = new TurboClientOptions();
         var engine = new TurboHttp.Streams.Engine();
@@ -225,7 +225,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
 
     [Fact(Timeout = 15_000,
         DisplayName = "FBUF-006: 200 OK passes through without entering feedback loop")]
-    public async Task NonRetryableResponsePassesThroughDirectly()
+    public async Task Should_PassThroughDirectly_When_ResponseIsNonRetryable()
     {
         var options = new TurboClientOptions();
         var engine = new TurboHttp.Streams.Engine();
