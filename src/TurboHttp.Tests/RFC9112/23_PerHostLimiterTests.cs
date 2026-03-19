@@ -167,7 +167,7 @@ public sealed class PerHostLimiterTests
     // ── ConnectionPolicy integration ─────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-9-PH-017: ConnectionPolicy_Default_MaxConnectionsPerHost_Is_6")]
-    public void ConnectionPolicy_Default_MaxConnectionsPerHost_Is_6()
+    public void Should_DefaultTo6_When_ConnectionPolicyMaxConnections()
     {
         var policy = ConnectionPolicy.Default;
         var limiter = new PerHostConnectionLimiter(policy.MaxConnectionsPerHost);
@@ -175,7 +175,7 @@ public sealed class PerHostLimiterTests
     }
 
     [Fact(DisplayName = "RFC9112-9-PH-018: ConnectionPolicy_AllowHttp2Multiplexing_Is_True_By_Default")]
-    public void ConnectionPolicy_AllowHttp2Multiplexing_Is_True_By_Default()
+    public void Should_AllowHttp2Multiplexing_When_DefaultPolicy()
     {
         var policy = ConnectionPolicy.Default;
         Assert.True(policy.AllowHttp2Multiplexing);

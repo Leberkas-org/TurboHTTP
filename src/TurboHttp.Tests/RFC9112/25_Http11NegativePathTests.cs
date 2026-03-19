@@ -14,7 +14,7 @@ public sealed class Http11NegativePathTests
     // ── RFC 9112 §4 — Start-Line Parsing ──────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-4-SL-001: HTTP/2.0 version in status-line rejected")]
-    public void RFC9112_4_StatusLine_MustRejectHttp20Version()
+    public void Should_RejectStatusLine_When_Http20Version()
     {
         // RFC 9112 §4: status-line = HTTP-version SP status-code SP reason-phrase CRLF
         // HTTP-version must be "HTTP/1.1" or "HTTP/1.0"; "HTTP/2.0" is not a valid HTTP/1.1 status line.
@@ -26,7 +26,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-002: Non-HTTP protocol prefix in status-line rejected")]
-    public void RFC9112_4_StatusLine_MustRejectNonHttpProtocol()
+    public void Should_RejectStatusLine_When_NonHttpProtocol()
     {
         // "HTTPS/1.1" is not a valid HTTP-version token.
         var decoder = new Http11Decoder();
@@ -37,7 +37,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-003: Double space between HTTP-version and status code rejected")]
-    public void RFC9112_4_StatusLine_MustRejectDoubleSpaceBeforeStatusCode()
+    public void Should_RejectStatusLine_When_DoubleSpaceBeforeStatusCode()
     {
         // RFC 9112 §4: exactly one SP between HTTP-version and 3-digit status code.
         // "HTTP/1.1  200 OK" has a leading space before the status digits, making it unparseable.
@@ -49,7 +49,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-004: Two-digit status code rejected")]
-    public void RFC9112_4_StatusLine_MustRejectTwoDigitStatusCode()
+    public void Should_RejectStatusLine_When_TwoDigitStatusCode()
     {
         // RFC 9112 §4: status-code is exactly 3 decimal digits.
         var decoder = new Http11Decoder();
@@ -60,7 +60,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-005: Non-digit character in status code rejected")]
-    public void RFC9112_4_StatusLine_MustRejectNonDigitInStatusCode()
+    public void Should_RejectStatusLine_When_NonDigitInStatusCode()
     {
         // Status code must be exactly 3 ASCII digits.
         var decoder = new Http11Decoder();
@@ -71,7 +71,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-006: Bare LF (no CR) line endings are not recognized as CRLF")]
-    public void RFC9112_4_StatusLine_BareLineFeedNeverDecodes()
+    public void Should_NeverDecode_When_BareLineFeedInStatusLine()
     {
         // RFC 9112 §2.2: a recipient MUST NOT treat a bare LF as a line terminator.
         // Our decoder uses strict CRLF matching; bare-LF input is treated as incomplete data.
@@ -85,7 +85,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-007: Overlong reason phrase hits header section size limit")]
-    public void RFC9112_4_StatusLine_OverlongReasonPhraseCaughtByHeaderLimit()
+    public void Should_CatchByHeaderLimit_When_OverlongReasonPhrase()
     {
         // The 8 KB header section size guard also protects against overlong status lines.
         // A reason phrase that makes the entire header block exceed 8 KB is rejected.
@@ -100,7 +100,7 @@ public sealed class Http11NegativePathTests
     // ── RFC 9112 §5 — Header Field Parsing ────────────────────────────────────
 
     [Fact(DisplayName = "RFC9112-5-HDR-001: Chunked trailer without colon rejected")]
-    public void RFC9112_5_Header_ChunkedTrailerWithoutColonRejected()
+    public void Should_RejectTrailer_When_ChunkedTrailerWithoutColon()
     {
         // RFC 9112 §7.1.2: trailer-field = field-line; each field-line MUST have a colon.
         // A trailer field with no colon delimiter is a parse error.
@@ -122,7 +122,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HDR-002: Chunked trailer with empty field name rejected")]
-    public void RFC9112_5_Header_ChunkedTrailerEmptyFieldNameRejected()
+    public void Should_RejectTrailer_When_EmptyFieldName()
     {
         // ": value" — colonIdx == 0 means empty field name, which is invalid per RFC 9112 §5.1.
         var decoder = new Http11Decoder();
@@ -145,7 +145,7 @@ public sealed class Http11NegativePathTests
 
     [Fact(DisplayName =
         "RFC9112-6-TE-001: Transfer-Encoding: gzip (non-chunked) with no Content-Length yields empty body")]
-    public void RFC9112_6_TransferEncoding_NonChunkedWithoutContentLength_YieldsEmptyBody()
+    public void Should_YieldEmptyBody_When_NonChunkedWithoutContentLength()
     {
         // When Transfer-Encoding is present but is not "chunked" (e.g., "gzip"),
         // and there is no Content-Length header, the decoder cannot determine body length.
@@ -167,7 +167,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-6-TE-002: Bytes after Content-Length boundary are not consumed by current response")]
-    public async Task RFC9112_6_Body_BytesAfterContentLengthTreatedAsPipelinedResponse()
+    public async Task Should_TreatAsPipelinedResponse_When_BytesAfterContentLength()
     {
         // RFC 9112 §6.3: content length terminates the body exactly.
         // Extra bytes following the declared body must be treated as the next pipelined response,
@@ -201,7 +201,7 @@ public sealed class Http11NegativePathTests
 
     [Fact(DisplayName =
         "RFC9110-15-204-001: 204 No Content always produces empty body regardless of Content-Length header")]
-    public async Task RFC9110_15_Response204_AlwaysHasEmptyBody()
+    public async Task Should_HaveEmptyBody_When_Response204()
     {
         // RFC 9110 §15.3.5: A 204 response MUST NOT include a message body.
         // The decoder must return an empty body even if Content-Length is present in headers.
@@ -220,7 +220,7 @@ public sealed class Http11NegativePathTests
 
     [Fact(DisplayName =
         "RFC9110-15-304-001: 304 Not Modified always produces empty body regardless of Content-Length header")]
-    public async Task RFC9110_15_Response304_AlwaysHasEmptyBody()
+    public async Task Should_HaveEmptyBody_When_Response304()
     {
         // RFC 9110 §15.4.5: A 304 response MUST NOT contain a message body.
         var decoder = new Http11Decoder();
@@ -239,7 +239,7 @@ public sealed class Http11NegativePathTests
     // ── RFC 9112 §9 — Request/Response Smuggling Protection ───────────────────
 
     [Fact(DisplayName = "RFC9112-9-SMUG-001: Multiple Content-Length with same value is accepted per RFC 9112 §6.3")]
-    public async Task RFC9112_9_MultipleContentLength_SameValue_Accepted()
+    public async Task Should_Accept_When_MultipleContentLengthSameValue()
     {
         // RFC 9112 §6.3: If a message is received with multiple Content-Length header fields
         // with identical values, the recipient MAY treat the message as having a single value.
@@ -262,7 +262,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-9-SMUG-002: Multiple Content-Length with differing values is a parse error")]
-    public void RFC9112_9_MultipleContentLength_DifferentValues_Rejected()
+    public void Should_Reject_When_MultipleContentLengthDifferentValues()
     {
         // RFC 9112 §6.3: If values differ, the recipient MUST reject the message.
         // This prevents HTTP request smuggling via Content-Length ambiguity.
@@ -280,7 +280,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-9-SMUG-003: Transfer-Encoding + Content-Length combination rejected")]
-    public void RFC9112_9_TransferEncodingAndContentLength_Rejected()
+    public void Should_Reject_When_TransferEncodingAndContentLength()
     {
         // RFC 9112 §6.3: If Transfer-Encoding and Content-Length are both present,
         // Transfer-Encoding supersedes, and the recipient SHOULD reject the message.
@@ -301,7 +301,7 @@ public sealed class Http11NegativePathTests
     // ── RFC 9112 §7.1 — Chunked Transfer-Encoding ─────────────────────────────
 
     [Fact(DisplayName = "RFC9112-7-CHK-001: Chunk size of zero with extra data in line rejected as parse error")]
-    public void RFC9112_7_Chunked_ZeroSizeLineWithNonNumericCharactersRejected()
+    public void Should_Reject_When_ChunkedZeroSizeNonNumericCharacters()
     {
         // RFC 9112 §7.1: chunk-size = 1*HEXDIG; "0x5" uses non-hex prefix "0x" which is invalid.
         var decoder = new Http11Decoder();
@@ -318,7 +318,7 @@ public sealed class Http11NegativePathTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CHK-002: Chunked body with all-caps hex chunk size accepted")]
-    public async Task RFC9112_7_Chunked_UpperCaseHexChunkSizeAccepted()
+    public async Task Should_Accept_When_ChunkedUpperCaseHexSize()
     {
         // RFC 9112 §7.1: chunk-size = 1*HEXDIG; HEXDIG includes both upper and lower case A-F.
         var decoder = new Http11Decoder();

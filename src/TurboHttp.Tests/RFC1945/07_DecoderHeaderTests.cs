@@ -20,7 +20,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-001: Single header parsed correctly")]
-    public void Headers_SingleHeader_ParsedCorrectly()
+    public void Should_ParseSingleHeader_When_DecodingHeaders()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -37,7 +37,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-002: Custom header parsed correctly")]
-    public void Headers_CustomHeader_ParsedCorrectly()
+    public void Should_ParseCustomHeader_When_DecodingHeaders()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -50,7 +50,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-003: Multiple custom headers all parsed")]
-    public void Headers_MultipleCustomHeaders_AllParsed()
+    public void Should_ParseAllCustomHeaders_When_MultiplePresent()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -65,7 +65,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-004: Header names are case-insensitive")]
-    public void Headers_NamesAreCaseInsensitive()
+    public void Should_BeCaseInsensitive_When_ComparingHeaderNames()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -79,7 +79,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-005: Obs-fold continuation accepted")]
-    public void Headers_FoldedHeader_IsContinuedCorrectly()
+    public void Should_ContinueFoldedHeader_When_ObsFoldPresent()
     {
         var decoder = new Http10Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Folded: first part\r\n continued\r\nContent-Length: 0\r\n\r\n";
@@ -94,7 +94,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-006: Header with leading/trailing spaces trimmed")]
-    public void Headers_HeaderWithLeadingTrailingSpaces_AreTrimmed()
+    public void Should_TrimWhitespace_When_HeaderHasLeadingTrailingSpaces()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -107,7 +107,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-007: LF-only line endings accepted in headers")]
-    public void Headers_LfOnlyLineEnding_ParsedCorrectly()
+    public void Should_ParseHeaders_When_LfOnlyLineEndings()
     {
         var decoder = new Http10Decoder();
         const string raw = "HTTP/1.0 200 OK\nX-Lf-Header: lf-value\nContent-Length: 0\n\n";
@@ -217,7 +217,7 @@ public sealed class Http10DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-016: Empty header value skipped safely")]
-    public void EdgeCase_HeaderWithoutValue_SkippedSafely()
+    public void Should_SkipSafely_When_HeaderHasNoValue()
     {
         var decoder = new Http10Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Empty:\r\nContent-Length: 0\r\n\r\n";

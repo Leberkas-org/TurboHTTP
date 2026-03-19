@@ -38,7 +38,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-001: Host header removed for HTTP/1.0")]
-    public void Headers_HostHeader_IsRemovedForHttp10()
+    public void Should_RemoveHostHeader_When_ProtocolIsHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var (_, headerLines, _) = ParseRaw(request);
@@ -47,7 +47,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-002: Connection header removed")]
-    public void Headers_ConnectionHeader_IsRemoved()
+    public void Should_RemoveConnectionHeader_When_EncodingHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("Connection", "keep-alive");
@@ -58,7 +58,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-003: Keep-Alive header removed")]
-    public void Headers_KeepAliveHeader_IsRemoved()
+    public void Should_RemoveKeepAliveHeader_When_EncodingHttp10()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("Keep-Alive", "timeout=5");
@@ -69,7 +69,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-004: Transfer-Encoding header removed")]
-    public void Headers_TransferEncodingHeader_IsRemoved()
+    public void Should_RemoveTransferEncodingHeader_When_EncodingHttp10()
     {
         // Transfer-Encoding ist HTTP/1.1 (RFC 2616 §14.41)
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -81,7 +81,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-005: Custom header preserved")]
-    public void Headers_CustomHeader_IsPreserved()
+    public void Should_PreserveCustomHeader_When_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Custom-Header", "my-value");
@@ -92,7 +92,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-006: Multiple custom headers all preserved")]
-    public void Headers_MultipleCustomHeaders_AllPreserved()
+    public void Should_PreserveAllCustomHeaders_When_MultiplePresent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Header-A", "value-a");
@@ -105,7 +105,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-007: Header format is name: value")]
-    public void Headers_HeaderFormat_IsNameColonSpaceValue()
+    public void Should_FormatAsNameColonSpaceValue_When_EncodingHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Test", "test-value");
@@ -117,7 +117,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-008: Each header ends with CRLF")]
-    public void Headers_EachHeaderEndsWithCrLf()
+    public void Should_EndEachHeaderWithCrLf_When_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Test", "value");
@@ -132,7 +132,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-009: Multi-value header each value on separate line")]
-    public void Headers_MultiValueHeader_EachValueOnSeparateLine()
+    public void Should_EmitEachValueOnSeparateLine_When_MultiValueHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
@@ -145,7 +145,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-010: Accept header preserved")]
-    public void Headers_AcceptHeader_IsPreserved()
+    public void Should_PreserveAcceptHeader_When_Encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
@@ -156,7 +156,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-011: Request with no custom headers has no suppressed headers")]
-    public void Headers_RequestWithNoCustomHeaders_OnlyContainsRfcMandatoryHeaders()
+    public void Should_ContainOnlyMandatoryHeaders_When_NoCustomHeadersPresent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var (_, headerLines, _) = ParseRaw(request);
@@ -167,7 +167,7 @@ public sealed class Http10EncoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC1945-4.2-HD-012: Header separator is double CRLF")]
-    public void Headers_HeaderSeparator_IsDoubleCrLf()
+    public void Should_UseDoubleCrLfSeparator_When_EncodingHeaders()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var raw = Encode(request);

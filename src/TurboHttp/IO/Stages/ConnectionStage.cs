@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Internal;
+using TurboHttp.Lifecycle;
 
 namespace TurboHttp.IO.Stages;
 
@@ -143,7 +145,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             if (item is MaxConcurrentStreamsItem maxStreams)
             {
                 _handle?.ConnectionActor.Tell(
-                    new HostPoolActor.UpdateMaxConcurrentStreams(_handle.ConnectionActor, maxStreams.MaxStreams));
+                    new HostPool.UpdateMaxConcurrentStreams(_handle.ConnectionActor, maxStreams.MaxStreams));
                 TryPull();
                 return;
             }
@@ -151,7 +153,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             if (item is StreamAcquireItem)
             {
                 _handle?.ConnectionActor.Tell(
-                    new HostPoolActor.StreamAcquired(_handle.ConnectionActor));
+                    new HostPool.StreamAcquired(_handle.ConnectionActor));
                 TryPull();
                 return;
             }
@@ -161,11 +163,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 if (!reuseItem.Decision.CanReuse)
                 {
                     _handle?.ConnectionActor.Tell(
-                        new HostPoolActor.MarkConnectionNoReuse(_handle.ConnectionActor));
+                        new HostPool.MarkConnectionNoReuse(_handle.ConnectionActor));
                 }
 
                 _handle?.ConnectionActor.Tell(
-                    new HostPoolActor.StreamCompleted(_handle.ConnectionActor));
+                    new HostPool.StreamCompleted(_handle.ConnectionActor));
                 TryPull();
                 return;
             }
@@ -174,7 +176,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             {
                 // Send EnsureHost — HostPoolActor will reply with ConnectionHandle to our StageActor.
                 _stage.PoolRouter.Tell(
-                    new PoolRouterActor.EnsureHost(connect.Key, connect.Options),
+                    new PoolRouter.EnsureHost(connect.Key, connect.Options),
                     _stageActor!.Ref);
 
                 // Do NOT pull — wait for ConnectionHandle reply before accepting data.

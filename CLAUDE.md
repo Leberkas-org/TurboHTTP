@@ -153,6 +153,10 @@ Network (TCP)
 - `HttpDecodeError` enum for error classification
 - `RedirectException` — redirect-specific errors
 
+## Workflow Rules
+
+- **Do NOT commit** — Claude must never run `git commit` or `git add` unless the user explicitly asks for it. All commits are done manually by the developer.
+
 ## Code Style and Conventions
 
 ### C# Style

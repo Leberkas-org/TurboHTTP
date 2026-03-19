@@ -11,6 +11,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using BenchmarkDotNet.Attributes;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;

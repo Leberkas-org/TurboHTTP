@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Servus.Akka;
 using TurboHttp.IO;
+using TurboHttp.Lifecycle;
 using TurboHttp.Streams;
 
 namespace TurboHttp.Client;
@@ -39,9 +41,7 @@ internal sealed class TurboClientStreamManager
 
         // Create PoolRouterActor — supervises the actor-based connection pool hierarchy.
         // PoolRouterActor → HostPoolActor → ConnectionActor → TCP
-        var poolRouter = system.ActorOf(
-            Props.Create(() => new PoolRouterActor(clientOptions)),
-            $"pool-router-{streamManagerId}");
+        var poolRouter = system.ResolveActor<PoolRouter>($"pool-router-{streamManagerId}", clientOptions);
 
         // Build the full pipeline flow from Engine.
         // Engine.CreateFlow internally creates per-client instances:

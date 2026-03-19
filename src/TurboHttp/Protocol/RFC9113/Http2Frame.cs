@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Protocol.RFC9113;

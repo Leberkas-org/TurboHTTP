@@ -32,7 +32,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-001: Headers split across two chunks reassembled")]
-    public void Fragmentation_HeadersSplitAcrossTwoChunks_ReassembledCorrectly()
+    public void Should_ReassembleHeaders_When_SplitAcrossTwoChunks()
     {
         var decoder = new Http10Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nHello");
@@ -51,7 +51,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-002: Body split across two chunks reassembled")]
-    public async Task Fragmentation_BodySplitAcrossTwoChunks_ReassembledCorrectly()
+    public async Task Should_ReassembleBody_When_SplitAcrossTwoChunks()
     {
         var decoder = new Http10Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 10\r\n\r\n1234567890");
@@ -70,7 +70,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-003: Single byte chunks eventually decoded")]
-    public void Fragmentation_SingleByteChunks_EventuallyDecodes()
+    public void Should_EventuallyDecode_When_SingleByteChunks()
     {
         var decoder = new Http10Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 3\r\n\r\nABC").ToArray();
@@ -94,7 +94,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-004: Multiple responses decoded independently")]
-    public void Fragmentation_MultipleResponses_DecodedIndependently()
+    public void Should_DecodeIndependently_When_MultipleResponses()
     {
         var decoder = new Http10Decoder();
 
@@ -109,7 +109,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-005: Incomplete header returns false and buffers")]
-    public void Fragmentation_IncompleteHeader_ReturnsFalseAndBuffers()
+    public void Should_ReturnFalseAndBuffer_When_HeaderIsIncomplete()
     {
         var decoder = new Http10Decoder();
         var incomplete = Bytes("HTTP/1.0 200 OK\r\nContent-Le");
@@ -121,7 +121,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-006: Incomplete body returns false and buffers")]
-    public void Fragmentation_IncompleteBody_ReturnsFalseAndBuffers()
+    public void Should_ReturnFalseAndBuffer_When_BodyIsIncomplete()
     {
         var decoder = new Http10Decoder();
         var incomplete = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nonly10bytes");
@@ -133,7 +133,7 @@ public sealed class Http10DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-FG-007: Three chunks decoded correctly")]
-    public async Task Fragmentation_ThreeChunks_DecodesCorrectly()
+    public async Task Should_DecodeCorrectly_When_ThreeChunksProvided()
     {
         var decoder = new Http10Decoder();
         const string full = "HTTP/1.0 200 OK\r\nContent-Length: 9\r\n\r\nABCDEFGHI";

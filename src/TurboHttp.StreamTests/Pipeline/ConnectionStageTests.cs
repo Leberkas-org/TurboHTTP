@@ -6,8 +6,10 @@ using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.TestKit;
+using TurboHttp.Internal;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
+using TurboHttp.Lifecycle;
 using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.StreamTests.Pipeline;
@@ -28,7 +30,7 @@ public sealed class ConnectionStageTests : StreamTestBase
     {
         public StubRouter(ConnectionHandle handle, IActorRef probe)
         {
-            Receive<PoolRouterActor.EnsureHost>(msg =>
+            Receive<PoolRouter.EnsureHost>(msg =>
             {
                 Sender.Tell(handle);
                 probe.Tell(msg);
@@ -103,7 +105,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
         await queue.OfferAsync(connectItem);
 
-        var received = await routerProbe.ExpectMsgAsync<PoolRouterActor.EnsureHost>(TimeSpan.FromSeconds(10));
+        var received = await routerProbe.ExpectMsgAsync<PoolRouter.EnsureHost>(TimeSpan.FromSeconds(10));
         Assert.Equal("localhost", received.Options.Host);
 
         inboundWriter.Complete();
@@ -264,12 +266,12 @@ public sealed class ConnectionStageTests : StreamTestBase
 
         // Verify that MarkConnectionNoReuse is sent first
         var markMsg =
-            await connectionActorProbe.ExpectMsgAsync<HostPoolActor.MarkConnectionNoReuse>(TimeSpan.FromSeconds(5));
+            await connectionActorProbe.ExpectMsgAsync<HostPool.MarkConnectionNoReuse>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActorProbe.Ref, markMsg.Connection);
 
         // Verify that StreamCompleted is sent second
         var streamMsg =
-            await connectionActorProbe.ExpectMsgAsync<HostPoolActor.StreamCompleted>(TimeSpan.FromSeconds(5));
+            await connectionActorProbe.ExpectMsgAsync<HostPool.StreamCompleted>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActorProbe.Ref, streamMsg.Connection);
 
         inboundWriter.Complete();
@@ -305,7 +307,7 @@ public sealed class ConnectionStageTests : StreamTestBase
 
         // Verify that only StreamCompleted is sent (no MarkConnectionNoReuse)
         var streamMsg =
-            await connectionActorProbe.ExpectMsgAsync<HostPoolActor.StreamCompleted>(TimeSpan.FromSeconds(5));
+            await connectionActorProbe.ExpectMsgAsync<HostPool.StreamCompleted>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActorProbe.Ref, streamMsg.Connection);
 
         // No further messages (specifically no MarkConnectionNoReuse)
@@ -344,7 +346,7 @@ public sealed class ConnectionStageTests : StreamTestBase
         // Verify UpdateMaxConcurrentStreams is sent to the connection actor
         var msg =
             await connectionActorProbe
-                .ExpectMsgAsync<HostPoolActor.UpdateMaxConcurrentStreams>(TimeSpan.FromSeconds(5));
+                .ExpectMsgAsync<HostPool.UpdateMaxConcurrentStreams>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActorProbe.Ref, msg.Connection);
         Assert.Equal(50, msg.MaxStreams);
 
@@ -378,7 +380,7 @@ public sealed class ConnectionStageTests : StreamTestBase
         await inputQueue.OfferAsync(new StreamAcquireItem());
 
         // Verify StreamAcquired is sent to the connection actor
-        var msg = await connectionActorProbe.ExpectMsgAsync<HostPoolActor.StreamAcquired>(TimeSpan.FromSeconds(5));
+        var msg = await connectionActorProbe.ExpectMsgAsync<HostPool.StreamAcquired>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActorProbe.Ref, msg.Connection);
 
         inboundWriter.Complete();

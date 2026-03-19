@@ -8,6 +8,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Client;
 using TurboHttp.Internal;
+using TurboHttp.Internal.Stages;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Protocol.RFC9110;
@@ -18,10 +19,6 @@ namespace TurboHttp.Streams;
 
 public class Engine
 {
-    public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef poolRouter,
-        TurboClientOptions? options)
-        => CreateFlow(poolRouter, options, requestOptionsFactory: null);
-
     public Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef poolRouter,
         TurboClientOptions? options,
         Func<TurboRequestOptions>? requestOptionsFactory)
@@ -218,11 +215,11 @@ public class Engine
             builder.From(cacheMerge.Out).To(redirect.In);
 
             return new PostProcessShape(
-                cookieStorage.Inlet,    // response input from engine+decompression
-                cacheMerge.In(1),       // cache hit input from cache lookup
-                redirect.Out0,          // final response output
-                retry.Out1,             // retry feedback → pre-processing
-                redirect.Out1);         // redirect feedback → pre-processing
+                cookieStorage.Inlet, // response input from engine+decompression
+                cacheMerge.In(1), // cache hit input from cache lookup
+                redirect.Out0, // final response output
+                retry.Out1, // retry feedback → pre-processing
+                redirect.Out1); // redirect feedback → pre-processing
         });
     }
 

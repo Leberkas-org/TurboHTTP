@@ -23,7 +23,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// This version calls Http10Encoder.Encode directly — same assertion, no ActorSystem.
     /// </summary>
     [Fact(DisplayName = "RFC1945-5.1-RL-001: Request-Line is METHOD SP path SP HTTP/1.0 CRLF (plain unit test)")]
-    public void ST_10_ENC_001_Plain_RequestLine_Format()
+    public void Should_FormatRequestLine_When_PlainEncoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/index.html")
         {
@@ -39,7 +39,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// Mirrors <c>Http10EncoderStageTests.ST_10_ENC_002_CustomHeader_Forwarded</c>.
     /// </summary>
     [Fact(DisplayName = "RFC1945-7.1-HD-001: Custom header is forwarded verbatim (plain unit test)")]
-    public void ST_10_ENC_002_Plain_CustomHeader_Forwarded()
+    public void Should_ForwardCustomHeader_When_PlainEncoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {
@@ -56,7 +56,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// Mirrors <c>Http10EncoderStageTests.ST_10_ENC_003_NoHostHeader</c>.
     /// </summary>
     [Fact(DisplayName = "RFC1945-D.1-HD-002: No Host header emitted (plain unit test)")]
-    public void ST_10_ENC_003_Plain_NoHostHeader()
+    public void Should_OmitHostHeader_When_PlainEncoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {
@@ -72,7 +72,7 @@ public sealed class Http10EncoderStageConversionExampleTests
     /// Mirrors <c>Http10EncoderStageTests.ST_10_ENC_005_PostBody_FollowsHeaders</c>.
     /// </summary>
     [Fact(DisplayName = "RFC1945-D.1-BD-001: POST body bytes follow headers after double-CRLF (plain unit test)")]
-    public void ST_10_ENC_005_Plain_PostBody_FollowsHeaders()
+    public void Should_PlacePostBodyAfterHeaders_When_PlainEncoding()
     {
         var body = "hello"u8.ToArray();
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")

@@ -11,7 +11,7 @@ public sealed class Http10EncoderSecurityTests
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];
 
     [Fact(DisplayName = "RFC1945-12-SC-001: CR in header value throws ArgumentException")]
-    public void HeaderInjection_CrInValue_ThrowsArgumentException()
+    public void Should_ThrowArgumentException_When_HeaderValueContainsCr()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Evil", "value\rX-Injected: attack");
@@ -23,7 +23,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-002: LF in header value throws ArgumentException")]
-    public void HeaderInjection_LfInValue_ThrowsArgumentException()
+    public void Should_ThrowArgumentException_When_HeaderValueContainsLf()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Evil", "value\nX-Injected: attack");
@@ -35,7 +35,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-003: CRLF in header value throws ArgumentException")]
-    public void HeaderInjection_CrLfInValue_ThrowsArgumentException()
+    public void Should_ThrowArgumentException_When_HeaderValueContainsCrLf()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Evil", "value\r\nX-Injected: attack");
@@ -47,7 +47,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-004: Header injection exception contains header name")]
-    public void HeaderInjection_Exception_ContainsHeaderName()
+    public void Should_IncludeHeaderNameInException_When_InjectionDetected()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Dangerous", "bad\r\nvalue");
@@ -61,7 +61,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-005: Normal header value does not throw")]
-    public void HeaderInjection_NormalValue_DoesNotThrow()
+    public void Should_NotThrow_When_HeaderValueIsNormal()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Safe", "perfectly-normal-value-123");
@@ -73,7 +73,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-006: Buffer too small for headers throws")]
-    public void BufferOverflow_BufferTooSmallForHeaders_ThrowsInvalidOperationException()
+    public void Should_ThrowInvalidOperationException_When_BufferTooSmallForHeaders()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var buffer = MakeBuffer(5);
@@ -83,7 +83,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-007: Buffer too small for body throws")]
-    public void BufferOverflow_BufferTooSmallForBody_ThrowsInvalidOperationException()
+    public void Should_ThrowInvalidOperationException_When_BufferTooSmallForBody()
     {
         var largeBody = new byte[1000];
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -98,7 +98,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-008: Exact size buffer does not throw")]
-    public void BufferOverflow_ExactSizeBuffer_DoesNotThrow()
+    public void Should_NotThrow_When_BufferIsExactSize()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
@@ -112,7 +112,7 @@ public sealed class Http10EncoderSecurityTests
     }
 
     [Fact(DisplayName = "RFC1945-12-SC-009: Empty buffer throws")]
-    public void BufferOverflow_EmptyBuffer_ThrowsInvalidOperationException()
+    public void Should_ThrowInvalidOperationException_When_BufferIsEmpty()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var buffer = MakeBuffer(0);

@@ -7,7 +7,7 @@ namespace TurboHttp.Tests.RFC9112;
 public sealed class Http11EncoderRangeRequestTests
 {
     [Fact(DisplayName = "RFC9112-5-RR-001: Range: bytes=0-499 encoded")]
-    public void Test_Range_Bytes_Encoded()
+    public void Should_EncodeRangeHeader_When_ByteRange()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
         request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 499);
@@ -16,7 +16,7 @@ public sealed class Http11EncoderRangeRequestTests
     }
 
     [Fact(DisplayName = "RFC9112-5-RR-002: Range: bytes=-500 suffix encoded")]
-    public void Test_Range_Suffix_Encoded()
+    public void Should_EncodeRangeHeader_When_SuffixRange()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
         request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(null, 500);
@@ -25,7 +25,7 @@ public sealed class Http11EncoderRangeRequestTests
     }
 
     [Fact(DisplayName = "RFC9112-5-RR-003: Range: bytes=500- open range encoded")]
-    public void Test_Range_OpenEnded_Encoded()
+    public void Should_EncodeRangeHeader_When_OpenEndedRange()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
         request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(500, null);
@@ -34,7 +34,7 @@ public sealed class Http11EncoderRangeRequestTests
     }
 
     [Fact(DisplayName = "RFC9112-5-RR-004: Multi-range bytes=0-499,1000-1499 encoded")]
-    public void Test_Range_MultiRange_Encoded()
+    public void Should_EncodeRangeHeader_When_MultiRange()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
         var range = new System.Net.Http.Headers.RangeHeaderValue();
@@ -48,7 +48,7 @@ public sealed class Http11EncoderRangeRequestTests
     }
 
     [Fact(DisplayName = "RFC9112-5-RR-005: Invalid range bytes=abc-xyz rejected")]
-    public void Test_Invalid_Range_Rejected()
+    public void Should_RejectRange_When_Invalid()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
         request.Headers.TryAddWithoutValidation("Range", "bytes=abc-xyz");

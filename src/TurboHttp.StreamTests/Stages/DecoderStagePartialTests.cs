@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages;

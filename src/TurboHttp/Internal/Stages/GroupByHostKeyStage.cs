@@ -9,7 +9,7 @@ using Akka.Streams.Stage;
 using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.Internal;
+namespace TurboHttp.Internal.Stages;
 
 internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, NotUsed>>>
 {

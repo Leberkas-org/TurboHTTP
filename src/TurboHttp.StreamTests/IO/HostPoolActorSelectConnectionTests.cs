@@ -1,13 +1,15 @@
 using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
+using TurboHttp.Internal;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
+using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Unit tests for <see cref="HostPoolActor.SelectConnection"/> — MRU ordering,
+/// Unit tests for <see cref="HostPool.SelectConnection"/> — MRU ordering,
 /// capacity filtering, and dead/non-reusable connection skipping.
 /// </summary>
 public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
@@ -42,7 +44,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
     {
         var connections = new List<ConnectionState>();
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Null(result);
     }
@@ -57,7 +59,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
         conn.MarkBusy();
         var connections = new List<ConnectionState> { conn };
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Null(result);
     }
@@ -70,7 +72,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
         var conn = CreateActiveConnection(HttpVersion.Version11);
         var connections = new List<ConnectionState> { conn };
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Same(conn, result);
     }
@@ -85,7 +87,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
         var newer = CreateActiveConnection(HttpVersion.Version11);
         var connections = new List<ConnectionState> { older, newer };
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Same(newer, result);
     }
@@ -101,7 +103,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
         dead.MarkDead(); // Active = false → HasAvailableSlot = false
         var connections = new List<ConnectionState> { alive, dead };
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Same(alive, result);
     }
@@ -117,7 +119,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
         nonReusable.MarkNoReuse(); // Reusable = false → HasAvailableSlot = false
         var connections = new List<ConnectionState> { reusable, nonReusable };
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Same(reusable, result);
     }
@@ -146,7 +148,7 @@ public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
 
         var connections = new List<ConnectionState> { dead, full, nonReusable, eligible1, eligible2 };
 
-        var result = HostPoolActor.SelectConnection(connections);
+        var result = HostPool.SelectConnection(connections);
 
         Assert.Same(eligible2, result);
     }

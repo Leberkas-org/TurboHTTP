@@ -32,7 +32,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-001: Content-Length body decoded to exact byte count")]
-    public async Task Body_WithContentLength_BodyReadCorrectly()
+    public async Task Should_ReadBodyCorrectly_When_ContentLengthPresent()
     {
         var decoder = new Http10Decoder();
         const string body = "Hello, World!";
@@ -46,7 +46,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-002: Content-Length exact bytes read")]
-    public async Task Body_WithContentLength_ExactBytesRead()
+    public async Task Should_ReadExactBytes_When_ContentLengthSpecified()
     {
         var decoder = new Http10Decoder();
         const string body = "ABCDE";
@@ -60,7 +60,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-003: Zero Content-Length produces empty body")]
-    public void Body_WithZeroContentLength_EmptyBody()
+    public void Should_ReturnEmptyBody_When_ContentLengthIsZero()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -71,7 +71,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-004: Body without Content-Length read until EOF")]
-    public async Task Body_WithoutContentLength_ReadsUntilEndOfData()
+    public async Task Should_ReadUntilEndOfData_When_ContentLengthAbsent()
     {
         var decoder = new Http10Decoder();
         const string body = "body without content-length";
@@ -84,7 +84,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-005: Binary content preserved exactly")]
-    public async Task Body_BinaryContent_PreservedExactly()
+    public async Task Should_PreserveBinaryContent_When_DecodingBody()
     {
         var bodyBytes = new byte[] { 0x00, 0x01, 0x7F, 0x80, 0xFE, 0xFF };
         var decoder = new Http10Decoder();
@@ -98,7 +98,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-006: Content-Length header set on content")]
-    public void Body_ContentLengthHeader_SetOnContent()
+    public void Should_SetContentLengthHeader_When_DecodingBody()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 5", "Hello");
@@ -109,7 +109,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-007: 204 No Content has no body")]
-    public void Body_NoBody_ResponseContentIsNull()
+    public void Should_ReturnNullContent_When_NoBodyPresent()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 204 No Content", "Content-Length: 0");
@@ -120,7 +120,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-008: Negative Content-Length rejected")]
-    public void EdgeCase_ContentLengthNegative_ThrowsDecoderException()
+    public void Should_ThrowDecoderException_When_ContentLengthIsNegative()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: -1");
@@ -226,7 +226,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-016: Very large header handled correctly")]
-    public void EdgeCase_VeryLargeHeader_HandledCorrectly()
+    public void Should_HandleCorrectly_When_HeaderIsVeryLarge()
     {
         var decoder = new Http10Decoder();
         var longValue = new string('A', 8000);
@@ -269,7 +269,7 @@ public sealed class Http10DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-019: Empty input returns false")]
-    public void EdgeCase_EmptyInput_ReturnsFalse()
+    public void Should_ReturnFalse_When_InputIsEmpty()
     {
         var decoder = new Http10Decoder();
 

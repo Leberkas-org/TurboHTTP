@@ -37,7 +37,7 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact(DisplayName = "RFC1945-5.1-RL-001: Request-line contains exactly one space between parts")]
-    public void RequestLine_ContainsExactlyOneSpaceBetweenParts()
+    public void Should_ContainOneSpaceBetweenParts_When_EncodingRequestLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var (requestLine, _, _) = ParseRaw(request);
@@ -47,7 +47,7 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact(DisplayName = "RFC1945-5.1-RL-002: Protocol version is HTTP/1.0")]
-    public void RequestLine_ProtocolVersionIsHttp10()
+    public void Should_UseHttp10Protocol_When_EncodingRequestLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var (requestLine, _, _) = ParseRaw(request);
@@ -56,7 +56,7 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact(DisplayName = "RFC1945-5.1-RL-003: Request-line ends with CRLF")]
-    public void RequestLine_EndsWithCrLf()
+    public void Should_EndWithCrLf_When_EncodingRequestLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var raw = Encode(request);
@@ -65,7 +65,7 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact(DisplayName = "RFC1945-5.1-RL-004: Query string included in request-target")]
-    public void RequestLine_WithQueryString_IncludesQueryInUri()
+    public void Should_IncludeQueryInUri_When_RequestHasQueryString()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?q=hello&page=2");
         var (requestLine, _, _) = ParseRaw(request);
@@ -74,7 +74,7 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact(DisplayName = "RFC1945-5.1-RL-005: Root path normalized to /")]
-    public void RequestLine_RootPath_IsForwardSlash()
+    public void Should_UseForwardSlash_When_PathIsRoot()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
         var (requestLine, _, _) = ParseRaw(request);
@@ -83,7 +83,7 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact(DisplayName = "RFC1945-5.1-RL-006: Deep path preserved in request-target")]
-    public void RequestLine_DeepPath_IsPreserved()
+    public void Should_PreserveDeepPath_When_EncodingRequestLine()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a/b/c/d");
         var (requestLine, _, _) = ParseRaw(request);

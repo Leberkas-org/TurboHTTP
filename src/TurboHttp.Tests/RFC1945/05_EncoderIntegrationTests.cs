@@ -37,7 +37,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-001: Non-ASCII path is percent-encoded")]
-    public void Uri_NonAsciiPath_IsPercentEncoded()
+    public void Should_PercentEncodeNonAscii_When_PathContainsNonAscii()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
             new Uri("http://example.com/pfad/mit/%C3%BCmlauten"));
@@ -47,7 +47,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-002: Space in path is percent-encoded")]
-    public void Uri_SpaceInPath_IsPercentEncoded()
+    public void Should_PercentEncodeSpace_When_PathContainsSpace()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
             new Uri("http://example.com/path%20with%20spaces"));
@@ -59,7 +59,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-003: Query string with special chars preserved")]
-    public void Uri_QueryStringWithSpecialChars_IsPreserved()
+    public void Should_PreserveSpecialChars_When_QueryStringEncoded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
             "http://example.com/search?q=hello+world&lang=de");
@@ -69,7 +69,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-004: Empty path normalizes to /")]
-    public void Uri_EmptyPath_NormalizesToSlash()
+    public void Should_NormalizeToSlash_When_PathIsEmpty()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
         var (requestLine, _, _) = ParseRaw(request);
@@ -78,7 +78,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-005: Path with fragment strips fragment")]
-    public void Uri_PathWithFragment_FragmentIsNotIncluded()
+    public void Should_ExcludeFragment_When_UriContainsFragment()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page");
         var (requestLine, _, _) = ParseRaw(request);
@@ -87,7 +87,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-006: Non-standard port not in request-line")]
-    public void Uri_NonStandardPort_IsNotInRequestLine()
+    public void Should_OmitPort_When_PortIsNonStandard()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/api");
         var (requestLine, _, _) = ParseRaw(request);
@@ -96,7 +96,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-007: Content-Type when set explicitly is preserved")]
-    public void ContentType_WhenSetExplicitly_IsPreserved()
+    public void Should_PreserveContentType_When_SetExplicitly()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
         {
@@ -110,7 +110,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-008: Content-Type without body is not set")]
-    public void ContentType_WithoutBody_IsNotSet()
+    public void Should_NotSetContentType_When_BodyIsAbsent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
@@ -121,7 +121,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-009: No default Content-Type injected when missing")]
-    public void ContentType_NoDefaultIsInjected_WhenMissingAndBodyExists()
+    public void Should_NotInjectDefaultContentType_When_MissingAndBodyExists()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
         {
@@ -138,7 +138,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-010: Bytes written matches actual encoded length")]
-    public void BytesWritten_MatchesActualEncodedLength()
+    public void Should_MatchActualEncodedLength_When_CheckingBytesWritten()
     {
         const string body = "test body content";
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")
@@ -154,7 +154,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-011: Bytes written is greater than zero")]
-    public void BytesWritten_IsGreaterThanZero()
+    public void Should_ReturnPositiveValue_When_CheckingBytesWritten()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var buffer = MakeBuffer();
@@ -165,7 +165,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-012: Bytes written with body is larger than without")]
-    public void BytesWritten_WithBody_IsLargerThanWithout()
+    public void Should_ReturnLargerCount_When_RequestHasBody()
     {
         var requestWithoutBody = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var requestWithBody = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -183,7 +183,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-013: Buffer beyond written bytes is untouched")]
-    public void BytesWritten_BufferBeyondWrittenBytes_IsUntouched()
+    public void Should_LeaveBufferUntouched_When_BeyondWrittenBytes()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var buffer = MakeBuffer(8192);
@@ -196,7 +196,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-014: Same POST request encoded twice produces identical output")]
-    public void Idempotent_SameRequestEncodedTwice_ProducesIdenticalOutput()
+    public void Should_ProduceIdenticalOutput_When_SameRequestEncodedTwice()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api")
         {
@@ -216,7 +216,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-015: Same GET request encoded twice produces identical output")]
-    public void Idempotent_SameGetRequestEncodedTwice_ProducesIdenticalOutput()
+    public void Should_ProduceIdenticalOutput_When_SameGetRequestEncodedTwice()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource?id=42");
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
@@ -231,7 +231,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-016: Minimal GET request is fully RFC 1945 compliant")]
-    public void Integration_MinimalGetRequest_IsFullyRfc1945Compliant()
+    public void Should_BeFullyRfc1945Compliant_When_MinimalGetRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/index.html");
         var raw = Encode(request);
@@ -244,7 +244,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-017: POST with JSON body is fully RFC 1945 compliant")]
-    public void Integration_PostWithJsonBody_IsFullyRfc1945Compliant()
+    public void Should_BeFullyRfc1945Compliant_When_PostWithJsonBody()
     {
         const string json = "{\"key\":\"value\"}";
         var request = new HttpRequestMessage(HttpMethod.Post, "http://api.example.com/resource")
@@ -263,7 +263,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-018: HEAD request has no body")]
-    public void Integration_HeadRequest_HasNoBody()
+    public void Should_HaveNoBody_When_HeadRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Head, "http://example.com/resource");
         var raw = Encode(request);
@@ -276,7 +276,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-019: Request with multiple headers all written correctly")]
-    public void Integration_RequestWithMultipleHeaders_AllWrittenCorrectly()
+    public void Should_WriteAllHeadersCorrectly_When_MultipleHeadersPresent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data");
         request.Headers.TryAddWithoutValidation("X-Api-Key", "secret-123");
@@ -294,7 +294,7 @@ public sealed class Http10EncoderIntegrationTests
     }
 
     [Fact(DisplayName = "RFC1945-5-IT-020: Content headers merged with request headers")]
-    public void Integration_ContentHeadersMergedWithRequestHeaders()
+    public void Should_MergeContentHeaders_When_RequestHasContentHeaders()
     {
         var content = new StringContent("body", Encoding.ASCII, "text/plain");
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")

@@ -2,11 +2,12 @@ using Akka.Actor;
 using Akka.TestKit;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
+using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Unit tests for <see cref="HostPoolActor.HandleEnsureHost"/> rewrite (TASK-9-011).
+/// Unit tests for <see cref="HostPool.HandleEnsureHost"/> rewrite (TASK-9-011).
 /// </summary>
 public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
 {
@@ -19,7 +20,7 @@ public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
         var (pool, _, handle) = SetupReadyPool(controlProbe, Key11);
 
         // First EnsureHost → immediate handle reply.
-        pool.Tell(new PoolRouterActor.EnsureHost(Key11, TestOptions), TestActor);
+        pool.Tell(new PoolRouter.EnsureHost(Key11, TestOptions), TestActor);
         var received = ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
         Assert.Equal(handle, received);
 
@@ -27,12 +28,12 @@ public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
         // Send 5 more to fill to capacity (PendingRequests = 6).
         for (var i = 0; i < 5; i++)
         {
-            pool.Tell(new PoolRouterActor.EnsureHost(Key11, TestOptions), TestActor);
+            pool.Tell(new PoolRouter.EnsureHost(Key11, TestOptions), TestActor);
             ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
         }
 
         // 7th request — all 6 slots occupied → should be queued (not immediately served).
-        pool.Tell(new PoolRouterActor.EnsureHost(Key11, TestOptions), TestActor);
+        pool.Tell(new PoolRouter.EnsureHost(Key11, TestOptions), TestActor);
         ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
@@ -46,12 +47,12 @@ public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
         var (pool, fakeConn1, _) = SetupReadyPool(controlProbe, Key10);
 
         // Make connection ready and occupy its single slot.
-        pool.Tell(new PoolRouterActor.EnsureHost(Key10, TestOptions), TestActor);
+        pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), TestActor);
         ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
 
         // Now all slots are full (HTTP/1.0 max 1). Next request → queued + spawn attempt.
         var requesterProbe = CreateTestProbe("requester");
-        pool.Tell(new PoolRouterActor.EnsureHost(Key10, TestOptions), requesterProbe.Ref);
+        pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), requesterProbe.Ref);
 
         // SpawnConnection should have been called — a new FakeConnectionActor should appear.
         var fakeConn2 = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
@@ -78,7 +79,7 @@ public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
         var (pool, conn1, _) = SetupReadyPool(controlProbe, Key10);
 
         // Fill slot on connection #1.
-        pool.Tell(new PoolRouterActor.EnsureHost(Key10, TestOptions), TestActor);
+        pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), TestActor);
         ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5)); // conn1 now busy
 
         // Spawn connections 2–6: each EnsureHost finds conn full → queues + spawns.
@@ -86,7 +87,7 @@ public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
         for (var i = 2; i <= 6; i++)
         {
             var probe = CreateTestProbe($"requester-{i}");
-            pool.Tell(new PoolRouterActor.EnsureHost(Key10, TestOptions), probe.Ref);
+            pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), probe.Ref);
 
             var connN = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
             pool.Tell(new ConnectionActor.ConnectionReady(CreateHandle(connN, Key10)), connN);
@@ -94,13 +95,13 @@ public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
             probe.ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
 
             // Fill connN's slot via a fresh EnsureHost.
-            pool.Tell(new PoolRouterActor.EnsureHost(Key10, TestOptions), CreateTestProbe().Ref);
+            pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), CreateTestProbe().Ref);
         }
 
         // Now: 6 connections, all at capacity. Limiter is at capacity (6/6).
         // 7th request — all full AND at limiter limit → queued only, no spawn.
         var finalRequester = CreateTestProbe("final-requester");
-        pool.Tell(new PoolRouterActor.EnsureHost(Key10, TestOptions), finalRequester.Ref);
+        pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), finalRequester.Ref);
 
         finalRequester.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
         controlProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(500));

@@ -4,9 +4,11 @@ using System.Threading.Channels;
 using Akka.Actor;
 using Akka.Event;
 using TurboHttp.Client;
+using TurboHttp.Internal;
+using TurboHttp.IO;
 using TurboHttp.IO.Stages;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Lifecycle;
 
 public sealed class ConnectionActor : ReceiveActor
 {
@@ -46,10 +48,10 @@ public sealed class ConnectionActor : ReceiveActor
         Receive<ClientRunner.ClientDisconnected>(HandleDisconnected);
         Receive<Terminated>(HandleTerminated);
         Receive<DoReconnect>(_ => AttemptReconnect());
-        Receive<HostPoolActor.MarkConnectionNoReuse>(msg => Context.Parent.Tell(msg));
-        Receive<HostPoolActor.StreamCompleted>(msg => Context.Parent.Tell(msg));
-        Receive<HostPoolActor.StreamAcquired>(msg => Context.Parent.Tell(msg));
-        Receive<HostPoolActor.UpdateMaxConcurrentStreams>(msg => Context.Parent.Tell(msg));
+        Receive<HostPool.MarkConnectionNoReuse>(msg => Context.Parent.Tell(msg));
+        Receive<HostPool.StreamCompleted>(msg => Context.Parent.Tell(msg));
+        Receive<HostPool.StreamAcquired>(msg => Context.Parent.Tell(msg));
+        Receive<HostPool.UpdateMaxConcurrentStreams>(msg => Context.Parent.Tell(msg));
     }
 
     protected override void PreStart()
@@ -98,7 +100,7 @@ public sealed class ConnectionActor : ReceiveActor
         _in.Writer.TryComplete();
 
         // Notify parent of connection failure
-        Context.Parent.Tell(new HostPoolActor.ConnectionFailed(Self));
+        Context.Parent.Tell(new HostPool.ConnectionFailed(Self));
 
         if (_reconnectAttempt >= _config.MaxReconnectAttempts)
         {

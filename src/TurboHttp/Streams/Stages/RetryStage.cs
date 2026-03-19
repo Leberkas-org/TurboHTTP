@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -13,11 +14,13 @@ namespace TurboHttp.Streams.Stages;
 /// on <see cref="FanOutShape{TIn,TOut0,TOut1}.Out0"/>.
 /// <para>
 /// Only idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS, TRACE) are retried.
-/// Retry-After delays from 408/503 responses are honoured via a timer before re-emission.
+/// Retry-After delays from 408/503 responses are honoured via independent timers.
 /// </para>
 /// <para>
-/// Both downstream outlets must have demand before the stage pulls the inlet,
-/// matching the same demand contract used by <see cref="RedirectStage"/>.
+/// This stage supports concurrent processing: final responses flow independently of
+/// pending retries, and multiple Retry-After timers can run in parallel. The inlet is
+/// pulled when the final outlet has demand and the pending retry count is below
+/// <see cref="MaxPendingRetries"/>, without requiring retry-outlet demand.
 /// </para>
 /// </summary>
 internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage>>
@@ -33,8 +36,13 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
     private readonly Outlet<HttpRequestMessage> _outRetry
         = new("retry.out1.retry");
 
-    public override FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage> Shape { get; }
+    /// <summary>
+    /// Maximum number of pending retries (ready + waiting) before the stage stops pulling
+    /// the inlet. Provides backpressure when the retry feedback loop is slow.
+    /// </summary>
+    internal const int MaxPendingRetries = 16;
 
+    public override FanOutShape<HttpResponseMessage, HttpResponseMessage, HttpRequestMessage> Shape { get; }
 
     /// <summary>
     /// Creates a new <see cref="RetryStage"/> with the given retry policy.
@@ -55,11 +63,12 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
         private static readonly HttpRequestOptionsKey<int> AttemptCountKey = new("TurboHttp.RetryAttemptCount");
 
         private readonly RetryStage _stage;
-        private bool _finalHasDemand;
-        private bool _retryHasDemand;
-        private HttpRequestMessage? _pendingRetryRequest;
-
-        private const string RetryTimerKey = "retry-timer";
+        private readonly Queue<HttpRequestMessage> _readyRetries = new();
+        private readonly Dictionary<string, HttpRequestMessage> _waitingRetries = new();
+        private long _retryIdCounter;
+        private bool _finalDemand;
+        private bool _retryDemand;
+        private bool _upstreamFinished;
 
         public Logic(RetryStage stage) : base(stage.Shape)
         {
@@ -75,8 +84,9 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
                     // idempotency or build a retry request — pass through as final.
                     if (original is null)
                     {
-                        _finalHasDemand = false;
+                        _finalDemand = false;
                         Push(stage._outFinal, response);
+                        TryPullInlet();
                         return;
                     }
 
@@ -92,31 +102,50 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
 
                     if (!decision.ShouldRetry)
                     {
-                        _finalHasDemand = false;
+                        _finalDemand = false;
                         Push(stage._outFinal, response);
+                        TryPullInlet();
                         return;
                     }
 
+                    // Retryable response — dispose it (not forwarded to any outlet).
+                    response.Dispose();
+
                     original.Options.Set(AttemptCountKey, attemptCount + 1);
-                    _pendingRetryRequest = original;
 
                     if (decision.RetryAfterDelay.HasValue && decision.RetryAfterDelay.Value > TimeSpan.Zero)
                     {
-                        // Honour the Retry-After delay before re-emitting the request.
-                        ScheduleOnce(RetryTimerKey, decision.RetryAfterDelay.Value);
+                        // Schedule a timer for the Retry-After delay.
+                        var timerId = $"retry-{_retryIdCounter++}";
+                        _waitingRetries[timerId] = original;
+                        ScheduleOnce(timerId, decision.RetryAfterDelay.Value);
                     }
                     else
                     {
-                        EmitRetry();
+                        // Immediate retry.
+                        _readyRetries.Enqueue(original);
+                        TryEmitRetry();
+                    }
+
+                    TryPullInlet();
+                },
+                onUpstreamFinish: () =>
+                {
+                    if (_readyRetries.Count == 0 && _waitingRetries.Count == 0)
+                    {
+                        CompleteStage();
+                    }
+                    else
+                    {
+                        _upstreamFinished = true;
                     }
                 },
-                onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: FailStage);
 
             SetHandler(stage._outFinal,
                 onPull: () =>
                 {
-                    _finalHasDemand = true;
+                    _finalDemand = true;
                     TryPullInlet();
                 },
                 onDownstreamFinish: _ => CompleteStage());
@@ -124,15 +153,8 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
             SetHandler(stage._outRetry,
                 onPull: () =>
                 {
-                    _retryHasDemand = true;
-                    // A pending retry request may be waiting for demand (e.g. after a timer fired
-                    // before downstream re-requested).
-                    if (_pendingRetryRequest is not null)
-                    {
-                        EmitRetry();
-                        return;
-                    }
-
+                    _retryDemand = true;
+                    TryEmitRetry();
                     TryPullInlet();
                 },
                 onDownstreamFinish: _ => CompleteStage());
@@ -140,27 +162,48 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
 
         protected override void OnTimer(object timerKey)
         {
-            // Timer fired after a Retry-After delay; emit the buffered retry request if
-            // downstream has demand, otherwise let onPull handle it when demand arrives.
-            if (_pendingRetryRequest is not null && _retryHasDemand)
+            var key = (string)timerKey;
+            if (_waitingRetries.Remove(key, out var request))
             {
-                EmitRetry();
+                _readyRetries.Enqueue(request);
+                TryEmitRetry();
+                TryPullInlet();
             }
         }
 
-        private void EmitRetry()
+        public override void PostStop()
         {
-            var request = _pendingRetryRequest!;
-            _pendingRetryRequest = null;
-            _retryHasDemand = false;
-            Push(_stage._outRetry, request);
+            _readyRetries.Clear();
+            _waitingRetries.Clear();
+        }
+
+        private void TryEmitRetry()
+        {
+            if (_retryDemand && _readyRetries.Count > 0)
+            {
+                var request = _readyRetries.Dequeue();
+                _retryDemand = false;
+                Push(_stage._outRetry, request);
+                CheckDrainComplete();
+            }
         }
 
         private void TryPullInlet()
         {
-            if (_finalHasDemand && _retryHasDemand && !HasBeenPulled(_stage._in))
+            if (_finalDemand
+                && !HasBeenPulled(_stage._in)
+                && !_upstreamFinished
+                && _readyRetries.Count + _waitingRetries.Count < MaxPendingRetries)
             {
                 Pull(_stage._in);
+            }
+        }
+
+        private void CheckDrainComplete()
+        {
+            if (_upstreamFinished && _readyRetries.Count == 0 && _waitingRetries.Count == 0)
+            {
+                CompleteStage();
             }
         }
     }

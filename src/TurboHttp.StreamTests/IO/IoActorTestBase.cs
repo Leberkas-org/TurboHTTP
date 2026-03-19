@@ -5,13 +5,15 @@ using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using TurboHttp.Client;
+using TurboHttp.Internal;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
+using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Shared test infrastructure for <see cref="HostPoolActor"/> tests.
+/// Shared test infrastructure for <see cref="HostPool"/> tests.
 /// Provides <see cref="FakeConnectionActor"/>, common test keys, and pool/handle factory helpers.
 /// </summary>
 public abstract class IoActorTestBase : TestKit
@@ -52,7 +54,7 @@ public abstract class IoActorTestBase : TestKit
         }
     }
 
-    /// <summary>Creates a <see cref="HostPoolActor"/> whose children are fakes controlled via
+    /// <summary>Creates a <see cref="HostPool"/> whose children are fakes controlled via
     /// <paramref name="controlProbe"/>. Each new child sends its ref to the probe.</summary>
     protected IActorRef CreatePool(TestProbe controlProbe, RequestEndpoint key, TimeSpan? reconnectInterval = null)
     {
@@ -63,13 +65,13 @@ public abstract class IoActorTestBase : TestKit
             MaxReconnectAttempts = 3
         };
 
-        var hostConfig = new HostPoolActor.HostPoolConfig(
+        var hostConfig = new HostPool.HostPoolConfig(
             TestOptions,
             config,
             key,
             ConnectionFactory: () => Props.Create(() => new FakeConnectionActor(controlProbe.Ref)));
 
-        return Sys.ActorOf(Props.Create(() => new HostPoolActor(hostConfig)));
+        return Sys.ActorOf(Props.Create(() => new HostPool(hostConfig)));
     }
 
     /// <summary>Builds a <see cref="ConnectionHandle"/> backed by in-memory channels.</summary>

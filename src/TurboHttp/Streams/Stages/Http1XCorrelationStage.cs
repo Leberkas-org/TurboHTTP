@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Streams.Stages;

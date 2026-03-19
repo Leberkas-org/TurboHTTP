@@ -1,8 +1,9 @@
 using System;
 using Akka.Actor;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Lifecycle;
 
 internal sealed class ConnectionState
 {

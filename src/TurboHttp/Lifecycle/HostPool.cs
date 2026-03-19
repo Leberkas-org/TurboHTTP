@@ -4,12 +4,14 @@ using Akka.Actor;
 using Akka.Event;
 using Servus.Akka;
 using TurboHttp.Client;
+using TurboHttp.Internal;
+using TurboHttp.IO;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9112;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Lifecycle;
 
-public sealed class HostPoolActor : ReceiveActor
+public sealed class HostPool : ReceiveActor
 {
     public record HostPoolConfig(
         TcpOptions Options,
@@ -54,7 +56,7 @@ public sealed class HostPoolActor : ReceiveActor
     /// <summary>Host identifier used for the per-host connection limiter.</summary>
     private string HostIdentifier => string.IsNullOrEmpty(_key.Host) ? "default" : $"{_key.Host}:{_key.Port}";
 
-    public HostPoolActor(HostPoolConfig config)
+    public HostPool(HostPoolConfig config)
     {
         _options = config.Options;
         _config = config.Config;
@@ -71,7 +73,7 @@ public sealed class HostPoolActor : ReceiveActor
         Receive<StreamAcquired>(HandleStreamAcquired);
         Receive<UpdateMaxConcurrentStreams>(HandleUpdateMaxConcurrentStreams);
         Receive<ConnectionActor.ConnectionReady>(HandleConnectionReady);
-        Receive<PoolRouterActor.EnsureHost>(HandleEnsureHost);
+        Receive<PoolRouter.EnsureHost>(HandleEnsureHost);
     }
 
     protected override void PreStart()
@@ -115,7 +117,7 @@ public sealed class HostPoolActor : ReceiveActor
         _pendingHandleRequesters.Clear();
     }
 
-    private void HandleEnsureHost(PoolRouterActor.EnsureHost msg)
+    private void HandleEnsureHost(PoolRouter.EnsureHost msg)
     {
         // Try to find a connection with an available slot and a handle
         var conn = SelectConnection();

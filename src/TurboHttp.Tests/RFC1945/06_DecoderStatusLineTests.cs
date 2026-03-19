@@ -32,7 +32,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-001: Status-Line format for HTTP/1.0 200 OK")]
-    public void StatusLine_200Ok_ParsedCorrectly()
+    public void Should_Parse200Ok_When_DecodingStatusLine()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -46,7 +46,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-002: Status-Line format for HTTP/1.0 404 Not Found")]
-    public void StatusLine_404NotFound_ParsedCorrectly()
+    public void Should_Parse404NotFound_When_DecodingStatusLine()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 404 Not Found", "Content-Length: 0");
@@ -59,7 +59,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-003: Status-Line format for HTTP/1.0 500 Internal Server Error")]
-    public void StatusLine_500InternalServerError_ParsedCorrectly()
+    public void Should_Parse500InternalServerError_When_DecodingStatusLine()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 500 Internal Server Error", "Content-Length: 0");
@@ -72,7 +72,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-004: Status-Line format for HTTP/1.0 301 Moved Permanently")]
-    public void StatusLine_301MovedPermanently_ParsedCorrectly()
+    public void Should_Parse301MovedPermanently_When_DecodingStatusLine()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 301 Moved Permanently",
@@ -85,7 +85,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-005: Status-Line reason phrase with multiple words preserved")]
-    public void StatusLine_ReasonPhraseWithMultipleWords_PreservedCompletely()
+    public void Should_PreserveMultiWordReasonPhrase_When_DecodingStatusLine()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 Very Long Reason Phrase Here", "Content-Length: 0");
@@ -96,7 +96,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-006: Status-Line HTTP version is 1.0")]
-    public void StatusLine_Version_IsSetToHttp10()
+    public void Should_SetVersionToHttp10_When_DecodingStatusLine()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -107,7 +107,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-007: Invalid status code rejected")]
-    public void StatusLine_InvalidStatusCode_ThrowsDecoderException()
+    public void Should_ThrowDecoderException_When_StatusCodeIsInvalid()
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse("HTTP/1.0 ABC BadCode", "Content-Length: 0");
@@ -132,7 +132,7 @@ public sealed class Http10DecoderStatusLineTests
     [InlineData(501)]
     [InlineData(502)]
     [InlineData(503)]
-    public void StatusLine_CommonStatusCodes_AllParsedCorrectly(int code)
+    public void Should_ParseStatusCodeCorrectly_When_CommonStatusCode(int code)
     {
         var decoder = new Http10Decoder();
         var data = BuildRawResponse($"HTTP/1.0 {code} Reason", "Content-Length: 0");
@@ -200,7 +200,7 @@ public sealed class Http10DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC1945-6-SL-014: Only header separator without status-line rejected")]
-    public void EdgeCase_OnlyHeaderSeparator_ThrowsDecoderException()
+    public void Should_ThrowDecoderException_When_OnlyHeaderSeparatorPresent()
     {
         var decoder = new Http10Decoder();
         var data = Bytes("\r\n\r\n");

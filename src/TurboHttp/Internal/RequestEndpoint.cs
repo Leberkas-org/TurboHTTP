@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 
-namespace TurboHttp.IO.Stages;
+namespace TurboHttp.Internal;
 
 public readonly record struct RequestEndpoint
 {

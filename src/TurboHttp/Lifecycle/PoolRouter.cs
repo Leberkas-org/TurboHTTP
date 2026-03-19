@@ -1,28 +1,26 @@
 using System;
 using System.Collections.Generic;
 using Akka.Actor;
+using Servus.Akka;
 using TurboHttp.Client;
-using TurboHttp.IO.Stages;
+using TurboHttp.Internal;
+using TurboHttp.IO;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Lifecycle;
 
-public sealed class PoolRouterActor : ReceiveActor
+public sealed class PoolRouter : ReceiveActor
 {
-    // ── Public message protocol ───────────────────────────────────────
-
     /// <summary>
     /// Sent by ConnectionStage on each ConnectItem to ensure a HostPoolActor exists.
     /// The message is forwarded to the HostPoolActor so it can reply with a ConnectionHandle.
     /// </summary>
     public sealed record EnsureHost(RequestEndpoint Key, TcpOptions Options);
 
-    // ── Fields ────────────────────────────────────────────────────────
-
     private readonly TurboClientOptions _config;
     private readonly Func<TcpOptions, TurboClientOptions, RequestEndpoint, IActorRef> _hostFactory;
     private readonly Dictionary<RequestEndpoint, IActorRef> _hosts = new();
 
-    public PoolRouterActor(TurboClientOptions config,
+    public PoolRouter(TurboClientOptions config,
         Func<TcpOptions, TurboClientOptions, RequestEndpoint, IActorRef>? hostFactory = null)
     {
         _config = config;
@@ -30,8 +28,6 @@ public sealed class PoolRouterActor : ReceiveActor
 
         Receive<EnsureHost>(HandleEnsureHost);
     }
-
-    // ── Message handlers ──────────────────────────────────────────────
 
     private void HandleEnsureHost(EnsureHost msg)
     {
@@ -52,9 +48,10 @@ public sealed class PoolRouterActor : ReceiveActor
         return hostActor;
     }
 
-    private IActorRef CreateHostPoolActor(TcpOptions options, TurboClientOptions config, RequestEndpoint key)
+    private static IActorRef CreateHostPoolActor(TcpOptions options, TurboClientOptions config, RequestEndpoint key)
     {
-        var hostConfig = new HostPoolActor.HostPoolConfig(options, config, key);
-        return Context.ActorOf(Props.Create(() => new HostPoolActor(hostConfig)), Guid.NewGuid().ToString());
+        var hostConfig = new HostPool.HostPoolConfig(options, config, key);
+        var name = Guid.NewGuid().ToString();
+        return Context.ResolveChildActor<HostPool>(name, hostConfig);
     }
 }

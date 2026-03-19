@@ -9,7 +9,7 @@ public sealed class Http11DecoderHeaderTests
     private readonly Http11Decoder _decoder = new();
 
     [Fact]
-    public void ResponseWithCustomHeaders_PreservesHeaders()
+    public void Should_PreserveHeaders_When_CustomHeadersPresent()
     {
         var raw = BuildResponse(200, "OK", "data",
             ("Content-Length", "4"),
@@ -25,7 +25,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact]
-    public void Decode_HeaderWithoutColon_ThrowsHttpDecoderException()
+    public void Should_ThrowHttpDecoderException_When_HeaderWithoutColon()
     {
         // RFC 9112 §5.1 / RFC 7230 §3.2: every header field MUST contain a colon separator.
         // A header line with no colon is a protocol violation and MUST be rejected.
@@ -36,7 +36,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-001: Standard header field Name: value parsed")]
-    public void Standard_HeaderField_Parsed()
+    public void Should_ParseHeaderField_When_StandardFormat()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -47,7 +47,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-002: OWS trimmed from header value")]
-    public void OWS_TrimmedFromHeaderValue()
+    public void Should_TrimOWS_When_HeaderValueHasWhitespace()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Foo:   bar   \r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -59,7 +59,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-003: Empty header value accepted")]
-    public void Empty_HeaderValue_Accepted()
+    public void Should_AcceptHeader_When_EmptyValue()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Empty:\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -71,7 +71,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-004: Multiple same-name headers both accessible")]
-    public void Multiple_SameName_Headers_Preserved()
+    public void Should_PreserveHeaders_When_MultipleSameName()
     {
         var raw = "HTTP/1.1 200 OK\r\nAccept: text/html\r\nAccept: application/json\r\nContent-Length: 0\r\n\r\n"u8
             .ToArray();
@@ -86,7 +86,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-005: Obs-fold rejected in HTTP/1.1")]
-    public void ObsFold_RejectedInHttp11()
+    public void Should_RejectObsFold_When_Http11()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Foo: bar\r\n baz\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -94,7 +94,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-006: Header without colon is parse error")]
-    public void Header_WithoutColon_IsError()
+    public void Should_Error_When_HeaderWithoutColon()
     {
         var raw = "HTTP/1.1 200 OK\r\nThisHeaderHasNoColon\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -103,7 +103,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-007: Header name lookup case-insensitive")]
-    public void HeaderName_Lookup_CaseInsensitive()
+    public void Should_LookupCaseInsensitively_When_HeaderName()
     {
         var raw = "HTTP/1.1 200 OK\r\nHOST: example.com\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -115,7 +115,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-008: Tab character in header value accepted")]
-    public void Tab_InHeaderValue_Accepted()
+    public void Should_AcceptTab_When_InHeaderValue()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Tab: before\ttab\tafter\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -127,7 +127,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-009: Quoted-string header value parsed")]
-    public void QuotedString_HeaderValue_Parsed()
+    public void Should_ParseHeaderValue_When_QuotedString()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Quoted: \"quoted value\"\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -139,7 +139,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact(DisplayName = "RFC9112-5-HD-010: Content-Type: text/html; charset=utf-8 accessible")]
-    public void ContentType_WithParameters_Parsed()
+    public void Should_ParseParameters_When_ContentTypeHeader()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -151,7 +151,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact]
-    public void Decode_Header_OWS_Trimmed()
+    public void Should_TrimOWS_When_HeaderDecoded()
     {
         // RFC 7230 §3.2: OWS (optional whitespace) around header field value MUST be trimmed.
         var raw = "HTTP/1.1 200 OK\r\nX-Foo:   bar   \r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -164,7 +164,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact]
-    public void Decode_Header_EmptyValue_Accepted()
+    public void Should_AcceptEmptyValue_When_HeaderDecoded()
     {
         // RFC 7230 §3.2: A header field with an empty value is valid.
         var raw = "HTTP/1.1 200 OK\r\nX-Empty:\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -177,7 +177,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact]
-    public void Decode_Header_CaseInsensitiveName()
+    public void Should_MatchCaseInsensitively_When_HeaderNameDecoded()
     {
         // RFC 7230 §3.2: Header field names are case-insensitive.
         var raw = "HTTP/1.1 200 OK\r\nHOST: example.com\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
@@ -191,7 +191,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact]
-    public void Decode_Header_MultipleValuesForSameName_Preserved()
+    public void Should_PreserveMultipleValues_When_SameHeaderName()
     {
         // RFC 7230 §3.2.2: Multiple header fields with the same name are valid;
         // the recipient MUST preserve all values.
@@ -208,7 +208,7 @@ public sealed class Http11DecoderHeaderTests
     }
 
     [Fact]
-    public void Decode_Header_ObsFold_Http11_IsError()
+    public void Should_RejectObsFold_When_Http11Header()
     {
         // RFC 9112 §5.2: A server MUST NOT send obs-fold in HTTP/1.1 responses.
         var raw = "HTTP/1.1 200 OK\r\nX-Foo: bar\r\n baz\r\nContent-Length: 0\r\n\r\n"u8.ToArray();

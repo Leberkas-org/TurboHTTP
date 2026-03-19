@@ -5,8 +5,10 @@ using Akka.Actor;
 using Akka.TestKit;
 using Akka.TestKit.Xunit2;
 using TurboHttp.Client;
+using TurboHttp.Internal;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
+using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
 
@@ -29,7 +31,7 @@ public sealed class ConnectionActorTests : TestKit
 
     /// <summary>
     /// Wraps <see cref="ConnectionActor"/> as a child actor so parent-directed messages
-    /// (e.g. <see cref="HostPoolActor.ConnectionFailed"/>, <see cref="ConnectionActor.ConnectionReady"/>)
+    /// (e.g. <see cref="HostPool.ConnectionFailed"/>, <see cref="ConnectionActor.ConnectionReady"/>)
     /// can be intercepted via a <see cref="TestProbe"/>.
     /// </summary>
     private sealed class ParentProxy : ReceiveActor
@@ -91,7 +93,7 @@ public sealed class ConnectionActorTests : TestKit
 
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
 
-        var failed = parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        var failed = parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActor, failed.Connection);
     }
 
@@ -117,7 +119,7 @@ public sealed class ConnectionActorTests : TestKit
         // Terminate the runner — ConnectionActor is watching it and will call Reconnect().
         Sys.Stop(runnerProbe.Ref);
 
-        var failed = parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        var failed = parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActor, failed.Connection);
     }
 
@@ -137,14 +139,14 @@ public sealed class ConnectionActorTests : TestKit
         // First disconnect — _reconnectAttempt=0, delay = 100ms * 2^0 = 100ms
         var t0 = DateTime.UtcNow;
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
         var delay1 = DateTime.UtcNow - t0;
 
         // Second disconnect — _reconnectAttempt=1, delay = 100ms * 2^1 = 200ms
         var t1 = DateTime.UtcNow;
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
         var delay2 = DateTime.UtcNow - t1;
 
@@ -172,17 +174,17 @@ public sealed class ConnectionActorTests : TestKit
 
         // Disconnect 1 — attempt=0, schedules reconnect in 10ms
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
 
         // Disconnect 2 — attempt=1, schedules reconnect in 20ms
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
 
         // Disconnect 3 — attempt=2 >= MaxReconnectAttempts=2 → gives up, no further reconnect
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
         clientManagerProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
@@ -199,9 +201,9 @@ public sealed class ConnectionActorTests : TestKit
 
         var (_, connectionActor, _, parentProbe) = CreateActor(config);
 
-        connectionActor.Tell(new HostPoolActor.StreamCompleted(connectionActor));
+        connectionActor.Tell(new HostPool.StreamCompleted(connectionActor));
 
-        var msg = parentProbe.ExpectMsg<HostPoolActor.StreamCompleted>(TimeSpan.FromSeconds(5));
+        var msg = parentProbe.ExpectMsg<HostPool.StreamCompleted>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActor, msg.Connection);
     }
 
@@ -218,9 +220,9 @@ public sealed class ConnectionActorTests : TestKit
 
         var (_, connectionActor, _, parentProbe) = CreateActor(config);
 
-        connectionActor.Tell(new HostPoolActor.StreamAcquired(connectionActor));
+        connectionActor.Tell(new HostPool.StreamAcquired(connectionActor));
 
-        var msg = parentProbe.ExpectMsg<HostPoolActor.StreamAcquired>(TimeSpan.FromSeconds(5));
+        var msg = parentProbe.ExpectMsg<HostPool.StreamAcquired>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActor, msg.Connection);
     }
 
@@ -237,9 +239,9 @@ public sealed class ConnectionActorTests : TestKit
 
         var (_, connectionActor, _, parentProbe) = CreateActor(config);
 
-        connectionActor.Tell(new HostPoolActor.UpdateMaxConcurrentStreams(connectionActor, 128));
+        connectionActor.Tell(new HostPool.UpdateMaxConcurrentStreams(connectionActor, 128));
 
-        var msg = parentProbe.ExpectMsg<HostPoolActor.UpdateMaxConcurrentStreams>(TimeSpan.FromSeconds(5));
+        var msg = parentProbe.ExpectMsg<HostPool.UpdateMaxConcurrentStreams>(TimeSpan.FromSeconds(5));
         Assert.Equal(connectionActor, msg.Connection);
         Assert.Equal(128, msg.MaxStreams);
     }
@@ -259,7 +261,7 @@ public sealed class ConnectionActorTests : TestKit
 
         // Disconnect triggers a reconnect attempt
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPoolActor.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
 
         // Wait for the reconnect attempt (CreateRunnerWithChannels sent to clientManager again)
         clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));

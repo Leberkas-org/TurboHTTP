@@ -18,7 +18,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-001: TryDecodeEof with buffered data returns true")]
-    public void TryDecodeEof_WithBufferedData_ReturnsTrue()
+    public void Should_ReturnTrue_When_EofWithBufferedData()
     {
         var decoder = new Http10Decoder();
         var incomplete = Bytes("HTTP/1.0 200 OK\r\n\r\nsome body data");
@@ -35,7 +35,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-002: TryDecodeEof with empty buffer returns false")]
-    public void TryDecodeEof_WithEmptyBuffer_ReturnsFalse()
+    public void Should_ReturnFalse_When_EofWithEmptyBuffer()
     {
         var decoder = new Http10Decoder();
 
@@ -46,7 +46,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-003: TryDecodeEof with incomplete header returns false")]
-    public void TryDecodeEof_WithIncompleteHeader_ReturnsFalse()
+    public void Should_ReturnFalse_When_EofWithIncompleteHeader()
     {
         var decoder = new Http10Decoder();
         var incomplete = Bytes("HTTP/1.0 200");
@@ -59,7 +59,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-004: TryDecodeEof clears remainder")]
-    public void TryDecodeEof_ClearsRemainder()
+    public void Should_ClearRemainder_When_EofDecoded()
     {
         var decoder = new Http10Decoder();
         var partial = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nshort");
@@ -73,7 +73,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-005: Reset clears buffered data")]
-    public void Reset_ClearsBufferedData()
+    public void Should_ClearBufferedData_When_Reset()
     {
         var decoder = new Http10Decoder();
         var partial = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nincomplete");
@@ -87,7 +87,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-006: Reset allows decoding new response")]
-    public void Reset_AfterReset_DecodesNewResponseCorrectly()
+    public void Should_DecodeNewResponse_When_ResetCalled()
     {
         var decoder = new Http10Decoder();
         var partial = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nincomplete");
@@ -103,7 +103,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-007: Reset called multiple times does not throw")]
-    public void Reset_CalledMultipleTimes_DoesNotThrow()
+    public void Should_NotThrow_When_ResetCalledMultipleTimes()
     {
         var decoder = new Http10Decoder();
 
@@ -118,7 +118,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-008: Empty input returns false")]
-    public void EdgeCase_EmptyInput_ReturnsFalse()
+    public void Should_ReturnFalse_When_InputIsEmpty()
     {
         var decoder = new Http10Decoder();
 
@@ -129,7 +129,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-009: Decoder state preserved across partial decodes")]
-    public void EdgeCase_StatePreservedAcrossPartials()
+    public void Should_PreserveState_When_PartialDataReceived()
     {
         var decoder = new Http10Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nX-Header: value\r\nContent-Length: 5\r\n\r\nHello");
@@ -150,7 +150,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-010: Decoder reusable after successful decode")]
-    public void EdgeCase_DecoderReusableAfterDecode()
+    public void Should_BeReusable_When_DecodingCompleted()
     {
         var decoder = new Http10Decoder();
 
@@ -168,7 +168,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-011: Multiple Reset calls idempotent")]
-    public void EdgeCase_MultipleResetIdempotent()
+    public void Should_BeIdempotent_When_MultipleResetsPerformed()
     {
         var decoder = new Http10Decoder();
         var partial = Bytes("HTTP/1.0 200");
@@ -186,7 +186,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-012: Decoder maintains state through multiple fragments")]
-    public void EdgeCase_StateMaintenanceMultipleFragments()
+    public void Should_MaintainState_When_MultipleFragmentsReceived()
     {
         var decoder = new Http10Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nHello");
@@ -209,7 +209,7 @@ public sealed class Http10DecoderStateTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-ST-013: TryDecodeEof called after successful decode returns false")]
-    public void EdgeCase_TryDecodeEofAfterSuccess()
+    public void Should_HandleEof_When_CalledAfterSuccessfulDecode()
     {
         var decoder = new Http10Decoder();
         var complete = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");

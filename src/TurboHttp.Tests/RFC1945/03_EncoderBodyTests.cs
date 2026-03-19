@@ -49,7 +49,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-001: POST body Content-Length is correct")]
-    public void Body_PostWithBody_ContentLengthIsCorrect()
+    public void Should_SetCorrectContentLength_When_PostHasBody()
     {
         const string bodyText = "Hello, World!";
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -65,7 +65,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-002: POST body is correctly written")]
-    public void Body_PostWithBody_BodyIsCorrectlyWritten()
+    public void Should_WriteBodyCorrectly_When_PostHasBody()
     {
         const string bodyText = "Hello, World!";
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -79,7 +79,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-003: GET with no body has no Content-Length")]
-    public void Body_GetWithNoBody_ContentLengthAbsent()
+    public void Should_NotIncludeContentLength_When_GetRequestHasNoBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
@@ -89,7 +89,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-004: GET with no body has no Content-Type")]
-    public void Body_GetWithNoBody_ContentTypeAbsent()
+    public void Should_OmitContentType_When_GetHasNoBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
@@ -99,7 +99,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-005: Binary POST body bytes exactly preserved")]
-    public void Body_PostWithBinaryBody_BytesExactlyPreserved()
+    public void Should_PreserveBinaryBytes_When_PostWithBinaryBody()
     {
         var bodyBytes = new byte[] { 0x00, 0x01, 0x02, 0xFF, 0xFE, 0x7F };
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
@@ -119,7 +119,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-006: Empty POST body has Content-Length 0")]
-    public void Body_PostWithEmptyBody_ContentLengthIsZero()
+    public void Should_SetContentLengthToZero_When_PostWithEmptyBody()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
         {
@@ -136,7 +136,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-007: Large POST body Content-Length matches body size")]
-    public void Body_PostWithLargeBody_ContentLengthMatchesBodySize()
+    public void Should_MatchContentLengthToBodySize_When_PostWithLargeBody()
     {
         var largeBody = new byte[4096];
         new Random(42).NextBytes(largeBody);
@@ -159,7 +159,7 @@ public sealed class Http10EncoderBodyTests
     }
 
     [Fact(DisplayName = "RFC1945-7.2-BD-008: Body appears after header separator")]
-    public void Body_PostWithBody_BodyAppearsAfterHeaderSeparator()
+    public void Should_PlaceBodyAfterHeaderSeparator_When_PostWithBody()
     {
         const string bodyText = "BODY_CONTENT";
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")

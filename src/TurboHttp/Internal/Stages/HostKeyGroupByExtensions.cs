@@ -5,7 +5,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Implementation;
 using TurboHttp.IO.Stages;
 
-namespace TurboHttp.Internal;
+namespace TurboHttp.Internal.Stages;
 
 internal static class FlowHostKeyGroupByExtensions
 {

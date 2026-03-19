@@ -3,8 +3,10 @@ using System.Net;
 using System.Threading.Channels;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
+using TurboHttp.Internal;
 using TurboHttp.IO;
 using TurboHttp.IO.Stages;
+using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
 

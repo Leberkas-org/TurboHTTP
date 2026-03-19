@@ -5,6 +5,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using TurboHttp.Client;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Protocol.RFC9110;

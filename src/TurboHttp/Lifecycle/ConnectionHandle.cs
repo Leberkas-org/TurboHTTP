@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using Akka.Actor;
+using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Lifecycle;
 
 /// <summary>
 /// Bundles the Channel read/write handles for a single TCP connection,
