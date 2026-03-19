@@ -230,12 +230,12 @@ _pendingSignal = new ConnectionReuseItem(endpoint, decision);
 ```
 
 **Acceptance Criteria:**
-- [ ] `ConnectionReuseItem.Key` contains correct `RequestEndpoint` when `response.RequestMessage` is present
-- [ ] Fallback to `RequestEndpoint.Default` when `response.RequestMessage` is null
-- [ ] Unit tests: Verify Key on ConnectionReuseItem for normal response (1.0, 1.1, 2.0)
-- [ ] Unit tests: Verify fallback when RequestMessage is null
-- [ ] Existing ConnectionReuseStage tests stay green
-- [ ] Build compiles without errors
+- [x] `ConnectionReuseItem.Key` contains correct `RequestEndpoint` when `response.RequestMessage` is present
+- [x] Fallback to `RequestEndpoint.Default` when `response.RequestMessage` is null
+- [x] Unit tests: Verify Key on ConnectionReuseItem for normal response (1.0, 1.1, 2.0)
+- [x] Unit tests: Verify fallback when RequestMessage is null
+- [x] Existing ConnectionReuseStage tests stay green
+- [x] Build compiles without errors
 
 ---
 

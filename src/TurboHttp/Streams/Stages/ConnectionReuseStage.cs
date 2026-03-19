@@ -47,8 +47,12 @@ internal sealed class
                     var decision = ConnectionReuseEvaluator.Evaluate(
                         response, response.Version, stage._bodyFullyConsumed);
 
+                    var endpoint = response.RequestMessage is { RequestUri: not null, Version: not null }
+                        ? RequestEndpoint.FromRequest(response.RequestMessage)
+                        : RequestEndpoint.Default;
+
                     _pendingResponse = response;
-                    _pendingSignal = new ConnectionReuseItem(RequestEndpoint.Default, decision);
+                    _pendingSignal = new ConnectionReuseItem(endpoint, decision);
 
                     TryPushResponse();
                     TryPushSignal();

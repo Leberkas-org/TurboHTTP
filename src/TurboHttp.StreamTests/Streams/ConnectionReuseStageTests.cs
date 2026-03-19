@@ -72,6 +72,20 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
         return response;
     }
 
+    private static HttpResponseMessage MakeResponseWithRequest(
+        Version requestVersion,
+        string uri = "https://example.com:443/path",
+        HttpStatusCode status = HttpStatusCode.OK,
+        string? connectionHeader = null)
+    {
+        var response = MakeResponse(status, connectionHeader);
+        response.RequestMessage = new HttpRequestMessage(HttpMethod.Get, new Uri(uri))
+        {
+            Version = requestVersion
+        };
+        return response;
+    }
+
     // ── HTTP/2: always reuse ───────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-001: HTTP/2 → CanReuse = true (multiplexed streams)")]
@@ -212,5 +226,63 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
         Assert.True(decision.Decision.CanReuse);
         Assert.Equal(TimeSpan.FromSeconds(30), decision.Decision.KeepAliveTimeout);
         Assert.Equal(100, decision.Decision.MaxRequests);
+    }
+
+    // ── RequestEndpoint propagation ───────────────────────────────────────────
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-011: HTTP/1.1 response with RequestMessage → Key has correct endpoint")]
+    public async Task REUSE_011_Http11_Key_HasCorrectEndpoint()
+    {
+        var response = MakeResponseWithRequest(HttpVersion.Version11, "https://api.example.com:8443/resource");
+
+        var (_, decisions) = await RunAsync(HttpVersion.Version11, true, response);
+
+        var decision = Assert.Single(decisions);
+        Assert.Equal("api.example.com", decision.Key.Host);
+        Assert.Equal(8443, decision.Key.Port);
+        Assert.Equal("https", decision.Key.Scheme);
+        Assert.Equal(HttpVersion.Version11, decision.Key.Version);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-012: HTTP/1.0 response with RequestMessage → Key has correct endpoint")]
+    public async Task REUSE_012_Http10_Key_HasCorrectEndpoint()
+    {
+        var response = MakeResponseWithRequest(HttpVersion.Version10, "http://legacy.example.com:80/old",
+            connectionHeader: "Keep-Alive");
+
+        var (_, decisions) = await RunAsync(HttpVersion.Version10, true, response);
+
+        var decision = Assert.Single(decisions);
+        Assert.Equal("legacy.example.com", decision.Key.Host);
+        Assert.Equal(80, decision.Key.Port);
+        Assert.Equal("http", decision.Key.Scheme);
+        Assert.Equal(HttpVersion.Version10, decision.Key.Version);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-013: HTTP/2 response with RequestMessage → Key has correct endpoint")]
+    public async Task REUSE_013_Http20_Key_HasCorrectEndpoint()
+    {
+        var response = MakeResponseWithRequest(HttpVersion.Version20, "https://h2.example.com:443/stream");
+
+        var (_, decisions) = await RunAsync(HttpVersion.Version20, true, response);
+
+        var decision = Assert.Single(decisions);
+        Assert.Equal("h2.example.com", decision.Key.Host);
+        Assert.Equal(443, decision.Key.Port);
+        Assert.Equal("https", decision.Key.Scheme);
+        Assert.Equal(HttpVersion.Version20, decision.Key.Version);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-014: response without RequestMessage → Key falls back to RequestEndpoint.Default")]
+    public async Task REUSE_014_NullRequestMessage_FallsBackToDefault()
+    {
+        var response = MakeResponse(); // no RequestMessage set
+
+        var (_, decisions) = await RunAsync(HttpVersion.Version11, true, response);
+
+        var decision = Assert.Single(decisions);
+        Assert.Equal(RequestEndpoint.Default, decision.Key);
+        Assert.Equal(string.Empty, decision.Key.Host);
+        Assert.Equal(HttpVersion.Unknown, decision.Key.Version);
     }
 }
