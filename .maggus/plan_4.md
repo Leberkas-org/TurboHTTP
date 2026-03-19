@@ -44,10 +44,10 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 ---
 
 ### TASK-003: RFC1945 Method Renames
-**Status:** Done (92% were already correct)
+**Status:** Done (100% already correct)
 
 **Acceptance Criteria:**
-- [ ] All ~232 methods in RFC1945 follow `Should_Action_When_Condition`
+- [x] All ~232 methods in RFC1945 follow `Should_Action_When_Condition`
 
 ---
 
