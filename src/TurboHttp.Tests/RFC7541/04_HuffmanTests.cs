@@ -22,7 +22,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Decode 'www.example.com' matches RFC 7541 Appendix C
-    [Fact(DisplayName = "HF-001: Decode 'www.example.com' matches RFC 7541 Appendix C")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-001: Decode 'www.example.com' matches RFC 7541 Appendix C")]
     public void HF001_Decode_WwwExampleCom_MatchesRfc()
     {
         var encoded = new byte[] { 0xf1, 0xe3, 0xc2, 0xe5, 0xf2, 0x3a, 0x6b, 0xa0, 0xab, 0x90, 0xf4, 0xff };
@@ -31,7 +31,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Decode 'no-cache' matches RFC 7541 Appendix C
-    [Fact(DisplayName = "HF-002: Decode 'no-cache' matches RFC 7541 Appendix C")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-002: Decode 'no-cache' matches RFC 7541 Appendix C")]
     public void HF002_Decode_NoCache_MatchesRfc()
     {
         var encoded = new byte[] { 0xa8, 0xeb, 0x10, 0x64, 0x9c, 0xbf };
@@ -40,7 +40,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Decode empty input returns empty byte array
-    [Fact(DisplayName = "HF-003: Decode empty input returns empty byte array")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-003: Decode empty input returns empty byte array")]
     public void HF003_Decode_EmptyInput_ReturnsEmpty()
     {
         var decoded = HuffmanCodec.Decode(ReadOnlySpan<byte>.Empty);
@@ -48,7 +48,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Decode single ASCII char 'a' (5-bit code 00011 + padding 111)
-    [Fact(DisplayName = "HF-004: Decode single ASCII char 'a' (5-bit code 00011 + padding 111)")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-004: Decode single ASCII char 'a' (5-bit code 00011 + padding 111)")]
     public void HF004_Decode_SingleChar_A()
     {
         // 'a' = code 0x3 (5 bits = 00011), padded to byte: 00011_111 = 0x1F
@@ -57,7 +57,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Decode digits '0' through '9' (all 5-bit codes)
-    [Fact(DisplayName = "HF-005: Decode digits '0' through '9' (all 5-bit codes)")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-005: Decode digits '0' through '9' (all 5-bit codes)")]
     public void HF005_Decode_Digits_5BitCodes()
     {
         // '0' = 0x0 (5 bits = 00000), '9' = 0x9 (5 bits = 01001)
@@ -69,7 +69,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Decode common HTTP status '200'
-    [Fact(DisplayName = "HF-006: Decode common HTTP status '200'")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-006: Decode common HTTP status '200'")]
     public void HF006_Decode_Status200()
     {
         var input = "200"u8.ToArray();
@@ -79,7 +79,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Decode HTTP header 'content-type: application/json'
-    [Fact(DisplayName = "HF-007: Decode HTTP header 'content-type: application/json'")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-007: Decode HTTP header 'content-type: application/json'")]
     public void HF007_Decode_ContentTypeApplicationJson()
     {
         var input = "application/json"u8.ToArray();
@@ -93,7 +93,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — All 128 printable ASCII chars encode and decode correctly
-    [Fact(DisplayName = "HF-010: All 128 printable ASCII chars encode and decode correctly")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-010: All 128 printable ASCII chars encode and decode correctly")]
     public void HF010_AllPrintableAscii_RoundTrip()
     {
         for (var b = 32; b <= 127; b++)
@@ -106,7 +106,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — All 256 byte values encode and decode correctly
-    [Fact(DisplayName = "HF-011: All 256 byte values encode and decode correctly")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-011: All 256 byte values encode and decode correctly")]
     public void HF011_AllByteValues_RoundTrip()
     {
         for (var b = 0; b <= 255; b++)
@@ -119,7 +119,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Multi-byte sequence with mixed code lengths decodes correctly
-    [Fact(DisplayName = "HF-012: Multi-byte sequence with mixed code lengths decodes correctly")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-012: Multi-byte sequence with mixed code lengths decodes correctly")]
     public void HF012_MixedCodeLengths_Decode()
     {
         // Mix short (5-bit) and long (28-bit) codes
@@ -130,7 +130,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Long string (256 bytes) round-trips correctly
-    [Fact(DisplayName = "HF-013: Long string (256 bytes) round-trips correctly")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-013: Long string (256 bytes) round-trips correctly")]
     public void HF013_LongString_RoundTrip()
     {
         var input = new byte[256];
@@ -144,7 +144,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — 'custom-key' and 'custom-value' from RFC 7541 Appendix C.5
-    [Fact(DisplayName = "HF-014: 'custom-key' and 'custom-value' from RFC 7541 Appendix C.5")]
+    [Fact(DisplayName = "RFC7541-5.2-HF-014: 'custom-key' and 'custom-value' from RFC 7541 Appendix C.5")]
     public void HF014_CustomKeyValue_RoundTrip()
     {
         foreach (var s in new[] { "custom-key", "custom-value", "custom-header", "password" })
@@ -162,7 +162,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — 4 bytes all-ones triggers EOS at bit 30 — throws HpackException
-    [Fact(DisplayName = "EO-001: 4 bytes all-ones triggers EOS at bit 30 — throws HpackException")]
+    [Fact(DisplayName = "RFC7541-5.2-EO-001: 4 bytes all-ones triggers EOS at bit 30 — throws HpackException")]
     public void EO001_FourBytesAllOnes_EosAtBit30_Throws()
     {
         // EOS = 0x3FFFFFFF = 30 bits all-ones
@@ -173,7 +173,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — 'a' then EOS (bytes [0x1F, 0xFF, 0xFF, 0xFF, 0xFF]) — throws after valid symbol
-    [Fact(DisplayName = "EO-002: 'a' then EOS (bytes [0x1F, 0xFF, 0xFF, 0xFF, 0xFF]) — throws after valid symbol")]
+    [Fact(DisplayName = "RFC7541-5.2-EO-002: 'a' then EOS (bytes [0x1F, 0xFF, 0xFF, 0xFF, 0xFF]) — throws after valid symbol")]
     public void EO002_ValidSymbolThenEos_Throws()
     {
         // 'a' = 00011 (5 bits), then 30 ones (EOS), then 5 ones padding → 40 bits = 5 bytes
@@ -185,7 +185,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — 3 bytes of all-ones triggers EOS at bit 30 — throws
-    [Fact(DisplayName = "EO-003: 3 bytes of all-ones triggers EOS at bit 30 — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-EO-003: 3 bytes of all-ones triggers EOS at bit 30 — throws")]
     public void EO003_ThreeBytesAllOnesPlusBits_Throws()
     {
         // 0xFF, 0xFF, 0xFF, 0xFC = 30 ones + 2 zero padding → EOS still throws
@@ -195,7 +195,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Two valid chars then EOS in stream — throws
-    [Fact(DisplayName = "EO-004: Two valid chars then EOS in stream — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-EO-004: Two valid chars then EOS in stream — throws")]
     public void EO004_TwoCharsBeforeEos_Throws()
     {
         // 'a' = 00011 (5 bits), 'e' = 00101 (5 bits), then 30 ones (EOS) + 2 padding ones
@@ -219,7 +219,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Single byte 0xFF does not trigger EOS (only 8 ones, need 30) — valid padding
-    [Fact(DisplayName = "EO-005: Single byte 0xFF does not trigger EOS (only 8 ones, need 30) — valid padding")]
+    [Fact(DisplayName = "RFC7541-5.2-EO-005: Single byte 0xFF does not trigger EOS (only 8 ones, need 30) — valid padding")]
     public void EO005_SingleByteFF_IsValidPaddingForSymbolWithLongCode()
     {
         // 0xFF = 11111111 (8 ones). EOS needs 30 ones. 8 ones is just padding for a symbol
@@ -241,7 +241,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Valid 3-bit all-ones padding for 'a' [0x1F] — no exception
-    [Fact(DisplayName = "PA-001: Valid 3-bit all-ones padding for 'a' [0x1F] — no exception")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-001: Valid 3-bit all-ones padding for 'a' [0x1F] — no exception")]
     public void PA001_ValidPadding_A_3Bits()
     {
         // 'a' = 00011 (5 bits), padding = 111 (3 bits) → 0x1F
@@ -250,7 +250,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Invalid padding for 'a' — last bit zero [0x1E] — throws
-    [Fact(DisplayName = "PA-002: Invalid padding for 'a' — last bit zero [0x1E] — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-002: Invalid padding for 'a' — last bit zero [0x1E] — throws")]
     public void PA002_InvalidPadding_A_LastBitZero_Throws()
     {
         // 'a' = 00011 (5 bits), invalid padding = 110 → 0x1E
@@ -258,7 +258,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Invalid padding for 'a' — middle bit zero [0x1B] — throws
-    [Fact(DisplayName = "PA-003: Invalid padding for 'a' — middle bit zero [0x1B] — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-003: Invalid padding for 'a' — middle bit zero [0x1B] — throws")]
     public void PA003_InvalidPadding_A_MiddleBitZero_Throws()
     {
         // 'a' = 00011, padding = 011 → 0b00011011 = 0x1B (not all-ones)
@@ -266,7 +266,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Overlong padding — extra null byte after valid 'a' — throws
-    [Fact(DisplayName = "PA-004: Overlong padding — extra null byte after valid 'a' — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-004: Overlong padding — extra null byte after valid 'a' — throws")]
     public void PA004_OverlongPadding_ExtraNullByte_Throws()
     {
         // Valid 'a' = [0x1F], then extra 0x00 = 8 bits of padding → 3+8=11 > 7 bits → throws
@@ -274,7 +274,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Overlong padding — extra 0xFF byte after valid 'a' — throws
-    [Fact(DisplayName = "PA-005: Overlong padding — extra 0xFF byte after valid 'a' — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-005: Overlong padding — extra 0xFF byte after valid 'a' — throws")]
     public void PA005_OverlongPadding_ExtraFFByte_Throws()
     {
         // Even all-ones extra byte = overlong (3+8=11 > 7 bits) → throws
@@ -282,7 +282,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Valid 7-bit all-ones padding — longest valid padding
-    [Fact(DisplayName = "PA-006: Valid 7-bit all-ones padding — longest valid padding")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-006: Valid 7-bit all-ones padding — longest valid padding")]
     public void PA006_ValidPadding_7Bits()
     {
         // Find a symbol that leaves exactly 1 bit after filling a byte: 7-bit code
@@ -297,7 +297,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Padding of exactly zero bits (symbol fills byte exactly) — valid
-    [Fact(DisplayName = "PA-007: Padding of exactly zero bits (symbol fills byte exactly) — valid")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-007: Padding of exactly zero bits (symbol fills byte exactly) — valid")]
     public void PA007_ZeroBitPadding_ByteAligned_Valid()
     {
         // Find 2 symbols whose total bits = 16 (2 bytes exactly).
@@ -315,7 +315,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Two-byte all-zero input has no valid padding — throws
-    [Fact(DisplayName = "PA-008: Two-byte all-zero input has no valid padding — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-PA-008: Two-byte all-zero input has no valid padding — throws")]
     public void PA008_TwoNullBytes_NoPaddingBits_Throws()
     {
         // 0x00, 0x00 = 16 bits all-zero. '0' = 00000 (5 bits).
@@ -330,7 +330,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Single byte 0x80 is incomplete prefix — throws
-    [Fact(DisplayName = "IC-001: Single byte 0x80 is incomplete prefix — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-IC-001: Single byte 0x80 is incomplete prefix — throws")]
     public void IC001_SingleByte_0x80_IncompletePrefix()
     {
         // 0x80 = 10000000. Looking at the tree: what does the One branch at root lead to?
@@ -341,7 +341,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Empty-ish single byte 0x01 is invalid padding — throws
-    [Fact(DisplayName = "IC-002: Empty-ish single byte 0x01 is invalid padding — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-IC-002: Empty-ish single byte 0x01 is invalid padding — throws")]
     public void IC002_SingleByte_0x01_InvalidPadding()
     {
         // 0x01 = 00000001 = '0' (5 bits = 00000) + padding 001 → padding must be 111 → throws
@@ -349,7 +349,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Two bytes forming overlong incomplete sequence — throws
-    [Fact(DisplayName = "IC-003: Two bytes forming overlong incomplete sequence — throws")]
+    [Fact(DisplayName = "RFC7541-5.2-IC-003: Two bytes forming overlong incomplete sequence — throws")]
     public void IC003_TwoBytesOverlongIncomplete_Throws()
     {
         // [0x1F, 0x80]: 0x1F decodes 'a' (5 bits 00011 → symbol 'a') + 3 bits 111.
@@ -362,7 +362,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — ..007: Round-trip various HTTP-relevant strings
-    [Theory(DisplayName = "RT-001..007: Round-trip various HTTP-relevant strings")]
+    [Theory(DisplayName = "RFC7541-5.2-RT-001..007: Round-trip various HTTP-relevant strings")]
     [InlineData("")]
     [InlineData("GET")]
     [InlineData("POST")]
@@ -379,7 +379,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — ..012: Round-trip header values
-    [Theory(DisplayName = "RT-008..012: Round-trip header values")]
+    [Theory(DisplayName = "RFC7541-5.2-RT-008..012: Round-trip header values")]
     [InlineData("text/html; charset=utf-8")]
     [InlineData("max-age=3600")]
     [InlineData("Bearer token_value_123")]
@@ -398,7 +398,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Encode always uses all-ones padding (MSBs of EOS)
-    [Fact(DisplayName = "ED-001: Encode always uses all-ones padding (MSBs of EOS)")]
+    [Fact(DisplayName = "RFC7541-5.2-ED-001: Encode always uses all-ones padding (MSBs of EOS)")]
     public void ED001_Encode_PaddingIsAllOnes()
     {
         // Every encoded byte[] should decode back without exception
@@ -415,7 +415,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Encode produces output shorter than or equal to input + 1 for common headers
-    [Fact(DisplayName = "ED-002: Encode produces output shorter than or equal to input + 1 for common headers")]
+    [Fact(DisplayName = "RFC7541-5.2-ED-002: Encode produces output shorter than or equal to input + 1 for common headers")]
     public void ED002_Encode_CompressesCommonHeaders()
     {
         var inputs = new[] { "gzip", "deflate", "text/html", "200", "private", "no-cache" };
@@ -429,7 +429,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Encode of single byte produces at most 1 byte (all symbols <= 30 bits)
-    [Fact(DisplayName = "ED-003: Encode of single byte produces at most 1 byte (all symbols <= 30 bits)")]
+    [Fact(DisplayName = "RFC7541-5.2-ED-003: Encode of single byte produces at most 1 byte (all symbols <= 30 bits)")]
     public void ED003_Encode_SingleByte_AtMost4Bytes()
     {
         // Longest code is 30 bits (EOS, never emitted). All 256 symbols are <= 28 bits.
@@ -448,7 +448,7 @@ public sealed class HuffmanDecoderTests
     // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Encode 'www.example.com' produces exact RFC 7541 Appendix C bytes
-    [Fact(DisplayName = "ED-004: Encode 'www.example.com' produces exact RFC 7541 Appendix C bytes")]
+    [Fact(DisplayName = "RFC7541-5.2-ED-004: Encode 'www.example.com' produces exact RFC 7541 Appendix C bytes")]
     public void ED004_Encode_WwwExampleCom_MatchesRfc()
     {
         // RFC 7541 Appendix C.4 — Request Examples with Huffman Coding
@@ -459,7 +459,7 @@ public sealed class HuffmanDecoderTests
     }
 
     /// RFC 7541 §5.2 — Encode 'no-cache' produces exact RFC 7541 Appendix C bytes
-    [Fact(DisplayName = "ED-005: Encode 'no-cache' produces exact RFC 7541 Appendix C bytes")]
+    [Fact(DisplayName = "RFC7541-5.2-ED-005: Encode 'no-cache' produces exact RFC 7541 Appendix C bytes")]
     public void ED005_Encode_NoCache_MatchesRfc()
     {
         // RFC 7541 Appendix C.4 — Request Examples with Huffman Coding

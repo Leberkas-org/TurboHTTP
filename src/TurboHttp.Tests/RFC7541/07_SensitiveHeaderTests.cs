@@ -24,7 +24,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 1: Core Sensitive Headers Are NeverIndexed (8 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s001: Authorization header encoded as NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-001: Authorization header encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_AuthorizationHeader()
     {
         var request = MakeGetRequest();
@@ -36,7 +36,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex, "RFC 7541 §7.1.3: Authorization must be NeverIndexed");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s002: Proxy-Authorization header encoded as NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-002: Proxy-Authorization header encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_ProxyAuthorizationHeader()
     {
         var request = MakeGetRequest();
@@ -48,7 +48,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex, "RFC 7541 §7.1.3: Proxy-Authorization must be NeverIndexed");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s003: Cookie header encoded as NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-003: Cookie header encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_CookieHeader()
     {
         var request = MakeGetRequest();
@@ -60,7 +60,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex, "RFC 7541 §7.1.3: Cookie must be NeverIndexed");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s004: Set-Cookie header encoded as NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-004: Set-Cookie header encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_SetCookieHeader()
     {
         var request = MakeGetRequest();
@@ -72,7 +72,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex, "RFC 7541 §7.1.3: Set-Cookie must be NeverIndexed");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s005: Authorization detection is case-insensitive")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-005: Authorization detection is case-insensitive")]
     public void Should_EncodeAsNeverIndexed_When_AuthorizationHeaderUppercase()
     {
         var request = MakeGetRequest();
@@ -85,7 +85,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex, "NeverIndexed detection must be case-insensitive");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s006: Authorization with empty value is still NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-006: Authorization with empty value is still NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_AuthorizationValueIsEmpty()
     {
         var request = MakeGetRequest();
@@ -98,7 +98,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s007: Authorization with long value is still NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-007: Authorization with long value is still NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_AuthorizationValueIsLong()
     {
         var longToken = $"Bearer {new string('a', 512)}";
@@ -112,7 +112,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Equal(longToken, header.Value);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s008: Cookie with complex multi-part value is still NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-008: Cookie with complex multi-part value is still NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_CookieHasComplexValue()
     {
         var request = MakeGetRequest();
@@ -128,7 +128,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 2: Non-Sensitive Headers Are NOT NeverIndexed (5 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s009: x-api-key header is NOT NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-009: x-api-key header is NOT NeverIndexed")]
     public void Should_NotBeNeverIndexed_When_XApiKeyHeader()
     {
         var request = MakeGetRequest();
@@ -140,7 +140,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.False(header.NeverIndex, "x-api-key is not a recognized sensitive header");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s010: User-Agent header is NOT NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-010: User-Agent header is NOT NeverIndexed")]
     public void Should_NotBeNeverIndexed_When_UserAgentHeader()
     {
         var request = MakeGetRequest();
@@ -152,7 +152,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.False(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s011: X-Request-Id header is NOT NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-011: X-Request-Id header is NOT NeverIndexed")]
     public void Should_NotBeNeverIndexed_When_CustomHeader()
     {
         var request = MakeGetRequest();
@@ -164,7 +164,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.False(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s012: Pseudo-headers (:method, :path, etc.) are NOT NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-012: Pseudo-headers (:method, :path, etc.) are NOT NeverIndexed")]
     public void Should_NotBeNeverIndexed_When_PseudoHeaders()
     {
         var request = MakeGetRequest();
@@ -176,7 +176,7 @@ public sealed class HpackSensitiveHeaderTests
         }
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s013: Accept header is NOT NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-013: Accept header is NOT NeverIndexed")]
     public void Should_NotBeNeverIndexed_When_AcceptHeader()
     {
         var request = MakeGetRequest();
@@ -192,7 +192,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 3: NeverIndexed Headers NOT Added to Dynamic Table (4 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s014: Authorization encoded twice produces same-size HPACK output (no caching)")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-014: Authorization encoded twice produces same-size HPACK output (no caching)")]
     public void Should_NotReduceHpackSize_When_AuthorizationEncodedTwice()
     {
         // Sensitive headers must NOT be added to the dynamic table.
@@ -209,7 +209,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Equal(block1.Length, block2.Length);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s015: Non-sensitive header encoded twice is smaller the second time (caching works)")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-015: Non-sensitive header encoded twice is smaller the second time (caching works)")]
     public void Should_ReduceHpackSize_When_NonSensitiveHeaderEncodedTwice()
     {
         // Verify that IncrementalIndexing headers ARE cached (contrast with NeverIndexed)
@@ -229,7 +229,7 @@ public sealed class HpackSensitiveHeaderTests
             "Second encoding of non-sensitive header should be smaller due to HPACK dynamic table caching");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s016: Authorization never appears as indexed reference across repeated encodings")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-016: Authorization never appears as indexed reference across repeated encodings")]
     public void Should_NeverUseIndexedReference_When_AuthorizationEncodedRepeatedly()
     {
         // If authorization were cached (incorrectly), the 2nd and 3rd HPACK-only encoding would shrink.
@@ -252,7 +252,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(decoded.First(h => h.Name == "authorization").NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s017: Cookie never appears as indexed reference across repeated encodings")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-017: Cookie never appears as indexed reference across repeated encodings")]
     public void Should_NeverUseIndexedReference_When_CookieEncodedRepeatedly()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -275,7 +275,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 4: Round-Trip Value Correctness (6 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s018: Authorization value preserved through encode/decode round-trip")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-018: Authorization value preserved through encode/decode round-trip")]
     public void Should_PreserveValue_When_AuthorizationRoundTrip()
     {
         const string token = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature";
@@ -289,7 +289,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s019: Proxy-Authorization value preserved through encode/decode round-trip")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-019: Proxy-Authorization value preserved through encode/decode round-trip")]
     public void Should_PreserveValue_When_ProxyAuthorizationRoundTrip()
     {
         const string value = "Basic dXNlcjpwYXNzd29yZA==";
@@ -303,7 +303,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s020: Cookie value preserved through encode/decode round-trip")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-020: Cookie value preserved through encode/decode round-trip")]
     public void Should_PreserveValue_When_CookieRoundTrip()
     {
         const string value = "session=abc123; userId=42; csrfToken=xyz789";
@@ -317,7 +317,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s021: Set-Cookie value preserved through encode/decode round-trip")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-021: Set-Cookie value preserved through encode/decode round-trip")]
     public void Should_PreserveValue_When_SetCookieRoundTrip()
     {
         const string value = "sessionId=38afes71g; HttpOnly; Secure; SameSite=Strict";
@@ -331,7 +331,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s022: Mixed request: sensitive and non-sensitive headers both encoded correctly")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-022: Mixed request: sensitive and non-sensitive headers both encoded correctly")]
     public void Should_EncodeBothCorrectly_When_MixedSensitiveAndNonSensitiveHeaders()
     {
         var request = MakeGetRequest();
@@ -351,7 +351,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.False(accept.NeverIndex, "Accept should not be NeverIndexed");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s023: Multiple sensitive headers in one request are all NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-023: Multiple sensitive headers in one request are all NeverIndexed")]
     public void Should_EncodeAllAsNeverIndexed_When_MultipleSensitiveHeaders()
     {
         var request = MakeGetRequest();
@@ -374,7 +374,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 5: HpackEncoder Direct API Tests (4 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s024: HpackHeader with NeverIndex=true is encoded as NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-024: HpackHeader with NeverIndex=true is encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_HpackHeaderNeverIndexTrue()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -392,7 +392,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex, "HpackHeader with NeverIndex=true must produce NeverIndexed wire encoding");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s025: HpackHeader with NeverIndex=false for non-sensitive name uses IncrementalIndexing")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-025: HpackHeader with NeverIndex=false for non-sensitive name uses IncrementalIndexing")]
     public void Should_UseIncrementalIndexing_When_HpackHeaderNeverIndexFalse()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -410,7 +410,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.False(header.NeverIndex);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s026: Sensitive header name auto-upgraded to NeverIndexed even if NeverIndex=false")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-026: Sensitive header name auto-upgraded to NeverIndexed even if NeverIndex=false")]
     public void Should_AutoUpgradeToNeverIndexed_When_SensitiveNameRegardlessOfFlag()
     {
         // Per RFC 7541 §7.1: the encoder MUST use NeverIndexed for sensitive headers
@@ -431,7 +431,7 @@ public sealed class HpackSensitiveHeaderTests
             "Authorization must be NeverIndexed even when HpackHeader.NeverIndex=false (auto-upgrade per RFC 7541 §7.1)");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s027: NeverIndexed header not added to dynamic table (two encodings same size)")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-027: NeverIndexed header not added to dynamic table (two encodings same size)")]
     public void Should_NotAddToDynamicTable_When_NeverIndexedHeaderEncoded()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -452,7 +452,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 6: Http2RequestEncoder Full Frame Integration Tests (5 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s028: Full HTTP/2 GET frame with Authorization: decoded NeverIndex=true")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-028: Full HTTP/2 GET frame with Authorization: decoded NeverIndex=true")]
     public void Should_ProduceNeverIndexedFrame_When_Http2GetRequestWithAuthorization()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/data");
@@ -465,7 +465,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Equal("Bearer access-token", auth.Value);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s029: Full HTTP/2 POST frame with Authorization and body: NeverIndexed preserved")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-029: Full HTTP/2 POST frame with Authorization and body: NeverIndexed preserved")]
     public void Should_PreserveSensitiveHeader_When_PostRequestWithBodyAndAuthorization()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/users");
@@ -479,7 +479,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Equal("Bearer post-token", auth.Value);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s030: Request without sensitive headers has no NeverIndexed entries")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-030: Request without sensitive headers has no NeverIndexed entries")]
     public void Should_HaveNoNeverIndexedHeaders_When_NoSensitiveHeaders()
     {
         var request = MakeGetRequest();
@@ -492,7 +492,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Empty(neverIndexed);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s031: Huffman encoding preserves NeverIndexed flag for Authorization")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-031: Huffman encoding preserves NeverIndexed flag for Authorization")]
     public void Should_PreserveNeverIndexed_When_HuffmanEncodingEnabled()
     {
         var request = MakeGetRequest();
@@ -505,7 +505,7 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Equal("Bearer huffman-test", auth.Value);
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s032: All four sensitive header types NeverIndexed in single request")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-032: All four sensitive header types NeverIndexed in single request")]
     public void Should_EncodeAllFourSensitiveHeaderTypes_When_AllPresent()
     {
         var request = MakeGetRequest();
@@ -529,7 +529,7 @@ public sealed class HpackSensitiveHeaderTests
     // Category 7: Edge Cases and Raw Byte Verification (3 tests)
     // =========================================================================
 
-    [Fact(DisplayName = "7541-7.1.3-s033: Authorization raw HPACK bytes use NeverIndexed encoding (walker verified)")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-033: Authorization raw HPACK bytes use NeverIndexed encoding (walker verified)")]
     public void Should_HaveNeverIndexedEncoding_When_AuthorizationEncodedRaw()
     {
         // Low-level verification via a proper HPACK byte walker.
@@ -544,7 +544,7 @@ public sealed class HpackSensitiveHeaderTests
             "The HPACK byte stream must use NeverIndexed encoding for authorization (RFC 7541 §6.2.3)");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s034: Cookie raw HPACK bytes use NeverIndexed encoding (walker verified)")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-034: Cookie raw HPACK bytes use NeverIndexed encoding (walker verified)")]
     public void Should_HaveNeverIndexedEncoding_When_CookieEncodedRaw()
     {
         var encoder = new Http2RequestEncoder(useHuffman: false);
@@ -556,7 +556,7 @@ public sealed class HpackSensitiveHeaderTests
             "The HPACK byte stream must use NeverIndexed encoding for cookie (RFC 7541 §6.2.3)");
     }
 
-    [Fact(DisplayName = "7541-7.1.3-s035: Non-sensitive header raw HPACK bytes use IncrementalIndexing (walker verified)")]
+    [Fact(DisplayName = "RFC7541-7.1.3-SH-035: Non-sensitive header raw HPACK bytes use IncrementalIndexing (walker verified)")]
     public void Should_HaveIncrementalIndexingEncoding_When_NonSensitiveHeaderEncodedRaw()
     {
         var encoder = new Http2RequestEncoder(useHuffman: false);

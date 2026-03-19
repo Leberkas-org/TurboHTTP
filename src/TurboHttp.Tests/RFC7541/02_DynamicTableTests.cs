@@ -21,7 +21,7 @@ public sealed class HpackDynamicTableTests
     // ── DT-00x: Empty table invariants ────────────────────────────────────────
 
     /// RFC 7541 §4 — Empty table has CurrentSize = 0
-    [Fact(DisplayName = "DT-001: Empty table has CurrentSize = 0")]
+    [Fact(DisplayName = "RFC7541-4-DT-001: Empty table has CurrentSize = 0")]
     public void DynamicTable_Empty_HasSizeZero()
     {
         var table = new HpackDynamicTable();
@@ -29,7 +29,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Empty table has Count = 0
-    [Fact(DisplayName = "DT-002: Empty table has Count = 0")]
+    [Fact(DisplayName = "RFC7541-4-DT-002: Empty table has Count = 0")]
     public void DynamicTable_Empty_HasCountZero()
     {
         var table = new HpackDynamicTable();
@@ -37,7 +37,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Default MaxSize = 4096 (RFC 7541 §4.2)
-    [Fact(DisplayName = "DT-003: Default MaxSize = 4096 (RFC 7541 §4.2)")]
+    [Fact(DisplayName = "RFC7541-4-DT-003: Default MaxSize = 4096 (RFC 7541 §4.2)")]
     public void DynamicTable_Default_MaxSizeIs4096()
     {
         var table = new HpackDynamicTable();
@@ -45,7 +45,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — GetEntry(1) returns null on empty table
-    [Fact(DisplayName = "DT-004: GetEntry(1) returns null on empty table")]
+    [Fact(DisplayName = "RFC7541-4-DT-004: GetEntry(1) returns null on empty table")]
     public void DynamicTable_GetEntry_EmptyTable_ReturnsNull()
     {
         var table = new HpackDynamicTable();
@@ -53,7 +53,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — GetEntry(0) returns null (out of range)
-    [Fact(DisplayName = "DT-005: GetEntry(0) returns null (out of range)")]
+    [Fact(DisplayName = "RFC7541-4-DT-005: GetEntry(0) returns null (out of range)")]
     public void DynamicTable_GetEntry_IndexZero_ReturnsNull()
     {
         var table = new HpackDynamicTable();
@@ -63,7 +63,7 @@ public sealed class HpackDynamicTableTests
     // ── DT-01x: Size tracking ─────────────────────────────────────────────────
 
     /// RFC 7541 §4 — Single entry size = UTF8(name) + UTF8(value) + 32
-    [Fact(DisplayName = "DT-010: Single entry size = UTF8(name) + UTF8(value) + 32")]
+    [Fact(DisplayName = "RFC7541-4-DT-010: Single entry size = UTF8(name) + UTF8(value) + 32")]
     public void DynamicTable_Add_SingleEntry_SizeIsCorrect()
     {
         var table = new HpackDynamicTable();
@@ -73,7 +73,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Two entries sum their individual sizes
-    [Fact(DisplayName = "DT-011: Two entries sum their individual sizes")]
+    [Fact(DisplayName = "RFC7541-4-DT-011: Two entries sum their individual sizes")]
     public void DynamicTable_Add_TwoEntries_SizeAccumulates()
     {
         var table = new HpackDynamicTable();
@@ -86,7 +86,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Empty name and value still adds 32 bytes overhead
-    [Fact(DisplayName = "DT-012: Empty name and value still adds 32 bytes overhead")]
+    [Fact(DisplayName = "RFC7541-4-DT-012: Empty name and value still adds 32 bytes overhead")]
     public void DynamicTable_Add_EmptyNameValue_Adds32Bytes()
     {
         var table = new HpackDynamicTable();
@@ -95,7 +95,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — UTF-8 multi-byte name counted in bytes, not chars
-    [Fact(DisplayName = "DT-013: UTF-8 multi-byte name counted in bytes, not chars")]
+    [Fact(DisplayName = "RFC7541-4-DT-013: UTF-8 multi-byte name counted in bytes, not chars")]
     public void DynamicTable_Add_MultiByteName_SizeCounted_AsUtf8Bytes()
     {
         var table = new HpackDynamicTable();
@@ -108,7 +108,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — UTF-8 multi-byte value counted in bytes, not chars
-    [Fact(DisplayName = "DT-014: UTF-8 multi-byte value counted in bytes, not chars")]
+    [Fact(DisplayName = "RFC7541-4-DT-014: UTF-8 multi-byte value counted in bytes, not chars")]
     public void DynamicTable_Add_MultiByteValue_SizeCounted_AsUtf8Bytes()
     {
         var table = new HpackDynamicTable();
@@ -122,7 +122,7 @@ public sealed class HpackDynamicTableTests
     // ── DT-02x: FIFO ordering ─────────────────────────────────────────────────
 
     /// RFC 7541 §4 — GetEntry(1) returns most recently added entry
-    [Fact(DisplayName = "DT-020: GetEntry(1) returns most recently added entry")]
+    [Fact(DisplayName = "RFC7541-4-DT-020: GetEntry(1) returns most recently added entry")]
     public void DynamicTable_GetEntry1_ReturnsMostRecent()
     {
         var table = new HpackDynamicTable();
@@ -136,7 +136,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — GetEntry(2) returns second-most-recently added entry
-    [Fact(DisplayName = "DT-021: GetEntry(2) returns second-most-recently added entry")]
+    [Fact(DisplayName = "RFC7541-4-DT-021: GetEntry(2) returns second-most-recently added entry")]
     public void DynamicTable_GetEntry2_ReturnsSecondMostRecent()
     {
         var table = new HpackDynamicTable();
@@ -150,7 +150,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — FIFO — oldest entry is at index Count
-    [Fact(DisplayName = "DT-022: FIFO — oldest entry is at index Count")]
+    [Fact(DisplayName = "RFC7541-4-DT-022: FIFO — oldest entry is at index Count")]
     public void DynamicTable_FifoOrdering_OldestIsAtHighestIndex()
     {
         var table = new HpackDynamicTable();
@@ -165,7 +165,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — GetEntry beyond Count returns null
-    [Fact(DisplayName = "DT-023: GetEntry beyond Count returns null")]
+    [Fact(DisplayName = "RFC7541-4-DT-023: GetEntry beyond Count returns null")]
     public void DynamicTable_GetEntry_BeyondCount_ReturnsNull()
     {
         var table = new HpackDynamicTable();
@@ -177,7 +177,7 @@ public sealed class HpackDynamicTableTests
     // ── DT-03x: FIFO eviction ─────────────────────────────────────────────────
 
     /// RFC 7541 §4 — Eviction removes oldest entry first (FIFO)
-    [Fact(DisplayName = "DT-030: Eviction removes oldest entry first (FIFO)")]
+    [Fact(DisplayName = "RFC7541-4-DT-030: Eviction removes oldest entry first (FIFO)")]
     public void DynamicTable_Eviction_RemovesOldestFirst()
     {
         // MaxSize=4096. Add 3 entries that fit. Then reduce MaxSize to force eviction.
@@ -199,7 +199,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Entry larger than MaxSize clears entire table (RFC §4.4)
-    [Fact(DisplayName = "DT-031: Entry larger than MaxSize clears entire table (RFC §4.4)")]
+    [Fact(DisplayName = "RFC7541-4-DT-031: Entry larger than MaxSize clears entire table (RFC §4.4)")]
     public void DynamicTable_AddOversizedEntry_ClearsTable()
     {
         var table = new HpackDynamicTable();
@@ -216,7 +216,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — SetMaxSize(0) evicts all entries
-    [Fact(DisplayName = "DT-032: SetMaxSize(0) evicts all entries")]
+    [Fact(DisplayName = "RFC7541-4-DT-032: SetMaxSize(0) evicts all entries")]
     public void DynamicTable_SetMaxSizeZero_EvictsAll()
     {
         var table = new HpackDynamicTable();
@@ -228,7 +228,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Adding to full table evicts oldest to make room
-    [Fact(DisplayName = "DT-033: Adding to full table evicts oldest to make room")]
+    [Fact(DisplayName = "RFC7541-4-DT-033: Adding to full table evicts oldest to make room")]
     public void DynamicTable_AddToFullTable_EvictsOldestToFit()
     {
         // Size of one entry: "k"=1, "v"=1, +32 = 34
@@ -250,7 +250,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Multiple evictions until size fits new entry
-    [Fact(DisplayName = "DT-034: Multiple evictions until size fits new entry")]
+    [Fact(DisplayName = "RFC7541-4-DT-034: Multiple evictions until size fits new entry")]
     public void DynamicTable_AddEntry_EvictsMultipleOldEntries()
     {
         // Fill table with 5 small entries, then add one large entry
@@ -276,7 +276,7 @@ public sealed class HpackDynamicTableTests
     // ── DT-04x: SetMaxSize behavior ───────────────────────────────────────────
 
     /// RFC 7541 §4 — SetMaxSize updates MaxSize property
-    [Fact(DisplayName = "DT-040: SetMaxSize updates MaxSize property")]
+    [Fact(DisplayName = "RFC7541-4-DT-040: SetMaxSize updates MaxSize property")]
     public void DynamicTable_SetMaxSize_UpdatesMaxSize()
     {
         var table = new HpackDynamicTable();
@@ -285,7 +285,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — SetMaxSize to same value is idempotent
-    [Fact(DisplayName = "DT-041: SetMaxSize to same value is idempotent")]
+    [Fact(DisplayName = "RFC7541-4-DT-041: SetMaxSize to same value is idempotent")]
     public void DynamicTable_SetMaxSize_SameValue_NoChange()
     {
         var table = new HpackDynamicTable();
@@ -297,7 +297,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Negative MaxSize throws HpackException
-    [Fact(DisplayName = "DT-042: Negative MaxSize throws HpackException")]
+    [Fact(DisplayName = "RFC7541-4-DT-042: Negative MaxSize throws HpackException")]
     public void DynamicTable_SetMaxSize_Negative_Throws()
     {
         var table = new HpackDynamicTable();
@@ -305,7 +305,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — SetMaxSize to exact entry size keeps that entry
-    [Fact(DisplayName = "DT-043: SetMaxSize to exact entry size keeps that entry")]
+    [Fact(DisplayName = "RFC7541-4-DT-043: SetMaxSize to exact entry size keeps that entry")]
     public void DynamicTable_SetMaxSize_ExactEntrySize_Keeps()
     {
         var table = new HpackDynamicTable();
@@ -317,7 +317,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — SetMaxSize to one less than entry size evicts it
-    [Fact(DisplayName = "DT-044: SetMaxSize to one less than entry size evicts it")]
+    [Fact(DisplayName = "RFC7541-4-DT-044: SetMaxSize to one less than entry size evicts it")]
     public void DynamicTable_SetMaxSize_OneLessThanEntry_EvictsIt()
     {
         var table = new HpackDynamicTable();
@@ -331,7 +331,7 @@ public sealed class HpackDynamicTableTests
     // ── TS-00x: Table size update position (RFC 7541 §6.3) ───────────────────
 
     /// RFC 7541 §6.3 — Table size update at start of block is accepted
-    [Fact(DisplayName = "TS-001: Table size update at start of block is accepted")]
+    [Fact(DisplayName = "RFC7541-6.3-TS-001: Table size update at start of block is accepted")]
     public void Decoder_TableSizeUpdate_AtStart_Accepted()
     {
         var decoder = new HpackDecoder();
@@ -349,7 +349,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — Two size updates at start of block are both accepted
-    [Fact(DisplayName = "TS-002: Two size updates at start of block are both accepted")]
+    [Fact(DisplayName = "RFC7541-6.3-TS-002: Two size updates at start of block are both accepted")]
     public void Decoder_TwoTableSizeUpdates_AtStart_BothAccepted()
     {
         var decoder = new HpackDecoder();
@@ -367,7 +367,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — Table size update after indexed header throws HpackException
-    [Fact(DisplayName = "TS-003: Table size update after indexed header throws HpackException")]
+    [Fact(DisplayName = "RFC7541-6.3-TS-003: Table size update after indexed header throws HpackException")]
     public void Decoder_TableSizeUpdate_AfterIndexedHeader_Throws()
     {
         var decoder = new HpackDecoder();
@@ -384,7 +384,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — Table size update after literal-with-indexing throws HpackException
-    [Fact(DisplayName = "TS-004: Table size update after literal-with-indexing throws HpackException")]
+    [Fact(DisplayName = "RFC7541-6.3-TS-004: Table size update after literal-with-indexing throws HpackException")]
     public void Decoder_TableSizeUpdate_AfterLiteralWithIndexing_Throws()
     {
         var decoder = new HpackDecoder();
@@ -404,7 +404,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — Table size update exceeding SETTINGS throws HpackException
-    [Fact(DisplayName = "TS-005: Table size update exceeding SETTINGS throws HpackException")]
+    [Fact(DisplayName = "RFC7541-6.3-TS-005: Table size update exceeding SETTINGS throws HpackException")]
     public void Decoder_TableSizeUpdate_ExceedingSettings_Throws()
     {
         var decoder = new HpackDecoder();
@@ -419,7 +419,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — Size update to exact SETTINGS value is accepted
-    [Fact(DisplayName = "TS-006: Size update to exact SETTINGS value is accepted")]
+    [Fact(DisplayName = "RFC7541-6.3-TS-006: Size update to exact SETTINGS value is accepted")]
     public void Decoder_TableSizeUpdate_ExactSettings_Accepted()
     {
         var decoder = new HpackDecoder();
@@ -438,7 +438,7 @@ public sealed class HpackDynamicTableTests
     // ── ET-00x: Encoder AcknowledgeTableSizeChange ────────────────────────────
 
     /// RFC 7541 §6.3 — AcknowledgeTableSizeChange emits size update prefix at next encode
-    [Fact(DisplayName = "ET-001: AcknowledgeTableSizeChange emits size update prefix at next encode")]
+    [Fact(DisplayName = "RFC7541-6.3-ET-001: AcknowledgeTableSizeChange emits size update prefix at next encode")]
     public void Encoder_AcknowledgeTableSizeChange_EmitsSizeUpdateBeforeHeaders()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -452,7 +452,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — After AcknowledgeTableSizeChange, next encode contains header after update
-    [Fact(DisplayName = "ET-002: After AcknowledgeTableSizeChange, next encode contains header after update")]
+    [Fact(DisplayName = "RFC7541-6.3-ET-002: After AcknowledgeTableSizeChange, next encode contains header after update")]
     public void Encoder_AcknowledgeTableSizeChange_SizeUpdateThenHeader()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -470,7 +470,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — AcknowledgeTableSizeChange(0) emits zero-size update
-    [Fact(DisplayName = "ET-003: AcknowledgeTableSizeChange(0) emits zero-size update")]
+    [Fact(DisplayName = "RFC7541-6.3-ET-003: AcknowledgeTableSizeChange(0) emits zero-size update")]
     public void Encoder_AcknowledgeTableSizeChange_Zero_EmitsZeroUpdate()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -484,7 +484,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — AcknowledgeTableSizeChange with negative size throws HpackException
-    [Fact(DisplayName = "ET-004: AcknowledgeTableSizeChange with negative size throws HpackException")]
+    [Fact(DisplayName = "RFC7541-6.3-ET-004: AcknowledgeTableSizeChange with negative size throws HpackException")]
     public void Encoder_AcknowledgeTableSizeChange_Negative_Throws()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -492,7 +492,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §6.3 — Second encode after AcknowledgeTableSizeChange does NOT re-emit update
-    [Fact(DisplayName = "ET-005: Second encode after AcknowledgeTableSizeChange does NOT re-emit update")]
+    [Fact(DisplayName = "RFC7541-6.3-ET-005: Second encode after AcknowledgeTableSizeChange does NOT re-emit update")]
     public void Encoder_AcknowledgeTableSizeChange_OnlyEmittedOnce()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -510,7 +510,7 @@ public sealed class HpackDynamicTableTests
     // ── ES-00x: Encoder/Decoder synchronization ───────────────────────────────
 
     /// RFC 7541 §7.1 — Dynamic entry added by encode is accessible via index on decode
-    [Fact(DisplayName = "ES-001: Dynamic entry added by encode is accessible via index on decode")]
+    [Fact(DisplayName = "RFC7541-7.1-ES-001: Dynamic entry added by encode is accessible via index on decode")]
     public void EncoderDecoder_DynamicEntry_AccessibleViaIndex()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -533,7 +533,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §7.1 — Multiple dynamic entries maintain FIFO indexing on both sides
-    [Fact(DisplayName = "ES-002: Multiple dynamic entries maintain FIFO indexing on both sides")]
+    [Fact(DisplayName = "RFC7541-7.1-ES-002: Multiple dynamic entries maintain FIFO indexing on both sides")]
     public void EncoderDecoder_MultipleEntries_MaintainFifoIndexing()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -557,7 +557,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §7.1 — Encoder and decoder stay in sync across multiple header blocks
-    [Fact(DisplayName = "ES-003: Encoder and decoder stay in sync across multiple header blocks")]
+    [Fact(DisplayName = "RFC7541-7.1-ES-003: Encoder and decoder stay in sync across multiple header blocks")]
     public void EncoderDecoder_MultipleBlocks_StayInSync()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -595,7 +595,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §7.1 — Synchronized table size change via AcknowledgeTableSizeChange
-    [Fact(DisplayName = "ES-004: Synchronized table size change via AcknowledgeTableSizeChange")]
+    [Fact(DisplayName = "RFC7541-7.1-ES-004: Synchronized table size change via AcknowledgeTableSizeChange")]
     public void EncoderDecoder_TableSizeChange_Synchronized()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -617,7 +617,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §7.1 — Never-indexed headers not added to dynamic table on either side
-    [Fact(DisplayName = "ES-005: Never-indexed headers not added to dynamic table on either side")]
+    [Fact(DisplayName = "RFC7541-7.1-ES-005: Never-indexed headers not added to dynamic table on either side")]
     public void EncoderDecoder_NeverIndexed_NotAddedToDynamicTable()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -643,7 +643,7 @@ public sealed class HpackDynamicTableTests
     // ── DT-05x: Boundary and stress tests ────────────────────────────────────
 
     /// RFC 7541 §4 — Table fills exactly to MaxSize without eviction
-    [Fact(DisplayName = "DT-050: Table fills exactly to MaxSize without eviction")]
+    [Fact(DisplayName = "RFC7541-4-DT-050: Table fills exactly to MaxSize without eviction")]
     public void DynamicTable_FillsExactlyToMaxSize_NoEviction()
     {
         var table = new HpackDynamicTable();
@@ -656,7 +656,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Adding one more byte beyond MaxSize evicts oldest
-    [Fact(DisplayName = "DT-051: Adding one more byte beyond MaxSize evicts oldest")]
+    [Fact(DisplayName = "RFC7541-4-DT-051: Adding one more byte beyond MaxSize evicts oldest")]
     public void DynamicTable_OneByteBeyondMaxSize_EvictsOldest()
     {
         var table = new HpackDynamicTable();
@@ -670,7 +670,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — 100 sequential adds with small MaxSize keeps size bounded
-    [Fact(DisplayName = "DT-052: 100 sequential adds with small MaxSize keeps size bounded")]
+    [Fact(DisplayName = "RFC7541-4-DT-052: 100 sequential adds with small MaxSize keeps size bounded")]
     public void DynamicTable_HighVolumeAdds_SizeRemainsWithinMaxSize()
     {
         var table = new HpackDynamicTable();
@@ -685,7 +685,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — After clear via SetMaxSize(0), new entries can be added again
-    [Fact(DisplayName = "DT-053: After clear via SetMaxSize(0), new entries can be added again")]
+    [Fact(DisplayName = "RFC7541-4-DT-053: After clear via SetMaxSize(0), new entries can be added again")]
     public void DynamicTable_AfterClear_CanAddNewEntries()
     {
         var table = new HpackDynamicTable();
@@ -700,7 +700,7 @@ public sealed class HpackDynamicTableTests
     }
 
     /// RFC 7541 §4 — Negative index returns null without throwing
-    [Fact(DisplayName = "DT-054: Negative index returns null without throwing")]
+    [Fact(DisplayName = "RFC7541-4-DT-054: Negative index returns null without throwing")]
     public void DynamicTable_NegativeIndex_ReturnsNull()
     {
         var table = new HpackDynamicTable();

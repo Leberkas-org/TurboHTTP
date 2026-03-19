@@ -47,7 +47,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── HD-00x: Indexed Header Field (§6.1) ──────────────────────────────────
 
     /// RFC 7541 §6.1 — Static index 2 decodes to :method GET
-    [Fact(DisplayName = "HD-001: Static index 2 decodes to :method GET")]
+    [Fact(DisplayName = "RFC7541-6-HD-001: Static index 2 decodes to :method GET")]
     public void Indexed_StaticIndex2_DecodesMethodGet()
     {
         var decoder = new HpackDecoder();
@@ -60,7 +60,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Static index 4 decodes to :path /
-    [Fact(DisplayName = "HD-002: Static index 4 decodes to :path /")]
+    [Fact(DisplayName = "RFC7541-6-HD-002: Static index 4 decodes to :path /")]
     public void Indexed_StaticIndex4_DecodesPathSlash()
     {
         var decoder = new HpackDecoder();
@@ -73,7 +73,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Static index 7 decodes to :scheme https
-    [Fact(DisplayName = "HD-003: Static index 7 decodes to :scheme https")]
+    [Fact(DisplayName = "RFC7541-6-HD-003: Static index 7 decodes to :scheme https")]
     public void Indexed_StaticIndex7_DecodesSchemeHttps()
     {
         var decoder = new HpackDecoder();
@@ -86,7 +86,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Static index 61 (last static entry) decodes correctly
-    [Fact(DisplayName = "HD-004: Static index 61 (last static entry) decodes correctly")]
+    [Fact(DisplayName = "RFC7541-6-HD-004: Static index 61 (last static entry) decodes correctly")]
     public void Indexed_StaticIndex61_DecodesWwwAuthenticate()
     {
         var decoder = new HpackDecoder();
@@ -100,7 +100,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Multiple indexed entries decoded in sequence
-    [Fact(DisplayName = "HD-005: Multiple indexed entries decoded in sequence")]
+    [Fact(DisplayName = "RFC7541-6-HD-005: Multiple indexed entries decoded in sequence")]
     public void Indexed_MultipleEntries_AllDecoded()
     {
         var decoder = new HpackDecoder();
@@ -114,7 +114,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Index 0 in indexed representation throws HpackException (§2.3.3)
-    [Fact(DisplayName = "HD-006: Index 0 in indexed representation throws HpackException (§2.3.3)")]
+    [Fact(DisplayName = "RFC7541-6-HD-006: Index 0 in indexed representation throws HpackException (§2.3.3)")]
     public void Indexed_IndexZero_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -124,7 +124,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Index beyond static+dynamic table throws HpackException (§2.3.3)
-    [Fact(DisplayName = "HD-007: Index beyond static+dynamic table throws HpackException (§2.3.3)")]
+    [Fact(DisplayName = "RFC7541-6-HD-007: Index beyond static+dynamic table throws HpackException (§2.3.3)")]
     public void Indexed_OutOfRangeIndex_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -138,7 +138,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── HD-01x: Literal with Incremental Indexing (§6.2.1) ───────────────────
 
     /// RFC 7541 §6.1 — Literal+indexing new name/value → header decoded and added to dynamic table
-    [Fact(DisplayName = "HD-010: Literal+indexing new name/value → header decoded and added to dynamic table")]
+    [Fact(DisplayName = "RFC7541-6-HD-010: Literal+indexing new name/value → header decoded and added to dynamic table")]
     public void LiteralIncrementalIndexing_NewName_AddedToDynamicTable()
     {
         var decoder = new HpackDecoder();
@@ -160,7 +160,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Literal+indexing static name index → name resolved from static table
-    [Fact(DisplayName = "HD-011: Literal+indexing static name index → name resolved from static table")]
+    [Fact(DisplayName = "RFC7541-6-HD-011: Literal+indexing static name index → name resolved from static table")]
     public void LiteralIncrementalIndexing_StaticNameIndex_NameFromStaticTable()
     {
         var decoder = new HpackDecoder();
@@ -174,7 +174,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — After Literal+indexing, dynamic entry indexed in subsequent block
-    [Fact(DisplayName = "HD-012: After Literal+indexing, dynamic entry indexed in subsequent block")]
+    [Fact(DisplayName = "RFC7541-6-HD-012: After Literal+indexing, dynamic entry indexed in subsequent block")]
     public void LiteralIncrementalIndexing_SubsequentBlock_DynamicIndexResolvable()
     {
         var decoder = new HpackDecoder();
@@ -193,7 +193,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Multiple Literal+indexing entries build dynamic table in FIFO order
-    [Fact(DisplayName = "HD-013: Multiple Literal+indexing entries build dynamic table in FIFO order")]
+    [Fact(DisplayName = "RFC7541-6-HD-013: Multiple Literal+indexing entries build dynamic table in FIFO order")]
     public void LiteralIncrementalIndexing_MultipleEntries_FifoOrder()
     {
         var decoder = new HpackDecoder();
@@ -215,7 +215,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── HD-02x: Literal without Indexing (§6.2.2) ────────────────────────────
 
     /// RFC 7541 §6.1 — Literal without indexing new name → decoded but NOT in dynamic table
-    [Fact(DisplayName = "HD-020: Literal without indexing new name → decoded but NOT in dynamic table")]
+    [Fact(DisplayName = "RFC7541-6-HD-020: Literal without indexing new name → decoded but NOT in dynamic table")]
     public void LiteralWithoutIndexing_NewName_NotAddedToDynamicTable()
     {
         var decoder = new HpackDecoder();
@@ -233,7 +233,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Literal without indexing static name index → name from static table, not added
-    [Fact(DisplayName = "HD-021: Literal without indexing static name index → name from static table, not added")]
+    [Fact(DisplayName = "RFC7541-6-HD-021: Literal without indexing static name index → name from static table, not added")]
     public void LiteralWithoutIndexing_StaticNameIndex_NameFromStatic_NotAdded()
     {
         var decoder = new HpackDecoder();
@@ -248,7 +248,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Literal without indexing sets NeverIndex = false
-    [Fact(DisplayName = "HD-022: Literal without indexing sets NeverIndex = false")]
+    [Fact(DisplayName = "RFC7541-6-HD-022: Literal without indexing sets NeverIndex = false")]
     public void LiteralWithoutIndexing_NeverIndex_IsFalse()
     {
         var decoder = new HpackDecoder();
@@ -261,7 +261,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── HD-03x: Never Indexed (§6.2.3) ───────────────────────────────────────
 
     /// RFC 7541 §6.1 — Never indexed new name → NeverIndex = true
-    [Fact(DisplayName = "HD-030: Never indexed new name → NeverIndex = true")]
+    [Fact(DisplayName = "RFC7541-6-HD-030: Never indexed new name → NeverIndex = true")]
     public void NeverIndexed_NewName_NeverIndexIsTrue()
     {
         var decoder = new HpackDecoder();
@@ -276,7 +276,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Never indexed → NOT added to dynamic table
-    [Fact(DisplayName = "HD-031: Never indexed → NOT added to dynamic table")]
+    [Fact(DisplayName = "RFC7541-6-HD-031: Never indexed → NOT added to dynamic table")]
     public void NeverIndexed_NotAddedToDynamicTable()
     {
         var decoder = new HpackDecoder();
@@ -288,7 +288,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Never indexed static name index → name from static table, NeverIndex = true
-    [Fact(DisplayName = "HD-032: Never indexed static name index → name from static table, NeverIndex = true")]
+    [Fact(DisplayName = "RFC7541-6-HD-032: Never indexed static name index → name from static table, NeverIndex = true")]
     public void NeverIndexed_StaticNameIndex_NeverIndexIsTrue()
     {
         var decoder = new HpackDecoder();
@@ -305,7 +305,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── HD-04x: Dynamic Table Size Update (§6.3) ─────────────────────────────
 
     /// RFC 7541 §6.1 — Table size update to 0 at start → dynamic table cleared
-    [Fact(DisplayName = "HD-040: Table size update to 0 at start → dynamic table cleared")]
+    [Fact(DisplayName = "RFC7541-6-HD-040: Table size update to 0 at start → dynamic table cleared")]
     public void TableSizeUpdate_Zero_ClearsTable()
     {
         var decoder = new HpackDecoder();
@@ -320,7 +320,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Table size update at start of block is accepted
-    [Fact(DisplayName = "HD-041: Table size update at start of block is accepted")]
+    [Fact(DisplayName = "RFC7541-6-HD-041: Table size update at start of block is accepted")]
     public void TableSizeUpdate_AtStart_Accepted()
     {
         var decoder = new HpackDecoder();
@@ -333,7 +333,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Two table size updates at start of block are both accepted (RFC allows)
-    [Fact(DisplayName = "HD-042: Two table size updates at start of block are both accepted (RFC allows)")]
+    [Fact(DisplayName = "RFC7541-6-HD-042: Two table size updates at start of block are both accepted (RFC allows)")]
     public void TableSizeUpdate_TwoUpdatesAtStart_BothAccepted()
     {
         var decoder = new HpackDecoder();
@@ -346,7 +346,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Table size update after indexed header throws HpackException (§6.3)
-    [Fact(DisplayName = "HD-043: Table size update after indexed header throws HpackException (§6.3)")]
+    [Fact(DisplayName = "RFC7541-6-HD-043: Table size update after indexed header throws HpackException (§6.3)")]
     public void TableSizeUpdate_AfterIndexedHeader_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -356,7 +356,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Table size update after literal header throws HpackException (§6.3)
-    [Fact(DisplayName = "HD-044: Table size update after literal header throws HpackException (§6.3)")]
+    [Fact(DisplayName = "RFC7541-6-HD-044: Table size update after literal header throws HpackException (§6.3)")]
     public void TableSizeUpdate_AfterLiteralHeader_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -369,7 +369,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6.1 — Table size update exceeding SETTINGS HEADER TABLE SIZE throws (§4.2)
-    [Fact(DisplayName = "HD-045: Table size update exceeding SETTINGS_HEADER_TABLE_SIZE throws (§4.2)")]
+    [Fact(DisplayName = "RFC7541-6-HD-045: Table size update exceeding SETTINGS_HEADER_TABLE_SIZE throws (§4.2)")]
     public void TableSizeUpdate_ExceedsSettings_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -385,7 +385,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── PI-00x: Prefix Integer Decoding (§5.1) ───────────────────────────────
 
     /// RFC 7541 §5.1 — Single-byte integer value 0 decodes correctly
-    [Fact(DisplayName = "PI-001: Single-byte integer value 0 decodes correctly")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-001: Single-byte integer value 0 decodes correctly")]
     public void ReadInteger_SingleByte_Zero()
     {
         var data = new byte[] { 0x00 };
@@ -396,7 +396,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.1 — Single-byte integer value fits within 7-bit prefix
-    [Fact(DisplayName = "PI-002: Single-byte integer value fits within 7-bit prefix")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-002: Single-byte integer value fits within 7-bit prefix")]
     public void ReadInteger_SingleByte_FitsInPrefix()
     {
         // Prefix 7 bits: values 0..126 fit in one byte
@@ -408,7 +408,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.1 — Multi-byte integer 300 decoded from 5-bit prefix
-    [Fact(DisplayName = "PI-003: Multi-byte integer 300 decoded from 5-bit prefix")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-003: Multi-byte integer 300 decoded from 5-bit prefix")]
     public void ReadInteger_MultiByte_300_FiveBitPrefix()
     {
         // 5-bit prefix: mask = 31, value 300 > 31
@@ -424,7 +424,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.1 — Multi-byte integer 1337 decoded from 5-bit prefix
-    [Fact(DisplayName = "PI-004: Multi-byte integer 1337 decoded from 5-bit prefix")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-004: Multi-byte integer 1337 decoded from 5-bit prefix")]
     public void ReadInteger_MultiByte_1337_FiveBitPrefix()
     {
         // RFC 7541 Appendix C.1.2 example: 1337 with 5-bit prefix
@@ -439,7 +439,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.1 — Truncated integer (no stop bit) throws HpackException (§5.1)
-    [Fact(DisplayName = "PI-005: Truncated integer (no stop bit) throws HpackException (§5.1)")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-005: Truncated integer (no stop bit) throws HpackException (§5.1)")]
     public void ReadInteger_Truncated_ThrowsHpackException()
     {
         // Prefix full but continuation byte has MSB set (more bytes expected) then data ends
@@ -450,7 +450,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.1 — Integer overflow exceeding int.MaxValue throws HpackException (§5.1)
-    [Fact(DisplayName = "PI-006: Integer overflow exceeding int.MaxValue throws HpackException (§5.1)")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-006: Integer overflow exceeding int.MaxValue throws HpackException (§5.1)")]
     public void ReadInteger_Overflow_ThrowsHpackException()
     {
         // Craft a multi-byte integer that overflows int.MaxValue
@@ -468,7 +468,7 @@ public sealed class HpackHeaderBlockDecodingTests
 
     /// RFC 7541 §5.1 — Reading integer at end of data throws HpackException (§5.1)
     /// RFC 7541 §5.1 — ReadInteger with prefixBits=0 is an invalid call (must be 1-8)
-    [Fact(DisplayName = "PI-008: ReadInteger with prefixBits=0 throws ArgumentOutOfRangeException (§5.1)")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-008: ReadInteger with prefixBits=0 throws ArgumentOutOfRangeException (§5.1)")]
     public void ReadInteger_PrefixBitsZero_ThrowsArgumentOutOfRangeException()
     {
         var data = new byte[] { 0x00 };
@@ -479,7 +479,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.1 — ReadInteger with prefixBits=9 is an invalid call (must be 1-8)
-    [Fact(DisplayName = "PI-009: ReadInteger with prefixBits=9 throws ArgumentOutOfRangeException (§5.1)")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-009: ReadInteger with prefixBits=9 throws ArgumentOutOfRangeException (§5.1)")]
     public void ReadInteger_PrefixBitsNine_ThrowsArgumentOutOfRangeException()
     {
         var data = new byte[] { 0x00 };
@@ -492,7 +492,7 @@ public sealed class HpackHeaderBlockDecodingTests
     /// RFC 7541 §5.1 — Excessively long multi-byte integer (shift >= 62) must throw HpackException.
     /// Encoding: 1-bit prefix byte (0x01 = all-ones for prefix=1) + 9 continuation bytes (MSB=1, value bits=0).
     /// At the 10th loop iteration, shift reaches 63 >= 62 → encoding length exceeded.
-    [Fact(DisplayName = "PI-010: Integer with 10 continuation bytes triggers shift>=62 overflow guard (§5.1)")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-010: Integer with 10 continuation bytes triggers shift>=62 overflow guard (§5.1)")]
     public void ReadInteger_TenContinuationBytes_ThrowsEncodingOverflowException()
     {
         // Build: [0x01, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00]
@@ -506,7 +506,7 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Contains("encoding length exceeded", ex.Message);
     }
 
-    [Fact(DisplayName = "PI-007: Reading integer at end of data throws HpackException (§5.1)")]
+    [Fact(DisplayName = "RFC7541-5.1-PI-007: Reading integer at end of data throws HpackException (§5.1)")]
     public void ReadInteger_AtEndOfData_ThrowsHpackException()
     {
         var data = Array.Empty<byte>();
@@ -519,7 +519,7 @@ public sealed class HpackHeaderBlockDecodingTests
 
     /// RFC 7541 §5.2 — String length exceeds available data throws HpackException (§5.2)
     /// RFC 7541 — HpackException(string, Exception) constructor sets InnerException correctly.
-    [Fact(DisplayName = "LF-006: HpackException two-arg constructor sets InnerException")]
+    [Fact(DisplayName = "RFC7541-5.2-LF-006: HpackException two-arg constructor sets InnerException")]
     public void HpackException_TwoArgCtor_SetsInnerException()
     {
         var inner = new InvalidOperationException("cause");
@@ -528,7 +528,7 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Same(inner, ex.InnerException);
     }
 
-    [Fact(DisplayName = "LF-001: String length exceeds available data throws HpackException (§5.2)")]
+    [Fact(DisplayName = "RFC7541-5.2-LF-001: String length exceeds available data throws HpackException (§5.2)")]
     public void StringLength_ExceedsAvailableData_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -538,7 +538,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.2 — Empty string literal (length 0) is accepted
-    [Fact(DisplayName = "LF-002: Empty string literal (length 0) is accepted")]
+    [Fact(DisplayName = "RFC7541-5.2-LF-002: Empty string literal (length 0) is accepted")]
     public void StringLength_Zero_Accepted()
     {
         var decoder = new HpackDecoder();
@@ -551,7 +551,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.2 — String length exceeding maxStringLength throws HpackException
-    [Fact(DisplayName = "LF-003: String length exceeding maxStringLength throws HpackException")]
+    [Fact(DisplayName = "RFC7541-5.2-LF-003: String length exceeding maxStringLength throws HpackException")]
     public void StringLength_ExceedsMaxStringLength_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -564,7 +564,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.2 — String value length exceeding maxStringLength throws HpackException
-    [Fact(DisplayName = "LF-005: String value length exceeding maxStringLength throws HpackException")]
+    [Fact(DisplayName = "RFC7541-5.2-LF-005: String value length exceeding maxStringLength throws HpackException")]
     public void StringValueLength_ExceedsMaxStringLength_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -585,7 +585,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §5.2 — Non-Huffman string with multi-byte content decoded correctly
-    [Fact(DisplayName = "LF-004: Non-Huffman string with multi-byte content decoded correctly")]
+    [Fact(DisplayName = "RFC7541-5.2-LF-004: Non-Huffman string with multi-byte content decoded correctly")]
     public void StringLiteral_NonHuffman_MultiByteContent_Decoded()
     {
         var decoder = new HpackDecoder();
@@ -602,7 +602,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── ME-00x: Malformed Encoding Detection ─────────────────────────────────
 
     /// RFC 7541 §6 — Empty byte array returns empty header list
-    [Fact(DisplayName = "ME-001: Empty byte array returns empty header list")]
+    [Fact(DisplayName = "RFC7541-6-ME-001: Empty byte array returns empty header list")]
     public void Decode_EmptyInput_ReturnsEmptyList()
     {
         var decoder = new HpackDecoder();
@@ -611,7 +611,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Index 0 in indexed representation throws HpackException (§2.3.3)
-    [Fact(DisplayName = "ME-002: Index 0 in indexed representation throws HpackException (§2.3.3)")]
+    [Fact(DisplayName = "RFC7541-6-ME-002: Index 0 in indexed representation throws HpackException (§2.3.3)")]
     public void Decode_IndexedRepresentation_Index0_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -620,7 +620,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Dynamic index out of range (table empty) throws HpackException (§2.3.3)
-    [Fact(DisplayName = "ME-003: Dynamic index out of range (table empty) throws HpackException (§2.3.3)")]
+    [Fact(DisplayName = "RFC7541-6-ME-003: Dynamic index out of range (table empty) throws HpackException (§2.3.3)")]
     public void Decode_DynamicIndex_TableEmpty_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -630,7 +630,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Empty header name in literal representation throws HpackException (§7.2)
-    [Fact(DisplayName = "ME-004: Empty header name in literal representation throws HpackException (§7.2)")]
+    [Fact(DisplayName = "RFC7541-6-ME-004: Empty header name in literal representation throws HpackException (§7.2)")]
     public void Decode_EmptyHeaderName_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -640,7 +640,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Truncated indexed field (no data after prefix byte) throws HpackException
-    [Fact(DisplayName = "ME-005: Truncated indexed field (no data after prefix byte) throws HpackException")]
+    [Fact(DisplayName = "RFC7541-6-ME-005: Truncated indexed field (no data after prefix byte) throws HpackException")]
     public void Decode_TruncatedIndexedField_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -650,7 +650,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Truncated string data (fewer bytes than declared length) throws HpackException
-    [Fact(DisplayName = "ME-006: Truncated string data (fewer bytes than declared length) throws HpackException")]
+    [Fact(DisplayName = "RFC7541-6-ME-006: Truncated string data (fewer bytes than declared length) throws HpackException")]
     public void Decode_TruncatedStringData_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -660,7 +660,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Mixed representation types decoded correctly in one block
-    [Fact(DisplayName = "ME-007: Mixed representation types decoded correctly in one block")]
+    [Fact(DisplayName = "RFC7541-6-ME-007: Mixed representation types decoded correctly in one block")]
     public void Decode_MixedRepresentationTypes_AllDecoded()
     {
         var decoder = new HpackDecoder();
@@ -681,7 +681,7 @@ public sealed class HpackHeaderBlockDecodingTests
     // ── RT-00x: Round-Trip Verification ──────────────────────────────────────
 
     /// RFC 7541 §6 — Encoder/decoder round-trip — all static-only headers
-    [Fact(DisplayName = "RT-001: Encoder/decoder round-trip — all static-only headers")]
+    [Fact(DisplayName = "RFC7541-6-RT-001: Encoder/decoder round-trip — all static-only headers")]
     public void RoundTrip_StaticOnlyHeaders_MatchAfterDecode()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -707,7 +707,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Encoder/decoder round-trip — dynamic table populated correctly
-    [Fact(DisplayName = "RT-002: Encoder/decoder round-trip — dynamic table populated correctly")]
+    [Fact(DisplayName = "RFC7541-6-RT-002: Encoder/decoder round-trip — dynamic table populated correctly")]
     public void RoundTrip_DynamicTable_Repopulated()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -735,7 +735,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Encoder/decoder round-trip — second request reuses dynamic table
-    [Fact(DisplayName = "RT-003: Encoder/decoder round-trip — second request reuses dynamic table")]
+    [Fact(DisplayName = "RFC7541-6-RT-003: Encoder/decoder round-trip — second request reuses dynamic table")]
     public void RoundTrip_SecondRequest_ReusesDynamicTable()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -767,7 +767,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Encoder/decoder round-trip — Huffman encoding enabled
-    [Fact(DisplayName = "RT-004: Encoder/decoder round-trip — Huffman encoding enabled")]
+    [Fact(DisplayName = "RFC7541-6-RT-004: Encoder/decoder round-trip — Huffman encoding enabled")]
     public void RoundTrip_HuffmanEnabled_CorrectlyDecoded()
     {
         var encoder = new HpackEncoder(useHuffman: true);
@@ -795,7 +795,7 @@ public sealed class HpackHeaderBlockDecodingTests
     }
 
     /// RFC 7541 §6 — Sensitive headers (authorization, cookie) are automatically NeverIndexed
-    [Fact(DisplayName = "RT-005: Sensitive headers (authorization, cookie) are automatically NeverIndexed")]
+    [Fact(DisplayName = "RFC7541-6-RT-005: Sensitive headers (authorization, cookie) are automatically NeverIndexed")]
     public void RoundTrip_SensitiveHeaders_AutomaticallyNeverIndexed()
     {
         var encoder = new HpackEncoder(useHuffman: false);

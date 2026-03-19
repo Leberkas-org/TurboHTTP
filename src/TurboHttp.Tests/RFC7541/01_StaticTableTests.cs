@@ -19,14 +19,14 @@ public sealed class HpackStaticTableTests
     // ── Static Table Structure ────────────────────────────────────────────────
 
     /// RFC 7541 Appendix A — Static table contains exactly 61 entries
-    [Fact(DisplayName = "ST-001: Static table contains exactly 61 entries")]
+    [Fact(DisplayName = "RFC7541-A-ST-001: Static table contains exactly 61 entries")]
     public void StaticTable_Count_IsExactly61()
     {
         Assert.Equal(61, HpackStaticTable.StaticCount);
     }
 
     /// RFC 7541 Appendix A — Static table array has 62 slots (index 0 reserved)
-    [Fact(DisplayName = "ST-002: Static table array has 62 slots (index 0 reserved)")]
+    [Fact(DisplayName = "RFC7541-A-ST-002: Static table array has 62 slots (index 0 reserved)")]
     public void StaticTable_Array_Has62Slots()
     {
         // Entries array has index 0 (reserved) + 61 entries = 62 elements
@@ -34,7 +34,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Index 0 is reserved (empty name and value)
-    [Fact(DisplayName = "ST-003: Index 0 is reserved (empty name and value)")]
+    [Fact(DisplayName = "RFC7541-A-ST-003: Index 0 is reserved (empty name and value)")]
     public void StaticTable_IndexZero_IsReserved()
     {
         var entry = HpackStaticTable.Entries[0];
@@ -113,7 +113,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — All 61 static entries have correct name and value
-    [Theory(DisplayName = "ST-004: All 61 static entries have correct name and value")]
+    [Theory(DisplayName = "RFC7541-A-ST-004: All 61 static entries have correct name and value")]
     [MemberData(nameof(AllStaticEntries))]
     public void StaticTable_AllEntries_HaveCorrectNameAndValue(int index, string expectedName, string expectedValue)
     {
@@ -125,7 +125,7 @@ public sealed class HpackStaticTableTests
     // ── Decoder Resolves Static Indices to Correct Headers ────────────────────
 
     /// RFC 7541 Appendix A — Decode index 2 → :method=GET
-    [Fact(DisplayName = "ST-010: Decode index 2 → :method=GET")]
+    [Fact(DisplayName = "RFC7541-A-ST-010: Decode index 2 → :method=GET")]
     public void Decoder_Index2_Returns_MethodGet()
     {
         var decoder = new HpackDecoder();
@@ -137,7 +137,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 3 → :method=POST
-    [Fact(DisplayName = "ST-011: Decode index 3 → :method=POST")]
+    [Fact(DisplayName = "RFC7541-A-ST-011: Decode index 3 → :method=POST")]
     public void Decoder_Index3_Returns_MethodPost()
     {
         var decoder = new HpackDecoder();
@@ -148,7 +148,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 4 → :path=/
-    [Fact(DisplayName = "ST-012: Decode index 4 → :path=/")]
+    [Fact(DisplayName = "RFC7541-A-ST-012: Decode index 4 → :path=/")]
     public void Decoder_Index4_Returns_PathRoot()
     {
         var decoder = new HpackDecoder();
@@ -159,7 +159,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 5 → :path=/index.html
-    [Fact(DisplayName = "ST-013: Decode index 5 → :path=/index.html")]
+    [Fact(DisplayName = "RFC7541-A-ST-013: Decode index 5 → :path=/index.html")]
     public void Decoder_Index5_Returns_PathIndexHtml()
     {
         var decoder = new HpackDecoder();
@@ -170,7 +170,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 7 → :scheme=https
-    [Fact(DisplayName = "ST-014: Decode index 7 → :scheme=https")]
+    [Fact(DisplayName = "RFC7541-A-ST-014: Decode index 7 → :scheme=https")]
     public void Decoder_Index7_Returns_SchemeHttps()
     {
         var decoder = new HpackDecoder();
@@ -181,7 +181,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 8 → :status=200
-    [Fact(DisplayName = "ST-015: Decode index 8 → :status=200")]
+    [Fact(DisplayName = "RFC7541-A-ST-015: Decode index 8 → :status=200")]
     public void Decoder_Index8_Returns_Status200()
     {
         var decoder = new HpackDecoder();
@@ -192,7 +192,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 13 → :status=404
-    [Fact(DisplayName = "ST-016: Decode index 13 → :status=404")]
+    [Fact(DisplayName = "RFC7541-A-ST-016: Decode index 13 → :status=404")]
     public void Decoder_Index13_Returns_Status404()
     {
         var decoder = new HpackDecoder();
@@ -203,7 +203,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 16 → accept-encoding=gzip, deflate
-    [Fact(DisplayName = "ST-017: Decode index 16 → accept-encoding=gzip, deflate")]
+    [Fact(DisplayName = "RFC7541-A-ST-017: Decode index 16 → accept-encoding=gzip, deflate")]
     public void Decoder_Index16_Returns_AcceptEncoding()
     {
         var decoder = new HpackDecoder();
@@ -214,7 +214,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 61 → www-authenticate=''
-    [Fact(DisplayName = "ST-018: Decode index 61 → www-authenticate=''")]
+    [Fact(DisplayName = "RFC7541-A-ST-018: Decode index 61 → www-authenticate=''")]
     public void Decoder_Index61_Returns_WwwAuthenticate()
     {
         var decoder = new HpackDecoder();
@@ -228,7 +228,7 @@ public sealed class HpackStaticTableTests
     // ── Encoder Produces Correct Indexed Wire Bytes ────────────────────────────
 
     /// RFC 7541 Appendix A — Encode :method=GET produces single byte 0x82
-    [Fact(DisplayName = "ST-020: Encode :method=GET produces single byte 0x82")]
+    [Fact(DisplayName = "RFC7541-A-ST-020: Encode :method=GET produces single byte 0x82")]
     public void Encoder_MethodGet_ProducesByte0x82()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -239,7 +239,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Encode :method=POST produces single byte 0x83
-    [Fact(DisplayName = "ST-021: Encode :method=POST produces single byte 0x83")]
+    [Fact(DisplayName = "RFC7541-A-ST-021: Encode :method=POST produces single byte 0x83")]
     public void Encoder_MethodPost_ProducesByte0x83()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -250,7 +250,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Encode :path=/ produces single byte 0x84
-    [Fact(DisplayName = "ST-022: Encode :path=/ produces single byte 0x84")]
+    [Fact(DisplayName = "RFC7541-A-ST-022: Encode :path=/ produces single byte 0x84")]
     public void Encoder_PathRoot_ProducesByte0x84()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -261,7 +261,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Encode :scheme=https produces single byte 0x87
-    [Fact(DisplayName = "ST-023: Encode :scheme=https produces single byte 0x87")]
+    [Fact(DisplayName = "RFC7541-A-ST-023: Encode :scheme=https produces single byte 0x87")]
     public void Encoder_SchemeHttps_ProducesByte0x87()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -272,7 +272,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Encode :status=200 produces single byte 0x88
-    [Fact(DisplayName = "ST-024: Encode :status=200 produces single byte 0x88")]
+    [Fact(DisplayName = "RFC7541-A-ST-024: Encode :status=200 produces single byte 0x88")]
     public void Encoder_Status200_ProducesByte0x88()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -283,7 +283,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Encode :status=404 produces single byte 0x8D
-    [Fact(DisplayName = "ST-025: Encode :status=404 produces single byte 0x8D")]
+    [Fact(DisplayName = "RFC7541-A-ST-025: Encode :status=404 produces single byte 0x8D")]
     public void Encoder_Status404_ProducesByte0x8D()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -296,7 +296,7 @@ public sealed class HpackStaticTableTests
     // ── Invalid Index Rejection ────────────────────────────────────────────────
 
     /// RFC 7541 Appendix A — Decode index 0 (0x80) throws HpackException — reserved index
-    [Fact(DisplayName = "ST-030: Decode index 0 (0x80) throws HpackException — reserved index")]
+    [Fact(DisplayName = "RFC7541-A-ST-030: Decode index 0 (0x80) throws HpackException — reserved index")]
     public void Decoder_IndexZero_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -305,7 +305,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 62 (0xBE) with empty dynamic table throws HpackException
-    [Fact(DisplayName = "ST-031: Decode index 62 (0xBE) with empty dynamic table throws HpackException")]
+    [Fact(DisplayName = "RFC7541-A-ST-031: Decode index 62 (0xBE) with empty dynamic table throws HpackException")]
     public void Decoder_Index62_EmptyDynamicTable_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -315,7 +315,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode index 100 with empty dynamic table throws HpackException
-    [Fact(DisplayName = "ST-032: Decode index 100 with empty dynamic table throws HpackException")]
+    [Fact(DisplayName = "RFC7541-A-ST-032: Decode index 100 with empty dynamic table throws HpackException")]
     public void Decoder_Index100_EmptyDynamicTable_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -326,7 +326,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decode very large index throws HpackException
-    [Fact(DisplayName = "ST-033: Decode very large index throws HpackException")]
+    [Fact(DisplayName = "RFC7541-A-ST-033: Decode very large index throws HpackException")]
     public void Decoder_VeryLargeIndex_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -341,7 +341,7 @@ public sealed class HpackStaticTableTests
     // ── Static Name-Only Match (encoder uses static index for name) ────────────
 
     /// RFC 7541 Appendix A — Encode :authority with custom value uses static index 1 for name
-    [Fact(DisplayName = "ST-040: Encode :authority with custom value uses static index 1 for name")]
+    [Fact(DisplayName = "RFC7541-A-ST-040: Encode :authority with custom value uses static index 1 for name")]
     public void Encoder_AuthorityWithCustomValue_UsesStaticNameIndex1()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -354,7 +354,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Encode accept-encoding with custom value uses static index 16 for name
-    [Fact(DisplayName = "ST-041: Encode accept-encoding with custom value uses static index 16 for name")]
+    [Fact(DisplayName = "RFC7541-A-ST-041: Encode accept-encoding with custom value uses static index 16 for name")]
     public void Encoder_AcceptEncodingWithCustomValue_UsesStaticNameIndex16()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -369,7 +369,7 @@ public sealed class HpackStaticTableTests
     // ── Round-Trip via Static Table ────────────────────────────────────────────
 
     /// RFC 7541 Appendix A — Round-trip encode/decode all pseudo-headers via static table
-    [Fact(DisplayName = "ST-050: Round-trip encode/decode all pseudo-headers via static table")]
+    [Fact(DisplayName = "RFC7541-A-ST-050: Round-trip encode/decode all pseudo-headers via static table")]
     public void RoundTrip_AllPseudoHeaders_ViaStaticTable()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -402,7 +402,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — All 61 static full-match entries produce exactly 1 byte when encoded
-    [Fact(DisplayName = "ST-051: All 61 static full-match entries produce exactly 1 byte when encoded")]
+    [Fact(DisplayName = "RFC7541-A-ST-051: All 61 static full-match entries produce exactly 1 byte when encoded")]
     public void Encoder_AllStaticFullMatches_ProduceSingleByte()
     {
         // Only entries with non-empty values can be full-matched in the static table
@@ -434,7 +434,7 @@ public sealed class HpackStaticTableTests
     }
 
     /// RFC 7541 Appendix A — Decoder can decode all 61 static indices (Theory via loop)
-    [Fact(DisplayName = "ST-052: Decoder can decode all 61 static indices (Theory via loop)")]
+    [Fact(DisplayName = "RFC7541-A-ST-052: Decoder can decode all 61 static indices (Theory via loop)")]
     public void Decoder_AllStaticIndices_ResolveCorrectly()
     {
         var decoder = new HpackDecoder();

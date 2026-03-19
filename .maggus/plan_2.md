@@ -85,11 +85,11 @@ RFC{number}-{section}-{CAT}-{NNN}: {description}
 **Description:** As a developer, I want HPACK tests to use the canonical `RFC7541-{section}-{CAT}-{NNN}` format consistently.
 
 **Acceptance Criteria:**
-- [ ] Bare category codes like `ST-001`, `DT-001` get RFC prefix: `RFC7541-2.3-ST-001`
-- [ ] Mixed prefixes like `7541-st-001`, `hpack-int-001` converted to standard format
-- [ ] HpackTests.cs — tests without DisplayName get one added where RFC section is clear
-- [ ] Section mapping: Static Table=2.3, Dynamic Table=2.3.2, Huffman=5, Integer Repr=5.1, Header Block=4
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC7541"` passes with 0 failures
+- [x] Bare category codes like `ST-001`, `DT-001` get RFC prefix: `RFC7541-2.3-ST-001`
+- [x] Mixed prefixes like `7541-st-001`, `hpack-int-001` converted to standard format
+- [x] HpackTests.cs — tests without DisplayName get one added where RFC section is clear
+- [x] Section mapping: Static Table=2.3, Dynamic Table=2.3.2, Huffman=5, Integer Repr=5.1, Header Block=4
+- [x] `dotnet test --filter "FullyQualifiedName~RFC7541"` passes with 0 failures
 
 ### TASK-005: RFC 9110 — Unify Semantics format (3 files, ~104 DisplayNames)
 **Description:** As a developer, I want HTTP Semantics tests (redirects, retries, content encoding) to use the `RFC9110-{section}-{CAT}-{NNN}` format.

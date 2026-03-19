@@ -5,7 +5,7 @@ namespace TurboHttp.Tests.RFC7541;
 
 public sealed class HpackTests
 {
-    [Fact]
+    [Fact(DisplayName = "RFC7541-A-ST-060: Encode indexed static entry produces single byte")]
     public void Encode_IndexedStaticEntry_SingleByte()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -16,7 +16,7 @@ public sealed class HpackTests
         Assert.Equal(0x82, encoded.Span[0]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-6-RT-010: Round-trip pseudo-headers via encode/decode")]
     public void Encode_Decode_RoundTrip_PseudoHeaders()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -41,7 +41,7 @@ public sealed class HpackTests
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-5.2-RT-020: Round-trip with Huffman encoding")]
     public void Encode_Decode_RoundTrip_WithHuffman()
     {
         var encoder = new HpackEncoder(useHuffman: true);
@@ -69,7 +69,7 @@ public sealed class HpackTests
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-6.2-LH-001: Literal new name decoded in correct order")]
     public void Decode_LiteralNewName_CorrectOrder()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -91,7 +91,7 @@ public sealed class HpackTests
         Assert.Equal("data", decoded[1].Value);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-6.3-TS-010: Dynamic table size update respected")]
     public void Decode_DynamicTableSizeUpdate_Respected()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -122,7 +122,7 @@ public sealed class HpackTests
 
     // ── US-201: RFC 7541 §2.3 — Dynamic table eviction ──────────────────────
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-4-DT-060: Eviction removes oldest entry when full")]
     public void DynamicTable_Eviction_OldestEntryRemovedWhenFull()
     {
         // RFC 7541 §4.4: When adding a new entry causes table size to exceed
@@ -158,7 +158,7 @@ public sealed class HpackTests
         Assert.Null(table.GetEntry(3));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-4-DT-061: Eviction order — newest survives")]
     public void DynamicTable_EvictionOrder_NewestSurvives()
     {
         // RFC 7541 §4.4: Eviction is FIFO — oldest entries removed first.
@@ -199,7 +199,7 @@ public sealed class HpackTests
         Assert.Null(table.GetEntry(3));
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-4-DT-062: Negative table size throws HpackException")]
     public void DynamicTable_SizeTooBig_ThrowsHpackException()
     {
         // RFC 7541 §4.2: Negative table size is invalid and must be rejected.
@@ -211,7 +211,7 @@ public sealed class HpackTests
 
     // ── US-202: RFC 7541 §5.1 — Integer representation edge cases ────────────
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-5.1-IR-010: Integer fits in prefix — single byte")]
     public void ReadInteger_FitsInPrefix_SingleByte()
     {
         // RFC 7541 §5.1: If the integer value fits within the prefix bits,
@@ -225,7 +225,7 @@ public sealed class HpackTests
         Assert.Equal(1, pos); // consumed exactly 1 byte
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-5.1-IR-011: Multi-byte integer 1337 decoded correctly")]
     public void ReadInteger_MultiByteEncoding_DecodedCorrectly()
     {
         // RFC 7541 §5.1 example: integer 1337 encoded with 5-bit prefix.
@@ -240,7 +240,7 @@ public sealed class HpackTests
         Assert.Equal(3, pos);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-5.1-IR-012: Maximum integer value accepted")]
     public void ReadInteger_MaxValue_Accepted()
     {
         // RFC 7541 §5.1: Values up to (1 << 28) - 1 must be accepted.
@@ -256,7 +256,7 @@ public sealed class HpackTests
         Assert.Equal(maxValue, result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-5.1-IR-013: Integer overflow throws HpackException")]
     public void ReadInteger_Overflow_ThrowsHpackException()
     {
         // RFC 7541 §5.1: Integer overflow must be detected.
@@ -279,7 +279,7 @@ public sealed class HpackTests
         Assert.Contains("overflow", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-5.1-IR-014: Truncated integer data throws HpackException")]
     public void ReadInteger_TruncatedData_ThrowsHpackException()
     {
         // RFC 7541 §5.1: A multi-byte integer with no stop bit (continuation
@@ -299,7 +299,7 @@ public sealed class HpackTests
 
     // ── End US-202 ────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-C.2-004: Appendix C.2.1 first request without Huffman")]
     public void Decode_Rfc7541_AppendixC2_FirstRequest()
     {
         // RFC 7541 Appendix C.2.1 - First Request WITHOUT Huffman encoding
@@ -341,7 +341,7 @@ public sealed class HpackTests
         }
     }
 
-    [Theory(DisplayName = "7541-st-001: Static table entry {0} [{1}:{2}] round-trips as indexed representation")]
+    [Theory(DisplayName = "RFC7541-A-ST-070: Static table entry {0} [{1}:{2}] round-trips as indexed representation")]
     [MemberData(nameof(StaticTableEntries))]
     public void StaticTableEntry_RoundTrips(int index, string name, string value)
     {
@@ -367,7 +367,7 @@ public sealed class HpackTests
         ["proxy-authorization"],
     ];
 
-    [Theory(DisplayName = "7541-ni-001: {0} encoded with NeverIndexed byte pattern (0x10)")]
+    [Theory(DisplayName = "RFC7541-7.1.3-NI-001: {0} encoded with NeverIndexed byte pattern (0x10)")]
     [MemberData(nameof(SensitiveHeaders))]
     public void NeverIndexed_SensitiveHeader_FirstByteHas0x10Flag(string headerName)
     {
@@ -379,7 +379,7 @@ public sealed class HpackTests
             $"Expected first byte 0x{encoded.Span[0]:X2} to have NeverIndexed flag (0x10) for '{headerName}'");
     }
 
-    [Theory(DisplayName = "7541-ni-002: {0} with NeverIndexed does not grow dynamic table")]
+    [Theory(DisplayName = "RFC7541-7.1.3-NI-002: {0} with NeverIndexed does not grow dynamic table")]
     [MemberData(nameof(SensitiveHeaders))]
     public void NeverIndexed_SensitiveHeader_DoesNotGrowDynamicTable(string headerName)
     {
@@ -399,7 +399,7 @@ public sealed class HpackTests
         Assert.Equal(indexed.Span[0], afterSensitive.Span[0]); // same byte — table unchanged
     }
 
-    [Fact(DisplayName = "7541-ni-003: Decoded authorization header preserves NeverIndex flag")]
+    [Fact(DisplayName = "RFC7541-7.1.3-NI-003: Decoded authorization header preserves NeverIndex flag")]
     public void NeverIndexed_AuthorizationHeader_PreservesFlag()
     {
         // RFC 7541 §6.2.3: NeverIndexed literal — 0x10 prefix, nameIdx=23 (authorization in static table)
@@ -428,7 +428,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 §2.3: Dynamic Table ─────────────────────────────────────────
 
-    [Fact(DisplayName = "7541-2.3-001: Incrementally indexed header added at dynamic index 62")]
+    [Fact(DisplayName = "RFC7541-2.3-DT-070: Incrementally indexed header added at dynamic index 62")]
     public void DynamicTable_IncrementallyIndexed_AddedAtIndex62()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -450,7 +450,7 @@ public sealed class HpackTests
         Assert.Equal("hello", decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-2.3-002: Oldest entry evicted when dynamic table full")]
+    [Fact(DisplayName = "RFC7541-2.3-DT-071: Oldest entry evicted when dynamic table full")]
     public void DynamicTable_OldestEntryEvicted_WhenFull()
     {
         var table = new HpackDynamicTable();
@@ -466,7 +466,7 @@ public sealed class HpackTests
         Assert.Null(table.GetEntry(3));                    // "a" evicted
     }
 
-    [Fact(DisplayName = "7541-2.3-003: Dynamic table resized on SETTINGS_HEADER_TABLE_SIZE")]
+    [Fact(DisplayName = "RFC7541-2.3-DT-072: Dynamic table resized on SETTINGS_HEADER_TABLE_SIZE")]
     public void DynamicTable_Resized_OnSettingsHeaderTableSize()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -491,7 +491,7 @@ public sealed class HpackTests
         Assert.Equal("4", decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-2.3-004: Dynamic table size 0 evicts all entries")]
+    [Fact(DisplayName = "RFC7541-2.3-DT-073: Dynamic table size 0 evicts all entries")]
     public void DynamicTable_SizeZero_EvictsAllEntries()
     {
         var table = new HpackDynamicTable();
@@ -505,7 +505,7 @@ public sealed class HpackTests
         Assert.Equal(0, table.CurrentSize);
     }
 
-    [Fact(DisplayName = "7541-2.3-005: Table size exceeding maximum causes COMPRESSION_ERROR")]
+    [Fact(DisplayName = "RFC7541-2.3-DT-074: Table size exceeding maximum causes COMPRESSION_ERROR")]
     public void DynamicTable_SizeExceedingMax_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -520,7 +520,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode(bytes));
     }
 
-    [Fact(DisplayName = "hpack-dt-001: Entry size counted as name + value + 32 overhead")]
+    [Fact(DisplayName = "RFC7541-4-DT-075: Entry size counted as name + value + 32 overhead")]
     public void DynamicTable_EntrySize_NamePlusValuePlus32()
     {
         var table = new HpackDynamicTable();
@@ -530,7 +530,7 @@ public sealed class HpackTests
         Assert.Equal(42, table.CurrentSize);
     }
 
-    [Fact(DisplayName = "hpack-dt-002: Size update prefix emitted when table resized")]
+    [Fact(DisplayName = "RFC7541-4-DT-076: Size update prefix emitted when table resized")]
     public void DynamicTable_SizeUpdatePrefix_EmittedAfterResize()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -546,7 +546,7 @@ public sealed class HpackTests
         Assert.Equal(0x3F, encoded.Span[0]); // size update prefix byte
     }
 
-    [Fact(DisplayName = "hpack-dt-003: Three entries evicted in FIFO order")]
+    [Fact(DisplayName = "RFC7541-4-DT-077: Three entries evicted in FIFO order")]
     public void DynamicTable_ThreeEntries_EvictedFifoOrder()
     {
         var table = new HpackDynamicTable();
@@ -569,7 +569,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 §5.1: Integer Representation ────────────────────────────────
 
-    [Fact(DisplayName = "7541-5.1-001: Integer smaller than prefix limit encodes in one byte")]
+    [Fact(DisplayName = "RFC7541-5.1-IR-001: Integer smaller than prefix limit encodes in one byte")]
     public void Integer_SmallerThanPrefixLimit_EncodesInOneByte()
     {
         // 5-bit prefix → limit = 31. Value 10 < 31 → single byte
@@ -580,7 +580,7 @@ public sealed class HpackTests
         Assert.Equal(10, buf.WrittenSpan[0]);
     }
 
-    [Fact(DisplayName = "7541-5.1-002: Integer at prefix limit requires continuation bytes")]
+    [Fact(DisplayName = "RFC7541-5.1-IR-002: Integer at prefix limit requires continuation bytes")]
     public void Integer_AtPrefixLimit_RequiresContinuationBytes()
     {
         // 5-bit prefix → limit = 31. Value 31 == limit → multi-byte (RFC 7541 §5.1 example)
@@ -593,7 +593,7 @@ public sealed class HpackTests
         Assert.Equal(0x00, buf.WrittenSpan[1]);
     }
 
-    [Fact(DisplayName = "7541-5.1-003: Maximum integer 2147483647 round-trips")]
+    [Fact(DisplayName = "RFC7541-5.1-IR-003: Maximum integer 2147483647 round-trips")]
     public void Integer_MaxValue_2147483647_RoundTrips()
     {
         const int max = int.MaxValue; // 2147483647 = 2^31 - 1
@@ -608,7 +608,7 @@ public sealed class HpackTests
         Assert.Equal(encoded.Length, pos); // consumed all bytes
     }
 
-    [Fact(DisplayName = "7541-5.1-004: Integer exceeding 2^31-1 causes COMPRESSION_ERROR")]
+    [Fact(DisplayName = "RFC7541-5.1-IR-004: Integer exceeding 2^31-1 causes COMPRESSION_ERROR")]
     public void Integer_ExceedingMaxInt_ThrowsHpackException()
     {
         // Craft bytes representing 2147483648 (int.MaxValue + 1) with 5-bit prefix:
@@ -621,7 +621,7 @@ public sealed class HpackTests
         Assert.Contains("overflow", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory(DisplayName = "hpack-int-001: Integer encoding with {0}-bit prefix")]
+    [Theory(DisplayName = "RFC7541-5.1-IR-005: Integer encoding with {0}-bit prefix")]
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
@@ -663,7 +663,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 §5.2: String Representation ─────────────────────────────────
 
-    [Fact(DisplayName = "7541-5.2-001: Plain string literal decoded")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-001: Plain string literal decoded")]
     public void StringLiteral_Plain_Decoded()
     {
         // H=0 (bit 7 = 0), length=5, "hello"
@@ -683,7 +683,7 @@ public sealed class HpackTests
         Assert.Equal("hello", decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-5.2-002: Huffman-encoded string decoded")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-002: Huffman-encoded string decoded")]
     public void StringLiteral_Huffman_Decoded()
     {
         // Encode "hello" with Huffman via the encoder, decode with decoder
@@ -708,7 +708,7 @@ public sealed class HpackTests
         Assert.Equal("hello", decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-5.2-003: Empty string literal decoded")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-003: Empty string literal decoded")]
     public void StringLiteral_Empty_Decoded()
     {
         // without-indexing, literal name "a", value "" (H=0, length=0)
@@ -721,7 +721,7 @@ public sealed class HpackTests
         Assert.Equal(string.Empty, decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-5.2-004: String larger than 8KB decoded")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-004: String larger than 8KB decoded")]
     public void StringLiteral_LargerThan8KB_DecodedWithoutTruncation()
     {
         // Build a 9000-byte value string
@@ -744,7 +744,7 @@ public sealed class HpackTests
         Assert.Equal(valueStr, decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-5.2-005: Malformed Huffman data causes COMPRESSION_ERROR")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-005: Malformed Huffman data causes COMPRESSION_ERROR")]
     public void StringLiteral_MalformedHuffman_ThrowsHpackException()
     {
         // Build header with H=1 (Huffman) but invalid Huffman bytes
@@ -755,7 +755,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode(raw));
     }
 
-    [Fact(DisplayName = "hpack-str-001: Non-1 EOS padding bits cause COMPRESSION_ERROR")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-006: Non-1 EOS padding bits cause COMPRESSION_ERROR")]
     public void StringLiteral_NonOneEosPaddingBits_ThrowsHpackException()
     {
         // After Huffman decoding, if padding bits are not all-1s (RFC 7541 §5.2)
@@ -769,7 +769,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode(raw));
     }
 
-    [Fact(DisplayName = "hpack-str-002: EOS padding > 7 bits causes COMPRESSION_ERROR")]
+    [Fact(DisplayName = "RFC7541-5.2-SR-007: EOS padding > 7 bits causes COMPRESSION_ERROR")]
     public void StringLiteral_EosPaddingMoreThan7Bits_ThrowsHpackException()
     {
         // RFC 7541 §5.2: padding must be < 8 bits (i.e., at most one partial byte)
@@ -788,7 +788,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 §6.1: Indexed Header Field ──────────────────────────────────
 
-    [Fact(DisplayName = "7541-6.1-002: Dynamic table entry at index 62+ retrieved")]
+    [Fact(DisplayName = "RFC7541-6.1-IX-002: Dynamic table entry at index 62+ retrieved")]
     public void IndexedHeader_DynamicEntry_RetrievedAtIndex62Plus()
     {
         var decoder = new HpackDecoder();
@@ -812,7 +812,7 @@ public sealed class HpackTests
         Assert.Equal("hello", decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-6.1-003: Index out of range causes COMPRESSION_ERROR")]
+    [Fact(DisplayName = "RFC7541-6.1-IX-003: Index out of range causes COMPRESSION_ERROR")]
     public void IndexedHeader_OutOfRange_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -821,7 +821,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode(bytes));
     }
 
-    [Fact(DisplayName = "hpack-idx-001: Index 0 is invalid per RFC 7541 §6.1")]
+    [Fact(DisplayName = "RFC7541-6.1-IX-001: Index 0 is invalid per RFC 7541 §6.1")]
     public void IndexedHeader_Index0_ThrowsHpackException()
     {
         var decoder = new HpackDecoder();
@@ -832,7 +832,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 §6.2: Literal Header Field ──────────────────────────────────
 
-    [Fact(DisplayName = "7541-6.2-001: Incremental indexing adds entry to dynamic table")]
+    [Fact(DisplayName = "RFC7541-6.2-LH-010: Incremental indexing adds entry to dynamic table")]
     public void LiteralHeader_IncrementalIndexing_AddsToTable()
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -850,7 +850,7 @@ public sealed class HpackTests
         Assert.Equal(0xBE, enc2.Span[0]); // absolute index 62 → 0x80|62
     }
 
-    [Fact(DisplayName = "7541-6.2-002: Without-indexing literal not added to dynamic table")]
+    [Fact(DisplayName = "RFC7541-6.2-LH-011: Without-indexing literal not added to dynamic table")]
     public void LiteralHeader_WithoutIndexing_NotAddedToTable()
     {
         // Build without-indexing header manually: 0x00 | nameIdx, name literal, value literal
@@ -872,7 +872,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode([0xBE]));
     }
 
-    [Fact(DisplayName = "7541-6.2-003: NeverIndexed literal not added to table")]
+    [Fact(DisplayName = "RFC7541-6.2-LH-012: NeverIndexed literal not added to table")]
     public void LiteralHeader_NeverIndexed_NotAddedToTable_FlagPreserved()
     {
         // Build NeverIndexed header: 0x10 | nameIdx=0, literal name, value
@@ -894,7 +894,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode([0xBE]));
     }
 
-    [Fact(DisplayName = "7541-6.2-004: Literal with indexed name and literal value decoded")]
+    [Fact(DisplayName = "RFC7541-6.2-LH-013: Literal with indexed name and literal value decoded")]
     public void LiteralHeader_IndexedNameWithLiteralValue_Decoded()
     {
         // Incremental indexing, name from static table, value literal
@@ -913,7 +913,7 @@ public sealed class HpackTests
         Assert.Equal("DELETE", decoded[0].Value);
     }
 
-    [Fact(DisplayName = "7541-6.2-005: Literal with literal name and literal value decoded")]
+    [Fact(DisplayName = "RFC7541-6.2-LH-014: Literal with literal name and literal value decoded")]
     public void LiteralHeader_LiteralNameAndValue_Decoded()
     {
         // Incremental indexing, nameIdx=0 (both name and value as literals)
@@ -933,7 +933,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 Appendix C.2: Requests without Huffman ──────────────────────
 
-    [Fact(DisplayName = "7541-C.2-001: RFC 7541 Appendix C.2.1 decode")]
+    [Fact(DisplayName = "RFC7541-C.2-001: RFC 7541 Appendix C.2.1 decode")]
     public void AppendixC2_1_FirstRequest_NoHuffman()
     {
         // C.2.1: :method GET, :scheme http, :path /, :authority www.example.com
@@ -957,7 +957,7 @@ public sealed class HpackTests
         Assert.Equal(":authority", headers[3].Name); Assert.Equal("www.example.com", headers[3].Value);
     }
 
-    [Fact(DisplayName = "7541-C.2-002: RFC 7541 Appendix C.2.2 decode (dynamic table)")]
+    [Fact(DisplayName = "RFC7541-C.2-002: RFC 7541 Appendix C.2.2 decode (dynamic table)")]
     public void AppendixC2_2_SecondRequest_DynamicTableReferenced()
     {
         // C.2.2: same as C.2.1 plus cache-control: no-cache
@@ -992,7 +992,7 @@ public sealed class HpackTests
         Assert.Equal("cache-control", headers[4].Name); Assert.Equal("no-cache",        headers[4].Value);
     }
 
-    [Fact(DisplayName = "7541-C.2-003: RFC 7541 Appendix C.2.3 decode")]
+    [Fact(DisplayName = "RFC7541-C.2-003: RFC 7541 Appendix C.2.3 decode")]
     public void AppendixC2_3_ThirdRequest_TableStateCorrect()
     {
         // C.2.3: :method GET, :scheme https, :path /index.html,
@@ -1042,7 +1042,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 Appendix C.3: Requests with Huffman ─────────────────────────
 
-    [Fact(DisplayName = "7541-C.3-001: RFC 7541 Appendix C.3 decode with Huffman")]
+    [Fact(DisplayName = "RFC7541-C.3-001: RFC 7541 Appendix C.3 decode with Huffman")]
     public void AppendixC3_AllThreeRequests_WithHuffman()
     {
         var decoder = new HpackDecoder();
@@ -1091,7 +1091,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 Appendix C.4: Responses without Huffman ─────────────────────
 
-    [Fact(DisplayName = "7541-C.4-001: RFC 7541 Appendix C.4.1 decode")]
+    [Fact(DisplayName = "RFC7541-C.4-001: RFC 7541 Appendix C.4.1 decode")]
     public void AppendixC4_1_FirstResponse_NoHuffman()
     {
         // C.4.1: :status 302, cache-control private, date Mon..., location https://...
@@ -1125,7 +1125,7 @@ public sealed class HpackTests
         Assert.Equal("location",      headers[3].Name); Assert.Equal("https://www.example.com",       headers[3].Value);
     }
 
-    [Fact(DisplayName = "7541-C.4-002: RFC 7541 Appendix C.4.2 decode (dynamic table reused)")]
+    [Fact(DisplayName = "RFC7541-C.4-002: RFC 7541 Appendix C.4.2 decode (dynamic table reused)")]
     public void AppendixC4_2_SecondResponse_DynamicTableReused()
     {
         var decoder = new HpackDecoder();
@@ -1164,7 +1164,7 @@ public sealed class HpackTests
         Assert.Equal("location",      headers[3].Name); Assert.Equal("https://www.example.com",       headers[3].Value);
     }
 
-    [Fact(DisplayName = "7541-C.4-003: RFC 7541 Appendix C.4.3 decode")]
+    [Fact(DisplayName = "RFC7541-C.4-003: RFC 7541 Appendix C.4.3 decode")]
     public void AppendixC4_3_ThirdResponse_CorrectTableStateAfterC4_2()
     {
         // Use encoder/decoder round-trip for C.4.3 which includes set-cookie (NeverIndexed)
@@ -1209,7 +1209,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 Appendix C.5: Responses with Huffman ────────────────────────
 
-    [Fact(DisplayName = "7541-C.5-001: RFC 7541 Appendix C.5 decode with Huffman")]
+    [Fact(DisplayName = "RFC7541-C.5-001: RFC 7541 Appendix C.5 decode with Huffman")]
     public void AppendixC5_ResponsesWithHuffman_DecodeCorrectly()
     {
         // Use encoder (Huffman) + decoder round-trip to verify the three C.5 responses
@@ -1253,7 +1253,7 @@ public sealed class HpackTests
 
     // ── RFC 7541 Appendix C.6: Large Cookie Responses ────────────────────────
 
-    [Fact(DisplayName = "7541-C.6-001: RFC 7541 Appendix C.6 large cookie responses")]
+    [Fact(DisplayName = "RFC7541-C.6-001: RFC 7541 Appendix C.6 large cookie responses")]
     public void AppendixC6_LargeCookieResponses_DecodeCorrectly()
     {
         // C.6 uses three responses, each with large cookie values
@@ -1301,7 +1301,7 @@ public sealed class HpackTests
 
     // ── End Phase 7 ───────────────────────────────────────────────────────────
 
-    [Fact]
+    [Fact(DisplayName = "RFC7541-C.3-002: Appendix C.3 all three requests with Huffman")]
     public void Decode_Rfc7541_AppendixC3_AllThreeRequests()
     {
         // RFC 7541 Appendix C.3 — Request Examples WITH Huffman Coding
