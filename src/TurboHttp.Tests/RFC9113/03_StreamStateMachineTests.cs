@@ -3,29 +3,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §5.1 — HTTP/2 Stream States.
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes frames
-/// involved in stream lifecycle transitions, and that the RFC-required stream
-/// state constraints are enforced by conforming callers.
-///
-/// Covered transitions:
-///   Idle → Open       HEADERS without END_STREAM (§5.1)
-///   Open → Closed     DATA + END_STREAM (§5.1)
-///   Any → Closed      RST_STREAM (§6.4)
-///
-/// Covered error cases:
-///   HEADERS on stream 0  → connection PROTOCOL_ERROR (§5.1, §6.2)
-///   DATA on stream 0     → connection PROTOCOL_ERROR (§5.1, §6.1)
-///   DATA on idle stream  → connection PROTOCOL_ERROR (§5.1)
-///   DATA on closed stream→ stream STREAM_CLOSED (§6.1)
-/// </summary>
 public sealed class Http2StreamStateMachineTests
 {
-    // =========================================================================
     // Helpers
-    // =========================================================================
 
     private static byte[] MakeHeadersBytes(int streamId, bool endStream = false, string status = "200")
     {
@@ -92,9 +72,7 @@ public sealed class Http2StreamStateMachineTests
         }
     }
 
-    // =========================================================================
     // SS-001..004: Frame decoding — Idle→Open, Open→Closed
-    // =========================================================================
 
     /// RFC 9113 §5.1 — Idle→Open: HEADERS without END_STREAM decoded as open-stream frame
     [Fact(DisplayName = "RFC9113-5.1-SS-001: Idle→Open — HEADERS (no END_STREAM) decoded correctly")]
@@ -155,9 +133,7 @@ public sealed class Http2StreamStateMachineTests
         // RFC §5.1: stream remains in Open state — more DATA frames expected.
     }
 
-    // =========================================================================
     // SS-005..007: RST_STREAM and multi-frame sequences
-    // =========================================================================
 
     /// RFC 9113 §5.1 / §6.4 — RST_STREAM decoded with correct ErrorCode and StreamId
     [Fact(DisplayName = "RFC9113-5.1-SS-005: RST_STREAM decoded with correct StreamId and ErrorCode")]
@@ -209,9 +185,7 @@ public sealed class Http2StreamStateMachineTests
         Assert.Equal(3, frames[1].StreamId);
     }
 
-    // =========================================================================
     // SS-008: HPACK integration
-    // =========================================================================
 
     /// RFC 9113 §5.1 / RFC 7541 — HPACK-encoded :status header decoded from HEADERS fragment
     [Fact(DisplayName = "RFC9113-5.1-SS-008: HPACK-encoded :status in HEADERS fragment decoded correctly")]
@@ -234,9 +208,7 @@ public sealed class Http2StreamStateMachineTests
         Assert.Contains(headers, h => h.Name == "content-type" && h.Value == "text/plain");
     }
 
-    // =========================================================================
     // SS-009..010: Stream 0 PROTOCOL_ERROR (RFC 9113 §5.1)
-    // =========================================================================
 
     /// RFC 9113 §5.1 — HEADERS on stream 0 is a connection PROTOCOL_ERROR.
     [Fact(DisplayName = "RFC9113-5.1-SS-009: HEADERS on stream 0 is connection PROTOCOL_ERROR")]
@@ -280,9 +252,7 @@ public sealed class Http2StreamStateMachineTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // SS-011..012: Idle/closed stream DATA errors (RFC 9113 §5.1 / §6.1)
-    // =========================================================================
 
     /// RFC 9113 §5.1 — DATA on idle stream (no prior HEADERS) is connection PROTOCOL_ERROR.
     [Fact(DisplayName = "RFC9113-5.1-SS-011: DATA on idle stream (no HEADERS) is connection PROTOCOL_ERROR")]

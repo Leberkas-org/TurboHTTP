@@ -5,25 +5,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC7541;
 
-/// <summary>
-/// Phase 31: Http2RequestEncoder — Sensitive Header Handling (RFC 7541 §7.1.3).
-///
-/// Verifies that security-sensitive headers (Authorization, Proxy-Authorization,
-/// Cookie, Set-Cookie) are encoded with the HPACK NeverIndexed representation
-/// (§6.2.3) to prevent compression-based attacks (e.g., CRIME/BREACH).
-///
-/// Sensitive headers must:
-///   1. Be encoded with the 0x1x prefix (NeverIndexed literal, RFC 7541 §6.2.3)
-///   2. NEVER be added to the HPACK dynamic table (no caching)
-///   3. Preserve their value exactly through encode/decode round-trip
-///   4. Be detected regardless of header name casing
-/// </summary>
 public sealed class HpackSensitiveHeaderTests
 {
-    // =========================================================================
-    // Category 1: Core Sensitive Headers Are NeverIndexed (8 tests)
-    // =========================================================================
-
     [Fact(DisplayName = "RFC7541-7.1.3-SH-001: Authorization header encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_AuthorizationHeader()
     {
@@ -124,10 +107,6 @@ public sealed class HpackSensitiveHeaderTests
         Assert.True(header.NeverIndex);
     }
 
-    // =========================================================================
-    // Category 2: Non-Sensitive Headers Are NOT NeverIndexed (5 tests)
-    // =========================================================================
-
     [Fact(DisplayName = "RFC7541-7.1.3-SH-009: x-api-key header is NOT NeverIndexed")]
     public void Should_NotBeNeverIndexed_When_XApiKeyHeader()
     {
@@ -187,10 +166,6 @@ public sealed class HpackSensitiveHeaderTests
 
         Assert.False(header.NeverIndex);
     }
-
-    // =========================================================================
-    // Category 3: NeverIndexed Headers NOT Added to Dynamic Table (4 tests)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC7541-7.1.3-SH-014: Authorization encoded twice produces same-size HPACK output (no caching)")]
     public void Should_NotReduceHpackSize_When_AuthorizationEncodedTwice()
@@ -270,10 +245,6 @@ public sealed class HpackSensitiveHeaderTests
         var decoded = new HpackDecoder().Decode(encoder.Encode(headers).Span);
         Assert.True(decoded.First(h => h.Name == "cookie").NeverIndex);
     }
-
-    // =========================================================================
-    // Category 4: Round-Trip Value Correctness (6 tests)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC7541-7.1.3-SH-018: Authorization value preserved through encode/decode round-trip")]
     public void Should_PreserveValue_When_AuthorizationRoundTrip()
@@ -370,10 +341,6 @@ public sealed class HpackSensitiveHeaderTests
             "All sensitive headers must be NeverIndexed per RFC 7541 §7.1.3");
     }
 
-    // =========================================================================
-    // Category 5: HpackEncoder Direct API Tests (4 tests)
-    // =========================================================================
-
     [Fact(DisplayName = "RFC7541-7.1.3-SH-024: HpackHeader with NeverIndex=true is encoded as NeverIndexed")]
     public void Should_EncodeAsNeverIndexed_When_HpackHeaderNeverIndexTrue()
     {
@@ -448,10 +415,6 @@ public sealed class HpackSensitiveHeaderTests
         Assert.Equal(output1.WrittenCount, output2.WrittenCount);
     }
 
-    // =========================================================================
-    // Category 6: Http2RequestEncoder Full Frame Integration Tests (5 tests)
-    // =========================================================================
-
     [Fact(DisplayName = "RFC7541-7.1.3-SH-028: Full HTTP/2 GET frame with Authorization: decoded NeverIndex=true")]
     public void Should_ProduceNeverIndexedFrame_When_Http2GetRequestWithAuthorization()
     {
@@ -525,10 +488,6 @@ public sealed class HpackSensitiveHeaderTests
         }
     }
 
-    // =========================================================================
-    // Category 7: Edge Cases and Raw Byte Verification (3 tests)
-    // =========================================================================
-
     [Fact(DisplayName = "RFC7541-7.1.3-SH-033: Authorization raw HPACK bytes use NeverIndexed encoding (walker verified)")]
     public void Should_HaveNeverIndexedEncoding_When_AuthorizationEncodedRaw()
     {
@@ -569,9 +528,7 @@ public sealed class HpackSensitiveHeaderTests
             "Non-sensitive header should NOT use the NeverIndexed encoding");
     }
 
-    // =========================================================================
     // Helpers
-    // =========================================================================
 
     private static HttpRequestMessage MakeGetRequest(string url = "https://api.example.com/v1/resource")
         => new(HttpMethod.Get, url);

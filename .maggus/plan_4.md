@@ -338,9 +338,9 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.Tests/RFC9113/` + `src/TurboHttp.Tests/RFC7541/`
 
 **Acceptance Criteria:**
-- [ ] Same rules as TASK-024
-- [ ] Hex value explanations and HPACK bit pattern comments preserved
-- [ ] Build + tests green
+- [x] Same rules as TASK-024
+- [x] Hex value explanations and HPACK bit pattern comments preserved
+- [x] Build + tests green
 
 ---
 

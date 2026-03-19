@@ -3,35 +3,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §6.4 — RST_STREAM Frame
-/// RFC 9113 §6.7 — PING Frame
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes RST_STREAM
-/// and PING frames and enforces wire-format constraints as specified in §6.4 and §6.7.
-///
-/// Covered (RST_STREAM §6.4):
-///   - StreamId, ErrorCode fields decoded correctly
-///   - FrameType is RstStream
-///   - Wrong payload length → FRAME_SIZE_ERROR (connection error)
-///   - Various error codes: NoError, Cancel, ProtocolError, InternalError
-///   - Round-trip: serialize then decode preserves all fields
-///
-/// Covered (PING §6.7):
-///   - Data (8 bytes) decoded correctly
-///   - IsAck flag (ACK bit) decoded correctly
-///   - FrameType is Ping
-///   - Wrong payload length → FRAME_SIZE_ERROR (connection error)
-///   - PING on non-zero stream → PROTOCOL_ERROR (connection error)
-///   - Round-trip: serialize then decode preserves all fields
-///
-/// Test IDs: RST-001..RST-007, PNG-001..PNG-007
-/// </summary>
 public sealed class Http2RstStreamPingTests
 {
-    // =========================================================================
     // RST-001..RST-007: RST_STREAM Frame — §6.4
-    // =========================================================================
 
     /// RFC 9113 §6.4 — RST_STREAM decoded with correct StreamId
     [Fact(DisplayName = "RFC9113-6.4-RST-001: RST_STREAM decoded with correct StreamId")]
@@ -133,9 +107,7 @@ public sealed class Http2RstStreamPingTests
         Assert.Equal(errorCode, frame.ErrorCode);
     }
 
-    // =========================================================================
     // PNG-001..PNG-007: PING Frame — §6.7
-    // =========================================================================
 
     /// RFC 9113 §6.7 — PING decoded with correct Data
     [Fact(DisplayName = "RFC9113-6.7-PNG-001: PING decoded with correct Data")]

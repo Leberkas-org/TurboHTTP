@@ -4,25 +4,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// Resource Exhaustion Protection Tests (RFC 9113)
-///
-/// Covers all attack vectors requiring explicit enforcement on decoded frames:
-///   RE-01x  SETTINGS flood (§6.5)
-///   RE-02x  Rapid reset attack (§6.4, CVE-2023-44487)
-///   RE-03x  CONTINUATION flood (§6.10)
-///   RE-04x  PING flood (§6.7)
-///   RE-05x  Dynamic table abuse (HPACK, §6.3)
-///   RE-06x  Stream ID exhaustion (§5.1)
-///   RE-07x  Empty DATA frame exhaustion (§6.1)
-///
-/// Pattern: Decode frames with Http2FrameDecoder, count explicitly, apply enforcement helpers
-/// that throw Http2Exception when thresholds are exceeded. Decoder is stateless; validation
-/// is caller responsibility.
-/// </summary>
 public sealed class Http2ResourceExhaustionTests
 {
-	// ── RE-01x: SETTINGS Flood ────────────────────────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-6.5-RE-010: 101st non-ACK SETTINGS frame triggers EnhanceYourCalm flood protection")]
 	public void Should_ThrowHttp2Exception_When_101SettingsFramesReceived()
@@ -106,7 +89,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Equal(0, settingsCount);
 	}
 
-	// ── RE-02x: Rapid Reset Attack (CVE-2023-44487) ───────────────────────────
 
 	[Fact(DisplayName = "RFC9113-6.4-RE-020: 101st RST_STREAM triggers rapid-reset ProtocolError (CVE-2023-44487)")]
 	public void Should_ThrowHttp2Exception_When_101RstStreamReceived()
@@ -194,7 +176,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Contains("CVE-2023-44487", ex.Message);
 	}
 
-	// ── RE-03x: CONTINUATION Flood ────────────────────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-6.10-RE-030: 1000th CONTINUATION frame triggers ProtocolError flood protection")]
 	public void Should_ThrowHttp2Exception_When_1000ContinuationFramesReceived()
@@ -266,7 +247,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Equal(999, continuationCount);
 	}
 
-	// ── RE-04x: PING Flood (§6.7) ──────────────────────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-6.7-RE-040: 1001st non-ACK PING frame triggers EnhanceYourCalm flood protection")]
 	public void Should_ThrowHttp2Exception_When_1001PingFramesReceived()
@@ -361,7 +341,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Contains("flood", ex.Message, StringComparison.OrdinalIgnoreCase);
 	}
 
-	// ── RE-05x: Dynamic Table Abuse (HPACK, §6.3) ─────────────────────────────
 
 	[Fact(DisplayName = "RFC7541-6.3-RE-050: HPACK dynamic table stays within HEADER_TABLE_SIZE limit")]
 	public void Should_KeepDynamicTableWithinLimit_WhenAddingManyHeaders()
@@ -416,7 +395,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Equal(":status", headers[0].Name);
 	}
 
-	// ── RE-06x: Stream ID Exhaustion (§5.1) ────────────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-5.1-RE-060: Decoder handles 10000+ streams without crash — explicit stream tracking")]
 	public void Should_HandleStreamIdExhaustionWithoutCrash()
@@ -444,7 +422,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Equal(10001, closedStreamIds.Count);
 	}
 
-	// ── RE-07x: Empty DATA Frame Exhaustion (§6.1) ──────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-6.1-RE-070: 10001st zero-length DATA frame triggers ProtocolError exhaustion protection")]
 	public void Should_ThrowHttp2Exception_When_10001EmptyDataFramesReceived()
@@ -517,7 +494,6 @@ public sealed class Http2ResourceExhaustionTests
 		Assert.Equal(10000, emptyDataCount);
 	}
 
-	// ── Enforcement Helpers ────────────────────────────────────────────────────
 
 	private static void EnforceSettingsFloodThreshold(int settingsCount, int threshold = 100)
 	{
@@ -569,7 +545,6 @@ public sealed class Http2ResourceExhaustionTests
 		}
 	}
 
-	// ── Frame Building Helpers ─────────────────────────────────────────────────
 
 	private static byte[] BuildRawFrame(byte frameType, byte flags, int streamId, byte[] payload)
 	{

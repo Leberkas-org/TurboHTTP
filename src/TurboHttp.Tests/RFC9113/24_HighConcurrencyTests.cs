@@ -4,22 +4,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// High-Concurrency Validation Tests (RFC 9113)
-///
-/// Tests Http2FrameDecoder robustness under high-throughput scenarios:
-///
-///   HC-001..005 — Sequential stream decoding (§5.1)
-///   HC-006..010 — Parallel header decoding with independent decoder instances (§5.1)
-///   HC-011..015 — Flow control saturation (§6.9)
-///   HC-020     — Connection teardown and fresh stream reuse (§5.1)
-///
-/// Pattern: Use Http2FrameDecoder to decode frames, track stream state explicitly,
-/// apply enforcement helpers for flow control. Decoder is stateless; validation is caller responsibility.
-/// </summary>
 public sealed class Http2HighConcurrencyTests
 {
-	// ── Frame Building Helpers ─────────────────────────────────────────────────
 
 	private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
 	{
@@ -52,7 +38,6 @@ public sealed class Http2HighConcurrencyTests
 		return BuildRawFrame(0x4, ack ? (byte)0x1 : (byte)0x0, 0, payload);
 	}
 
-	// ── HC-001..005: Sequential Stream Decoding (§5.1) ────────────────────────
 
 	[Fact(DisplayName = "RFC9113-5.1-HC-001: 1000 sequential streams with END_STREAM HEADERS — all close cleanly")]
 	public void Should_Handle1000SequentialStreams_WithEndStreamHeaders()
@@ -177,7 +162,6 @@ public sealed class Http2HighConcurrencyTests
 		Assert.Equal(10001, closedStreams.Count);
 	}
 
-	// ── HC-006..010: Parallel Header Decoding (§5.1) ───────────────────────────
 
 	[Fact(DisplayName = "RFC9113-5.1-HC-006: 50 independent decoders decode same HEADERS frame in parallel — no exceptions")]
 	public async Task Should_Decode50IndependentDecoders_InParallel_WithoutException()
@@ -318,7 +302,6 @@ public sealed class Http2HighConcurrencyTests
 		Assert.All(results, count => Assert.Equal(expectedClosed, count));
 	}
 
-	// ── HC-011..015: Flow Control Saturation (§6.9) ────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-6.9-HC-011: Three sequential DATA frames with explicit window tracking — correct payload sizes")]
 	public void Should_AcceptData_WhenTotalBytesDoNotExceedConnectionWindow()
@@ -506,7 +489,6 @@ public sealed class Http2HighConcurrencyTests
 		Assert.Equal(5, closedStreams.Count);
 	}
 
-	// ── HC-020: Fresh Stream Reuse (§5.1) ───────────────────────────────────────
 
 	[Fact(DisplayName = "RFC9113-5.1-HC-020: Fresh decoder instance decodes new streams without prior-state interference")]
 	public void Should_DecodeNewStreams_OnFreshDecoder_WithoutPriorStateInterference()
@@ -535,7 +517,6 @@ public sealed class Http2HighConcurrencyTests
 		Assert.Equal(20, decodedCount);
 	}
 
-	// ── Flow Control Enforcement Helpers ────────────────────────────────────────
 
 	private static void EnforceConnectionReceiveWindow(int dataLength, ref int connectionWindow)
 	{

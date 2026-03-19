@@ -3,35 +3,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §8.2 — HTTP Header Field Block assembly via CONTINUATION frames.
-/// RFC 9113 §6.10 — CONTINUATION Frame semantics.
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/>, <see cref="HeadersFrame"/>,
-/// and <see cref="ContinuationFrame"/> are used directly to assemble and decode
-/// header blocks.
-///
-/// Key invariants:
-///   - A HEADERS frame without END_HEADERS is followed by CONTINUATION frames.
-///   - The full header block is the concatenation of all fragments until END_HEADERS.
-///   - Any frame type other than CONTINUATION (or CONTINUATION on the wrong stream)
-///     while a header block is pending is a connection error (PROTOCOL_ERROR).
-///   - CONTINUATION without a preceding HEADERS is a connection error (PROTOCOL_ERROR).
-///
-/// Covered:
-///   §8.2 / §6.10: END_HEADERS flag on HEADERS and CONTINUATION frames
-///   §8.2 / §6.10: Multi-fragment CONTINUATION chains decode correctly
-///   §8.2 / §6.10: Header field values preserved across fragments
-///   §6.10:        Interleaved non-CONTINUATION frames → PROTOCOL_ERROR
-///   §6.10:        CONTINUATION on wrong stream → PROTOCOL_ERROR
-///   §6.10:        CONTINUATION without preceding HEADERS → PROTOCOL_ERROR
-///   §6.10:        CONTINUATION flood protection (≥1000 frames)
-///
-/// Test IDs: CF-001..025
-/// </summary>
 public sealed class Http2ContinuationFrameTests
 {
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static byte[] EncodeBlock(params (string Name, string Value)[] headers)
     {
@@ -121,7 +94,6 @@ public sealed class Http2ContinuationFrameTests
         return buffer.ToArray();
     }
 
-    // ── Enforce END_HEADERS ──────────────────────────────────────────────────
 
     /// RFC 9113 §8.2 / §6.10 — HEADERS with END_HEADERS flag set completes immediately
     [Fact(DisplayName = "RFC9113-8.2-CF-001: HEADERS with END_HEADERS decoded with EndHeaders=true")]
@@ -245,7 +217,6 @@ public sealed class Http2ContinuationFrameTests
         Assert.Contains(headers, h => h.Name == "content-type" && h.Value == "application/json");
     }
 
-    // ── Require contiguous CONTINUATION frames ───────────────────────────────
 
     /// RFC 9113 §6.10 — DATA frame interleaved while awaiting CONTINUATION is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.2-CF-007: DATA frame interleaved while awaiting CONTINUATION is PROTOCOL_ERROR")]
@@ -381,7 +352,6 @@ public sealed class Http2ContinuationFrameTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── Reject orphaned CONTINUATION frames ──────────────────────────────────
 
     /// RFC 9113 §6.10 — CONTINUATION on stream 0 is decoded with StreamId=0; treated as wrong stream
     [Fact(DisplayName = "RFC9113-8.2-CF-014: CONTINUATION on stream 0 while awaiting stream 1 is PROTOCOL_ERROR")]
@@ -460,7 +430,6 @@ public sealed class Http2ContinuationFrameTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── Combined delivery ─────────────────────────────────────────────────────
 
     /// RFC 9113 §8.2 / §6.10 — HEADERS and CONTINUATION in same byte buffer are decoded together
     [Fact(DisplayName = "RFC9113-8.2-CF-018: HEADERS and CONTINUATION in same Decode call are decoded together")]

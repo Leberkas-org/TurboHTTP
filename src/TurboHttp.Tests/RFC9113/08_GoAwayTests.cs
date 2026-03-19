@@ -3,30 +3,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §6.8 — GOAWAY Frame
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes GOAWAY frames
-/// and enforces wire-format constraints as specified in §6.8.
-///
-/// Covered:
-///   - LastStreamId, ErrorCode, DebugData fields decoded correctly
-///   - FrameType is GoAway, StreamId is always 0
-///   - GOAWAY on non-zero stream → PROTOCOL_ERROR (connection error)
-///   - GOAWAY with lastStreamId=0 decoded correctly
-///   - GOAWAY without debug data has empty DebugData
-///   - GOAWAY with debug data decoded correctly
-///   - Various error codes: NoError, ProtocolError, InternalError, Cancel, etc.
-///   - Reserved high bit in lastStreamId stripped
-///   - Round-trip: serialize then decode preserves all fields
-///
-/// Test IDs: GA-001..GA-011
-/// </summary>
 public sealed class Http2GoAwayTests
 {
-    // =========================================================================
     // GA-001..GA-005: GOAWAY basic field decoding
-    // =========================================================================
 
     /// RFC 9113 §6.8 — GOAWAY decoded with correct LastStreamId
     [Fact(DisplayName = "RFC9113-6.8-GA-001: GOAWAY decoded with correct LastStreamId")]
@@ -88,9 +67,7 @@ public sealed class Http2GoAwayTests
         Assert.Empty(frame.DebugData);
     }
 
-    // =========================================================================
     // GA-006..GA-007: GOAWAY debug data and special lastStreamId values
-    // =========================================================================
 
     /// RFC 9113 §6.8 — GOAWAY with debug data decoded correctly
     [Fact(DisplayName = "RFC9113-6.8-GA-006: GOAWAY with debug data decoded correctly")]
@@ -117,9 +94,7 @@ public sealed class Http2GoAwayTests
         Assert.Equal(0, frame.LastStreamId);
     }
 
-    // =========================================================================
     // GA-008: GOAWAY on non-zero stream → PROTOCOL_ERROR
-    // =========================================================================
 
     /// RFC 9113 §6.8 — GOAWAY on non-zero stream is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-6.8-GA-008: GOAWAY on non-zero stream is PROTOCOL_ERROR")]
@@ -139,9 +114,7 @@ public sealed class Http2GoAwayTests
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
     }
 
-    // =========================================================================
     // GA-009: Round-trip
-    // =========================================================================
 
     /// RFC 9113 §6.8 — GOAWAY round-trip preserves LastStreamId, ErrorCode, and DebugData
     [Fact(DisplayName = "RFC9113-6.8-GA-009: GOAWAY round-trip preserves LastStreamId, ErrorCode, and DebugData")]
@@ -159,9 +132,7 @@ public sealed class Http2GoAwayTests
         Assert.Equal(original.DebugData, decoded.DebugData);
     }
 
-    // =========================================================================
     // GA-010: Various error codes
-    // =========================================================================
 
     /// RFC 9113 §6.8 — GOAWAY various error codes decoded correctly
     [Theory(DisplayName = "RFC9113-6.8-GA-010: GOAWAY various error codes decoded correctly")]
@@ -181,9 +152,7 @@ public sealed class Http2GoAwayTests
         Assert.Equal(errorCode, frame.ErrorCode);
     }
 
-    // =========================================================================
     // GA-011: Reserved high bit in lastStreamId stripped
-    // =========================================================================
 
     /// RFC 9113 §6.8 — Reserved high bit in LastStreamId field is stripped
     [Fact(DisplayName = "RFC9113-6.8-GA-011: Reserved high bit in LastStreamId field is stripped")]

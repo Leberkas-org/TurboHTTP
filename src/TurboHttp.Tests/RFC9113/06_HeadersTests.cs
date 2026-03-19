@@ -3,31 +3,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §8.2 — HTTP Header Field Validity
-/// RFC 9113 §8.3 — HTTP Request and Response Pseudo-Header Fields
-///
-/// Tests call <see cref="HpackDecoder"/> and <see cref="HeadersFrame"/> directly.
-/// Validation helpers (ValidateResponseHeaders) enforce RFC §8.2/§8.3 rules.
-///
-/// Covered (§8.2):
-///   - Uppercase header names → PROTOCOL_ERROR
-///   - Forbidden connection-specific headers → PROTOCOL_ERROR
-///   - Valid lowercase header names accepted
-///
-/// Covered (§8.3):
-///   - Missing :status → PROTOCOL_ERROR
-///   - Duplicate :status → PROTOCOL_ERROR
-///   - Request pseudo-headers in response → PROTOCOL_ERROR
-///   - Unknown pseudo-headers → PROTOCOL_ERROR
-///   - Pseudo-header after regular header → PROTOCOL_ERROR
-///   - Valid :status (200, 301, 404, 100) accepted
-///
-/// Test IDs: HV-001..028
-/// </summary>
 public sealed class Http2DecoderHeadersValidationTests
 {
-    // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>
     /// Encodes a set of headers using HpackEncoder (no Huffman) and returns the block as Memory.
@@ -144,7 +121,6 @@ public sealed class Http2DecoderHeadersValidationTests
     private static bool IsForbiddenConnectionHeader(string name) =>
         name is "connection" or "keep-alive" or "proxy-connection" or "transfer-encoding" or "upgrade";
 
-    // ── HV-001: Valid minimal response ────────────────────────────────────────
 
     /// RFC 9113 §8.3 — Valid response with only :status is accepted
     [Fact(DisplayName = "RFC9113-8.3-HV-001: Valid response with only :status is accepted")]
@@ -156,7 +132,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Contains(headers, h => h.Name == ":status" && h.Value == "200");
     }
 
-    // ── HV-002: Valid response with :status + regular headers ─────────────────
 
     /// RFC 9113 §8.3 — Valid response with :status then regular headers is accepted
     [Fact(DisplayName = "RFC9113-8.3-HV-002: Valid response with :status then regular headers is accepted")]
@@ -168,7 +143,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Contains(headers, h => h.Name == "content-type");
     }
 
-    // ── HV-003: Missing :status pseudo-header ─────────────────────────────────
 
     /// RFC 9113 §8.3 — Missing :status pseudo-header is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-003: Missing :status pseudo-header is PROTOCOL_ERROR")]
@@ -182,7 +156,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-004: Duplicate :status pseudo-header ───────────────────────────────
 
     /// RFC 9113 §8.3 — Duplicate :status pseudo-header is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-004: Duplicate :status pseudo-header is PROTOCOL_ERROR")]
@@ -214,7 +187,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-005: Request pseudo-header :method in response is PROTOCOL_ERROR ──
 
     /// RFC 9113 §8.3 — Request pseudo-header :method in response is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-005: Request pseudo-header :method in response is PROTOCOL_ERROR")]
@@ -228,7 +200,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-006: Request pseudo-header :path in response is PROTOCOL_ERROR ────
 
     /// RFC 9113 §8.3 — Request pseudo-header :path in response is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-006: Request pseudo-header :path in response is PROTOCOL_ERROR")]
@@ -242,7 +213,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-007: Request pseudo-header :scheme in response is PROTOCOL_ERROR ──
 
     /// RFC 9113 §8.3 — Request pseudo-header :scheme in response is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-007: Request pseudo-header :scheme in response is PROTOCOL_ERROR")]
@@ -256,7 +226,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-008: Request pseudo-header :authority in response is PROTOCOL_ERROR
 
     /// RFC 9113 §8.3 — Request pseudo-header :authority in response is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-008: Request pseudo-header :authority in response is PROTOCOL_ERROR")]
@@ -270,7 +239,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-009: Unknown pseudo-header is PROTOCOL_ERROR ──────────────────────
 
     /// RFC 9113 §8.3 — Unknown pseudo-header is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-009: Unknown pseudo-header in response is PROTOCOL_ERROR")]
@@ -301,7 +269,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-010: Pseudo-header after regular header is PROTOCOL_ERROR ──────────
 
     /// RFC 9113 §8.3 — Pseudo-header :status after regular header is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-010: Pseudo-header :status after regular header is PROTOCOL_ERROR")]
@@ -333,7 +300,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-011: Uppercase header name is PROTOCOL_ERROR ──────────────────────
 
     /// RFC 9113 §8.2 — Uppercase header name is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.2-HV-011: Uppercase header name is PROTOCOL_ERROR")]
@@ -364,7 +330,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-012: Uppercase in pseudo-header is PROTOCOL_ERROR ─────────────────
 
     /// RFC 9113 §8.2 — Uppercase in pseudo-header name is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.2-HV-012: Uppercase in pseudo-header name is PROTOCOL_ERROR")]
@@ -384,7 +349,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-013: connection header is forbidden ────────────────────────────────
 
     /// RFC 9113 §8.2.2 — 'connection' header is PROTOCOL_ERROR in HTTP/2
     [Fact(DisplayName = "RFC9113-8.2.2-HV-013: 'connection' header is PROTOCOL_ERROR in HTTP/2")]
@@ -398,7 +362,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-014: keep-alive header is forbidden ────────────────────────────────
 
     /// RFC 9113 §8.2.2 — 'keep-alive' header is PROTOCOL_ERROR in HTTP/2
     [Fact(DisplayName = "RFC9113-8.2.2-HV-014: 'keep-alive' header is PROTOCOL_ERROR in HTTP/2")]
@@ -412,7 +375,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-015: proxy-connection header is forbidden ──────────────────────────
 
     /// RFC 9113 §8.2.2 — 'proxy-connection' header is PROTOCOL_ERROR in HTTP/2
     [Fact(DisplayName = "RFC9113-8.2.2-HV-015: 'proxy-connection' header is PROTOCOL_ERROR in HTTP/2")]
@@ -426,7 +388,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-016: transfer-encoding header is forbidden ─────────────────────────
 
     /// RFC 9113 §8.2.2 — 'transfer-encoding' header is PROTOCOL_ERROR in HTTP/2
     [Fact(DisplayName = "RFC9113-8.2.2-HV-016: 'transfer-encoding' header is PROTOCOL_ERROR in HTTP/2")]
@@ -440,7 +401,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-017: upgrade header is forbidden ───────────────────────────────────
 
     /// RFC 9113 §8.2.2 — 'upgrade' header is PROTOCOL_ERROR in HTTP/2
     [Fact(DisplayName = "RFC9113-8.2.2-HV-017: 'upgrade' header is PROTOCOL_ERROR in HTTP/2")]
@@ -454,7 +414,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-018: Valid response with multiple regular headers ──────────────────
 
     /// RFC 9113 §8.2 — Valid response with :status and multiple regular headers is accepted
     [Fact(DisplayName = "RFC9113-8.2-HV-018: Valid response with :status and multiple regular headers is accepted")]
@@ -471,7 +430,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Equal(4, headers.Count);
     }
 
-    // ── HV-019: Valid 404 response ────────────────────────────────────────────
 
     /// RFC 9113 §8.3 — Valid 404 response is accepted
     [Fact(DisplayName = "RFC9113-8.3-HV-019: Valid 404 response is accepted")]
@@ -483,7 +441,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Contains(headers, h => h.Name == ":status" && h.Value == "404");
     }
 
-    // ── HV-020: Valid 301 redirect response ───────────────────────────────────
 
     /// RFC 9113 §8.3 — Valid 301 redirect response with location header is accepted
     [Fact(DisplayName = "RFC9113-8.3-HV-020: Valid 301 redirect response with location header is accepted")]
@@ -495,7 +452,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Contains(headers, h => h.Name == "location");
     }
 
-    // ── HV-021: Error message includes header name ────────────────────────────
 
     /// RFC 9113 §8.2 — PROTOCOL_ERROR message for uppercase includes the offending header name
     [Fact(DisplayName = "RFC9113-8.2-HV-021: PROTOCOL_ERROR message for uppercase includes the offending header name")]
@@ -525,7 +481,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-022: Error message for connection-specific includes header name ─────
 
     /// RFC 9113 §8.2.2 — PROTOCOL_ERROR message for connection-specific includes the header name
     [Fact(DisplayName = "RFC9113-8.2.2-HV-022: PROTOCOL_ERROR message for connection-specific header includes name and 'forbidden'")]
@@ -539,7 +494,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-023: CONTINUATION frames — validation applies to full header block ─
 
     /// RFC 9113 §8.2 — Validation applies to reassembled header block from CONTINUATION frames
     [Fact(DisplayName = "RFC9113-8.2-HV-023: Validation applies to reassembled headers from CONTINUATION frames")]
@@ -571,7 +525,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-024: Multiple streams — each validated independently ───────────────
 
     /// RFC 9113 §8.2 — Each stream's header block is validated independently
     [Fact(DisplayName = "RFC9113-8.2-HV-024: Each stream's header block is validated independently")]
@@ -590,7 +543,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-025: 1xx informational response ───────────────────────────────────
 
     /// RFC 9113 §8.3 — Valid :status 100 (1xx informational) is accepted
     [Fact(DisplayName = "RFC9113-8.3-HV-025: Valid 100 Continue response (:status 100) is accepted")]
@@ -602,7 +554,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Contains(headers, h => h.Name == ":status" && h.Value == "100");
     }
 
-    // ── HV-026: All-lowercase valid custom header ─────────────────────────────
 
     /// RFC 9113 §8.2 — All-lowercase custom header names are accepted
     [Fact(DisplayName = "RFC9113-8.2-HV-026: All-lowercase custom header names are accepted")]
@@ -618,7 +569,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.Contains(headers, h => h.Name == "x-custom-header");
     }
 
-    // ── HV-027: Uppercase in middle of name ──────────────────────────────────
 
     /// RFC 9113 §8.2 — Header name with uppercase in the middle is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.2-HV-027: Header name with uppercase in the middle is PROTOCOL_ERROR")]
@@ -648,7 +598,6 @@ public sealed class Http2DecoderHeadersValidationTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // ── HV-028: Empty header block is PROTOCOL_ERROR ─────────────────────────
 
     /// RFC 9113 §8.3 — Empty header block (no :status) is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-8.3-HV-028: Empty header block with no :status is PROTOCOL_ERROR")]

@@ -3,22 +3,8 @@ using TurboHttp.Protocol.RFC7541;
 
 namespace TurboHttp.Tests.RFC7541;
 
-/// <summary>
-/// RFC 7541 §6 — HPACK Header Block Decoding
-/// Phase 19-20: Verify all five header field representation types,
-/// prefix integer decoding (§5.1), string length validation (§5.2),
-/// and rejection of malformed encodings.
-///
-/// Representation types covered:
-///   §6.1   Indexed Header Field                  (1xxxxxxx)
-///   §6.2.1 Literal with Incremental Indexing     (01xxxxxx)
-///   §6.2.2 Literal without Indexing              (0000xxxx)
-///   §6.2.3 Literal — Never Indexed               (0001xxxx)
-///   §6.3   Dynamic Table Size Update             (001xxxxx)
-/// </summary>
 public sealed class HpackHeaderBlockDecodingTests
 {
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>Encodes a raw (non-Huffman) HPACK string literal.</summary>
     private static byte[] RawString(string s)
@@ -44,7 +30,6 @@ public sealed class HpackHeaderBlockDecodingTests
         return result;
     }
 
-    // ── HD-00x: Indexed Header Field (§6.1) ──────────────────────────────────
 
     /// RFC 7541 §6.1 — Static index 2 decodes to :method GET
     [Fact(DisplayName = "RFC7541-6-HD-001: Static index 2 decodes to :method GET")]
@@ -135,7 +120,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Contains("out of range", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── HD-01x: Literal with Incremental Indexing (§6.2.1) ───────────────────
 
     /// RFC 7541 §6.1 — Literal+indexing new name/value → header decoded and added to dynamic table
     [Fact(DisplayName = "RFC7541-6-HD-010: Literal+indexing new name/value → header decoded and added to dynamic table")]
@@ -212,7 +196,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Equal("h1", result63[0].Name);
     }
 
-    // ── HD-02x: Literal without Indexing (§6.2.2) ────────────────────────────
 
     /// RFC 7541 §6.1 — Literal without indexing new name → decoded but NOT in dynamic table
     [Fact(DisplayName = "RFC7541-6-HD-020: Literal without indexing new name → decoded but NOT in dynamic table")]
@@ -258,7 +241,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.False(result[0].NeverIndex);
     }
 
-    // ── HD-03x: Never Indexed (§6.2.3) ───────────────────────────────────────
 
     /// RFC 7541 §6.1 — Never indexed new name → NeverIndex = true
     [Fact(DisplayName = "RFC7541-6-HD-030: Never indexed new name → NeverIndex = true")]
@@ -302,7 +284,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.True(result[0].NeverIndex);
     }
 
-    // ── HD-04x: Dynamic Table Size Update (§6.3) ─────────────────────────────
 
     /// RFC 7541 §6.1 — Table size update to 0 at start → dynamic table cleared
     [Fact(DisplayName = "RFC7541-6-HD-040: Table size update to 0 at start → dynamic table cleared")]
@@ -382,7 +363,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Contains("§4.2", ex.Message);
     }
 
-    // ── PI-00x: Prefix Integer Decoding (§5.1) ───────────────────────────────
 
     /// RFC 7541 §5.1 — Single-byte integer value 0 decodes correctly
     [Fact(DisplayName = "RFC7541-5.1-PI-001: Single-byte integer value 0 decodes correctly")]
@@ -515,7 +495,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Contains("end of data", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── LF-00x: Length Field Validation (§5.2) ───────────────────────────────
 
     /// RFC 7541 §5.2 — String length exceeds available data throws HpackException (§5.2)
     /// RFC 7541 — HpackException(string, Exception) constructor sets InnerException correctly.
@@ -599,7 +578,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Equal(longValue, result[0].Value);
     }
 
-    // ── ME-00x: Malformed Encoding Detection ─────────────────────────────────
 
     /// RFC 7541 §6 — Empty byte array returns empty header list
     [Fact(DisplayName = "RFC7541-6-ME-001: Empty byte array returns empty header list")]
@@ -678,7 +656,6 @@ public sealed class HpackHeaderBlockDecodingTests
         Assert.Equal("cookie", result[2].Name); Assert.True(result[2].NeverIndex);
     }
 
-    // ── RT-00x: Round-Trip Verification ──────────────────────────────────────
 
     /// RFC 7541 §6 — Encoder/decoder round-trip — all static-only headers
     [Fact(DisplayName = "RFC7541-6-RT-001: Encoder/decoder round-trip — all static-only headers")]

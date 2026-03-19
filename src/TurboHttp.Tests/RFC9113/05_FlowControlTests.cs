@@ -2,29 +2,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §6.9 — WINDOW_UPDATE Frame
-/// RFC 7540 §6.9 — WINDOW_UPDATE Frame
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes WINDOW_UPDATE and
-/// DATA frames and enforces wire-format constraints as specified in §6.9.
-///
-/// Covered:
-///   §6.9  : WINDOW_UPDATE on stream 0 (connection-level) — StreamId and Increment fields
-///   §6.9  : WINDOW_UPDATE on stream N (stream-level) — StreamId and Increment fields
-///   §6.9  : Multiple WINDOW_UPDATE frames in a single Decode call
-///   §6.9  : Increment value edge cases — minimum (1), large values, maximum (0x7FFFFFFF)
-///   §6.9  : Reserved bit in increment field stripped (high bit ignored)
-///   §6.9  : Zero increment → PROTOCOL_ERROR (connection error)
-///   §6.9  : Wrong payload size → FRAME_SIZE_ERROR (connection error)
-///   §6.9  : DATA frame — StreamId, Data, EndStream decoded correctly
-///   §6.9  : Round-trip: serialize then decode preserves all fields
-/// </summary>
 public sealed class Http2FlowControlTests
 {
-    // =========================================================================
     // FC-WU-001..006: WINDOW_UPDATE Decoding — Connection Level (Stream 0)
-    // =========================================================================
 
     /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 0 decoded with correct StreamId
     [Fact(DisplayName = "RFC9113-6.9-FC-WU-001: WINDOW_UPDATE on stream 0 decoded with correct StreamId")]
@@ -111,9 +91,7 @@ public sealed class Http2FlowControlTests
         Assert.Equal(0x7FFFFFFF, frame.Increment);
     }
 
-    // =========================================================================
     // FC-WU-007..012: WINDOW_UPDATE Decoding — Stream Level (Stream N)
-    // =========================================================================
 
     /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 1 decoded with correct StreamId
     [Fact(DisplayName = "RFC9113-6.9-FC-WU-007: WINDOW_UPDATE on stream 1 decoded with correct StreamId")]
@@ -208,9 +186,7 @@ public sealed class Http2FlowControlTests
         Assert.Equal(0x7FFFFFFF, frame.Increment);
     }
 
-    // =========================================================================
     // FC-WU-013..016: Reserved bit handling and increment values
-    // =========================================================================
 
     /// RFC 9113 §6.9 — Reserved high bit of increment field is stripped on decode
     [Fact(DisplayName = "RFC9113-6.9-FC-WU-013: Reserved high bit of increment field stripped on decode")]
@@ -282,9 +258,7 @@ public sealed class Http2FlowControlTests
         Assert.Equal(8192, frame.Increment);
     }
 
-    // =========================================================================
     // FC-WU-017..019: Error cases — PROTOCOL_ERROR and FRAME_SIZE_ERROR
-    // =========================================================================
 
     /// RFC 9113 §6.9 — Zero increment on stream 0 is connection PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-6.9-FC-WU-017: Zero increment on stream 0 is connection PROTOCOL_ERROR")]
@@ -340,9 +314,7 @@ public sealed class Http2FlowControlTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // FC-DF-001..007: DATA Frame Decoding
-    // =========================================================================
 
     /// RFC 9113 §6.9 — DATA frame decoded with correct stream ID and payload
     [Fact(DisplayName = "RFC9113-6.9-FC-DF-001: DATA frame decoded with correct StreamId and data")]

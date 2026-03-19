@@ -5,18 +5,6 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §3.4 — HTTP/2 Connection Preface
-/// Phase 1-2: Connection Preface &amp; ALPN (protocol-layer coverage)
-///
-/// The TLS/ALPN requirements (TLS 1.2+, ALPN="h2") are enforced at the I/O
-/// layer (not the protocol layer) and are therefore out of scope for these tests.
-/// This class covers all protocol-layer MUST requirements:
-///   - Client preface: exact magic bytes + SETTINGS frame on stream 0
-///   - Server preface validation: first frame MUST be SETTINGS on stream 0
-///   - Partial preface: fewer than 9 bytes → NeedMoreData (no error)
-///   - Malformed preface: wrong frame type or stream → PROTOCOL_ERROR
-/// </summary>
 public sealed class Http2ConnectionPrefaceTests
 {
     // RFC 9113 §3.4: client connection preface = magic octets + SETTINGS frame
@@ -74,9 +62,7 @@ public sealed class Http2ConnectionPrefaceTests
         return response;
     }
 
-    // =========================================================================
     // Client preface — Http2FrameUtils.BuildConnectionPreface()
-    // =========================================================================
 
     /// RFC 9113 §3.4 — Client preface starts with exact magic octets
     [Fact(DisplayName = "RFC9113-3.4-CP-001: Client preface starts with exact magic octets")]
@@ -169,9 +155,7 @@ public sealed class Http2ConnectionPrefaceTests
         Assert.Equal("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", text);
     }
 
-    // =========================================================================
     // Server preface validation — Http2Decoder.ValidateServerPreface()
-    // =========================================================================
 
     /// RFC 9113 §3.4 — Valid SETTINGS frame on stream 0 is accepted
     [Fact(DisplayName = "RFC9113-3.4-SP-001: Valid SETTINGS frame on stream 0 is accepted")]
@@ -356,9 +340,7 @@ public sealed class Http2ConnectionPrefaceTests
         // Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // Client preface round-trip: encoder produces preface, decoder validates it
-    // =========================================================================
 
     /// RFC 9113 §3.4 — Encoder preface passes validation if server echoes SETTINGS
     [Fact(DisplayName = "RFC9113-3.4-RT-001: Encoder preface passes validation if server echoes SETTINGS")]
@@ -393,9 +375,7 @@ public sealed class Http2ConnectionPrefaceTests
         Assert.Equal(MagicLength + 9 + payloadLen, preface.Length);
     }
 
-    // =========================================================================
     // Frame header tests (migrated from 12_DecoderConnectionPrefaceTests — Phase 6)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-4.1-001: Valid 9-byte frame header decoded correctly")]
     public void Should_DecodeCorrectly_When_FrameHeaderIsValid9Bytes()
@@ -598,9 +578,7 @@ public sealed class Http2ConnectionPrefaceTests
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // =========================================================================
     // DATA frame tests (migrated from 12_DecoderConnectionPrefaceTests — Phase 6)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.1-001: DATA frame received — response available on stream")]
     public void Should_DecodeCorrectly_When_DataFrameHasPayload()
@@ -712,9 +690,7 @@ public sealed class Http2ConnectionPrefaceTests
         Assert.Equal(200, (int)responses[0].Response.StatusCode);
     }
 
-    // =========================================================================
     // HEADERS frame tests (migrated from 12_DecoderConnectionPrefaceTests — Phase 6)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.2-001: HEADERS frame decoded into response headers")]
     public void Should_DecodeResponseHeaders_When_HeadersFrameReceived()
@@ -859,9 +835,7 @@ public sealed class Http2ConnectionPrefaceTests
         Assert.Equal(0, headersFrame.StreamId);
     }
 
-    // =========================================================================
     // CONTINUATION frame tests (migrated from 12_DecoderConnectionPrefaceTests — Phase 6)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.9-001: CONTINUATION appended to HEADERS block")]
     public void Should_MergeHeaderBlock_When_ContinuationFrameAppendedToHeaders()

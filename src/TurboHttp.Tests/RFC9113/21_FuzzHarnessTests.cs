@@ -4,31 +4,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 Fuzz Harness Tests — Robustness validation.
-///
-/// Property-based fuzz tests that validate <see cref="Http2FrameDecoder"/> and
-/// <see cref="HpackDecoder"/> robustness under adversarial and random inputs.
-/// All tests use deterministic seeds for reproducibility.
-///
-/// Core invariant: Http2FrameDecoder MUST NEVER throw anything other than Http2Exception.
-/// All unexpected input must be gracefully rejected with a typed protocol error.
-/// Any HpackException that escapes Http2FrameDecoder is a bug (must be wrapped as
-/// Http2Exception(CompressionError) per RFC 9113 §4.3).
-///
-///   FZ-001..005 — Random frame ordering (RFC 9113 §5.5)
-///   FZ-006..010 — Invalid frame lengths (RFC 9113 §4.2)
-///   FZ-011..015 — Invalid header (HPACK) encodings (RFC 9113 §4.3)
-///   FZ-016..020 — Window overflow attempts (RFC 9113 §6.9)
-///   FZ-021..025 — Dynamic table resizing storms (RFC 7541 §6.3)
-///
-/// Test IDs: FZ-001..FZ-025
-/// </summary>
 public sealed class Http2FuzzHarnessTests
 {
-    // =========================================================================
     // Core invariant helper
-    // =========================================================================
 
     /// <summary>
     /// Feeds <paramref name="frame"/> to the decoder and asserts that the outcome
@@ -53,9 +31,7 @@ public sealed class Http2FuzzHarnessTests
         // Any other exception type propagates and fails the test via xUnit.
     }
 
-    // =========================================================================
     // Frame building helpers
-    // =========================================================================
 
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
@@ -108,9 +84,7 @@ public sealed class Http2FuzzHarnessTests
     // Valid :status 200 HPACK block (RFC 7541 static table index 8 → :status: 200)
     private static readonly byte[] Status200HpackBlock = [0x88];
 
-    // =========================================================================
     // FZ-001..005: Random frame ordering (RFC 9113 §5.5)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-5.5-FZ-001: Random valid HEADERS + DATA sequences never crash the decoder")]
     public void Should_HandleRandomHeadersDataSequences_WithoutCrashing()
@@ -201,9 +175,7 @@ public sealed class Http2FuzzHarnessTests
         }
     }
 
-    // =========================================================================
     // FZ-006..010: Invalid frame lengths (RFC 9113 §4.2)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-4.2-FZ-006: Frame with payload length exceeding MaxFrameSize throws Http2Exception")]
     public void Should_RejectOversizedFrame_WithFrameSizeError()
@@ -292,9 +264,7 @@ public sealed class Http2FuzzHarnessTests
         }
     }
 
-    // =========================================================================
     // FZ-011..015: Invalid header (HPACK) encodings (RFC 9113 §4.3)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-4.3-FZ-011: Fully random bytes fed as HPACK header block never crash the decoder")]
     public void Should_HandleRandomHpackBytes_WithoutCrashing()
@@ -385,9 +355,7 @@ public sealed class Http2FuzzHarnessTests
         }
     }
 
-    // =========================================================================
     // FZ-016..020: Window overflow attempts (RFC 9113 §6.9)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.9-FZ-016: Connection WINDOW_UPDATE overflow detected by explicit enforcement")]
     public void Should_RejectConnectionWindowOverflow_WithExplicitEnforcement()
@@ -478,9 +446,7 @@ public sealed class Http2FuzzHarnessTests
         Assert.True(hasOverflow, "Expected INITIAL_WINDOW_SIZE overflow in parameters");
     }
 
-    // =========================================================================
     // FZ-021..025: Dynamic table resizing storms (RFC 7541 §6.3)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC7541-6.3-FZ-021: Repeated HpackDecoder table size oscillation between 0 and 256 never crashes")]
     public void Should_HandleRepeatedTableSizeOscillation_WithoutCrashing()

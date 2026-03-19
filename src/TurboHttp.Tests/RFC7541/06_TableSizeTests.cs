@@ -3,19 +3,8 @@ using TurboHttp.Protocol.RFC7541;
 
 namespace TurboHttp.Tests.RFC7541;
 
-/// <summary>
-/// RFC 7540 §6.5.2 — SETTINGS_MAX_HEADER_LIST_SIZE enforcement in the HPACK decoder.
-///
-/// Per RFC 7541 §4.1 / RFC 7540 §6.5.2:
-///   Header List Size = sum of (name_octets + value_octets + 32) for every decoded entry.
-/// When the cumulative total exceeds MAX_HEADER_LIST_SIZE, a COMPRESSION_ERROR
-/// (connection-level error) MUST be generated.
-///
-/// Phase 23: Enforce MAX_HEADER_LIST_SIZE / Abort stream if exceeded.
-/// </summary>
 public sealed class HpackHeaderListSizeTests
 {
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>Encodes a raw (non-Huffman) HPACK string literal: [length | raw bytes].</summary>
     private static byte[] RawStr(string s)
@@ -52,7 +41,6 @@ public sealed class HpackHeaderListSizeTests
 
     private static HpackDecoder NewDecoder() => new();
 
-    // ── HLS-00x: Default (no limit) ──────────────────────────────────────────
 
     /// RFC 7540 §6.5.2 — Should DecodeHeaders When NoLimitConfigured
     [Fact(DisplayName = "RFC7541-4.1-HLS-001: Should_DecodeHeaders_When_NoLimitConfigured")]
@@ -86,7 +74,6 @@ public sealed class HpackHeaderListSizeTests
         Assert.Contains("MAX_HEADER_LIST_SIZE", ex.Message);
     }
 
-    // ── HLS-01x: Exact limit boundary ────────────────────────────────────────
 
     /// RFC 7540 §6.5.2 — Should Succeed When HeaderSizeExactlyEqualsLimit
     [Fact(DisplayName = "RFC7541-4.1-HLS-010: Should_Succeed_When_HeaderSizeExactlyEqualsLimit")]
@@ -146,7 +133,6 @@ public sealed class HpackHeaderListSizeTests
         Assert.Contains("MAX_HEADER_LIST_SIZE", ex.Message);
     }
 
-    // ── HLS-02x: All representation types counted ─────────────────────────────
 
     /// RFC 7540 §6.5.2 — Should CountIndexedStaticHeader Toward Limit
     [Fact(DisplayName = "RFC7541-4.1-HLS-020: Should_CountIndexedStaticHeader_Toward_Limit")]
@@ -244,7 +230,6 @@ public sealed class HpackHeaderListSizeTests
         Assert.Contains("MAX_HEADER_LIST_SIZE", ex.Message);
     }
 
-    // ── HLS-03x: Cumulative behavior ──────────────────────────────────────────
 
     /// RFC 7540 §6.5.2 — Should AccumulateSizeAcrossAllHeaders
     [Fact(DisplayName = "RFC7541-4.1-HLS-030: Should_AccumulateSizeAcrossAllHeaders")]
@@ -301,7 +286,6 @@ public sealed class HpackHeaderListSizeTests
         Assert.Contains("MAX_HEADER_LIST_SIZE", ex.Message);
     }
 
-    // ── HLS-04x: SetMaxHeaderListSize argument validation ────────────────────
 
     /// RFC 7540 §6.5.2 — Should Throw When NegativeSizeProvided
     [Fact(DisplayName = "RFC7541-4.1-HLS-040: Should_Throw_When_NegativeSizeProvided")]
@@ -361,7 +345,6 @@ public sealed class HpackHeaderListSizeTests
         Assert.Equal(2, headers.Count);
     }
 
-    // ── HLS-05x: Message quality and edge cases ───────────────────────────────
 
     /// RFC 7540 §6.5.2 — Should ThrowWithRfcReference InExceptionMessage
     [Fact(DisplayName = "RFC7541-4.1-HLS-050: Should_ThrowWithRfcReference_InExceptionMessage")]

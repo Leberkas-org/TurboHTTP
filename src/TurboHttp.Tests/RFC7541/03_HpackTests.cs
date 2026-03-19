@@ -120,7 +120,6 @@ public sealed class HpackTests
         Assert.Equal("new", decoded[0].Value);
     }
 
-    // ── US-201: RFC 7541 §2.3 — Dynamic table eviction ──────────────────────
 
     [Fact(DisplayName = "RFC7541-4-DT-060: Eviction removes oldest entry when full")]
     public void Should_RemoveOldestEntry_WhenDynamicTableIsFull()
@@ -207,9 +206,7 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.SetMaxAllowedTableSize(-1));
     }
 
-    // ── End US-201 ────────────────────────────────────────────────────────────
 
-    // ── US-202: RFC 7541 §5.1 — Integer representation edge cases ────────────
 
     [Fact(DisplayName = "RFC7541-5.1-IR-010: Integer fits in prefix — single byte")]
     public void Should_ReadSingleByte_WhenIntegerFitsInPrefix()
@@ -297,7 +294,6 @@ public sealed class HpackTests
         Assert.Contains("truncated", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── End US-202 ────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-C.2-004: Appendix C.2.1 first request without Huffman")]
     public void Should_DecodeFirstRequest_WhenDecodingAppendixC2WithoutHuffman()
@@ -328,9 +324,7 @@ public sealed class HpackTests
         Assert.Equal("www.example.com", decoded[3].Value);
     }
 
-    // ── Phase 7: HPACK (RFC 7541) — Full Coverage ─────────────────────────────
 
-    // ── §Appendix A: All 61 Static Table Entries ─────────────────────────────
 
     public static IEnumerable<object[]> StaticTableEntries()
     {
@@ -357,7 +351,6 @@ public sealed class HpackTests
         _ = index; // used via DisplayName parameter
     }
 
-    // ── §7.1.3: Sensitive Headers — NeverIndexed ─────────────────────────────
 
     public static IEnumerable<object[]> SensitiveHeaders() =>
     [
@@ -426,7 +419,6 @@ public sealed class HpackTests
         Assert.True(decoded[0].NeverIndex, "Decoded authorization header must preserve NeverIndex=true");
     }
 
-    // ── RFC 7541 §2.3: Dynamic Table ─────────────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-2.3-DT-070: Incrementally indexed header added at dynamic index 62")]
     public void Should_AddEntryAtIndex62_WhenIncrementallyIndexingHeader()
@@ -567,7 +559,6 @@ public sealed class HpackTests
         Assert.Null(table.GetEntry(3));
     }
 
-    // ── RFC 7541 §5.1: Integer Representation ────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-5.1-IR-001: Integer smaller than prefix limit encodes in one byte")]
     public void Should_EncodeInOneByte_WhenIntegerIsSmallerThanPrefixLimit()
@@ -661,7 +652,6 @@ public sealed class HpackTests
         }
     }
 
-    // ── RFC 7541 §5.2: String Representation ─────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-5.2-SR-001: Plain string literal decoded")]
     public void Should_DecodePlainString_WhenDecodingStringLiteral()
@@ -786,7 +776,6 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode(raw));
     }
 
-    // ── RFC 7541 §6.1: Indexed Header Field ──────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-6.1-IX-002: Dynamic table entry at index 62+ retrieved")]
     public void Should_RetrieveDynamicEntryAtIndex62Plus_WhenDecodingIndexedHeader()
@@ -830,7 +819,6 @@ public sealed class HpackTests
         Assert.Throws<HpackException>(() => decoder.Decode(bytes));
     }
 
-    // ── RFC 7541 §6.2: Literal Header Field ──────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-6.2-LH-010: Incremental indexing adds entry to dynamic table")]
     public void Should_AddEntryToTable_WhenDecodingLiteralHeaderWithIncrementalIndexing()
@@ -931,7 +919,6 @@ public sealed class HpackTests
         Assert.Equal("baz", decoded[0].Value);
     }
 
-    // ── RFC 7541 Appendix C.2: Requests without Huffman ──────────────────────
 
     [Fact(DisplayName = "RFC7541-C.2-001: RFC 7541 Appendix C.2.1 decode")]
     public void Should_DecodeFirstRequest_WhenDecodingAppendixC2_1WithoutHuffman()
@@ -1040,7 +1027,6 @@ public sealed class HpackTests
         Assert.Equal("custom-key", headers[4].Name); Assert.Equal("custom-value",    headers[4].Value);
     }
 
-    // ── RFC 7541 Appendix C.3: Requests with Huffman ─────────────────────────
 
     [Fact(DisplayName = "RFC7541-C.3-001: RFC 7541 Appendix C.3 decode with Huffman")]
     public void Should_DecodeAllThreeRequests_WhenDecodingAppendixC3WithHuffman()
@@ -1089,7 +1075,6 @@ public sealed class HpackTests
         Assert.Equal("custom-key", d3[4].Name); Assert.Equal("custom-value",  d3[4].Value);
     }
 
-    // ── RFC 7541 Appendix C.4: Responses without Huffman ─────────────────────
 
     [Fact(DisplayName = "RFC7541-C.4-001: RFC 7541 Appendix C.4.1 decode")]
     public void Should_DecodeFirstResponse_WhenDecodingAppendixC4_1WithoutHuffman()
@@ -1207,7 +1192,6 @@ public sealed class HpackTests
         Assert.Equal("set-cookie",       headers[5].Name); Assert.Equal("foo=ASDJKHQKBZXOQWEOPIUAXQWJKHZXCWLKJ", headers[5].Value);
     }
 
-    // ── RFC 7541 Appendix C.5: Responses with Huffman ────────────────────────
 
     [Fact(DisplayName = "RFC7541-C.5-001: RFC 7541 Appendix C.5 decode with Huffman")]
     public void Should_DecodeCorrectly_WhenDecodingAppendixC5ResponsesWithHuffman()
@@ -1251,7 +1235,6 @@ public sealed class HpackTests
         }
     }
 
-    // ── RFC 7541 Appendix C.6: Large Cookie Responses ────────────────────────
 
     [Fact(DisplayName = "RFC7541-C.6-001: RFC 7541 Appendix C.6 large cookie responses")]
     public void Should_DecodeCorrectly_WhenDecodingAppendixC6LargeCookieResponses()
@@ -1299,7 +1282,6 @@ public sealed class HpackTests
         }
     }
 
-    // ── End Phase 7 ───────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC7541-C.3-002: Appendix C.3 all three requests with Huffman")]
     public void Should_DecodeAllThreeRequests_WhenDecodingAppendixC3WithHuffmanEncoding()
@@ -1309,7 +1291,6 @@ public sealed class HpackTests
         // exactly as it would on a persistent HTTP/2 connection.
         var decoder = new HpackDecoder();
 
-        // ── C.3.1 First Request ──────────────────────────────────────────────────
         // :method: GET, :scheme: http, :path: /, :authority: www.example.com
         // Dynamic table after: [62] :authority: www.example.com
         var req1 = new byte[]
@@ -1329,7 +1310,6 @@ public sealed class HpackTests
         Assert.Equal(":path",      d1[2].Name); Assert.Equal("/",               d1[2].Value);
         Assert.Equal(":authority", d1[3].Name); Assert.Equal("www.example.com", d1[3].Value);
 
-        // ── C.3.2 Second Request ─────────────────────────────────────────────────
         // :method: GET, :scheme: http, :path: /, :authority: www.example.com (dynamic),
         // cache-control: no-cache
         // Dynamic table after: [62] cache-control: no-cache, [63] :authority: www.example.com
@@ -1352,7 +1332,6 @@ public sealed class HpackTests
         Assert.Equal(":authority",    d2[3].Name); Assert.Equal("www.example.com", d2[3].Value);
         Assert.Equal("cache-control", d2[4].Name); Assert.Equal("no-cache",        d2[4].Value);
 
-        // ── C.3.3 Third Request ──────────────────────────────────────────────────
         // :method: GET, :scheme: https, :path: /index.html,
         // :authority: www.example.com (dynamic[63]), custom-key: custom-value
         // Dynamic table after: [62] custom-key: custom-value, [63] cache-control: no-cache,

@@ -5,7 +5,6 @@ namespace TurboHttp.Tests.RFC9113;
 
 public sealed class Http2FrameDecoderBasicTests
 {
-    // ── Settings ─────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.5-001: SETTINGS frame parameters are decoded correctly")]
     public void Should_ExtractParameters_WhenSettingsFrameDecoded()
@@ -40,7 +39,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.True(sf.IsAck);
     }
 
-    // ── Ping ─────────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.7-001: PING request frame data is decoded correctly")]
     public void Should_ReturnCorrectData_WhenPingRequestDecoded()
@@ -72,7 +70,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.Equal(data, pf.Data);
     }
 
-    // ── WindowUpdate ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.9-001: WINDOW_UPDATE frame increment is decoded correctly")]
     public void Should_ReturnIncrement_WhenWindowUpdateDecoded()
@@ -88,7 +85,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.Equal(32768, wf.Increment);
     }
 
-    // ── RstStream ────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.4-001: RST_STREAM error code is decoded correctly")]
     public void Should_ReturnErrorCode_WhenRstStreamDecoded()
@@ -104,7 +100,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.Equal(Http2ErrorCode.Cancel, rf.ErrorCode);
     }
 
-    // ── GoAway ───────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.8-001: GOAWAY last-stream-id and error code are decoded correctly")]
     public void Should_ParseCorrectly_WhenGoAwayDecoded()
@@ -121,7 +116,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.Equal(Http2ErrorCode.NoError, gf.ErrorCode);
     }
 
-    // ── Fragmentation ────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-4.1-001: Frame split across two TCP segments is reassembled")]
     public void Should_ReassembleCorrectly_WhenFrameSplitAcrossTcpSegments()
@@ -140,7 +134,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.IsType<PingFrame>(result2[0]);
     }
 
-    // ── Multiple frames ──────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-4.1-002: Multiple frames in one TCP segment are all decoded")]
     public void Should_ProcessAll_WhenMultipleFramesInOneTcpSegment()
@@ -163,7 +156,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.IsType<SettingsFrame>(frames[2]);
     }
 
-    // ── HEADERS + DATA (frame-level) ─────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.1-001: HEADERS and DATA frames are decoded with correct flags")]
     public void Should_ReturnCorrectFrameObjects_WhenHeadersAndDataDecoded()
@@ -218,7 +210,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.True(hf.EndHeaders);
     }
 
-    // ── CONTINUATION ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.10-001: HEADERS + CONTINUATION frames are decoded as separate frame objects")]
     public void Should_DecodeAsSeparateFrames_WhenContinuationFollowsHeaders()
@@ -257,7 +248,6 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.True(cf.EndHeaders);
     }
 
-    // ── Reset ────────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-4.1-003: Reset clears buffered partial data")]
     public void Should_ClearPartialBuffer_WhenResetAfterPartialDecode()

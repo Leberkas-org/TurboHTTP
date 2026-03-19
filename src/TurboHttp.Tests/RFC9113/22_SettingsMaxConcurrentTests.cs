@@ -3,20 +3,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §5.1.2 / §6.5.2 — MAX_CONCURRENT_STREAMS enforcement.
-///
-/// Tests verify that:
-///   MCS-API-XXX — SETTINGS frame with MAX_CONCURRENT_STREAMS is decoded and extracted correctly
-///   MCS-INT-XXX — Stream counting and limit enforcement work correctly across frame sequences
-///
-/// The decoder produces frames; enforcement is the caller's responsibility.
-/// </summary>
 public sealed class Http2SettingsMaxConcurrentTests
 {
-    // =========================================================================
     // Helpers
-    // =========================================================================
 
     private static byte[] MakeResponseHeadersBytes(int streamId, bool endStream = false, bool endHeaders = true)
     {
@@ -117,9 +106,7 @@ public sealed class Http2SettingsMaxConcurrentTests
         }
     }
 
-    // =========================================================================
     // MCS-API: API Contract Tests (§5.1.2 / §6.5.2)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.5.2-MCS-API-007: SETTINGS with MaxConcurrentStreams=1")]
     public void Should_DecodeCorrectly_WhenMaxConcurrentStreamsIs1()
@@ -325,9 +312,7 @@ public sealed class Http2SettingsMaxConcurrentTests
         Assert.Null(exception);
     }
 
-    // =========================================================================
     // MCS-INT: Integration Tests (§5.1.2 / §6.5.2)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.5.2-MCS-INT-001: Single stream under default limit succeeds")]
     public void Should_Succeed_WhenSingleStreamUnderDefaultLimit()

@@ -2,20 +2,6 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §6.9 — WINDOW_UPDATE Frame: decoder-level stream flow control tests.
-///
-/// Verifies that <see cref="Http2FrameDecoder"/> decodes WINDOW_UPDATE frames and
-/// DATA frames correctly and enforces RFC-mandated wire constraints.
-///
-/// Covered:
-///   §6.9  : WINDOW_UPDATE decoded — connection window (stream 0)
-///   §6.9  : WINDOW_UPDATE decoded — stream window (stream N)
-///   §6.9  : Zero increment → PROTOCOL_ERROR
-///   §6.9  : Wrong payload size → FRAME_SIZE_ERROR
-///   §6.9  : DATA frame fields preserved on decode
-///   §6.9  : Increment preserved exactly by decoder
-/// </summary>
 public sealed class Http2DecoderStreamFlowControlTests
 {
     /// RFC 9113 §6.9 — WINDOW_UPDATE on stream 0 (connection window) decoded correctly

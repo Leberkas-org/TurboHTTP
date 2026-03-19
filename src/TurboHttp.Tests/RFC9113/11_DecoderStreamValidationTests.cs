@@ -3,28 +3,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §8.2 / §8.3 — HTTP/2 Header Block Decoding.
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/>, <see cref="HpackDecoder"/>,
-/// <see cref="HeadersFrame"/>, and <see cref="ContinuationFrame"/> correctly
-/// decode header blocks at the wire level.
-///
-/// Covered (§8.2 / §8.3):
-///   - HEADERS frame: EndHeaders flag (true/false) decoded correctly
-///   - CONTINUATION frame: EndHeaders flag (true/false) decoded correctly
-///   - HEADERS + CONTINUATION: assembled block decoded by HpackDecoder
-///   - Multi-fragment header block: all headers present in decoded result
-///   - HeaderBlockFragment accessible from decoded HeadersFrame
-///   - HeaderBlockFragment accessible from decoded ContinuationFrame
-///   - HpackDecoder decodes :status and regular headers from fragment
-///   - End-to-end: build HeadersFrame → serialize → decode → HPACK → validate §8.3
-///
-/// Test IDs: HBD-001..008
-/// </summary>
 public sealed class Http2HeaderBlockDecoderTests
 {
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static byte[] MakeBlock(params (string Name, string Value)[] headers)
     {
@@ -46,7 +26,6 @@ public sealed class Http2HeaderBlockDecoderTests
         return result;
     }
 
-    // ── HBD-001: END_HEADERS=true on HEADERS frame ───────────────────────────
 
     /// RFC 9113 §8.2 — HEADERS frame with END_HEADERS set is decoded with EndHeaders=true
     [Fact(DisplayName = "RFC9113-8.2-HBD-001: HEADERS with END_HEADERS flag decoded with EndHeaders=true")]
@@ -63,7 +42,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.True(hf.EndHeaders);
     }
 
-    // ── HBD-002: END_HEADERS=false on HEADERS frame ──────────────────────────
 
     /// RFC 9113 §8.2 — HEADERS frame without END_HEADERS set is decoded with EndHeaders=false
     [Fact(DisplayName = "RFC9113-8.2-HBD-002: HEADERS without END_HEADERS flag decoded with EndHeaders=false")]
@@ -80,7 +58,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.False(hf.EndHeaders);
     }
 
-    // ── HBD-003: END_HEADERS=true on CONTINUATION frame ─────────────────────
 
     /// RFC 9113 §8.2 — CONTINUATION frame with END_HEADERS is decoded with EndHeaders=true
     [Fact(DisplayName = "RFC9113-8.2-HBD-003: CONTINUATION with END_HEADERS flag decoded with EndHeaders=true")]
@@ -97,7 +74,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.True(cf.EndHeaders);
     }
 
-    // ── HBD-004: END_HEADERS=false on CONTINUATION frame ────────────────────
 
     /// RFC 9113 §8.2 — CONTINUATION frame without END_HEADERS is decoded with EndHeaders=false
     [Fact(DisplayName = "RFC9113-8.2-HBD-004: CONTINUATION without END_HEADERS flag decoded with EndHeaders=false")]
@@ -114,7 +90,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.False(cf.EndHeaders);
     }
 
-    // ── HBD-005: HeaderBlockFragment accessible from HEADERS ─────────────────
 
     /// RFC 9113 §8.2 — HeaderBlockFragment from decoded HEADERS frame is the original HPACK block
     [Fact(DisplayName = "RFC9113-8.2-HBD-005: HeaderBlockFragment from decoded HEADERS frame contains the HPACK block")]
@@ -136,7 +111,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.Contains(headers, h => h.Name == "content-type" && h.Value == "text/plain");
     }
 
-    // ── HBD-006: HeaderBlockFragment accessible from CONTINUATION ────────────
 
     /// RFC 9113 §8.2 — HeaderBlockFragment from decoded CONTINUATION frame is the fragment bytes
     [Fact(DisplayName = "RFC9113-8.2-HBD-006: HeaderBlockFragment from decoded CONTINUATION frame contains its fragment bytes")]
@@ -158,7 +132,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.Equal(part2, cf.HeaderBlockFragment.ToArray());
     }
 
-    // ── HBD-007: Assembled multi-fragment block decodes all headers ───────────
 
     /// RFC 9113 §8.2 — Assembled HEADERS + CONTINUATION block decoded by HpackDecoder yields all headers
     [Fact(DisplayName = "RFC9113-8.2-HBD-007: Assembled HEADERS+CONTINUATION block decoded by HpackDecoder yields all headers")]
@@ -195,7 +168,6 @@ public sealed class Http2HeaderBlockDecoderTests
         Assert.Contains(headers, h => h.Name == "cache-control" && h.Value == "no-cache");
     }
 
-    // ── HBD-008: End-to-end — HEADERS frame header block round-trip with §8.3 validation ──
 
     /// RFC 9113 §8.3 — HeadersFrame built with HpackEncoder encodes correctly; HpackDecoder decodes
     /// the fragment; response pseudo-header :status is present and valid.

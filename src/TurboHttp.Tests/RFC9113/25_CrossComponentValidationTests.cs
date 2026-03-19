@@ -4,32 +4,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 Cross-Component Validation — Frame decoding with enforcement.
-///
-/// Tests verify correct interaction between decoder output and enforcement:
-///
-///   CC-001..005 — HPACK failure → connection error (RFC 9113 §4.3)
-///       A decompression failure MUST be treated as a connection error of type
-///       COMPRESSION_ERROR, regardless of which stream triggered it.
-///
-///   CC-006..010 — Flow control independent from header decoding (RFC 9113 §6.9)
-///       Windows are tracked per-connection and per-stream independently.
-///
-///   CC-011..014 — Stream cleanup on RST_STREAM (RFC 9113 §6.4)
-///       RST_STREAM marks stream closed and prevents further DATA.
-///
-///   CC-015..018 — GOAWAY stops new stream creation (RFC 9113 §6.8)
-///       After GOAWAY, streams > lastStreamId are rejected.
-///
-///   CC-019..020 — Header injection prevention (RFC 9113 §8.2)
-///       Invalid HPACK data and uppercase headers are rejected.
-/// </summary>
 public sealed class Http2CrossComponentValidationTests
 {
-    // =========================================================================
     // Helpers
-    // =========================================================================
 
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
@@ -168,9 +145,7 @@ public sealed class Http2CrossComponentValidationTests
         }
     }
 
-    // =========================================================================
     // CC-001..005: HPACK failure → connection error (RFC 9113 §4.3)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-4.3-CC-001: Malformed HPACK → CompressionError connection error")]
     public void Should_ThrowCompressionError_WhenMalformedHpackBytesDecoded()
@@ -278,9 +253,7 @@ public sealed class Http2CrossComponentValidationTests
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
     }
 
-    // =========================================================================
     // CC-006..010: Flow control independent from header decoding (RFC 9113 §6.9)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.9-CC-006: Connection window tracked independently from HPACK")]
     public void Should_TrackConnectionWindowIndependentlyFromHpack()
@@ -376,9 +349,7 @@ public sealed class Http2CrossComponentValidationTests
         Assert.Equal(5000, frame.Increment);
     }
 
-    // =========================================================================
     // CC-011..014: Stream cleanup on RST_STREAM (RFC 9113 §6.4)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.4-CC-011: RST_STREAM decrements active stream count")]
     public void Should_DecrementActiveStreamCount_WhenRstStreamReceived()
@@ -465,9 +436,7 @@ public sealed class Http2CrossComponentValidationTests
         Assert.Equal(Http2ErrorCode.Cancel, frame.ErrorCode);
     }
 
-    // =========================================================================
     // CC-015..018: GOAWAY stops new stream creation (RFC 9113 §6.8)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-6.8-CC-015: GOAWAY frame decoded with correct lastStreamId")]
     public void Should_DecodeCorrectLastStreamId_WhenGoAwayReceived()
@@ -533,9 +502,7 @@ public sealed class Http2CrossComponentValidationTests
         Assert.Equal(Http2ErrorCode.FlowControlError, frame.ErrorCode);
     }
 
-    // =========================================================================
     // CC-019..020: No header injection via HPACK (RFC 9113 §8.2)
-    // =========================================================================
 
     [Fact(DisplayName = "RFC9113-8.2-CC-019: Invalid HPACK index cannot inject headers")]
     public void Should_PreventHeaderInjection_WhenHpackIndexIsInvalid()

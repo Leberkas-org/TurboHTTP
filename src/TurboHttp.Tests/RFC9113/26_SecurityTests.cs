@@ -3,26 +3,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 Security Tests — Flood and Constraint Validation.
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes frames
-/// involved in security attack scenarios, and that RFC-required constraint checks
-/// are correctly enforced by conforming callers.
-///
-/// Covered:
-///   §6.10          : Excessive CONTINUATION frames (flood detection)
-///   §5.1 + §6.4    : Rapid RST_STREAM cycling (CVE-2023-44487)
-///   §6.1           : Excessive zero-length DATA frames (flood detection)
-///   §6.5.2         : SETTINGS_ENABLE_PUSH must be 0 or 1
-///   §6.5.2         : SETTINGS_INITIAL_WINDOW_SIZE ≤ 2^31−1
-///   §6.5           : Unknown SETTINGS parameters silently decoded
-/// </summary>
 public sealed class Http2SecurityTests
 {
-    // =========================================================================
     // Helpers — RFC-mandated validators that the decoder delegates to the caller
-    // =========================================================================
 
     /// <summary>
     /// RFC 9113 §6.10 + security best practice: Excessive CONTINUATION frames
@@ -100,9 +83,7 @@ public sealed class Http2SecurityTests
         }
     }
 
-    // =========================================================================
     // SEC-001..003: CONTINUATION Flood (RFC 9113 §6.10)
-    // =========================================================================
 
     /// RFC 9113 §6.10: Excessive CONTINUATION frames detected by explicit enforcement
     [Fact(DisplayName = "RFC9113-6.10-SEC-001: Excessive CONTINUATION frames detected by flood enforcement")]
@@ -147,9 +128,7 @@ public sealed class Http2SecurityTests
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // =========================================================================
     // SEC-002: Rapid RST_STREAM Protection (RFC 9113 §5.1, §6.4 + CVE-2023-44487)
-    // =========================================================================
 
     /// RFC 9113 §5.1 + §6.4: Rapid RST_STREAM cycling (101 frames) detected by enforcement
     [Fact(DisplayName = "RFC9113-5.1-SEC-002: Rapid RST_STREAM cycling detected by flood enforcement (CVE-2023-44487)")]
@@ -185,9 +164,7 @@ public sealed class Http2SecurityTests
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // =========================================================================
     // SEC-003: Empty DATA Frame Flood (RFC 9113 §6.1)
-    // =========================================================================
 
     /// RFC 9113 §6.1: Excessive zero-length DATA frames detected by enforcement
     [Fact(DisplayName = "RFC9113-6.1-SEC-003: Excessive zero-length DATA frames detected by flood enforcement")]
@@ -217,9 +194,7 @@ public sealed class Http2SecurityTests
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // =========================================================================
     // SEC-004..005: SETTINGS Parameter Validation (RFC 9113 §6.5.2)
-    // =========================================================================
 
     /// RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH > 1 causes PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-6.5-SEC-004: SETTINGS ENABLE_PUSH > 1 rejected by enforcement")]
@@ -265,9 +240,7 @@ public sealed class Http2SecurityTests
         Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
     }
 
-    // =========================================================================
     // SEC-006: Unknown SETTINGS Parameter (RFC 9113 §5.5)
-    // =========================================================================
 
     /// RFC 9113 §5.5: Unknown SETTINGS parameter IDs are silently decoded
     [Fact(DisplayName = "RFC9113-6.5-SEC-006: Unknown SETTINGS parameter silently decoded per RFC §5.5")]
@@ -293,9 +266,7 @@ public sealed class Http2SecurityTests
         Assert.Equal(42u, unknownEntry.Item2);
     }
 
-    // =========================================================================
     // Helpers
-    // =========================================================================
 
     /// <summary>
     /// Build a raw HTTP/2 frame with a 9-byte header + payload.

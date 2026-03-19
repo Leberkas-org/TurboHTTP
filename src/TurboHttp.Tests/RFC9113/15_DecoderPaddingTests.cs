@@ -4,15 +4,10 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// Tests for PADDED flag handling in DATA (§6.1) and HEADERS (§6.2) frames.
-/// Covers RFC 9113 SHOULD-level requirements for padding stripping and error detection.
-/// </summary>
 public sealed class Http2DecoderPaddingTests
 {
     private readonly Http2FrameDecoder _decoder = new();
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Builds a raw DATA frame with the PADDED flag set.
@@ -113,7 +108,6 @@ public sealed class Http2DecoderPaddingTests
         return buf;
     }
 
-    // ── DATA §6.1 — PADDED flag ────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.1-PAD-001: DATA with PADDED flag strips padding, payload correct")]
     public void Should_StripPadding_WhenDataFrameHasPaddedFlag()
@@ -182,7 +176,6 @@ public sealed class Http2DecoderPaddingTests
         Assert.Equal(payload, df.Data.ToArray());
     }
 
-    // ── HEADERS §6.2 — PADDED flag ─────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.2-PAD-001: HEADERS with PADDED flag strips padding, header block correct")]
     public void Should_StripPadding_WhenHeadersFrameHasPaddedFlag()

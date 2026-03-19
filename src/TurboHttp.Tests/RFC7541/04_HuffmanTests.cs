@@ -4,22 +4,9 @@ using TurboHttp.Protocol.RFC7541;
 
 namespace TurboHttp.Tests.RFC7541;
 
-/// <summary>
-/// Tests for HuffmanCodec — RFC 7541 §5.2 (String Literal Representation)
-/// and Appendix B (Huffman Code Table).
-///
-/// Phase 21-22: Huffman Decoder
-///   - Canonical Huffman tree decoding
-///   - EOS (symbol 256) misuse rejection
-///   - Overlong padding rejection (> 7 bits)
-///   - Invalid padding rejection (non-all-ones bits)
-///   - Incomplete symbol / truncated input rejection
-/// </summary>
 public sealed class HuffmanDecoderTests
 {
-    // -------------------------------------------------------------------------
     // HF-00x: Valid RFC 7541 decode vectors
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Decode 'www.example.com' matches RFC 7541 Appendix C
     [Fact(DisplayName = "RFC7541-5.2-HF-001: Decode 'www.example.com' matches RFC 7541 Appendix C")]
@@ -88,9 +75,7 @@ public sealed class HuffmanDecoderTests
         Assert.Equal("application/json", Encoding.ASCII.GetString(decoded));
     }
 
-    // -------------------------------------------------------------------------
     // HF-01x: Canonical Huffman tree — full symbol coverage
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — All 128 printable ASCII chars encode and decode correctly
     [Fact(DisplayName = "RFC7541-5.2-HF-010: All 128 printable ASCII chars encode and decode correctly")]
@@ -156,10 +141,8 @@ public sealed class HuffmanDecoderTests
         }
     }
 
-    // -------------------------------------------------------------------------
     // EO-00x: EOS (symbol 256) misuse — RFC 7541 §5.2
     // "A Huffman-encoded string literal MUST NOT contain the EOS symbol."
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — 4 bytes all-ones triggers EOS at bit 30 — throws HpackException
     [Fact(DisplayName = "RFC7541-5.2-EO-001: 4 bytes all-ones triggers EOS at bit 30 — throws HpackException")]
@@ -236,9 +219,7 @@ public sealed class HuffmanDecoderTests
         Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0xFF }));
     }
 
-    // -------------------------------------------------------------------------
     // PA-00x: Padding validation — RFC 7541 §5.2
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Valid 3-bit all-ones padding for 'a' [0x1F] — no exception
     [Fact(DisplayName = "RFC7541-5.2-PA-001: Valid 3-bit all-ones padding for 'a' [0x1F] — no exception")]
@@ -325,9 +306,7 @@ public sealed class HuffmanDecoderTests
         Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x00, 0x00 }));
     }
 
-    // -------------------------------------------------------------------------
     // IC-00x: Incomplete symbol / truncated input
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Single byte 0x80 is incomplete prefix — throws
     [Fact(DisplayName = "RFC7541-5.2-IC-001: Single byte 0x80 is incomplete prefix — throws")]
@@ -357,9 +336,7 @@ public sealed class HuffmanDecoderTests
         Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x1F, 0x80 }));
     }
 
-    // -------------------------------------------------------------------------
     // RT-00x: Round-trip encode → decode
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — ..007: Round-trip various HTTP-relevant strings
     [Theory(DisplayName = "RFC7541-5.2-RT-001..007: Round-trip various HTTP-relevant strings")]
@@ -393,9 +370,7 @@ public sealed class HuffmanDecoderTests
         Assert.Equal(bytes, decoded);
     }
 
-    // -------------------------------------------------------------------------
     // ED-00x: Encode output properties
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Encode always uses all-ones padding (MSBs of EOS)
     [Fact(DisplayName = "RFC7541-5.2-ED-001: Encode always uses all-ones padding (MSBs of EOS)")]
@@ -442,10 +417,8 @@ public sealed class HuffmanDecoderTests
         }
     }
 
-    // -------------------------------------------------------------------------
     // ED-00x: RFC 7541 Appendix C encode reference vectors (encode direction)
     // Migrated from HuffmanTests.cs (Phase 70 Step 2 — duplicate removal)
-    // -------------------------------------------------------------------------
 
     /// RFC 7541 §5.2 — Encode 'www.example.com' produces exact RFC 7541 Appendix C bytes
     [Fact(DisplayName = "RFC7541-5.2-ED-004: Encode 'www.example.com' produces exact RFC 7541 Appendix C bytes")]

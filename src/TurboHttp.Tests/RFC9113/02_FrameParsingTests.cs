@@ -3,25 +3,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 7540 §4 — HTTP/2 Frame Layer
-/// Phase 3-4: Frame Parsing Core — strict frame header and payload validation.
-///
-/// Covers:
-///   - 9-byte frame header parsing (RFC 7540 §4.1)
-///   - 24-bit length field enforcement
-///   - Frame size limits: SETTINGS_MAX_FRAME_SIZE (RFC 7540 §4.2 / §6.5.2)
-///   - Stream ID rules: R-bit, stream 0 requirements (RFC 7540 §4.1 / §6.5 / §6.7 / §6.8)
-///   - Unknown frame types silently ignored (RFC 7540 §4.1)
-///   - Frame-specific payload size: SETTINGS, PING, WINDOW_UPDATE, RST_STREAM (RFC 7540 §6.4/§6.5/§6.7/§6.9)
-///   - Unknown flags silently ignored (RFC 7540 §4.1)
-///   - MUST NOT accept invalid frame in stream state
-/// </summary>
 public sealed class Http2FrameParsingCoreTests
 {
-    // =========================================================================
     // Frame Header Parsing (RFC 7540 §4.1)
-    // =========================================================================
 
     /// RFC 7540 §4.1 — Zero bytes returns empty (NeedMoreData)
     [Fact(DisplayName = "RFC9113-4.1-FP-001: Zero bytes returns empty (NeedMoreData)")]
@@ -93,9 +77,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.IsType<PingFrame>(frames[0]);
     }
 
-    // =========================================================================
     // 24-Bit Length Field (RFC 7540 §4.1)
-    // =========================================================================
 
     /// RFC 7540 §4.1 — Length field uses all 24 bits (payload > 65535)
     [Fact(DisplayName = "RFC9113-4.1-FP-006: Length field uses all 24 bits (payload > 65535)")]
@@ -124,9 +106,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.NotNull(settingsFrame);
     }
 
-    // =========================================================================
     // Frame Size Limits (RFC 7540 §4.2, §6.5.2)
-    // =========================================================================
 
     /// RFC 7540 §4.2 — Default MAX_FRAME_SIZE is 16384 (2^14)
     [Fact(DisplayName = "RFC9113-4.2-FP-007: Default MAX_FRAME_SIZE is 16384 (2^14)")]
@@ -224,9 +204,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.Null(ex);
     }
 
-    // =========================================================================
     // Unknown Frame Types (RFC 7540 §4.1)
-    // =========================================================================
 
     /// RFC 7540 §4.1 — Unknown frame type is decoded (even if not recognized)
     [Fact(DisplayName = "RFC9113-4.1-FP-013: Unknown frame type is decoded")]
@@ -281,9 +259,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.Empty(frames);
     }
 
-    // =========================================================================
     // Stream ID Rules (RFC 7540 §4.1, §6.5, §6.7, §6.8)
-    // =========================================================================
 
     /// RFC 7540 §6.5 — SETTINGS on non-zero stream causes PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-6.5-FP-016: SETTINGS on non-zero stream causes PROTOCOL_ERROR")]
@@ -360,9 +336,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.IsType<WindowUpdateFrame>(frames[0]);
     }
 
-    // =========================================================================
     // Frame-Specific Payload Size Validation (RFC 7540 §6.4/§6.5/§6.7/§6.9)
-    // =========================================================================
 
     /// RFC 7540 §6.5 — SETTINGS payload not multiple of 6 is FRAME_SIZE_ERROR
     [Fact(DisplayName = "RFC9113-6.5-FP-021: SETTINGS payload not multiple of 6 is FRAME_SIZE_ERROR")]
@@ -484,9 +458,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // Unknown Flags Are Silently Ignored (RFC 7540 §4.1)
-    // =========================================================================
 
     /// RFC 7540 §4.1 — SETTINGS with unknown flag bits set is processed normally
     [Fact(DisplayName = "RFC9113-4.1-FP-028: SETTINGS with unknown flag bits set is processed normally")]
@@ -539,9 +511,7 @@ public sealed class Http2FrameParsingCoreTests
         Assert.Equal(Http2ErrorCode.NoError, goAwayFrame.ErrorCode);
     }
 
-    // =========================================================================
     // Invalid Frame in Stream State (RFC 7540 §5.1)
-    // =========================================================================
 
     /// RFC 7540 §5.1 — CONTINUATION frame decoded as ContinuationFrame (ordering validation at stream stage level)
     [Fact(DisplayName = "RFC9113-5.1-FP-031: Standalone CONTINUATION frame decoded as ContinuationFrame")]

@@ -5,7 +5,6 @@ namespace TurboHttp.Tests.RFC9113;
 
 public sealed class Http2RequestEncoderFrameTests
 {
-    // ── Frame structure ───────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-8.1-001: GET request produces HEADERS frame with END_STREAM and END_HEADERS")]
     public void Should_ProduceHeadersFrameWithEndStream_WhenEncodingGetRequest()
@@ -48,7 +47,6 @@ public sealed class Http2RequestEncoderFrameTests
         Assert.NotEmpty(df.Data.ToArray());
     }
 
-    // ── Pseudo-headers ────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-8.3.1-001: Encoded header block contains required HTTP/2 pseudo-headers")]
     public void Should_ContainPseudoHeaders_WhenEncodingGetRequestHeaderBlock()
@@ -75,7 +73,6 @@ public sealed class Http2RequestEncoderFrameTests
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/search?term=foo&page=2" });
     }
 
-    // ── Forbidden headers ─────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-8.2.2-001: Connection-specific headers are stripped from encoded output")]
     public void Should_StripConnectionHeaders_WhenEncoding()
@@ -91,7 +88,6 @@ public sealed class Http2RequestEncoderFrameTests
         Assert.Contains(headers, h => h.Name == "x-custom");
     }
 
-    // ── Large header block (CONTINUATION) ─────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.10-002: Header block larger than max frame size uses CONTINUATION frames")]
     public void Should_UseContinuationFrames_WhenEncodingLargeHeaderBlock()
@@ -122,7 +118,6 @@ public sealed class Http2RequestEncoderFrameTests
         }
     }
 
-    // ── Stream ID ─────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-5.1.1-001: All frames for a request share the same stream ID")]
     public void Should_HaveSameStreamIdOnAllFrames_WhenEncodingPostRequest()

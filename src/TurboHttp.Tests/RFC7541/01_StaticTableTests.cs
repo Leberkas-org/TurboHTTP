@@ -2,21 +2,8 @@ using TurboHttp.Protocol.RFC7541;
 
 namespace TurboHttp.Tests.RFC7541;
 
-/// <summary>
-/// RFC 7541 Appendix A — HPACK Static Table
-/// Phase 15-16: Verify full static table implementation.
-///
-/// Key invariants tested here:
-///   - The static table contains exactly 61 entries (RFC 7541 Appendix A).
-///   - Index 0 is reserved and must never be used (RFC 7541 §2.3.3).
-///   - Each of the 61 static entries resolves to the correct name and value.
-///   - The encoder produces correct indexed wire bytes for full static matches.
-///   - The encoder uses static name indices for name-only matches.
-///   - Invalid indices (0, 62+ with empty dynamic table) throw HpackException.
-/// </summary>
 public sealed class HpackStaticTableTests
 {
-    // ── Static Table Structure ────────────────────────────────────────────────
 
     /// RFC 7541 Appendix A — Static table contains exactly 61 entries
     [Fact(DisplayName = "RFC7541-A-ST-001: Static table contains exactly 61 entries")]
@@ -42,7 +29,6 @@ public sealed class HpackStaticTableTests
         Assert.Equal(string.Empty, entry.Value);
     }
 
-    // ── All 61 Entries Have Correct Name and Value (Theory) ───────────────────
 
     public static TheoryData<int, string, string> AllStaticEntries()
     {
@@ -122,7 +108,6 @@ public sealed class HpackStaticTableTests
         Assert.Equal(expectedValue, entry.Value);
     }
 
-    // ── Decoder Resolves Static Indices to Correct Headers ────────────────────
 
     /// RFC 7541 Appendix A — Decode index 2 → :method=GET
     [Fact(DisplayName = "RFC7541-A-ST-010: Decode index 2 → :method=GET")]
@@ -225,7 +210,6 @@ public sealed class HpackStaticTableTests
         Assert.Equal("", result[0].Value);
     }
 
-    // ── Encoder Produces Correct Indexed Wire Bytes ────────────────────────────
 
     /// RFC 7541 Appendix A — Encode :method=GET produces single byte 0x82
     [Fact(DisplayName = "RFC7541-A-ST-020: Encode :method=GET produces single byte 0x82")]
@@ -293,7 +277,6 @@ public sealed class HpackStaticTableTests
         Assert.Equal(0x8D, encoded.Span[0]);
     }
 
-    // ── Invalid Index Rejection ────────────────────────────────────────────────
 
     /// RFC 7541 Appendix A — Decode index 0 (0x80) throws HpackException — reserved index
     [Fact(DisplayName = "RFC7541-A-ST-030: Decode index 0 (0x80) throws HpackException — reserved index")]
@@ -338,7 +321,6 @@ public sealed class HpackStaticTableTests
         Assert.Contains("999", ex.Message);
     }
 
-    // ── Static Name-Only Match (encoder uses static index for name) ────────────
 
     /// RFC 7541 Appendix A — Encode :authority with custom value uses static index 1 for name
     [Fact(DisplayName = "RFC7541-A-ST-040: Encode :authority with custom value uses static index 1 for name")]
@@ -366,7 +348,6 @@ public sealed class HpackStaticTableTests
         Assert.Equal(0x50, encoded.Span[0]);
     }
 
-    // ── Round-Trip via Static Table ────────────────────────────────────────────
 
     /// RFC 7541 Appendix A — Round-trip encode/decode all pseudo-headers via static table
     [Fact(DisplayName = "RFC7541-A-ST-050: Round-trip encode/decode all pseudo-headers via static table")]

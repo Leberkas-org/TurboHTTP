@@ -4,21 +4,8 @@ using TurboHttp.Protocol.RFC7541;
 
 namespace TurboHttp.Tests.RFC7541;
 
-/// <summary>
-/// RFC 7541 §4 — HPACK Dynamic Table Engine
-/// Phase 17-18: Verify dynamic table FIFO eviction, size tracking,
-/// HEADER_TABLE_SIZE enforcement, and size update position rules.
-///
-/// Key invariants:
-///   §4.1  Entry size = name.UTF8 + value.UTF8 + 32 bytes overhead
-///   §4.2  Table size must not exceed SETTINGS_HEADER_TABLE_SIZE
-///   §4.4  Entry larger than MaxSize → evict entire table (no partial add)
-///   §6.3  Dynamic Table Size Update must appear before any header field
-///   FIFO: newest entry is at index 1; oldest is at index Count; oldest evicted first
-/// </summary>
 public sealed class HpackDynamicTableTests
 {
-    // ── DT-00x: Empty table invariants ────────────────────────────────────────
 
     /// RFC 7541 §4 — Empty table has CurrentSize = 0
     [Fact(DisplayName = "RFC7541-4-DT-001: Empty table has CurrentSize = 0")]
@@ -60,7 +47,6 @@ public sealed class HpackDynamicTableTests
         Assert.Null(table.GetEntry(0));
     }
 
-    // ── DT-01x: Size tracking ─────────────────────────────────────────────────
 
     /// RFC 7541 §4 — Single entry size = UTF8(name) + UTF8(value) + 32
     [Fact(DisplayName = "RFC7541-4-DT-010: Single entry size = UTF8(name) + UTF8(value) + 32")]
@@ -119,7 +105,6 @@ public sealed class HpackDynamicTableTests
         Assert.Equal(expected, table.CurrentSize);
     }
 
-    // ── DT-02x: FIFO ordering ─────────────────────────────────────────────────
 
     /// RFC 7541 §4 — GetEntry(1) returns most recently added entry
     [Fact(DisplayName = "RFC7541-4-DT-020: GetEntry(1) returns most recently added entry")]
@@ -174,7 +159,6 @@ public sealed class HpackDynamicTableTests
         Assert.Null(table.GetEntry(99));
     }
 
-    // ── DT-03x: FIFO eviction ─────────────────────────────────────────────────
 
     /// RFC 7541 §4 — Eviction removes oldest entry first (FIFO)
     [Fact(DisplayName = "RFC7541-4-DT-030: Eviction removes oldest entry first (FIFO)")]
@@ -273,7 +257,6 @@ public sealed class HpackDynamicTableTests
         Assert.True(table.CurrentSize <= 200);
     }
 
-    // ── DT-04x: SetMaxSize behavior ───────────────────────────────────────────
 
     /// RFC 7541 §4 — SetMaxSize updates MaxSize property
     [Fact(DisplayName = "RFC7541-4-DT-040: SetMaxSize updates MaxSize property")]
@@ -328,7 +311,6 @@ public sealed class HpackDynamicTableTests
         Assert.Equal(0, table.CurrentSize);
     }
 
-    // ── TS-00x: Table size update position (RFC 7541 §6.3) ───────────────────
 
     /// RFC 7541 §6.3 — Table size update at start of block is accepted
     [Fact(DisplayName = "RFC7541-6.3-TS-001: Table size update at start of block is accepted")]
@@ -435,7 +417,6 @@ public sealed class HpackDynamicTableTests
         Assert.Single(headers);
     }
 
-    // ── ET-00x: Encoder AcknowledgeTableSizeChange ────────────────────────────
 
     /// RFC 7541 §6.3 — AcknowledgeTableSizeChange emits size update prefix at next encode
     [Fact(DisplayName = "RFC7541-6.3-ET-001: AcknowledgeTableSizeChange emits size update prefix at next encode")]
@@ -507,7 +488,6 @@ public sealed class HpackDynamicTableTests
         Assert.NotEqual(0x20, secondFirstByte & 0xE0); // top 3 bits must NOT be 001
     }
 
-    // ── ES-00x: Encoder/Decoder synchronization ───────────────────────────────
 
     /// RFC 7541 §7.1 — Dynamic entry added by encode is accessible via index on decode
     [Fact(DisplayName = "RFC7541-7.1-ES-001: Dynamic entry added by encode is accessible via index on decode")]
@@ -640,7 +620,6 @@ public sealed class HpackDynamicTableTests
         Assert.Equal(0x10, buf.WrittenSpan[0] & 0xF0);
     }
 
-    // ── DT-05x: Boundary and stress tests ────────────────────────────────────
 
     /// RFC 7541 §4 — Table fills exactly to MaxSize without eviction
     [Fact(DisplayName = "RFC7541-4-DT-050: Table fills exactly to MaxSize without eviction")]

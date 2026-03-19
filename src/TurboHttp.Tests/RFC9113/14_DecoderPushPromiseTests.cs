@@ -2,19 +2,8 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §5.1.1 — Push-Promise Stream State Machine
-/// Covers:
-///   - PUSH_PROMISE moves promised stream to reserved(remote) state
-///   - Client rejection of reserved(remote) stream via RST_STREAM CANCEL
-///   - PUSH_PROMISE on stream 0 → PROTOCOL_ERROR
-///   - PUSH_PROMISE with even promised-stream-ID is decodable
-///   - PUSH_PROMISE referencing invalid/already-open stream → PROTOCOL_ERROR
-///   - PUSH_PROMISE with END_HEADERS flag handling
-/// </summary>
 public sealed class Http2DecoderPushPromiseTests
 {
-    // ── Decode basics ───────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-001: PUSH_PROMISE moves stream to reserved(remote) state")]
     public void Should_SetPromisedStreamAsReservedRemote_WhenPushPromiseDecoded()

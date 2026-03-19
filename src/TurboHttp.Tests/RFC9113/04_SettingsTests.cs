@@ -2,29 +2,9 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// RFC 9113 §6.5 — SETTINGS Frames.
-///
-/// Tests verify that <see cref="Http2FrameDecoder"/> correctly decodes SETTINGS frames,
-/// enforces wire-format constraints, and that RFC-required parameter validation rules
-/// are correctly applied by conforming callers.
-///
-/// Covered:
-///   §6.5  : ACK flag — SettingsFrame.IsAck
-///   §6.5  : SETTINGS on non-zero stream → PROTOCOL_ERROR
-///   §6.5  : SETTINGS ACK with payload → FRAME_SIZE_ERROR
-///   §6.5  : Payload not multiple of 6 → FRAME_SIZE_ERROR
-///   §6.5.2: MAX_FRAME_SIZE range [16384, 16777215]
-///   §6.5.2: ENABLE_PUSH must be 0 or 1
-///   §6.5.2: INITIAL_WINDOW_SIZE overflow (> 2^31−1) → FLOW_CONTROL_ERROR
-///   §6.5  : Parameter round-trip (encode → decode → verify)
-///   §6.5  : Unknown parameters silently decoded (§5.5)
-/// </summary>
 public sealed class Http2SettingsTests
 {
-    // =========================================================================
     // Helpers — RFC-mandated validators that the decoder delegates to the caller
-    // =========================================================================
 
     /// <summary>
     /// RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH MUST be 0 or 1.
@@ -60,9 +40,7 @@ public sealed class Http2SettingsTests
         }
     }
 
-    // =========================================================================
     // SS-001..003: ACK flag and stream-0 constraint (RFC 9113 §6.5)
-    // =========================================================================
 
     /// RFC 9113 §6.5 — SETTINGS ACK flag decoded as IsAck=true
     [Fact(DisplayName = "RFC9113-6.5-SS-001: SETTINGS ACK flag decoded as IsAck=true")]
@@ -109,9 +87,7 @@ public sealed class Http2SettingsTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // SS-004..005: Frame-size errors (RFC 9113 §6.5)
-    // =========================================================================
 
     /// RFC 9113 §6.5 — SETTINGS ACK with non-empty payload is FRAME_SIZE_ERROR
     [Fact(DisplayName = "RFC9113-6.5-SS-004: SETTINGS ACK with non-empty payload is FRAME_SIZE_ERROR")]
@@ -151,9 +127,7 @@ public sealed class Http2SettingsTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // SS-006..009: MAX_FRAME_SIZE range [16384, 16777215] (RFC 9113 §6.5.2)
-    // =========================================================================
 
     /// RFC 9113 §6.5.2 — MAX_FRAME_SIZE below 16384 is PROTOCOL_ERROR
     [Fact(DisplayName = "RFC9113-6.5-SS-006: MAX_FRAME_SIZE below 16384 is PROTOCOL_ERROR")]
@@ -203,9 +177,7 @@ public sealed class Http2SettingsTests
         Assert.Contains(frame.Parameters, p => p.Item1 == SettingsParameter.MaxFrameSize && p.Item2 == 16777215u);
     }
 
-    // =========================================================================
     // SS-010..013: ENABLE_PUSH validation (RFC 9113 §6.5.2)
-    // =========================================================================
 
     /// RFC 9113 §6.5.2 — ENABLE_PUSH=0 is accepted
     [Fact(DisplayName = "RFC9113-6.5-SS-010: ENABLE_PUSH=0 is accepted")]
@@ -267,9 +239,7 @@ public sealed class Http2SettingsTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // SS-014..016: INITIAL_WINDOW_SIZE overflow (RFC 9113 §6.5.2)
-    // =========================================================================
 
     /// RFC 9113 §6.5.2 — INITIAL_WINDOW_SIZE above 2^31−1 is FLOW_CONTROL_ERROR
     [Fact(DisplayName = "RFC9113-6.5-SS-014: INITIAL_WINDOW_SIZE above 2^31-1 is FLOW_CONTROL_ERROR")]
@@ -317,9 +287,7 @@ public sealed class Http2SettingsTests
         Assert.True(ex.IsConnectionError);
     }
 
-    // =========================================================================
     // SS-017..020: Parameter parsing and round-trip (RFC 9113 §6.5)
-    // =========================================================================
 
     /// RFC 9113 §6.5 — Empty SETTINGS frame decoded with no parameters
     [Fact(DisplayName = "RFC9113-6.5-SS-017: Empty SETTINGS frame decoded with no parameters")]

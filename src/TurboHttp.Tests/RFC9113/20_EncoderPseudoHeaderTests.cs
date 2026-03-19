@@ -4,18 +4,10 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Tests.RFC9113;
 
-/// <summary>
-/// Phase 29-30: Http2RequestEncoder — Pseudo-Header Validation (RFC 7540 §8.1.2.1)
-/// Part 1: Contract tests for ValidatePseudoHeaders.
-/// Part 2: Integration tests through Encode().
-/// </summary>
 public sealed class Http2EncoderPseudoHeaderTests
 {
-    // =========================================================================
     // PART 1: Contract Tests for ValidatePseudoHeaders
-    // =========================================================================
 
-    // --- Happy Path ----------------------------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-c001: Valid pseudo-header configurations pass validation")]
     [InlineData("/path", "GET", "https", "example.com", 0)]
@@ -34,7 +26,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Null(ex);
     }
 
-    // --- Missing Required Pseudo-Headers ------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-c005: Missing [{missingHeader}] throws Http2Exception")]
     [InlineData(":method")]
@@ -69,7 +60,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         }
     }
 
-    // --- Duplicate Pseudo-Headers -------------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-c011: Duplicate [{pseudoHeader}] throws Http2Exception")]
     [InlineData(":method", "POST")]
@@ -85,7 +75,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Contains(pseudoHeader, ex.Message);
     }
 
-    // --- Unknown Pseudo-Headers ---------------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-c015: Unknown pseudo-header [{unknownHeader}] throws Http2Exception")]
     [InlineData(":status", "200")]
@@ -99,7 +88,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Contains(unknownHeader, ex.Message);
     }
 
-    // --- Pseudo-Headers After Regular Headers --------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-c017: Pseudo-header after regular header at index [{insertIndex}] throws")]
     [InlineData(2, "x-custom", "value")]
@@ -130,11 +118,8 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Contains("1", ex.Message);
     }
 
-    // =========================================================================
     // PART 2: Integration Tests via Encode()
-    // =========================================================================
 
-    // --- Standard Methods ---------------------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-i001: Encode succeeds for [{method}] requests")]
     [InlineData("GET")]
@@ -151,7 +136,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Null(ex);
     }
 
-    // --- Pseudo-Header Value Round-Trip -------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-i002: Encode [{method}] {url} produces [{expectedHeader}]=[{expectedValue}]")]
     [InlineData("GET", "https://example.com/", ":scheme", "https")]
@@ -175,7 +159,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Equal(expectedValue, headers.First(h => h.Name == expectedHeader).Value);
     }
 
-    // --- Long Path ----------------------------------------------------------
 
     [Fact(DisplayName = "RFC9113-8.1.2.1-i006: Long path encodes correctly in :path")]
     public void Should_EncodeCorrectly_WhenPathIsLong()
@@ -187,7 +170,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Equal(longPath, path);
     }
 
-    // --- Pseudo-Header Presence & Count -------------------------------------
 
     [Theory(DisplayName = "RFC9113-8.1.2.1-i009: All four pseudo-headers present in encoded [{method}] request")]
     [InlineData("GET", "https://example.com/data", false, false)]
@@ -214,7 +196,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.Equal(4, pseudoCount);
     }
 
-    // --- Pseudo-Header Order & Structure ------------------------------------
 
     [Fact(DisplayName = "RFC9113-8.1.2.1-i010: Pseudo-headers precede regular headers in output")]
     public void Should_PrecedeRegularHeaders_WhenPseudoHeadersEncoded()
@@ -254,7 +235,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.All(pseudos, h => Assert.Contains(h.Name, known));
     }
 
-    // --- Custom Headers Do Not Break Pseudo-Header Rules --------------------
 
     [Fact(DisplayName = "RFC9113-8.1.2.1-i013: Custom headers do not displace pseudo-headers")]
     public void Should_NotAffectPseudoHeaders_WhenCustomHeadersAdded()
@@ -296,7 +276,6 @@ public sealed class Http2EncoderPseudoHeaderTests
         Assert.DoesNotContain("upgrade", names);
     }
 
-    // --- Multiple Requests --------------------------------------------------
 
     [Fact(DisplayName = "RFC9113-8.1.2.1-i015: Multiple requests each have valid pseudo-headers")]
     public void Should_HaveValidPseudoHeaders_WhenMultipleRequestsEncoded()
@@ -317,9 +296,7 @@ public sealed class Http2EncoderPseudoHeaderTests
         }
     }
 
-    // =========================================================================
     // Helpers
-    // =========================================================================
 
     private static List<(string, string)> AllFourPseudos(string path, string method, string scheme, string authority)
     {
