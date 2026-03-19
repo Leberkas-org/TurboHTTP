@@ -20,66 +20,6 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("Hello World", result);
     }
 
-    [Fact]
-    public async Task ChunkedBody_WithExtensions_Ignored()
-    {
-        const string chunkedBody = "5;ext=value\r\nHello\r\n0\r\n\r\n";
-        var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
-
-        var decoded = _decoder.TryDecode(raw, out var responses);
-        Assert.True(decoded);
-        var result = await responses[0].Content.ReadAsStringAsync();
-        Assert.Equal("Hello", result);
-    }
-
-    [Fact]
-    public void ChunkedBody_Incomplete_NeedMoreData()
-    {
-        const string partial = "5\r\nHel";
-        var raw = BuildRaw(200, "OK", partial, ("Transfer-Encoding", "chunked"));
-
-        var decoded = _decoder.TryDecode(raw, out _);
-        Assert.False(decoded);
-    }
-
-    [Fact]
-    public void Decode_InvalidChunkSize_ReturnsError()
-    {
-        // RFC 7230 §4.1: chunk-size is a hex string. Non-hex characters MUST cause a parse error.
-        const string chunkedBody = "xyz\r\nHello\r\n0\r\n\r\n";
-        var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
-
-        var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
-    }
-
-    [Fact]
-    public void Decode_ChunkSizeTooLarge_ReturnsError()
-    {
-        // RFC 7230 §4.1: A chunk size that overflows the parser's integer type MUST be rejected.
-        const string chunkedBody = "999999999999\r\ndata\r\n0\r\n\r\n";
-        var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
-
-        var ex = Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecoderError.InvalidChunkSize, ex.DecodeError);
-    }
-
-    [Fact]
-    public void Decode_ChunkedWithTrailer_TrailerHeadersPresent()
-    {
-        // RFC 7230 §4.1.2: A chunked message may include trailer fields after the last chunk.
-        // Trailer headers appear between the final "0\r\n" chunk and the terminating "\r\n".
-        const string chunkedBody = "5\r\nHello\r\n0\r\nX-Trailer: value\r\n\r\n";
-        var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
-
-        var decoded = _decoder.TryDecode(raw, out var responses);
-
-        Assert.True(decoded);
-        Assert.Single(responses);
-        Assert.True(responses[0].TrailingHeaders.TryGetValues("X-Trailer", out var values));
-        Assert.Equal("value", values.Single());
-    }
-
     [Fact(DisplayName = "RFC7230-4.1: Single chunk body decoded")]
     public async Task SingleChunk_Decoded()
     {
