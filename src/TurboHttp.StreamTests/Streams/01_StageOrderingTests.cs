@@ -13,7 +13,7 @@ using TurboHttp.Protocol.RFC9111;
 using TurboHttp.Streams;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Verifies the 10 ordering invariants of the three-island pipeline topology

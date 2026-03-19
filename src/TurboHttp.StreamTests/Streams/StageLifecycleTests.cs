@@ -5,7 +5,7 @@ using TurboHttp.IO.Stages;
 using TurboHttp.Protocol;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Stages;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests encoder and decoder stage lifecycle and termination behaviour.

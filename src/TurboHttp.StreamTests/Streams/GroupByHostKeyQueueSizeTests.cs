@@ -6,7 +6,7 @@ using TurboHttp.Internal.Stages;
 using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests for TASK-12-005: GroupByHostKey queue size tuning.

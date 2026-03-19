@@ -8,7 +8,7 @@ using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests that redirect/retry feedback buffer optimization (TASK-12-008)

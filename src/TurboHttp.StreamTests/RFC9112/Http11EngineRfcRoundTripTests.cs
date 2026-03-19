@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.RFC9112;
 
 /// <summary>
 /// RFC 9112 — Http11Engine end-to-end round-trip tests.

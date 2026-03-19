@@ -12,7 +12,7 @@ using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 using TurboHttp.Protocol.RFC9112;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Stream-level tests for <see cref="ConnectionStage"/>.

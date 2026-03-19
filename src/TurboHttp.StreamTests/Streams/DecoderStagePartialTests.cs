@@ -6,7 +6,7 @@ using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Stages;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests decoder stage partial-frame handling.

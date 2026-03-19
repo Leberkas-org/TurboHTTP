@@ -13,7 +13,7 @@ using TurboHttp.Protocol.RFC9111;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// TASK-010: Comprehensive tests verifying all fixes from TASK-001 through TASK-009.

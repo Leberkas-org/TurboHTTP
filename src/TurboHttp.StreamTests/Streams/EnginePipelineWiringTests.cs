@@ -9,7 +9,7 @@ using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests that Engine.CreateFlow conditionally inserts pipeline stages based on

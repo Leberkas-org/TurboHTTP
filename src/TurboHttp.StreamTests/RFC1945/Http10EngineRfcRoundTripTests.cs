@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.RFC1945;
 
 /// <summary>
 /// RFC 1945 — Http10Engine end-to-end round-trip tests.

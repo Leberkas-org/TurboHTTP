@@ -4,7 +4,7 @@ using TurboHttp.Internal;
 using TurboHttp.Internal.Stages;
 using TurboHttp.IO.Stages;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests for <see cref="FlowHostKeyGroupByExtensions.GroupByHostKey{T,TMat}"/>.

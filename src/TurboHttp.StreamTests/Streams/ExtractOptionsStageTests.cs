@@ -5,7 +5,7 @@ using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.Streams;
 
 public sealed class ExtractOptionsStageTests : StreamTestBase
 {

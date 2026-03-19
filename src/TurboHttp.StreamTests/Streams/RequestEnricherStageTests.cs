@@ -5,7 +5,7 @@ using Akka.Streams.Dsl;
 using TurboHttp.Client;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.Streams;
 
 public sealed class RequestEnricherStageTests : StreamTestBase
 {

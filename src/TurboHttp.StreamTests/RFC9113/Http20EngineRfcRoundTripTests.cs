@@ -12,7 +12,7 @@ using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 using TurboHttp.Streams.Stages;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.RFC9113;
 
 /// <summary>
 /// RFC 9113 — Http20Engine end-to-end round-trip tests.

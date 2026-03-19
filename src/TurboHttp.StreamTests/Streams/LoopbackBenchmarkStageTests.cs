@@ -7,7 +7,7 @@ using Akka.Streams.Dsl;
 using TurboHttp.IO.Stages;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Validates the persistent-queue pipeline pattern used by

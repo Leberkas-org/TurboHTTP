@@ -7,7 +7,7 @@ using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Engine;
+namespace TurboHttp.StreamTests.Streams;
 
 public sealed class EngineVersionRoutingTests : EngineTestBase
 {

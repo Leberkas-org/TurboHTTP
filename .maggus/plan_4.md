@@ -55,9 +55,9 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Status:** Done
 
 **Acceptance Criteria:**
-- [ ] All files moved to RFC folders
-- [ ] Namespaces updated
-- [ ] Old folders deleted
+- [x] All files moved to RFC folders
+- [x] Namespaces updated
+- [x] Old folders deleted
 
 ---
 

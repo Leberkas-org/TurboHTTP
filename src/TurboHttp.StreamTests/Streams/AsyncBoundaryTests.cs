@@ -10,7 +10,7 @@ using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 
-namespace TurboHttp.StreamTests.Pipeline;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests that async boundaries (TASK-12-004) are correctly placed in the Engine pipeline
