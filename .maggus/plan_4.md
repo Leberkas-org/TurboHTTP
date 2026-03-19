@@ -387,10 +387,10 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.Tests/RFC1945/` (18) + `src/TurboHttp.Tests/RFC6265/` (2)
 
 **Acceptance Criteria:**
-- [ ] Every test class has `<summary>` + `<remarks>`
-- [ ] `<see cref="..."/>` pointing to the class under test
-- [ ] Valid XML — build without warnings
-- [ ] Build green
+- [x] Every test class has `<summary>` + `<remarks>`
+- [x] `<see cref="..."/>` pointing to the class under test
+- [x] Valid XML — build without warnings
+- [x] Build green
 
 ---
 

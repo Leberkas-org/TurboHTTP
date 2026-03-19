@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 response decoding on connection close per RFC 1945.
+/// Verifies TryDecodeEof behaviour and state reset between connections.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Decoder"/>.
+/// RFC 1945: HTTP/1.0 uses connection-close to delimit response bodies.
+/// </remarks>
 public sealed class Http10DecoderConnectionTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

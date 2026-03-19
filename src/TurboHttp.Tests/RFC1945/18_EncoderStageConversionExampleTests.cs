@@ -8,6 +8,10 @@ namespace TurboHttp.Tests.RFC1945;
 /// Each test here mirrors a test from <c>TurboHttp.StreamTests.Http10.Http10EncoderStageTests</c>
 /// but calls <see cref="Http10Encoder.Encode"/> directly — no ActorSystem, no Materializer.
 /// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Encoder"/>.
+/// RFC 1945: HTTP/1.0 request encoding — StreamTest-to-unit-test conversion pattern.
+/// </remarks>
 public sealed class Http10EncoderStageConversionExampleTests
 {
     private static string Encode(HttpRequestMessage request, int bufferSize = 8192)

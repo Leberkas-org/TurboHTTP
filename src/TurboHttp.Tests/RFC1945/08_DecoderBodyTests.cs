@@ -5,6 +5,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 response body handling per RFC 1945 §7.
+/// Verifies that the entity body is read until connection close (EOF).
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Decoder"/>.
+/// RFC 1945 §7: Entity body delimited by connection close in HTTP/1.0.
+/// </remarks>
 public sealed class Http10DecoderBodyTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

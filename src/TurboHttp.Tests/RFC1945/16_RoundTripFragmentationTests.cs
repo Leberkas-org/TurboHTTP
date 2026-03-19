@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 parsing under TCP fragmentation per RFC 1945.
+/// Verifies that split delivery of bytes does not corrupt round-trip decode output.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http10Encoder"/>, <see cref="Http10Decoder"/>.
+/// RFC 1945: Decoder must handle partial byte delivery across TryDecode calls.
+/// </remarks>
 public sealed class Http10RoundTripFragmentationTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 entity body serialization per RFC 1945 §7.
+/// Verifies that request bodies are appended after the header section.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Encoder"/>.
+/// RFC 1945 §7: Entity body transmitted with HTTP requests.
+/// </remarks>
 public sealed class Http10EncoderBodyTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

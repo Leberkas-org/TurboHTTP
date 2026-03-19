@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 header field serialization per RFC 1945 §4.2.
+/// Verifies name-value pairs, folding rules, and header ordering.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Encoder"/>.
+/// RFC 1945 §4.2: Message headers — field-name ':' field-value CRLF.
+/// </remarks>
 public sealed class Http10EncoderHeaderTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

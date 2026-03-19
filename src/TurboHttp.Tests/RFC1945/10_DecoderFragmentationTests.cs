@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 decoder robustness to fragmented TCP segments per RFC 1945.
+/// Verifies that partial data is buffered and assembled into complete responses.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Decoder"/>.
+/// RFC 1945: TCP fragmentation must not corrupt HTTP/1.0 parsing.
+/// </remarks>
 public sealed class Http10DecoderFragmentationTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

@@ -9,6 +9,10 @@ namespace TurboHttp.Tests.RFC6265;
 /// Secure/HttpOnly attributes, Expires/Max-Age handling, SameSite, multiple cookies,
 /// cookie replacement, expiry/deletion, and AddCookiesToRequest filtering.
 /// </summary>
+/// <remarks>
+/// Class under test: <see cref="CookieJar"/>.
+/// RFC 6265 §5: Cookie processing model — storage, retrieval, and attribute enforcement.
+/// </remarks>
 public sealed class CookieJarTests
 {
     private static Uri Uri(string url) => new(url);

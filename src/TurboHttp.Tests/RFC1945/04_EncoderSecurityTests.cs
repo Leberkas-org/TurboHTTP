@@ -2,6 +2,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 header-injection protection per RFC 1945 §12.
+/// Verifies that CR, LF, and CRLF sequences in header values are rejected.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Encoder"/>.
+/// RFC 1945 §12: Security considerations — header injection prevention.
+/// </remarks>
 public sealed class Http10EncoderSecurityTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

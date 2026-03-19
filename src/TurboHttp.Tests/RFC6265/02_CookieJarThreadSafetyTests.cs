@@ -9,6 +9,10 @@ namespace TurboHttp.Tests.RFC6265;
 /// Verifies that concurrent access from CookieInjectionStage (pre-processing island)
 /// and CookieStorageStage (post-processing island) doesn't corrupt cookie state.
 /// </summary>
+/// <remarks>
+/// Class under test: <see cref="CookieJar"/>.
+/// RFC 6265 §5.3: Cookie storage model — must remain consistent under concurrent reads and writes.
+/// </remarks>
 public sealed class CookieJarThreadSafetyTests
 {
     private static Uri Uri(string url) => new(url);

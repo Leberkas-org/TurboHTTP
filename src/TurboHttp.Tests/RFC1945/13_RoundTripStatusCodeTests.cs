@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 status codes per RFC 1945 §6.1.1.
+/// Verifies that all defined status codes survive encode-then-decode unchanged.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http10Encoder"/>, <see cref="Http10Decoder"/>.
+/// RFC 1945 §6.1.1: Status codes — 1xx, 2xx, 3xx, 4xx, 5xx.
+/// </remarks>
 public sealed class Http10RoundTripStatusCodeTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

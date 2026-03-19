@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 decoder state lifecycle per RFC 1945.
+/// Verifies Reset() clears internal state and the decoder is reusable across connections.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Decoder"/>.
+/// RFC 1945: Decoder must be resettable between sequential connections.
+/// </remarks>
 public sealed class Http10DecoderStateTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

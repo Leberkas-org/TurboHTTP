@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 request methods per RFC 1945 §5.1.1.
+/// Encodes with Http10Encoder and decodes with Http10Decoder; verifies method is preserved.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http10Encoder"/>, <see cref="Http10Decoder"/>.
+/// RFC 1945 §5.1.1: Method token (GET, HEAD, POST, and extension methods).
+/// </remarks>
 public sealed class Http10RoundTripMethodTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

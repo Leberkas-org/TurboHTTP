@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Integration tests for HTTP/1.0 request encoding per RFC 1945.
+/// Verifies that complete requests encode correctly across various scenarios.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Encoder"/>.
+/// RFC 1945: Full HTTP/1.0 request serialization — request-line, headers, and body.
+/// </remarks>
 public sealed class Http10EncoderIntegrationTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

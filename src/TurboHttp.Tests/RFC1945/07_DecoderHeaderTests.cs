@@ -5,6 +5,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 response header parsing per RFC 1945 §4.2.
+/// Verifies field names, values, folded headers, and empty header blocks.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Decoder"/>.
+/// RFC 1945 §4.2: Message headers — name ':' value, optional folding.
+/// </remarks>
 public sealed class Http10DecoderHeaderTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

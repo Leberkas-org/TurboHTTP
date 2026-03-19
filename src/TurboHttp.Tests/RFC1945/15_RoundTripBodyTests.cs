@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 entity bodies per RFC 1945 §7.
+/// Verifies that body content survives encode-then-decode with correct byte boundaries.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http10Encoder"/>, <see cref="Http10Decoder"/>.
+/// RFC 1945 §7: Entity body.
+/// </remarks>
 public sealed class Http10RoundTripBodyTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)

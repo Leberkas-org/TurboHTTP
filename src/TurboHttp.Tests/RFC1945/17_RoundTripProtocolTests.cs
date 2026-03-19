@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Round-trip protocol conformance tests for HTTP/1.0 per RFC 1945.
+/// Verifies version strings, header blocks, and protocol-level edge cases.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http10Encoder"/>, <see cref="Http10Decoder"/>.
+/// RFC 1945: HTTP/1.0 protocol conformance — version, request/response structure.
+/// </remarks>
 public sealed class Http10RoundTripProtocolTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

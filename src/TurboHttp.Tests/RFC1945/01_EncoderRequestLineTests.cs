@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 request-line serialization per RFC 1945 §5.1.
+/// Verifies that method, request URI, and HTTP-version are correctly encoded.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Encoder"/>.
+/// RFC 1945 §5.1: Request-Line — Method SP Request-URI SP HTTP-Version CRLF.
+/// </remarks>
 public sealed class Http10EncoderRequestLineTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 header fields per RFC 1945 §4.2.
+/// Verifies that request and response headers survive encode-then-decode unchanged.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http10Encoder"/>, <see cref="Http10Decoder"/>.
+/// RFC 1945 §4.2: Message headers — field-name ':' field-value.
+/// </remarks>
 public sealed class Http10RoundTripHeaderTests
 {
     private static Memory<byte> MakeBuffer(int size = 8192) => new byte[size];

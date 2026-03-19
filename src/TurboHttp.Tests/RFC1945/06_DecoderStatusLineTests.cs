@@ -5,6 +5,14 @@ using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Tests.RFC1945;
 
+/// <summary>
+/// Tests HTTP/1.0 response status-line parsing per RFC 1945 §6.1.
+/// Verifies version, status code, and reason phrase extraction.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http10Decoder"/>.
+/// RFC 1945 §6.1: Status-Line — HTTP-Version SP Status-Code SP Reason-Phrase CRLF.
+/// </remarks>
 public sealed class Http10DecoderStatusLineTests
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
