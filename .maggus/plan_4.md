@@ -243,8 +243,8 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.StreamTests/RFC9113/` — only `Http20Connection*`, `Http20Correlation*`, `Http20Preface*` files
 
 **Acceptance Criteria:**
-- [ ] All methods in the 10 files follow `Should_Action_When_Condition`
-- [ ] Tests compile and pass
+- [x] All methods in the 10 files follow `Should_Action_When_Condition`
+- [x] Tests compile and pass
 
 ---
 

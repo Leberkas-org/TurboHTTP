@@ -49,7 +49,7 @@ public sealed class Http20PrependPrefaceStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.5: First 24 bytes are exactly the connection preface magic")]
-    public async Task ST_20_PRE_001_Preface_Magic_First24Bytes()
+    public async Task Should_Emit_Magic_As_First_24_Bytes()
     {
         var outputs = await RunAsync([0x01]);
 
@@ -61,7 +61,7 @@ public sealed class Http20PrependPrefaceStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC9113-3.5: Bytes 24..32 are a SETTINGS frame header (type=0x4, stream=0)")]
-    public async Task ST_20_PRE_002_Preface_Settings_FrameHeader()
+    public async Task Should_Emit_Settings_Frame_Header_After_Magic()
     {
         var outputs = await RunAsync([0x01]);
 
@@ -79,7 +79,7 @@ public sealed class Http20PrependPrefaceStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC9113-3.5: Second element passed through unchanged after preface emitted")]
-    public async Task ST_20_PRE_003_PassThrough_After_Preface()
+    public async Task Should_Pass_Through_Items_After_Preface()
     {
         var payload = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
         var outputs = await RunAsync(payload);
@@ -90,7 +90,7 @@ public sealed class Http20PrependPrefaceStageTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC9113-3.5: Preface emitted exactly once (not repeated for second demand)")]
-    public async Task ST_20_PRE_004_Preface_Emitted_Once()
+    public async Task Should_Emit_Preface_Exactly_Once()
     {
         var outputs = await RunAsync([0x01], [0x02], [0x03]);
 

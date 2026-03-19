@@ -95,7 +95,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-001: Inbound DATA → connection window decremented ────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-001: Inbound DATA decrements connection window")]
-    public async Task Inbound_Data_Decrements_Connection_Window()
+    public async Task Should_Decrement_Connection_Window_When_Data_Received_Inbound()
     {
         // Send two DATA frames totalling 65535 bytes (exactly filling the default 65535 window).
         // The stage should succeed because the window is not exceeded.
@@ -111,7 +111,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-001: Connection window tracks cumulative inbound DATA")]
-    public async Task Connection_Window_Tracks_Cumulative_Inbound()
+    public async Task Should_Track_Cumulative_Connection_Window_For_Inbound_Data()
     {
         // Send data on two different streams that together exceed the connection window.
         // Stream 1: 40000 bytes, Stream 3: 30000 bytes → total 70000 > 65535
@@ -125,7 +125,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-002: Inbound DATA → stream window decremented ────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-002: Inbound DATA decrements stream window")]
-    public async Task Inbound_Data_Decrements_Stream_Window()
+    public async Task Should_Decrement_Stream_Window_When_Data_Received_Inbound()
     {
         // Send DATA filling the entire stream window (65535 bytes) — should succeed.
         var data = new DataFrame(streamId: 1, data: new byte[65535], endStream: true);
@@ -137,7 +137,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-002: Stream window tracked per-stream independently")]
-    public async Task Stream_Window_Tracked_Per_Stream()
+    public async Task Should_Track_Window_Per_Stream_Independently()
     {
         // Stream 1 gets 65535 bytes (exactly at window), stream 3 gets 65536 (exceeds).
         // Per-stream tracking means stream 1 succeeds but stream 3 exceeds its own window.
@@ -151,7 +151,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-003: Inbound DATA → WINDOW_UPDATE(stream=0) sent ─────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-003: Inbound DATA triggers WINDOW_UPDATE on stream 0")]
-    public async Task Inbound_Data_Sends_Connection_WindowUpdate()
+    public async Task Should_Send_Connection_WindowUpdate_When_Data_Received_Inbound()
     {
         var data = new DataFrame(streamId: 1, data: new byte[1024], endStream: true);
 
@@ -169,7 +169,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-004: Inbound DATA → WINDOW_UPDATE(stream=N) sent ─────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-004: Inbound DATA triggers WINDOW_UPDATE on stream N")]
-    public async Task Inbound_Data_Sends_Stream_WindowUpdate()
+    public async Task Should_Send_Stream_WindowUpdate_When_Data_Received_Inbound()
     {
         var data = new DataFrame(streamId: 5, data: new byte[2048], endStream: true);
 
@@ -184,7 +184,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-004: Both connection and stream WINDOW_UPDATEs sent for single DATA")]
-    public async Task Inbound_Data_Sends_Both_WindowUpdates()
+    public async Task Should_Send_Both_WindowUpdates_When_Data_Received_Inbound()
     {
         var data = new DataFrame(streamId: 3, data: new byte[512], endStream: true);
 
@@ -201,7 +201,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-005: Connection window < 0 → stage fails with exception ──────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-005: Connection window exceeded causes stage failure")]
-    public async Task Connection_Window_Exceeded_Fails_Stage()
+    public async Task Should_Fail_Stage_When_Connection_Window_Exceeded()
     {
         // Default connection window is 65535. Send 65536 bytes to exceed it.
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
@@ -213,7 +213,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-006: Stream window < 0 → stage fails with exception ──────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-006: Stream window exceeded causes stage failure")]
-    public async Task Stream_Window_Exceeded_Fails_Stage()
+    public async Task Should_Fail_Stage_When_Stream_Window_Exceeded()
     {
         // Default stream window is 65535. Send 65536 bytes on one stream to exceed it.
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
@@ -225,7 +225,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-007: Outbound DATA → connection window decremented ────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound DATA decrements connection send window")]
-    public async Task Outbound_Data_Decrements_Connection_Window()
+    public async Task Should_Fail_Stage_When_Outbound_Data_Exceeds_Connection_Window()
     {
         // Send outbound DATA that exceeds the connection window → stage should fail.
         // Default connection window = 65535, so 65536 bytes should exceed it.
@@ -266,7 +266,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound DATA within window succeeds")]
-    public async Task Outbound_Data_Within_Window_Succeeds()
+    public async Task Should_Forward_Data_When_Outbound_Data_Within_Window()
     {
         // Send outbound DATA within the connection window → should be forwarded to server.
         // Use Sink.First (completes after one element) to avoid waiting for full stream completion.
@@ -304,7 +304,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-008: WINDOW_UPDATE(stream=0) received → connection window incremented ─
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-008: WINDOW_UPDATE on stream 0 increments connection window")]
-    public async Task WindowUpdate_Stream0_Increments_Connection_Window()
+    public async Task Should_Increment_Connection_Window_When_WindowUpdate_On_Stream0()
     {
         // Receive a WINDOW_UPDATE on stream 0 that increases the connection window.
         // Then send outbound DATA that would exceed the original window but fits the new one.
@@ -355,7 +355,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-008: WINDOW_UPDATE on stream 0 is forwarded downstream")]
-    public async Task WindowUpdate_Stream0_Forwarded_Downstream()
+    public async Task Should_Forward_WindowUpdate_Downstream_When_Stream0()
     {
         var windowUpdate = new WindowUpdateFrame(streamId: 0, increment: 5000);
 
@@ -370,7 +370,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     // ─── 20CW-009: WINDOW_UPDATE(stream=N) received → stream window incremented ─
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-009: WINDOW_UPDATE on stream N increments stream window")]
-    public async Task WindowUpdate_StreamN_Increments_Stream_Window()
+    public async Task Should_Increment_Stream_Window_When_WindowUpdate_On_StreamN()
     {
         // Receive WINDOW_UPDATE on stream 1 — verify it's forwarded downstream.
         // (Stream send window validation is not fully implemented for outbound,
@@ -386,7 +386,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-009: Multiple WINDOW_UPDATEs accumulate for stream")]
-    public async Task Multiple_WindowUpdates_Accumulate_For_Stream()
+    public async Task Should_Forward_All_WindowUpdates_When_Multiple_Received_For_Same_Stream()
     {
         // Two WINDOW_UPDATEs on same stream should both be forwarded downstream
         var wu1 = new WindowUpdateFrame(streamId: 3, increment: 1000);

@@ -59,7 +59,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC9113-3.4-H2P-001: First 24 bytes are the HTTP/2 connection preface magic")]
-    public async Task First_24_Bytes_Are_Http2_Magic()
+    public async Task Should_Set_First_24_Bytes_As_Http2_Magic()
     {
         var output = await RunAsync(
             MakeConnect(),
@@ -75,7 +75,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC9113-3.4-H2P-002: SETTINGS frame immediately follows the 24-byte magic")]
-    public async Task Settings_Frame_Follows_Magic()
+    public async Task Should_Send_Settings_Frame_After_Magic()
     {
         var output = await RunAsync(
             MakeConnect(),
@@ -104,7 +104,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.4-H2P-002: SETTINGS frame contains expected default parameters")]
-    public async Task Settings_Frame_Contains_Default_Parameters()
+    public async Task Should_Include_Default_Parameters_In_Settings_Frame()
     {
         var output = await RunAsync(
             MakeConnect(),
@@ -139,7 +139,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName = "RFC9113-3.4-H2P-003: Preface is sent exactly once — not repeated on subsequent data")]
-    public async Task Preface_Sent_Exactly_Once()
+    public async Task Should_Send_Preface_Exactly_Once()
     {
         // One connect followed by multiple data items — preface only on connect
         var output = await RunAsync(
@@ -170,7 +170,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     // ─── H2P-004: SETTINGS frame on stream 0 ────────────────────────────────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.4-H2P-004: SETTINGS frame in preface has stream ID 0")]
-    public async Task Settings_Frame_Has_Stream_Id_Zero()
+    public async Task Should_Use_Stream_Id_Zero_In_Settings_Frame()
     {
         var output = await RunAsync(
             MakeConnect(),
@@ -187,7 +187,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.4-H2P-004: Reserved bit in stream ID is zero")]
-    public async Task Settings_Frame_Reserved_Bit_Is_Zero()
+    public async Task Should_Clear_Reserved_Bit_In_Settings_Frame()
     {
         var output = await RunAsync(
             MakeConnect(),

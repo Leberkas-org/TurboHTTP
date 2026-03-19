@@ -85,7 +85,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
     // ─── 20CS-BP-001: 3 HeadersFrames at limit=3 → no pull after 3rd ────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.2-20CS-BP-001: Backpressure gates request inlet at max concurrent streams")]
-    public async Task Three_Headers_At_Limit_Three_Stops_Pulling()
+    public async Task Should_Stop_Pulling_When_At_MaxConcurrentStreams_Limit()
     {
         var (requestQueue, _, serverBoundProbe, appOutProbe, signalProbe) = CreateProbes(3);
 
@@ -110,7 +110,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
     // ─── 20CS-BP-002: 3 HeadersFrames + 1 END_STREAM → pull resumes ─────────
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.2-20CS-BP-002: END_STREAM decrements active streams and resumes pull")]
-    public async Task EndStream_Decrements_And_Resumes_Pull()
+    public async Task Should_Decrement_And_Resume_Pull_When_EndStream_Received()
     {
         var (requestQueue, serverProbe, serverBoundProbe, appOutProbe, signalProbe) = CreateProbes(3);
 
@@ -145,7 +145,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
     // ─── 20CS-BP-003: RstStreamFrame → activeStreams decrements, pull resumes ─
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.2-20CS-BP-003: RstStreamFrame decrements active streams and resumes pull")]
-    public async Task RstStream_Decrements_And_Resumes_Pull()
+    public async Task Should_Decrement_And_Resume_Pull_When_RstStream_Received()
     {
         var (requestQueue, serverProbe, serverBoundProbe, appOutProbe, signalProbe) = CreateProbes(3);
 
@@ -178,7 +178,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
     // ─── 20CS-BP-004: SETTINGS MAX_CONCURRENT_STREAMS mid-session → new limit ─
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.2-20CS-BP-004: SETTINGS MAX_CONCURRENT_STREAMS mid-session enforces new limit immediately")]
-    public async Task Settings_MaxConcurrentStreams_MidSession_Enforces_New_Limit()
+    public async Task Should_Enforce_New_ConcurrentStreams_Limit_When_Settings_Updated_MidSession()
     {
         // Start with limit=100, open 2 streams, then SETTINGS lowers limit to 2
         var (requestQueue, serverProbe, serverBoundProbe, appOutProbe, signalProbe) = CreateProbes(100);

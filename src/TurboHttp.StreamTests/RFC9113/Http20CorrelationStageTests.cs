@@ -44,7 +44,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         => new(HttpStatusCode.OK);
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-001: Single (Request,streamId=1) + (Response,streamId=1) → correctly correlated")]
-    public async Task COR20_001_Single_Request_Response_Correlated()
+    public async Task Should_Correlate_Single_Request_And_Response()
     {
         var request = MakeRequest();
         var response = OkResponse();
@@ -59,7 +59,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-002: 3 requests (IDs 1,3,5) + 3 responses (IDs 5,1,3) → out-of-order correlation")]
-    public async Task COR20_002_Out_Of_Order_Responses_Correlated()
+    public async Task Should_Correlate_Out_Of_Order_Responses()
     {
         var req1 = MakeRequest(1);
         var req3 = MakeRequest(3);
@@ -86,7 +86,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-003: Response stream ID with no matching request → stays in queue")]
-    public async Task COR20_003_Unmatched_Response_Stays_In_Queue()
+    public async Task Should_Keep_Unmatched_Response_In_Queue()
     {
         var req1 = MakeRequest(1);
         var res99 = OkResponse(); // stream ID 99 — no request was sent on this stream
@@ -125,7 +125,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-004: Reference equality: response.RequestMessage is exactly the sent object")]
-    public async Task COR20_004_Reference_Equality()
+    public async Task Should_Set_RequestMessage_As_Exact_Same_Reference()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/data")
         {
@@ -142,7 +142,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-005: 10 interleaved requests/responses → all correctly matched")]
-    public async Task COR20_005_Ten_Interleaved_All_Matched()
+    public async Task Should_Match_All_When_Ten_Interleaved_Requests()
     {
         const int count = 10;
 
@@ -176,7 +176,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-006: Stage terminates on empty dictionaries after UpstreamFinish")]
-    public async Task COR20_006_Stage_Terminates_On_Empty_Dicts_After_Finish()
+    public async Task Should_Terminate_When_Dicts_Empty_After_Finish()
     {
         var request = MakeRequest();
         var response = OkResponse();
@@ -206,7 +206,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-007: Request(1), Response(3), Request(3) → correlation immediately on match")]
-    public async Task COR20_007_Interleaved_Push_Correlated_On_Match()
+    public async Task Should_Correlate_Immediately_On_Match_When_Interleaved_Push()
     {
         var req1 = MakeRequest(1);
         var req3 = MakeRequest(3);
