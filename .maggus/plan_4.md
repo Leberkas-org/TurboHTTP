@@ -101,10 +101,10 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **New pattern:** `Should_Parse200Ok_When_StatusLineIsValid()`, `Should_NormalizePath_When_PathIsMissing()`
 
 **Acceptance Criteria:**
-- [ ] All methods in 7 files follow `Should_Action_When_Condition`
-- [ ] `DisplayName` attributes unchanged
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9112"` — all green
-- [ ] No `Test_` prefix remaining
+- [x] All methods in 7 files follow `Should_Action_When_Condition`
+- [x] `DisplayName` attributes unchanged
+- [x] `dotnet test --filter "FullyQualifiedName~RFC9112"` — all green
+- [x] No `Test_` prefix remaining
 
 ---
 

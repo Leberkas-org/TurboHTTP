@@ -9,7 +9,7 @@ public sealed class Http11DecoderBodyTests
     private readonly Http11Decoder _decoder = new();
 
     [Fact]
-    public async Task IncompleteHeader_NeedMoreData_ReturnsFalse_OnSecondChunk()
+    public async Task Should_ReturnFalse_When_IncompleteHeaderNeedsMoreData()
     {
         const string body = "complete body";
         var full = BuildResponse(200, "OK", body, ("Content-Length", body.Length.ToString()));
@@ -28,7 +28,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact]
-    public async Task IncompleteBody_NeedMoreData_ReturnsTrue_AfterBodyArrives()
+    public async Task Should_ReturnTrue_When_IncompleteBodyCompletedBySecondChunk()
     {
         const string body = "complete";
         var full = BuildResponse(200, "OK", body, ("Content-Length", body.Length.ToString()));
@@ -47,7 +47,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-001: Content-Length body decoded to exact byte count")]
-    public async Task ContentLength_Body_DecodedToExactByteCount()
+    public async Task Should_DecodeToExactByteCount_When_ContentLengthBody()
     {
         const string body = "Hello, World!";
         var raw = BuildResponse(200, "OK", body, ("Content-Length", body.Length.ToString()));
@@ -61,7 +61,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-002: Zero Content-Length produces empty body")]
-    public void Zero_ContentLength_EmptyBody()
+    public void Should_ProduceEmptyBody_When_ZeroContentLength()
     {
         var raw = BuildResponse(200, "OK", "", ("Content-Length", "0"));
 
@@ -72,7 +72,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-003: Transfer-Encoding + Content-Length conflict rejected")]
-    public void TransferEncoding_And_ContentLength_Conflict_Rejected()
+    public void Should_Reject_When_TransferEncodingAndContentLengthConflict()
     {
         // RFC 9112 §6.3 / Security: TE+CL combination is rejected to prevent HTTP smuggling.
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
@@ -85,7 +85,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-004: Multiple Content-Length values rejected")]
-    public void Multiple_ContentLength_DifferentValues_Rejected()
+    public void Should_Reject_When_MultipleContentLengthDifferentValues()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 6\r\n\r\nHello"u8.ToArray();
 
@@ -94,7 +94,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-005: Negative Content-Length is parse error")]
-    public void Negative_ContentLength_HandledGracefully()
+    public void Should_HandleGracefully_When_NegativeContentLength()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\n"u8.ToArray();
 
@@ -105,7 +105,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-006: Response without body framing has empty body")]
-    public void NoBodyFraming_EmptyBody()
+    public void Should_ProduceEmptyBody_When_NoBodyFraming()
     {
         var raw = "HTTP/1.1 200 OK\r\nX-Custom: test\r\n\r\n"u8.ToArray();
 
@@ -116,7 +116,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-007: 10 MB body decoded with correct Content-Length")]
-    public async Task LargeBody_10MB_DecodedCorrectly()
+    public async Task Should_DecodeCorrectly_When_LargeBody10MB()
     {
         // Create 10 MB body
         var bodySize = 10 * 1024 * 1024;
@@ -138,7 +138,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-BD-008: Binary body with null bytes intact")]
-    public async Task BinaryBody_WithNullBytes_Intact()
+    public async Task Should_PreserveNullBytes_When_BinaryBody()
     {
         var binaryBody = new byte[] { 0x00, 0x01, 0xFF, 0x00, 0xAB, 0xCD };
 
@@ -156,7 +156,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact]
-    public void Decode_ConflictingHeaders_BothTeAndCl_Rejected()
+    public void Should_Reject_When_ConflictingTeAndClHeaders()
     {
         // RFC 9112 §6.3 / Security: Both Transfer-Encoding and Content-Length present
         // is treated as a protocol error to prevent HTTP request smuggling.
@@ -170,7 +170,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact]
-    public void Decode_MultipleContentLength_DifferentValues_Throws()
+    public void Should_Throw_When_MultipleContentLengthDifferentValues()
     {
         // RFC 9112 §6.3: Multiple Content-Length headers with differing values
         // indicate a message framing error and MUST be treated as an error.
@@ -181,7 +181,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact]
-    public void Decode_NegativeContentLength_HandledGracefully()
+    public void Should_HandleGracefully_When_NegativeContentLengthDecoded()
     {
         // RFC 7230 §3.3: A negative Content-Length is invalid. The decoder should
         // not throw; instead it treats the value as unparseable and falls through
@@ -196,7 +196,7 @@ public sealed class Http11DecoderBodyTests
     }
 
     [Fact]
-    public void Decode_NoBodyIndicator_EmptyBody()
+    public void Should_ProduceEmptyBody_When_NoBodyIndicatorDecoded()
     {
         // RFC 7230 §3.3-007: Response with neither Content-Length nor
         // Transfer-Encoding and non-1xx/204/304 status → empty body.

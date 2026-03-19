@@ -10,7 +10,7 @@ public sealed class Http11DecoderStatusLineTests
     private readonly Http11Decoder _decoder = new();
 
     [Fact]
-    public async Task SimpleOk_WithContentLength_Decodes()
+    public async Task Should_Decode_When_SimpleOkWithContentLength()
     {
         const string body = "Hello, World!";
         var raw = BuildResponse(200, "OK", body, ("Content-Length", body.Length.ToString()));
@@ -31,7 +31,7 @@ public sealed class Http11DecoderStatusLineTests
     [InlineData(400, "Bad Request", HttpStatusCode.BadRequest)]
     [InlineData(404, "Not Found", HttpStatusCode.NotFound)]
     [InlineData(500, "Internal Server Error", HttpStatusCode.InternalServerError)]
-    public void KnownStatusCodes_ParseCorrectly(int code, string reason, HttpStatusCode expected)
+    public void Should_ParseCorrectly_When_KnownStatusCode(int code, string reason, HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -49,7 +49,7 @@ public sealed class Http11DecoderStatusLineTests
     [InlineData(205, "Reset Content", HttpStatusCode.ResetContent)]
     [InlineData(206, "Partial Content", HttpStatusCode.PartialContent)]
     [InlineData(207, "Multi-Status", (HttpStatusCode)207)]
-    public void All_2xx_StatusCodes_ParseCorrectly(int code, string reason, HttpStatusCode expected)
+    public void Should_ParseCorrectly_When_2xxStatusCode(int code, string reason, HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -66,7 +66,7 @@ public sealed class Http11DecoderStatusLineTests
     [InlineData(304, "Not Modified", HttpStatusCode.NotModified)]
     [InlineData(307, "Temporary Redirect", HttpStatusCode.TemporaryRedirect)]
     [InlineData(308, "Permanent Redirect", HttpStatusCode.PermanentRedirect)]
-    public void All_3xx_StatusCodes_ParseCorrectly(int code, string reason, HttpStatusCode expected)
+    public void Should_ParseCorrectly_When_3xxStatusCode(int code, string reason, HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -88,7 +88,7 @@ public sealed class Http11DecoderStatusLineTests
     [InlineData(415, "Unsupported Media Type", HttpStatusCode.UnsupportedMediaType)]
     [InlineData(422, "Unprocessable Entity", (HttpStatusCode)422)]
     [InlineData(429, "Too Many Requests", (HttpStatusCode)429)]
-    public void All_4xx_StatusCodes_ParseCorrectly(int code, string reason, HttpStatusCode expected)
+    public void Should_ParseCorrectly_When_4xxStatusCode(int code, string reason, HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -103,7 +103,7 @@ public sealed class Http11DecoderStatusLineTests
     [InlineData(502, "Bad Gateway", HttpStatusCode.BadGateway)]
     [InlineData(503, "Service Unavailable", HttpStatusCode.ServiceUnavailable)]
     [InlineData(504, "Gateway Timeout", HttpStatusCode.GatewayTimeout)]
-    public void All_5xx_StatusCodes_ParseCorrectly(int code, string reason, HttpStatusCode expected)
+    public void Should_ParseCorrectly_When_5xxStatusCode(int code, string reason, HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -113,7 +113,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-005: 1xx Informational response has no body")]
-    public void Informational_1xx_HasNoBody()
+    public void Should_HaveNoBody_When_1xxInformational()
     {
         var raw = "HTTP/1.1 103 Early Hints\r\nLink: </style.css>; rel=preload\r\n\r\n"u8.ToArray();
         var raw200 = BuildResponse(200, "OK", "body", ("Content-Length", "4"));
@@ -134,7 +134,7 @@ public sealed class Http11DecoderStatusLineTests
     [InlineData(101, "Switching Protocols")]
     [InlineData(102, "Processing")]
     [InlineData(103, "Early Hints")]
-    public void Each_1xx_Code_ParsedWithNoBody(int code, string reason)
+    public void Should_ParseWithNoBody_When_1xxCode(int code, string reason)
     {
         var raw1xx = Encoding.ASCII.GetBytes($"HTTP/1.1 {code} {reason}\r\n\r\n");
         var raw200 = BuildResponse(200, "OK", "data", ("Content-Length", "4"));
@@ -151,7 +151,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-007: 100 Continue before 200 OK decoded correctly")]
-    public void Continue_100_Before_200_DecodedCorrectly()
+    public void Should_DecodeCorrectly_When_100ContinueBefore200()
     {
         var raw100 = "HTTP/1.1 100 Continue\r\n\r\n"u8.ToArray();
         var raw200 = BuildResponse(200, "OK", "body", ("Content-Length", "4"));
@@ -168,7 +168,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-008: Multiple 1xx interim responses before 200")]
-    public async Task Multiple_1xx_Then_200_AllProcessed()
+    public async Task Should_ProcessAll_When_Multiple1xxThen200()
     {
         var raw100 = "HTTP/1.1 100 Continue\r\n\r\n"u8.ToArray();
         var raw102 = "HTTP/1.1 102 Processing\r\n\r\n"u8.ToArray();
@@ -191,7 +191,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-009: Custom status code 599 parsed")]
-    public void Custom_Status_599_Parsed()
+    public void Should_Parse_When_CustomStatus599()
     {
         var raw = "HTTP/1.1 599 Custom\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -203,7 +203,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-010: Status code >599 is a parse error")]
-    public void Status_GreaterThan_599_IsError()
+    public void Should_Error_When_StatusGreaterThan599()
     {
         var raw = "HTTP/1.1 600 Invalid\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -212,7 +212,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact(DisplayName = "RFC9112-4-SL-011: Empty reason phrase is valid")]
-    public void Empty_ReasonPhrase_IsValid()
+    public void Should_BeValid_When_EmptyReasonPhrase()
     {
         var raw = "HTTP/1.1 200 \r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -224,7 +224,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact]
-    public void Response204_NoContent_NoBody()
+    public void Should_HaveNoBody_When_Response204NoContent()
     {
         var raw = BuildResponse(204, "No Content", "", ("Content-Length", "0"));
         var decoded = _decoder.TryDecode(raw, out var responses);
@@ -236,7 +236,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact]
-    public void Informational_100Continue_IsSkipped()
+    public void Should_Skip_When_100Continue()
     {
         var raw100 = "HTTP/1.1 100 Continue\r\n\r\n"u8.ToArray();
         var raw200 = BuildResponse(200, "OK", "body", ("Content-Length", "4"));
@@ -253,7 +253,7 @@ public sealed class Http11DecoderStatusLineTests
     }
 
     [Fact]
-    public void Response304_NoBody_ParsedCorrectly()
+    public void Should_ParseCorrectly_When_Response304NoBody()
     {
         var raw = "HTTP/1.1 304 Not Modified\r\nETag: \"abc\"\r\n\r\n"u8.ToArray();
         var decoded = _decoder.TryDecode(raw, out var responses);

@@ -106,7 +106,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-LG-006: Two pipelined responses decoded")]
-    public async Task TwoPipelinedResponses_InSameBuffer_BothDecoded()
+    public async Task Should_DecodeBoth_When_TwoPipelinedResponsesInSameBuffer()
     {
         var resp1 = BuildResponse(200, "OK", "first", ("Content-Length", "5"));
         var resp2 = BuildResponse(201, "Created", "second", ("Content-Length", "6"));
@@ -126,7 +126,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-LG-007: Partial second response held in remainder")]
-    public async Task TwoPipelinedResponses_SecondPartial_RemainderBuffered()
+    public async Task Should_BufferRemainder_When_SecondPipelinedResponsePartial()
     {
         var resp1 = BuildResponse(200, "OK", "first", ("Content-Length", "5"));
         var resp2 = BuildResponse(202, "Accepted", "done", ("Content-Length", "4"));
@@ -154,7 +154,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-LG-008: Three pipelined responses decoded in order")]
-    public async Task ThreePipelinedResponses_InSameBuffer_DecodedInOrder()
+    public async Task Should_DecodeInOrder_When_ThreePipelinedResponsesInSameBuffer()
     {
         var resp1 = BuildResponse(200, "OK", "alpha", ("Content-Length", "5"));
         var resp2 = BuildResponse(201, "Created", "beta", ("Content-Length", "4"));
@@ -178,7 +178,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-LG-009: Content-Range: bytes 0-499/1000 accessible")]
-    public void Test_ContentRange_Accessible()
+    public void Should_BeAccessible_When_ContentRangeHeader()
     {
         var raw = BuildResponse(206, "Partial Content", "first 500 bytes",
             ("Content-Length", "15"),
@@ -194,7 +194,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-LG-010: 206 Partial Content with Content-Range decoded")]
-    public async Task Test_PartialContent_Decoded()
+    public async Task Should_Decode_When_206PartialContent()
     {
         const string partialBody = "Hello";
         var raw = BuildResponse(206, "Partial Content", partialBody,
@@ -211,7 +211,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-LG-011: 206 multipart/byteranges body decoded")]
-    public async Task Test_Multipart_ByteRanges_Decoded()
+    public async Task Should_Decode_When_MultipartByteRanges()
     {
         // RFC 7233 §4.1: A server may return multiple ranges in a single multipart/byteranges response.
         // The client decoder returns the raw body; multipart parsing is the caller's responsibility.
@@ -244,7 +244,7 @@ public sealed class Http11DecoderLegacyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-LG-012: Content-Range: bytes 0-499/* unknown total")]
-    public void Test_ContentRange_UnknownTotal_Accepted()
+    public void Should_Accept_When_ContentRangeUnknownTotal()
     {
         // RFC 7233 §4.2: The "*" token indicates an unknown total length.
         var raw = BuildResponse(206, "Partial Content", "Hello",

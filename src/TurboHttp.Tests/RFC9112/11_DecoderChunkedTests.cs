@@ -9,7 +9,7 @@ public sealed class Http11DecoderChunkedTests
     private readonly Http11Decoder _decoder = new();
 
     [Fact]
-    public async Task ChunkedBody_Decodes_Correctly()
+    public async Task Should_DecodeCorrectly_When_ChunkedBody()
     {
         const string chunkedBody = "5\r\nHello\r\n6\r\n World\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -21,7 +21,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-001: Single chunk body decoded")]
-    public async Task SingleChunk_Decoded()
+    public async Task Should_Decode_When_SingleChunk()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -34,7 +34,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-002: Multiple chunks concatenated")]
-    public async Task MultipleChunks_Concatenated()
+    public async Task Should_Concatenate_When_MultipleChunks()
     {
         const string chunkedBody = "3\r\nfoo\r\n3\r\nbar\r\n3\r\nbaz\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -47,7 +47,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-003: Chunk extension silently ignored")]
-    public async Task ChunkExtension_SilentlyIgnored()
+    public async Task Should_SilentlyIgnore_When_ChunkExtension()
     {
         const string chunkedBody = "5;ext=value\r\nHello\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -60,7 +60,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-004: Trailer fields after final chunk")]
-    public void TrailerFields_AfterFinalChunk_Accessible()
+    public void Should_BeAccessible_When_TrailerFieldsAfterFinalChunk()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\nX-Trailer: value\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -73,7 +73,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-005: Non-hex chunk size is parse error")]
-    public void NonHex_ChunkSize_IsError()
+    public void Should_Error_When_NonHexChunkSize()
     {
         const string chunkedBody = "xyz\r\nHello\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -83,7 +83,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-006: Missing final chunk is NeedMoreData")]
-    public void MissingFinalChunk_NeedMoreData()
+    public void Should_NeedMoreData_When_MissingFinalChunk()
     {
         const string partial = "5\r\nHel";
         var raw = BuildRaw(200, "OK", partial, ("Transfer-Encoding", "chunked"));
@@ -94,7 +94,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-007: 0\\r\\n\\r\\n terminates chunked body")]
-    public async Task ZeroChunk_TerminatesChunkedBody()
+    public async Task Should_TerminateBody_When_ZeroChunk()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -107,7 +107,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-008: Chunk size overflow is parse error")]
-    public void ChunkSize_Overflow_IsError()
+    public void Should_Error_When_ChunkSizeOverflow()
     {
         const string chunkedBody = "999999999999\r\ndata\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -117,7 +117,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-009: 1-byte chunk decoded")]
-    public async Task OneByte_Chunk_Decoded()
+    public async Task Should_Decode_When_OneByteChunk()
     {
         const string chunkedBody = "1\r\nX\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -130,7 +130,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-010: Uppercase hex chunk size accepted")]
-    public async Task Uppercase_HexChunkSize_Accepted()
+    public async Task Should_Accept_When_UppercaseHexChunkSize()
     {
         const string chunkedBody = "A\r\n0123456789\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -143,7 +143,7 @@ public sealed class Http11DecoderChunkedTests
     }
 
     [Fact(DisplayName = "RFC9112-7-CH-011: Empty chunk (0 data bytes) before terminator accepted")]
-    public async Task EmptyChunk_BeforeTerminator_Accepted()
+    public async Task Should_Accept_When_EmptyChunkBeforeTerminator()
     {
         // Test an empty chunked body: only the terminator chunk (0\r\n\r\n) with no data chunks
         const string chunkedBody = "0\r\n\r\n";

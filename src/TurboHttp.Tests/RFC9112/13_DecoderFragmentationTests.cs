@@ -8,7 +8,7 @@ public sealed class Http11DecoderFragmentationTests
     private readonly Http11Decoder _decoder = new();
 
     [Fact(DisplayName = "RFC9112-6-FG-001: Status-line split byte 1 reassembled")]
-    public async Task StatusLine_SplitAtByte1_Reassembled()
+    public async Task Should_Reassemble_When_StatusLineSplitAtByte1()
     {
         var full = BuildResponse(200, "OK", "body", ("Content-Length", "4"));
         var chunk1 = full[..1];
@@ -24,7 +24,7 @@ public sealed class Http11DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC9112-6-FG-002: Status-line split inside HTTP/1.1 version")]
-    public async Task StatusLine_SplitInsideVersion_Reassembled()
+    public async Task Should_Reassemble_When_StatusLineSplitInsideVersion()
     {
         var full = BuildResponse(200, "OK", "data", ("Content-Length", "4"));
         var chunk1 = full[..10]; // Split inside "HTTP/1.1"
@@ -40,7 +40,7 @@ public sealed class Http11DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC9112-6-FG-003: Header name:value split at colon")]
-    public async Task Header_SplitAtColon_Reassembled()
+    public async Task Should_Reassemble_When_HeaderSplitAtColon()
     {
         var full = BuildResponse(200, "OK", "test", ("Content-Length", "4"), ("X-Custom", "value"));
         var colonPos = Encoding.UTF8.GetString(full.Span).IndexOf("X-Custom:", StringComparison.Ordinal) + 8;
@@ -57,7 +57,7 @@ public sealed class Http11DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC9112-6-FG-004: Split at CRLFCRLF header-body boundary")]
-    public async Task Split_AtHeaderBodyBoundary_Reassembled()
+    public async Task Should_Reassemble_When_SplitAtHeaderBodyBoundary()
     {
         const string body = "complete";
         var full = BuildResponse(200, "OK", body, ("Content-Length", body.Length.ToString()));
@@ -75,7 +75,7 @@ public sealed class Http11DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC9112-6-FG-005: Chunk-size line split across two reads")]
-    public async Task ChunkSize_SplitAcrossReads_Reassembled()
+    public async Task Should_Reassemble_When_ChunkSizeSplitAcrossReads()
     {
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
         var full = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
@@ -94,7 +94,7 @@ public sealed class Http11DecoderFragmentationTests
     }
 
     [Fact(DisplayName = "RFC9112-6-FG-006: Response delivered 1 byte at a time assembles correctly")]
-    public async Task Response_OneByteAtATime_AssemblesCorrectly()
+    public async Task Should_AssembleCorrectly_When_ResponseDeliveredOneByteAtATime()
     {
         const string body = "OK";
         var full = BuildResponse(200, "OK", body, ("Content-Length", "2"));

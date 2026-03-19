@@ -9,7 +9,7 @@ public sealed class Http11DecoderNoBodyTests
     private readonly Http11Decoder _decoder = new();
 
     [Fact(DisplayName = "RFC9112-6-NB-001: 204 No Content has empty body")]
-    public void Response_204_NoContent_EmptyBody()
+    public void Should_HaveEmptyBody_When_204NoContent()
     {
         var raw = "HTTP/1.1 204 No Content\r\n\r\n"u8.ToArray();
 
@@ -21,7 +21,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-NB-002: 304 Not Modified has empty body")]
-    public void Response_304_NotModified_EmptyBody()
+    public void Should_HaveEmptyBody_When_304NotModified()
     {
         var raw = "HTTP/1.1 304 Not Modified\r\nETag: \"abc\"\r\n\r\n"u8.ToArray();
 
@@ -36,7 +36,7 @@ public sealed class Http11DecoderNoBodyTests
     [InlineData(204, "No Content")]
     [InlineData(205, "Reset Content")]
     [InlineData(304, "Not Modified")]
-    public void NoBodyStatuses_AlwaysEmptyBody(int code, string reason)
+    public void Should_HaveEmptyBody_When_NoBodyStatus(int code, string reason)
     {
         var raw = Encoding.ASCII.GetBytes($"HTTP/1.1 {code} {reason}\r\n\r\n");
 
@@ -48,7 +48,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-6-NB-004: HEAD response has Content-Length header but empty body")]
-    public void HEAD_Response_HasContentLength_ButEmptyBody()
+    public void Should_ExpectBodyBytes_When_HeadResponseHasContentLength()
     {
         // Simulating HEAD response: status-line and headers indicate body length,
         // but no body bytes are present (server doesn't send body for HEAD).
@@ -67,7 +67,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-NB-005: Connection: close signals connection close")]
-    public void Connection_Close_Signals_ConnectionClose()
+    public void Should_SignalConnectionClose_When_ConnectionCloseHeader()
     {
         var raw = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -78,7 +78,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-NB-006: Connection: keep-alive signals reuse")]
-    public void Connection_KeepAlive_Signals_Reuse()
+    public void Should_SignalReuse_When_ConnectionKeepAliveHeader()
     {
         var raw = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -89,7 +89,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-NB-007: HTTP/1.1 default connection is keep-alive")]
-    public void Http11_DefaultConnection_IsKeepAlive()
+    public void Should_DefaultToKeepAlive_When_Http11()
     {
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -102,7 +102,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-NB-008: HTTP/1.0 connection defaults to close")]
-    public void Http10_DefaultConnection_IsClose()
+    public void Should_DefaultToClose_When_Http10()
     {
         var raw = "HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -115,7 +115,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact(DisplayName = "RFC9112-9-NB-009: Multiple Connection tokens all recognized")]
-    public void Multiple_ConnectionTokens_AllRecognized()
+    public void Should_RecognizeAllTokens_When_MultipleConnectionTokens()
     {
         var raw = "HTTP/1.1 200 OK\r\nConnection: keep-alive, Upgrade\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
@@ -128,7 +128,7 @@ public sealed class Http11DecoderNoBodyTests
     }
 
     [Fact]
-    public async Task TwoResponses_InSameBuffer_BothDecoded()
+    public async Task Should_DecodeBoth_When_TwoResponsesInSameBuffer()
     {
         var resp1 = BuildResponse(200, "OK", "first", ("Content-Length", "5"));
         var resp2 = BuildResponse(201, "Created", "second", ("Content-Length", "6"));
