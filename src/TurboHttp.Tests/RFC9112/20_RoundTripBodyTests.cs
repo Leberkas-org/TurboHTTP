@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests round-trip encoding and decoding of message bodies per RFC 9112 §6.
+/// Verifies that request bodies survive a full encode → decode cycle intact.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http11Encoder"/> and <see cref="Http11Decoder"/>.
+/// RFC 9112 §6: Message body — Content-Length or Transfer-Encoding delimits the payload.
+/// </remarks>
 public sealed class Http11RoundTripBodyTests
 {
     private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)

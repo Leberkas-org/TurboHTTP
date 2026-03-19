@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests Range request header encoding per RFC 9112 §5.
+/// Verifies byte-range and multi-range header serialization.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112 §5 / RFC 9110 §14.2: Range header — bytes=first-byte-pos "-" last-byte-pos.
+/// </remarks>
 public sealed class Http11EncoderRangeRequestTests
 {
     [Fact(DisplayName = "RFC9112-5-RR-001: Range: bytes=0-499 encoded")]

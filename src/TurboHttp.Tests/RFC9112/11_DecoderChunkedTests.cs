@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests chunked transfer encoding decoding per RFC 9112 §7.1.
+/// Verifies chunk-size parsing, data accumulation, and trailing CRLF handling.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §7.1: Chunked transfer coding — chunk-size CRLF chunk-data CRLF … "0" CRLF CRLF.
+/// </remarks>
 public sealed class Http11DecoderChunkedTests
 {
     private readonly Http11Decoder _decoder = new();

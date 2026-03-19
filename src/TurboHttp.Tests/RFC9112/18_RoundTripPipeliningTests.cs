@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 request pipelining round-trips per RFC 9112 §9.3.
+/// Verifies that multiple consecutive requests and responses are correctly correlated.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http11Encoder"/> and <see cref="Http11Decoder"/>.
+/// RFC 9112 §9.3: Pipelining — responses MUST be sent in the same order as requests.
+/// </remarks>
 public sealed class Http11RoundTripPipeliningTests
 {
     private static ReadOnlyMemory<byte> BuildResponse(int status, string reason, string body,

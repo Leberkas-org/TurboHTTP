@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 response body decoding per RFC 9112 §6.
+/// Verifies Content-Length–delimited body extraction and partial data buffering.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §6: Message body length — determined by Content-Length or Transfer-Encoding.
+/// </remarks>
 public sealed class Http11DecoderBodyTests
 {
     private readonly Http11Decoder _decoder = new();

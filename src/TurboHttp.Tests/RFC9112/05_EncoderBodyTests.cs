@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests message body and Content-Length encoding per RFC 9112 §6.
+/// Verifies Content-Length presence, chunked framing, and bodyless request handling.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112 §6: Message body — determined by Content-Length or Transfer-Encoding.
+/// </remarks>
 public sealed class Http11EncoderBodyTests
 {
     [Fact(DisplayName = "RFC9112-6-BD-001: No Content-Length for bodyless GET")]

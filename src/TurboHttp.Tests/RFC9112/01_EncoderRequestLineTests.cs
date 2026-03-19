@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 request-line serialization per RFC 9112 §3.
+/// Verifies that method, request-target, and HTTP-version are correctly encoded.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112 §3: Request-Line — Method SP Request-Target SP HTTP-Version CRLF.
+/// </remarks>
 public sealed class Http11EncoderRequestLineTests
 {
     [Fact]

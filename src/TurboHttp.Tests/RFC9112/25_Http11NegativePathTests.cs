@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests rejection of malformed HTTP/1.1 responses per RFC 9112.
+/// Verifies that invalid status lines, headers, and versions produce appropriate errors.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §4: Malformed status-line or unsupported HTTP-version must be rejected.
+/// </remarks>
 public sealed class Http11NegativePathTests
 {
     [Fact(DisplayName = "RFC9112-4-SL-001: HTTP/2.0 version in status-line rejected")]

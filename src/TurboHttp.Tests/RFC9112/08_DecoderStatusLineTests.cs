@@ -5,6 +5,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 response status-line parsing per RFC 9112 §4.
+/// Verifies that HTTP-version, status-code, and reason-phrase are correctly decoded.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §4: Status-Line — HTTP-Version SP Status-Code SP Reason-Phrase CRLF.
+/// </remarks>
 public sealed class Http11DecoderStatusLineTests
 {
     private readonly Http11Decoder _decoder = new();

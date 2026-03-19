@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests header field serialization per RFC 9112 §5.
+/// Verifies name/value formatting, ordering, and folding rules.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112 §5: Header fields — field-name ":" OWS field-value OWS CRLF.
+/// </remarks>
 public sealed class Http11EncoderHeaderTests
 {
     [Fact(DisplayName = "RFC9112-5-HD-001: Header field format is Name: SP value CRLF")]

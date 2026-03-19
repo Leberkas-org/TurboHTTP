@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests round-trip encoding and decoding of HTTP methods per RFC 9112 §3.
+/// Verifies that all standard methods survive a full encode → decode cycle.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http11Encoder"/> and <see cref="Http11Decoder"/>.
+/// RFC 9112 §3: Method token must be preserved verbatim through encode/decode.
+/// </remarks>
 public sealed class Http11RoundTripMethodTests
 {
     private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)

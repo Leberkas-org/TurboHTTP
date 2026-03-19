@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 response header field parsing per RFC 9112 §5.
+/// Verifies header name/value extraction, multi-value handling, and OWS trimming.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §5: Header fields — field-name ":" OWS field-value OWS CRLF.
+/// </remarks>
 public sealed class Http11DecoderHeaderTests
 {
     private readonly Http11Decoder _decoder = new();

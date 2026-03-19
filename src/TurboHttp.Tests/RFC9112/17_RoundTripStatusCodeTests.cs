@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests round-trip encoding and decoding of HTTP status codes per RFC 9112 §4.
+/// Verifies that all standard status classes survive a full encode → decode cycle.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http11Encoder"/> and <see cref="Http11Decoder"/>.
+/// RFC 9112 §4: Status-Code — three-digit integer categorised by class (1xx–5xx).
+/// </remarks>
 public sealed class Http11RoundTripStatusCodeTests
 {
     private static ReadOnlyMemory<byte> BuildResponse(int status, string reason, string body,

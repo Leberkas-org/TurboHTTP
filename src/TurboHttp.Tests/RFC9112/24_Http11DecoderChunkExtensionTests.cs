@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests chunk-extension parsing per RFC 9112 §7.1.1.
+/// Verifies that chunk-ext tokens are ignored and do not interfere with body decoding.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §7.1.1: chunk-ext = *( ";" chunk-ext-name [ "=" chunk-ext-val ] ) — MUST be ignored.
+/// </remarks>
 public sealed class Http11DecoderChunkExtensionTests
 {
     private readonly Http11Decoder _decoder = new();

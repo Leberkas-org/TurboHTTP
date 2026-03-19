@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests Connection header encoding per RFC 9112 §9.
+/// Verifies keep-alive default, close opt-out, and upgrade negotiation.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112 §9: Connection header — controls per-hop options including keep-alive and close.
+/// </remarks>
 public sealed class Http11EncoderConnectionTests
 {
     [Fact(DisplayName = "RFC9112-9-CN-001: Connection keep-alive default in HTTP/1.1")]

@@ -2,6 +2,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests per-host connection limit enforcement per RFC 9112 §9.4.
+/// Verifies default limits, custom configuration, and slot tracking.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="PerHostConnectionLimiter"/>.
+/// RFC 9112 §9.4: Clients SHOULD limit the number of simultaneous connections per host.
+/// </remarks>
 public sealed class PerHostLimiterTests
 {
     [Fact(DisplayName = "RFC9112-9-PH-001: Default_MaxConnectionsPerHost_Is_6")]

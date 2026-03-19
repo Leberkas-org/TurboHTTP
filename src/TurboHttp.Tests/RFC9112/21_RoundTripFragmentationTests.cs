@@ -3,6 +3,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests round-trip encoding and decoding across TCP fragment boundaries per RFC 9112 §6.
+/// Verifies that responses split at arbitrary byte positions are correctly reassembled.
+/// </summary>
+/// <remarks>
+/// Classes under test: <see cref="Http11Encoder"/> and <see cref="Http11Decoder"/>.
+/// RFC 9112 §6: Decoders must handle arbitrary TCP fragmentation of response streams.
+/// </remarks>
 public sealed class Http11RoundTripFragmentationTests
 {
     [Fact(DisplayName = "RFC9112-4-FG-001: TCP fragment split after status line CRLF — response assembled")]

@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests legacy encoder compatibility behaviors per RFC 9112.
+/// Verifies backward-compatible encoding scenarios and obsolete header handling.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112: Legacy compatibility — encoders must interoperate with older HTTP/1.x agents.
+/// </remarks>
 public sealed class Http11EncoderLegacyTests
 {
     [Fact]

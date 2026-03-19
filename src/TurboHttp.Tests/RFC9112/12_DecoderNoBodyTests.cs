@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests no-body response decoding per RFC 9112 §6.3.
+/// Verifies that 1xx, 204, and 304 responses are decoded with empty bodies.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §6.3: Body not allowed for 1xx, 204 No Content, and 304 Not Modified responses.
+/// </remarks>
 public sealed class Http11DecoderNoBodyTests
 {
     private readonly Http11Decoder _decoder = new();

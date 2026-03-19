@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 security limits and protections per RFC 9112.
+/// Verifies header count limits, request smuggling defenses, and oversized field rejection.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Decoder"/>.
+/// RFC 9112 §11: Security considerations — limits on header count and field sizes prevent DoS.
+/// </remarks>
 public sealed class Http11SecurityTests
 {
     [Fact(DisplayName = "RFC9112-9-SC-001: 100 headers accepted at default limit")]

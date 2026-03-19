@@ -4,6 +4,14 @@ using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Tests.RFC9112;
 
+/// <summary>
+/// Tests mandatory Host header encoding per RFC 9112 §5.4.
+/// Verifies that Host is always included and correctly formatted.
+/// </summary>
+/// <remarks>
+/// Class under test: <see cref="Http11Encoder"/>.
+/// RFC 9112 §5.4: Host header field MUST be sent in all HTTP/1.1 request messages.
+/// </remarks>
 public sealed class Http11EncoderHostHeaderTests
 {
     [Fact(DisplayName = "RFC9112-5.4-HH-001: Host header mandatory in HTTP/1.1")]
