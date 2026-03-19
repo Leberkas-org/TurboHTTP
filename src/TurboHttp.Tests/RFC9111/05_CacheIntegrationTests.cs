@@ -27,7 +27,7 @@ public sealed class CacheIntegrationTests
     // ── Full cycle tests ──────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4-CI-001: PUT response then GET same URI → Fresh hit")]
-    public void FullCycle_PutThenGet_FreshHit()
+    public void Should_ReturnFreshHit_When_PutThenGetSameUri()
     {
         var store = new HttpCacheStore();
         var request = GetRequest();
@@ -46,7 +46,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-4-CI-002: PUT response then time passes → Stale → must revalidate")]
-    public void FullCycle_Stale_MustRevalidate()
+    public void Should_ReturnMustRevalidate_When_EntryIsStaleWithMustRevalidate()
     {
         var store = new HttpCacheStore();
         var request = GetRequest();
@@ -65,7 +65,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-5.2.2.8-CI-003: stale + must-revalidate → MustRevalidate status")]
-    public void MustRevalidate_WhenStale_ReturnsMustRevalidate()
+    public void Should_ReturnMustRevalidate_When_StaleWithMustRevalidateFlag()
     {
         var cc = new CacheControl { MaxAge = TimeSpan.FromSeconds(30), MustRevalidate = true };
         var entry = new CacheEntry
@@ -84,7 +84,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2-CI-004: stale without must-revalidate → Stale status")]
-    public void StaleWithoutMustRevalidate_ReturnsStale()
+    public void Should_ReturnStale_When_StaleWithoutMustRevalidate()
     {
         var cc = new CacheControl { MaxAge = TimeSpan.FromSeconds(30) };
         var entry = new CacheEntry
@@ -107,7 +107,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-5.2.1.4-CI-005: no-cache on request forces revalidation even if fresh")]
-    public void NoCache_OnRequest_ForcesMustRevalidateEvenIfFresh()
+    public void Should_ForceMustRevalidate_When_RequestHasNoCache()
     {
         var cc = new CacheControl { MaxAge = TimeSpan.FromSeconds(3600) };
         var entry = new CacheEntry
@@ -129,7 +129,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-5.2.1.7-CI-006: only-if-cached + fresh entry → Fresh")]
-    public void OnlyIfCached_FreshEntry_ReturnsFresh()
+    public void Should_ReturnFresh_When_OnlyIfCachedAndFreshEntry()
     {
         var store = new HttpCacheStore();
         var response = OkResponseWithMaxAge(600);
@@ -145,7 +145,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-5.2.1.2-CI-007: max-stale=300 accepts stale entry within tolerance")]
-    public void MaxStale_300_AcceptsStaleEntryWithinTolerance()
+    public void Should_AcceptStaleEntry_When_MaxStale300WithinTolerance()
     {
         var cc = new CacheControl { MaxAge = TimeSpan.FromSeconds(60) };
         var entry = new CacheEntry
@@ -168,7 +168,7 @@ public sealed class CacheIntegrationTests
     }
 
     [Fact(DisplayName = "RFC9111-4.4-CI-008: unsafe method (POST) invalidates related GET cache entry")]
-    public void UnsafeMethod_Post_InvalidatesGetEntry()
+    public void Should_InvalidateGetEntry_When_PostToSameUri()
     {
         var store = new HttpCacheStore();
         var uri = "http://example.com/items";

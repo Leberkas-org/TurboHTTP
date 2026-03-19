@@ -205,11 +205,11 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **New pattern:** `Should_ReturnNull_When_InputIsNull()`, `Should_CalculateFreshnessLifetimeAs60s_When_MaxAgeIs60()`
 
 **Acceptance Criteria:**
-- [ ] 100% of methods in all 3 folders follow `Should_Action_When_Condition`
-- [ ] `DisplayName` attributes unchanged
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9110"` — all green
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9111"` — all green
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC6265"` — all green
+- [x] 100% of methods in all 3 folders follow `Should_Action_When_Condition`
+- [x] `DisplayName` attributes unchanged
+- [x] ⚠️ BLOCKED: `dotnet test --filter "FullyQualifiedName~RFC9110"` — all green — RFC9110-15.4-RH-015 fails with pre-existing `file:///` URI resolution bug (was failing before this task)
+- [x] `dotnet test --filter "FullyQualifiedName~RFC9111"` — all green
+- [x] `dotnet test --filter "FullyQualifiedName~RFC6265"` — all green
 
 ---
 

@@ -23,7 +23,7 @@ public sealed class CacheStoreTests
     // ── IsCacheable ───────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-3.1-CS-001: GET 200 with max-age is cacheable")]
-    public void IsCacheable_200_True()
+    public void Should_BeCacheable_When_200OkWithMaxAge()
     {
         var response = OkResponse();
         Assert.True(HttpCacheStore.IsCacheable(response));
@@ -39,14 +39,14 @@ public sealed class CacheStoreTests
     [InlineData(308)]
     [InlineData(404)]
     [InlineData(410)]
-    public void IsCacheable_CacheableStatuses(int statusCode)
+    public void Should_BeCacheable_When_StatusCodeIsCacheable(int statusCode)
     {
         var response = new HttpResponseMessage((HttpStatusCode)statusCode);
         Assert.True(HttpCacheStore.IsCacheable(response));
     }
 
     [Fact(DisplayName = "RFC9111-3.1-CS-003: 500 status is not cacheable by default")]
-    public void IsCacheable_500_False()
+    public void Should_NotBeCacheable_When_500InternalServerError()
     {
         var response = new HttpResponseMessage(HttpStatusCode.InternalServerError);
         Assert.False(HttpCacheStore.IsCacheable(response));
@@ -55,20 +55,20 @@ public sealed class CacheStoreTests
     // ── ShouldStore ───────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-3-CS-004: GET 200 with max-age should be stored")]
-    public void ShouldStore_Get200_True()
+    public void Should_StoreEntry_When_Get200WithMaxAge()
     {
         Assert.True(HttpCacheStore.ShouldStore(GetRequest(), OkResponse()));
     }
 
     [Fact(DisplayName = "RFC9111-3-CS-005: POST 200 should not be stored (unsafe method)")]
-    public void ShouldStore_Post200_False()
+    public void Should_NotStoreEntry_When_Post200UnsafeMethod()
     {
         var post = new HttpRequestMessage(HttpMethod.Post, "http://example.com/resource");
         Assert.False(HttpCacheStore.ShouldStore(post, OkResponse()));
     }
 
     [Fact(DisplayName = "RFC9111-5.2.1.5-CS-006: no-store on request → should not store")]
-    public void ShouldStore_RequestNoStore_False()
+    public void Should_NotStoreEntry_When_RequestHasNoStore()
     {
         var request = GetRequest();
         request.Headers.TryAddWithoutValidation("Cache-Control", "no-store");
@@ -76,7 +76,7 @@ public sealed class CacheStoreTests
     }
 
     [Fact(DisplayName = "RFC9111-5.2.2.5-CS-007: no-store on response → should not store")]
-    public void ShouldStore_ResponseNoStore_False()
+    public void Should_NotStoreEntry_When_ResponseHasNoStore()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Cache-Control", "no-store");
@@ -86,7 +86,7 @@ public sealed class CacheStoreTests
     // ── Get / Put / Invalidate ────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4-CS-008: Get on empty store returns null")]
-    public void Get_EmptyStore_ReturnsNull()
+    public void Should_ReturnNull_When_StoreIsEmpty()
     {
         var store = new HttpCacheStore();
         var result = store.Get(GetRequest());
@@ -94,7 +94,7 @@ public sealed class CacheStoreTests
     }
 
     [Fact(DisplayName = "RFC9111-3-CS-009: Put then Get same URI returns entry")]
-    public void Put_ThenGet_ReturnsCachedEntry()
+    public void Should_ReturnCachedEntry_When_PutThenGetSameUri()
     {
         var store = new HttpCacheStore();
         var request = GetRequest();
@@ -109,7 +109,7 @@ public sealed class CacheStoreTests
     }
 
     [Fact(DisplayName = "RFC9111-4.4-CS-010: Invalidate removes entry for URI")]
-    public void Invalidate_RemovesEntry()
+    public void Should_RemoveEntry_When_Invalidated()
     {
         var store = new HttpCacheStore();
         var request = GetRequest();
@@ -123,7 +123,7 @@ public sealed class CacheStoreTests
     // ── Vary ──────────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4.1-CS-011: Vary header — different Accept is a cache miss")]
-    public void Vary_DifferentAccept_Miss()
+    public void Should_ReturnMiss_When_VaryHeaderAndDifferentAccept()
     {
         var store = new HttpCacheStore();
 
@@ -142,7 +142,7 @@ public sealed class CacheStoreTests
     }
 
     [Fact(DisplayName = "RFC9111-4.1-CS-012: Vary header — matching Accept is a cache hit")]
-    public void Vary_MatchingAccept_Hit()
+    public void Should_ReturnHit_When_VaryHeaderAndMatchingAccept()
     {
         var store = new HttpCacheStore();
 
@@ -162,7 +162,7 @@ public sealed class CacheStoreTests
     }
 
     [Fact(DisplayName = "RFC9111-4.1-CS-013: Vary: * never matches")]
-    public void Vary_Star_NeverMatches()
+    public void Should_NeverMatch_When_VaryIsStar()
     {
         var store = new HttpCacheStore();
 
@@ -177,7 +177,7 @@ public sealed class CacheStoreTests
     // ── LRU eviction ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-3-CS-014: LRU eviction when MaxEntries exceeded")]
-    public void LruEviction_WhenMaxEntriesExceeded()
+    public void Should_EvictEntries_When_MaxEntriesExceeded()
     {
         var policy = new CachePolicy { MaxEntries = 2 };
         var store = new HttpCacheStore(policy);

@@ -23,7 +23,7 @@ public sealed class CookieJarTests
     // ── CM-001–CM-005: Basic cookie parsing ───────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-001: Basic name=value cookie is stored")]
-    public void Basic_Cookie_Is_Stored()
+    public void Should_StoreCookie_When_BasicNameValueCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("session=abc123"));
@@ -31,7 +31,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-002: Cookie value is accessible when adding to request")]
-    public void Cookie_Value_Is_Added_To_Request()
+    public void Should_AddCookieValueToRequest_When_CookieMatches()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("token=xyz"));
@@ -44,7 +44,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-003: Malformed cookie (no '=') is ignored")]
-    public void Malformed_Cookie_No_Equals_Is_Ignored()
+    public void Should_IgnoreCookie_When_NoEqualsSign()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("invalidsyntax"));
@@ -52,7 +52,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-004: Cookie with empty name is ignored")]
-    public void Cookie_With_Empty_Name_Is_Ignored()
+    public void Should_IgnoreCookie_When_NameIsEmpty()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("=value"));
@@ -60,7 +60,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-005: Multiple Set-Cookie headers are all processed")]
-    public void Multiple_SetCookie_Headers_Are_All_Processed()
+    public void Should_ProcessAllCookies_When_MultipleSetCookieHeaders()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Set-Cookie", "a=1");
@@ -76,7 +76,7 @@ public sealed class CookieJarTests
     // ── CM-006–CM-010: Domain matching (RFC 6265 §5.1.3) ─────────────────────
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-006: Host-only cookie (no Domain attr) matches exact host only")]
-    public void HostOnly_Cookie_Matches_Exact_Host_Only()
+    public void Should_MatchExactHostOnly_When_HostOnlyCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1"));
@@ -88,7 +88,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-007: Host-only cookie matches same host")]
-    public void HostOnly_Cookie_Matches_Same_Host()
+    public void Should_MatchSameHost_When_HostOnlyCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1"));
@@ -100,7 +100,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-008: Domain cookie matches subdomain")]
-    public void Domain_Cookie_Matches_Subdomain()
+    public void Should_MatchSubdomain_When_DomainCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1; Domain=example.com"));
@@ -112,7 +112,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-009: Domain cookie does NOT match unrelated host (no naive EndsWith)")]
-    public void Domain_Cookie_Does_Not_Match_Unrelated_Host()
+    public void Should_NotMatchUnrelatedHost_When_DomainCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1; Domain=example.com"));
@@ -124,7 +124,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-010: Domain cookie with leading dot is stored correctly (dot stripped)")]
-    public void Domain_Cookie_Leading_Dot_Is_Stripped()
+    public void Should_StripLeadingDot_When_DomainCookieHasLeadingDot()
     {
         var jar = new CookieJar();
         // Leading dot should be stripped per RFC 6265 §5.2.3
@@ -139,7 +139,7 @@ public sealed class CookieJarTests
     // ── CM-011–CM-015: Path matching (RFC 6265 §5.1.4) ───────────────────────
 
     [Fact(DisplayName = "RFC6265-5.1.4-CM-011: Cookie with path=/api matches /api/users")]
-    public void Path_Cookie_Matches_Sub_Path()
+    public void Should_MatchSubPath_When_PathCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/api"), ResponseWithCookie("token=x; Path=/api"));
@@ -151,7 +151,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.4-CM-012: Cookie with path=/api does NOT match /apiv2")]
-    public void Path_Cookie_Does_Not_Match_Partial_Label()
+    public void Should_NotMatchPartialLabel_When_PathCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/api"), ResponseWithCookie("token=x; Path=/api"));
@@ -163,7 +163,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.4-CM-013: Cookie with path=/ matches all paths")]
-    public void Path_Root_Matches_All_Paths()
+    public void Should_MatchAllPaths_When_PathIsRoot()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("global=1; Path=/"));
@@ -175,7 +175,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.4-CM-014: Cookie with path=/foo/ (trailing slash) matches /foo/bar")]
-    public void Path_With_Trailing_Slash_Matches_Sub_Path()
+    public void Should_MatchSubPath_When_PathHasTrailingSlash()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/foo/"), ResponseWithCookie("x=1; Path=/foo/"));
@@ -187,7 +187,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.4-CM-015: Cookie path is correctly defaulted from request URI")]
-    public void Default_Path_Is_Computed_From_Request_URI()
+    public void Should_ComputeDefaultPath_When_NoCookiePath()
     {
         var jar = new CookieJar();
         // Request to /foo/bar — default path should be /foo
@@ -203,7 +203,7 @@ public sealed class CookieJarTests
     // ── CM-016–CM-020: Secure attribute ──────────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-016: Secure cookie is NOT sent over HTTP")]
-    public void Secure_Cookie_Not_Sent_Over_Http()
+    public void Should_NotSendCookie_When_SecureCookieAndHttpScheme()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("https://example.com/"), ResponseWithCookie("sess=abc; Secure"));
@@ -215,7 +215,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-017: Secure cookie IS sent over HTTPS")]
-    public void Secure_Cookie_Sent_Over_Https()
+    public void Should_SendCookie_When_SecureCookieAndHttpsScheme()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("https://example.com/"), ResponseWithCookie("sess=abc; Secure"));
@@ -227,7 +227,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-018: Non-secure cookie IS sent over HTTP")]
-    public void NonSecure_Cookie_Sent_Over_Http()
+    public void Should_SendCookie_When_NonSecureCookieAndHttpScheme()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("pref=dark"));
@@ -241,7 +241,7 @@ public sealed class CookieJarTests
     // ── CM-019–CM-020: HttpOnly attribute ─────────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-019: HttpOnly cookie is stored with HttpOnly=true")]
-    public void HttpOnly_Cookie_Is_Stored()
+    public void Should_StoreCookie_When_HttpOnlyAttribute()
     {
         var jar = new CookieJar();
         // We verify via behavior: HttpOnly cookies are still sent in HTTP requests (server-side flag)
@@ -255,7 +255,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-020: Non-HttpOnly cookie is stored and sent")]
-    public void NonHttpOnly_Cookie_Is_Stored_And_Sent()
+    public void Should_StoreAndSendCookie_When_NonHttpOnlyCookie()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("pref=light"));
@@ -269,7 +269,7 @@ public sealed class CookieJarTests
     // ── CM-021–CM-025: Expires and Max-Age ────────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-021: Expired cookie (past Expires) is not sent")]
-    public void Expired_Cookie_Is_Not_Sent()
+    public void Should_NotSendCookie_When_CookieIsExpired()
     {
         var jar = new CookieJar();
         // Expires in the distant past
@@ -283,7 +283,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-022: Future Expires cookie IS sent")]
-    public void Future_Expires_Cookie_Is_Sent()
+    public void Should_SendCookie_When_ExpiresInFuture()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"),
@@ -296,7 +296,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-023: Max-Age=0 deletes existing cookie")]
-    public void MaxAge_Zero_Deletes_Existing_Cookie()
+    public void Should_DeleteCookie_When_MaxAgeIsZero()
     {
         var jar = new CookieJar();
         // First: add the cookie
@@ -309,7 +309,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-024: Max-Age takes precedence over Expires")]
-    public void MaxAge_Takes_Precedence_Over_Expires()
+    public void Should_PreferMaxAge_When_BothMaxAgeAndExpiresPresent()
     {
         var jar = new CookieJar();
         // Expires says far future, but Max-Age=0 should win and delete
@@ -320,7 +320,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-025: Max-Age positive sets future expiry")]
-    public void MaxAge_Positive_Sets_Future_Expiry()
+    public void Should_SetFutureExpiry_When_MaxAgeIsPositive()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("x=1; Max-Age=3600"));
@@ -335,7 +335,7 @@ public sealed class CookieJarTests
     // ── CM-026–CM-028: Cookie replacement ────────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-026: Cookie with same name+domain+path replaces existing cookie")]
-    public void Cookie_Replacement_Same_Name_Domain_Path()
+    public void Should_ReplaceCookie_When_SameNameDomainPath()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("token=old"));
@@ -351,7 +351,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-027: Cookies with same name but different paths coexist")]
-    public void Cookies_Same_Name_Different_Paths_Coexist()
+    public void Should_AllowCoexistence_When_SameNameDifferentPaths()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/api/v1"), ResponseWithCookie("x=1; Path=/api/v1"));
@@ -361,7 +361,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-028: Clear() removes all cookies")]
-    public void Clear_Removes_All_Cookies()
+    public void Should_RemoveAllCookies_When_ClearCalled()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("a=1"));
@@ -375,7 +375,7 @@ public sealed class CookieJarTests
     // ── CM-029–CM-030: SameSite attribute ─────────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-029: SameSite=Strict is stored correctly")]
-    public void SameSite_Strict_Is_Stored()
+    public void Should_StoreCookie_When_SameSiteStrict()
     {
         // We verify the cookie is stored (enforcement is caller's responsibility)
         var jar = new CookieJar();
@@ -384,7 +384,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-030: SameSite=Lax is stored correctly")]
-    public void SameSite_Lax_Is_Stored()
+    public void Should_StoreCookie_When_SameSiteLax()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1; SameSite=Lax"));
@@ -394,7 +394,7 @@ public sealed class CookieJarTests
     // ── CM-031–CM-033: Domain rejection ──────────────────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-031: Cookie with Domain for unrelated host is rejected")]
-    public void Cookie_Domain_For_Unrelated_Host_Is_Rejected()
+    public void Should_RejectCookie_When_DomainForUnrelatedHost()
     {
         var jar = new CookieJar();
         // Server at example.com tries to set a cookie for attacker.com — must be rejected
@@ -403,7 +403,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-032: Cookie Domain=example.com accepted from sub.example.com")]
-    public void Cookie_Domain_SuperDomain_Accepted()
+    public void Should_AcceptCookie_When_DomainIsSuperDomain()
     {
         var jar = new CookieJar();
         // sub.example.com can set a cookie for example.com
@@ -412,7 +412,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-033: Cookie Domain=sub.example.com from example.com is rejected")]
-    public void Cookie_Domain_SubDomain_From_Parent_Is_Rejected()
+    public void Should_RejectCookie_When_SubDomainSetByParent()
     {
         var jar = new CookieJar();
         // example.com cannot set a cookie for sub.example.com via Domain attr (not a parent)
@@ -423,7 +423,7 @@ public sealed class CookieJarTests
     // ── CM-034–CM-038: IP address and IP domain matching ──────────────────────
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-034: Cookie from IP address is host-only")]
-    public void Cookie_From_Ip_Address_Is_HostOnly()
+    public void Should_BeHostOnly_When_CookieFromIpAddress()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://192.168.1.1/"), ResponseWithCookie("id=1"));
@@ -435,7 +435,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.1.3-CM-035: Domain cookie is not matched to IP address host")]
-    public void Domain_Cookie_Not_Matched_To_Ip_Address()
+    public void Should_NotMatchIpAddress_When_DomainCookie()
     {
         // DomainMatches with IP address request host should return false for domain cookies
         Assert.False(CookieJar.DomainMatches("example.com", false, "192.168.1.1"));
@@ -451,7 +451,7 @@ public sealed class CookieJarTests
     [InlineData("example.com", false, "notexample.com", false)]
     [InlineData("example.com", false, "other.com", false)]
     [InlineData("example.com", false, "192.168.1.1", false)]
-    public void DomainMatches_Correct_Result(string cookieDomain, bool isHostOnly, string requestHost, bool expected)
+    public void Should_ReturnCorrectResult_When_CheckingDomainMatches(string cookieDomain, bool isHostOnly, string requestHost, bool expected)
     {
         Assert.Equal(expected, CookieJar.DomainMatches(cookieDomain, isHostOnly, requestHost));
     }
@@ -470,13 +470,13 @@ public sealed class CookieJarTests
     [InlineData("/api/v1", "/api/v1/users", true)]
     [InlineData("/api/v1", "/api/v2", false)]
     [InlineData("/api/v1", "/api/v10", false)]
-    public void PathMatches_Correct_Result(string cookiePath, string requestPath, bool expected)
+    public void Should_ReturnCorrectResult_When_CheckingPathMatches(string cookiePath, string requestPath, bool expected)
     {
         Assert.Equal(expected, CookieJar.PathMatches(cookiePath, requestPath));
     }
 
     [Fact(DisplayName = "RFC6265-5.1.4-CM-038: Cookies sorted by path length (longer first) in Cookie header")]
-    public void Cookies_Sorted_By_Path_Length_Longer_First()
+    public void Should_SortByPathLengthLongerFirst_When_BuildingCookieHeader()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("root=1; Path=/"));
@@ -501,7 +501,7 @@ public sealed class CookieJarTests
     // ── CM-039–CM-042: Cross-origin redirect cookie re-evaluation ─────────────
 
     [Fact(DisplayName = "RFC6265-5.3-CM-039: Cookie jar evaluates cookies for new URI on redirect")]
-    public void Cookie_Jar_Evaluates_For_Redirect_URI()
+    public void Should_EvaluateCookiesForNewUri_When_Redirecting()
     {
         var jar = new CookieJar();
         // Cookie for original domain
@@ -520,7 +520,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-040: No cookies sent when jar has no matching cookies")]
-    public void No_Cookies_Sent_When_No_Match()
+    public void Should_NotSendCookies_When_NoCookiesMatchUri()
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1"));
@@ -536,7 +536,7 @@ public sealed class CookieJarTests
     [Theory(DisplayName = "RFC6265-5.3-CM-041: Various Expires date formats are parsed correctly")]
     [InlineData("Thu, 01 Jan 2099 00:00:00 GMT")]
     [InlineData("Thu, 01-Jan-2099 00:00:00 GMT")]
-    public void Various_Expires_Formats_Are_Parsed(string expiresValue)
+    public void Should_ParseExpires_When_VariousDateFormats(string expiresValue)
     {
         var jar = new CookieJar();
         jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie($"x=1; Expires={expiresValue}"));
@@ -548,7 +548,7 @@ public sealed class CookieJarTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-CM-042: Cookie with unrecognized Expires format is treated as session cookie")]
-    public void Unrecognized_Expires_Format_Treated_As_Session_Cookie()
+    public void Should_TreatAsSessionCookie_When_ExpiresFormatUnrecognized()
     {
         // If Expires can't be parsed, the cookie should still be stored as session cookie
         var jar = new CookieJar();

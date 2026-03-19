@@ -23,7 +23,7 @@ public sealed class CookieJarThreadSafetyTests
     // ── TS-001–TS-004: Concurrent read + write safety ────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-TS-001: Concurrent ProcessResponse calls don't throw")]
-    public async Task Concurrent_ProcessResponse_Does_Not_Throw()
+    public async Task Should_NotThrow_When_ConcurrentProcessResponse()
     {
         var jar = new CookieJar();
         var exceptions = new ConcurrentBag<Exception>();
@@ -48,7 +48,7 @@ public sealed class CookieJarThreadSafetyTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-TS-002: Concurrent AddCookiesToRequest calls don't throw")]
-    public async Task Concurrent_AddCookiesToRequest_Does_Not_Throw()
+    public async Task Should_NotThrow_When_ConcurrentAddCookiesToRequest()
     {
         var jar = new CookieJar();
 
@@ -81,7 +81,7 @@ public sealed class CookieJarThreadSafetyTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-TS-003: Concurrent read + write (injection + storage) don't throw or corrupt")]
-    public async Task Concurrent_Read_And_Write_Does_Not_Throw_Or_Corrupt()
+    public async Task Should_NotThrowOrCorrupt_When_ConcurrentReadAndWrite()
     {
         var jar = new CookieJar();
         var exceptions = new ConcurrentBag<Exception>();
@@ -130,7 +130,7 @@ public sealed class CookieJarThreadSafetyTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-TS-004: Concurrent Clear + ProcessResponse don't throw")]
-    public async Task Concurrent_Clear_And_ProcessResponse_Does_Not_Throw()
+    public async Task Should_NotThrow_When_ConcurrentClearAndProcessResponse()
     {
         var jar = new CookieJar();
         var exceptions = new ConcurrentBag<Exception>();
@@ -169,7 +169,7 @@ public sealed class CookieJarThreadSafetyTests
     // ── TS-005–TS-007: Correctness under contention ─────────────────────────
 
     [Fact(DisplayName = "RFC6265-5.3-TS-005: Cookie injection returns correct cookies under contention")]
-    public async Task Cookie_Injection_Correct_Under_Contention()
+    public async Task Should_ReturnCorrectCookies_When_ConcurrentInjectionUnderContention()
     {
         var jar = new CookieJar();
 
@@ -212,7 +212,7 @@ public sealed class CookieJarThreadSafetyTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-TS-006: Cookie storage correctly replaces under contention")]
-    public async Task Cookie_Storage_Replaces_Correctly_Under_Contention()
+    public async Task Should_ReplaceCorrectly_When_ConcurrentStorageUnderContention()
     {
         var jar = new CookieJar();
 
@@ -238,7 +238,7 @@ public sealed class CookieJarThreadSafetyTests
     }
 
     [Fact(DisplayName = "RFC6265-5.3-TS-007: Count property is consistent under concurrent modification")]
-    public async Task Count_Consistent_Under_Concurrent_Modification()
+    public async Task Should_BeConsistent_When_ConcurrentCountAndModification()
     {
         var jar = new CookieJar();
         var exceptions = new ConcurrentBag<Exception>();

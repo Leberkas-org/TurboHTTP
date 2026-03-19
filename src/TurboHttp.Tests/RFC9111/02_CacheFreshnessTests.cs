@@ -49,7 +49,7 @@ public sealed class CacheFreshnessTests
     // ── GetFreshnessLifetime ─────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4.2-CF-001: max-age=60 → freshness lifetime = 60s")]
-    public void MaxAge_FreshnessLifetime_60s()
+    public void Should_ReturnFreshnessLifetime60s_When_MaxAge60()
     {
         var entry = MakeEntry(maxAgeSeconds: 60);
         var lifetime = CacheFreshnessEvaluator.GetFreshnessLifetime(entry);
@@ -57,7 +57,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2-CF-002: s-maxage=120 overrides max-age=60 for shared cache")]
-    public void SMaxAge_OverridesMaxAge_SharedCache()
+    public void Should_OverrideMaxAgeWithSMaxAge_When_SharedCache()
     {
         var entry = MakeEntry(maxAgeSeconds: 60, sMaxAgeSeconds: 120);
         var sharedPolicy = new CachePolicy { SharedCache = true };
@@ -66,7 +66,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2-CF-003: s-maxage ignored for private cache")]
-    public void SMaxAge_IgnoredForPrivateCache()
+    public void Should_IgnoreSMaxAge_When_PrivateCache()
     {
         var entry = MakeEntry(maxAgeSeconds: 60, sMaxAgeSeconds: 120);
         var privatePolicy = new CachePolicy { SharedCache = false };
@@ -75,7 +75,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-5.3-CF-004: Expires header used when no max-age")]
-    public void ExpiresHeader_UsedWhenNoMaxAge()
+    public void Should_UseExpiresHeader_When_NoMaxAge()
     {
         var entry = MakeEntry(expires: _baseTime.AddSeconds(300));
         var lifetime = CacheFreshnessEvaluator.GetFreshnessLifetime(entry);
@@ -83,7 +83,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2.2-CF-005: heuristic freshness = 10% of age from Last-Modified")]
-    public void HeuristicFreshness_TenPercentOfAge()
+    public void Should_UseTenPercentOfAge_When_HeuristicFreshness()
     {
         // Date = base, Last-Modified = 1000s before Date → 10% = 100s
         var entry = MakeEntry(lastModified: _baseTime.AddSeconds(-1000));
@@ -92,7 +92,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2.2-CF-006: heuristic freshness capped at 1 day")]
-    public void HeuristicFreshness_CappedAtOneDay()
+    public void Should_CapFreshnessAtOneDay_When_HeuristicFreshnessExceedsOneDay()
     {
         // 10% of 100 days = 10 days → capped at 1 day
         var entry = MakeEntry(lastModified: _baseTime.AddDays(-100));
@@ -101,7 +101,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2-CF-007: no freshness info → lifetime = zero")]
-    public void NoFreshnessInfo_LifetimeZero()
+    public void Should_ReturnLifetimeZero_When_NoFreshnessInfo()
     {
         var entry = MakeEntry();
         var lifetime = CacheFreshnessEvaluator.GetFreshnessLifetime(entry);
@@ -111,7 +111,7 @@ public sealed class CacheFreshnessTests
     // ── GetCurrentAge ────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4.2.3-CF-008: current age uses Age header value")]
-    public void CurrentAge_UsesAgeHeader()
+    public void Should_UseAgeHeader_When_ComputingCurrentAge()
     {
         // Entry was received at _baseTime, Age header = 30s, now = _baseTime + 10s
         var entry = MakeEntry(ageHeaderSeconds: 30);
@@ -122,7 +122,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2.3-CF-009: current age without Age header uses response delay")]
-    public void CurrentAge_WithoutAgeHeader_UsesResponseDelay()
+    public void Should_UseResponseDelay_When_NoAgeHeader()
     {
         // No Age header; date = request+1s; now = request+11s
         var entry = MakeEntry();
@@ -138,7 +138,7 @@ public sealed class CacheFreshnessTests
     // ── IsFresh ──────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4.2-CF-010: fresh entry: freshness_lifetime > current_age → IsFresh=true")]
-    public void IsFresh_True_WhenFreshnessExceedsAge()
+    public void Should_ReturnIsFreshTrue_When_FreshnessLifetimeExceedsCurrentAge()
     {
         var entry = MakeEntry(maxAgeSeconds: 60);
         var now = _baseTime.AddSeconds(10);
@@ -146,7 +146,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4.2-CF-011: stale entry: freshness_lifetime ≤ current_age → IsFresh=false")]
-    public void IsFresh_False_WhenAgeExceedsFreshness()
+    public void Should_ReturnIsFreshFalse_When_CurrentAgeExceedsFreshnessLifetime()
     {
         var entry = MakeEntry(maxAgeSeconds: 10);
         var now = _baseTime.AddSeconds(60);
@@ -156,7 +156,7 @@ public sealed class CacheFreshnessTests
     // ── Evaluate ─────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9111-4-CF-012: Evaluate with null entry → Miss")]
-    public void Evaluate_NullEntry_Miss()
+    public void Should_ReturnMiss_When_EntryIsNull()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var result = CacheFreshnessEvaluator.Evaluate(null, request, DateTimeOffset.UtcNow);
@@ -164,7 +164,7 @@ public sealed class CacheFreshnessTests
     }
 
     [Fact(DisplayName = "RFC9111-4-CF-013: Evaluate with fresh entry → Fresh")]
-    public void Evaluate_FreshEntry_Fresh()
+    public void Should_ReturnFresh_When_EntryIsFresh()
     {
         var entry = MakeEntry(maxAgeSeconds: 60);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
