@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net;
 using Akka.Streams.Dsl;
 using TurboHttp.Protocol.RFC9111;
@@ -257,5 +258,92 @@ public sealed class CacheStorageStageTests : StreamTestBase
         Assert.Single(results);
         Assert.Same(response, results[0]);
         Assert.Equal(0, store.Count);
+    }
+
+    // ── sync fast-path (ByteArrayContent) ────────────────────────────────────
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CSTR-013: sync fast-path — ByteArrayContent body stored correctly")]
+    public async Task CSTR_013_SyncFastPath_ByteArrayContent_BodyStoredCorrectly()
+    {
+        const string url = "http://example.com/sync-body";
+        var store = new HttpCacheStore();
+        var bodyBytes = "sync fast-path body"u8.ToArray();
+        var response = MakeResponse(url, HttpMethod.Get, cacheControl: "max-age=600", body: bodyBytes);
+
+        var results = await RunAsync(store, response);
+
+        Assert.Single(results);
+        var entry = store.Get(response.RequestMessage!);
+        Assert.NotNull(entry);
+        Assert.Equal(bodyBytes, entry.Body);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CSTR-014: sync fast-path — response pushed downstream after body stored")]
+    public async Task CSTR_014_SyncFastPath_ResponsePushedAfterBodyStored()
+    {
+        const string url = "http://example.com/sync-order";
+        var store = new HttpCacheStore();
+        var bodyBytes = "order check"u8.ToArray();
+        var response = MakeResponse(url, HttpMethod.Get, cacheControl: "max-age=600", body: bodyBytes);
+
+        var results = await RunAsync(store, response);
+
+        // Body must be stored before downstream sees the response
+        Assert.Single(results);
+        Assert.Same(response, results[0]);
+        var entry = store.Get(response.RequestMessage!);
+        Assert.NotNull(entry);
+        Assert.Equal(bodyBytes, entry.Body);
+    }
+
+    // ── async path (StreamContent) ───────────────────────────────────────────
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CSTR-015: async path — StreamContent body stored correctly")]
+    public async Task CSTR_015_AsyncPath_StreamContent_BodyStoredCorrectly()
+    {
+        const string url = "http://example.com/async-body";
+        var store = new HttpCacheStore();
+        var bodyBytes = "async stream body"u8.ToArray();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            RequestMessage = request,
+            Content = new StreamContent(new MemoryStream(bodyBytes))
+        };
+        response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
+        response.Headers.Date = DateTimeOffset.UtcNow;
+
+        var results = await RunAsync(store, response);
+
+        Assert.Single(results);
+        var entry = store.Get(request);
+        Assert.NotNull(entry);
+        Assert.Equal(bodyBytes, entry.Body);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CSTR-016: async path — response pushed downstream after body read")]
+    public async Task CSTR_016_AsyncPath_ResponsePushedAfterBodyRead()
+    {
+        const string url = "http://example.com/async-order";
+        var store = new HttpCacheStore();
+        var bodyBytes = "async order check"u8.ToArray();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            RequestMessage = request,
+            Content = new StreamContent(new MemoryStream(bodyBytes))
+        };
+        response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
+        response.Headers.Date = DateTimeOffset.UtcNow;
+
+        var results = await RunAsync(store, response);
+
+        Assert.Single(results);
+        Assert.Same(response, results[0]);
+        var entry = store.Get(request);
+        Assert.NotNull(entry);
+        Assert.Equal(bodyBytes, entry.Body);
     }
 }

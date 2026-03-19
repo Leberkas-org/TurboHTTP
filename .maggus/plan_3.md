@@ -400,13 +400,13 @@ public override void PreStart()
 **Alternative (simpler):** Since response bodies in TurboHttp are typically already fully buffered in memory (through DecompressionStage or direct buffer allocation), `ReadAsByteArrayAsync()` is synchronous in practice. A sync fast-path for `ByteArrayContent`/`ReadOnlyMemoryContent` with async fallback could be simpler.
 
 **Acceptance Criteria:**
-- [ ] No `GetAwaiter().GetResult()` remaining in the file
-- [ ] Async read using `GetAsyncCallback` or synchronous fast-path when content is already in memory
-- [ ] Response is only pushed downstream after body has been read
-- [ ] Unit tests: Cache stores body correctly (async path)
-- [ ] Unit tests: Cache stores body correctly (sync fast-path, if implemented)
-- [ ] Existing CacheStorageStage tests stay green
-- [ ] Build compiles without errors
+- [x] No `GetAwaiter().GetResult()` remaining in the file
+- [x] Async read using `GetAsyncCallback` or synchronous fast-path when content is already in memory
+- [x] Response is only pushed downstream after body has been read
+- [x] Unit tests: Cache stores body correctly (async path)
+- [x] Unit tests: Cache stores body correctly (sync fast-path, if implemented)
+- [x] Existing CacheStorageStage tests stay green
+- [x] Build compiles without errors
 
 ---
 

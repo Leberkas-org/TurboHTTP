@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC9111;
@@ -19,7 +20,9 @@ namespace TurboHttp.Streams.Stages;
 ///   </description></item>
 ///   <item><description>
 ///     <b>2xx (cacheable)</b> — calls <see cref="HttpCacheStore.Put"/> to store the response.
-///     The body is read synchronously and stored alongside request/response timestamps.
+///     The body is read via a synchronous fast-path when content is already buffered in memory
+///     (e.g. <see cref="ByteArrayContent"/>), or asynchronously via <see cref="GraphStageLogic.GetAsyncCallback{T}"/>
+///     for other content types.
 ///   </description></item>
 ///   <item><description>
 ///     <b>Unsafe method (POST/PUT/DELETE/PATCH)</b> — calls <see cref="HttpCacheStore.Invalidate"/>
@@ -54,6 +57,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
     private sealed class Logic : GraphStageLogic
     {
         private readonly CacheStorageStage _stage;
+        private Action<(HttpResponseMessage response, byte[] body)>? _onBodyRead;
 
         public Logic(CacheStorageStage stage) : base(stage.Shape)
         {
@@ -67,10 +71,17 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
 
                     if (request is not null)
                     {
-                        response = Process(request, response);
+                        var (result, needsAsyncRead) = Process(request, response);
+                        if (!needsAsyncRead)
+                        {
+                            Push(stage._outlet, result);
+                        }
+                        // When needsAsyncRead is true, the async callback will push downstream.
                     }
-
-                    Push(stage._outlet, response);
+                    else
+                    {
+                        Push(stage._outlet, response);
+                    }
                 },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: FailStage);
@@ -80,7 +91,24 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                 onDownstreamFinish: _ => CompleteStage());
         }
 
-        private HttpResponseMessage Process(HttpRequestMessage request, HttpResponseMessage response)
+        public override void PreStart()
+        {
+            _onBodyRead = GetAsyncCallback<(HttpResponseMessage response, byte[] body)>(tuple =>
+            {
+                var (response, body) = tuple;
+                var now = DateTimeOffset.UtcNow;
+                _stage._store.Put(response.RequestMessage!, response, body, now, now);
+                Push(_stage._outlet, response);
+            });
+        }
+
+        /// <summary>
+        /// Processes a response for caching. Returns the response to push and whether an async
+        /// body read was initiated. When <c>needsAsyncRead</c> is true, the caller must NOT push
+        /// — the async callback will push after the body has been read.
+        /// </summary>
+        private (HttpResponseMessage response, bool needsAsyncRead) Process(
+            HttpRequestMessage request, HttpResponseMessage response)
         {
             var method = request.Method;
             var isUnsafe = method == HttpMethod.Post
@@ -96,7 +124,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                     _stage._store.Invalidate(request.RequestUri);
                 }
 
-                return response;
+                return (response, false);
             }
 
             if (response.StatusCode == HttpStatusCode.NotModified)
@@ -112,21 +140,38 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                     var now = DateTimeOffset.UtcNow;
                     _stage._store.Put(request, merged, entry.Body, now, now);
 
-                    return merged;
+                    return (merged, false);
                 }
 
-                return response;
+                return (response, false);
             }
 
             if ((int)response.StatusCode >= 200 && (int)response.StatusCode < 300)
             {
-                // RFC 9111 §3 — store cacheable 2xx responses
-                var body = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
-                var now = DateTimeOffset.UtcNow;
-                _stage._store.Put(request, response, body, now, now);
+                // RFC 9111 §3 — store cacheable 2xx responses.
+                // Sync fast-path: ReadAsByteArrayAsync on ByteArrayContent completes synchronously.
+                var task = response.Content.ReadAsByteArrayAsync();
+
+                if (task.IsCompletedSuccessfully)
+                {
+                    var body = task.Result;
+                    var now = DateTimeOffset.UtcNow;
+                    _stage._store.Put(request, response, body, now, now);
+                    return (response, false);
+                }
+
+                // Async fallback: content not yet available — schedule callback.
+                var callback = _onBodyRead!;
+                var capturedResponse = response;
+                task.ContinueWith(t =>
+                {
+                    callback((capturedResponse, t.Result));
+                }, TaskContinuationOptions.ExecuteSynchronously);
+
+                return (response, true);
             }
 
-            return response;
+            return (response, false);
         }
     }
 }
