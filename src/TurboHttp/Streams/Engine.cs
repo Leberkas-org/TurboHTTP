@@ -67,6 +67,32 @@ public class Engine
             MaxResponseContentBufferSize: 1024 * 1024);
     }
 
+    /// <summary>
+    /// Builds the three-island pipeline that processes HTTP requests end-to-end.
+    /// <para><b>Stage ordering rationale (invariants verified in StageOrderingTests):</b></para>
+    /// <para><b>Pre-processing island (fused island 1):</b></para>
+    /// <list type="number">
+    ///   <item><description>RequestEnricherStage — applies BaseAddress, DefaultVersion, DefaultHeaders.</description></item>
+    ///   <item><description>MergePreferred(redirect) — redirect feedback enters HERE so redirected requests
+    ///         get fresh cookies (INV-7) but skip re-enrichment (INV-9, preserves original Version).</description></item>
+    ///   <item><description>CookieInjectionStage — RFC 6265 §5.4. Must run before CacheLookup because cookies
+    ///         may be part of the Vary key (INV-2).</description></item>
+    ///   <item><description>MergePreferred(retry) — retry feedback enters HERE so retried requests reuse the
+    ///         same cookies from the original pass (INV-8).</description></item>
+    ///   <item><description>CacheLookupStage — RFC 9111 §4. Cache hits bypass the engine and retry stages
+    ///         entirely, merging into post-processing after RetryStage (INV-10).</description></item>
+    /// </list>
+    /// <para><b>Protocol engine island (fused island 2, async boundary):</b></para>
+    /// <list type="number">
+    ///   <item><description>BuildEngineCoreGraph — version-specific encode/decode per GroupByHostKey substream.
+    ///         ConnectionReuseStage runs inside each substream, signalling connection lifecycle decisions
+    ///         before the response crosses the async boundary into post-processing (INV-1).</description></item>
+    ///   <item><description>DecompressionStage — RFC 9110 §8.4. Runs after decode but before post-processing,
+    ///         so cached entries store decompressed bodies (INV-6).</description></item>
+    /// </list>
+    /// <para><b>Post-processing island (fused island 3, async boundary):</b></para>
+    /// <para>See <see cref="BuildPostProcessGraph"/> for the internal ordering of this island.</para>
+    /// </summary>
     private static Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> BuildExtendedPipeline(
         IActorRef poolRouter,
         TurboClientOptions options,
@@ -150,8 +176,25 @@ public class Engine
 
     /// <summary>
     /// Builds the post-processing sub-graph as a single fused island.
-    /// Contains: CookieStorage → CacheStorage → Retry → CacheMerge → Redirect.
-    /// Exposed ports: 2 inlets (response, cache hits), 3 outlets (response, retry feedback, redirect feedback).
+    /// <para><b>Stage ordering rationale (invariants verified in StageOrderingTests):</b></para>
+    /// <list type="number">
+    ///   <item><description>CookieStorageStage — RFC 6265 §5.3. Stores Set-Cookie headers in the shared CookieJar.
+    ///         Must run before CacheStorage so that subsequent requests (including retries/redirects)
+    ///         have up-to-date cookies (INV-3).</description></item>
+    ///   <item><description>CacheStorageStage — RFC 9111 §3. Stores cacheable 2xx responses (decompressed bodies,
+    ///         thanks to INV-6). Only 2xx responses are cached, so 408/503 retryable responses pass through
+    ///         without being stored. Must run before RetryStage (INV-4).</description></item>
+    ///   <item><description>RetryStage — RFC 9110 §9.2. Evaluates idempotent retry for 408/503 responses.
+    ///         Out0 = final response (pass-through), Out1 = retry feedback to pre-processing.
+    ///         Must run before RedirectStage: a 503 should be retried, not redirected (INV-5).</description></item>
+    ///   <item><description>Merge(cache hits) — merges RetryStage.Out0 with cache hits from CacheLookupStage.
+    ///         Cache hits bypass RetryStage entirely, which is correct since cached responses
+    ///         never need retry evaluation (INV-10).</description></item>
+    ///   <item><description>RedirectStage — RFC 9110 §15.4. Evaluates 301/302/303/307/308 redirects.
+    ///         Out0 = final response to client, Out1 = redirect feedback to pre-processing.</description></item>
+    /// </list>
+    /// <para>Exposed ports: 2 inlets (response from engine, cache hits from lookup),
+    /// 3 outlets (final response, retry feedback, redirect feedback).</para>
     /// </summary>
     private static IGraph<PostProcessShape, NotUsed> BuildPostProcessGraph(
         CookieJar cookieJar,
