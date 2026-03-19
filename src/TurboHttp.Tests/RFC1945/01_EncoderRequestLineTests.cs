@@ -37,36 +37,6 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Fact]
-    public void RequestLine_Get_IsCorrectlyFormatted()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
-        var (requestLine, _, _) = ParseRaw(request);
-
-        Assert.Equal("GET /path HTTP/1.0", requestLine);
-    }
-
-    [Fact]
-    public void RequestLine_Head_IsCorrectlyFormatted()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Head, "http://example.com/resource");
-        var (requestLine, _, _) = ParseRaw(request);
-
-        Assert.Equal("HEAD /resource HTTP/1.0", requestLine);
-    }
-
-    [Fact]
-    public void RequestLine_Post_IsCorrectlyFormatted()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")
-        {
-            Content = new StringContent("data")
-        };
-        var (requestLine, _, _) = ParseRaw(request);
-
-        Assert.Equal("POST /submit HTTP/1.0", requestLine);
-    }
-
-    [Fact]
     public void RequestLine_ContainsExactlyOneSpaceBetweenParts()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -160,17 +130,17 @@ public sealed class Http10EncoderRequestLineTests
     }
 
     [Theory(DisplayName = "enc1-m-001: All HTTP methods produce correct uppercase request-line")]
-    [InlineData("GET")]
-    [InlineData("POST")]
-    [InlineData("PUT")]
-    [InlineData("DELETE")]
-    [InlineData("PATCH")]
-    [InlineData("HEAD")]
-    [InlineData("OPTIONS")]
-    [InlineData("TRACE")]
-    public void Should_ProduceCorrectRequestLine_When_UsingHttpMethod(string method)
+    [InlineData("GET", "/path")]
+    [InlineData("POST", "/submit")]
+    [InlineData("PUT", "/res")]
+    [InlineData("DELETE", "/res")]
+    [InlineData("PATCH", "/res")]
+    [InlineData("HEAD", "/resource")]
+    [InlineData("OPTIONS", "/res")]
+    [InlineData("TRACE", "/res")]
+    public void Should_ProduceCorrectRequestLine_When_UsingHttpMethod(string method, string path)
     {
-        var request = new HttpRequestMessage(new HttpMethod(method), "http://example.com/res");
+        var request = new HttpRequestMessage(new HttpMethod(method), $"http://example.com{path}");
         if (method is "POST" or "PUT" or "PATCH")
         {
             request.Content = new StringContent("body");
@@ -178,7 +148,7 @@ public sealed class Http10EncoderRequestLineTests
 
         var (requestLine, _, _) = ParseRaw(request);
 
-        Assert.Equal($"{method} /res HTTP/1.0", requestLine);
+        Assert.Equal($"{method} {path} HTTP/1.0", requestLine);
     }
 
     [Fact(DisplayName = "enc1-uri-001: Missing path normalized to /")]

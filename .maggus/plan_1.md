@@ -115,12 +115,12 @@ declared once and all four `HostPoolActor*` files contain only test-relevant log
 a new HTTP method requires a single `[InlineData]` line rather than a new test method.
 
 **Acceptance Criteria:**
-- [ ] Identify all `[Fact]` methods in `RFC1945/01_EncoderRequestLineTests.cs` that differ only
+- [x] Identify all `[Fact]` methods in `RFC1945/01_EncoderRequestLineTests.cs` that differ only
   by HTTP method string
-- [ ] Consolidate into one or more `[Theory]` methods with `[InlineData]` per method
-- [ ] DisplayName format preserved: `"RFC-section-cat-nnn: description (METHOD)"`
-- [ ] Test count for this file decreases; coverage does not
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC1945"` all pass
+- [x] Consolidate into one or more `[Theory]` methods with `[InlineData]` per method
+- [x] DisplayName format preserved: `"RFC-section-cat-nnn: description (METHOD)"`
+- [x] Test count for this file decreases; coverage does not
+- [x] `dotnet test --filter "FullyQualifiedName~RFC1945"` all pass
 
 ---
 
