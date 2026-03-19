@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests the HTTP/1.1 request encoder stage per RFC 9112.
+/// Verifies that request lines, headers, and chunked bodies are correctly serialised to byte streams.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11EncoderStage"/>.
+/// RFC 9112 §3: HTTP/1.1 request message format, request-line, and header fields.
+/// </remarks>
 public sealed class Http11EncoderStageTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)

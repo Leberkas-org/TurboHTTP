@@ -3,6 +3,14 @@ using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 connection management behaviour via the full engine per RFC 9112.
+/// Verifies that Connection: close, keep-alive, and version downgrade semantics are correctly handled.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11DecoderStage"/> and connection management logic.
+/// RFC 9112 §9.6: HTTP/1.1 connection option handling and persistent connection negotiation.
+/// </remarks>
 public sealed class Http11StageConnectionMgmtTests : EngineTestBase
 {
     private static Http11Engine Engine => new();

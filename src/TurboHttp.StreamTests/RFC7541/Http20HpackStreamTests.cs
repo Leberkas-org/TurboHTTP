@@ -5,6 +5,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC7541;
 
+/// <summary>
+/// Tests HPACK header compression through the HTTP/2 request pipeline per RFC 7541.
+/// Verifies dynamic table indexing, Huffman encoding, and header eviction across sequential requests.
+/// </summary>
+/// <remarks>
+/// Stages under test: <see cref="HpackEncoder"/> and <see cref="HpackDecoder"/> via <see cref="Request2FrameStage"/>.
+/// RFC 7541 §2–§6: HPACK header compression, dynamic table management, and Huffman encoding.
+/// </remarks>
 public sealed class Http20HpackStreamTests : StreamTestBase
 {
     /// <summary>

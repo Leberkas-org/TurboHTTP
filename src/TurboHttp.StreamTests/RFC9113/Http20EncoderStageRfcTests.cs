@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// RFC-tagged tests for the HTTP/2 frame encoder stage per RFC 9113.
+/// Verifies that all frame types are correctly serialised to their binary wire format with proper headers and flags.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20EncoderStage"/>.
+/// RFC 9113 §4–§6: HTTP/2 frame serialisation, type codes, flags, and 9-byte frame header format.
+/// </remarks>
 public sealed class Http20EncoderStageRfcTests : StreamTestBase
 {
     private async Task<byte[]> EncodeAsync(Http2Frame frame)

@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 connection preface injection stage per RFC 9113.
+/// Verifies that the client connection preface magic bytes are prepended exactly once at the start of a connection.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="PrependPrefaceStage"/>.
+/// RFC 9113 §3.4: HTTP/2 client connection preface requirement and format.
+/// </remarks>
 public sealed class Http20PrependPrefaceStageTests : StreamTestBase
 {
     private static readonly byte[] PrefaceMagic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();

@@ -4,6 +4,14 @@ using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// RFC-tagged round-trip tests for the HTTP/1.1 engine per RFC 9112.
+/// Verifies end-to-end request encoding and response decoding through the full HTTP/1.1 protocol flow.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11Engine"/>.
+/// RFC 9112 §3–§9: HTTP/1.1 full message exchange including chunked encoding and connection management.
+/// </remarks>
 public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
 {
     private static Http11Engine Engine => new();

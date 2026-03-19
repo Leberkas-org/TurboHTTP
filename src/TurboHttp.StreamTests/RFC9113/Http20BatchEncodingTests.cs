@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the batch encoding consolidation behaviour of the HTTP/2 encoder stage per RFC 9113.
+/// Verifies that multiple output items are correctly concatenated into a single buffer for efficient sending.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20EncoderStage"/>.
+/// RFC 9113 §4: HTTP/2 frame serialisation and buffer management for outbound data.
+/// </remarks>
 public sealed class Http20BatchEncodingTests : StreamTestBase
 {
     [Fact(DisplayName = "BatchConsolidate: two DataItems are concatenated into single buffer")]

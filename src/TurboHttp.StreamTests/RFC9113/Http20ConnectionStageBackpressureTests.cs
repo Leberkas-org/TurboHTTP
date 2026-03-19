@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests backpressure behaviour in the HTTP/2 connection stage per RFC 9113.
+/// Verifies that the stage correctly applies flow control and does not emit frames faster than the downstream can consume.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20ConnectionStage"/>.
+/// RFC 9113 §5.2: HTTP/2 flow control and backpressure in connection-level frame processing.
+/// </remarks>
 public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
 {
     /// <summary>

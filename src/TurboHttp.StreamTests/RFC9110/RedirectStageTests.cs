@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9110;
 
+/// <summary>
+/// Tests the redirect handling stage per RFC 9110.
+/// Verifies that 3xx responses trigger new requests with correct method rewriting, URI resolution, and loop detection.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="RedirectStage"/>.
+/// RFC 9110 §15.4: Redirect status codes, method preservation rules, and redirect loop protection.
+/// </remarks>
 public sealed class RedirectStageTests : StreamTestBase
 {
     /// <summary>

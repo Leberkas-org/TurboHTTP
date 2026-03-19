@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// RFC-tagged tests for chunked transfer encoding in the HTTP/1.1 decoder stage per RFC 9112.
+/// Verifies that chunked body reassembly, chunk extensions, and trailing headers are correctly handled.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11DecoderStage"/>.
+/// RFC 9112 §7.1: HTTP/1.1 chunked transfer encoding format and body reassembly.
+/// </remarks>
 public sealed class Http11DecoderStageChunkedRfcTests : StreamTestBase
 {
     private static IInputItem Chunk(string ascii)

@@ -5,6 +5,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC6265;
 
+/// <summary>
+/// Tests the cookie storage stage per RFC 6265.
+/// Verifies that Set-Cookie response headers are parsed and stored in the cookie jar correctly.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CookieStorageStage"/>.
+/// RFC 6265 §5.2–§5.3: Cookie attribute processing, storage model, and domain/path matching.
+/// </remarks>
 public sealed class CookieStorageStageTests : StreamTestBase
 {
     private Task<IImmutableList<HttpResponseMessage>> RunAsync(

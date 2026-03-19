@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 frame decoder stage per RFC 9113.
+/// Verifies that binary-encoded HTTP/2 frames are correctly parsed from byte streams including partial frames.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20DecoderStage"/>.
+/// RFC 9113 §4: HTTP/2 frame format — 9-byte header, payload, and stateful parsing across TCP boundaries.
+/// </remarks>
 public sealed class Http20DecoderStageTests : StreamTestBase
 {
     private static IInputItem Chunk(byte[] data)

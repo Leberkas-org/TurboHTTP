@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// RFC-tagged tests for the HTTP/2 frame decoder stage per RFC 9113.
+/// Verifies frame type parsing, flags, stream IDs, and error handling for all defined frame types.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20DecoderStage"/>.
+/// RFC 9113 §4–§6: HTTP/2 frame format, frame types, and error detection.
+/// </remarks>
 public sealed class Http20DecoderStageRfcTests : StreamTestBase
 {
     private static IInputItem Chunk(byte[] data)

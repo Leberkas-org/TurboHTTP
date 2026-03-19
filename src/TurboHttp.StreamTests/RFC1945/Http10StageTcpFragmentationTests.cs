@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC1945;
 
+/// <summary>
+/// Tests the HTTP/1.0 decoder stage's handling of TCP-fragmented responses per RFC 1945.
+/// Verifies that the decoder correctly reassembles messages split across multiple byte chunks.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http10DecoderStage"/>.
+/// RFC 1945 §6: HTTP/1.0 response message framing and parsing across partial TCP segments.
+/// </remarks>
 public sealed class Http10StageTcpFragmentationTests : StreamTestBase
 {
     private static DataItem Chunk(byte[] data)

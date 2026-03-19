@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 frame encoder stage per RFC 9113.
+/// Verifies that HEADERS, DATA, SETTINGS, and other frame types are correctly serialised to binary wire format.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20EncoderStage"/>.
+/// RFC 9113 §4: HTTP/2 frame format, type-specific payload layout, and serialisation correctness.
+/// </remarks>
 public sealed class Http20EncoderStageTests : StreamTestBase
 {
     private static readonly RequestEndpoint TestEndpoint = new()

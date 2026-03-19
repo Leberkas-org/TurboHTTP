@@ -3,6 +3,14 @@ using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 response correlation via the full engine per RFC 9112.
+/// Verifies that RequestMessage is correctly set on each response when requests are sent through the pipeline.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CorrelationHttp1XStage"/>.
+/// RFC 9112 §9.3: HTTP/1.1 pipeline ordering ensuring request-response identity is preserved.
+/// </remarks>
 public sealed class Http11ResponseCorrelationTests : EngineTestBase
 {
     private static readonly Func<byte[]> Ok200 =

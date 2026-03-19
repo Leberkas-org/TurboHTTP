@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests the connection reuse stage per RFC 9112.
+/// Verifies that keep-alive and close decisions are correctly derived from response headers and HTTP version.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="ConnectionReuseStage"/>.
+/// RFC 9112 §9: HTTP/1.1 persistent connection management and connection reuse eligibility.
+/// </remarks>
 public sealed class ConnectionReuseStageTests : StreamTestBase
 {
     private async Task<(IReadOnlyList<HttpResponseMessage> responses, IReadOnlyList<ConnectionReuseItem> decisions)>

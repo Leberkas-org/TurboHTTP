@@ -9,6 +9,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests stream acquisition and signalling in the HTTP/2 connection stage per RFC 9113.
+/// Verifies that request frames are forwarded to the server and that stream-open signals are emitted correctly.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20ConnectionStage"/>.
+/// RFC 9113 §5.1: HTTP/2 stream state transitions and client-initiated stream opening.
+/// </remarks>
 public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
 {
     /// <summary>

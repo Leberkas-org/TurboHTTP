@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 stream stage per RFC 9113.
+/// Verifies that HEADERS and DATA frames are assembled into complete HttpResponseMessage objects with HPACK decoding.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20StreamStage"/>.
+/// RFC 9113 §8.1: HTTP/2 response message assembly from HEADERS and DATA frames including decompression.
+/// </remarks>
 public sealed class Http20StreamStageTests : StreamTestBase
 {
     private readonly HpackEncoder _hpack = new(useHuffman: false);

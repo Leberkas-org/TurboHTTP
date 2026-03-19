@@ -5,6 +5,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC6265;
 
+/// <summary>
+/// Tests the cookie injection stage per RFC 6265.
+/// Verifies that applicable cookies are retrieved from the jar and injected into outgoing request headers.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CookieInjectionStage"/>.
+/// RFC 6265 §5.4: Cookie header construction and domain/path selection rules.
+/// </remarks>
 public sealed class CookieInjectionStageTests : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunAsync(

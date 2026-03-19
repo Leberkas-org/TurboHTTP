@@ -4,6 +4,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9110;
 
+/// <summary>
+/// Tests the content encoding decompression stage per RFC 9110.
+/// Verifies that gzip, deflate, and brotli encoded response bodies are correctly decompressed.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="DecompressionStage"/>.
+/// RFC 9110 §8.4: Content-Encoding header and transparent decompression of response bodies.
+/// </remarks>
 public sealed class DecompressionStageTests : StreamTestBase
 {
     private async Task<IReadOnlyList<HttpResponseMessage>> RunAsync(

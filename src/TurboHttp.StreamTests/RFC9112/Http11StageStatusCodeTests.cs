@@ -3,6 +3,14 @@ using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests HTTP/1.1 response status code parsing via the full engine per RFC 9110.
+/// Verifies that 1xx, 2xx, 3xx, 4xx, and 5xx status codes are correctly decoded and exposed on the response.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11DecoderStage"/>.
+/// RFC 9110 §15.1: HTTP status code classes and their required handling by clients.
+/// </remarks>
 public sealed class Http11StageStatusCodeTests : EngineTestBase
 {
     private static Http11Engine Engine => new();

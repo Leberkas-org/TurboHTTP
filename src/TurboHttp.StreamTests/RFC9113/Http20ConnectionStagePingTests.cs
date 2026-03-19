@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests PING frame handling in the HTTP/2 connection stage per RFC 9113.
+/// Verifies that PING frames from the server receive a PING ACK response and that initiation is handled correctly.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20ConnectionStage"/>.
+/// RFC 9113 §6.7: HTTP/2 PING frame format, ACK flag, and connection health probing.
+/// </remarks>
 public sealed class Http20ConnectionStagePingTests : StreamTestBase
 {
     /// <summary>

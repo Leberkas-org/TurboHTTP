@@ -431,9 +431,9 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.StreamTests/RFC1945/` + `RFC9112/` + `RFC9113/` + `RFC7541/` + `RFC9110/` + `RFC9111/` + `RFC6265/`
 
 **Acceptance Criteria:**
-- [ ] Every test class has `<summary>` + `<remarks>`
-- [ ] `<see cref="..."/>` pointing to the stage/class under test
-- [ ] Build green
+- [x] Every test class has `<summary>` + `<remarks>`
+- [x] `<see cref="..."/>` pointing to the stage/class under test
+- [x] Build green
 
 ---
 

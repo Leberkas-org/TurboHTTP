@@ -9,6 +9,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests GOAWAY frame handling in the HTTP/2 connection stage per RFC 9113.
+/// Verifies that a received GOAWAY causes the stage to stop accepting new streams and drain existing ones.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20ConnectionStage"/>.
+/// RFC 9113 §6.8: HTTP/2 GOAWAY frame semantics, graceful shutdown, and last stream ID.
+/// </remarks>
 public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
 {
     /// <summary>

@@ -3,6 +3,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 stream ID allocator stage per RFC 9113.
+/// Verifies that client-initiated streams are assigned odd, monotonically increasing IDs starting from 1.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="StreamIdAllocatorStage"/>.
+/// RFC 9113 §5.1.1: HTTP/2 stream identifier allocation rules for client-initiated streams.
+/// </remarks>
 public sealed class Http20StreamIdAllocatorStageTests : StreamTestBase
 {
     private async Task<IReadOnlyList<(HttpRequestMessage Request, int StreamId)>> RunAsync(

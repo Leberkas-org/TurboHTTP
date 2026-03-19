@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests the HTTP/1.1 decoder stage's handling of TCP-fragmented responses per RFC 9112.
+/// Verifies that the decoder correctly reassembles messages split across multiple byte chunks.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11DecoderStage"/>.
+/// RFC 9112 §2.2: HTTP/1.1 message parsing robustness across partial TCP segments.
+/// </remarks>
 public sealed class Http11StageFragmentationTests : StreamTestBase
 {
     private static IInputItem Chunk(byte[] data)

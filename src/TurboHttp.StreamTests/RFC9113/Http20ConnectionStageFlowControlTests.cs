@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests HTTP/2 connection-level flow control in the connection stage per RFC 9113.
+/// Verifies that WINDOW_UPDATE frames are processed and that the connection window is correctly maintained.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20ConnectionStage"/>.
+/// RFC 9113 §5.2: HTTP/2 flow control, WINDOW_UPDATE frame processing, and window size management.
+/// </remarks>
 public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 {
     /// <summary>

@@ -5,6 +5,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// RFC-tagged tests for HTTP/2 stream ID assignment rules per RFC 9113.
+/// Verifies that stream IDs are odd, monotonically increasing, and that stream ID exhaustion is handled.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="StreamIdAllocatorStage"/>.
+/// RFC 9113 §5.1.1: HTTP/2 stream identifier rules, client-initiated odd IDs, and exhaustion handling.
+/// </remarks>
 public sealed class Http20StreamIdRfcTests : StreamTestBase
 {
     private static HttpRequestMessage GetRequest(string path = "/")

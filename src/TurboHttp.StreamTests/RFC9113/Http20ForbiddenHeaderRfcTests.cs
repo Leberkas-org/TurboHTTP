@@ -5,6 +5,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// RFC-tagged tests for forbidden header enforcement in the HTTP/2 request pipeline per RFC 9113.
+/// Verifies that connection-specific headers prohibited by HTTP/2 are excluded from HEADERS frames.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Request2FrameStage"/>.
+/// RFC 9113 §8.2.2: HTTP/2 forbidden header fields that must not appear in HTTP/2 requests.
+/// </remarks>
 public sealed class Http20ForbiddenHeaderRfcTests : StreamTestBase
 {
     /// <summary>

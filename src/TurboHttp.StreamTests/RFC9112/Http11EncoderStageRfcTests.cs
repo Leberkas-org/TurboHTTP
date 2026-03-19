@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// RFC-tagged tests for the HTTP/1.1 request encoder stage per RFC 9112.
+/// Verifies header folding, Host header presence, Content-Length, and chunked transfer encoding as mandated.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11EncoderStage"/>.
+/// RFC 9112 §3–§6: HTTP/1.1 request-line, header fields, and transfer coding rules.
+/// </remarks>
 public sealed class Http11EncoderStageRfcTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)

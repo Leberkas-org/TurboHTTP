@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// RFC-tagged tests for HTTP/2 pseudo-header field generation per RFC 9113.
+/// Verifies that :method, :scheme, :path, and :authority pseudo-headers are correctly populated in HEADERS frames.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Request2FrameStage"/>.
+/// RFC 9113 §8.3: HTTP/2 pseudo-header fields, their required presence, and correct values.
+/// </remarks>
 public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
 {
     private static HttpRequestMessage GetRequest(string uri = "http://example.com/")

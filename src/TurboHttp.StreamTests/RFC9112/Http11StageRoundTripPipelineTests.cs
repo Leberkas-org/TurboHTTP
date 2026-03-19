@@ -3,6 +3,14 @@ using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Round-trip pipeline tests for HTTP/1.1 request encoding and response decoding per RFC 9112.
+/// Verifies that multiple pipelined requests are matched to their responses in FIFO order.
+/// </summary>
+/// <remarks>
+/// Stages under test: <see cref="Http11EncoderStage"/> and <see cref="Http11DecoderStage"/>.
+/// RFC 9112 §9.3: HTTP/1.1 pipeline request ordering and response correlation.
+/// </remarks>
 public sealed class Http11StageRoundTripPipelineTests : EngineTestBase
 {
     private static readonly Func<byte[]> Ok200 =

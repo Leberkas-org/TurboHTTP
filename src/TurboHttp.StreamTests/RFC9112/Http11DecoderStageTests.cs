@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests the HTTP/1.1 response decoder stage per RFC 9112.
+/// Verifies that status lines, headers, content-length bodies, and chunked transfer encoding are correctly parsed.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11DecoderStage"/>.
+/// RFC 9112 §4–§7: HTTP/1.1 response message format, header parsing, and message body framing.
+/// </remarks>
 public sealed class Http11DecoderStageTests : StreamTestBase
 {
     private static IInputItem Chunk(string ascii)

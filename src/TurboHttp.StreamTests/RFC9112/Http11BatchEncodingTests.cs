@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests the batch encoding consolidation behaviour of the HTTP/1.1 encoder stage per RFC 9112.
+/// Verifies that multiple output items are correctly concatenated into a single buffer for efficient sending.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11EncoderStage"/>.
+/// RFC 9112 §6: HTTP/1.1 message body framing and transfer encoding.
+/// </remarks>
 public sealed class Http11BatchEncodingTests : StreamTestBase
 {
     [Fact(DisplayName = "RFC9112-6-11BE-001: BatchConsolidate two DataItems concatenated into single buffer")]

@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 request methods per RFC 1945.
+/// Verifies that GET, POST, and HEAD requests are correctly encoded and that the resulting responses are decoded.
+/// </summary>
+/// <remarks>
+/// Stages under test: <see cref="Http10EncoderStage"/> and <see cref="Http10DecoderStage"/>.
+/// RFC 1945 §8: HTTP/1.0 request methods and their expected behaviour.
+/// </remarks>
 public sealed class Http10StageRoundTripMethodTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)

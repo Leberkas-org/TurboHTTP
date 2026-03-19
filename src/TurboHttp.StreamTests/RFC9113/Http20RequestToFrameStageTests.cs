@@ -5,6 +5,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 request-to-frame conversion stage per RFC 9113.
+/// Verifies that HttpRequestMessage objects are correctly converted to HEADERS and DATA frames with HPACK encoding.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Request2FrameStage"/>.
+/// RFC 9113 §8.1: HTTP/2 request message mapping to HEADERS frames and pseudo-header fields.
+/// </remarks>
 public sealed class Http20RequestToFrameStageTests : StreamTestBase
 {
     private static HttpRequestMessage GetRequest(string url = "http://example.com/path")

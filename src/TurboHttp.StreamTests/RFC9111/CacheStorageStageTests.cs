@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9111;
 
+/// <summary>
+/// Tests the cache storage stage per RFC 9111.
+/// Verifies that cacheable responses are stored correctly and non-cacheable responses pass through unmodified.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CacheStorageStage"/>.
+/// RFC 9111 §3: Storing responses, cache-control directives, and Vary header handling.
+/// </remarks>
 public sealed class CacheStorageStageTests : StreamTestBase
 {
     /// <summary>Materialises a CacheStorageStage and collects all output responses.</summary>

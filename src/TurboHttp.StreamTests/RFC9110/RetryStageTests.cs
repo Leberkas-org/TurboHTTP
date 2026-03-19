@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9110;
 
+/// <summary>
+/// Tests the retry handling stage per RFC 9110.
+/// Verifies that idempotent requests are retried on transient failures and that Retry-After is respected.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="RetryStage"/>.
+/// RFC 9110 §9.2: Idempotency, safe methods, and retry semantics for failed requests.
+/// </remarks>
 public sealed class RetryStageTests : StreamTestBase
 {
     /// <summary>

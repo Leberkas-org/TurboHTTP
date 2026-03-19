@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests the HTTP/2 stream correlation stage per RFC 9113.
+/// Verifies that responses are matched to their originating requests using stream IDs and RequestMessage is set.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CorrelationHttp20Stage"/>.
+/// RFC 9113 §5.1: HTTP/2 stream state machine and stream-ID-based request-response correlation.
+/// </remarks>
 public sealed class Http20CorrelationStageTests : StreamTestBase
 {
     /// <summary>

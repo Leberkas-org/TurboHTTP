@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9111;
 
+/// <summary>
+/// Tests the cache lookup stage per RFC 9111.
+/// Verifies that cache hits serve fresh responses directly while cache misses forward requests downstream.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CacheLookupStage"/>.
+/// RFC 9111 §4: Cache lookup, freshness evaluation, and cache-hit/miss routing.
+/// </remarks>
 public sealed class CacheLookupStageTests : StreamTestBase
 {
     /// <summary>

@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// Tests memory management and resource disposal in the HTTP/2 stream stage per RFC 9113.
+/// Verifies that stream state is correctly disposed after responses complete, preventing memory leaks.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20StreamStage"/>.
+/// RFC 9113 §6.1: HTTP/2 DATA frame processing and stream lifecycle resource management.
+/// </remarks>
 public sealed class Http20StreamStageMemoryTests : StreamTestBase
 {
     private readonly HpackEncoder _hpack = new(useHuffman: false);

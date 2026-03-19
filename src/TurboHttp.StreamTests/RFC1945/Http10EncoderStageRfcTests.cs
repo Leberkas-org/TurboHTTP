@@ -6,6 +6,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC1945;
 
+/// <summary>
+/// RFC-tagged tests for the HTTP/1.0 request encoder stage per RFC 1945.
+/// Verifies request-line format, header serialisation, and method handling as mandated by the specification.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http10EncoderStage"/>.
+/// RFC 1945 §5: HTTP/1.0 request message format, request-line, and header fields.
+/// </remarks>
 public sealed class Http10EncoderStageRfcTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)

@@ -7,6 +7,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC1945;
 
+/// <summary>
+/// Round-trip tests for HTTP/1.0 header and body encoding/decoding per RFC 1945.
+/// Verifies that headers and body content survive an encode-then-decode cycle intact.
+/// </summary>
+/// <remarks>
+/// Stages under test: <see cref="Http10EncoderStage"/> and <see cref="Http10DecoderStage"/>.
+/// RFC 1945 §5–§6: HTTP/1.0 request and response message format, headers, and entity body.
+/// </remarks>
 public sealed class Http10StageRoundTripHeaderBodyTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)

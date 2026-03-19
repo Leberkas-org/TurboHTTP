@@ -8,6 +8,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
 
+/// <summary>
+/// Tests the HTTP/1.1 request-response correlation stage per RFC 9112.
+/// Verifies that responses are matched to requests in FIFO order and that RequestMessage is correctly set.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="CorrelationHttp1XStage"/>.
+/// RFC 9112 §9.3: HTTP/1.1 pipeline ordering and request-response pairing.
+/// </remarks>
 public sealed class Http11CorrelationStageTests : StreamTestBase
 {
     /// <summary>

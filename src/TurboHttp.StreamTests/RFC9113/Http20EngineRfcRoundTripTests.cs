@@ -14,6 +14,14 @@ using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;
 
+/// <summary>
+/// RFC-tagged round-trip tests for the HTTP/2 engine per RFC 9113.
+/// Verifies end-to-end request encoding and response decoding through the full HTTP/2 protocol flow including HPACK.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http20Engine"/>.
+/// RFC 9113 §3–§8: HTTP/2 connection setup, frame exchange, flow control, and HTTP message mapping.
+/// </remarks>
 public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 {
     private static Http20Engine Engine => new();
