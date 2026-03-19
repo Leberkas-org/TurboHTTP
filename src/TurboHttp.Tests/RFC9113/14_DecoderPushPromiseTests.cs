@@ -17,7 +17,7 @@ public sealed class Http2DecoderPushPromiseTests
     // ── Decode basics ───────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-001: PUSH_PROMISE moves stream to reserved(remote) state")]
-    public void Decode_PushPromise_PromisedStreamEntersReservedRemote()
+    public void Should_SetPromisedStreamAsReservedRemote_WhenPushPromiseDecoded()
     {
         // A server sends PUSH_PROMISE on an existing stream (1) to promise stream 2.
         // The decoder must produce a PushPromiseFrame with the correct promised stream ID.
@@ -40,7 +40,7 @@ public sealed class Http2DecoderPushPromiseTests
     }
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-002: Client rejects reserved(remote) stream with RST_STREAM CANCEL")]
-    public void Client_RejectsReservedRemote_WithRstStreamCancel()
+    public void Should_RejectReservedRemoteStream_WithRstStreamCancel()
     {
         // After receiving PUSH_PROMISE (promised stream 2), a client may reject it
         // by sending RST_STREAM with CANCEL on the promised stream ID.
@@ -56,7 +56,7 @@ public sealed class Http2DecoderPushPromiseTests
     }
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-003: PUSH_PROMISE on stream 0 is a PROTOCOL_ERROR")]
-    public void Decode_PushPromise_OnStream0_IsProtocolError()
+    public void Should_ParseWithStream0_WhenPushPromiseOnStream0()
     {
         // RFC 9113 §6.6: PUSH_PROMISE MUST be associated with a peer-initiated stream.
         // Stream 0 is the connection control stream — PUSH_PROMISE on it is invalid.
@@ -88,7 +88,7 @@ public sealed class Http2DecoderPushPromiseTests
     }
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-004: PUSH_PROMISE with even promised-stream-ID is decodable")]
-    public void Decode_PushPromise_EvenPromisedStreamId_IsDecodable()
+    public void Should_BeDecodable_WhenPushPromiseHasEvenPromisedStreamId()
     {
         // RFC 9113 §5.1.1: Server-initiated streams use even IDs (2, 4, 6, ...).
         // PUSH_PROMISE must use even promised stream IDs.
@@ -112,7 +112,7 @@ public sealed class Http2DecoderPushPromiseTests
     }
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-005: PUSH_PROMISE referencing stream 0 as promised is invalid")]
-    public void Decode_PushPromise_PromisedStreamId0_IsProtocolError()
+    public void Should_ReportPromisedStreamId0_WhenPushPromiseDecoded()
     {
         // RFC 9113 §6.6: The promised stream ID MUST be a valid stream identifier.
         // Stream 0 is reserved for the connection — using it as promised ID is a protocol error.
@@ -142,7 +142,7 @@ public sealed class Http2DecoderPushPromiseTests
     }
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-006: PUSH_PROMISE without END_HEADERS expects CONTINUATION")]
-    public void Decode_PushPromise_WithoutEndHeaders_NeedsContinuation()
+    public void Should_SetEndHeadersFalse_WhenPushPromiseWithoutEndHeaders()
     {
         // When END_HEADERS is not set, the header block is incomplete and
         // CONTINUATION frames must follow (RFC 9113 §6.6, §6.10).
@@ -164,7 +164,7 @@ public sealed class Http2DecoderPushPromiseTests
     }
 
     [Fact(DisplayName = "RFC9113-5.1.1-PP-007: PUSH_PROMISE preserves large header block fragment")]
-    public void Decode_PushPromise_LargeHeaderBlock_IsPreserved()
+    public void Should_PreserveLargeHeaderBlock_WhenPushPromiseDecoded()
     {
         // Ensure the decoder handles larger header block fragments correctly.
         var headerBlock = new byte[256];

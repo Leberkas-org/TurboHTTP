@@ -116,7 +116,7 @@ public sealed class Http2DecoderPaddingTests
     // ── DATA §6.1 — PADDED flag ────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.1-PAD-001: DATA with PADDED flag strips padding, payload correct")]
-    public void Decode_DataPadded_StripsPadding()
+    public void Should_StripPadding_WhenDataFrameHasPaddedFlag()
     {
         var payload = new byte[] { 0xCA, 0xFE, 0xBA, 0xBE };
         var raw = BuildPaddedDataFrame(streamId: 1, data: payload, padLength: 3);
@@ -131,7 +131,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.1-PAD-002: DATA with maximum pad length (254 bytes)")]
-    public void Decode_DataPadded_MaxPadLength()
+    public void Should_HandleMaxPadLength_WhenDataFrameHasPaddedFlag()
     {
         var payload = new byte[] { 0x01 };
         byte padLength = 254;
@@ -147,7 +147,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.1-PAD-003: DATA with pad_length > frame_length triggers PROTOCOL_ERROR")]
-    public void Decode_DataPadded_PadLengthExceedsPayload_Throws()
+    public void Should_ThrowProtocolError_WhenDataPadLengthExceedsPayload()
     {
         // Total payload = 2 bytes (padLength field + 1 byte), but padLength claims 5
         var raw = BuildInvalidPaddedDataFrame(streamId: 1, padLengthField: 5, totalPayloadLength: 2);
@@ -157,7 +157,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.1-PAD-004: DATA with PADDED flag and zero-length data")]
-    public void Decode_DataPadded_ZeroLengthData()
+    public void Should_HandleZeroLengthData_WhenDataFrameHasPaddedFlag()
     {
         var payload = Array.Empty<byte>();
         var raw = BuildPaddedDataFrame(streamId: 5, data: payload, padLength: 10);
@@ -170,7 +170,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.1-PAD-005: DATA with PADDED flag and zero padding")]
-    public void Decode_DataPadded_ZeroPadding()
+    public void Should_HandleZeroPadding_WhenDataFrameHasPaddedFlag()
     {
         var payload = new byte[] { 0xDE, 0xAD };
         var raw = BuildPaddedDataFrame(streamId: 7, data: payload, padLength: 0);
@@ -185,7 +185,7 @@ public sealed class Http2DecoderPaddingTests
     // ── HEADERS §6.2 — PADDED flag ─────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.2-PAD-001: HEADERS with PADDED flag strips padding, header block correct")]
-    public void Decode_HeadersPadded_StripsPadding()
+    public void Should_StripPadding_WhenHeadersFrameHasPaddedFlag()
     {
         var headerBlock = new byte[] { 0x82, 0x86, 0x84 }; // some HPACK bytes
         var raw = BuildPaddedHeadersFrame(streamId: 1, headerBlock: headerBlock, padLength: 5);
@@ -200,7 +200,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.2-PAD-002: HEADERS with PRIORITY flag skips priority fields, headers correct")]
-    public void Decode_HeadersPriority_SkipsPriorityFields()
+    public void Should_SkipPriorityFields_WhenHeadersFrameHasPriorityFlag()
     {
         var headerBlock = new byte[] { 0x82, 0x86 };
         // Build without padding, just PRIORITY
@@ -230,7 +230,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.2-PAD-003: HEADERS with PADDED + PRIORITY combined")]
-    public void Decode_HeadersPaddedAndPriority_StripsAll()
+    public void Should_StripAll_WhenHeadersFrameHasBothPaddedAndPriorityFlags()
     {
         var headerBlock = new byte[] { 0x82, 0x86, 0x84, 0x41, 0x8A };
         var raw = BuildPaddedHeadersFrame(
@@ -254,7 +254,7 @@ public sealed class Http2DecoderPaddingTests
     }
 
     [Fact(DisplayName = "RFC9113-6.2-PAD-004: HEADERS with pad_length > frame_length triggers PROTOCOL_ERROR")]
-    public void Decode_HeadersPadded_PadLengthExceedsPayload_Throws()
+    public void Should_ThrowProtocolError_WhenHeadersPadLengthExceedsPayload()
     {
         // Build a HEADERS frame with PADDED flag where padLength is too large
         // Total payload = 2 bytes, padLength claims 5 → exceeds

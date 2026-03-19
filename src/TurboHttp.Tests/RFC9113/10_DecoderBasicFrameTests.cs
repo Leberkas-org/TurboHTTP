@@ -8,7 +8,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── Settings ─────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.5-001: SETTINGS frame parameters are decoded correctly")]
-    public void Decode_SettingsFrame_ExtractsParameters()
+    public void Should_ExtractParameters_WhenSettingsFrameDecoded()
     {
         var settings = new SettingsFrame(new List<(SettingsParameter, uint)>
         {
@@ -28,7 +28,7 @@ public sealed class Http2FrameDecoderBasicTests
     }
 
     [Fact(DisplayName = "RFC9113-6.5-002: SETTINGS ACK flag is preserved")]
-    public void Decode_SettingsAck_IsAckTrue()
+    public void Should_SetIsAckTrue_WhenSettingsAckDecoded()
     {
         var ack = SettingsFrame.SettingsAck();
 
@@ -43,7 +43,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── Ping ─────────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.7-001: PING request frame data is decoded correctly")]
-    public void Decode_PingRequest_ReturnsCorrectData()
+    public void Should_ReturnCorrectData_WhenPingRequestDecoded()
     {
         var data = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 };
         var ping = new PingFrame(data, isAck: false).Serialize();
@@ -58,7 +58,7 @@ public sealed class Http2FrameDecoderBasicTests
     }
 
     [Fact(DisplayName = "RFC9113-6.7-002: PING ACK flag is preserved")]
-    public void Decode_PingAck_IsAckTrue()
+    public void Should_SetIsAckTrue_WhenPingAckDecoded()
     {
         var data = new byte[] { 7, 6, 5, 4, 3, 2, 1, 0 };
         var ping = new PingFrame(data, isAck: true).Serialize();
@@ -75,7 +75,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── WindowUpdate ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.9-001: WINDOW_UPDATE frame increment is decoded correctly")]
-    public void Decode_WindowUpdate_ReturnsIncrement()
+    public void Should_ReturnIncrement_WhenWindowUpdateDecoded()
     {
         var frame = new WindowUpdateFrame(1, 32768).Serialize();
 
@@ -91,7 +91,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── RstStream ────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.4-001: RST_STREAM error code is decoded correctly")]
-    public void Decode_RstStream_ReturnsErrorCode()
+    public void Should_ReturnErrorCode_WhenRstStreamDecoded()
     {
         var frame = new RstStreamFrame(3, Http2ErrorCode.Cancel).Serialize();
 
@@ -107,7 +107,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── GoAway ───────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.8-001: GOAWAY last-stream-id and error code are decoded correctly")]
-    public void Decode_GoAway_ParsedCorrectly()
+    public void Should_ParseCorrectly_WhenGoAwayDecoded()
     {
         var frame = new GoAwayFrame(5, Http2ErrorCode.NoError,
             "server shutdown"u8.ToArray()).Serialize();
@@ -124,7 +124,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── Fragmentation ────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-4.1-001: Frame split across two TCP segments is reassembled")]
-    public void Decode_FrameFragmented_ReassembledCorrectly()
+    public void Should_ReassembleCorrectly_WhenFrameSplitAcrossTcpSegments()
     {
         var ping = new PingFrame(new byte[8], isAck: false).Serialize();
         const int cut = 5;
@@ -143,7 +143,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── Multiple frames ──────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-4.1-002: Multiple frames in one TCP segment are all decoded")]
-    public void Decode_MultipleFrames_AllProcessed()
+    public void Should_ProcessAll_WhenMultipleFramesInOneTcpSegment()
     {
         var ping1 = new PingFrame([1, 1, 1, 1, 1, 1, 1, 1]).Serialize();
         var ping2 = new PingFrame([2, 2, 2, 2, 2, 2, 2, 2]).Serialize();
@@ -166,7 +166,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── HEADERS + DATA (frame-level) ─────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.1-001: HEADERS and DATA frames are decoded with correct flags")]
-    public void Decode_HeadersAndData_CorrectFrameObjects()
+    public void Should_ReturnCorrectFrameObjects_WhenHeadersAndDataDecoded()
     {
         var hpackEncoder = new HpackEncoder(useHuffman: false);
         var headerBlock = hpackEncoder.Encode(
@@ -201,7 +201,7 @@ public sealed class Http2FrameDecoderBasicTests
     }
 
     [Fact(DisplayName = "RFC9113-6.2-001: HEADERS with END_STREAM flag is decoded correctly")]
-    public void Decode_HeadersWithEndStream_FlagsCorrect()
+    public void Should_SetFlagsCorrectly_WhenHeadersWithEndStreamDecoded()
     {
         var hpackEncoder = new HpackEncoder(useHuffman: false);
         var headerBlock = hpackEncoder.Encode([(":status", "204")]);
@@ -221,7 +221,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── CONTINUATION ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-6.10-001: HEADERS + CONTINUATION frames are decoded as separate frame objects")]
-    public void Decode_ContinuationFrames_DecodedSeparately()
+    public void Should_DecodeAsSeparateFrames_WhenContinuationFollowsHeaders()
     {
         var hpackEncoder = new HpackEncoder();
         var headerBlock = hpackEncoder.Encode(
@@ -260,7 +260,7 @@ public sealed class Http2FrameDecoderBasicTests
     // ── Reset ────────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "RFC9113-4.1-003: Reset clears buffered partial data")]
-    public void Decode_AfterReset_PartialBufferCleared()
+    public void Should_ClearPartialBuffer_WhenResetAfterPartialDecode()
     {
         var ping = new PingFrame(new byte[8], isAck: false).Serialize();
         var chunk1 = ping[..5];

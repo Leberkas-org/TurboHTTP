@@ -144,9 +144,9 @@ Revised plan (replaces plan_4). Same goals, but broken into significantly smalle
 **Scope:** `src/TurboHttp.Tests/RFC9113/10_*.cs` through `15_*.cs`
 
 **Acceptance Criteria:**
-- [ ] All methods follow `Should_Action_When_Condition`
-- [ ] `DisplayName` attributes unchanged
-- [ ] `dotnet test --filter "FullyQualifiedName~RFC9113"` — all green
+- [x] All methods follow `Should_Action_When_Condition`
+- [x] `DisplayName` attributes unchanged
+- [x] `dotnet test --filter "FullyQualifiedName~RFC9113"` — all green
 
 ---
 
