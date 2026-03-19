@@ -28,7 +28,7 @@ public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
 
     // ── 11ENG-001: GET → 200 with Content-Length body — version 1.1 ────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-ENG-001: GET → 200 with Content-Length body — version 1.1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-6-11EN-001: GET → 200 with Content-Length body — version 1.1")]
     public async Task ENG_001_Get_Returns_200_With_ContentLength_Body_And_Version11()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/hello")
@@ -51,7 +51,7 @@ public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
 
     // ── 11ENG-002: POST → chunked request + chunked response ────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-ENG-002: POST → chunked request + chunked response")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-7-11EN-002: POST → chunked request + chunked response")]
     public async Task ENG_002_Post_Chunked_Request_And_Chunked_Response()
     {
         const string payload = "field=value&mode=chunked";
@@ -81,7 +81,7 @@ public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
 
     // ── 11ENG-003: 5 sequential requests → FIFO correlation ─────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-ENG-003: 5 sequential requests → FIFO correlation")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11EN-003: 5 sequential requests → FIFO correlation")]
     public async Task ENG_003_Five_Sequential_Requests_FifoCorrelation()
     {
         const int count = 5;
@@ -118,7 +118,7 @@ public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
 
     // ── 11ENG-004: Host header in wire correct for each URI ─────────────────────
 
-    [Theory(Timeout = 10_000, DisplayName = "RFC-9112-ENG-004: Host header in wire correct for each URI")]
+    [Theory(Timeout = 10_000, DisplayName = "RFC9112-3.2-11EN-004: Host header in wire correct for each URI")]
     [InlineData("http://api.example.com/v1", "Host: api.example.com\r\n")]
     [InlineData("http://other.example.com:9090/endpoint", "Host: other.example.com:9090\r\n")]
     [InlineData("https://secure.example.com/data", "Host: secure.example.com\r\n")]
@@ -139,7 +139,7 @@ public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
 
     // ── 11ENG-005: Hop-by-hop headers stripped in wire ──────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-ENG-005: Hop-by-hop headers (TE, Keep-Alive, Proxy-Connection) stripped in wire")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-5-11EN-005: Hop-by-hop headers (TE, Keep-Alive, Proxy-Connection) stripped in wire")]
     public async Task ENG_005_HopByHop_Headers_Stripped_In_Wire()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource")

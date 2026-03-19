@@ -74,7 +74,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── HTTP/2: always reuse ───────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-001: HTTP/2 → CanReuse = true (multiplexed streams)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-001: HTTP/2 → CanReuse = true (multiplexed streams)")]
     public async Task REUSE_001_Http2_AlwaysReuse()
     {
         var response = MakeResponse();
@@ -88,7 +88,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── HTTP/1.1: persistent by default ───────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-002: HTTP/1.1 no Connection header → CanReuse = true")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-002: HTTP/1.1 no Connection header → CanReuse = true")]
     public async Task REUSE_002_Http11_NoConnectionHeader_Reuse()
     {
         var response = MakeResponse();
@@ -100,7 +100,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
         Assert.True(decision.Decision.CanReuse);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-003: HTTP/1.1 Connection: close → CanReuse = false")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-003: HTTP/1.1 Connection: close → CanReuse = false")]
     public async Task REUSE_003_Http11_ConnectionClose_NoReuse()
     {
         var response = MakeResponse(connectionHeader: "close");
@@ -114,7 +114,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── HTTP/1.0: opt-in keep-alive ────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-004: HTTP/1.0 Connection: Keep-Alive → CanReuse = true")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-004: HTTP/1.0 Connection: Keep-Alive → CanReuse = true")]
     public async Task REUSE_004_Http10_KeepAlive_Reuse()
     {
         var response = MakeResponse(connectionHeader: "Keep-Alive");
@@ -126,7 +126,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
         Assert.True(decision.Decision.CanReuse);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-005: HTTP/1.0 no Connection header → CanReuse = false (not persistent by default)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-005: HTTP/1.0 no Connection header → CanReuse = false (not persistent by default)")]
     public async Task REUSE_005_Http10_NoKeepAlive_NoReuse()
     {
         var response = MakeResponse();
@@ -140,7 +140,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── body not fully consumed ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-006: bodyFullyConsumed = false → CanReuse = false")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-006: bodyFullyConsumed = false → CanReuse = false")]
     public async Task REUSE_006_BodyNotConsumed_NoReuse()
     {
         var response = MakeResponse();
@@ -154,7 +154,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── 101 Switching Protocols ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-007: 101 Switching Protocols → CanReuse = false")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-007: 101 Switching Protocols → CanReuse = false")]
     public async Task REUSE_007_SwitchingProtocols_NoReuse()
     {
         var response = MakeResponse(HttpStatusCode.SwitchingProtocols);
@@ -168,7 +168,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── response passes through unchanged ─────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-008: response object passes through the stage unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-008: response object passes through the stage unchanged")]
     public async Task REUSE_008_Response_PassesThrough()
     {
         var response = MakeResponse(HttpStatusCode.Created);
@@ -182,7 +182,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── multiple responses ─────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-009: multiple responses each produce one decision")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-009: multiple responses each produce one decision")]
     public async Task REUSE_009_MultipleResponses_EachDecision()
     {
         var resp1 = MakeResponse(); // 200 → reuse
@@ -200,7 +200,7 @@ public sealed class ConnectionReuseStageTests : StreamTestBase
 
     // ── Keep-Alive parameters ──────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REUSE-010: HTTP/1.1 Keep-Alive timeout and max parsed into decision")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-010: HTTP/1.1 Keep-Alive timeout and max parsed into decision")]
     public async Task REUSE_010_Http11_KeepAliveParams_Parsed()
     {
         var response = MakeResponse(keepAliveHeader: "timeout=30, max=100");

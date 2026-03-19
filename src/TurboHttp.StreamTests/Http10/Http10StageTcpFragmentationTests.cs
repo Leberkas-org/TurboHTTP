@@ -61,7 +61,7 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-1945-§8-10F-001: Response split into 3 TCP fragments → correctly reassembled")]
+        DisplayName = "RFC1945-6-10FR-001: Response split into 3 TCP fragments → correctly reassembled")]
     public async Task ST_10F_001_Three_Fragments_Reassembled()
     {
         const string fullResponse =
@@ -81,7 +81,7 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
         Assert.Equal("Hello, World!", body);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-1945-§8-10F-002: Headers split across 2 fragments → correctly parsed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-6.2-10FR-002: Headers split across 2 fragments → correctly parsed")]
     public async Task ST_10F_002_Headers_Split_Across_Two_Fragments()
     {
         const string fullResponse =
@@ -103,7 +103,7 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-1945-§8-10F-003: Body fragment arrives in separate chunk → content complete")]
+        DisplayName = "RFC1945-7-10FR-003: Body fragment arrives in separate chunk → content complete")]
     public async Task ST_10F_003_Body_In_Separate_Fragment()
     {
         const string bodyText = "This is the body content that arrives separately";
@@ -121,7 +121,7 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
         Assert.Equal(bodyText, body);
     }
 
-    [Fact(Timeout = 30_000, DisplayName = "RFC-1945-§8-10F-004: 1-byte fragments → decoder handles gracefully")]
+    [Fact(Timeout = 30_000, DisplayName = "RFC1945-6-10FR-004: 1-byte fragments → decoder handles gracefully")]
     public async Task ST_10F_004_Single_Byte_Fragments()
     {
         const string fullResponse = "HTTP/1.0 200 OK\r\nContent-Length: 3\r\n\r\nABC";
@@ -139,7 +139,7 @@ public sealed class Http10StageTcpFragmentationTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName =
-            "RFC-1945-§8-10F-005: Fragment boundary in middle of \\r\\n\\r\\n → header end correctly detected")]
+            "RFC1945-6-10FR-005: Fragment boundary in middle of \\r\\n\\r\\n → header end correctly detected")]
     public async Task ST_10F_005_Fragment_Boundary_Inside_CrLfCrLf()
     {
         const string fullResponse = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nHello";

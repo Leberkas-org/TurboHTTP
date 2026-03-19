@@ -24,7 +24,7 @@ public sealed class Http11EncoderStageTests : StreamTestBase
         return sb.ToString();
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§3.1: Request-Line is METHOD SP path SP HTTP/1.1 CRLF")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-3.1-11ES-001: Request-Line is METHOD SP path SP HTTP/1.1 CRLF")]
     public async Task ST_11_ENC_001_RequestLine_Format()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/index.html")
@@ -37,7 +37,7 @@ public sealed class Http11EncoderStageTests : StreamTestBase
         Assert.StartsWith("GET /index.html HTTP/1.1\r\n", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§7.2: Host header is emitted for HTTP/1.1 requests")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-3.2-11ES-002: Host header is emitted for HTTP/1.1 requests")]
     public async Task ST_11_ENC_002_HostHeader_Emitted()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -50,7 +50,7 @@ public sealed class Http11EncoderStageTests : StreamTestBase
         Assert.Contains("Host: example.com\r\n", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§6.1: POST with known body has Content-Length or Transfer-Encoding: chunked")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-6.1-11ES-003: POST with known body has Content-Length or Transfer-Encoding chunked")]
     public async Task ST_11_ENC_003_PostBody_HasFramingHeader()
     {
         var body = "hello"u8.ToArray();
@@ -67,7 +67,7 @@ public sealed class Http11EncoderStageTests : StreamTestBase
         Assert.True(hasContentLength || hasChunked, "Expected Content-Length or Transfer-Encoding: chunked framing header");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§7.6.1: Hop-by-hop connection-specific headers are stripped from wire")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-5-11ES-004: Hop-by-hop connection-specific headers are stripped from wire")]
     public async Task ST_11_ENC_004_HopByHop_Headers_Stripped()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -85,7 +85,7 @@ public sealed class Http11EncoderStageTests : StreamTestBase
         Assert.DoesNotContain("Proxy-Connection:", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§3.1: Custom request header forwarded verbatim")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-3-11ES-005: Custom request header forwarded verbatim")]
     public async Task ST_11_ENC_005_CustomHeader_Forwarded()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")

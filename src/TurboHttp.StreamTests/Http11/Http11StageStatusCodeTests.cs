@@ -14,7 +14,7 @@ public sealed class Http11StageStatusCodeTests : EngineTestBase
 
     // ── 11SC-001: 200 OK → StatusCode=200 ────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9110-§15-11SC-001: 200 OK → StatusCode=200")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.1-11SC-001: 200 OK → StatusCode=200")]
     public async Task _11SC_001_200_OK()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/ok");
@@ -31,7 +31,7 @@ public sealed class Http11StageStatusCodeTests : EngineTestBase
 
     // ── 11SC-002: 301 Moved Permanently → StatusCode=301, Location header present ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9110-§15-11SC-002: 301 Moved Permanently → StatusCode=301, Location header present")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.1-11SC-002: 301 Moved Permanently → StatusCode=301, Location header present")]
     public async Task _11SC_002_301_Moved_Permanently_Location_Header()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
@@ -47,7 +47,7 @@ public sealed class Http11StageStatusCodeTests : EngineTestBase
 
     // ── 11SC-003: 404 Not Found → StatusCode=404 ─────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9110-§15-11SC-003: 404 Not Found → StatusCode=404")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.1-11SC-003: 404 Not Found → StatusCode=404")]
     public async Task _11SC_003_404_Not_Found()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/missing");
@@ -63,7 +63,7 @@ public sealed class Http11StageStatusCodeTests : EngineTestBase
 
     // ── 11SC-004: 500 Internal Server Error → StatusCode=500 ──────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9110-§15-11SC-004: 500 Internal Server Error → StatusCode=500")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.1-11SC-004: 500 Internal Server Error → StatusCode=500")]
     public async Task _11SC_004_500_Internal_Server_Error()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/error");
@@ -79,7 +79,7 @@ public sealed class Http11StageStatusCodeTests : EngineTestBase
 
     // ── 11SC-005: 204 No Content → StatusCode=204, no body ────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9110-§15-11SC-005: 204 No Content → StatusCode=204, no body")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.1-11SC-005: 204 No Content → StatusCode=204, no body")]
     public async Task _11SC_005_204_No_Content_Empty_Body()
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, "http://example.com/resource");

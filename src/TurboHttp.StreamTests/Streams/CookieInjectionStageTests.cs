@@ -30,7 +30,7 @@ public sealed class CookieInjectionStageTests : StreamTestBase
 
     // ── null jar (pass-through) ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "COOK-001: null CookieJar → request passes through unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-001: null CookieJar → request passes through unchanged")]
     public async Task COOK_001_NullJar_PassThrough()
     {
         var stage = new CookieInjectionStage(null);
@@ -44,7 +44,7 @@ public sealed class CookieInjectionStageTests : StreamTestBase
 
     // ── cookie injection ────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "COOK-002: matching cookie in jar → Cookie header injected into request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-002: matching cookie in jar → Cookie header injected into request")]
     public async Task COOK_002_MatchingCookie_Injected()
     {
         var jar = JarWithCookie("session", "abc123", "example.com");
@@ -59,7 +59,7 @@ public sealed class CookieInjectionStageTests : StreamTestBase
         Assert.Contains("session=abc123", cookieValue);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COOK-003: empty jar → no Cookie header added to request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-003: empty jar → no Cookie header added to request")]
     public async Task COOK_003_EmptyJar_NoCookieHeader()
     {
         var jar = new CookieJar();
@@ -72,7 +72,7 @@ public sealed class CookieInjectionStageTests : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COOK-004: non-matching domain → no Cookie header added")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-004: non-matching domain → no Cookie header added")]
     public async Task COOK_004_NonMatchingDomain_NoCookieHeader()
     {
         var jar = JarWithCookie("session", "abc123", "other.com");
@@ -85,7 +85,7 @@ public sealed class CookieInjectionStageTests : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COOK-005: request with null RequestUri → passes through without throwing")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-005: request with null RequestUri → passes through without throwing")]
     public async Task COOK_005_NullRequestUri_PassThrough()
     {
         var jar = JarWithCookie("session", "abc123", "example.com");
@@ -99,7 +99,7 @@ public sealed class CookieInjectionStageTests : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COOK-006: multiple requests → each gets cookies injected independently")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-006: multiple requests → each gets cookies injected independently")]
     public async Task COOK_006_MultipleRequests_EachInjected()
     {
         var jar = new CookieJar();

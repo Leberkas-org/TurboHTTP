@@ -37,7 +37,7 @@ public sealed class Http10EncoderStageRfcTests : StreamTestBase
         return (lines[0], lines[1..], body);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10E-RFC-001: Request-line format: GET /path HTTP/1.0 CRLF")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10ES-001: Request-line format: GET /path HTTP/1.0 CRLF")]
     public async Task _10E_RFC_001_RequestLine_Format()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
@@ -47,7 +47,7 @@ public sealed class Http10EncoderStageRfcTests : StreamTestBase
         Assert.StartsWith("GET /path HTTP/1.0\r\n", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10E-RFC-002: POST with body includes Content-Length header")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-7-10ES-002: POST with body includes Content-Length header")]
     public async Task _10E_RFC_002_Post_ContentLengthPresent()
     {
         var body = "hello=world"u8.ToArray();
@@ -61,7 +61,7 @@ public sealed class Http10EncoderStageRfcTests : StreamTestBase
         Assert.Contains($"Content-Length: {body.Length}", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10E-RFC-003: No Host header in HTTP/1.0 request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5-10ES-003: No Host header in HTTP/1.0 request")]
     public async Task _10E_RFC_003_NoHostHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -71,7 +71,7 @@ public sealed class Http10EncoderStageRfcTests : StreamTestBase
         Assert.DoesNotContain("Host:", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10E-RFC-004: Connection header is not sent (no keep-alive in HTTP/1.0)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.2-10ES-004: Connection header is not sent (no keep-alive in HTTP/1.0)")]
     public async Task _10E_RFC_004_NoConnectionHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -81,7 +81,7 @@ public sealed class Http10EncoderStageRfcTests : StreamTestBase
         Assert.DoesNotContain("Connection:", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10E-RFC-005: Query string is preserved in request target")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10ES-005: Query string is preserved in request target")]
     public async Task _10E_RFC_005_QueryString_InRequestTarget()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?q=foo");

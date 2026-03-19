@@ -10,7 +10,7 @@ public sealed class Http11ResponseCorrelationTests : EngineTestBase
 
     private static Http11Engine Engine => new();
 
-    [Fact(Timeout = 10_000, DisplayName = "REQ-001: Single request/response pair — response.RequestMessage set to the originating request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-001: Single request/response pair — response.RequestMessage set to the originating request")]
     public async Task Single_Request_Response_Correlation()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -21,7 +21,7 @@ public sealed class Http11ResponseCorrelationTests : EngineTestBase
         Assert.Same(request, response.RequestMessage);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REQ-002: 5 sequential requests — each response.RequestMessage matches correct in-order request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-002: 5 sequential requests — each response.RequestMessage matches correct in-order request")]
     public async Task Five_Sequential_Requests_InOrder_Correlation()
     {
         var requests = Enumerable.Range(1, 5)
@@ -37,7 +37,7 @@ public sealed class Http11ResponseCorrelationTests : EngineTestBase
         }
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REQ-003: response.RequestMessage is the exact same object instance (reference equality)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-003: response.RequestMessage is the exact same object instance (reference equality)")]
     public async Task RequestMessage_Is_Same_Reference()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/data")
@@ -52,7 +52,7 @@ public sealed class Http11ResponseCorrelationTests : EngineTestBase
             "response.RequestMessage must be the exact same object reference as the sent request.");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REQ-004: Http11Engine flow with fake TCP — correlation preserved end-to-end")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-004: Http11Engine flow with fake TCP — correlation preserved end-to-end")]
     public async Task Http11Engine_FakeTcp_CorrelationPreserved()
     {
         var engine = new Http11Engine();

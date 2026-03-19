@@ -32,7 +32,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-001: GET → 200 — SETTINGS + HEADERS round-trip ────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-001: GET → 200 with SETTINGS and HEADERS round-trip")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-001: GET → 200 with SETTINGS and HEADERS round-trip")]
     public async Task ENG_001_Get_Returns_200_With_Settings_And_Headers_Round_Trip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/hello")
@@ -58,7 +58,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-002: POST with body → outbound has HEADERS + DATA frames ───────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-002: POST with body → outbound has HEADERS + DATA frames")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-002: POST with body → outbound has HEADERS + DATA frames")]
     public async Task ENG_002_Post_With_Body_Outbound_Has_Headers_And_Data_Frames()
     {
         const string payload = "field=value";
@@ -87,7 +87,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-003: gzip-compressed response → body correctly decompressed ───────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-003: gzip-compressed response body is correctly decompressed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-003: gzip-compressed response body is correctly decompressed")]
     public async Task ENG_003_Gzip_Response_Body_Correctly_Decompressed()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data")
@@ -140,7 +140,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-004: Server SETTINGS → SETTINGS ACK in outbound ───────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-004: Server SETTINGS produces SETTINGS ACK in outbound frames")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-004: Server SETTINGS produces SETTINGS ACK in outbound frames")]
     public async Task ENG_004_Server_Settings_Produces_SettingsAck_In_Outbound()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/ack-test")
@@ -168,7 +168,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-005: 3 requests → 3 responses, stream IDs 1/3/5 ──────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-005: 3 requests produce 3 responses with outbound stream IDs 1, 3, 5")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-005: 3 requests produce 3 responses with outbound stream IDs 1, 3, 5")]
     public async Task ENG_005_Three_Requests_Three_Responses_Correct_Stream_Ids()
     {
         const int count = 3;
@@ -211,7 +211,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-006: SETTINGS MAX_CONCURRENT_STREAMS → MaxConcurrentStreamsItem on outlet ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-006: SETTINGS MAX_CONCURRENT_STREAMS=50 produces MaxConcurrentStreamsItem(50) on IOutputItem outlet")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-006: SETTINGS MAX_CONCURRENT_STREAMS=50 produces MaxConcurrentStreamsItem(50) on IOutputItem outlet")]
     public async Task ENG_006_Settings_MaxConcurrentStreams_Produces_Signal_On_Outlet()
     {
         var engine = new Http20Engine();
@@ -272,7 +272,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-007: preface emitted on first ConnectItem ───────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-007: Preface emitted on first ConnectItem through engine graph")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-007: Preface emitted on first ConnectItem through engine graph")]
     public async Task ENG_007_Preface_Emitted_On_First_ConnectItem()
     {
         var engine = new Http20Engine();
@@ -349,7 +349,7 @@ public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
 
     // ── 20ENG-008: preface not emitted on second ConnectItem for same host ────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-ENG-008: Preface not emitted on second ConnectItem for same host")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-008: Preface not emitted on second ConnectItem for same host")]
     public async Task ENG_008_Preface_Not_Emitted_On_Second_ConnectItem_Same_Host()
     {
         var tcpOptions = new TcpOptions { Host = "example.com", Port = 80 };

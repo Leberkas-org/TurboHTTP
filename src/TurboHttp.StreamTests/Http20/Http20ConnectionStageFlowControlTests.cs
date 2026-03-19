@@ -93,7 +93,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-001: Inbound DATA → connection window decremented ────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-001: Inbound DATA decrements connection window")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-001: Inbound DATA decrements connection window")]
     public async Task Inbound_Data_Decrements_Connection_Window()
     {
         // Send two DATA frames totalling 65535 bytes (exactly filling the default 65535 window).
@@ -109,7 +109,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.IsType<DataFrame>(downstream[1]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-001: Connection window tracks cumulative inbound DATA")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-001: Connection window tracks cumulative inbound DATA")]
     public async Task Connection_Window_Tracks_Cumulative_Inbound()
     {
         // Send data on two different streams that together exceed the connection window.
@@ -123,7 +123,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-002: Inbound DATA → stream window decremented ────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-002: Inbound DATA decrements stream window")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-002: Inbound DATA decrements stream window")]
     public async Task Inbound_Data_Decrements_Stream_Window()
     {
         // Send DATA filling the entire stream window (65535 bytes) — should succeed.
@@ -135,7 +135,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.IsType<DataFrame>(forwarded);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-002: Stream window tracked per-stream independently")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-002: Stream window tracked per-stream independently")]
     public async Task Stream_Window_Tracked_Per_Stream()
     {
         // Stream 1 gets 65535 bytes (exactly at window), stream 3 gets 65536 (exceeds).
@@ -149,7 +149,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-003: Inbound DATA → WINDOW_UPDATE(stream=0) sent ─────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-003: Inbound DATA triggers WINDOW_UPDATE on stream 0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-003: Inbound DATA triggers WINDOW_UPDATE on stream 0")]
     public async Task Inbound_Data_Sends_Connection_WindowUpdate()
     {
         var data = new DataFrame(streamId: 1, data: new byte[1024], endStream: true);
@@ -167,7 +167,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-004: Inbound DATA → WINDOW_UPDATE(stream=N) sent ─────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-004: Inbound DATA triggers WINDOW_UPDATE on stream N")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-004: Inbound DATA triggers WINDOW_UPDATE on stream N")]
     public async Task Inbound_Data_Sends_Stream_WindowUpdate()
     {
         var data = new DataFrame(streamId: 5, data: new byte[2048], endStream: true);
@@ -182,7 +182,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.Equal(2048, streamUpdate.Increment);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-004: Both connection and stream WINDOW_UPDATEs sent for single DATA")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-004: Both connection and stream WINDOW_UPDATEs sent for single DATA")]
     public async Task Inbound_Data_Sends_Both_WindowUpdates()
     {
         var data = new DataFrame(streamId: 3, data: new byte[512], endStream: true);
@@ -199,7 +199,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-005: Connection window < 0 → stage fails with exception ──────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-005: Connection window exceeded causes stage failure")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-005: Connection window exceeded causes stage failure")]
     public async Task Connection_Window_Exceeded_Fails_Stage()
     {
         // Default connection window is 65535. Send 65536 bytes to exceed it.
@@ -211,7 +211,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-006: Stream window < 0 → stage fails with exception ──────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-006: Stream window exceeded causes stage failure")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-006: Stream window exceeded causes stage failure")]
     public async Task Stream_Window_Exceeded_Fails_Stage()
     {
         // Default stream window is 65535. Send 65536 bytes on one stream to exceed it.
@@ -223,7 +223,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-007: Outbound DATA → connection window decremented ────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-007: Outbound DATA decrements connection send window")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound DATA decrements connection send window")]
     public async Task Outbound_Data_Decrements_Connection_Window()
     {
         // Send outbound DATA that exceeds the connection window → stage should fail.
@@ -264,7 +264,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.Contains("flow control", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-007: Outbound DATA within window succeeds")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound DATA within window succeeds")]
     public async Task Outbound_Data_Within_Window_Succeeds()
     {
         // Send outbound DATA within the connection window → should be forwarded to server.
@@ -302,7 +302,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-008: WINDOW_UPDATE(stream=0) received → connection window incremented ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-008: WINDOW_UPDATE on stream 0 increments connection window")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-008: WINDOW_UPDATE on stream 0 increments connection window")]
     public async Task WindowUpdate_Stream0_Increments_Connection_Window()
     {
         // Receive a WINDOW_UPDATE on stream 0 that increases the connection window.
@@ -353,7 +353,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.Equal(70000, dataFrame.Data.Length);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-008: WINDOW_UPDATE on stream 0 is forwarded downstream")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-008: WINDOW_UPDATE on stream 0 is forwarded downstream")]
     public async Task WindowUpdate_Stream0_Forwarded_Downstream()
     {
         var windowUpdate = new WindowUpdateFrame(streamId: 0, increment: 5000);
@@ -368,7 +368,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
     // ─── 20CW-009: WINDOW_UPDATE(stream=N) received → stream window incremented ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-009: WINDOW_UPDATE on stream N increments stream window")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-009: WINDOW_UPDATE on stream N increments stream window")]
     public async Task WindowUpdate_StreamN_Increments_Stream_Window()
     {
         // Receive WINDOW_UPDATE on stream 1 — verify it's forwarded downstream.
@@ -384,7 +384,7 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.Equal(8192, wu.Increment);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.9-20CW-009: Multiple WINDOW_UPDATEs accumulate for stream")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-009: Multiple WINDOW_UPDATEs accumulate for stream")]
     public async Task Multiple_WindowUpdates_Accumulate_For_Stream()
     {
         // Two WINDOW_UPDATEs on same stream should both be forwarded downstream

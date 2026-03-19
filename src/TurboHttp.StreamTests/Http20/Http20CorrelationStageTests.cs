@@ -43,7 +43,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
     private static HttpResponseMessage OkResponse()
         => new(HttpStatusCode.OK);
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-001: Single (Request,streamId=1) + (Response,streamId=1) → correctly correlated")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-001: Single (Request,streamId=1) + (Response,streamId=1) → correctly correlated")]
     public async Task COR20_001_Single_Request_Response_Correlated()
     {
         var request = MakeRequest();
@@ -58,7 +58,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         Assert.Same(response, results[0]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-002: 3 requests (IDs 1,3,5) + 3 responses (IDs 5,1,3) → out-of-order correlation")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-002: 3 requests (IDs 1,3,5) + 3 responses (IDs 5,1,3) → out-of-order correlation")]
     public async Task COR20_002_Out_Of_Order_Responses_Correlated()
     {
         var req1 = MakeRequest(1);
@@ -85,7 +85,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         Assert.Contains(results, r => ReferenceEquals(r.RequestMessage, req5) && ReferenceEquals(r, res5));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-003: Response stream ID with no matching request → stays in queue")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-003: Response stream ID with no matching request → stays in queue")]
     public async Task COR20_003_Unmatched_Response_Stays_In_Queue()
     {
         var req1 = MakeRequest(1);
@@ -124,7 +124,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         await Assert.ThrowsAsync<TimeoutException>(() => completedEarly);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-004: Reference equality: response.RequestMessage is exactly the sent object")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-004: Reference equality: response.RequestMessage is exactly the sent object")]
     public async Task COR20_004_Reference_Equality()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/data")
@@ -141,7 +141,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
             "response.RequestMessage must be the exact same object reference as the original request.");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-005: 10 interleaved requests/responses → all correctly matched")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-005: 10 interleaved requests/responses → all correctly matched")]
     public async Task COR20_005_Ten_Interleaved_All_Matched()
     {
         const int count = 10;
@@ -175,7 +175,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         }
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-006: Stage terminates on empty dictionaries after UpstreamFinish")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-006: Stage terminates on empty dictionaries after UpstreamFinish")]
     public async Task COR20_006_Stage_Terminates_On_Empty_Dicts_After_Finish()
     {
         var request = MakeRequest();
@@ -205,7 +205,7 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         Assert.Same(request, results[0].RequestMessage);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "COR20-007: Request(1), Response(3), Request(3) → correlation immediately on match")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-007: Request(1), Response(3), Request(3) → correlation immediately on match")]
     public async Task COR20_007_Interleaved_Push_Correlated_On_Match()
     {
         var req1 = MakeRequest(1);

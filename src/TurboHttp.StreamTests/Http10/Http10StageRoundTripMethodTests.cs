@@ -44,7 +44,7 @@ public sealed class Http10StageRoundTripMethodTests : StreamTestBase
             .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-1945-§8-RT-M-001: GET → 200 OK — request-line + response correct")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10RT-001: GET → 200 OK — request-line + response correct")]
     public async Task ST_10RT_M_001_Get_200_Ok()
     {
         // Encode
@@ -64,7 +64,7 @@ public sealed class Http10StageRoundTripMethodTests : StreamTestBase
         Assert.Equal("OK", body);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-1945-§8-RT-M-002: POST with body → body in wire format + 200 response")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10RT-002: POST with body → body in wire format + 200 response")]
     public async Task ST_10RT_M_002_Post_Body_200()
     {
         // Encode
@@ -95,7 +95,7 @@ public sealed class Http10StageRoundTripMethodTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-1945-§8-RT-M-003: HEAD → response without body, but with Content-Length header")]
+        DisplayName = "RFC1945-5.1-10RT-003: HEAD → response without body, but with Content-Length header")]
     public async Task ST_10RT_M_003_Head_No_Body_With_ContentLength()
     {
         // Encode
@@ -116,7 +116,7 @@ public sealed class Http10StageRoundTripMethodTests : StreamTestBase
         Assert.Empty(body);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-1945-§8-RT-M-004: DELETE → 204 No Content (empty body)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10RT-004: DELETE → 204 No Content (empty body)")]
     public async Task ST_10RT_M_004_Delete_204_NoContent()
     {
         // Encode
@@ -135,7 +135,7 @@ public sealed class Http10StageRoundTripMethodTests : StreamTestBase
         Assert.Empty(body);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-1945-§8-RT-M-005: PUT → body correctly transmitted and response parsed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10RT-005: PUT → body correctly transmitted and response parsed")]
     public async Task ST_10RT_M_005_Put_Body_RoundTrip()
     {
         // Encode

@@ -32,7 +32,7 @@ public sealed class Http10DecoderStageRfcTests : StreamTestBase
             .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10D-RFC-001: Status-line HTTP/1.0 200 OK → StatusCode=200, Version=1.0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-6.1-10DS-001: Status-line HTTP/1.0 200 OK → StatusCode=200, Version=1.0")]
     public async Task _10D_RFC_001_StatusLine_200OK()
     {
         var response = await DecodeAsync("HTTP/1.0 200 OK\r\n\r\n");
@@ -41,7 +41,7 @@ public sealed class Http10DecoderStageRfcTests : StreamTestBase
         Assert.Equal(new Version(1, 0), response.Version);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10D-RFC-002: Status-line HTTP/1.0 404 Not Found → StatusCode=404")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-6.1-10DS-002: Status-line HTTP/1.0 404 Not Found → StatusCode=404")]
     public async Task _10D_RFC_002_StatusLine_404NotFound()
     {
         var response = await DecodeAsync("HTTP/1.0 404 Not Found\r\n\r\n");
@@ -50,7 +50,7 @@ public sealed class Http10DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "10D-RFC-003: Response headers Content-Type and Content-Length correctly parsed")]
+        DisplayName = "RFC1945-6.2-10DS-003: Response headers Content-Type and Content-Length correctly parsed")]
     public async Task _10D_RFC_003_ResponseHeaders_Parsed()
     {
         const string raw =
@@ -67,7 +67,7 @@ public sealed class Http10DecoderStageRfcTests : StreamTestBase
         Assert.Equal(4L, response.Content.Headers.ContentLength);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "10D-RFC-004: Body with Content-Length correctly read")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC1945-7-10DS-004: Body with Content-Length correctly read")]
     public async Task _10D_RFC_004_Body_ContentLength_Read()
     {
         const string raw =
@@ -83,7 +83,7 @@ public sealed class Http10DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "10D-RFC-005: Connection-Close — stream ends after body, exactly 1 response emitted")]
+        DisplayName = "RFC1945-6-10DS-005: Connection-Close — stream ends after body, exactly 1 response emitted")]
     public async Task _10D_RFC_005_ConnectionClose_StreamEndsAfterBody()
     {
         // HTTP/1.0 has no persistent connections; after the body the connection closes.

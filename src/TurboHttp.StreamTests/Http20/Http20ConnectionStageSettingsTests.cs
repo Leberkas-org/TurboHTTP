@@ -86,7 +86,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-001: Server SETTINGS received → SETTINGS ACK sent ─────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-001: Server SETTINGS received produces SETTINGS ACK")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-001: Server SETTINGS received produces SETTINGS ACK")]
     public async Task Server_Settings_Received_Sends_Ack()
     {
         var settings = new SettingsFrame(
@@ -102,7 +102,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-002: SETTINGS with ACK flag → no ACK sent back ────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-002: SETTINGS with ACK flag does not trigger another ACK")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-002: SETTINGS with ACK flag does not trigger another ACK")]
     public async Task Settings_Ack_Does_Not_Trigger_Another_Ack()
     {
         var settingsAck = new SettingsFrame([], isAck: true);
@@ -117,7 +117,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-003: INITIAL_WINDOW_SIZE parameter → _initialStreamWindow updated ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-003: INITIAL_WINDOW_SIZE parameter updates internal stream window")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-003: INITIAL_WINDOW_SIZE parameter updates internal stream window")]
     public async Task Initial_Window_Size_Updates_Stream_Window()
     {
         // Send SETTINGS with INITIAL_WINDOW_SIZE = 32768, then a DATA frame
@@ -142,7 +142,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
         Assert.True(((SettingsFrame)serverBound[0]).IsAck);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-003: INITIAL_WINDOW_SIZE exceeded causes stage failure")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-003: INITIAL_WINDOW_SIZE exceeded causes stage failure")]
     public async Task Initial_Window_Size_Exceeded_Causes_Failure()
     {
         // Default stream recv window is 65535. Send 65536 bytes to exceed it.
@@ -156,7 +156,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-004: SETTINGS frame forwarded downstream ──────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-004: SETTINGS frame is forwarded downstream")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-004: SETTINGS frame is forwarded downstream")]
     public async Task Settings_Frame_Forwarded_Downstream()
     {
         var settings = new SettingsFrame(
@@ -173,7 +173,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-005: Multiple consecutive SETTINGS → one ACK each ─────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5-20CS-005: Multiple SETTINGS each produce exactly one ACK")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-005: Multiple SETTINGS each produce exactly one ACK")]
     public async Task Multiple_Settings_Each_Produce_One_Ack()
     {
         var settings1 = new SettingsFrame(
@@ -201,7 +201,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-006: MAX_CONCURRENT_STREAMS → OutletSignal emits MaxConcurrentStreamsItem ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5.2-20CS-006: SETTINGS MAX_CONCURRENT_STREAMS emits MaxConcurrentStreamsItem on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5.2-20CS-006: SETTINGS MAX_CONCURRENT_STREAMS emits MaxConcurrentStreamsItem on OutletSignal")]
     public async Task Settings_MaxConcurrentStreams_Emits_Signal()
     {
         var settings = new SettingsFrame(
@@ -216,7 +216,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 
     // ─── 20CS-007: SETTINGS ACK → no emission on OutletSignal ────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.5.2-20CS-007: SETTINGS ACK does not emit on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5.2-20CS-007: SETTINGS ACK does not emit on OutletSignal")]
     public async Task Settings_Ack_Does_Not_Emit_Signal()
     {
         var settingsAck = new SettingsFrame([], isAck: true);

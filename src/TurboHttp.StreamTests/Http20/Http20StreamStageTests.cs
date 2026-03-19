@@ -25,7 +25,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-001: HEADERS with END_STREAM → response without body ────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-001: HEADERS with END_STREAM produces response without body")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-001: HEADERS with END_STREAM produces response without body")]
     public async Task Headers_With_EndStream_Produces_Response_Without_Body()
     {
         var headerBlock = EncodeHeaders(
@@ -49,7 +49,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
         }
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-001: HEADERS-only response with 204 has no body")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-001: HEADERS-only response with 204 has no body")]
     public async Task Headers_Only_204_No_Body()
     {
         var headerBlock = EncodeHeaders(
@@ -75,7 +75,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-002: HEADERS + DATA with END_STREAM → response with body ────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-002: HEADERS + DATA with END_STREAM produces response with body")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-002: HEADERS + DATA with END_STREAM produces response with body")]
     public async Task Headers_Plus_Data_EndStream_Produces_Response_With_Body()
     {
         var headerBlock = EncodeHeaders(
@@ -97,7 +97,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
         Assert.Equal(body, responseBody);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-002: Multiple DATA frames concatenated into single body")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-002: Multiple DATA frames concatenated into single body")]
     public async Task Multiple_Data_Frames_Concatenated()
     {
         var headerBlock = EncodeHeaders(
@@ -122,7 +122,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-003: HEADERS + CONTINUATION + DATA → header block reassembled ───────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-003: HEADERS + CONTINUATION reassembles header block before DATA")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-003: HEADERS + CONTINUATION reassembles header block before DATA")]
     public async Task Headers_Plus_Continuation_Plus_Data_Reassembled()
     {
         // Encode a header block, then split it across HEADERS and CONTINUATION
@@ -151,7 +151,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
         Assert.Equal("body"u8.ToArray(), responseBody);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-003: Multiple CONTINUATION frames all reassembled")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-003: Multiple CONTINUATION frames all reassembled")]
     public async Task Multiple_Continuation_Frames_Reassembled()
     {
         var fullBlock = EncodeHeaders(
@@ -183,7 +183,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-004: Multiple streams (ID 1, 3) → separate responses ────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-004: Two streams produce two separate responses")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-004: Two streams produce two separate responses")]
     public async Task Two_Streams_Produce_Two_Responses()
     {
         // Use a fresh encoder per stream to avoid HPACK dynamic table cross-contamination
@@ -218,7 +218,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
         Assert.Equal("body-3"u8.ToArray(), body3);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-004: Interleaved frames from two streams correctly separated")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-004: Interleaved frames from two streams correctly separated")]
     public async Task Interleaved_Frames_Two_Streams_Separated()
     {
         var headerBlock1 = EncodeHeaders(
@@ -252,7 +252,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-005: :status pseudo-header → correct HttpStatusCode ─────────────────
 
-    [Theory(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-005: :status pseudo-header maps to correct HttpStatusCode")]
+    [Theory(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-005: :status pseudo-header maps to correct HttpStatusCode")]
     [InlineData("200", HttpStatusCode.OK)]
     [InlineData("301", HttpStatusCode.MovedPermanently)]
     [InlineData("404", HttpStatusCode.NotFound)]
@@ -279,7 +279,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-006: Content-Encoding header → decompression applied (gzip) ─────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-006: Content-Encoding gzip triggers decompression")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-006: Content-Encoding gzip triggers decompression")]
     public async Task Content_Encoding_Gzip_Triggers_Decompression()
     {
         var headerBlock = EncodeHeaders(
@@ -312,7 +312,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
         Assert.Equal(originalBody, responseBody);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-006: No Content-Encoding leaves body unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-006: No Content-Encoding leaves body unchanged")]
     public async Task No_Content_Encoding_Leaves_Body_Unchanged()
     {
         var headerBlock = EncodeHeaders(
@@ -335,7 +335,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     // ─── 20S-007: Regular headers (non-pseudo) → present in Response.Headers ─────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-007: Regular headers present in response headers")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-007: Regular headers present in response headers")]
     public async Task Regular_Headers_Present_In_Response()
     {
         var headerBlock = EncodeHeaders(
@@ -358,7 +358,7 @@ public sealed class Http20StreamStageTests : StreamTestBase
         Assert.Equal("TurboHttp", responses[0].Headers.GetValues("server").Single());
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20S-007: Pseudo-headers excluded from response headers collection")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-007: Pseudo-headers excluded from response headers collection")]
     public async Task Pseudo_Headers_Excluded_From_Response_Headers()
     {
         var headerBlock = EncodeHeaders(

@@ -64,7 +64,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── non-redirect pass-through ──────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-001: 200 OK → forwarded on Out0 (final)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-001: 200 OK → forwarded on Out0 (final)")]
     public async Task REDIR_001_NonRedirect_ForwardedOnOut0()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -77,7 +77,7 @@ public sealed class RedirectStageTests : StreamTestBase
         await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-002: 404 Not Found → forwarded on Out0 (final)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-002: 404 Not Found → forwarded on Out0 (final)")]
     public async Task REDIR_002_404_ForwardedOnOut0()
     {
         var response = new HttpResponseMessage(HttpStatusCode.NotFound)
@@ -92,7 +92,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── redirect forwarding to Out1 ────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-003: 301 Moved Permanently → redirect request emitted on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-003: 301 Moved Permanently → redirect request emitted on Out1")]
     public async Task REDIR_003_301_EmitsRedirectOnOut1()
     {
         var response = BuildRedirect(HttpStatusCode.MovedPermanently, "http://example.com/new");
@@ -103,7 +103,7 @@ public sealed class RedirectStageTests : StreamTestBase
         await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-004: 302 Found → redirect request emitted on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-004: 302 Found → redirect request emitted on Out1")]
     public async Task REDIR_004_302_EmitsRedirectOnOut1()
     {
         var response = BuildRedirect(HttpStatusCode.Found, "http://example.com/new");
@@ -113,7 +113,7 @@ public sealed class RedirectStageTests : StreamTestBase
         await redirect.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-005: 303 See Other → method rewritten to GET on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-005: 303 See Other → method rewritten to GET on Out1")]
     public async Task REDIR_005_303_MethodRewrittenToGet()
     {
         var response = new HttpResponseMessage(HttpStatusCode.SeeOther)
@@ -129,7 +129,7 @@ public sealed class RedirectStageTests : StreamTestBase
         await final.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-006: 307 Temporary Redirect → method preserved on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-006: 307 Temporary Redirect → method preserved on Out1")]
     public async Task REDIR_006_307_MethodPreserved()
     {
         var response = new HttpResponseMessage(HttpStatusCode.TemporaryRedirect)
@@ -145,7 +145,7 @@ public sealed class RedirectStageTests : StreamTestBase
         await final.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-007: 308 Permanent Redirect → method preserved on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-007: 308 Permanent Redirect → method preserved on Out1")]
     public async Task REDIR_007_308_MethodPreserved()
     {
         var response = new HttpResponseMessage(HttpStatusCode.PermanentRedirect)
@@ -163,7 +163,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── max redirects enforcement ──────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-008: max redirects exceeded → final response forwarded on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-008: max redirects exceeded → final response forwarded on Out0")]
     public async Task REDIR_008_MaxRedirectsExceeded_ForwardedOnOut0()
     {
         var policy = new RedirectPolicy { MaxRedirects = 1 };
@@ -186,7 +186,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── redirect loop detection ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-009: redirect loop detected → final response forwarded on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-009: redirect loop detected → final response forwarded on Out0")]
     public async Task REDIR_009_RedirectLoop_ForwardedOnOut0()
     {
         var handler = new RedirectHandler();
@@ -208,7 +208,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── HTTPS → HTTP downgrade protection ─────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-010: HTTPS to HTTP downgrade blocked → final response on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-010: HTTPS to HTTP downgrade blocked → final response on Out0")]
     public async Task REDIR_010_HttpsToHttpDowngrade_ForwardedOnOut0()
     {
         var handler = new RedirectHandler(); // AllowHttpsToHttpDowngrade = false
@@ -226,7 +226,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── missing Location header ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-011: redirect with no Location header → final response on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-011: redirect with no Location header → final response on Out0")]
     public async Task REDIR_011_MissingLocationHeader_ForwardedOnOut0()
     {
         // No Location header — BuildRedirectRequest will throw RedirectException
@@ -244,7 +244,7 @@ public sealed class RedirectStageTests : StreamTestBase
     // ── null RequestMessage ────────────────────────────────────────────────────
 
     [Fact(Timeout = 10_000,
-        DisplayName = "REDIR-012: redirect response with null RequestMessage → passes through on Out0")]
+        DisplayName = "RFC9110-15.4-RDIR-012: redirect response with null RequestMessage → passes through on Out0")]
     public async Task REDIR_012_NullRequestMessage_ForwardedOnOut0()
     {
         var response = new HttpResponseMessage(HttpStatusCode.Found);
@@ -259,7 +259,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── default constructor (null handler) ────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-013: null handler → uses default RedirectHandler with default policy")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-013: null handler → uses default RedirectHandler with default policy")]
     public async Task REDIR_013_NullHandler_UsesDefaults()
     {
         // Using default constructor (no handler)
@@ -275,7 +275,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── redirect request URL ───────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-014: redirect request on Out1 targets the Location URI")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-014: redirect request on Out1 targets the Location URI")]
     public async Task REDIR_014_RedirectRequest_TargetsLocationUri()
     {
         const string target = "http://other.com/new-location";
@@ -289,7 +289,7 @@ public sealed class RedirectStageTests : StreamTestBase
 
     // ── cross-origin Authorization header stripping ───────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "REDIR-015: cross-origin redirect strips Authorization header")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-15.4-RDIR-015: cross-origin redirect strips Authorization header")]
     public async Task REDIR_015_CrossOrigin_AuthorizationStripped()
     {
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api");

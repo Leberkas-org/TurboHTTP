@@ -121,11 +121,11 @@ RFC{number}-{section}-{CAT}-{NNN}: {description}
 **Description:** As a developer, I want StreamTests that test RFC-defined behavior to use the same `RFC{N}-{section}-{CAT}-{NNN}` format. Implementation-only tests (ConnectionActor, HostPoolActor, etc.) keep their current category-based format.
 
 **Acceptance Criteria:**
-- [ ] Protocol stage tests (Http10/, Http11/, Http20/) get RFC-prefixed DisplayNames
-- [ ] Infrastructure tests (IO/, Stages/) keep `{CAT}-{NNN}` format (no RFC prefix) — these are implementation tests
-- [ ] Streams/ tests (Redirect, Retry, Cache, Cookie, etc.) get RFC prefix where applicable
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamTests"` passes with 0 failures
-- [ ] Add DisplayNames only where RFC reference is clearly identifiable
+- [x] Protocol stage tests (Http10/, Http11/, Http20/) get RFC-prefixed DisplayNames
+- [x] Infrastructure tests (IO/, Stages/) keep `{CAT}-{NNN}` format (no RFC prefix) — these are implementation tests
+- [x] Streams/ tests (Redirect, Retry, Cache, Cookie, etc.) get RFC prefix where applicable
+- [x] `dotnet test --filter "FullyQualifiedName~StreamTests"` passes with 0 failures
+- [x] Add DisplayNames only where RFC reference is clearly identifiable
 
 ### TASK-009: IntegrationTests — Add DisplayNames to Kestrel fixtures
 **Description:** As a developer, I want any integration tests to follow the naming convention.

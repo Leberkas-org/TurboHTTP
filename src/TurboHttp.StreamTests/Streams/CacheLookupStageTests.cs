@@ -91,7 +91,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
 
     // ── cache miss ─────────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-001: cache miss → request forwarded to Out0 unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-001: cache miss → request forwarded to Out0 unchanged")]
     public async Task CACHE_001_CacheMiss_ForwardsToOut0()
     {
         var store   = new HttpCacheStore();
@@ -103,7 +103,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-002: POST request → cache miss → forwarded to Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-002: POST request → cache miss → forwarded to Out0")]
     public async Task CACHE_002_PostRequest_CacheMiss_ForwardsToOut0()
     {
         var store   = new HttpCacheStore();
@@ -117,7 +117,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
 
     // ── cache hit (fresh) ──────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-003: fresh cache entry → cached response emitted on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-003: fresh cache entry → cached response emitted on Out1")]
     public async Task CACHE_003_FreshEntry_EmitsOnOut1()
     {
         var store   = StoreWithFreshEntry();
@@ -130,7 +130,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         miss.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-004: fresh cache entry → Out1 emits the exact stored response object")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-004: fresh cache entry → Out1 emits the exact stored response object")]
     public async Task CACHE_004_FreshEntry_SameResponseObject()
     {
         const string url  = "http://example.com/resource";
@@ -151,7 +151,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
 
     // ── must-revalidate ────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-005: stale must-revalidate with ETag → If-None-Match added on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-005: stale must-revalidate with ETag → If-None-Match added on Out0")]
     public async Task CACHE_005_MustRevalidate_WithETag_AddsIfNoneMatch()
     {
         var store   = StoreWithStaleEntry(etag: "\"v1\"");
@@ -165,7 +165,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-006: stale must-revalidate with Last-Modified → If-Modified-Since on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-006: stale must-revalidate with Last-Modified → If-Modified-Since on Out0")]
     public async Task CACHE_006_MustRevalidate_WithLastModified_AddsIfModifiedSince()
     {
         var lastModified = DateTimeOffset.UtcNow.AddDays(-7);
@@ -179,7 +179,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-007: stale must-revalidate with no validators → plain request forwarded to Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-007: stale must-revalidate with no validators → plain request forwarded to Out0")]
     public async Task CACHE_007_MustRevalidate_NoValidators_PlainRequestOut0()
     {
         const string url = "http://example.com/resource";
@@ -202,7 +202,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
 
     // ── request Cache-Control directives ──────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-008: request no-cache → forces MustRevalidate even for fresh entry")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-008: request no-cache → forces MustRevalidate even for fresh entry")]
     public async Task CACHE_008_RequestNoCache_ForcesMustRevalidate()
     {
         var store   = StoreWithFreshEntry();
@@ -217,7 +217,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
 
     // ── multiple requests ──────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-009: two sequential misses → both forwarded to Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-009: two sequential misses → both forwarded to Out0")]
     public async Task CACHE_009_TwoMisses_BothToOut0()
     {
         var store = new HttpCacheStore();
@@ -231,7 +231,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-010: two sequential hits → both served on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-010: two sequential hits → both served on Out1")]
     public async Task CACHE_010_TwoHits_BothToOut1()
     {
         const string url1 = "http://example.com/a";
@@ -260,7 +260,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         miss.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-011: mixed miss then hit → miss on Out0, hit on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-011: mixed miss then hit → miss on Out0, hit on Out1")]
     public async Task CACHE_011_MixedMissAndHit_CorrectRouting()
     {
         const string urlMiss = "http://example.com/miss";
@@ -278,7 +278,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
 
     // ── policy ────────────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CACHE-012: null policy → defaults to CachePolicy.Default, fresh entries served from cache")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-012: null policy → defaults to CachePolicy.Default, fresh entries served from cache")]
     public async Task CACHE_012_NullPolicy_UsesDefault()
     {
         var store   = StoreWithFreshEntry();

@@ -56,7 +56,7 @@ public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
 
     // ─── 20CS-SA-001: HeadersFrame on InletRequest → OutletSignal emits StreamAcquireItem ─
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20CS-SA-001: HeadersFrame on InletRequest emits StreamAcquireItem on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CS-SA-001: HeadersFrame on InletRequest emits StreamAcquireItem on OutletSignal")]
     public async Task HeadersFrame_Emits_StreamAcquireItem()
     {
         var headers = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endHeaders: true, endStream: true);
@@ -69,7 +69,7 @@ public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
 
     // ─── 20CS-SA-002: DataFrame on InletRequest → no emission on OutletSignal ─────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.1-20CS-SA-002: DataFrame on InletRequest does not emit on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CS-SA-002: DataFrame on InletRequest does not emit on OutletSignal")]
     public async Task DataFrame_Does_Not_Emit_Signal()
     {
         var data = new DataFrame(streamId: 1, data: new byte[] { 0x01 }, endStream: true);

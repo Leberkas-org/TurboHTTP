@@ -21,7 +21,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     // ─── 20D-RFC-001: Complete frame → correctly decoded ─────────────────────────
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-001: Complete HEADERS frame decoded with correct type and payload")]
+        DisplayName = "RFC9113-4.1-20D-RFC-001: Complete HEADERS frame decoded with correct type and payload")]
     public async Task Complete_Headers_Frame_Decoded_Correctly()
     {
         var hpackBlock = new byte[] { 0x82, 0x84, 0x86, 0x41 };
@@ -39,7 +39,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-001: Complete PING frame decoded with correct opaque data")]
+        DisplayName = "RFC9113-4.1-20D-RFC-001: Complete PING frame decoded with correct opaque data")]
     public async Task Complete_Ping_Frame_Decoded_Correctly()
     {
         var opaqueData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
@@ -54,7 +54,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-001: Complete WINDOW_UPDATE frame decoded with correct increment")]
+        DisplayName = "RFC9113-4.1-20D-RFC-001: Complete WINDOW_UPDATE frame decoded with correct increment")]
     public async Task Complete_WindowUpdate_Frame_Decoded_Correctly()
     {
         var rawBytes = new WindowUpdateFrame(streamId: 7, increment: 65535).Serialize();
@@ -70,7 +70,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     // ─── 20D-RFC-002: Frame split across 2 TCP segments → reassembled ────────────
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-002: HEADERS frame split at midpoint reassembled correctly")]
+        DisplayName = "RFC9113-4.1-20D-RFC-002: HEADERS frame split at midpoint reassembled correctly")]
     public async Task Headers_Frame_Split_At_Midpoint_Reassembled()
     {
         var hpackBlock = new byte[] { 0x82, 0x84, 0x86, 0x41 };
@@ -89,7 +89,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-002: DATA frame split inside 9-byte header reassembled correctly")]
+        DisplayName = "RFC9113-4.1-20D-RFC-002: DATA frame split inside 9-byte header reassembled correctly")]
     public async Task Data_Frame_Split_Inside_Header_Reassembled()
     {
         var body = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"
@@ -108,7 +108,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-002: SETTINGS frame split between header and payload reassembled")]
+        DisplayName = "RFC9113-4.1-20D-RFC-002: SETTINGS frame split between header and payload reassembled")]
     public async Task Settings_Frame_Split_Between_Header_And_Payload_Reassembled()
     {
         var parameters = new List<(SettingsParameter, uint)>
@@ -132,7 +132,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     // ─── 20D-RFC-003: 2 frames in one TCP segment → both decoded ─────────────────
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-003: Two frames in single TCP segment both decoded in order")]
+        DisplayName = "RFC9113-4.1-20D-RFC-003: Two frames in single TCP segment both decoded in order")]
     public async Task Two_Frames_In_Single_Segment_Both_Decoded()
     {
         var settingsBytes = new SettingsFrame(new List<(SettingsParameter, uint)>(), isAck: true).Serialize();
@@ -151,7 +151,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-003: Three frames in single TCP segment all decoded in order")]
+        DisplayName = "RFC9113-4.1-20D-RFC-003: Three frames in single TCP segment all decoded in order")]
     public async Task Three_Frames_In_Single_Segment_All_Decoded()
     {
         var pingBytes = new PingFrame(new byte[8], isAck: false).Serialize();
@@ -174,7 +174,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     // ─── 20D-RFC-004: SETTINGS frame (Type 0x4) → flags and parameters correct ──
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-004: SETTINGS frame parameters decoded with correct keys and values")]
+        DisplayName = "RFC9113-4.1-20D-RFC-004: SETTINGS frame parameters decoded with correct keys and values")]
     public async Task Settings_Frame_Parameters_Decoded_Correctly()
     {
         var parameters = new List<(SettingsParameter, uint)>
@@ -201,7 +201,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-004: SETTINGS ACK frame decoded with empty parameters and ACK flag")]
+        DisplayName = "RFC9113-4.1-20D-RFC-004: SETTINGS ACK frame decoded with empty parameters and ACK flag")]
     public async Task Settings_Ack_Frame_Decoded_Correctly()
     {
         var rawBytes = new SettingsFrame(new List<(SettingsParameter, uint)>(), isAck: true).Serialize();
@@ -218,7 +218,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
 
     [Fact(Timeout = 10_000,
         DisplayName =
-            "RFC-9113-§4.1-20D-RFC-005: DATA frame decoded with correct stream ID, payload, and END_STREAM flag")]
+            "RFC9113-4.1-20D-RFC-005: DATA frame decoded with correct stream ID, payload, and END_STREAM flag")]
     public async Task Data_Frame_Decoded_With_StreamId_Payload_And_EndStream()
     {
         var body = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"
@@ -233,7 +233,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
         Assert.Equal(body, dataFrame.Data.ToArray());
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20D-RFC-005: DATA frame with empty payload decoded correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20D-RFC-005: DATA frame with empty payload decoded correctly")]
     public async Task Data_Frame_Empty_Payload_Decoded_Correctly()
     {
         var rawBytes = new DataFrame(streamId: 9, data: Array.Empty<byte>(), endStream: false).Serialize();
@@ -248,7 +248,7 @@ public sealed class Http20DecoderStageRfcTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§4.1-20D-RFC-005: Large DATA frame payload preserved through decode")]
+        DisplayName = "RFC9113-4.1-20D-RFC-005: Large DATA frame payload preserved through decode")]
     public async Task Data_Frame_Large_Payload_Preserved()
     {
         var body = new byte[1024];

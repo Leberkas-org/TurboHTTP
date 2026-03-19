@@ -14,7 +14,7 @@ public sealed class Http11StageConnectionMgmtTests : EngineTestBase
 
     // ── 11RT-C-001: Response with Connection: close → version correctly set ──────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§9.6-RT-C-001: Response with Connection: close → version correctly set")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.6-11CM-001: Response with Connection: close → version correctly set")]
     public async Task _11RT_C_001_Connection_Close_Version_Set()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/close");
@@ -32,7 +32,7 @@ public sealed class Http11StageConnectionMgmtTests : EngineTestBase
 
     // ── 11RT-C-002: Response without Connection header → keep-alive (default) ────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§9.8-RT-C-002: Response without Connection header → keep-alive default")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.8-11CM-002: Response without Connection header → keep-alive default")]
     public async Task _11RT_C_002_No_Connection_Header_KeepAlive_Default()
     {
         var requests = Enumerable.Range(1, 3)
@@ -53,7 +53,7 @@ public sealed class Http11StageConnectionMgmtTests : EngineTestBase
 
     // ── 11RT-C-003: Chunked + Connection: keep-alive → stream stays open ─────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§9.8-RT-C-003: Chunked + Connection: keep-alive → stream stays open")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.8-11CM-003: Chunked + Connection: keep-alive → stream stays open")]
     public async Task _11RT_C_003_Chunked_KeepAlive_Stream_Stays_Open()
     {
         var requests = Enumerable.Range(1, 2)
@@ -79,7 +79,7 @@ public sealed class Http11StageConnectionMgmtTests : EngineTestBase
 
     // ── 11RT-C-004: Content-Length body → correctly read, not prematurely closed ──
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§9.6-RT-C-004: Content-Length body → correctly read, connection not prematurely closed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.6-11CM-004: Content-Length body → correctly read, connection not prematurely closed")]
     public async Task _11RT_C_004_ContentLength_Body_Correctly_Read()
     {
         var requests = Enumerable.Range(1, 3)
@@ -105,7 +105,7 @@ public sealed class Http11StageConnectionMgmtTests : EngineTestBase
 
     // ── 11RT-C-005: Empty body with Content-Length: 0 → response emitted immediately
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9112-§9.6-RT-C-005: Empty body with Content-Length: 0 → response emitted immediately")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.6-11CM-005: Empty body with Content-Length: 0 → response emitted immediately")]
     public async Task _11RT_C_005_Empty_Body_ContentLength_Zero_Immediate()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/empty");

@@ -34,7 +34,7 @@ public sealed class CookieStorageStageTests : StreamTestBase
 
     // ── null jar (pass-through) ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CSTO-001: null CookieJar → response passes through unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-001: null CookieJar → response passes through unchanged")]
     public async Task CSTO_001_NullJar_PassThrough()
     {
         var stage = new CookieStorageStage(null);
@@ -48,7 +48,7 @@ public sealed class CookieStorageStageTests : StreamTestBase
 
     // ── cookie storage ─────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "CSTO-002: Set-Cookie in response → stored in jar for next request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-002: Set-Cookie in response → stored in jar for next request")]
     public async Task CSTO_002_SetCookie_StoredInJar()
     {
         var jar = new CookieJar();
@@ -64,7 +64,7 @@ public sealed class CookieStorageStageTests : StreamTestBase
         Assert.Contains("session=abc123", cookieValue);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CSTO-003: response is NOT modified by the stage")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-003: response is NOT modified by the stage")]
     public async Task CSTO_003_ResponseNotModified()
     {
         var jar = new CookieJar();
@@ -79,7 +79,7 @@ public sealed class CookieStorageStageTests : StreamTestBase
         Assert.Equal(originalStatusCode, result.StatusCode);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CSTO-004: no Set-Cookie header → jar remains empty")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-004: no Set-Cookie header → jar remains empty")]
     public async Task CSTO_004_NoSetCookie_JarEmpty()
     {
         var jar = new CookieJar();
@@ -93,7 +93,7 @@ public sealed class CookieStorageStageTests : StreamTestBase
         Assert.False(nextRequest.Headers.Contains("Cookie"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CSTO-005: response with null RequestMessage → passes through without throwing")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-005: response with null RequestMessage → passes through without throwing")]
     public async Task CSTO_005_NullRequestMessage_PassThrough()
     {
         var jar = new CookieJar();
@@ -109,7 +109,7 @@ public sealed class CookieStorageStageTests : StreamTestBase
         Assert.False(nextRequest.Headers.Contains("Cookie"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "CSTO-006: multiple responses → cookies accumulated across all responses")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-006: multiple responses → cookies accumulated across all responses")]
     public async Task CSTO_006_MultipleResponses_CookiesAccumulated()
     {
         var jar = new CookieJar();

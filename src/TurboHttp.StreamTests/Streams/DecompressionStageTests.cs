@@ -58,7 +58,7 @@ public sealed class DecompressionStageTests : StreamTestBase
 
     // ── pass-through cases ─────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-001: no Content-Encoding → response passes through unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-001: no Content-Encoding → response passes through unchanged")]
     public async Task DECO_001_NoEncoding_PassThrough()
     {
         var body = "hello world"u8.ToArray();
@@ -72,7 +72,7 @@ public sealed class DecompressionStageTests : StreamTestBase
         Assert.False(result.Content.Headers.Contains("Content-Encoding"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-002: Content-Encoding: identity → response passes through unchanged")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-002: Content-Encoding: identity → response passes through unchanged")]
     public async Task DECO_002_IdentityEncoding_PassThrough()
     {
         var body = "hello world"u8.ToArray();
@@ -87,7 +87,7 @@ public sealed class DecompressionStageTests : StreamTestBase
 
     // ── gzip decompression ─────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-003: Content-Encoding: gzip → body decompressed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-003: Content-Encoding: gzip → body decompressed")]
     public async Task DECO_003_Gzip_Decompressed()
     {
         var original = "gzip compressed response body"u8.ToArray();
@@ -101,7 +101,7 @@ public sealed class DecompressionStageTests : StreamTestBase
         Assert.Equal(original, resultBody);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-004: Content-Encoding: x-gzip → body decompressed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-004: Content-Encoding: x-gzip → body decompressed")]
     public async Task DECO_004_XGzip_Decompressed()
     {
         var original = "x-gzip content"u8.ToArray();
@@ -117,7 +117,7 @@ public sealed class DecompressionStageTests : StreamTestBase
 
     // ── deflate decompression ──────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-005: Content-Encoding: deflate → body decompressed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-005: Content-Encoding: deflate → body decompressed")]
     public async Task DECO_005_Deflate_Decompressed()
     {
         var original = "deflate compressed data"u8.ToArray();
@@ -133,7 +133,7 @@ public sealed class DecompressionStageTests : StreamTestBase
 
     // ── brotli decompression ───────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-006: Content-Encoding: br → body decompressed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-006: Content-Encoding: br → body decompressed")]
     public async Task DECO_006_Brotli_Decompressed()
     {
         var original = "brotli compressed response"u8.ToArray();
@@ -149,7 +149,7 @@ public sealed class DecompressionStageTests : StreamTestBase
 
     // ── header management ──────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-007: after decompression Content-Encoding header is removed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-007: after decompression Content-Encoding header is removed")]
     public async Task DECO_007_ContentEncoding_RemovedAfterDecompression()
     {
         var original = "test body"u8.ToArray();
@@ -162,7 +162,7 @@ public sealed class DecompressionStageTests : StreamTestBase
         Assert.False(result.Content.Headers.Contains("Content-Encoding"));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-008: after decompression Content-Length is updated to decompressed size")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-008: after decompression Content-Length is updated to decompressed size")]
     public async Task DECO_008_ContentLength_UpdatedAfterDecompression()
     {
         var original = "content length test body"u8.ToArray();
@@ -175,7 +175,7 @@ public sealed class DecompressionStageTests : StreamTestBase
         Assert.Equal(original.Length, result.Content.Headers.ContentLength);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-009: other content headers (Content-Type) preserved after decompression")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-009: other content headers (Content-Type) preserved after decompression")]
     public async Task DECO_009_OtherContentHeaders_Preserved()
     {
         var original = "{\"key\":\"value\"}"u8.ToArray();
@@ -195,7 +195,7 @@ public sealed class DecompressionStageTests : StreamTestBase
 
     // ── multiple responses ─────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "DECO-010: multiple responses with different encodings all decompressed")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-010: multiple responses with different encodings all decompressed")]
     public async Task DECO_010_MultipleResponses_AllDecompressed()
     {
         var body1 = "first response"u8.ToArray();

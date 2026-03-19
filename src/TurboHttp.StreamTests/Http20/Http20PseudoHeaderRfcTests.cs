@@ -38,7 +38,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
 
     // ─── H2PH-001: :method = HTTP method (GET, POST, etc.) ─────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-001: :method pseudo-header equals GET for GET request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-001: :method pseudo-header equals GET for GET request")]
     public async Task H2PH_001_Method_Get()
     {
         var frames = await RunAsync(GetRequest());
@@ -48,7 +48,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         Assert.Equal("GET", method.Value);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-001: :method pseudo-header equals POST for POST request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-001: :method pseudo-header equals POST for POST request")]
     public async Task H2PH_001_Method_Post()
     {
         var frames = await RunAsync(PostRequest());
@@ -58,7 +58,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         Assert.Equal("POST", method.Value);
     }
 
-    [Theory(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-001: :method pseudo-header matches HTTP method")]
+    [Theory(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-001: :method pseudo-header matches HTTP method")]
     [InlineData("PUT")]
     [InlineData("DELETE")]
     [InlineData("PATCH")]
@@ -81,7 +81,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
 
     // ─── H2PH-002: :path = absolute path + query ───────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-002: :path pseudo-header equals absolute path")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-002: :path pseudo-header equals absolute path")]
     public async Task H2PH_002_Path_Simple()
     {
         var frames = await RunAsync(GetRequest("http://example.com/api/items"));
@@ -91,7 +91,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         Assert.Equal("/api/items", path.Value);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-002: :path pseudo-header includes query string")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-002: :path pseudo-header includes query string")]
     public async Task H2PH_002_Path_With_Query()
     {
         var frames = await RunAsync(GetRequest("http://example.com/search?q=foo&page=2"));
@@ -101,7 +101,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         Assert.Equal("/search?q=foo&page=2", path.Value);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-002: :path pseudo-header for root is /")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-002: :path pseudo-header for root is /")]
     public async Task H2PH_002_Path_Root()
     {
         var frames = await RunAsync(GetRequest("http://example.com/"));
@@ -113,7 +113,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
 
     // ─── H2PH-003: :scheme = URI scheme (http/https) ───────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-003: :scheme pseudo-header equals http for http URI")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-003: :scheme pseudo-header equals http for http URI")]
     public async Task H2PH_003_Scheme_Http()
     {
         var frames = await RunAsync(GetRequest("http://example.com/"));
@@ -123,7 +123,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         Assert.Equal("http", scheme.Value);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-003: :scheme pseudo-header equals https for https URI")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-003: :scheme pseudo-header equals https for https URI")]
     public async Task H2PH_003_Scheme_Https()
     {
         var frames = await RunAsync(GetRequest("https://example.com/"));
@@ -135,7 +135,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
 
     // ─── H2PH-004: :authority = host:port ───────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-004: :authority pseudo-header equals host")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-004: :authority pseudo-header equals host")]
     public async Task H2PH_004_Authority_Host()
     {
         var frames = await RunAsync(GetRequest("http://example.com/"));
@@ -145,7 +145,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         Assert.Equal("example.com", authority.Value);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-004: :authority pseudo-header includes port when non-default")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-004: :authority pseudo-header includes port when non-default")]
     public async Task H2PH_004_Authority_Host_With_Port()
     {
         var frames = await RunAsync(GetRequest("http://example.com:8080/api"));
@@ -157,7 +157,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
 
     // ─── H2PH-005: Pseudo-headers appear BEFORE regular headers ─────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-005: All pseudo-headers appear before regular headers")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-005: All pseudo-headers appear before regular headers")]
     public async Task H2PH_005_Pseudo_Headers_Before_Regular()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
@@ -187,7 +187,7 @@ public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
         }
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§8.3.1-H2PH-005: All four required pseudo-headers are present")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.3.1-H2PH-005: All four required pseudo-headers are present")]
     public async Task H2PH_005_All_Four_Pseudo_Headers_Present()
     {
         var frames = await RunAsync(GetRequest("http://example.com/path"));

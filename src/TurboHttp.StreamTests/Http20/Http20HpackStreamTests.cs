@@ -37,7 +37,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
 
     // ─── H2HP-001: Static table: :method GET transmitted as indexed ─────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-001: Static table :method GET transmitted as indexed byte 0x82")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-001: Static table :method GET transmitted as indexed byte 0x82")]
     public async Task H2HP_001_Method_Get_Is_Static_Indexed()
     {
         var encoder = new Http2RequestEncoder();
@@ -52,7 +52,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
         Assert.Equal(0x82, bytes[0]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-001: Static table :method GET uses single-byte indexed representation")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-001: Static table :method GET uses single-byte indexed representation")]
     public async Task H2HP_001_Method_Get_Indexed_Is_Single_Byte()
     {
         var encoder = new Http2RequestEncoder();
@@ -75,7 +75,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
 
     // ─── H2HP-002: Dynamic table: repeated custom headers → smaller on 2nd ──
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-002: Repeated custom header produces smaller block on 2nd request")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-002: Repeated custom header produces smaller block on 2nd request")]
     public async Task H2HP_002_Dynamic_Table_Shrinks_Repeated_Custom_Header()
     {
         // Use the same encoder so the dynamic table persists across requests.
@@ -102,7 +102,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
             $"2nd header block ({block2Size} bytes) should be smaller than 1st ({block1Size} bytes) due to dynamic table indexing");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-002: 2nd request custom header is indexed from dynamic table")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-002: 2nd request custom header is indexed from dynamic table")]
     public async Task H2HP_002_Dynamic_Table_Second_Request_Decoded_Correctly()
     {
         var encoder = new Http2RequestEncoder();
@@ -132,7 +132,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
 
     // ─── H2HP-003: 3 requests with same host → progressive compression ──────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-003: 3 requests with same host show progressive compression")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-003: 3 requests with same host show progressive compression")]
     public async Task H2HP_003_Progressive_Compression_Same_Host()
     {
         var encoder = new Http2RequestEncoder();
@@ -166,7 +166,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
             $"3rd block ({size3} bytes) should be <= 2nd ({size2} bytes)");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-003: Progressive compression - all 3 responses decode correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-003: Progressive compression - all 3 responses decode correctly")]
     public async Task H2HP_003_Progressive_Compression_All_Decode_Correctly()
     {
         var encoder = new Http2RequestEncoder();
@@ -200,7 +200,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
 
     // ─── H2HP-004: Huffman encoding → smaller header block ──────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-004: Huffman encoding produces smaller header block than without")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-004: Huffman encoding produces smaller header block than without")]
     public async Task H2HP_004_Huffman_Encoding_Produces_Smaller_Block()
     {
         // Encoder WITHOUT Huffman
@@ -224,7 +224,7 @@ public sealed class Http20HpackStreamTests : StreamTestBase
             $"Huffman block ({blockHuff.Length} bytes) should be smaller than raw block ({blockNoHuff.Length} bytes)");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-7541-§2-H2HP-004: Huffman-encoded block decodes to same headers as non-Huffman")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC7541-2-H2HP-004: Huffman-encoded block decodes to same headers as non-Huffman")]
     public async Task H2HP_004_Huffman_And_Raw_Decode_To_Same_Headers()
     {
         var encoderNoHuff = new Http2RequestEncoder(useHuffman: false);

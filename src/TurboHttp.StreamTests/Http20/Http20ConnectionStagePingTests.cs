@@ -48,7 +48,7 @@ public sealed class Http20ConnectionStagePingTests : StreamTestBase
 
     // ─── 20CP-001: PING without ACK → PING with ACK sent back ───────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.7-20CP-001: PING without ACK produces PING ACK response")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.7-20CP-001: PING without ACK produces PING ACK response")]
     public async Task Ping_Without_Ack_Sends_Ack_Response()
     {
         var ping = new PingFrame(new byte[8], isAck: false);
@@ -62,7 +62,7 @@ public sealed class Http20ConnectionStagePingTests : StreamTestBase
 
     // ─── 20CP-002: PING payload (8 bytes) → identical in ACK ─────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.7-20CP-002: PING ACK echoes identical 8-byte payload")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.7-20CP-002: PING ACK echoes identical 8-byte payload")]
     public async Task Ping_Ack_Echoes_Identical_Payload()
     {
         var payload = new byte[] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
@@ -77,7 +77,7 @@ public sealed class Http20ConnectionStagePingTests : StreamTestBase
 
     // ─── 20CP-003: PING with ACK flag → no new PING sent ────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.7-20CP-003: PING with ACK flag does not trigger another PING")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.7-20CP-003: PING with ACK flag does not trigger another PING")]
     public async Task Ping_With_Ack_Does_Not_Trigger_Response()
     {
         var pingAck = new PingFrame(new byte[8], isAck: true);
@@ -89,7 +89,7 @@ public sealed class Http20ConnectionStagePingTests : StreamTestBase
 
     // ─── 20CP-004: PING on stream 0 → response on stream 0 ──────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.7-20CP-004: PING response is on stream 0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.7-20CP-004: PING response is on stream 0")]
     public async Task Ping_Response_On_Stream_Zero()
     {
         var ping = new PingFrame([0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8], isAck: false);

@@ -31,7 +31,7 @@ public sealed class Http20StreamIdRfcTests : StreamTestBase
 
     // ─── H2S-001: First request → stream ID 1 ────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-H2S-001: First request produces stream ID 1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.1-H2S-001: First request produces stream ID 1")]
     public async Task H2S_001_First_Request_Stream_Id_1()
     {
         var frames = await RunAsync(GetRequest());
@@ -42,7 +42,7 @@ public sealed class Http20StreamIdRfcTests : StreamTestBase
 
     // ─── H2S-002: Second request → stream ID 3 ───────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-H2S-002: Second request produces stream ID 3")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.1-H2S-002: Second request produces stream ID 3")]
     public async Task H2S_002_Second_Request_Stream_Id_3()
     {
         var frames = await RunAsync(GetRequest("/a"), GetRequest("/b"));
@@ -55,7 +55,7 @@ public sealed class Http20StreamIdRfcTests : StreamTestBase
 
     // ─── H2S-003: 5 requests → IDs 1, 3, 5, 7, 9 ────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-H2S-003: 5 requests produce stream IDs 1, 3, 5, 7, 9")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.1-H2S-003: 5 requests produce stream IDs 1, 3, 5, 7, 9")]
     public async Task H2S_003_Five_Requests_Produce_Expected_Ids()
     {
         var requests = Enumerable.Range(0, 5).Select(i => GetRequest($"/{i}")).ToArray();
@@ -74,7 +74,7 @@ public sealed class Http20StreamIdRfcTests : StreamTestBase
 
     // ─── H2S-004: All HEADERS frames have correct stream ID ──────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-H2S-004: All HEADERS frames have correct odd stream IDs")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.1-H2S-004: All HEADERS frames have correct odd stream IDs")]
     public async Task H2S_004_All_Headers_Frames_Have_Correct_Stream_Id()
     {
         var requests = Enumerable.Range(0, 5).Select(i => GetRequest($"/{i}")).ToArray();
@@ -95,7 +95,7 @@ public sealed class Http20StreamIdRfcTests : StreamTestBase
 
     // ─── H2S-005: DATA frames have same stream ID as associated HEADERS ──────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§5.1.1-H2S-005: DATA frames share the same stream ID as their associated HEADERS")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-5.1.1-H2S-005: DATA frames share the same stream ID as their associated HEADERS")]
     public async Task H2S_005_Data_Frames_Have_Same_Stream_Id_As_Headers()
     {
         // POST requests produce HEADERS + DATA frame pairs

@@ -87,7 +87,7 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
 
     // ─── 20CG-001: GOAWAY received → _goAwayReceived flag set ─────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.8-20CG-001: GOAWAY received sets goAwayReceived flag (verified by rejecting subsequent request)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-001: GOAWAY received sets goAwayReceived flag (verified by rejecting subsequent request)")]
     public async Task GoAway_Received_Sets_Flag()
     {
         // We verify the flag is set indirectly: after GOAWAY, pushing a request
@@ -111,7 +111,7 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
 
     // ─── 20CG-002: GOAWAY frame forwarded downstream ──────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.8-20CG-002: GOAWAY frame is forwarded downstream")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-002: GOAWAY frame is forwarded downstream")]
     public async Task GoAway_Forwarded_Downstream()
     {
         var goAway = new GoAwayFrame(lastStreamId: 5, Http2ErrorCode.NoError, debugData: [0x01, 0x02]);
@@ -127,7 +127,7 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
 
     // ─── 20CG-003: After GOAWAY → new requests rejected ──────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§6.8-20CG-003: After GOAWAY new requests are rejected with Http2Exception")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-003: After GOAWAY new requests are rejected with Http2Exception")]
     public async Task After_GoAway_New_Requests_Rejected()
     {
         var goAway = new GoAwayFrame(lastStreamId: 1, Http2ErrorCode.InternalError);

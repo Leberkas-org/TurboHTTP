@@ -37,7 +37,7 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
         return (lines[0], lines[1..], body);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "11E-RFC-001: Request-line format: GET /path HTTP/1.1 CRLF")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-3.1-11ES-001: Request-line format GET /path HTTP/1.1 CRLF")]
     public async Task _11E_RFC_001_RequestLine_Format()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path")
@@ -51,7 +51,7 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
         Assert.Equal("GET /path HTTP/1.1", requestLine);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "11E-RFC-002: Host header MUST be present (RFC 9112 §7.2)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-3.2-11ES-002: Host header MUST be present")]
     public async Task _11E_RFC_002_HostHeader_MustBePresent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -64,7 +64,7 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
         Assert.Contains("Host:", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "11E-RFC-003: Host header value equals URI authority (host:port)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-3.2-11ES-003: Host header value equals URI authority (host:port)")]
     public async Task _11E_RFC_003_HostHeader_ValueEqualsAuthority()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource")
@@ -77,7 +77,7 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
         Assert.Contains("Host: example.com:8080\r\n", raw);
     }
 
-    [Theory(Timeout = 10_000, DisplayName = "11E-RFC-003: Host header omits default port")]
+    [Theory(Timeout = 10_000, DisplayName = "RFC9112-3.2-11ES-003b: Host header omits default port")]
     [InlineData("http://example.com/", "Host: example.com\r\n")]
     [InlineData("https://example.com/", "Host: example.com\r\n")]
     public async Task _11E_RFC_003_HostHeader_OmitsDefaultPort(string uri, string expectedHost)
@@ -92,7 +92,7 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
         Assert.Contains(expectedHost, raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "11E-RFC-004: POST with body includes Content-Length or Transfer-Encoding: chunked")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-6-11ES-004: POST with body includes Content-Length or Transfer-Encoding chunked")]
     public async Task _11E_RFC_004_Post_ContentLengthOrChunked()
     {
         var body = "key=value"u8.ToArray();
@@ -110,7 +110,7 @@ public sealed class Http11EncoderStageRfcTests : StreamTestBase
             "POST with body must have Content-Length or Transfer-Encoding: chunked");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "11E-RFC-005: Hop-by-hop headers (TE, Keep-Alive, Proxy-Connection) are stripped")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-5-11ES-005: Hop-by-hop headers (TE, Keep-Alive, Proxy-Connection) are stripped")]
     public async Task _11E_RFC_005_HopByHop_HeadersStripped()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")

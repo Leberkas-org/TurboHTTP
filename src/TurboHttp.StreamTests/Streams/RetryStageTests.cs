@@ -67,7 +67,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── non-retriable responses pass through on Out0 ───────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-001: 200 OK on GET → forwarded on Out0 (final)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-001: 200 OK on GET → forwarded on Out0 (final)")]
     public async Task RETRY_001_200OK_ForwardedOnOut0()
     {
         var response = BuildResponse(HttpStatusCode.OK);
@@ -77,7 +77,7 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-002: 404 Not Found → forwarded on Out0 (final)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-002: 404 Not Found → forwarded on Out0 (final)")]
     public async Task RETRY_002_404_ForwardedOnOut0()
     {
         var response = BuildResponse(HttpStatusCode.NotFound);
@@ -87,7 +87,7 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-003: 500 Internal Server Error → forwarded on Out0 (not retryable)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-003: 500 Internal Server Error → forwarded on Out0 (not retryable)")]
     public async Task RETRY_003_500_ForwardedOnOut0()
     {
         var response = BuildResponse(HttpStatusCode.InternalServerError);
@@ -99,7 +99,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── 408 triggers retry for idempotent methods ─────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-004: 408 on GET → retry request emitted on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-004: 408 on GET → retry request emitted on Out1")]
     public async Task RETRY_004_408_GET_EmitsRetryOnOut1()
     {
         var response = BuildResponse(HttpStatusCode.RequestTimeout, HttpMethod.Get);
@@ -110,7 +110,7 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-005: 503 on GET → retry request emitted on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-005: 503 on GET → retry request emitted on Out1")]
     public async Task RETRY_005_503_GET_EmitsRetryOnOut1()
     {
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable, HttpMethod.Get);
@@ -123,7 +123,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── non-idempotent methods are never retried ──────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-006: 408 on POST → forwarded on Out0 (not idempotent)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-006: 408 on POST → forwarded on Out0 (not idempotent)")]
     public async Task RETRY_006_408_POST_ForwardedOnOut0()
     {
         var response = BuildResponse(HttpStatusCode.RequestTimeout, HttpMethod.Post);
@@ -133,7 +133,7 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-007: 503 on PATCH → forwarded on Out0 (not idempotent)")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-007: 503 on PATCH → forwarded on Out0 (not idempotent)")]
     public async Task RETRY_007_503_PATCH_ForwardedOnOut0()
     {
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable, HttpMethod.Patch);
@@ -145,7 +145,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── retry limit enforcement ────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-008: retry limit of 1 → second 408 forwarded as final on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-008: retry limit of 1 → second 408 forwarded as final on Out0")]
     public async Task RETRY_008_RetryLimitExhausted_ForwardedOnOut0()
     {
         var policy = new RetryPolicy { MaxRetries = 1 };
@@ -160,7 +160,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── null RequestMessage ────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-009: response with null RequestMessage → passes through on Out0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-009: response with null RequestMessage → passes through on Out0")]
     public async Task RETRY_009_NullRequestMessage_ForwardedOnOut0()
     {
         // No RequestMessage — evaluator cannot determine idempotency.
@@ -174,7 +174,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── retry preserves original request ─────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-010: retry request on Out1 is the original RequestMessage")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-010: retry request on Out1 is the original RequestMessage")]
     public async Task RETRY_010_RetryRequest_IsOriginalRequestMessage()
     {
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data");
@@ -192,7 +192,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── Retry-After delay respected ────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-011: Retry-After: 0 on 503 GET → immediate retry on Out1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-011: Retry-After: 0 on 503 GET → immediate retry on Out1")]
     public async Task RETRY_011_RetryAfter_Zero_ImmediateRetry()
     {
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable, HttpMethod.Get,
@@ -207,7 +207,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── default policy ─────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RETRY-012: null policy constructor → uses RetryPolicy.Default")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-012: null policy constructor → uses RetryPolicy.Default")]
     public async Task RETRY_012_NullPolicy_UsesDefault()
     {
         var stage = new RetryStage(null);
@@ -223,7 +223,7 @@ public sealed class RetryStageTests : StreamTestBase
 
     // ── idempotent method coverage ─────────────────────────────────────────────
 
-    [Theory(Timeout = 10_000, DisplayName = "RETRY-013: idempotent methods retry on 408")]
+    [Theory(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-013: idempotent methods retry on 408")]
     [InlineData("PUT")]
     [InlineData("DELETE")]
     [InlineData("HEAD")]

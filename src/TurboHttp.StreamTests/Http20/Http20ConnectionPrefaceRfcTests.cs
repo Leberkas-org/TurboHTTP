@@ -57,7 +57,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     // ─── H2P-001: First 24 bytes = PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n ──────────────
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§3.4-H2P-001: First 24 bytes are the HTTP/2 connection preface magic")]
+        DisplayName = "RFC9113-3.4-H2P-001: First 24 bytes are the HTTP/2 connection preface magic")]
     public async Task First_24_Bytes_Are_Http2_Magic()
     {
         var output = await RunAsync(
@@ -73,7 +73,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     // ─── H2P-002: SETTINGS frame directly after magic (byte 24+) ────────────────
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§3.4-H2P-002: SETTINGS frame immediately follows the 24-byte magic")]
+        DisplayName = "RFC9113-3.4-H2P-002: SETTINGS frame immediately follows the 24-byte magic")]
     public async Task Settings_Frame_Follows_Magic()
     {
         var output = await RunAsync(
@@ -102,7 +102,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
             $"Expected at least {24 + 9 + payloadLength} bytes for complete preface, got {bytes.Length}");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.4-H2P-002: SETTINGS frame contains expected default parameters")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.4-H2P-002: SETTINGS frame contains expected default parameters")]
     public async Task Settings_Frame_Contains_Default_Parameters()
     {
         var output = await RunAsync(
@@ -137,7 +137,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
     // ─── H2P-003: Preface is sent exactly once (not repeated on second request) ──
 
     [Fact(Timeout = 10_000,
-        DisplayName = "RFC-9113-§3.4-H2P-003: Preface is sent exactly once — not repeated on subsequent data")]
+        DisplayName = "RFC9113-3.4-H2P-003: Preface is sent exactly once — not repeated on subsequent data")]
     public async Task Preface_Sent_Exactly_Once()
     {
         // One connect followed by multiple data items — preface only on connect
@@ -168,7 +168,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
 
     // ─── H2P-004: SETTINGS frame on stream 0 ────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.4-H2P-004: SETTINGS frame in preface has stream ID 0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.4-H2P-004: SETTINGS frame in preface has stream ID 0")]
     public async Task Settings_Frame_Has_Stream_Id_Zero()
     {
         var output = await RunAsync(
@@ -185,7 +185,7 @@ public sealed class Http20ConnectionPrefaceRfcTests : StreamTestBase
         Assert.Equal(0, streamId);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§3.4-H2P-004: Reserved bit in stream ID is zero")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-3.4-H2P-004: Reserved bit in stream ID is zero")]
     public async Task Settings_Frame_Reserved_Bit_Is_Zero()
     {
         var output = await RunAsync(

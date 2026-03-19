@@ -18,7 +18,7 @@ public sealed class Http20DecoderStageTests : StreamTestBase
             .RunWith(Sink.Seq<Http2Frame>(), Materializer);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1: Single complete frame decoded correctly")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1: Single complete frame decoded correctly")]
     public async Task ST_20_FDEC_001_Single_Complete_Frame_Decoded()
     {
         var hpackBlock = new byte[] { 0x82, 0x84, 0x86, 0x41 };
@@ -33,7 +33,7 @@ public sealed class Http20DecoderStageTests : StreamTestBase
         Assert.Equal(hpackBlock, headersFrame.HeaderBlockFragment.ToArray());
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1: Frame split across two TCP chunks reassembled")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1: Frame split across two TCP chunks reassembled")]
     public async Task ST_20_FDEC_002_Frame_Split_Across_Two_Chunks_Reassembled()
     {
         var hpackBlock = new byte[] { 0x82, 0x84, 0x86, 0x41 };
@@ -50,7 +50,7 @@ public sealed class Http20DecoderStageTests : StreamTestBase
         Assert.Equal(3, headersFrame.StreamId);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1: Two frames in one TCP chunk each decoded")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1: Two frames in one TCP chunk each decoded")]
     public async Task ST_20_FDEC_003_Two_Frames_In_One_Chunk_Decoded()
     {
         var settingsBytes = new SettingsFrame(new List<(SettingsParameter, uint)>(), isAck: true).Serialize();
@@ -68,7 +68,7 @@ public sealed class Http20DecoderStageTests : StreamTestBase
         Assert.IsType<HeadersFrame>(frames[1]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1: SETTINGS frame (stream 0) decoded")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1: SETTINGS frame (stream 0) decoded")]
     public async Task ST_20_FDEC_004_Settings_Frame_Decoded()
     {
         var parameters = new List<(SettingsParameter, uint)>
@@ -87,7 +87,7 @@ public sealed class Http20DecoderStageTests : StreamTestBase
         Assert.Equal(4096u, settingsFrame.Parameters[0].Item2);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1: DATA frame decoded with correct stream ID and payload")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1: DATA frame decoded with correct stream ID and payload")]
     public async Task ST_20_FDEC_005_Data_Frame_Decoded_With_StreamId_And_Payload()
     {
         var body = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"

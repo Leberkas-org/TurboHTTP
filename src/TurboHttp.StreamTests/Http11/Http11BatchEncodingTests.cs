@@ -9,7 +9,7 @@ namespace TurboHttp.StreamTests.Http11;
 
 public sealed class Http11BatchEncodingTests : StreamTestBase
 {
-    [Fact(DisplayName = "BatchConsolidate: two DataItems are concatenated into single buffer")]
+    [Fact(DisplayName = "RFC9112-6-11BE-001: BatchConsolidate two DataItems concatenated into single buffer")]
     public void ST_11_BATCH_001_Two_DataItems_Concatenated()
     {
         var owner1 = MemoryPool<byte>.Shared.Rent(4);
@@ -28,7 +28,7 @@ public sealed class Http11BatchEncodingTests : StreamTestBase
         result.Memory.Dispose();
     }
 
-    [Fact(DisplayName = "BatchConsolidate: Key is preserved from accumulated item")]
+    [Fact(DisplayName = "RFC9112-6-11BE-002: BatchConsolidate Key preserved from accumulated item")]
     public void ST_11_BATCH_002_Key_Preserved_From_Accumulated()
     {
         var key = new RequestEndpoint
@@ -53,7 +53,7 @@ public sealed class Http11BatchEncodingTests : StreamTestBase
         result.Memory.Dispose();
     }
 
-    [Fact(DisplayName = "BatchConsolidate: source items disposed after consolidation")]
+    [Fact(DisplayName = "RFC9112-6-11BE-003: BatchConsolidate source items disposed after consolidation")]
     public void ST_11_BATCH_003_Source_Items_Disposed()
     {
         var owner1 = MemoryPool<byte>.Shared.Rent(4);
@@ -72,19 +72,19 @@ public sealed class Http11BatchEncodingTests : StreamTestBase
         result.Memory.Dispose();
     }
 
-    [Fact(DisplayName = "MaxBatchWeight: is 64KB")]
+    [Fact(DisplayName = "RFC9112-6-11BE-004: MaxBatchWeight is 64KB")]
     public void ST_11_BATCH_004_MaxWeight_Is_64KB()
     {
         Assert.Equal(65_536L, Http11Engine.MaxBatchWeight);
     }
 
-    [Fact(DisplayName = "MinItemWeight: enforces max 8 items per batch")]
+    [Fact(DisplayName = "RFC9112-6-11BE-005: MinItemWeight enforces max 8 items per batch")]
     public void ST_11_BATCH_005_MinItemWeight_Enforces_Max_8_Items()
     {
         Assert.Equal(Http11Engine.MaxBatchWeight / 8, Http11Engine.MinItemWeight);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "Batch: single request passes through unchanged in stream")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-6-11BE-006: Single request passes through unchanged in stream")]
     public async Task ST_11_BATCH_006_Single_Request_PassThrough()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
@@ -108,7 +108,7 @@ public sealed class Http11BatchEncodingTests : StreamTestBase
         dataItem.Memory.Dispose();
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "Batch: multiple small requests batched into fewer output items")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-6-11BE-007: Multiple small requests batched into fewer output items")]
     public async Task ST_11_BATCH_007_Multiple_Requests_Batched()
     {
         var requests = Enumerable.Range(1, 5)
@@ -147,7 +147,7 @@ public sealed class Http11BatchEncodingTests : StreamTestBase
         }
     }
 
-    [Fact(DisplayName = "BatchConsolidate: three DataItems chained produce correct concatenation")]
+    [Fact(DisplayName = "RFC9112-6-11BE-008: BatchConsolidate three DataItems chained produce correct concatenation")]
     public void ST_11_BATCH_008_Three_DataItems_Chained()
     {
         var items = new DataItem[3];

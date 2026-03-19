@@ -21,7 +21,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
 
     // ─── 20E-RFC-001: HEADERS frame → 9-byte header + HPACK payload ───────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-001: HEADERS frame produces 9-byte header followed by HPACK payload")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-001: HEADERS frame produces 9-byte header followed by HPACK payload")]
     public async Task Headers_Frame_Produces_9Byte_Header_Plus_Hpack_Payload()
     {
         var hpackBlock = new byte[] { 0x82, 0x84, 0x86, 0x41, 0x8A };
@@ -34,7 +34,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(hpackBlock, bytes[9..]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-001: HEADERS frame with empty header block produces exactly 9 bytes")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20E-RFC-001: HEADERS frame with empty header block produces exactly 9 bytes")]
     public async Task Headers_Frame_Empty_Block_Produces_Exactly_9_Bytes()
     {
         var frame = new HeadersFrame(streamId: 3, headerBlock: Array.Empty<byte>(), endStream: false);
@@ -46,7 +46,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
 
     // ─── 20E-RFC-002: DATA frame → 9-byte header + body payload ───────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-002: DATA frame produces 9-byte header followed by body payload")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-002: DATA frame produces 9-byte header followed by body payload")]
     public async Task Data_Frame_Produces_9Byte_Header_Plus_Body()
     {
         var body = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"
@@ -58,7 +58,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(body, bytes[9..]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-002: DATA frame with empty body produces exactly 9 bytes")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20E-RFC-002: DATA frame with empty body produces exactly 9 bytes")]
     public async Task Data_Frame_Empty_Body_Produces_Exactly_9_Bytes()
     {
         var frame = new DataFrame(streamId: 5, data: Array.Empty<byte>(), endStream: true);
@@ -70,7 +70,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
 
     // ─── 20E-RFC-003: Frame-length field (3 bytes) → correct payload length ───
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-003: Length field (bytes 0-2) matches DATA payload size")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-003: Length field (bytes 0-2) matches DATA payload size")]
     public async Task Length_Field_Matches_Data_Payload_Size()
     {
         var body = new byte[42];
@@ -83,7 +83,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(body.Length, lengthField);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-003: Length field (bytes 0-2) matches HEADERS payload size")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20E-RFC-003: Length field (bytes 0-2) matches HEADERS payload size")]
     public async Task Length_Field_Matches_Headers_Payload_Size()
     {
         var hpackBlock = new byte[17];
@@ -96,7 +96,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(hpackBlock.Length, lengthField);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-003: Length field is zero for empty payload")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20E-RFC-003: Length field is zero for empty payload")]
     public async Task Length_Field_Is_Zero_For_Empty_Payload()
     {
         var frame = new DataFrame(streamId: 1, data: Array.Empty<byte>(), endStream: true);
@@ -109,7 +109,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
 
     // ─── 20E-RFC-004: Frame type (1 byte): 0x0=DATA, 0x1=HEADERS ─────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-004: DATA frame type byte (offset 3) is 0x0")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-004: DATA frame type byte (offset 3) is 0x0")]
     public async Task Data_Frame_Type_Byte_Is_0x0()
     {
         var frame = new DataFrame(streamId: 1, data: new byte[] { 0xFF }, endStream: false);
@@ -119,7 +119,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(0x00, bytes[3]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-004: HEADERS frame type byte (offset 3) is 0x1")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20E-RFC-004: HEADERS frame type byte (offset 3) is 0x1")]
     public async Task Headers_Frame_Type_Byte_Is_0x1()
     {
         var frame = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endStream: false);
@@ -131,7 +131,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
 
     // ─── 20E-RFC-005: Stream ID in big-endian (4 bytes), highest bit = 0 ──────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-005: Stream ID 1 encoded big-endian in bytes 5-8")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-005: Stream ID 1 encoded big-endian in bytes 5-8")]
     public async Task StreamId_1_Encoded_BigEndian()
     {
         var frame = new DataFrame(streamId: 1, data: new byte[] { 0x01 }, endStream: false);
@@ -144,7 +144,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(0x01, bytes[8]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-005: Stream ID 257 encoded big-endian in bytes 5-8")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-4.1-20E-RFC-005: Stream ID 257 encoded big-endian in bytes 5-8")]
     public async Task StreamId_257_Encoded_BigEndian()
     {
         var frame = new HeadersFrame(streamId: 257, headerBlock: new byte[] { 0x82 }, endStream: false);
@@ -158,7 +158,7 @@ public sealed class Http20EncoderStageRfcTests : StreamTestBase
         Assert.Equal(0x01, bytes[8]);
     }
 
-    [Theory(Timeout = 10_000, DisplayName = "RFC-9113-§4.1-20E-RFC-005: Highest bit of stream ID field is always 0 (reserved)")]
+    [Theory(Timeout = 10_000, DisplayName = "RFC9113-4.1-20EN-005: Highest bit of stream ID field is always 0 (reserved)")]
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(0x7FFFFFFF)] // max valid stream ID
