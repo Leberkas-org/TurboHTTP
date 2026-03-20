@@ -14,7 +14,7 @@ namespace TurboHttp.StreamTests.RFC9112;
 /// Stage under test: <see cref="Http11EncoderStage"/>.
 /// RFC 9112 §3–§6: HTTP/1.1 request-line, header fields, and transfer coding rules.
 /// </remarks>
-public sealed class Http11EncoderStageRfcTests : StreamTestBase
+public sealed class Http11EncoderStageWireFormatTests : StreamTestBase
 {
     private async Task<string> EncodeAsync(HttpRequestMessage request)
     {

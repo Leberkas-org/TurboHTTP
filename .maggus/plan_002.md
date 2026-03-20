@@ -275,10 +275,10 @@ Example:  01_Http10EncoderStageTests.cs
 3. `Http11BatchEncodingTests.cs` → `03_Http11BatchEncodingTests.cs`
 
 **Acceptance Criteria:**
-- [ ] Files renamed via `git mv`
-- [ ] Class names updated (`Http11EncoderStageRfcTests` → `Http11EncoderStageWireFormatTests`)
-- [ ] Namespaces unchanged
-- [ ] `dotnet build` succeeds
+- [x] Files renamed via `git mv`
+- [x] Class names updated (`Http11EncoderStageRfcTests` → `Http11EncoderStageWireFormatTests`)
+- [x] Namespaces unchanged
+- [x] `dotnet build` succeeds
 
 ---
 
