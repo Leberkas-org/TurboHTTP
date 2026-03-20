@@ -495,11 +495,11 @@ The following RFC supersession rules apply:
 3. `src/TurboHttp/IO/TcpOptionsFactory.cs`
 
 **Acceptance Criteria:**
-- [ ] Stage comments accurately describe current behaviour
-- [ ] TCP options comments are up to date
-- [ ] No outdated RFC references
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Stage comments accurately describe current behaviour
+- [x] TCP options comments are up to date
+- [x] No outdated RFC references
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
