@@ -342,6 +342,53 @@ public sealed class ConnectionStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 15_000,
+        DisplayName = "CS-009: DataItem with missing handle logs warning and stream survives")]
+    public async Task Should_SurviveAndContinue_When_DataItemArrivesWithNoHandle()
+    {
+        // Build a stub router that never replies with a ConnectionHandle
+        // so _handle remains null when DataItem arrives.
+        var neverReplyRouter = Sys.ActorOf(Props.Create(() => new NeverReplyRouter()));
+
+        var outbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+        var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+
+        var stageFlow = Flow.FromGraph(new ConnectionStage(neverReplyRouter));
+
+        var (inputQueue, outputTask) = Source.Queue<IOutputItem>(8, OverflowStrategy.Backpressure)
+            .Via(stageFlow)
+            .ToMaterialized(Sink.Seq<IInputItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Push a DataItem without first connecting — handle is null.
+        var data = MakeData(0xFF, 4);
+        await inputQueue.OfferAsync(data);
+
+        // Give the stage a moment to process the dropped item.
+        await Task.Delay(200);
+
+        // Push a second DataItem to confirm the stage is still alive and processing.
+        var data2 = MakeData(0xEE, 4);
+        await inputQueue.OfferAsync(data2);
+        await Task.Delay(200);
+
+        // Complete the stream — no exception means the stage survived.
+        inputQueue.Complete();
+        var results = await outputTask.WaitAsync(TimeSpan.FromSeconds(10));
+
+        // No output items expected (handle was never established), but no crash.
+        Assert.Empty(results);
+    }
+
+    /// <summary>Stub router that never replies so the ConnectionHandle is never set.</summary>
+    private sealed class NeverReplyRouter : ReceiveActor
+    {
+        public NeverReplyRouter()
+        {
+            ReceiveAny(_ => { /* intentionally silent */ });
+        }
+    }
+
+    [Fact(Timeout = 15_000,
         DisplayName = "CS-008: StreamAcquireItem forwarded as StreamAcquired to ConnectionActor")]
     public async Task Should_ForwardStreamAcquired_When_StreamAcquireItemReceived()
     {

@@ -243,14 +243,14 @@ if (_handle is null)
 Also fix the race condition (from original audit): use local copy of `_handle`.
 
 **Acceptance Criteria:**
-- [ ] `FailStage` removed from ConnectionStage
-- [ ] Missing handle logs warning and drops element instead of killing stream
-- [ ] Race condition on `_handle` fixed (local copy pattern)
-- [ ] `onUpstreamFinish`/`onDownstreamFinish` → `CompleteStage()` remains (Dispose path)
-- [ ] Stream test: simulate missing handle, verify stream survives
-- [ ] Existing tests asserting `FailStage` on missing handle → **deleted**
-- [ ] Remaining ConnectionStage stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] `FailStage` removed from ConnectionStage
+- [x] Missing handle logs warning and drops element instead of killing stream
+- [x] Race condition on `_handle` fixed (local copy pattern)
+- [x] `onUpstreamFinish`/`onDownstreamFinish` → `CompleteStage()` remains (Dispose path)
+- [x] Stream test: simulate missing handle, verify stream survives
+- [x] Existing tests asserting `FailStage` on missing handle → **deleted**
+- [x] Remaining ConnectionStage stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

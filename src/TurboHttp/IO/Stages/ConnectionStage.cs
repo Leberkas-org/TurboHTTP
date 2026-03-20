@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
@@ -185,16 +186,16 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
             if (item is DataItem dataItem)
             {
-                if (_handle is null)
+                var handle = _handle;
+                if (handle is null)
                 {
-                    FailStage(new InvalidOperationException(
-                        "DataItem received but no ConnectionHandle is available. " +
-                        "A ConnectItem must precede data items."));
+                    Log.Warning("ConnectionStage: DataItem received but no ConnectionHandle is available — dropping element.");
+                    TryPull();
                     return;
                 }
 
                 // Write directly to the connection's outbound channel.
-                _ = _handle.OutboundWriter
+                _ = handle.OutboundWriter
                     .WriteAsync(new ValueTuple<IMemoryOwner<byte>, int>(dataItem.Memory, dataItem.Length))
                     .AsTask()
                     .ContinueWith(_ => _onOutboundWriteDone!(), TaskContinuationOptions.ExecuteSynchronously);
