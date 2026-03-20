@@ -678,9 +678,9 @@ finally
 **File:** `src/TurboHttp/Protocol/RFC9113/Http2Frame.cs`, line 104
 
 **Acceptance Criteria:**
-- [ ] Negative stream IDs throw `ArgumentOutOfRangeException`
-- [ ] Unit tests verify
-- [ ] Build compiles with 0 errors
+- [x] Negative stream IDs throw `ArgumentOutOfRangeException`
+- [x] Unit tests verify
+- [x] Build compiles with 0 errors
 
 ---
 

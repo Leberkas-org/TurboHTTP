@@ -81,4 +81,27 @@ public sealed class Http2FrameTests
         var frame = new GoAwayFrame(3, Http2ErrorCode.ProtocolError, debug).Serialize();
         Assert.Equal(27, frame.Length);
     }
+
+    [Theory(DisplayName = "RFC-9113-§4.1-cat-001: Negative stream ID must throw ArgumentOutOfRangeException")]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    [InlineData(int.MinValue)]
+    public void Should_ThrowArgumentOutOfRangeException_WhenStreamIdIsNegative(int negativeStreamId)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new DataFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new HeadersFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new RstStreamFrame(negativeStreamId, Http2ErrorCode.Cancel));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new WindowUpdateFrame(negativeStreamId, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ContinuationFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
+    }
+
+    [Theory(DisplayName = "RFC-9113-§4.1-cat-002: Zero and positive stream IDs must be accepted")]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(int.MaxValue)]
+    public void Should_AcceptStreamId_WhenStreamIdIsNonNegative(int streamId)
+    {
+        var frame = new DataFrame(streamId, ReadOnlyMemory<byte>.Empty);
+        Assert.Equal(streamId, frame.StreamId);
+    }
 }

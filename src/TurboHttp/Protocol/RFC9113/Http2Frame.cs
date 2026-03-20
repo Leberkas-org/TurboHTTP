@@ -101,7 +101,9 @@ public enum Http2ErrorCode : uint
 
 public abstract class Http2Frame(int streamId)
 {
-    public int StreamId { get; } = streamId;
+    public int StreamId { get; } = streamId >= 0
+        ? streamId
+        : throw new ArgumentOutOfRangeException(nameof(streamId), streamId, "Stream ID must be non-negative.");
     public abstract FrameType Type { get; }
 
     /// <summary>
