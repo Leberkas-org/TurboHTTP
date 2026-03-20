@@ -600,7 +600,7 @@ public sealed class Http11Decoder : IDisposable
             var line = data[pos..lineEnd];
             var colonIdx = line.IndexOf((byte)':');
 
-            // RFC 9112 §5.1 / RFC 7230 §3.2: every header field MUST contain a colon.
+            // RFC 9112 §5.1: every header field MUST contain a colon.
             // colonIdx == -1: no colon present; colonIdx == 0: empty field name — both are invalid.
             if (colonIdx <= 0)
             {

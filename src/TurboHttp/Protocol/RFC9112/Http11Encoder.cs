@@ -237,7 +237,7 @@ public static class Http11Encoder
 
         foreach (var header in headers)
         {
-            // RFC 7230 Section 3.3.2: Content-Length MUST NOT be sent when Transfer-Encoding is present
+            // RFC 9112 §6.1: Content-Length MUST NOT be sent when Transfer-Encoding is present
             if (isChunked && header.Key.Equals(WellKnownHeaders.Names.ContentLength, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -510,7 +510,7 @@ public static class Http11Encoder
 
     private static void ValidateRangeValue(string value)
     {
-        // RFC 7233 §2.1: bytes-range-spec = first-byte-pos "-" [last-byte-pos]
+        // RFC 9110 §14.1.1: bytes-range-spec = first-byte-pos "-" [last-byte-pos]
         // suffix-byte-range-spec = "-" suffix-length
         // All positions must consist only of DIGIT characters.
         if (!value.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase))

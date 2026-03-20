@@ -205,15 +205,15 @@ The following RFC supersession rules apply:
 2. `src/TurboHttp/Protocol/RFC9112/Http11Decoder.cs`
 
 **Acceptance Criteria:**
-- [ ] **RFC 7230 → RFC 9112 mapping**: Update all outdated RFC 7230 references
+- [x] **RFC 7230 → RFC 9112 mapping**: Update all outdated RFC 7230 references
   - RFC 7230 §3.2 (Header Fields) → RFC 9112 §5 (Field Syntax)
-  - RFC 7230 §3.3.2 (Content-Length) → RFC 9112 §6.2 (Content-Length)
+  - RFC 7230 §3.3.2 (Content-Length) → RFC 9112 §6.1 (Transfer-Encoding)
   - RFC 7230 §4.1 (Chunked Transfer) → RFC 9112 §7.1 (Chunked Transfer Coding)
-- [ ] **RFC 7233 → RFC 9110 mapping**: RFC 7233 §2.1 (byte-range-spec) → RFC 9110 §14.1.1
-- [ ] Validate all §-numbers against the RFC 9112 table of contents
-- [ ] Comments accurately describe current encoder/decoder behaviour
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] **RFC 7233 → RFC 9110 mapping**: RFC 7233 §2.1 (byte-range-spec) → RFC 9110 §14.1.1
+- [x] Validate all §-numbers against the RFC 9112 table of contents
+- [x] Comments accurately describe current encoder/decoder behaviour
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
