@@ -379,6 +379,50 @@ public sealed class ConnectionStageTests : StreamTestBase
         Assert.Empty(results);
     }
 
+    [Fact(Timeout = 15_000,
+        DisplayName =
+            "CS-010: Concurrent disconnect — stage survives items arriving after inbound channel completes")]
+    public async Task Should_SurviveItems_When_HandleClearedByConcurrentInboundComplete()
+    {
+        var connectionActorProbe = CreateTestProbe();
+        var (stageFlow, _, inboundWriter, _) = Build(connectionActorProbe.Ref);
+        var options = new TcpOptions { Host = "localhost", Port = 8080 };
+        var connectItem = new ConnectItem(options)
+        {
+            Key = new RequestEndpoint { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+        };
+
+        var (inputQueue, outputTask) = Source.Queue<IOutputItem>(8, OverflowStrategy.Backpressure)
+            .Via(stageFlow)
+            .ToMaterialized(Sink.Seq<IInputItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Connect — handle becomes non-null.
+        await inputQueue.OfferAsync(connectItem);
+        await Task.Delay(300);
+
+        // Simulate TCP disconnect: complete the inbound channel.
+        // This triggers _onInboundComplete which sets _handle = null in the stage event loop.
+        inboundWriter.Complete();
+
+        // Immediately (before the async callback drains) push items that access the handle.
+        // After the event-loop processes the completion the local copy pattern keeps these safe.
+        await inputQueue.OfferAsync(new MaxConcurrentStreamsItem(10));
+        await inputQueue.OfferAsync(new StreamAcquireItem());
+        var reuseDecision = ConnectionReuseDecision.Close("close");
+        await inputQueue.OfferAsync(new ConnectionReuseItem(TestKey, reuseDecision));
+
+        // Allow all callbacks to drain.
+        await Task.Delay(400);
+
+        // Complete the source — no exception means the stage survived.
+        inputQueue.Complete();
+        var results = await outputTask.WaitAsync(TimeSpan.FromSeconds(10));
+
+        // No inbound data was injected after connect, so results are empty.
+        Assert.Empty(results);
+    }
+
     /// <summary>Stub router that never replies so the ConnectionHandle is never set.</summary>
     private sealed class NeverReplyRouter : ReceiveActor
     {

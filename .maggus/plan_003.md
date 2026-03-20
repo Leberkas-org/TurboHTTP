@@ -471,10 +471,10 @@ _ = handle.OutboundWriter.WriteAsync(...);
 ```
 
 **Acceptance Criteria:**
-- [ ] All `_handle` accesses use a local copy pattern
-- [ ] No direct field access after null check
-- [ ] Stream test verifies concurrent disconnect doesn't crash
-- [ ] Build compiles with 0 errors
+- [x] All `_handle` accesses use a local copy pattern
+- [x] No direct field access after null check
+- [x] Stream test verifies concurrent disconnect doesn't crash
+- [x] Build compiles with 0 errors
 
 ---
 

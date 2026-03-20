@@ -142,19 +142,20 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         private void HandlePush()
         {
             var item = Grab(_stage._inlet);
+            var handle = _handle;
 
             if (item is MaxConcurrentStreamsItem maxStreams)
             {
-                _handle?.ConnectionActor.Tell(
-                    new HostPool.UpdateMaxConcurrentStreams(_handle.ConnectionActor, maxStreams.MaxStreams));
+                handle?.ConnectionActor.Tell(
+                    new HostPool.UpdateMaxConcurrentStreams(handle.ConnectionActor, maxStreams.MaxStreams));
                 TryPull();
                 return;
             }
 
             if (item is StreamAcquireItem)
             {
-                _handle?.ConnectionActor.Tell(
-                    new HostPool.StreamAcquired(_handle.ConnectionActor));
+                handle?.ConnectionActor.Tell(
+                    new HostPool.StreamAcquired(handle.ConnectionActor));
                 TryPull();
                 return;
             }
@@ -163,12 +164,12 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             {
                 if (!reuseItem.Decision.CanReuse)
                 {
-                    _handle?.ConnectionActor.Tell(
-                        new HostPool.MarkConnectionNoReuse(_handle.ConnectionActor));
+                    handle?.ConnectionActor.Tell(
+                        new HostPool.MarkConnectionNoReuse(handle.ConnectionActor));
                 }
 
-                _handle?.ConnectionActor.Tell(
-                    new HostPool.StreamCompleted(_handle.ConnectionActor));
+                handle?.ConnectionActor.Tell(
+                    new HostPool.StreamCompleted(handle.ConnectionActor));
                 TryPull();
                 return;
             }
@@ -186,7 +187,6 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
             if (item is DataItem dataItem)
             {
-                var handle = _handle;
                 if (handle is null)
                 {
                     Log.Warning("ConnectionStage: DataItem received but no ConnectionHandle is available — dropping element.");
