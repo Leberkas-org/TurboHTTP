@@ -62,14 +62,14 @@ Transform TurboHttp from a working codebase into a polished, production-ready op
 **Description:** As a developer, I want an .editorconfig that enforces the project's coding style so that contributions are consistent.
 
 **Acceptance Criteria:**
-- [ ] Root `.editorconfig` created matching CLAUDE.md conventions:
+- [x] Root `.editorconfig` created matching CLAUDE.md conventions:
   - Allman braces, 4 spaces, no tabs
   - `_fieldName` prefix for private fields
   - `var` preferences
   - File header: no `#nullable enable` (project-level)
   - `sealed` class preference
-- [ ] C# analyzer severity settings for key rules (IDE0003, IDE0007, etc.)
-- [ ] Build still succeeds (no new errors from analyzer rules — warnings acceptable initially)
+- [x] C# analyzer severity settings for key rules (IDE0003, IDE0007, etc.)
+- [x] Build still succeeds (no new errors from analyzer rules — warnings acceptable initially)
 
 ### TASK-006: Write README.md
 **Description:** As a visitor, I want a comprehensive README so that I understand what TurboHttp is, how to install it, and how to use it.
