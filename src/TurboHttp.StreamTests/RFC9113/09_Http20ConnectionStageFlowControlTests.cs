@@ -18,9 +18,9 @@ namespace TurboHttp.StreamTests.RFC9113;
 public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 {
     /// <summary>
-    /// Runs the Http20ConnectionStage with the given server frames (arriving on ServerIn).
-    /// Returns (downstream frames from AppOut, server-bound frames from ServerOut).
-    /// AppIn is fed Source.Never so the stage stays alive until inletRaw finishes.
+    /// Runs the Http20ConnectionStage with the given server frames (arriving on InServer).
+    /// Returns (downstream frames from OutStream, server-bound frames from OutServer).
+    /// InApp is fed Source.Never so the stage stays alive until _inServer finishes.
     /// </summary>
     private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
         params Http2Frame[] serverFrames)

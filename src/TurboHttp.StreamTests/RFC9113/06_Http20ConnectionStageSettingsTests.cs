@@ -19,9 +19,9 @@ namespace TurboHttp.StreamTests.RFC9113;
 public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
 {
     /// <summary>
-    /// Runs the Http20ConnectionStage with the given server frames (arriving on ServerIn).
-    /// Returns (downstream frames from AppOut, server-bound frames from ServerOut).
-    /// AppIn is fed Source.Never so the stage stays alive until inletRaw finishes.
+    /// Runs the Http20ConnectionStage with the given server frames (arriving on InServer).
+    /// Returns (downstream frames from OutStream, server-bound frames from OutServer).
+    /// InApp is fed Source.Never so the stage stays alive until _inServer finishes.
     /// </summary>
     private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
         params Http2Frame[] serverFrames)
@@ -57,7 +57,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
     }
 
     /// <summary>
-    /// Runs the Http20ConnectionStage and captures OutletSignal emissions alongside standard outputs.
+    /// Runs the Http20ConnectionStage and captures OutSignal emissions alongside standard outputs.
     /// </summary>
     private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunWithSignalsAsync(
         params Http2Frame[] serverFrames)
@@ -225,7 +225,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
         });
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5.2-20CS-006: SETTINGS MAX_CONCURRENT_STREAMS emits MaxConcurrentStreamsItem on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5.2-20CS-006: SETTINGS MAX_CONCURRENT_STREAMS emits MaxConcurrentStreamsItem on OutSignal")]
     public async Task Should_Emit_Signal_When_MaxConcurrentStreams_Settings_Received()
     {
         var settings = new SettingsFrame(
@@ -238,7 +238,7 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
         Assert.Equal(50, item.MaxStreams);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5.2-20CS-007: SETTINGS ACK does not emit on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5.2-20CS-007: SETTINGS ACK does not emit on OutSignal")]
     public async Task Should_Not_Emit_Signal_When_Settings_Ack_Received()
     {
         var settingsAck = new SettingsFrame([], isAck: true);

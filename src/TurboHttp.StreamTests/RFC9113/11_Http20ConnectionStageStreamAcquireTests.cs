@@ -20,9 +20,9 @@ namespace TurboHttp.StreamTests.RFC9113;
 public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
 {
     /// <summary>
-    /// Runs the Http20ConnectionStage with request frames on AppIn and a
-    /// harmless SETTINGS ACK on ServerIn to allow the stage to complete.
-    /// Returns (server-bound frames from ServerOut, signal items from OutletSignal).
+    /// Runs the Http20ConnectionStage with request frames on InApp and a
+    /// harmless SETTINGS ACK on InServer to allow the stage to complete.
+    /// Returns (server-bound frames from OutServer, signal items from OutSignal).
     /// </summary>
     private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunWithRequestsAsync(
         params Http2Frame[] requestFrames)
@@ -37,9 +37,9 @@ public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
                 {
                     var stage = b.Add(new Http20ConnectionStage());
 
-                    // A SETTINGS ACK on ServerIn is harmless (no ACK reply) and lets
+                    // A SETTINGS ACK on InServer is harmless (no ACK reply) and lets
                     // the inlet complete, which tears down the stage via the default
-                    // onUpstreamFinish on _inletRaw.
+                    // onUpstreamFinish on _inServer.
                     var serverSource = b.Add(
                         Source.Single<Http2Frame>(new SettingsFrame([], isAck: true))
                             .InitialDelay(TimeSpan.FromMilliseconds(200)));
@@ -104,7 +104,7 @@ public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
         return (serverBound, signals);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CS-SA-001: HeadersFrame on InletRequest emits StreamAcquireItem on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CS-SA-001: HeadersFrame on InApp emits StreamAcquireItem on OutSignal")]
     public async Task Should_Emit_StreamAcquireItem_When_HeadersFrame_Received()
     {
         var headers = new HeadersFrame(streamId: 1, headerBlock: new byte[] { 0x82 }, endHeaders: true, endStream: true);
@@ -115,7 +115,7 @@ public sealed class Http20ConnectionStageStreamAcquireTests : StreamTestBase
         Assert.IsType<StreamAcquireItem>(signal);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CS-SA-002: DataFrame on InletRequest does not emit on OutletSignal")]
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CS-SA-002: DataFrame on InApp does not emit on OutSignal")]
     public async Task Should_Not_Emit_Signal_When_DataFrame_Received()
     {
         var data = new DataFrame(streamId: 1, data: new byte[] { 0x01 }, endStream: true);

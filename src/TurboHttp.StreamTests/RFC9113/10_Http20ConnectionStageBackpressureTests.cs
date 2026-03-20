@@ -19,8 +19,8 @@ namespace TurboHttp.StreamTests.RFC9113;
 public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
 {
     /// <summary>
-    /// Creates an Http20ConnectionStage graph with a <see cref="Source.Queue{T}"/> for AppIn
-    /// and a <see cref="TestPublisher.ManualProbe{T}"/> for ServerIn.
+    /// Creates an Http20ConnectionStage graph with a <see cref="Source.Queue{T}"/> for InApp
+    /// and a <see cref="TestPublisher.ManualProbe{T}"/> for InServer.
     /// Subscriber probes capture all three outlets for assertion.
     /// </summary>
     private (
@@ -69,7 +69,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
 
     /// <summary>
     /// Sends <paramref name="count"/> HeadersFrame elements through the queue and verifies
-    /// each one is forwarded to ServerOut and emits a StreamAcquireItem signal.
+    /// each one is forwarded to OutServer and emits a StreamAcquireItem signal.
     /// Returns the next available odd stream ID.
     /// </summary>
     private static async Task<int> FillStreamsAsync(
@@ -109,7 +109,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
         // Offer a 4th frame — it enters the queue buffer but the stage won't pull it
         await OfferAsync(requestQueue, new HeadersFrame(streamId: nextId, headerBlock: new byte[] { 0x82 }, endHeaders: true));
 
-        // The 4th frame should NOT appear on ServerOut because the stage is gating _inletRequest
+        // The 4th frame should NOT appear on OutServer because the stage is gating _inApp
         serverBoundProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
@@ -141,7 +141,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
         srvSub.SendNext(new DataFrame(streamId: 1, data: Array.Empty<byte>(), endStream: true));
         appOutProbe.ExpectNext();
 
-        // Pull resumes — the 4th frame now appears on ServerOut
+        // Pull resumes — the 4th frame now appears on OutServer
         serverBoundProbe.ExpectNext(TimeSpan.FromSeconds(3));
         signalProbe.ExpectNext(TimeSpan.FromSeconds(3));
     }
@@ -172,7 +172,7 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
         srvSub.SendNext(new RstStreamFrame(streamId: 3, Http2ErrorCode.Cancel));
         appOutProbe.ExpectNext();
 
-        // Pull resumes — the 4th frame now appears on ServerOut
+        // Pull resumes — the 4th frame now appears on OutServer
         serverBoundProbe.ExpectNext(TimeSpan.FromSeconds(3));
         signalProbe.ExpectNext(TimeSpan.FromSeconds(3));
     }
@@ -200,9 +200,9 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
         srvSub.SendNext(new SettingsFrame(
             [(SettingsParameter.MaxConcurrentStreams, 2u)]));
 
-        // SETTINGS frame forwarded to AppOut
+        // SETTINGS frame forwarded to OutStream
         appOutProbe.ExpectNext();
-        // SETTINGS ACK emitted on ServerOut
+        // SETTINGS ACK emitted on OutServer
         serverBoundProbe.ExpectNext();
         // MaxConcurrentStreamsItem signal
         signalProbe.ExpectNext();

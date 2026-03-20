@@ -18,8 +18,8 @@ namespace TurboHttp.StreamTests.RFC9113;
 public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
 {
     /// <summary>
-    /// Runs the Http20ConnectionStage with the given server frames (arriving on ServerIn).
-    /// Returns (downstream frames from AppOut, server-bound frames from ServerOut).
+    /// Runs the Http20ConnectionStage with the given server frames (arriving on InServer).
+    /// Returns (downstream frames from OutStream, server-bound frames from OutServer).
     /// </summary>
     private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
         params Http2Frame[] serverFrames)
