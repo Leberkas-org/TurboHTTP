@@ -153,6 +153,35 @@ Network (TCP)
 - `HttpDecodeError` enum for error classification
 - `RedirectException` — redirect-specific errors
 
+### Stage Inlet/Outlet Naming
+
+All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `StageName.Direction.Role` (PascalCase). C# field names mirror the same pattern.
+
+**String name pattern:**
+
+| Shape Type | Inlet pattern | Outlet pattern | Example |
+|-----------|--------------|----------------|---------|
+| FlowShape (1 in, 1 out) | `StageName.In` | `StageName.Out` | `"Http11Encoder.In"` / `"Http11Encoder.Out"` |
+| FanOutShape (1 in, 2+ out) | `StageName.In` | `StageName.Out.Role` | `"Redirect.In"` / `"Redirect.Out.Final"` / `"Redirect.Out.Redirect"` |
+| FanInShape (2+ in, 1 out) | `StageName.In.Role` | `StageName.Out` | `"H2Correlation.In.Request"` / `"H2Correlation.In.Response"` / `"H2Correlation.Out"` |
+| Custom multi-port | `StageName.In.Role` | `StageName.Out.Role` | `"H2Connection.In.Server"` / `"H2Connection.Out.Stream"` |
+
+**C# field name pattern:**
+
+| Shape Type | Inlet fields | Outlet fields |
+|-----------|-------------|--------------|
+| FlowShape (1 in, 1 out) | `_in` | `_out` |
+| FanOutShape (1 in, 2+ out) | `_in` | `_outRole` (e.g., `_outFinal`, `_outSignal`) |
+| FanInShape (2+ in, 1 out) | `_inRole` (e.g., `_inRequest`, `_inResponse`) | `_out` |
+| Custom multi-port | `_inRole` | `_outRole` |
+
+**Rules:**
+- PascalCase throughout — matches C# idiom
+- No protocol prefix — stage class name already contains it (e.g., `Http11Encoder` not `Http.Http11Encoder`)
+- Drop `Stage` suffix in the string name (e.g., `Http11Encoder` not `Http11EncoderStage`)
+- Role names are semantic: `Request`, `Response`, `Final`, `Retry`, `Redirect`, `Signal`, `Miss`, `Hit`, `Server`, `Stream`, `App`
+- Every stage must have globally unique port names — no two stages may share the same string
+
 ## Workflow Rules
 
 - **Do NOT commit** — Claude must never run `git commit` or `git add` unless the user explicitly asks for it. All commits are done manually by the developer.

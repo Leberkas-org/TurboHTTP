@@ -492,9 +492,9 @@ Also update the custom `Http20ConnectionShape` class.
 ```
 
 **Acceptance Criteria:**
-- [ ] Convention documented in CLAUDE.md
-- [ ] Includes examples for FlowShape, FanOutShape, FanInShape, and custom shapes
-- [ ] Build compiles with 0 errors
+- [x] Convention documented in CLAUDE.md
+- [x] Includes examples for FlowShape, FanOutShape, FanInShape, and custom shapes
+- [x] Build compiles with 0 errors
 
 ---
 
