@@ -26,6 +26,25 @@ dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifie
 dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
 ```
 
+### Documentation Site (requires Node.js 20+)
+
+```bash
+# Install dependencies
+cd docs && npm install
+
+# Start local dev server (http://localhost:5173/TurboHttp/)
+npm run docs:dev
+
+# Build static site (output: docs/.vitepress/dist/)
+npm run docs:build
+
+# Preview production build locally
+npm run docs:preview
+
+# Regenerate LikeC4 SVG exports
+npx likec4 export svg --output docs/public/diagrams docs/likec4
+```
+
 ## Architecture
 
 ### Layered Design
@@ -252,9 +271,50 @@ Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures
 - **Cookies**: RFC 6265
 - **Caching**: RFC 9111 (freshness, validation, storage)
 
+## Documentation Site
+
+The documentation site lives in `docs/` and is built with [VitePress](https://vitepress.dev/) with interactive [LikeC4](https://likec4.dev/) architecture diagrams.
+
+### Directory Structure
+
+```
+docs/
+  .vitepress/
+    config.ts             — VitePress configuration (nav, sidebar, base path)
+    theme/index.ts        — Custom theme extending VitePress default
+    components/
+      LikeC4Diagram.vue   — Vue wrapper for LikeC4 React components
+  likec4/                 — LikeC4 architecture model (.c4 files, 12+ views)
+  logo/                   — Project logos (logo.svg, logo.png, logo_small.svg)
+  public/
+    diagrams/             — Static SVG fallback exports from LikeC4
+  guide/                  — Getting started, architecture overview, protocols
+  architecture/           — Per-layer and per-scenario architecture pages
+  rfc/                    — RFC coverage details (one page per RFC)
+  api/                    — Public API overview
+  index.md                — VitePress home page (hero, features, CTA)
+  package.json            — VitePress + LikeC4 npm dependencies
+  vite.config.ts          — LikeC4 Vite plugin configuration
+```
+
+### Deployment
+
+The docs site is automatically built and deployed to [https://st0o0.github.io/TurboHttp/](https://st0o0.github.io/TurboHttp/) via `.github/workflows/docs.yml` on every push to `main` that touches `docs/**` or `README.md`. GitHub Pages must be enabled in repository settings with "GitHub Actions" as the source.
+
+### LikeC4 Architecture Views
+
+The `docs/likec4/` workspace contains 12+ named views:
+- `index` — System overview
+- `turbohttp` — Container view
+- `clientLayer`, `streamsLayer`, `ioLayer` — Layer views
+- `http10Engine`, `http11Engine`, `http2Engine` — Engine views
+- `pipelineFlow` — Full pipeline
+- `scenarioHttp10`, `scenarioHttp11`, `scenarioHttp2` — Dynamic scenarios
+
 ## Current Limitations
 
 - **No end-to-end integration tests**: Kestrel fixtures are defined with 60+ routes but no test classes consume them yet.
+- **LikeC4 diagrams**: Require Node.js 20+ to render interactively. Static SVG fallbacks in `docs/public/diagrams/` are placeholders until regenerated via `npx likec4 export svg`.
 
 
 ## Dependencies
