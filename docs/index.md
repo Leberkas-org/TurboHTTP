@@ -4,7 +4,7 @@ layout: home
 hero:
   name: TurboHttp
   text: High-Performance HTTP Client for .NET
-  tagline: Built on Akka.Streams with full RFC compliance — HTTP/1.0, HTTP/1.1, and HTTP/2.
+  tagline: Built on Akka.Streams — automatic retries, caching, cookies, and HTTP/2 multiplexing out of the box.
   image:
     src: /logo/logo.svg
     alt: TurboHttp
@@ -13,39 +13,42 @@ hero:
       text: Get Started
       link: /guide/
     - theme: alt
-      text: View on GitHub
+      text: Why TurboHttp?
+      link: /why/
+    - theme: alt
+      text: GitHub
       link: https://github.com/st0o0/TurboHttp
 
 features:
   - icon: ⚡
-    title: HTTP/1.0, 1.1, and HTTP/2
-    details: Full protocol support with automatic version negotiation. HPACK compression, flow control, and multiplexed streams for HTTP/2.
+    title: HTTP/1.0, HTTP/1.1 & HTTP/2
+    details: Automatic version negotiation, HPACK compression, flow control, and multiplexed streams. One client handles all versions.
 
   - icon: 🔄
-    title: Akka.Streams Pipeline
-    details: Backpressure-aware, reactive processing with zero actor hops on the data path. System.Threading.Channels for lock-free I/O.
+    title: Automatic Retries
+    details: Smart retry with idempotency detection — GET, PUT, DELETE are retried automatically. Respects Retry-After headers. POST is never retried.
 
-  - icon: ✅
-    title: RFC-Compliant
-    details: 2,435 tests across 7 RFCs — RFC 1945, RFC 9112, RFC 9113, RFC 7541, RFC 9110, RFC 9111, and RFC 6265.
-
-  - icon: 🔗
-    title: Connection Pooling
-    details: Per-host actor hierarchy with idle eviction and reconnect with exponential backoff. Configurable per-host concurrency limits.
+  - icon: 📦
+    title: Built-in Caching
+    details: In-memory LRU cache with Vary support, conditional requests (ETag, Last-Modified), and freshness evaluation. Zero config needed.
 
   - icon: 🔀
-    title: Redirect & Retry
-    details: RFC 9110 §15.4 redirect handling with correct method rewriting and loop detection. Idempotency-based retries with Retry-After support.
+    title: Redirect Following
+    details: Automatic redirect chain following with method rewriting (301/302 → GET), body preservation (307/308), loop detection, and cross-origin safety.
 
   - icon: 🍪
     title: Cookie Management
-    details: RFC 6265 domain/path matching, Secure/HttpOnly/SameSite attributes, Max-Age/Expires handling, and thread-safe CookieJar.
+    details: Automatic cookie storage and injection. Domain/path matching, Secure/HttpOnly/SameSite attributes, expiration handling.
 
-  - icon: 📦
-    title: HTTP Caching
-    details: RFC 9111 LRU cache with Vary support, conditional requests (If-None-Match, If-Modified-Since), and freshness evaluation.
+  - icon: 🔗
+    title: Connection Pooling
+    details: Per-host connection pools with automatic reconnect, idle eviction, and configurable concurrency limits.
+
+  - icon: 🗜️
+    title: Content Encoding
+    details: Automatic gzip, deflate, and Brotli decompression. Server-driven content negotiation via Accept-Encoding.
 
   - icon: 🚀
     title: Zero-Allocation Internals
-    details: Span<T>, IBufferWriter<byte>, and ReadOnlyMemory<byte> throughout. Pre-allocated buffers for encoding; stateful decoders with no heap pressure.
+    details: Span<T>, Memory<byte>, and IBufferWriter throughout. Pooled buffers, stateful decoders, zero GC pressure on the hot path.
 ---

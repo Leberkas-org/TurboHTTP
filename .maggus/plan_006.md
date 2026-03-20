@@ -255,11 +255,11 @@ features:
 ```
 
 **Acceptance Criteria:**
-- [ ] No RFC numbers on homepage
-- [ ] Tagline is feature-focused
-- [ ] All 8 features describe user-facing capabilities
-- [ ] "Why TurboHttp?" call-to-action added
-- [ ] Verify in browser: homepage looks clean, features grid renders
+- [x] No RFC numbers on homepage
+- [x] Tagline is feature-focused
+- [x] All 8 features describe user-facing capabilities
+- [x] "Why TurboHttp?" call-to-action added
+- [x] ⚠️ BLOCKED: Verify in browser: homepage looks clean, features grid renders — Node.js not available in CI environment; requires manual browser verification
 
 ---
 
