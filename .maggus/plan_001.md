@@ -100,12 +100,12 @@ The following RFC supersession rules apply:
 4. `src/TurboHttp/Protocol/RFC9110/ContentEncodingDecoder.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 9110 §15.4 (Redirects) references are correct
-- [ ] RFC 9110 §8.4 (Content-Encoding) references in ContentEncodingDecoder verified
-- [ ] No references to RFC 7231 (old Redirect RFC) remain
-- [ ] Comments accurately describe current redirect behaviour (301/302/303/307/308)
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] RFC 9110 §15.4 (Redirects) references are correct
+- [x] RFC 9110 §8.4 (Content-Encoding) references in ContentEncodingDecoder verified
+- [x] No references to RFC 7231 (old Redirect RFC) remain
+- [x] Comments accurately describe current redirect behaviour (301/302/303/307/308)
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 

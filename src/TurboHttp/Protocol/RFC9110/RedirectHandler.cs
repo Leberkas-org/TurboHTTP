@@ -78,7 +78,6 @@ public sealed class RedirectHandler
                 RedirectError.MaxRedirectsExceeded);
         }
 
-        // Extract and validate Location header
         var locationUri = ResolveLocationUri(original.RequestUri, response);
 
         // Detect HTTPS → HTTP downgrade

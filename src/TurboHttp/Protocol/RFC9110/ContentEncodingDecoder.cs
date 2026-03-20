@@ -28,7 +28,7 @@ internal static class ContentEncodingDecoder
             return body;
         }
 
-        // RFC 9110 §8.4.1: Content-Encoding is a comma-separated list.
+        // RFC 9110 §8.4: Content-Encoding is a comma-separated list.
         // Decodings are applied in reverse order (last encoding is outermost).
         var encodings = contentEncoding.Split(',');
 
@@ -101,7 +101,7 @@ internal static class ContentEncodingDecoder
 
     private static byte[] DecompressDeflate(byte[] data)
     {
-        // RFC 9110 §8.4.1.2: "deflate" is the zlib format (RFC 1950), not raw DEFLATE.
+        // RFC 9110 §8.4.2: "deflate" is the zlib format (RFC 1950), not raw DEFLATE.
         // However, some servers send raw DEFLATE (RFC 1951) without the zlib wrapper.
         // Try zlib first; fall back to raw DEFLATE if it fails.
         try
