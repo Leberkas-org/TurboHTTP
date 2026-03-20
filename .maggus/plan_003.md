@@ -376,15 +376,15 @@ Also fix the race condition (from original audit): use local copy of `_handle`.
 **File:** `src/TurboHttp.StreamTests/Streams/NN_StreamSurvivalTests.cs` (new file)
 
 **Acceptance Criteria:**
-- [ ] Test: Send request → encoding error (malformed URI) → send normal request → succeeds
-- [ ] Test: Send request → server returns corrupt response → send normal request → succeeds
-- [ ] Test: Send request → connection drops mid-response → send normal request → succeeds (reconnect)
-- [ ] Test: Send request → HTTP/2 GOAWAY received → send normal request → succeeds (new connection)
-- [ ] Test: Send request → timeout → send normal request → succeeds
-- [ ] Test: 100 sequential requests where every 10th triggers an error → 90 succeed, 10 fail individually, stream never dies
-- [ ] Test: Verify stream only completes when client is disposed
-- [ ] Test: After Dispose, verify all stages have completed
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamSurvivalTests"` — all pass
+- [x] Test: Send request → encoding error (malformed URI) → send normal request → succeeds
+- [x] Test: Send request → server returns corrupt response → send normal request → succeeds
+- [x] Test: Send request → connection drops mid-response → send normal request → succeeds (reconnect)
+- [x] Test: Send request → HTTP/2 GOAWAY received → send normal request → succeeds (new connection)
+- [x] Test: Send request → timeout → send normal request → succeeds
+- [x] Test: 100 sequential requests where every 10th triggers an error → 90 succeed, 10 fail individually, stream never dies
+- [x] Test: Verify stream only completes when client is disposed
+- [x] Test: After Dispose, verify all stages have completed
+- [x] `dotnet test --filter "FullyQualifiedName~StreamSurvivalTests"` — all pass
 
 ---
 
@@ -400,10 +400,10 @@ Also fix the race condition (from original audit): use local copy of `_handle`.
 **Required Change:** Replace `"turbomqtt"` with `"turbohttp"`.
 
 **Acceptance Criteria:**
-- [ ] ActorSystem name is `"turbohttp"`
-- [ ] Unit test verifies the ActorSystem name after service registration
-- [ ] All existing tests pass
-- [ ] Build compiles with 0 errors
+- [x] ActorSystem name is `"turbohttp"`
+- [x] Unit test verifies the ActorSystem name after service registration
+- [x] All existing tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
