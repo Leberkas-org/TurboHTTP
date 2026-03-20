@@ -157,16 +157,16 @@ Transform TurboHttp from a working codebase into a polished, production-ready op
 **Description:** As a contributor, I want RFC coverage details and API documentation in the docs site.
 
 **Acceptance Criteria:**
-- [ ] `docs/rfc/index.md` — RFC compliance overview with summary table
-- [ ] `docs/rfc/rfc1945.md` — HTTP/1.0 coverage details
-- [ ] `docs/rfc/rfc9112.md` — HTTP/1.1 coverage details
-- [ ] `docs/rfc/rfc9113.md` — HTTP/2 coverage details
-- [ ] `docs/rfc/rfc7541.md` — HPACK coverage details
-- [ ] `docs/rfc/rfc9110.md` — HTTP Semantics coverage details
-- [ ] `docs/rfc/rfc9111.md` — Caching coverage details
-- [ ] `docs/rfc/rfc6265.md` — Cookies coverage details
-- [ ] `docs/api/index.md` — Public API overview (ITurboHttpClient, key types)
-- [ ] Content sourced from RFC_COVERAGE.md and CLAUDE.md (not duplicated manually)
+- [x] `docs/rfc/index.md` — RFC compliance overview with summary table
+- [x] `docs/rfc/rfc1945.md` — HTTP/1.0 coverage details
+- [x] `docs/rfc/rfc9112.md` — HTTP/1.1 coverage details
+- [x] `docs/rfc/rfc9113.md` — HTTP/2 coverage details
+- [x] `docs/rfc/rfc7541.md` — HPACK coverage details
+- [x] `docs/rfc/rfc9110.md` — HTTP Semantics coverage details
+- [x] `docs/rfc/rfc9111.md` — Caching coverage details
+- [x] `docs/rfc/rfc6265.md` — Cookies coverage details
+- [x] `docs/api/index.md` — Public API overview (ITurboHttpClient, key types)
+- [x] Content sourced from RFC_COVERAGE.md and CLAUDE.md (not duplicated manually)
 
 ### TASK-012: GitHub Actions — VitePress Build and Deploy to GitHub Pages
 **Description:** As a maintainer, I want the docs site automatically built and deployed to GitHub Pages on every push to main.
