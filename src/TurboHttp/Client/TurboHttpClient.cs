@@ -11,6 +11,10 @@ using Akka.Actor;
 
 namespace TurboHttp.Client;
 
+/// <summary>
+/// Snapshot of <see cref="TurboHttpClient"/> configuration captured at request-submission time.
+/// Passed into the pipeline so that per-request options reflect the values set on the client at the moment of submission.
+/// </summary>
 public record TurboRequestOptions(
     Uri? BaseAddress,
     HttpRequestHeaders DefaultRequestHeaders,

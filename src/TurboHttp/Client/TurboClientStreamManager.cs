@@ -39,8 +39,8 @@ internal sealed class TurboClientStreamManager
         var responseWriter = responsesChannel.Writer;
         var requestReader = requestsChannel.Reader;
 
-        // Create PoolRouterActor — supervises the actor-based connection pool hierarchy.
-        // PoolRouterActor → HostPoolActor → ConnectionActor → TCP
+        // Create PoolRouter — supervises the actor-based connection pool hierarchy.
+        // PoolRouter → HostPool → ConnectionActor → TCP
         var poolRouter = system.ResolveActor<PoolRouter>($"pool-router-{streamManagerId}", clientOptions);
 
         // Build the full pipeline flow from Engine.

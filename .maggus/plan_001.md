@@ -441,11 +441,11 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/Internal/Messages.cs`
 
 **Acceptance Criteria:**
-- [ ] Public API comments (XML docs) accurately describe the current API
-- [ ] Channel-based API model is correctly documented
-- [ ] Message type comments (IOutputItem, IInputItem) are up to date
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Public API comments (XML docs) accurately describe the current API
+- [x] Channel-based API model is correctly documented
+- [x] Message type comments (IOutputItem, IInputItem) are up to date
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
