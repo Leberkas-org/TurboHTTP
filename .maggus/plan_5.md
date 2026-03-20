@@ -28,11 +28,11 @@ Transform TurboHttp from a working codebase into a polished, production-ready op
 **Description:** As a maintainer, I want the publish job to activate on main-branch pushes so that releases are automated.
 
 **Acceptance Criteria:**
-- [ ] Remove `&& false` from the publish job condition (line 100)
-- [ ] Publish job triggers on push to main (not on PRs)
-- [ ] NuGet push uses `NUGET_API_KEY` secret (document that it must be configured)
-- [ ] GitHub Release is created with tag `vX.Y.Z` and auto-generated release notes
-- [ ] Add a note in CLAUDE.md or README about required repository secrets
+- [x] Remove `&& false` from the publish job condition (line 100)
+- [x] Publish job triggers on push to main (not on PRs)
+- [x] NuGet push uses `NUGET_API_KEY` secret (document that it must be configured)
+- [x] GitHub Release is created with tag `vX.Y.Z` and auto-generated release notes
+- [x] Add a note in CLAUDE.md or README about required repository secrets
 
 ### TASK-003: Add Directory.Build.props
 **Description:** As a developer, I want shared build properties so that version info, compiler settings, and package metadata are consistent across all projects.

@@ -157,6 +157,16 @@ Network (TCP)
 
 - **Do NOT commit** — Claude must never run `git commit` or `git add` unless the user explicitly asks for it. All commits are done manually by the developer.
 
+## CI/CD and Repository Secrets
+
+The `build-and-release.yml` workflow publishes NuGet packages and creates GitHub Releases on every push to `main`. The following secret must be configured in the repository settings before publishing works:
+
+| Secret | Where to set | Description |
+|--------|-------------|-------------|
+| `NUGET_API_KEY` | GitHub → Settings → Secrets and variables → Actions | API key from [nuget.org](https://www.nuget.org/account/apikeys) with push permissions for the `TurboHttp` package |
+
+Without `NUGET_API_KEY`, the publish job will fail at the `dotnet nuget push` step. The build and test steps always run regardless.
+
 ## Code Style and Conventions
 
 ### C# Style
