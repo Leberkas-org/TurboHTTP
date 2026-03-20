@@ -490,12 +490,12 @@ Example:  01_Http10EncoderStageTests.cs
 4. `HostPoolActorStreamLifecycleTests.cs` → `07_HostPoolActorStreamLifecycleTests.cs`
 
 **Acceptance Criteria:**
-- [ ] Files renamed via `git mv`
-- [ ] Class names unchanged
-- [ ] Namespaces unchanged
-- [ ] `dotnet build` succeeds
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamTests.IO"` passes
-- [ ] Full test suite passes: `dotnet test` on TurboHttp.StreamTests project
+- [x] Files renamed via `git mv`
+- [x] Class names unchanged
+- [x] Namespaces unchanged
+- [x] `dotnet build` succeeds
+- [x] `dotnet test --filter "FullyQualifiedName~StreamTests.IO"` passes
+- [x] Full test suite passes: `dotnet test` on TurboHttp.StreamTests project
 
 ---
 
