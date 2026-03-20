@@ -21,12 +21,12 @@ public class Http10Engine : IHttpProtocolEngine
             var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
 
             b.From(requestBCast.Out(0)).To(encoder.Inlet);
-            b.From(requestBCast.Out(1)).To(correlation.RequestIn);
+            b.From(requestBCast.Out(1)).To(correlation.InRequest);
 
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
-            b.From(correlation.OutletSignal).To(signalSink);
+            b.From(correlation.OutSignal).To(signalSink);
 
-            b.From(decoder.Outlet).To(correlation.ResponseIn);
+            b.From(decoder.Outlet).To(correlation.InResponse);
 
             return new BidiShape<
                 HttpRequestMessage,

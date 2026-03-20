@@ -27,9 +27,9 @@ public class Http11Engine : IHttpProtocolEngine
             var signalMerge = b.Add(new MergePreferred<IOutputItem>(1));
 
             b.From(requestBCast.Out(0)).To(encoder.Inlet);
-            b.From(requestBCast.Out(1)).To(correlation.RequestIn);
+            b.From(requestBCast.Out(1)).To(correlation.InRequest);
 
-            b.From(decoder.Outlet).To(correlation.ResponseIn);
+            b.From(decoder.Outlet).To(correlation.InResponse);
 
             var signalCast = b.Add(Flow.Create<IControlItem>().Select(IOutputItem (x) => x));
 
@@ -42,7 +42,7 @@ public class Http11Engine : IHttpProtocolEngine
                         BatchConsolidate));
 
             b.From(encoder.Outlet).Via(batchFlow).To(signalMerge.In(0));
-            b.From(correlation.OutletSignal).Via(signalCast).To(signalMerge.Preferred);
+            b.From(correlation.OutSignal).Via(signalCast).To(signalMerge.Preferred);
 
             return new BidiShape<
                 HttpRequestMessage,

@@ -471,10 +471,10 @@ Also update the custom `Http20ConnectionShape` class.
 **Scope:** The Engine builds the full pipeline graph and references stage inlets/outlets by field name. Update all references.
 
 **Acceptance Criteria:**
-- [ ] All stage field references in Engine.cs use new names
-- [ ] All Http10Engine, Http11Engine, Http20Engine files updated
-- [ ] `dotnet build` succeeds
-- [ ] All stream tests pass
+- [x] All stage field references in Engine.cs use new names
+- [x] All Http10Engine, Http11Engine, Http20Engine files updated
+- [x] `dotnet build` succeeds
+- [x] All stream tests pass
 
 ---
 

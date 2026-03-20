@@ -10,36 +10,36 @@ namespace TurboHttp.Streams.Stages;
 
 public sealed class Http1XCorrelationShape : Shape
 {
-    public Inlet<HttpRequestMessage> RequestIn { get; }
-    public Inlet<HttpResponseMessage> ResponseIn { get; }
+    public Inlet<HttpRequestMessage> InRequest { get; }
+    public Inlet<HttpResponseMessage> InResponse { get; }
     public Outlet<HttpResponseMessage> Out { get; }
-    public Outlet<IControlItem> OutletSignal { get; }
+    public Outlet<IControlItem> OutSignal { get; }
 
     public Http1XCorrelationShape(
-        Inlet<HttpRequestMessage> requestIn,
-        Inlet<HttpResponseMessage> responseIn,
+        Inlet<HttpRequestMessage> inRequest,
+        Inlet<HttpResponseMessage> inResponse,
         Outlet<HttpResponseMessage> @out,
-        Outlet<IControlItem> outletSignal)
+        Outlet<IControlItem> outSignal)
     {
-        RequestIn = requestIn;
-        ResponseIn = responseIn;
+        InRequest = inRequest;
+        InResponse = inResponse;
         Out = @out;
-        OutletSignal = outletSignal;
+        OutSignal = outSignal;
     }
 
     public override ImmutableArray<Inlet> Inlets =>
-        ImmutableArray.Create<Inlet>(RequestIn, ResponseIn);
+        ImmutableArray.Create<Inlet>(InRequest, InResponse);
 
     public override ImmutableArray<Outlet> Outlets =>
-        ImmutableArray.Create<Outlet>(Out, OutletSignal);
+        ImmutableArray.Create<Outlet>(Out, OutSignal);
 
     public override Shape DeepCopy()
     {
         return new Http1XCorrelationShape(
-            (Inlet<HttpRequestMessage>)RequestIn.CarbonCopy(),
-            (Inlet<HttpResponseMessage>)ResponseIn.CarbonCopy(),
+            (Inlet<HttpRequestMessage>)InRequest.CarbonCopy(),
+            (Inlet<HttpResponseMessage>)InResponse.CarbonCopy(),
             (Outlet<HttpResponseMessage>)Out.CarbonCopy(),
-            (Outlet<IControlItem>)OutletSignal.CarbonCopy());
+            (Outlet<IControlItem>)OutSignal.CarbonCopy());
     }
 
     public override Shape CopyFromPorts(ImmutableArray<Inlet> inlets, ImmutableArray<Outlet> outlets)
