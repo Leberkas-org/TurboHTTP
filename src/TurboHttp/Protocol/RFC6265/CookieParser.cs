@@ -170,8 +170,6 @@ internal static class CookieParser
             CreatedAt: now);
     }
 
-    // ── RFC 6265 §5.1.4: Default path computation ─────────────────────────────
-
     private static string GetDefaultPath(Uri requestUri)
     {
         var uriPath = requestUri.AbsolutePath;
@@ -188,8 +186,6 @@ internal static class CookieParser
 
         return uriPath[..lastSlash];
     }
-
-    // ── RFC 6265 §5.1.1: Lenient date parsing ─────────────────────────────────
 
     private static readonly string[] ExpiresFormats =
     [

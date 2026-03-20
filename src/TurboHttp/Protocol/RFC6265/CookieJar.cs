@@ -5,7 +5,7 @@ using System.Net.Http;
 namespace TurboHttp.Protocol.RFC6265;
 
 /// <summary>
-/// RFC 6265 §5.4 — Cookie ordering preference.
+/// SameSite cookie attribute — not defined in RFC 6265; introduced in RFC 6265bis.
 /// </summary>
 public enum SameSitePolicy
 {
@@ -130,13 +130,13 @@ public sealed class CookieJar
                     continue;
                 }
 
-                // RFC 6265 §5.4 step 2: Domain matching
+                // RFC 6265 §5.4 step 1: Domain matching
                 if (!DomainMatches(cookie.Domain, cookie.IsHostOnly, requestHost))
                 {
                     continue;
                 }
 
-                // RFC 6265 §5.4 step 3: Path matching
+                // RFC 6265 §5.4 step 1: Path matching
                 if (!PathMatches(cookie.Path, requestPath))
                 {
                     continue;
@@ -193,8 +193,6 @@ public sealed class CookieJar
         }
     }
 
-    // ── RFC 6265 §5.1.3 Domain Matching ──────────────────────────────────────
-
     /// <summary>
     /// Returns true if <paramref name="requestHost"/> domain-matches the cookie's domain.
     ///
@@ -228,8 +226,6 @@ public sealed class CookieJar
         return requestHost.EndsWith("." + cookieDomain, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── RFC 6265 §5.1.4 Path Matching ────────────────────────────────────────
-
     /// <summary>
     /// Returns true if <paramref name="requestPath"/> path-matches the cookie's path.
     ///
@@ -262,8 +258,6 @@ public sealed class CookieJar
 
         return false;
     }
-
-    // ── Private Helpers ───────────────────────────────────────────────────────
 
     private static bool IsExpired(CookieEntry cookie, DateTimeOffset now)
     {

@@ -364,11 +364,11 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/Streams/Engine.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 6265 references are correct (RFC 6265 remains current; check for RFC 6265bis if applicable)
-- [ ] Cookie logic comments (domain/path matching, Secure/HttpOnly) are up to date
-- [ ] Engine comments accurately describe current version-routing logic
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] RFC 6265 references are correct (RFC 6265 remains current; check for RFC 6265bis if applicable)
+- [x] Cookie logic comments (domain/path matching, Secure/HttpOnly) are up to date
+- [x] Engine comments accurately describe current version-routing logic
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
