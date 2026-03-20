@@ -136,7 +136,6 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                     var merged = CacheValidationRequestBuilder.MergeNotModifiedResponse(response, entry);
                     merged.RequestMessage = request;
 
-                    // Update the cache with the refreshed entry
                     var now = DateTimeOffset.UtcNow;
                     _stage._store.Put(request, merged, entry.Body, now, now);
 

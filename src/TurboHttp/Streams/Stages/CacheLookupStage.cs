@@ -7,7 +7,7 @@ using TurboHttp.Protocol.RFC9111;
 namespace TurboHttp.Streams.Stages;
 
 /// <summary>
-/// RFC 9111 §4 — Checks the in-memory cache before forwarding requests to the network.
+/// RFC 9111 §4.2/§4.3 — Checks the in-memory cache before forwarding requests to the network.
 /// <para>
 /// On each incoming <see cref="HttpRequestMessage"/>:
 /// <list type="bullet">

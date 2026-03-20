@@ -189,11 +189,11 @@ The following RFC supersession rules apply:
 2. `src/TurboHttp/Streams/Stages/CacheStorageStage.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 9111 references in stage comments are correct
-- [ ] Stage descriptions match current behaviour
-- [ ] No outdated RFC references
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] RFC 9111 references in stage comments are correct
+- [x] Stage descriptions match current behaviour
+- [x] No outdated RFC references
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
