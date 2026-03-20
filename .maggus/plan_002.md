@@ -257,12 +257,12 @@ Example:  01_Http10EncoderStageTests.cs
 3. `RFC9111/CacheStorageStageTests.cs` → `RFC9111/02_CacheStorageStageTests.cs`
 
 **Acceptance Criteria:**
-- [ ] Files renamed via `git mv`
-- [ ] Class names updated to match
-- [ ] Namespaces unchanged
-- [ ] `dotnet build` succeeds
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamTests.RFC9110"` passes
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamTests.RFC9111"` passes
+- [x] Files renamed via `git mv`
+- [x] Class names updated to match
+- [x] Namespaces unchanged
+- [x] `dotnet build` succeeds
+- [x] `dotnet test --filter "FullyQualifiedName~StreamTests.RFC9110"` passes
+- [x] `dotnet test --filter "FullyQualifiedName~StreamTests.RFC9111"` passes
 
 ---
 
