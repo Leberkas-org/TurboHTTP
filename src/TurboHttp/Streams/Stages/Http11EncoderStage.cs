@@ -49,7 +49,7 @@ public sealed class Http11EncoderStage : GraphStage<FlowShape<HttpRequestMessage
                     {
                         var key = RequestEndpoint.FromRequest(request);
                         var contentLength = Convert.ToInt32(request.Content?.Headers.ContentLength ?? 0);
-                        var estimatedSize = Math.Max(_minBufferSize, contentLength);
+                        var estimatedSize = _minBufferSize + contentLength;
                         var bufferSize = Math.Min(estimatedSize, _maxBufferSize);
                         owner = MemoryPool<byte>.Shared.Rent(bufferSize);
                         var buffer = owner.Memory.Span;

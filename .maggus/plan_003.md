@@ -702,9 +702,9 @@ finally
 **Required Change:** Unify to `_minBufferSize + contentLength`.
 
 **Acceptance Criteria:**
-- [ ] Both use identical estimation
-- [ ] All existing tests pass
-- [ ] Build compiles with 0 errors
+- [x] Both use identical estimation
+- [x] All existing tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
