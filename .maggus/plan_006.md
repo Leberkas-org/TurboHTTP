@@ -322,12 +322,12 @@ features:
 6. Code example: custom retry policy
 
 **Acceptance Criteria:**
-- [ ] Clear explanation of idempotency-based retry logic
-- [ ] Table: method → retried? → reason
-- [ ] Table: status code → retry behavior
-- [ ] Code example for custom configuration
-- [ ] No RFC section references (say "idempotent methods" not "RFC 9110 §9.2")
-- [ ] Verify in browser
+- [x] Clear explanation of idempotency-based retry logic
+- [x] Table: method → retried? → reason
+- [x] Table: status code → retry behavior
+- [x] Code example for custom configuration
+- [x] No RFC section references (say "idempotent methods" not "RFC 9110 §9.2")
+- [x] ⚠️ BLOCKED: Verify in browser — Node.js not available in CI environment; requires manual browser verification
 
 ---
 
