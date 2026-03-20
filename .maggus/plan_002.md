@@ -471,12 +471,12 @@ Example:  01_Http10EncoderStageTests.cs
 4. `IO/ConnectionStateTests.cs` → `IO/03_ConnectionStateTests.cs`
 
 **Acceptance Criteria:**
-- [ ] Files renamed via `git mv`
-- [ ] Class names unchanged
-- [ ] `IoActorTestBase.cs` remains unchanged (base class, no prefix)
-- [ ] Namespaces unchanged
-- [ ] `dotnet build` succeeds
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamTests.Streams"` passes
+- [x] Files renamed via `git mv`
+- [x] Class names unchanged
+- [x] `IoActorTestBase.cs` remains unchanged (base class, no prefix)
+- [x] Namespaces unchanged
+- [x] `dotnet build` succeeds
+- [x] `dotnet test --filter "FullyQualifiedName~StreamTests.Streams"` passes
 
 ---
 
