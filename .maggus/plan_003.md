@@ -652,9 +652,9 @@ finally
 **Required Change:** Replace `throw new HpackException("")` with RFC-referenced messages.
 
 **Acceptance Criteria:**
-- [ ] All `HpackException` throws have meaningful messages
-- [ ] All existing HPACK tests pass
-- [ ] Build compiles with 0 errors
+- [x] All `HpackException` throws have meaningful messages
+- [x] All existing HPACK tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

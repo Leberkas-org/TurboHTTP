@@ -154,7 +154,8 @@ public static class HuffmanCodec
 
                 if (node is null)
                 {
-                    throw new HpackException("");
+                    throw new HpackException(
+                        $"Invalid Huffman-encoded data: no valid symbol at bit offset {remainingBits} (input byte 0x{b:X2}).");
                 }
 
                 remainingBits++;
@@ -167,7 +168,8 @@ public static class HuffmanCodec
 
                 if (sym == 256)
                 {
-                    throw new HpackException("");
+                    throw new HpackException(
+                        "Invalid Huffman-encoded data: EOS symbol (256) must not appear in a Huffman-encoded string (RFC 7541 §5.2).");
                 }
 
                 result.WriteByte((byte)sym);
@@ -181,13 +183,15 @@ public static class HuffmanCodec
         {
             if (remainingBits > 7)
             {
-                throw new HpackException("");
+                throw new HpackException(
+                    $"Invalid Huffman-encoded data: {remainingBits} incomplete bits remain at end of input — a valid padding sequence is at most 7 bits (RFC 7541 §5.2).");
             }
 
             var mask = (1 << remainingBits) - 1;
             if (remainingValue != mask)
             {
-                throw new HpackException("");
+                throw new HpackException(
+                    $"Invalid Huffman-encoded data: padding bits must be all-ones (EOS prefix) but got 0x{remainingValue:X} with {remainingBits} bits (RFC 7541 §5.2).");
             }
         }
 
