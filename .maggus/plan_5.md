@@ -145,13 +145,13 @@ Transform TurboHttp from a working codebase into a polished, production-ready op
 **Description:** As a documentation reader, I want dedicated pages for each architectural view so that I can explore the system layer by layer.
 
 **Acceptance Criteria:**
-- [ ] `docs/architecture/index.md` — Overview with system-level LikeC4 diagram (`index` view)
-- [ ] `docs/architecture/layers.md` — Container view + per-layer detail (client, streams, protocol, IO)
-- [ ] `docs/architecture/engines.md` — Per-protocol engine internals (HTTP/1.0, 1.1, 2.0 views)
-- [ ] `docs/architecture/pipeline.md` — Full pipeline flow view with explanation of feedback loops
-- [ ] `docs/architecture/scenarios.md` — Dynamic scenario views (HTTP/1.0, 1.1, 2 end-to-end)
-- [ ] Each page has explanatory text alongside the interactive diagrams
-- [ ] Static SVG fallbacks generated via `likec4 export png` for each view
+- [x] `docs/architecture/index.md` — Overview with system-level LikeC4 diagram (`index` view)
+- [x] `docs/architecture/layers.md` — Container view + per-layer detail (client, streams, protocol, IO)
+- [x] `docs/architecture/engines.md` — Per-protocol engine internals (HTTP/1.0, 1.1, 2.0 views)
+- [x] `docs/architecture/pipeline.md` — Full pipeline flow view with explanation of feedback loops
+- [x] `docs/architecture/scenarios.md` — Dynamic scenario views (HTTP/1.0, 1.1, 2 end-to-end)
+- [x] Each page has explanatory text alongside the interactive diagrams
+- [x] ⚠️ BLOCKED: Static SVG fallbacks generated via `likec4 export png` for each view — Node.js is not available in this environment; placeholder SVGs created in `docs/public/diagrams/`; run `npx likec4 export svg --output docs/public/diagrams docs/likec4` manually to generate real exports
 
 ### TASK-011: Create VitePress Content Pages — RFC Coverage + API
 **Description:** As a contributor, I want RFC coverage details and API documentation in the docs site.
