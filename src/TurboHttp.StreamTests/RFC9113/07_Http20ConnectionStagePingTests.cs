@@ -77,7 +77,7 @@ public sealed class Http20ConnectionStagePingTests : StreamTestBase
 
         var pingAck = Assert.IsType<PingFrame>(Assert.Single(serverBound));
         Assert.True(pingAck.IsAck);
-        Assert.Equal(payload, pingAck.Data);
+        Assert.True(pingAck.Data.Span.SequenceEqual(payload));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.7-20CP-003: PING with ACK flag does not trigger another PING")]
@@ -93,7 +93,7 @@ public sealed class Http20ConnectionStagePingTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.7-20CP-004: PING response is on stream 0")]
     public async Task Should_Send_Ping_Response_On_Stream_Zero()
     {
-        var ping = new PingFrame([0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8], isAck: false);
+        var ping = new PingFrame(new byte[] { 0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8 }, isAck: false);
 
         var (_, serverBound) = await RunAsync(ping);
 

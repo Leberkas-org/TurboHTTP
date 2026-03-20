@@ -286,10 +286,10 @@ public sealed class SettingsFrame : Http2Frame
 public sealed class PingFrame : Http2Frame
 {
     public override FrameType Type => FrameType.Ping;
-    public byte[] Data { get; }
+    public ReadOnlyMemory<byte> Data { get; }
     public bool IsAck { get; }
 
-    public PingFrame(byte[] data, bool isAck = false) : base(0)
+    public PingFrame(ReadOnlyMemory<byte> data, bool isAck = false) : base(0)
     {
         if (data.Length != 8)
         {
@@ -307,7 +307,7 @@ public sealed class PingFrame : Http2Frame
         var flags = IsAck ? (byte)PingFlags.Ack : (byte)0;
         WriteHeader(ref span, 8, FrameType.Ping, flags, 0);
         span = span[FrameHeaderSize..];
-        Data.CopyTo(span);
+        Data.Span.CopyTo(span);
         span = span[8..];
         return SerializedSize;
     }
@@ -318,9 +318,9 @@ public sealed class GoAwayFrame : Http2Frame
     public override FrameType Type => FrameType.GoAway;
     public int LastStreamId { get; }
     public Http2ErrorCode ErrorCode { get; }
-    public byte[] DebugData { get; }
+    public ReadOnlyMemory<byte> DebugData { get; }
 
-    public GoAwayFrame(int lastStreamId, Http2ErrorCode errorCode, byte[]? debugData = null) : base(0)
+    public GoAwayFrame(int lastStreamId, Http2ErrorCode errorCode, ReadOnlyMemory<byte> debugData = default) : base(0)
     {
         if (lastStreamId < 0)
         {
@@ -329,7 +329,7 @@ public sealed class GoAwayFrame : Http2Frame
 
         LastStreamId = lastStreamId;
         ErrorCode = errorCode;
-        DebugData = debugData ?? [];
+        DebugData = debugData;
     }
 
     public override int SerializedSize => FrameHeaderSize + 8 + DebugData.Length;
@@ -342,7 +342,7 @@ public sealed class GoAwayFrame : Http2Frame
         BinaryPrimitives.WriteUInt32BigEndian(span, (uint)LastStreamId & 0x7FFFFFFFu);
         BinaryPrimitives.WriteUInt32BigEndian(span[4..], (uint)ErrorCode);
         span = span[8..];
-        DebugData.CopyTo(span);
+        DebugData.Span.CopyTo(span);
         span = span[DebugData.Length..];
         return SerializedSize;
     }

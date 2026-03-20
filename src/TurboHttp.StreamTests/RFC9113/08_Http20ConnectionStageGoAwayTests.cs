@@ -57,7 +57,7 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-002: GOAWAY frame is forwarded downstream")]
     public async Task Should_Forward_GoAway_Downstream()
     {
-        var goAway = new GoAwayFrame(lastStreamId: 5, Http2ErrorCode.NoError, debugData: [0x01, 0x02]);
+        var goAway = new GoAwayFrame(lastStreamId: 5, Http2ErrorCode.NoError, debugData: new byte[] { 0x01, 0x02 });
 
         var (downstream, _) = await RunAsync(goAway);
 
@@ -65,7 +65,7 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
         var goAwayFrame = Assert.IsType<GoAwayFrame>(forwarded);
         Assert.Equal(5, goAwayFrame.LastStreamId);
         Assert.Equal(Http2ErrorCode.NoError, goAwayFrame.ErrorCode);
-        Assert.Equal(new byte[] { 0x01, 0x02 }, goAwayFrame.DebugData);
+        Assert.True(goAwayFrame.DebugData.Span.SequenceEqual(new byte[] { 0x01, 0x02 }));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-003: After GOAWAY new request frames are dropped without failing the stream")]

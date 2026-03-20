@@ -60,7 +60,7 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.Single(frames);
         var pf = Assert.IsType<PingFrame>(frames[0]);
         Assert.False(pf.IsAck);
-        Assert.Equal(data, pf.Data);
+        Assert.True(pf.Data.Span.SequenceEqual(data));
     }
 
     [Fact(DisplayName = "RFC9113-6.7-002: PING ACK flag is preserved")]
@@ -75,7 +75,7 @@ public sealed class Http2FrameDecoderBasicTests
         Assert.Single(frames);
         var pf = Assert.IsType<PingFrame>(frames[0]);
         Assert.True(pf.IsAck);
-        Assert.Equal(data, pf.Data);
+        Assert.True(pf.Data.Span.SequenceEqual(data));
     }
 
 
@@ -146,8 +146,8 @@ public sealed class Http2FrameDecoderBasicTests
     [Fact(DisplayName = "RFC9113-4.1-002: Multiple frames in one TCP segment are all decoded")]
     public void Should_ProcessAll_WhenMultipleFramesInOneTcpSegment()
     {
-        var ping1 = new PingFrame([1, 1, 1, 1, 1, 1, 1, 1]).Serialize();
-        var ping2 = new PingFrame([2, 2, 2, 2, 2, 2, 2, 2]).Serialize();
+        var ping1 = new PingFrame(new byte[] { 1, 1, 1, 1, 1, 1, 1, 1 }).Serialize();
+        var ping2 = new PingFrame(new byte[] { 2, 2, 2, 2, 2, 2, 2, 2 }).Serialize();
         var settings = SettingsFrame.SettingsAck();
 
         var combined = new byte[ping1.Length + ping2.Length + settings.Length];

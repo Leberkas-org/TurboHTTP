@@ -634,9 +634,9 @@ finally
 **Required Change:** Change frame types to accept `ReadOnlyMemory<byte>` for payloads where source buffer lifetime allows.
 
 **Acceptance Criteria:**
-- [ ] Reduced `.ToArray()` calls
-- [ ] All existing RFC9113 decoder tests pass
-- [ ] Build compiles with 0 errors
+- [x] Reduced `.ToArray()` calls
+- [x] All existing RFC9113 decoder tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

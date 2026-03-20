@@ -129,7 +129,7 @@ public sealed class Http2RstStreamPingTests
 
         Assert.Single(frames);
         var frame = Assert.IsType<PingFrame>(frames[0]);
-        Assert.Equal(pingData, frame.Data);
+        Assert.True(frame.Data.Span.SequenceEqual(pingData));
     }
 
     /// RFC 9113 §6.7 — PING IsAck=false when ACK bit not set
@@ -212,7 +212,7 @@ public sealed class Http2RstStreamPingTests
         var frames = decoder.Decode(bytes);
 
         var decoded = Assert.IsType<PingFrame>(frames[0]);
-        Assert.Equal(original.Data, decoded.Data);
+        Assert.True(decoded.Data.Span.SequenceEqual(original.Data.Span));
         Assert.Equal(original.IsAck, decoded.IsAck);
     }
 }

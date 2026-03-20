@@ -63,7 +63,7 @@ public sealed class Http2FrameDecoder
 
             FrameType.Continuation => new ContinuationFrame(
                 streamId,
-                payload.ToArray(),
+                payload,
                 (flags & (byte)ContinuationFlags.EndHeaders) != 0),
 
             FrameType.Ping => streamId != 0
@@ -117,7 +117,7 @@ public sealed class Http2FrameDecoder
             data = data.Slice(1, data.Length - 1 - padLen);
         }
 
-        return new DataFrame(streamId, data.ToArray(), endStream);
+        return new DataFrame(streamId, data, endStream);
     }
 
     private static HeadersFrame ParseHeadersFrame(byte flags, int streamId, ReadOnlyMemory<byte> payload)
@@ -160,7 +160,7 @@ public sealed class Http2FrameDecoder
                 Http2ErrorCode.FrameSizeError);
         }
 
-        return new PingFrame(payload.ToArray(), (flags & (byte)PingFlags.Ack) != 0);
+        return new PingFrame(payload, (flags & (byte)PingFlags.Ack) != 0);
     }
 
     private static SettingsFrame ParseSettings(ReadOnlyMemory<byte> payload, byte flags)
@@ -208,7 +208,7 @@ public sealed class Http2FrameDecoder
         var span = payload.Span;
         var lastStream = (int)(BinaryPrimitives.ReadUInt32BigEndian(span) & 0x7FFFFFFFu);
         var errorCode = (Http2ErrorCode)BinaryPrimitives.ReadUInt32BigEndian(span[4..]);
-        var debugData = span.Length > 8 ? payload[8..].ToArray() : [];
+        var debugData = span.Length > 8 ? payload[8..] : ReadOnlyMemory<byte>.Empty;
         return new GoAwayFrame(lastStream, errorCode, debugData);
     }
 
@@ -218,8 +218,7 @@ public sealed class Http2FrameDecoder
         var span = payload.Span;
         var promised = (int)(BinaryPrimitives.ReadUInt32BigEndian(span) & 0x7FFFFFFFu);
         var endHeaders = (flags & (byte)Headers.EndHeaders) != 0;
-        var headerBlock = payload[4..].ToArray();
-        return new PushPromiseFrame(streamId, promised, headerBlock, endHeaders);
+        return new PushPromiseFrame(streamId, promised, payload[4..], endHeaders);
     }
 
     private static WindowUpdateFrame CreateWindowUpdateFrame(int streamId, ReadOnlyMemory<byte> payload)

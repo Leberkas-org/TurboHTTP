@@ -72,7 +72,7 @@ public sealed class Http2GoAwayTests
         var frames = decoder.Decode(bytes);
 
         var frame = Assert.IsType<GoAwayFrame>(frames[0]);
-        Assert.Empty(frame.DebugData);
+        Assert.True(frame.DebugData.IsEmpty);
     }
 
     // GA-006..GA-007: GOAWAY debug data and special lastStreamId values
@@ -87,7 +87,7 @@ public sealed class Http2GoAwayTests
         var frames = decoder.Decode(bytes);
 
         var frame = Assert.IsType<GoAwayFrame>(frames[0]);
-        Assert.Equal(debugData, frame.DebugData);
+        Assert.True(frame.DebugData.Span.SequenceEqual(debugData));
     }
 
     /// RFC 9113 §6.8 — GOAWAY with lastStreamId=0 decoded correctly
@@ -137,7 +137,7 @@ public sealed class Http2GoAwayTests
         var decoded = Assert.IsType<GoAwayFrame>(frames[0]);
         Assert.Equal(original.LastStreamId, decoded.LastStreamId);
         Assert.Equal(original.ErrorCode, decoded.ErrorCode);
-        Assert.Equal(original.DebugData, decoded.DebugData);
+        Assert.True(decoded.DebugData.Span.SequenceEqual(original.DebugData.Span));
     }
 
     // GA-010: Various error codes

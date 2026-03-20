@@ -246,7 +246,7 @@ public sealed class Http2ConnectionPrefaceTests
     [Fact(DisplayName = "RFC9113-3.4-SP-006: GOAWAY frame as first frame throws PROTOCOL_ERROR")]
     public void Should_ThrowProtocolError_When_ServerSendsGoAwayFrameFirst()
     {
-        var goAway = new GoAwayFrame(lastStreamId: 0, Http2ErrorCode.NoError, null).Serialize();
+        var goAway = new GoAwayFrame(lastStreamId: 0, Http2ErrorCode.NoError).Serialize();
 
         // var ex = Assert.Throws<Http2Exception>(() => Http2StageTestHelper.ValidateServerPreface(goAway));
         // Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
