@@ -15,8 +15,8 @@ internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMess
 {
     private readonly CookieJar? _cookieJar;
 
-    private readonly Inlet<HttpResponseMessage> _inlet = new("cookie.storage.in");
-    private readonly Outlet<HttpResponseMessage> _outlet = new("cookie.storage.out");
+    private readonly Inlet<HttpResponseMessage> _in = new("CookieStorage.In");
+    private readonly Outlet<HttpResponseMessage> _out = new("CookieStorage.Out");
 
     public override FlowShape<HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
@@ -24,7 +24,7 @@ internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMess
     public CookieStorageStage(CookieJar? cookieJar)
     {
         _cookieJar = cookieJar;
-        Shape = new FlowShape<HttpResponseMessage, HttpResponseMessage>(_inlet, _outlet);
+        Shape = new FlowShape<HttpResponseMessage, HttpResponseMessage>(_in, _out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -34,22 +34,22 @@ internal sealed class CookieStorageStage : GraphStage<FlowShape<HttpResponseMess
     {
         public Logic(CookieStorageStage stage) : base(stage.Shape)
         {
-            SetHandler(stage._inlet,
+            SetHandler(stage._in,
                 onPush: () =>
                 {
-                    var response = Grab(stage._inlet);
+                    var response = Grab(stage._in);
 
                     if (stage._cookieJar is not null && response.RequestMessage?.RequestUri is not null)
                     {
                         stage._cookieJar.ProcessResponse(response.RequestMessage.RequestUri, response);
                     }
 
-                    Push(stage._outlet, response);
+                    Push(stage._out, response);
                 },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: ex => Log.Warning("CookieStorageStage: Upstream failure absorbed: {0}", ex.Message));
 
-            SetHandler(stage._outlet, onPull: () => Pull(stage._inlet), onDownstreamFinish: _ => CompleteStage());
+            SetHandler(stage._out, onPull: () => Pull(stage._in), onDownstreamFinish: _ => CompleteStage());
         }
     }
 }

@@ -275,10 +275,10 @@ Fields: `_inlet`/`_outlet` → `_in`/`_out`
 Fields: `_inlet`/`_outlet` → `_in`/`_out`
 
 **Acceptance Criteria:**
-- [ ] All 3 stages renamed
-- [ ] Field names unified
-- [ ] All existing RFC6265/RFC9111 stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] All 3 stages renamed
+- [x] Field names unified
+- [x] All existing RFC6265/RFC9111 stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

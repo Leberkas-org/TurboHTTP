@@ -40,8 +40,8 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
 {
     private readonly HttpCacheStore _store;
 
-    private readonly Inlet<HttpResponseMessage> _inlet = new("cache.storage.in");
-    private readonly Outlet<HttpResponseMessage> _outlet = new("cache.storage.out");
+    private readonly Inlet<HttpResponseMessage> _in = new("CacheStorage.In");
+    private readonly Outlet<HttpResponseMessage> _out = new("CacheStorage.Out");
 
     public override FlowShape<HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
@@ -49,7 +49,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
     public CacheStorageStage(HttpCacheStore store)
     {
         _store = store;
-        Shape = new FlowShape<HttpResponseMessage, HttpResponseMessage>(_inlet, _outlet);
+        Shape = new FlowShape<HttpResponseMessage, HttpResponseMessage>(_in, _out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -64,10 +64,10 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
         {
             _stage = stage;
 
-            SetHandler(stage._inlet,
+            SetHandler(stage._in,
                 onPush: () =>
                 {
-                    var response = Grab(stage._inlet);
+                    var response = Grab(stage._in);
                     var request = response.RequestMessage;
 
                     if (request is not null)
@@ -75,20 +75,20 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                         var (result, needsAsyncRead) = Process(request, response);
                         if (!needsAsyncRead)
                         {
-                            Push(stage._outlet, result);
+                            Push(stage._out, result);
                         }
                         // When needsAsyncRead is true, the async callback will push downstream.
                     }
                     else
                     {
-                        Push(stage._outlet, response);
+                        Push(stage._out, response);
                     }
                 },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: ex => Log.Warning("CacheStorageStage: Upstream failure absorbed: {0}", ex.Message));
 
-            SetHandler(stage._outlet,
-                onPull: () => Pull(stage._inlet),
+            SetHandler(stage._out,
+                onPull: () => Pull(stage._in),
                 onDownstreamFinish: _ => CompleteStage());
         }
 
@@ -99,7 +99,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                 var (response, body) = tuple;
                 var now = DateTimeOffset.UtcNow;
                 _stage._store.Put(response.RequestMessage!, response, body, now, now);
-                Push(_stage._outlet, response);
+                Push(_stage._out, response);
             });
         }
 
