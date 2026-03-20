@@ -601,9 +601,9 @@ finally
 **Required Change:** Store task references, add fault continuations that trigger `DoClose`.
 
 **Acceptance Criteria:**
-- [ ] All three tasks have exception continuations
-- [ ] Faulted tasks trigger `DoClose`
-- [ ] Build compiles with 0 errors
+- [x] All three tasks have exception continuations
+- [x] Faulted tasks trigger `DoClose`
+- [x] Build compiles with 0 errors
 
 ---
 
