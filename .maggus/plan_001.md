@@ -155,11 +155,11 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/Protocol/RFC9111/CachePolicy.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 9111 §5.2 (Cache-Control) references are correct
-- [ ] No references to RFC 7234 (old Caching RFC) remain
-- [ ] Comments accurately describe current cache behaviour
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] RFC 9111 §5.2 (Cache-Control) references are correct
+- [x] No references to RFC 7234 (old Caching RFC) remain
+- [x] Comments accurately describe current cache behaviour
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 

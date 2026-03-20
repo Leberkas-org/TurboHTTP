@@ -194,7 +194,7 @@ public sealed class HttpCacheStore
             }
         }
 
-        // no-store on response (RFC 9111 §5.2.2.5)
+        // no-store on response (RFC 9111 §5.2.2.4)
         if (response.Headers.TryGetValues("Cache-Control", out var resCcValues))
         {
             var resCc = CacheControlParser.Parse(string.Join(", ", resCcValues));
@@ -216,8 +216,6 @@ public sealed class HttpCacheStore
             _index.Clear();
         }
     }
-
-    // ── Private Helpers ──────────────────────────────────────────────────────
 
     private static CacheEntry BuildEntry(
         HttpResponseMessage response,

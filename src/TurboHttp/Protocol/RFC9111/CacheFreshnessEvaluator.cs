@@ -19,7 +19,7 @@ public static class CacheFreshnessEvaluator
         policy ??= CachePolicy.Default;
         var cc = entry.CacheControl;
 
-        // s-maxage applies only to shared caches (RFC 9111 §5.2.2.10)
+        // s-maxage applies only to shared caches (RFC 9111 §5.2.2.9)
         if (policy.SharedCache && cc?.SMaxAge.HasValue == true)
         {
             return cc.SMaxAge.Value;
@@ -170,7 +170,7 @@ public static class CacheFreshnessEvaluator
         if (resCc?.MustRevalidate == true || (policy?.SharedCache == true && resCc?.ProxyRevalidate == true))
         {
             return CacheLookupResult.MustRevalidate(entry,
-                "RFC 9111 §5.2.2.8: must-revalidate — stale entry cannot be served without revalidation.");
+                "RFC 9111 §5.2.2.2: must-revalidate — stale entry cannot be served without revalidation.");
         }
 
         // RFC 9111 §5.2.1.2 — max-stale: accept stale entry if within staleness tolerance

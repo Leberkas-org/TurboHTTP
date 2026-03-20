@@ -158,8 +158,6 @@ public static class CacheControlParser
         };
     }
 
-    // ── Private Helpers ──────────────────────────────────────────────────────
-
     private static TimeSpan? ParseSeconds(ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
