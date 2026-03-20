@@ -2,7 +2,6 @@ using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
-using TurboHttp.Protocol;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Streams;
@@ -28,9 +27,6 @@ public sealed class StageLifecycleTests : StreamTestBase
         var bytes = Encoding.Latin1.GetBytes(ascii);
         return new DataItem(new SimpleMemoryOwner(bytes), bytes.Length) { Key = RequestEndpoint.Default };
     }
-
-    private static Exception Unwrap(Exception ex)
-        => ex is AggregateException agg ? agg.InnerException! : ex;
 
     [Fact(Timeout = 10_000,
         DisplayName = "LIFE-001: UpstreamFinish → encoder stage completes without exception")]
@@ -99,25 +95,37 @@ public sealed class StageLifecycleTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "LIFE-004: Exception in decoder → stage fails with HttpDecoderException")]
-    public async Task Should_FailWithHttpDecoderException_When_DecoderStageReceivesMalformedData()
+        DisplayName = "LIFE-005: HTTP/1.1 decoder survives corrupt bytes — valid response after garbage is decoded")]
+    public async Task Should_DecodeValidResponse_When_CorruptBytesReceivedFirst()
     {
-        // Sending bytes that are not a valid HTTP response (no "HTTP/1.x" status-line)
-        // must cause Http11Decoder to throw HttpDecoderException(InvalidStatusLine).
-        // The decoder stage catches it, calls FailStage(), and the stream fails.
-        // We verify the inner exception is exactly HttpDecoderException.
+        // Corrupt bytes cause HttpDecoderException in the decoder.
+        // The stage must log the error, reset state, and continue pulling.
+        // The subsequent valid response must be decoded successfully.
         var garbage = Chunk("GARBAGE DATA\r\n\r\n");
+        var valid = Chunk("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
-            await Source.Single(garbage)
-                .Via(Flow.FromGraph(new Http11DecoderStage()))
-                .RunWith(Sink.First<HttpResponseMessage>(), Materializer));
+        var response = await Source.From(new[] { garbage, valid })
+            .Via(Flow.FromGraph(new Http11DecoderStage()))
+            .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
 
-        var inner = Unwrap(ex);
-
-        Assert.IsType<HttpDecoderException>(inner);
-
-        var decoderEx = (HttpDecoderException)inner;
-        Assert.Equal(HttpDecoderError.InvalidStatusLine, decoderEx.DecodeError);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Fact(Timeout = 10_000,
+        DisplayName = "LIFE-006: HTTP/1.0 decoder survives corrupt bytes — valid response after garbage is decoded")]
+    public async Task Should_DecodeValidHttp10Response_When_CorruptBytesReceivedFirst()
+    {
+        // Corrupt bytes cause HttpDecoderException in the HTTP/1.0 decoder.
+        // The stage must log the error, reset state, and continue pulling.
+        // The subsequent valid HTTP/1.0 response must be decoded successfully.
+        var garbage = Chunk("GARBAGE DATA\r\n\r\n");
+        var valid = Chunk("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
+
+        var response = await Source.From(new[] { garbage, valid })
+            .Via(Flow.FromGraph(new Http10DecoderStage()))
+            .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    }
+
 }

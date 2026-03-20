@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
@@ -60,7 +61,12 @@ public sealed class Http10DecoderStage : GraphStage<FlowShape<IInputItem, HttpRe
                     catch (Exception ex)
                     {
                         dataItem.Memory.Dispose();
-                        FailStage(ex);
+                        Log.Warning("Http10DecoderStage: Failed to decode response: {0}", ex.Message);
+                        _decoder.Reset();
+                        if (!HasBeenPulled(stage._inlet))
+                        {
+                            Pull(stage._inlet);
+                        }
                     }
                 },
                 onUpstreamFinish: () =>
@@ -72,10 +78,11 @@ public sealed class Http10DecoderStage : GraphStage<FlowShape<IInputItem, HttpRe
                     }
                     else
                     {
+                        _decoder.Reset();
                         CompleteStage();
                     }
                 },
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("Http10DecoderStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet, onPull: () => Pull(stage._inlet), onDownstreamFinish: _ => CompleteStage());
         }

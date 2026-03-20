@@ -179,14 +179,14 @@ Also change `onUpstreamFailure: FailStage` → `onUpstreamFailure: ex => Log.Err
 4. For HTTP/1.0 (connection-close-based): after emitting response on EOF, reset decoder state and pull for next connection's data
 
 **Acceptance Criteria:**
-- [ ] Decoder stages never call `FailStage` or self-`CompleteStage`
-- [ ] Decode errors logged with context (bytes received, error type)
-- [ ] Stream stays alive after a decode error
-- [ ] HTTP/1.0 decoder resets state after EOF response instead of completing
-- [ ] Stream test: corrupt response bytes, verify stream survives
-- [ ] Existing tests asserting `FailStage`/`CompleteStage` on decode errors → **deleted**
-- [ ] Remaining decoder stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] Decoder stages never call `FailStage` or self-`CompleteStage`
+- [x] Decode errors logged with context (bytes received, error type)
+- [x] Stream stays alive after a decode error
+- [x] HTTP/1.0 decoder resets state after EOF response instead of completing
+- [x] Stream test: corrupt response bytes, verify stream survives
+- [x] Existing tests asserting `FailStage`/`CompleteStage` on decode errors → **deleted**
+- [x] Remaining decoder stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
