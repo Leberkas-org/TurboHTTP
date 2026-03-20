@@ -14,7 +14,7 @@ namespace TurboHttp.StreamTests.RFC9113;
 /// Stage under test: <see cref="Http20EncoderStage"/>.
 /// RFC 9113 §4–§6: HTTP/2 frame serialisation, type codes, flags, and 9-byte frame header format.
 /// </remarks>
-public sealed class Http20EncoderStageRfcTests : StreamTestBase
+public sealed class Http20EncoderStageFrameSerializationTests : StreamTestBase
 {
     private async Task<byte[]> EncodeAsync(Http2Frame frame)
     {

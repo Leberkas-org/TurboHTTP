@@ -12,7 +12,7 @@ namespace TurboHttp.StreamTests.RFC9112;
 /// Stage under test: <see cref="Http11Engine"/>.
 /// RFC 9112 §3–§9: HTTP/1.1 full message exchange including chunked encoding and connection management.
 /// </remarks>
-public sealed class Http11EngineRfcRoundTripTests : EngineTestBase
+public sealed class Http11EngineEndToEndTests : EngineTestBase
 {
     private static Http11Engine Engine => new();
 
