@@ -13,9 +13,9 @@ internal sealed class
 {
     private readonly bool _bodyFullyConsumed;
 
-    private readonly Inlet<HttpResponseMessage> _inletResponse = new("connection.reuse.in.response");
-    private readonly Outlet<HttpResponseMessage> _outletResponse = new("connection.reuse.out.response");
-    private readonly Outlet<IOutputItem> _outletSignalItem = new("connection.reuse.out.signal");
+    private readonly Inlet<HttpResponseMessage> _in = new("ConnectionReuse.In");
+    private readonly Outlet<HttpResponseMessage> _outResponse = new("ConnectionReuse.Out.Response");
+    private readonly Outlet<IOutputItem> _outSignal = new("ConnectionReuse.Out.Signal");
 
     public override FanOutShape<HttpResponseMessage, HttpResponseMessage, IOutputItem> Shape { get; }
 
@@ -24,7 +24,7 @@ internal sealed class
     {
         _bodyFullyConsumed = bodyFullyConsumed;
         Shape = new FanOutShape<HttpResponseMessage, HttpResponseMessage, IOutputItem>(
-            _inletResponse, _outletResponse, _outletSignalItem);
+            _in, _outResponse, _outSignal);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -42,10 +42,10 @@ internal sealed class
         {
             _stage = stage;
 
-            SetHandler(stage._inletResponse,
+            SetHandler(stage._in,
                 onPush: () =>
                 {
-                    var response = Grab(stage._inletResponse);
+                    var response = Grab(stage._in);
                     var decision = ConnectionReuseEvaluator.Evaluate(
                         response, response.Version, stage._bodyFullyConsumed);
 
@@ -68,7 +68,7 @@ internal sealed class
                 },
                 onUpstreamFailure: ex => Log.Warning("ConnectionReuseStage: Upstream failure absorbed: {0}", ex.Message));
 
-            SetHandler(stage._outletResponse,
+            SetHandler(stage._outResponse,
                 onPull: () =>
                 {
                     _responseOutletDemand = true;
@@ -77,7 +77,7 @@ internal sealed class
                 },
                 onDownstreamFinish: _ => CompleteStage());
 
-            SetHandler(stage._outletSignalItem,
+            SetHandler(stage._outSignal,
                 onPull: () =>
                 {
                     _signalOutletDemand = true;
@@ -98,7 +98,7 @@ internal sealed class
             _pendingResponse = null;
             _responseOutletDemand = false;
 
-            Push(_stage._outletResponse, response);
+            Push(_stage._outResponse, response);
             TryPullIfReady();
         }
 
@@ -113,7 +113,7 @@ internal sealed class
             _pendingSignal = null;
             _signalOutletDemand = false;
 
-            Push(_stage._outletSignalItem, signal);
+            Push(_stage._outSignal, signal);
             TryPullIfReady();
         }
 
@@ -131,13 +131,13 @@ internal sealed class
                 return;
             }
 
-            if (IsClosed(_stage._inletResponse))
+            if (IsClosed(_stage._in))
             {
                 CompleteStage();
             }
-            else if (!HasBeenPulled(_stage._inletResponse))
+            else if (!HasBeenPulled(_stage._in))
             {
-                Pull(_stage._inletResponse);
+                Pull(_stage._in);
             }
         }
     }

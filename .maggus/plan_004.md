@@ -328,9 +328,9 @@ Fields: `_inlet`/`_outlet` → `_in`/`_out`
 | Out Signal | `connection.reuse.out.signal` | `ConnectionReuse.Out.Signal` | `_outletSignalItem` | `_outSignal` |
 
 **Acceptance Criteria:**
-- [ ] String names and field names updated
-- [ ] All existing stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] String names and field names updated
+- [x] All existing stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
