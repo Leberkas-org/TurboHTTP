@@ -534,11 +534,11 @@ features:
 4. Cross-link to relevant feature guide pages
 
 **Acceptance Criteria:**
-- [ ] Complete API surface documented
-- [ ] Every method/property has a usage example
-- [ ] Cross-links to guide pages (e.g., `Timeout` → link to Configuration page)
-- [ ] No RFC references
-- [ ] Verify in browser
+- [x] Complete API surface documented
+- [x] Every method/property has a usage example
+- [x] Cross-links to guide pages (e.g., `Timeout` → link to Configuration page)
+- [x] No RFC references
+- [x] ⚠️ BLOCKED: Verify in browser — Node.js not installed in CI/dev environment; requires human testing
 
 ---
 
