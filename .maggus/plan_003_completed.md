@@ -790,10 +790,10 @@ finally
 3. Add exponential backoff cap (max 30s)
 
 **Acceptance Criteria:**
-- [ ] Old pump tasks awaited before new channels
-- [ ] Backoff capped
-- [ ] All existing lifecycle tests pass
-- [ ] Build compiles with 0 errors
+- [x] Old pump tasks awaited before new channels
+- [x] Backoff capped
+- [x] All existing lifecycle tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

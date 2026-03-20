@@ -14,8 +14,8 @@ namespace TurboHttp.Internal.Stages;
 
 internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, NotUsed>>>
 {
-    private readonly Inlet<T> _inlet = new("groupby.hostkey.in");
-    private readonly Outlet<Source<T, NotUsed>> _outlet = new("groupby.hostkey.in");
+    private readonly Inlet<T> _in = new("GroupByHostKey.In");
+    private readonly Outlet<Source<T, NotUsed>> _out = new("GroupByHostKey.Out");
     public override FlowShape<T, Source<T, NotUsed>> Shape { get; }
 
 
@@ -28,7 +28,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
         _keyFor = keyFor ?? throw new ArgumentNullException(nameof(keyFor));
         _maxSubstreams = maxSubstreams;
         _defaultQueueSize = queueSize;
-        Shape = new FlowShape<T, Source<T, NotUsed>>(_inlet, _outlet);
+        Shape = new FlowShape<T, Source<T, NotUsed>>(_in, _out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -57,7 +57,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 new TurboAttributes.SubstreamQueueSize(stage._defaultQueueSize));
             _queueSize = queueAttr.Size;
 
-            SetHandler(stage._inlet,
+            SetHandler(stage._in,
                 onPush: HandlePush,
                 onUpstreamFinish: () =>
                 {
@@ -66,7 +66,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 },
                 onUpstreamFailure: ex => Log.Warning("GroupByHostKeyStage: Upstream failure absorbed: {0}", ex.Message));
 
-            SetHandler(stage._outlet, onPull: HandleOutPull);
+            SetHandler(stage._out, onPull: HandleOutPull);
         }
 
         public override void PreStart()
@@ -85,9 +85,9 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 {
                     TryFinish();
                 }
-                else if (!HasBeenPulled(_stage._inlet) && !IsClosed(_stage._inlet))
+                else if (!HasBeenPulled(_stage._in) && !IsClosed(_stage._in))
                 {
-                    Pull(_stage._inlet);
+                    Pull(_stage._in);
                 }
             });
         }
@@ -112,17 +112,17 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
         {
             if (_pendingSources.TryDequeue(out var bufferedSource))
             {
-                Push(_stage._outlet, bufferedSource);
+                Push(_stage._out, bufferedSource);
             }
-            else if (!HasBeenPulled(_stage._inlet))
+            else if (!HasBeenPulled(_stage._in))
             {
-                Pull(_stage._inlet);
+                Pull(_stage._in);
             }
         }
 
         private void HandlePush()
         {
-            var item = Grab(_stage._inlet);
+            var item = Grab(_stage._in);
             var key = _stage._keyFor(item);
 
             if (_subflows.TryGetValue(key, out var existing))
@@ -148,9 +148,9 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 var state = new SubflowState(matQueue);
                 _subflows[key] = state;
 
-                if (IsAvailable(_stage._outlet))
+                if (IsAvailable(_stage._out))
                 {
-                    Push(_stage._outlet, source);
+                    Push(_stage._out, source);
                 }
                 else
                 {
@@ -161,9 +161,9 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 DrainPending(key, state);
             }
 
-            if (!HasBeenPulled(_stage._inlet) && _pendingSources.Count == 0)
+            if (!HasBeenPulled(_stage._in) && _pendingSources.Count == 0)
             {
-                Pull(_stage._inlet);
+                Pull(_stage._in);
             }
         }
 

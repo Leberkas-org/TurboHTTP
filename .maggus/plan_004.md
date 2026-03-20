@@ -127,11 +127,11 @@ TurboHttp has 26 GraphStage implementations with 6 different naming patterns for
 **Required Change:** Rename outlet to `"GroupByHostKey.Out"` and inlet to `"GroupByHostKey.In"`.
 
 **Acceptance Criteria:**
-- [ ] Inlet name is `"GroupByHostKey.In"`, outlet name is `"GroupByHostKey.Out"`
-- [ ] Field names changed to `_in` / `_out`
-- [ ] All references to old field names updated in the Logic class
-- [ ] All existing tests pass
-- [ ] Build compiles with 0 errors
+- [x] Inlet name is `"GroupByHostKey.In"`, outlet name is `"GroupByHostKey.Out"`
+- [x] Field names changed to `_in` / `_out`
+- [x] All references to old field names updated in the Logic class
+- [x] All existing tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

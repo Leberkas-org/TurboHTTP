@@ -95,9 +95,12 @@ public sealed class ConnectionActor : ReceiveActor
     {
         _runner = null;
 
-        // Complete the inbound channel so any ConnectionStage holding the stale
-        // ConnectionHandle.InboundReader detects end-of-stream and re-requests a fresh handle.
+        // Complete both channels so old pump tasks exit cleanly before new channels are created.
+        // _in.Writer completion: MoveChannelToStream sees OutboundReader.Completion and exits its loop.
+        // _out.Writer completion: ConnectionStage sees InboundReader.Completion (end-of-stream) and
+        //   re-requests a fresh handle; MovePipeToChannel can no longer write stale data.
         _in.Writer.TryComplete();
+        _out.Writer.TryComplete();
 
         // Notify parent of connection failure
         Context.Parent.Tell(new HostPool.ConnectionFailed(Self));
@@ -109,11 +112,11 @@ public sealed class ConnectionActor : ReceiveActor
             return;
         }
 
-        // Exponential backoff: base * 2^attempt (capped at 60s)
+        // Exponential backoff: base * 2^attempt (capped at 30s)
         var delay = TimeSpan.FromTicks(
             Math.Min(
                 _config.ReconnectInterval.Ticks * (1L << _reconnectAttempt),
-                TimeSpan.FromSeconds(60).Ticks));
+                TimeSpan.FromSeconds(30).Ticks));
 
         _reconnectAttempt++;
 

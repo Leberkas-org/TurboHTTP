@@ -235,6 +235,40 @@ public sealed class ConnectionActorTests : TestKit
         Assert.Equal(128, msg.MaxStreams);
     }
 
+    [Fact(DisplayName = "CA-009: Both channel writers completed when reconnect is triggered")]
+    public void Should_CompleteBothChannelWriters_WhenReconnectTriggered()
+    {
+        var config = new TurboClientOptions
+        {
+            ReconnectInterval = TimeSpan.FromSeconds(60), // prevent reconnect from firing during test
+            MaxReconnectAttempts = 3
+        };
+
+        var parentProbe = CreateTestProbe("parent-ca009");
+        var clientManagerProbe = CreateTestProbe("clientManager-ca009");
+
+        Sys.ActorOf(Props.Create(() => new ParentProxy(parentProbe.Ref, clientManagerProbe.Ref, config)));
+
+        // Capture the initial CreateRunnerWithChannels to get channel references
+        var createMsg = clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
+        var connectionActor = clientManagerProbe.LastSender;
+
+        // Trigger disconnect — this calls Reconnect() inside the actor
+        connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
+
+        // Wait for ConnectionFailed to propagate through ParentProxy to parentProbe.
+        // By the time this returns, Reconnect() has already run (it sends ConnectionFailed before returning).
+        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
+
+        // Both channel writers must be completed so old pump tasks can exit cleanly.
+        // OutboundChannel (_in in ConnectionActor): MoveChannelToStream exits via Completion check.
+        Assert.False(createMsg.OutboundChannel.Writer.TryWrite(default),
+            "OutboundChannel (_in) writer should be completed after Reconnect()");
+        // InboundChannel (_out in ConnectionActor): ConnectionStage InboundReader sees end-of-stream.
+        Assert.False(createMsg.InboundChannel.Writer.TryWrite(default),
+            "InboundChannel (_out) writer should be completed after Reconnect()");
+    }
+
     [Fact(DisplayName = "CA-005: ConnectionReady sent to parent after successful reconnect")]
     public void Should_SendConnectionReadyToParent_WhenReconnectSucceeds()
     {
