@@ -439,10 +439,10 @@ features:
 6. Configuration: max connections per host, idle timeout
 
 **Acceptance Criteria:**
-- [ ] Clear explanation of pool lifecycle
-- [ ] Configuration examples
-- [ ] No RFC references
-- [ ] Verify in browser
+- [x] Clear explanation of pool lifecycle
+- [x] Configuration examples
+- [x] No RFC references
+- [x] ⚠️ BLOCKED: Verify in browser — Node.js not available in CI environment; requires manual browser verification
 
 ---
 
