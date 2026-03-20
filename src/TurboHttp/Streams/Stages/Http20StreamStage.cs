@@ -15,11 +15,11 @@ namespace TurboHttp.Streams.Stages;
 
 public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpResponseMessage>>
 {
-    private readonly Inlet<Http2Frame> _inlet = new("h2.stream.in");
+    private readonly Inlet<Http2Frame> _in = new("H2Stream.In");
 
-    private readonly Outlet<HttpResponseMessage> _outlet = new("h2.stream.out");
+    private readonly Outlet<HttpResponseMessage> _out = new("H2Stream.Out");
 
-    public override FlowShape<Http2Frame, HttpResponseMessage> Shape => new(_inlet, _outlet);
+    public override FlowShape<Http2Frame, HttpResponseMessage> Shape => new(_in, _out);
 
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -125,9 +125,9 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpRes
         {
             _stage = stage;
 
-            SetHandler(stage._inlet, () =>
+            SetHandler(stage._in, () =>
             {
-                var frame = Grab(stage._inlet);
+                var frame = Grab(stage._in);
                 _responsePushed = false;
                 switch (frame)
                 {
@@ -146,14 +146,14 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpRes
 
                 if (!_responsePushed)
                 {
-                    Pull(stage._inlet);
+                    Pull(stage._in);
                 }
             });
 
-            SetHandler(stage._outlet, () =>
+            SetHandler(stage._out, () =>
             {
                 _responsePushed = false;
-                Pull(stage._inlet);
+                Pull(stage._in);
             });
         }
 
@@ -219,7 +219,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpRes
             response.Content = new ByteArrayContent(bodyBytes);
 
             _responsePushed = true;
-            Push(_stage._outlet, response);
+            Push(_stage._out, response);
 
             state.Dispose();
             _streams.Remove(frame.StreamId);
@@ -262,7 +262,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpRes
             }
 
             _responsePushed = true;
-            Push(_stage._outlet, response);
+            Push(_stage._out, response);
 
             state.Dispose();
             _streams.Remove(streamId);

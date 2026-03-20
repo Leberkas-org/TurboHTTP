@@ -15,8 +15,8 @@ namespace TurboHttp.Streams.Stages;
 // RFC 9113 §3.4 — prepend connection preface to the first outbound bytes
 public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOutputItem>>
 {
-    private readonly Inlet<IOutputItem> _inlet = new("preface.in");
-    private readonly Outlet<IOutputItem> _outlet = new("preface.out");
+    private readonly Inlet<IOutputItem> _in = new("PrependPreface.In");
+    private readonly Outlet<IOutputItem> _out = new("PrependPreface.Out");
 
     private readonly int _initialWindowSize;
 
@@ -26,7 +26,7 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
     }
 
     public override FlowShape<IOutputItem, IOutputItem> Shape
-        => new(_inlet, _outlet);
+        => new(_in, _out);
 
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -62,12 +62,12 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
         {
             _stage = stage;
 
-            SetHandler(stage._outlet, onPull: () => Pull(stage._inlet));
+            SetHandler(stage._out, onPull: () => Pull(stage._in));
 
-            SetHandler(stage._inlet,
+            SetHandler(stage._in,
                 onPush: () =>
                 {
-                    var item = Grab(stage._inlet);
+                    var item = Grab(stage._in);
                     if (item is ConnectItem connectItem)
                     {
                         var key = new PrefaceKey(connectItem.Options is TlsOptions, connectItem.Options.Host, connectItem.Options.Port);
@@ -79,12 +79,12 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
                         var preface = BuildHttp2ConnectionPreface();
                         var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
                         ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
-                        EmitMultiple(stage._outlet, [item, new DataItem(owner, preface.Length)]);
+                        EmitMultiple(stage._out, [item, new DataItem(owner, preface.Length)]);
                         _prefaceSentHost.Add(key);
                     }
                     else
                     {
-                        Push(stage._outlet, item);
+                        Push(stage._out, item);
                     }
                 },
                 onUpstreamFinish: CompleteStage,

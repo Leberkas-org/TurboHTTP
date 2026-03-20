@@ -7,8 +7,8 @@ namespace TurboHttp.Streams.Stages;
 
 public sealed class StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequestMessage, (HttpRequestMessage, int)>>
 {
-    private readonly Inlet<HttpRequestMessage> _in = new("allocator.in");
-    private readonly Outlet<(HttpRequestMessage, int)> _out = new("allocator.out");
+    private readonly Inlet<HttpRequestMessage> _in = new("StreamIdAllocator.In");
+    private readonly Outlet<(HttpRequestMessage, int)> _out = new("StreamIdAllocator.Out");
     private readonly int _startStreamId;
 
     public override FlowShape<HttpRequestMessage, (HttpRequestMessage, int)> Shape { get; }
