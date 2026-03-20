@@ -6,10 +6,9 @@ using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Protocol.RFC9113;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// HTTP/2 Frame Types  —  RFC 7540 §6
+// HTTP/2 Frame Types  —  RFC 9113 §6
 //
-// Frame-Header (9 Bytes, RFC 7540 §4.1):
+// Frame-Header (9 Bytes, RFC 9113 §4.1):
 //   +-----------------------------------------------+
 //   |                 Length (24)                    |
 //   +---------------+---------------+---------------+
@@ -19,7 +18,6 @@ namespace TurboHttp.Protocol.RFC9113;
 //   +=+=============================================================+
 //   |                   Frame Payload (0...)                        |
 //   +---------------------------------------------------------------+
-// ══════════════════════════════════════════════════════════════════════════════
 public enum FrameType : byte
 {
     Data = 0x0,
@@ -379,7 +377,7 @@ public sealed class WindowUpdateFrame : Http2Frame
 
 /// <summary>
 /// Represents an HTTP/2 frame with an unrecognized type.
-/// RFC 7540 §4.1 / RFC 9113 §5.5: Unknown frame types MUST be ignored.
+/// RFC 9113 §5.5: Unknown frame types MUST be ignored.
 /// Preserved in the decoded output so callers can inspect or discard as needed.
 /// </summary>
 public sealed class UnknownFrame : Http2Frame

@@ -280,14 +280,14 @@ The following RFC supersession rules apply:
 2. `src/TurboHttp/Protocol/RFC9113/Http2Exception.cs`
 
 **Acceptance Criteria:**
-- [ ] **RFC 7540 → RFC 9113 mapping** for frame types:
+- [x] **RFC 7540 → RFC 9113 mapping** for frame types:
   - §4.1 (Frame Format) → RFC 9113 §4.1
   - §5.4 (Error Handling) → RFC 9113 §5.4
   - §6.x (Frame Definitions) → RFC 9113 §6.x (verify §-numbers are identical)
-- [ ] Replace all RFC 7540 references with RFC 9113
-- [ ] Validate error code comments against RFC 9113 §7
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Replace all RFC 7540 references with RFC 9113
+- [x] Validate error code comments against RFC 9113 §7
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
