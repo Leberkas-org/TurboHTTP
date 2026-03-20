@@ -332,6 +332,11 @@ ASALocalRun/
 **.env
 *cwd
 
+# VitePress docs
+docs/node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
 # CUSTOM
 .ralph/
 COMMIT.md
