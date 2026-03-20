@@ -6,7 +6,9 @@ The `Engine` stage demultiplexes requests by HTTP version and routes each reques
 
 ## HTTP/1.0 Engine
 
-<LikeC4Diagram viewId="http10Engine" :height="440" />
+<ClientOnly>
+  <LikeC4Diagram viewId="http10Engine" :height="440" />
+</ClientOnly>
 
 HTTP/1.0 (RFC 1945) uses a **close-then-respond** model. Each connection handles exactly one request, then closes.
 
@@ -34,7 +36,9 @@ Http10EncoderStage → ConnectionStage → TCP → ConnectionStage → Http10Dec
 
 ## HTTP/1.1 Engine
 
-<LikeC4Diagram viewId="http11Engine" :height="480" />
+<ClientOnly>
+  <LikeC4Diagram viewId="http11Engine" :height="480" />
+</ClientOnly>
 
 HTTP/1.1 (RFC 9112) adds **persistent connections** and **keep-alive control** via a feedback loop from the correlation stage back to `ConnectionStage`.
 
@@ -70,7 +74,9 @@ If the decision is **reuse**, `ConnectionStage` keeps the TCP connection open fo
 
 ## HTTP/2 Engine
 
-<LikeC4Diagram viewId="http2Engine" :height="520" />
+<ClientOnly>
+  <LikeC4Diagram viewId="http2Engine" :height="520" />
+</ClientOnly>
 
 HTTP/2 (RFC 9113) provides **stream multiplexing** — many logical requests share a single TCP connection, each assigned a unique stream ID.
 

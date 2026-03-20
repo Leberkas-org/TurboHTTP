@@ -4,7 +4,9 @@ TurboHttp is composed of four layers. The container view shows all four layers a
 
 ## Container View
 
-<LikeC4Diagram viewId="turbohttp" :height="560" />
+<ClientOnly>
+  <LikeC4Diagram viewId="turbohttp" :height="560" />
+</ClientOnly>
 
 The four containers are:
 
@@ -19,7 +21,9 @@ The four containers are:
 
 ## Client Layer
 
-<LikeC4Diagram viewId="clientLayer" :height="400" />
+<ClientOnly>
+  <LikeC4Diagram viewId="clientLayer" :height="400" />
+</ClientOnly>
 
 `ITurboHttpClient` exposes two interaction modes:
 
@@ -32,7 +36,9 @@ The client layer creates and materialises the Akka.Streams graph. All configurat
 
 ## Streams Layer
 
-<LikeC4Diagram viewId="streamsLayer" :height="600" />
+<ClientOnly>
+  <LikeC4Diagram viewId="streamsLayer" :height="600" />
+</ClientOnly>
 
 The Streams layer is the heart of TurboHttp. It is a single composable Akka.Streams graph that processes every request through the following stages (in order):
 
@@ -63,7 +69,9 @@ The Streams layer is the heart of TurboHttp. It is a single composable Akka.Stre
 
 ## I/O Layer
 
-<LikeC4Diagram viewId="ioLayer" :height="520" />
+<ClientOnly>
+  <LikeC4Diagram viewId="ioLayer" :height="520" />
+</ClientOnly>
 
 The I/O layer uses a **hybrid pattern** — actors manage connection lifecycle while data travels through lock-free channels.
 

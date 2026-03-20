@@ -2,7 +2,9 @@
 
 TurboHttp is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, and HTTP/2 with full RFC compliance across four composable layers.
 
-<LikeC4Diagram viewId="index" :height="520" />
+<ClientOnly>
+  <LikeC4Diagram viewId="index" :height="520" />
+</ClientOnly>
 
 ## System Boundaries
 

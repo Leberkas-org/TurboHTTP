@@ -2,7 +2,9 @@
 
 The pipeline view shows every stage in TurboHttp's request/response path — the forward flow of data, the backward flow of connection-reuse signals, and the short-circuit paths for cache hits, retries, and redirects.
 
-<LikeC4Diagram viewId="pipelineFlow" :height="700" />
+<ClientOnly>
+  <LikeC4Diagram viewId="pipelineFlow" :height="700" />
+</ClientOnly>
 
 ---
 

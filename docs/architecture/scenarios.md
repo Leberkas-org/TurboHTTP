@@ -6,7 +6,9 @@ These dynamic views trace a single HTTP request from application code through ev
 
 ## HTTP/1.0 — Simple Request/Response
 
-<LikeC4Diagram viewId="scenarioHttp10" :height="680" />
+<ClientOnly>
+  <LikeC4Diagram viewId="scenarioHttp10" :height="680" />
+</ClientOnly>
 
 ### Request Path
 
@@ -39,7 +41,9 @@ After step 17, the TCP connection is closed. The next HTTP/1.0 request will go t
 
 ## HTTP/1.1 — Persistent Connection with Keep-Alive
 
-<LikeC4Diagram viewId="scenarioHttp11" :height="720" />
+<ClientOnly>
+  <LikeC4Diagram viewId="scenarioHttp11" :height="720" />
+</ClientOnly>
 
 HTTP/1.1 follows the same request/response path as HTTP/1.0 except for one critical difference: the connection can be **reused** after the response is delivered.
 
@@ -67,7 +71,9 @@ On **close**, `ConnectionStage` notifies `HostPoolActor`, which schedules a reco
 
 ## HTTP/2 — Multiplexed Streams
 
-<LikeC4Diagram viewId="scenarioHttp2" :height="740" />
+<ClientOnly>
+  <LikeC4Diagram viewId="scenarioHttp2" :height="740" />
+</ClientOnly>
 
 HTTP/2 is fundamentally different from HTTP/1.x. A single TCP connection carries many concurrent logical **streams**, each identified by an odd integer stream ID assigned by the client.
 

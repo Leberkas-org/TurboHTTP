@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useData } from 'vitepress'
 
 const props = defineProps<{
     viewId: string
     height?: number
+    interactive?: boolean
+    showNavigation?: boolean
 }>()
 
-const containerHeight = computed(() => `${props.height ?? 500}px`)
+const { isDark } = useData()
+const colorScheme = computed(() => isDark.value ? 'dark' : 'light')
 
 const containerRef = ref<HTMLElement | null>(null)
 const status = ref<'loading' | 'ready' | 'error'>('loading')
@@ -32,7 +36,15 @@ async function renderDiagram()
         ])
 
         const root = createRoot(el)
-        root.render(createElement(LikeC4View, { viewId: props.viewId }))
+        root.render(createElement(LikeC4View, {
+            viewId: props.viewId,
+            colorScheme: colorScheme.value,
+            fitView: true,
+            pannable: props.interactive !== false,
+            zoomable: props.interactive !== false,
+            background: 'transparent',
+            keepAspectRatio: true,
+        }))
         status.value = 'ready'
         unmountRoot = () => root.unmount()
     }
@@ -46,6 +58,7 @@ async function renderDiagram()
 onMounted(renderDiagram)
 
 watch(() => props.viewId, renderDiagram)
+watch(colorScheme, renderDiagram)
 
 onUnmounted(() =>
 {
@@ -55,7 +68,7 @@ onUnmounted(() =>
 </script>
 
 <template>
-    <div class="likec4-diagram" :style="{ height: containerHeight }">
+    <div class="likec4-diagram" :style="height ? { height: `${height}px` } : {}">
         <!-- React mount target — always in the DOM so React can size itself correctly -->
         <div ref="containerRef" class="likec4-container" />
 
@@ -79,12 +92,14 @@ onUnmounted(() =>
 <style scoped>
 .likec4-diagram {
     width: 100%;
+    min-height: 400px;
+    aspect-ratio: 16 / 10;
     border-radius: 8px;
     border: 1px solid var(--vp-c-divider);
     overflow: hidden;
     margin: 1.5rem 0;
     position: relative;
-    background: var(--vp-c-bg-soft);
+    background: transparent;
 }
 
 .likec4-container {
