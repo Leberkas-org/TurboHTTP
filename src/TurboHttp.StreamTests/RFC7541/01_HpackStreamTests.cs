@@ -13,7 +13,7 @@ namespace TurboHttp.StreamTests.RFC7541;
 /// Stages under test: <see cref="HpackEncoder"/> and <see cref="HpackDecoder"/> via <see cref="Request2FrameStage"/>.
 /// RFC 7541 §2–§6: HPACK header compression, dynamic table management, and Huffman encoding.
 /// </remarks>
-public sealed class Http20HpackStreamTests : StreamTestBase
+public sealed class HpackStreamTests : StreamTestBase
 {
     /// <summary>
     /// Runs requests through StreamIdAllocatorStage → Request2FrameStage using a shared encoder,
