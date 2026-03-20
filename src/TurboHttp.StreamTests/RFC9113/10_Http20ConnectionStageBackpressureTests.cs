@@ -44,11 +44,11 @@ public sealed class Http20ConnectionStageBackpressureTests : StreamTestBase
                     var stage = b.Add(new Http20ConnectionStage(maxConcurrentStreams: maxConcurrentStreams));
                     var srvSrc = b.Add(Source.FromPublisher(serverProbe));
 
-                    b.From(srvSrc).To(stage.ServerIn);
-                    b.From(stage.AppOut).To(Sink.FromSubscriber(appOutProbe));
-                    b.From(reqSrc).To(stage.AppIn);
-                    b.From(stage.ServerOut).To(Sink.FromSubscriber(serverBoundProbe));
-                    b.From(stage.OutletSignal).To(Sink.FromSubscriber(signalProbe));
+                    b.From(srvSrc).To(stage.InServer);
+                    b.From(stage.OutStream).To(Sink.FromSubscriber(appOutProbe));
+                    b.From(reqSrc).To(stage.InApp);
+                    b.From(stage.OutServer).To(Sink.FromSubscriber(serverBoundProbe));
+                    b.From(stage.OutSignal).To(Sink.FromSubscriber(signalProbe));
 
                     return ClosedShape.Instance;
                 }));

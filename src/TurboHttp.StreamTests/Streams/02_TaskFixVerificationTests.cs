@@ -766,11 +766,11 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     var requestSource = b.Add(Source.From(requestFrames));
                     var downstreamSink = b.Add(Sink.Ignore<Http2Frame>().MapMaterializedValue(_ => NotUsed.Instance));
 
-                    b.From(serverSource).To(stage.ServerIn);
-                    b.From(stage.AppOut).To(downstreamSink);
-                    b.From(requestSource).To(stage.AppIn);
-                    b.From(stage.ServerOut).To(sbSink);
-                    b.From(stage.OutletSignal).To(sigSink);
+                    b.From(serverSource).To(stage.InServer);
+                    b.From(stage.OutStream).To(downstreamSink);
+                    b.From(requestSource).To(stage.InApp);
+                    b.From(stage.OutServer).To(sbSink);
+                    b.From(stage.OutSignal).To(sigSink);
 
                     return ClosedShape.Instance;
                 }));

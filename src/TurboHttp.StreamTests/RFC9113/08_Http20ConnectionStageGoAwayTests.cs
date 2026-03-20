@@ -37,11 +37,11 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
                     var requestSource = b.Add(Source.Never<Http2Frame>());
                     var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
-                    b.From(serverSource).To(stage.ServerIn);
-                    b.From(stage.AppOut).To(dsSink);
-                    b.From(requestSource).To(stage.AppIn);
-                    b.From(stage.ServerOut).To(sbSink);
-                    b.From(stage.OutletSignal).To(signalSink);
+                    b.From(serverSource).To(stage.InServer);
+                    b.From(stage.OutStream).To(dsSink);
+                    b.From(requestSource).To(stage.InApp);
+                    b.From(stage.OutServer).To(sbSink);
+                    b.From(stage.OutSignal).To(signalSink);
 
                     return ClosedShape.Instance;
                 }));
@@ -97,11 +97,11 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
                             .InitialDelay(TimeSpan.FromMilliseconds(200))
                             .Concat(Source.Never<Http2Frame>()));
 
-                    b.From(serverSource).To(stage.ServerIn);
-                    b.From(stage.AppOut).To(dsSink);
-                    b.From(requestSource).To(stage.AppIn);
-                    b.From(stage.ServerOut).To(sbSink);
-                    b.From(stage.OutletSignal).To(signalSink);
+                    b.From(serverSource).To(stage.InServer);
+                    b.From(stage.OutStream).To(dsSink);
+                    b.From(requestSource).To(stage.InApp);
+                    b.From(stage.OutServer).To(sbSink);
+                    b.From(stage.OutSignal).To(signalSink);
 
                     return ClosedShape.Instance;
                 }));

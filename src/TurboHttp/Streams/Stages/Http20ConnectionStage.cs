@@ -13,40 +13,40 @@ namespace TurboHttp.Streams.Stages;
 
 public sealed class Http20ConnectionShape : Shape
 {
-    public Inlet<Http2Frame> ServerIn { get; }
-    public Outlet<Http2Frame> AppOut { get; }
-    public Inlet<Http2Frame> AppIn { get; }
-    public Outlet<Http2Frame> ServerOut { get; }
-    public Outlet<IControlItem> OutletSignal { get; }
+    public Inlet<Http2Frame> InServer { get; }
+    public Outlet<Http2Frame> OutStream { get; }
+    public Inlet<Http2Frame> InApp { get; }
+    public Outlet<Http2Frame> OutServer { get; }
+    public Outlet<IControlItem> OutSignal { get; }
 
     public Http20ConnectionShape(
-        Inlet<Http2Frame> serverIn,
-        Outlet<Http2Frame> appOut,
-        Inlet<Http2Frame> appIn,
-        Outlet<Http2Frame> serverOut,
-        Outlet<IControlItem> outletSignal)
+        Inlet<Http2Frame> inServer,
+        Outlet<Http2Frame> outStream,
+        Inlet<Http2Frame> inApp,
+        Outlet<Http2Frame> outServer,
+        Outlet<IControlItem> outSignal)
     {
-        ServerIn = serverIn;
-        AppOut = appOut;
-        AppIn = appIn;
-        ServerOut = serverOut;
-        OutletSignal = outletSignal;
+        InServer = inServer;
+        OutStream = outStream;
+        InApp = inApp;
+        OutServer = outServer;
+        OutSignal = outSignal;
     }
 
     public override ImmutableArray<Inlet> Inlets =>
-        ImmutableArray.Create<Inlet>(ServerIn, AppIn);
+        ImmutableArray.Create<Inlet>(InServer, InApp);
 
     public override ImmutableArray<Outlet> Outlets =>
-        ImmutableArray.Create<Outlet>(AppOut, ServerOut, OutletSignal);
+        ImmutableArray.Create<Outlet>(OutStream, OutServer, OutSignal);
 
     public override Shape DeepCopy()
     {
         return new Http20ConnectionShape(
-            (Inlet<Http2Frame>)ServerIn.CarbonCopy(),
-            (Outlet<Http2Frame>)AppOut.CarbonCopy(),
-            (Inlet<Http2Frame>)AppIn.CarbonCopy(),
-            (Outlet<Http2Frame>)ServerOut.CarbonCopy(),
-            (Outlet<IControlItem>)OutletSignal.CarbonCopy());
+            (Inlet<Http2Frame>)InServer.CarbonCopy(),
+            (Outlet<Http2Frame>)OutStream.CarbonCopy(),
+            (Inlet<Http2Frame>)InApp.CarbonCopy(),
+            (Outlet<Http2Frame>)OutServer.CarbonCopy(),
+            (Outlet<IControlItem>)OutSignal.CarbonCopy());
     }
 
     public override Shape CopyFromPorts(ImmutableArray<Inlet> inlets, ImmutableArray<Outlet> outlets)
@@ -62,11 +62,11 @@ public sealed class Http20ConnectionShape : Shape
 
 public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 {
-    private readonly Inlet<Http2Frame> _inletRaw = new("h2.server.in");
-    private readonly Outlet<Http2Frame> _outletStream = new("h2.app.out");
-    private readonly Inlet<Http2Frame> _inletRequest = new("h2.app.in");
-    private readonly Outlet<Http2Frame> _outletRaw = new("h2.server.out");
-    private readonly Outlet<IControlItem> _outletSignal = new("h2.signal.out");
+    private readonly Inlet<Http2Frame> _inServer = new("H2Connection.In.Server");
+    private readonly Outlet<Http2Frame> _outStream = new("H2Connection.Out.Stream");
+    private readonly Inlet<Http2Frame> _inApp = new("H2Connection.In.App");
+    private readonly Outlet<Http2Frame> _outServer = new("H2Connection.Out.Server");
+    private readonly Outlet<IControlItem> _outSignal = new("H2Connection.Out.Signal");
 
     private readonly int _initialRecvWindowSize;
     private readonly int _maxConcurrentStreams;
@@ -78,7 +78,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
     }
 
     public override Http20ConnectionShape Shape =>
-        new(_inletRaw, _outletStream, _inletRequest, _outletRaw, _outletSignal);
+        new(_inServer, _outStream, _inApp, _outServer, _outSignal);
 
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -106,9 +106,9 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             _initialRecvStreamWindow = stage._initialRecvWindowSize;
             _maxConcurrentStreams = stage._maxConcurrentStreams;
 
-            SetHandler(stage._inletRaw, onPush: () =>
+            SetHandler(stage._inServer, onPush: () =>
             {
-                var frame = Grab(stage._inletRaw);
+                var frame = Grab(stage._inServer);
 
                 switch (frame)
                 {
@@ -146,34 +146,34 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                         HandlePing(ping);
                         // PING is connection-level — not forwarded to app.
                         // Re-pull inbound to get the next app-visible frame.
-                        Pull(stage._inletRaw);
+                        Pull(stage._inServer);
                         return;
 
                     case GoAwayFrame goAway:
                         _goAwayReceived = true;
                         Log.Warning("Http20ConnectionStage: RFC 9113 §6.8 — GOAWAY received (lastStreamId={0}, errorCode={1}). Triggering reconnect.",
                             goAway.LastStreamId, goAway.ErrorCode);
-                        Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                        Emit(_stage._outSignal, new ConnectionReuseItem(_endpoint,
                             ConnectionReuseDecision.Close("RFC 9113 §6.8: GOAWAY received")));
                         break;
                 }
 
-                Push(stage._outletStream, frame);
+                Push(stage._outStream, frame);
             });
 
-            SetHandler(stage._outletStream, onPull: () => Pull(stage._inletRaw));
+            SetHandler(stage._outStream, onPull: () => Pull(stage._inServer));
 
-            SetHandler(stage._inletRequest, onPush: () =>
+            SetHandler(stage._inApp, onPush: () =>
             {
-                var frame = Grab(stage._inletRequest);
+                var frame = Grab(stage._inApp);
 
                 if (_goAwayReceived)
                 {
                     Log.Warning("Http20ConnectionStage: RFC 9113 §6.8 — GOAWAY received; dropping new request frame (stream {0}).",
                         frame is HeadersFrame hf ? hf.StreamId : -1);
-                    if (!HasBeenPulled(_stage._inletRequest) && !IsClosed(_stage._inletRequest))
+                    if (!HasBeenPulled(_stage._inApp) && !IsClosed(_stage._inApp))
                     {
-                        Pull(_stage._inletRequest);
+                        Pull(_stage._inApp);
                     }
                     return;
                 }
@@ -188,7 +188,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                             _endpoint = headers.Endpoint.Value;
                         }
 
-                        Emit(stage._outletSignal, new StreamAcquireItem
+                        Emit(stage._outSignal, new StreamAcquireItem
                         {
                             Key = _endpoint
                         });
@@ -208,12 +208,12 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 // Request stream finished — keep stage alive to receive server responses.
             });
 
-            SetHandler(stage._outletRaw, onPull: () =>
+            SetHandler(stage._outServer, onPull: () =>
             {
                 TryDrainOutbound();
             });
 
-            SetHandler(stage._outletSignal, onPull: () =>
+            SetHandler(stage._outSignal, onPull: () =>
             {
                 // Demand-driven by downstream MergePreferred; no action needed.
             });
@@ -227,9 +227,9 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 
         private void TryDrainOutbound()
         {
-            if (_outboundQueue.Count > 0 && IsAvailable(_stage._outletRaw))
+            if (_outboundQueue.Count > 0 && IsAvailable(_stage._outServer))
             {
-                Push(_stage._outletRaw, _outboundQueue.Dequeue());
+                Push(_stage._outServer, _outboundQueue.Dequeue());
                 return;
             }
 
@@ -257,7 +257,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 if (key == SettingsParameter.MaxConcurrentStreams)
                 {
                     _maxConcurrentStreams = (int)value;
-                    Emit(_stage._outletSignal, new MaxConcurrentStreamsItem(_maxConcurrentStreams)
+                    Emit(_stage._outSignal, new MaxConcurrentStreamsItem(_maxConcurrentStreams)
                     {
                         Key = _endpoint
                     });
@@ -281,9 +281,9 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             {
                 Log.Warning("Http20ConnectionStage: RFC 9113 §6.9 — connection flow control window exceeded by {0} bytes. Triggering reconnect.",
                     -_connectionWindow);
-                Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                Emit(_stage._outSignal, new ConnectionReuseItem(_endpoint,
                     ConnectionReuseDecision.Close("RFC 9113 §6.9: connection window exceeded")));
-                Pull(_stage._inletRaw);
+                Pull(_stage._inServer);
                 return false;
             }
 
@@ -291,9 +291,9 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             {
                 Log.Warning("Http20ConnectionStage: RFC 9113 §6.9 — stream {0} flow control window exceeded by {1} bytes. Triggering reconnect.",
                     frame.StreamId, -_streamWindows[frame.StreamId]);
-                Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                Emit(_stage._outSignal, new ConnectionReuseItem(_endpoint,
                     ConnectionReuseDecision.Close("RFC 9113 §6.9: stream window exceeded")));
-                Pull(_stage._inletRaw);
+                Pull(_stage._inServer);
                 return false;
             }
 
@@ -344,11 +344,11 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
         private void TryPullRequest()
         {
             if (_activeStreams < _maxConcurrentStreams
-                && !HasBeenPulled(_stage._inletRequest)
-                && !IsClosed(_stage._inletRequest)
-                && IsAvailable(_stage._outletRaw))
+                && !HasBeenPulled(_stage._inApp)
+                && !IsClosed(_stage._inApp)
+                && IsAvailable(_stage._outServer))
             {
-                Pull(_stage._inletRequest);
+                Pull(_stage._inApp);
             }
         }
 
@@ -360,7 +360,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             {
                 Log.Warning("Http20ConnectionStage: RFC 9113 §6.9 — outbound flow control connection window exceeded by {0} bytes. Triggering reconnect.",
                     -_connectionWindow);
-                Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                Emit(_stage._outSignal, new ConnectionReuseItem(_endpoint,
                     ConnectionReuseDecision.Close("RFC 9113 §6.9: outbound flow control exceeded")));
                 return false;
             }

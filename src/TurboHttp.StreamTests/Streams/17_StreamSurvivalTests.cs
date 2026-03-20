@@ -196,11 +196,11 @@ public sealed class StreamSurvivalTests : EngineTestBase
                             .InitialDelay(TimeSpan.FromMilliseconds(150))
                             .Concat(Source.Never<Http2Frame>()));
 
-                    b.From(serverSource).To(connStage.ServerIn);
-                    b.From(connStage.AppOut).To(dsSink);
-                    b.From(requestSource).To(connStage.AppIn);
-                    b.From(connStage.ServerOut).To(sbSink);
-                    b.From(connStage.OutletSignal).To(signalSink);
+                    b.From(serverSource).To(connStage.InServer);
+                    b.From(connStage.OutStream).To(dsSink);
+                    b.From(requestSource).To(connStage.InApp);
+                    b.From(connStage.OutServer).To(sbSink);
+                    b.From(connStage.OutSignal).To(signalSink);
 
                     return ClosedShape.Instance;
                 }));

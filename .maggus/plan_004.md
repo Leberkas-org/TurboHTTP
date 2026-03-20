@@ -440,10 +440,10 @@ Also update the custom `Http1XCorrelationShape` class if it references port name
 Also update the custom `Http20ConnectionShape` class.
 
 **Acceptance Criteria:**
-- [ ] All 5 ports renamed (string + field)
-- [ ] Custom shape class updated
-- [ ] All existing HTTP/2 connection stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] All 5 ports renamed (string + field)
+- [x] Custom shape class updated
+- [x] All existing HTTP/2 connection stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
