@@ -52,7 +52,7 @@ public sealed class HttpDecoderException : Exception
             => "Content decompression failed.",
 
         HttpDecoderError.LineTooLong
-            => "RFC 9112 §2.3: Line length exceeds the configured maximum.",
+            => "RFC 9112 §5.4: Line length exceeds the configured maximum.",
 
         HttpDecoderError.InvalidRequestLine
             => @"RFC 9112 §3: Invalid request-line. Expected 'METHOD SP request-target SP HTTP/1.x\r\n'.",
@@ -67,10 +67,10 @@ public sealed class HttpDecoderException : Exception
             => "RFC 9112 §2.3: Invalid HTTP version. Expected 'HTTP/1.0' or 'HTTP/1.1'.",
 
         HttpDecoderError.MissingHostHeader
-            => "RFC 9112 §5.4: Missing required Host header in HTTP/1.1 request.",
+            => "RFC 9110 §7.2: Missing required Host header in HTTP/1.1 request.",
 
         HttpDecoderError.MultipleHostHeaders
-            => "RFC 9112 §5.4: Multiple Host headers present; exactly one is required.",
+            => "RFC 9110 §7.2: Multiple Host headers present; exactly one is required.",
 
         HttpDecoderError.MultipleContentLengthValues
             => "RFC 9112 §6.3: Multiple Content-Length headers with conflicting values; request-smuggling risk.",
@@ -88,7 +88,7 @@ public sealed class HttpDecoderException : Exception
             => "RFC 9112 §6.3: Both Transfer-Encoding and Content-Length are present; request-smuggling risk.",
 
         HttpDecoderError.InvalidTrailerHeader
-            => "RFC 9112 §6.5: Invalid trailer header field.",
+            => "RFC 9112 §7.1.2: Invalid trailer header field.",
 
         HttpDecoderError.InvalidChunkSize
             => "RFC 9112 §7.1.1: Invalid chunk-size. Expected one or more hexadecimal digits.",

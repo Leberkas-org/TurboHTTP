@@ -69,10 +69,10 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/Protocol/HttpSizePredictor.cs`
 
 **Acceptance Criteria:**
-- [ ] Verify RFC 7541 Huffman references (Appendix B)
-- [ ] Review error enums and exception comments for accuracy
-- [ ] Remove outdated or redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Verify RFC 7541 Huffman references (Appendix B)
+- [x] Review error enums and exception comments for accuracy
+- [x] Remove outdated or redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 

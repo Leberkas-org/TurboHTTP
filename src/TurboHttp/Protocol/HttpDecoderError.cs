@@ -27,7 +27,7 @@ public enum HttpDecoderError
 
     // ── RFC 9112 Specific Errors ────────────────────────────────────────────────
 
-    /// <summary>RFC 9112 Section 2.3: Line exceeds configured maximum length.</summary>
+    /// <summary>RFC 9112 Section 5.4: Line exceeds configured maximum length.</summary>
     LineTooLong,
 
     /// <summary>RFC 9112 Section 3: Invalid request-line format.</summary>
@@ -42,10 +42,10 @@ public enum HttpDecoderError
     /// <summary>RFC 9112 Section 2.3: Invalid HTTP version format.</summary>
     InvalidHttpVersion,
 
-    /// <summary>RFC 9112 Section 5.4: Missing required Host header in HTTP/1.1.</summary>
+    /// <summary>RFC 9110 Section 7.2: Missing required Host header in HTTP/1.1.</summary>
     MissingHostHeader,
 
-    /// <summary>RFC 9112 Section 5.4: Multiple Host headers present.</summary>
+    /// <summary>RFC 9110 Section 7.2: Multiple Host headers present.</summary>
     MultipleHostHeaders,
 
     /// <summary>RFC 9112 Section 6.3: Multiple Content-Length headers with different values.</summary>
@@ -63,7 +63,7 @@ public enum HttpDecoderError
     /// <summary>RFC 9112 Section 6.3: Both Transfer-Encoding and Content-Length present.</summary>
     ChunkedWithContentLength,
 
-    /// <summary>RFC 9112 Section 6.5: Invalid trailer header field.</summary>
+    /// <summary>RFC 9112 Section 7.1.2: Invalid trailer header field.</summary>
     InvalidTrailerHeader,
 
     /// <summary>RFC 9112 Section 7.1.1: Invalid chunk size encoding.</summary>
