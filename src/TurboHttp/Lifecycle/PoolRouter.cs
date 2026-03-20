@@ -11,8 +11,8 @@ namespace TurboHttp.Lifecycle;
 public sealed class PoolRouter : ReceiveActor
 {
     /// <summary>
-    /// Sent by ConnectionStage on each ConnectItem to ensure a HostPoolActor exists.
-    /// The message is forwarded to the HostPoolActor so it can reply with a ConnectionHandle.
+    /// Sent by ConnectionStage on each ConnectItem to ensure a HostPool actor exists.
+    /// The message is forwarded to the HostPool actor so it can reply with a ConnectionHandle.
     /// </summary>
     public sealed record EnsureHost(RequestEndpoint Key, TcpOptions Options);
 
@@ -33,7 +33,7 @@ public sealed class PoolRouter : ReceiveActor
     {
         var hostActor = EnsureHostActor(msg.Key, msg.Options);
 
-        // Forward preserves the original Sender so HostPoolActor can reply directly.
+        // Forward preserves the original Sender so the HostPool actor can reply directly.
         hostActor.Forward(msg);
     }
 

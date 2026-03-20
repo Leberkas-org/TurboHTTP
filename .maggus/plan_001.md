@@ -402,11 +402,11 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/IO/Stages/ConnectionStage.cs`
 
 **Acceptance Criteria:**
-- [ ] Comments accurately describe the current hybrid architecture (actors + channels)
-- [ ] Data path comments (TCP→Pipe→Channel) match the implementation
-- [ ] No outdated architecture comments (e.g. if actor hierarchy has changed)
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Comments accurately describe the current hybrid architecture (actors + channels)
+- [x] Data path comments (TCP→Pipe→Channel) match the implementation
+- [x] No outdated architecture comments (e.g. if actor hierarchy has changed)
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 

@@ -95,7 +95,7 @@ public sealed class ConnectionActor : ReceiveActor
     {
         _runner = null;
 
-        // AC4: complete the inbound channel so any ConnectionStage holding the stale
+        // Complete the inbound channel so any ConnectionStage holding the stale
         // ConnectionHandle.InboundReader detects end-of-stream and re-requests a fresh handle.
         _in.Writer.TryComplete();
 

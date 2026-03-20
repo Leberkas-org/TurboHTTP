@@ -183,10 +183,10 @@ public sealed class HostPool : ReceiveActor
             return;
         }
 
-        // AC2: mark inactive before removal (for any in-flight observers)
+        // Mark inactive before removal so any in-flight observers see a dead connection.
         conn.MarkDead();
 
-        // AC1: remove stale connection state immediately
+        // Remove stale connection state immediately.
         _connections.Remove(conn);
 
         _limiter.Release(HostIdentifier);

@@ -53,7 +53,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         private StageActor? _stageActor;
         private CancellationTokenSource? _pumpCts;
 
-        /// <summary>The HostKey from the most recent ConnectItem — used to tag inbound DataItems.</summary>
+        /// <summary>The RequestEndpoint from the most recent ConnectItem — used to tag inbound DataItems.</summary>
         private RequestEndpoint _currentKey;
 
         public Logic(ConnectionStage stage) : base(stage.Shape)
