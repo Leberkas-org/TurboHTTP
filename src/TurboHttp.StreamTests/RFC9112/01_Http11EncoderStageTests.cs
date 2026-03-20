@@ -1,7 +1,6 @@
 using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
@@ -119,7 +118,7 @@ public sealed class Http11EncoderStageTests : StreamTestBase
             Version = System.Net.HttpVersion.Version11
         };
 
-        var items = await Source.From(new[] { malformed, valid })
+        var items = await Source.From([malformed, valid])
             .Via(Flow.FromGraph(new Http11EncoderStage()))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 

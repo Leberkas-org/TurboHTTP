@@ -40,7 +40,7 @@ public sealed class Http11EncoderBodyTests
     [InlineData("PATCH")]
     public void Should_SetContentLength_When_MethodWithBody(string method)
     {
-        var content = new ByteArrayContent(new byte[] { 1, 2, 3, 4, 5 });
+        var content = new ByteArrayContent([1, 2, 3, 4, 5]);
         var request = new HttpRequestMessage(new HttpMethod(method), "https://example.com/")
         {
             Content = content

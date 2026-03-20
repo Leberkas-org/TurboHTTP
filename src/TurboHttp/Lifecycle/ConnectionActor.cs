@@ -6,7 +6,6 @@ using Akka.Event;
 using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Lifecycle;
 

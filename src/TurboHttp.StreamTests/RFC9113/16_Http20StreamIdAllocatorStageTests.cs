@@ -100,7 +100,7 @@ public sealed class Http20StreamIdAllocatorStageTests : StreamTestBase
         // The stage should emit this ID, then the next allocation wraps to a negative value.
         var stage = new StreamIdAllocatorStage(startStreamId: int.MaxValue);
 
-        var results = await Source.From(new[] { MakeRequest("/last"), MakeRequest("/overflow") })
+        var results = await Source.From([MakeRequest("/last"), MakeRequest("/overflow")])
             .Via(Flow.FromGraph(stage))
             .RunWith(Sink.Seq<(HttpRequestMessage, int)>(), Materializer);
 

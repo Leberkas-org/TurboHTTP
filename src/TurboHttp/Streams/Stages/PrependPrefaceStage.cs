@@ -7,7 +7,6 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
 using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages;
@@ -55,7 +54,7 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly HashSet<PrefaceKey> _prefaceSentHost = new();
+        private readonly HashSet<PrefaceKey> _prefaceSentHost = [];
         private readonly PrependPrefaceStage _stage;
 
         public Logic(PrependPrefaceStage stage) : base(stage.Shape)

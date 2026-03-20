@@ -7,7 +7,6 @@ using Akka.TestKit.Xunit2;
 using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
@@ -20,7 +19,7 @@ namespace TurboHttp.StreamTests.IO;
 /// Actor under test: <see cref="ConnectionActor"/>.
 /// Validates actor message handling for the full connection lifecycle.
 /// </remarks>
-public sealed class ConnectionActorTests : TestKit
+public sealed class  ConnectionActorTests : TestKit
 {
     private static readonly RequestEndpoint TestKey = new()
     {

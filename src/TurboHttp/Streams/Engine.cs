@@ -11,7 +11,6 @@ using TurboHttp.Internal;
 using TurboHttp.Internal.Stages;
 using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC6265;
-using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9111;
 using TurboHttp.Streams.Stages;
 

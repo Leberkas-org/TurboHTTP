@@ -169,7 +169,7 @@ public sealed class Http2SettingsMaxConcurrentTests
         Assert.False(frame.EndStream);
 
         var openStreams = new HashSet<int>();
-        TrackStreamState(frame, openStreams, new HashSet<int>());
+        TrackStreamState(frame, openStreams, []);
         Assert.Single(openStreams);
         Assert.Equal(1, openStreams.First());
     }

@@ -1,9 +1,6 @@
-using System;
 using System.Buffers;
-using System.IO;
 using System.Threading.Channels;
 using TurboHttp.IO;
-using Xunit;
 
 namespace TurboHttp.StreamTests.IO;
 
@@ -13,12 +10,10 @@ namespace TurboHttp.StreamTests.IO;
 /// </summary>
 public sealed class ClientStateTests
 {
-    private sealed class TrackingMemoryOwner : IMemoryOwner<byte>
+    private sealed class TrackingMemoryOwner(int size) : IMemoryOwner<byte>
     {
-        private readonly byte[] _data;
+        private readonly byte[] _data = new byte[size];
         public bool Disposed { get; private set; }
-
-        public TrackingMemoryOwner(int size) => _data = new byte[size];
 
         public Memory<byte> Memory => _data.AsMemory();
 

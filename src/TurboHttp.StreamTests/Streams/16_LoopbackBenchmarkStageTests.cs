@@ -1,10 +1,7 @@
 using System.Net;
-using System.Net.Http;
 using System.Threading.Channels;
-using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.Streams;

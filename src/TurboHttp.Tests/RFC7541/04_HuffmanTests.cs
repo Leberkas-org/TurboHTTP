@@ -47,7 +47,7 @@ public sealed class HuffmanDecoderTests
     public void Should_DecodeSingleCharA_When_FiveBitEncodedInput()
     {
         // 'a' = code 0x3 (5 bits = 00011), padded to byte: 00011_111 = 0x1F
-        var decoded = HuffmanCodec.Decode(new byte[] { 0x1F });
+        var decoded = HuffmanCodec.Decode([0x1F]);
         Assert.Equal("a", Encoding.ASCII.GetString(decoded));
     }
 
@@ -159,7 +159,7 @@ public sealed class HuffmanDecoderTests
         // EOS = 0x3FFFFFFF = 30 bits all-ones
         // 32 ones → first 30 form EOS → throws before reaching bits 31-32
         var ex = Assert.Throws<HpackException>(() =>
-            HuffmanCodec.Decode(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }));
+            HuffmanCodec.Decode([0xFF, 0xFF, 0xFF, 0xFF]));
         Assert.NotNull(ex);
     }
 
@@ -171,7 +171,7 @@ public sealed class HuffmanDecoderTests
         // Byte 0: 0001_1111 = 0x1F
         // Bytes 1-4: all 0xFF
         var ex = Assert.Throws<HpackException>(() =>
-            HuffmanCodec.Decode(new byte[] { 0x1F, 0xFF, 0xFF, 0xFF, 0xFF }));
+            HuffmanCodec.Decode([0x1F, 0xFF, 0xFF, 0xFF, 0xFF]));
         Assert.NotNull(ex);
     }
 
@@ -181,7 +181,7 @@ public sealed class HuffmanDecoderTests
     {
         // 0xFF, 0xFF, 0xFF, 0xFC = 30 ones + 2 zero padding → EOS still throws
         var ex = Assert.Throws<HpackException>(() =>
-            HuffmanCodec.Decode(new byte[] { 0xFF, 0xFF, 0xFF, 0xFC }));
+            HuffmanCodec.Decode([0xFF, 0xFF, 0xFF, 0xFC]));
         Assert.NotNull(ex);
     }
 
@@ -224,7 +224,7 @@ public sealed class HuffmanDecoderTests
         // From the table, checking one-branch codes: only EOS (30 bits) is all-ones.
         // No symbol has a code starting with 11111111 at 8 bits.
         // Therefore, 0xFF should throw with overlong padding (remainingBits=8) if no symbol completes.
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0xFF }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0xFF]));
     }
 
     // PA-00x: Padding validation — RFC 7541 §5.2
@@ -234,7 +234,7 @@ public sealed class HuffmanDecoderTests
     public void Should_DecodeSuccessfully_When_ValidThreeBitAllOnesPadding()
     {
         // 'a' = 00011 (5 bits), padding = 111 (3 bits) → 0x1F
-        var decoded = HuffmanCodec.Decode(new byte[] { 0x1F });
+        var decoded = HuffmanCodec.Decode([0x1F]);
         Assert.Equal(new byte[] { (byte)'a' }, decoded);
     }
 
@@ -243,7 +243,7 @@ public sealed class HuffmanDecoderTests
     public void Should_Throw_When_LastPaddingBitIsZero()
     {
         // 'a' = 00011 (5 bits), invalid padding = 110 → 0x1E
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x1E }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x1E]));
     }
 
     /// RFC 7541 §5.2 — Invalid padding for 'a' — middle bit zero [0x1B] — throws
@@ -251,7 +251,7 @@ public sealed class HuffmanDecoderTests
     public void Should_Throw_When_MiddlePaddingBitIsZero()
     {
         // 'a' = 00011, padding = 011 → 0b00011011 = 0x1B (not all-ones)
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x1B }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x1B]));
     }
 
     /// RFC 7541 §5.2 — Overlong padding — extra null byte after valid 'a' — throws
@@ -259,7 +259,7 @@ public sealed class HuffmanDecoderTests
     public void Should_Throw_When_OverlongPaddingExtraNullByte()
     {
         // Valid 'a' = [0x1F], then extra 0x00 = 8 bits of padding → 3+8=11 > 7 bits → throws
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x1F, 0x00 }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x1F, 0x00]));
     }
 
     /// RFC 7541 §5.2 — Overlong padding — extra 0xFF byte after valid 'a' — throws
@@ -267,7 +267,7 @@ public sealed class HuffmanDecoderTests
     public void Should_Throw_When_OverlongPaddingExtraFFByte()
     {
         // Even all-ones extra byte = overlong (3+8=11 > 7 bits) → throws
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x1F, 0xFF }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x1F, 0xFF]));
     }
 
     /// RFC 7541 §5.2 — Valid 7-bit all-ones padding — longest valid padding
@@ -311,7 +311,7 @@ public sealed class HuffmanDecoderTests
         // After first 5 zero-bits: '0' decoded. remainingBits = 0. node = root.
         // Continue: 5 more zeros → '0' decoded. remainingBits = 0. node = root.
         // Last 6 zeros = padding bits, but they must all be ones → throws!
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x00, 0x00 }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x00, 0x00]));
     }
 
     // IC-00x: Incomplete symbol / truncated input
@@ -324,7 +324,7 @@ public sealed class HuffmanDecoderTests
         // No 1-bit symbol exists (min code length is 5 bits). After 8 bits:
         // remainingBits=8 (if no symbol completes) → overlong padding → throws.
         // OR if some symbol completes mid-byte, the padding might be invalid.
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x80 }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x80]));
     }
 
     /// RFC 7541 §5.2 — Empty-ish single byte 0x01 is invalid padding — throws
@@ -332,7 +332,7 @@ public sealed class HuffmanDecoderTests
     public void Should_Throw_When_SingleByte0x01HasInvalidPadding()
     {
         // 0x01 = 00000001 = '0' (5 bits = 00000) + padding 001 → padding must be 111 → throws
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x01 }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x01]));
     }
 
     /// RFC 7541 §5.2 — Two bytes forming overlong incomplete sequence — throws
@@ -341,7 +341,7 @@ public sealed class HuffmanDecoderTests
     {
         // [0x1F, 0x80]: 0x1F decodes 'a' (5 bits 00011 → symbol 'a') + 3 bits 111.
         // 0x80 = 10000000 adds 8 more bits → remainingBits = 3+8 = 11 > 7 → throws (overlong padding).
-        Assert.Throws<HpackException>(() => HuffmanCodec.Decode(new byte[] { 0x1F, 0x80 }));
+        Assert.Throws<HpackException>(() => HuffmanCodec.Decode([0x1F, 0x80]));
     }
 
     // RT-00x: Round-trip encode → decode

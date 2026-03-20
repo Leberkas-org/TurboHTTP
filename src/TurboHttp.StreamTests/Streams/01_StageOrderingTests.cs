@@ -6,9 +6,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using TurboHttp.Client;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC6265;
-using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9111;
 using TurboHttp.Streams;
 using TurboHttp.Streams.Stages;
@@ -43,17 +41,19 @@ public sealed class StageOrderingTests : EngineTestBase
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             RequestMessage = new HttpRequestMessage(HttpMethod.Get, url),
-            Content = new ByteArrayContent(body ?? Array.Empty<byte>())
+            Content = new ByteArrayContent(body ?? [])
         };
         if (cacheControl is not null)
         {
             response.Headers.TryAddWithoutValidation("Cache-Control", cacheControl);
         }
+
         response.Headers.Date = DateTimeOffset.UtcNow;
         if (setCookie is not null)
         {
             response.Headers.TryAddWithoutValidation("Set-Cookie", setCookie);
         }
+
         return response;
     }
 
@@ -72,7 +72,7 @@ public sealed class StageOrderingTests : EngineTestBase
         }
 
         var store = new HttpCacheStore();
-        store.Put(req, resp, Array.Empty<byte>(),
+        store.Put(req, resp, [],
             DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
         return store;
     }
@@ -84,6 +84,7 @@ public sealed class StageOrderingTests : EngineTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -153,8 +154,8 @@ public sealed class StageOrderingTests : EngineTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subMiss = probeMiss.ExpectSubscription();
-        var subHit = probeHit.ExpectSubscription();
+        var subMiss = await probeMiss.ExpectSubscriptionAsync();
+        var subHit = await probeHit.ExpectSubscriptionAsync();
         subMiss.Request(1);
         subHit.Request(1);
 
@@ -218,8 +219,8 @@ public sealed class StageOrderingTests : EngineTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRetry = probeRetry.ExpectSubscription();
+        var subFinal = await probeFinal.ExpectSubscriptionAsync();
+        var subRetry = await probeRetry.ExpectSubscriptionAsync();
         subFinal.Request(1);
         subRetry.Request(1);
 
@@ -325,8 +326,8 @@ public sealed class StageOrderingTests : EngineTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRetry = probeRetry.ExpectSubscription();
+        var subFinal = await probeFinal.ExpectSubscriptionAsync();
+        var subRetry = await probeRetry.ExpectSubscriptionAsync();
         subFinal.Request(1);
         subRetry.Request(1);
 
@@ -375,8 +376,8 @@ public sealed class StageOrderingTests : EngineTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRedirect = probeRedirect.ExpectSubscription();
+        var subFinal = await probeFinal.ExpectSubscriptionAsync();
+        var subRedirect = await probeRedirect.ExpectSubscriptionAsync();
         subFinal.Request(1);
         subRedirect.Request(1);
 
@@ -421,8 +422,8 @@ public sealed class StageOrderingTests : EngineTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRedirect = probeRedirect.ExpectSubscription();
+        var subFinal = await probeFinal.ExpectSubscriptionAsync();
+        var subRedirect = await probeRedirect.ExpectSubscriptionAsync();
         subFinal.Request(1);
         subRedirect.Request(1);
 
@@ -612,10 +613,12 @@ public sealed class StageOrderingTests : EngineTestBase
         // First request → 301 redirect, second request (from redirect) → 200 OK.
         // This proves the redirect feedback loop works: redirect → redirectMerge → CookieInjection → pipeline.
         var callCount = 0;
+
         byte[] ResponseFactory()
         {
             return Interlocked.Increment(ref callCount) == 1
-                ? "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com/new\r\nContent-Length: 0\r\n\r\n"u8.ToArray()
+                ? "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com/new\r\nContent-Length: 0\r\n\r\n"u8
+                    .ToArray()
                 : "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         }
 

@@ -1,7 +1,4 @@
 using Akka.Actor;
-using Akka.TestKit;
-using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 
 
@@ -15,7 +12,7 @@ namespace TurboHttp.StreamTests.IO;
 /// Actor under test: <see cref="HostPool"/>.
 /// Validates the pool actor's response to connection failures and subsequent reconnect scheduling.
 /// </remarks>
-public sealed class HostPoolTests : IoActorTestBase
+public sealed class HostPoolTests : IOActorTestBase
 {
     [Fact(DisplayName = "HPA-001: ConnectionFailed clears active handle; next EnsureHost is queued")]
     public void Should_ClearActiveHandleAndQueueRequester_WhenConnectionFailed()

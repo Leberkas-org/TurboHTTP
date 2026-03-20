@@ -5,7 +5,6 @@ using Akka.Streams.Stage;
 using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Streams.Stages;
 

@@ -1,11 +1,6 @@
-using System;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.DependencyInjection;
 using Akka.Hosting;
@@ -59,14 +54,15 @@ public sealed class TurboHttpClientPendingTests
         var system = CreateSystem("test-pending-timeout");
         try
         {
-            var client = new TurboHttpClient(new TurboClientOptions(), system);
-            client.Timeout = TimeSpan.FromMilliseconds(50);
+            var client = new TurboHttpClient(new TurboClientOptions(), system)
+            {
+                Timeout = TimeSpan.FromMilliseconds(50)
+            };
             var pending = GetPending(client);
 
             // 127.0.0.1:1 is typically closed — connection will never succeed
             var request = new HttpRequestMessage(HttpMethod.Get, "http://127.0.0.1:1/");
-            await Assert.ThrowsAsync<TimeoutException>(
-                () => client.SendAsync(request, CancellationToken.None));
+            await Assert.ThrowsAsync<TimeoutException>(() => client.SendAsync(request, CancellationToken.None));
 
             Assert.Empty(pending);
         }
@@ -82,14 +78,15 @@ public sealed class TurboHttpClientPendingTests
         var system = CreateSystem("test-pending-cancel");
         try
         {
-            var client = new TurboHttpClient(new TurboClientOptions(), system);
-            client.Timeout = TimeSpan.FromSeconds(30); // long timeout — we cancel manually
+            var client = new TurboHttpClient(new TurboClientOptions(), system)
+            {
+                Timeout = TimeSpan.FromSeconds(30) // long timeout — we cancel manually
+            };
             var pending = GetPending(client);
 
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
             var request = new HttpRequestMessage(HttpMethod.Get, "http://127.0.0.1:1/");
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => client.SendAsync(request, cts.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.SendAsync(request, cts.Token));
 
             Assert.Empty(pending);
         }
@@ -105,8 +102,10 @@ public sealed class TurboHttpClientPendingTests
         var system = CreateSystem("test-pending-channel-error");
         try
         {
-            var client = new TurboHttpClient(new TurboClientOptions(), system);
-            client.Timeout = TimeSpan.FromSeconds(5);
+            var client = new TurboHttpClient(new TurboClientOptions(), system)
+            {
+                Timeout = TimeSpan.FromSeconds(5)
+            };
             var pending = GetPending(client);
             var manager = GetManager(client);
             var key = GetKey(client);
@@ -114,8 +113,10 @@ public sealed class TurboHttpClientPendingTests
             // Register two pending TCS entries as SendAsync would
             var id1 = Guid.NewGuid();
             var id2 = Guid.NewGuid();
-            var tcs1 = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var tcs2 = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs1 = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions
+                .RunContinuationsAsynchronously);
+            var tcs2 = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions
+                .RunContinuationsAsynchronously);
             pending.TryAdd(id1, tcs1);
             pending.TryAdd(id2, tcs2);
 
@@ -143,8 +144,10 @@ public sealed class TurboHttpClientPendingTests
         var system = CreateSystem("test-pending-success");
         try
         {
-            var client = new TurboHttpClient(new TurboClientOptions(), system);
-            client.Timeout = TimeSpan.FromSeconds(5);
+            var client = new TurboHttpClient(new TurboClientOptions(), system)
+            {
+                Timeout = TimeSpan.FromSeconds(5)
+            };
             var pending = GetPending(client);
             var manager = GetManager(client);
             var key = GetKey(client);

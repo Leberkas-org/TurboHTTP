@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC1945;
@@ -46,13 +45,7 @@ public sealed class Http10TcpFragmentationReassemblyTests : StreamTestBase
 
     private static List<IInputItem> SplitIntoSingleBytes(byte[] data)
     {
-        var chunks = new List<IInputItem>();
-        foreach (var b in data)
-        {
-            chunks.Add(Chunk(new[] { b }));
-        }
-
-        return chunks;
+        return data.Select(b => Chunk([b])).Cast<IInputItem>().ToList();
     }
 
     private async Task<HttpResponseMessage> DecodeFragmentsAsync(

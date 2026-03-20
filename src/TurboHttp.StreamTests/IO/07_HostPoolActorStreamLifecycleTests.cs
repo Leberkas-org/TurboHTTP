@@ -1,7 +1,5 @@
 using Akka.Actor;
 using Akka.TestKit;
-using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
@@ -14,7 +12,7 @@ namespace TurboHttp.StreamTests.IO;
 /// Actor under test: <see cref="HostPool"/>.
 /// Validates that slot reclamation after stream completion correctly triggers pending EnsureHost requests.
 /// </remarks>
-public sealed class HostPoolActorStreamLifecycleTests : IoActorTestBase
+public sealed class HostPoolActorStreamLifecycleTests : IOActorTestBase
 {
     [Fact(DisplayName = "SLC-001: StreamCompleted frees slot and serves queued requester")]
     public void Should_FreeSlotAndServeQueuedRequester_WhenStreamCompleted()

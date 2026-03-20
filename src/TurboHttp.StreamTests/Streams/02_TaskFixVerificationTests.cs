@@ -1,12 +1,9 @@
-using System.IO;
 using System.Net;
-using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9111;
@@ -562,7 +559,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         asyncResponse.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
         asyncResponse.Headers.Date = DateTimeOffset.UtcNow;
 
-        var results = await Source.From(new[] { syncResponse, asyncResponse })
+        var results = await Source.From([syncResponse, asyncResponse])
             .Via(new CacheStorageStage(store))
             .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
 

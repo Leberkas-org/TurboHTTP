@@ -7,10 +7,9 @@ using Akka.TestKit.Xunit2;
 using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 
-namespace TurboHttp.StreamTests.IO;
+namespace TurboHttp.StreamTests;
 
 /// <summary>
 /// Abstract base class for I/O actor tests.
@@ -19,7 +18,7 @@ namespace TurboHttp.StreamTests.IO;
 /// <remarks>
 /// Inherits from TestKit; all derived tests use Akka's TestProbe infrastructure for actor interaction verification.
 /// </remarks>
-public abstract class IoActorTestBase : TestKit
+public abstract class IOActorTestBase : TestKit
 {
     protected static readonly TcpOptions TestOptions = new() { Host = "localhost", Port = 8080 };
 

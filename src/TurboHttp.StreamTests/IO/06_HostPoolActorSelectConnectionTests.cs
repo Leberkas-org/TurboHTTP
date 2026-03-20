@@ -2,8 +2,6 @@ using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
 using TurboHttp.Internal;
-using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
@@ -16,7 +14,7 @@ namespace TurboHttp.StreamTests.IO;
 /// Actor under test: <see cref="HostPool"/>.
 /// Validates the selection heuristics for multi-connection host pools.
 /// </remarks>
-public sealed class HostPoolActorSelectConnectionTests : IoActorTestBase
+public sealed class HostPoolActorSelectConnectionTests : IOActorTestBase
 {
     private ConnectionHandle CreateHandle(Version version)
     {

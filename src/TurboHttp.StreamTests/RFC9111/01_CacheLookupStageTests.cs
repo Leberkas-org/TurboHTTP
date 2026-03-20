@@ -62,7 +62,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         resp.Headers.Date = DateTimeOffset.UtcNow;
 
         var store = new HttpCacheStore();
-        store.Put(req, resp, Array.Empty<byte>(),
+        store.Put(req, resp, [],
             DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
         return store;
     }
@@ -91,7 +91,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         }
 
         var store = new HttpCacheStore();
-        store.Put(req, resp, Array.Empty<byte>(),
+        store.Put(req, resp, [],
             DateTimeOffset.UtcNow.AddSeconds(-101), DateTimeOffset.UtcNow.AddSeconds(-100));
         return store;
     }
@@ -143,7 +143,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         resp.Headers.Date = DateTimeOffset.UtcNow;
 
         var store = new HttpCacheStore();
-        store.Put(req, resp, Array.Empty<byte>(),
+        store.Put(req, resp, [],
             DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
 
         var (miss, hit) = Run(store, null, 1, new HttpRequestMessage(HttpMethod.Get, url));
@@ -191,7 +191,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         resp.Headers.Date = DateTimeOffset.UtcNow.AddSeconds(-100);
 
         var store = new HttpCacheStore();
-        store.Put(req, resp, Array.Empty<byte>(),
+        store.Put(req, resp, [],
             DateTimeOffset.UtcNow.AddSeconds(-101), DateTimeOffset.UtcNow.AddSeconds(-100));
 
         var (miss, hit) = Run(store, null, 1, new HttpRequestMessage(HttpMethod.Get, url));
@@ -254,7 +254,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
             var s = new HttpResponseMessage(HttpStatusCode.OK);
             s.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
             s.Headers.Date = DateTimeOffset.UtcNow;
-            store.Put(r, s, Array.Empty<byte>(),
+            store.Put(r, s, [],
                 DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
         }
     }

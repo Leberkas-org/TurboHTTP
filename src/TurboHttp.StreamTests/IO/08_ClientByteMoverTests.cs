@@ -1,7 +1,4 @@
 using System.Buffers;
-using System.IO;
-using System.IO.Pipelines;
-using System.Threading;
 using System.Threading.Channels;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
@@ -16,47 +13,6 @@ namespace TurboHttp.StreamTests.IO;
 /// </summary>
 public sealed class ClientByteMoverTests : TestKit
 {
-    /// <summary>
-    /// A minimal <see cref="IMemoryOwner{T}"/> that tracks whether
-    /// <see cref="Dispose"/> has been called.
-    /// </summary>
-    private sealed class TrackingMemoryOwner : IMemoryOwner<byte>
-    {
-        private readonly byte[] _data;
-        public bool Disposed { get; private set; }
-
-        public TrackingMemoryOwner(int size)
-        {
-            _data = new byte[size];
-        }
-
-        public Memory<byte> Memory => _data.AsMemory();
-
-        public void Dispose()
-        {
-            Disposed = true;
-        }
-    }
-
-    /// <summary>
-    /// A <see cref="MemoryPool{T}"/> that always returns a <see cref="TrackingMemoryOwner"/>
-    /// so we can verify disposal.
-    /// </summary>
-    private sealed class TrackingMemoryPool : MemoryPool<byte>
-    {
-        public TrackingMemoryOwner? LastOwner { get; private set; }
-
-        public override int MaxBufferSize => int.MaxValue;
-
-        public override IMemoryOwner<byte> Rent(int minBufferSize = -1)
-        {
-            LastOwner = new TrackingMemoryOwner(minBufferSize < 0 ? 4096 : minBufferSize);
-            return LastOwner;
-        }
-
-        protected override void Dispose(bool disposing) { }
-    }
-
     [Fact(DisplayName = "TASK-013-001: Buffer disposed when TryWrite fails on closed inbound channel")]
     public async Task Should_DisposeBuffer_WhenInboundChannelIsClosed()
     {

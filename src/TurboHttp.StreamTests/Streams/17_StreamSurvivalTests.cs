@@ -97,7 +97,7 @@ public sealed class StreamSurvivalTests : EngineTestBase
         };
         var validRequest = ValidHttp11Request("/after-error");
 
-        var results = await Source.From(new[] { nullUriRequest, validRequest })
+        var results = await Source.From([nullUriRequest, validRequest])
             .Via(Flow.FromGraph(new Http11EncoderStage()))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
@@ -122,7 +122,7 @@ public sealed class StreamSurvivalTests : EngineTestBase
         var garbage = MakeChunk("GARBAGE CORRUPT BYTES\r\n\r\n");
         var valid = MakeChunk("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        var response = await Source.From(new[] { garbage, valid })
+        var response = await Source.From([garbage, valid])
             .Via(Flow.FromGraph(new Http11DecoderStage()))
             .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
 

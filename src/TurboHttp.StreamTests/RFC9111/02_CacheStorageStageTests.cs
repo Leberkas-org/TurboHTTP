@@ -1,4 +1,3 @@
-using System.IO;
 using System.Net;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
@@ -41,7 +40,7 @@ public sealed class CacheStorageStageTests : StreamTestBase
         var response = new HttpResponseMessage(status)
         {
             RequestMessage = request,
-            Content = new ByteArrayContent(body ?? Array.Empty<byte>())
+            Content = new ByteArrayContent(body ?? [])
         };
 
         if (cacheControl is not null)
@@ -63,7 +62,7 @@ public sealed class CacheStorageStageTests : StreamTestBase
         var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new ByteArrayContent(body ?? Array.Empty<byte>())
+            Content = new ByteArrayContent(body ?? [])
         };
         resp.Headers.TryAddWithoutValidation("Cache-Control", cacheControl);
         resp.Headers.Date = DateTimeOffset.UtcNow;
@@ -74,7 +73,7 @@ public sealed class CacheStorageStageTests : StreamTestBase
         }
 
         var store = new HttpCacheStore();
-        store.Put(req, resp, body ?? Array.Empty<byte>(),
+        store.Put(req, resp, body ?? [],
             DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
         return store;
     }

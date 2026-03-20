@@ -34,14 +34,14 @@ public sealed class Http2ConnectionPrefaceTests
             switch (frame)
             {
                 case HeadersFrame { EndHeaders: true } h:
-                    {
-                        var hdrs = hpack.Decode(h.HeaderBlockFragment.Span);
-                        var resp = BuildResponseFromHpack(hdrs);
-                        if (resp == null) break;
-                        if (h.EndStream) responses.Add((h.StreamId, resp));
-                        else pending[h.StreamId] = (resp, []);
-                        break;
-                    }
+                {
+                    var hdrs = hpack.Decode(h.HeaderBlockFragment.Span);
+                    var resp = BuildResponseFromHpack(hdrs);
+                    if (resp == null) break;
+                    if (h.EndStream) responses.Add((h.StreamId, resp));
+                    else pending[h.StreamId] = (resp, []);
+                    break;
+                }
                 case DataFrame d:
                     if (pending.TryGetValue(d.StreamId, out var p))
                         p.Body.AddRange(d.Data.ToArray());
@@ -51,9 +51,11 @@ public sealed class Http2ConnectionPrefaceTests
                         responses.Add((d.StreamId, completed.Response));
                         pending.Remove(d.StreamId);
                     }
+
                     break;
             }
         }
+
         return responses;
     }
 
@@ -69,6 +71,7 @@ public sealed class Http2ConnectionPrefaceTests
                 response.Content.Headers.TryAddWithoutValidation(h.Name, h.Value);
             }
         }
+
         return response;
     }
 
@@ -439,58 +442,37 @@ public sealed class Http2ConnectionPrefaceTests
     [InlineData(0x9)] // CONTINUATION
     public void Should_DispatchWithoutCrash_When_AllKnownFrameTypes(byte typeCode)
     {
-        byte[] frame;
-        switch ((FrameType)typeCode)
+        var frame = (FrameType)typeCode switch
         {
-            case FrameType.Settings:
-                frame = SettingsFrame.SettingsAck();
-                break;
-            case FrameType.Ping:
-                frame = new PingFrame(new byte[8]).Serialize();
-                break;
-            case FrameType.GoAway:
-                frame = new GoAwayFrame(0, Http2ErrorCode.NoError).Serialize();
-                break;
-            case FrameType.WindowUpdate:
-                frame = new WindowUpdateFrame(0, 1).Serialize();
-                break;
-            case FrameType.RstStream:
-                frame = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
-                break;
-            case FrameType.Priority:
-                frame =
-                [
-                    0x00, 0x00, 0x05, // length=5
-                    0x02, // PRIORITY
-                    0x00, // flags=0
-                    0x00, 0x00, 0x00, 0x01, // stream=1
-                    0x00, 0x00, 0x00, 0x01, // stream dependency
-                    0x00 // weight
-                ];
-                break;
-            case FrameType.PushPromise:
-                frame =
-                [
-                    0x00, 0x00, 0x05, // length=5
-                    0x05, // PUSH_PROMISE
-                    0x04, // END_HEADERS
-                    0x00, 0x00, 0x00, 0x01, // stream=1
-                    0x00, 0x00, 0x00, 0x02, // promised stream=2
-                    0x00 // empty header block byte
-                ];
-                break;
-            default:
-                // DATA/HEADERS/CONTINUATION on stream 0 — will trigger Http2Exception
-                frame =
-                [
-                    0x00, 0x00, 0x01,
-                    typeCode,
-                    0x00,
-                    0x00, 0x00, 0x00, 0x00, // stream 0
-                    0x00
-                ];
-                break;
-        }
+            FrameType.Settings => SettingsFrame.SettingsAck(),
+            FrameType.Ping => new PingFrame(new byte[8]).Serialize(),
+            FrameType.GoAway => new GoAwayFrame(0, Http2ErrorCode.NoError).Serialize(),
+            FrameType.WindowUpdate => new WindowUpdateFrame(0, 1).Serialize(),
+            FrameType.RstStream => new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize(),
+            FrameType.Priority =>
+            [
+                0x00, 0x00, 0x05, // length=5
+                0x02, // PRIORITY
+                0x00, // flags=0
+                0x00, 0x00, 0x00, 0x01, // stream=1
+                0x00, 0x00, 0x00, 0x01, // stream dependency
+                0x00 // weight
+            ],
+            FrameType.PushPromise =>
+            [
+                0x00, 0x00, 0x05, // length=5
+                0x05, // PUSH_PROMISE
+                0x04, // END_HEADERS
+                0x00, 0x00, 0x00, 0x01, // stream=1
+                0x00, 0x00, 0x00, 0x02, // promised stream=2
+                0x00 // empty header block byte
+            ],
+            _ =>
+            [
+                0x00, 0x00, 0x01, typeCode, 0x00, 0x00, 0x00, 0x00, 0x00, // stream 0
+                0x00
+            ]
+        };
 
         var decoder = new Http2FrameDecoder();
         // Allow any Http2Exception — the handler was reached and detected an error condition.

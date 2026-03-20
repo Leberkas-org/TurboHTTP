@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
@@ -63,10 +62,9 @@ public sealed class Http11DecoderStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9112-4-11DS-004: Two pipelined responses decoded as two messages")]
     public async Task Should_DecodePipelinedResponses_WhenTwoResponsesInStream()
     {
-        var source = Source.From(new[]
-        {
+        var source = Source.From([
             Chunk("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\nHTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n")
-        });
+        ]);
 
         var responses = await source
             .Via(Flow.FromGraph(new Http11DecoderStage()))

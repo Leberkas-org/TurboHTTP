@@ -1,7 +1,6 @@
 using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.Streams;
@@ -104,7 +103,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         var garbage = Chunk("GARBAGE DATA\r\n\r\n");
         var valid = Chunk("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        var response = await Source.From(new[] { garbage, valid })
+        var response = await Source.From([garbage, valid])
             .Via(Flow.FromGraph(new Http11DecoderStage()))
             .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
 
@@ -121,7 +120,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         var garbage = Chunk("GARBAGE DATA\r\n\r\n");
         var valid = Chunk("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        var response = await Source.From(new[] { garbage, valid })
+        var response = await Source.From([garbage, valid])
             .Via(Flow.FromGraph(new Http10DecoderStage()))
             .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
 

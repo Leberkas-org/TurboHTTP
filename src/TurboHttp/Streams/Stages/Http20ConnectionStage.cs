@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Protocol.RFC9113;
 
@@ -34,10 +32,10 @@ public sealed class Http20ConnectionShape : Shape
     }
 
     public override ImmutableArray<Inlet> Inlets =>
-        ImmutableArray.Create<Inlet>(InServer, InApp);
+        [InServer, InApp];
 
     public override ImmutableArray<Outlet> Outlets =>
-        ImmutableArray.Create<Outlet>(OutStream, OutServer, OutSignal);
+        [OutStream, OutServer, OutSignal];
 
     public override Shape DeepCopy()
     {
@@ -96,7 +94,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 
         private RequestEndpoint _endpoint;
         private readonly Dictionary<int, int> _streamWindows = new();
-        private readonly HashSet<int> _activeStreamIds = new();
+        private readonly HashSet<int> _activeStreamIds = [];
         private readonly Queue<Http2Frame> _outboundQueue = new();
 
         public Logic(Http20ConnectionStage stage) : base(stage.Shape)

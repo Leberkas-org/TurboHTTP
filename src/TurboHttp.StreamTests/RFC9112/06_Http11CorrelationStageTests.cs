@@ -3,7 +3,6 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9112;
@@ -196,7 +195,7 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
             var corr = b.Add(new Http1XCorrelationStage());
-            var reqSrc = b.Add(Source.From(new[] { request1, request2 }));
+            var reqSrc = b.Add(Source.From([request1, request2]));
             var resSrc = b.Add(neverEndingResponses);
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 

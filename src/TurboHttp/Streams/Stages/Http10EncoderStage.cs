@@ -1,11 +1,10 @@
-using System;
+﻿using System;
 using System.Buffers;
 using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC1945;
 
 namespace TurboHttp.Streams.Stages;

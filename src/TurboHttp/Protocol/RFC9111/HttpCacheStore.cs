@@ -14,7 +14,7 @@ public sealed class HttpCacheStore
     private readonly object _lock = new();
 
     // Linked list tracks LRU order; _index provides O(1) node lookup by compound key
-    private readonly LinkedList<(string key, CacheEntry entry)> _lruList = new();
+    private readonly LinkedList<(string key, CacheEntry entry)> _lruList = [];
     private readonly Dictionary<string, LinkedListNode<(string key, CacheEntry entry)>> _index = new();
 
     // Secondary index: primary key → list of nodes; enables O(1) candidate lookup in Get/Invalidate
@@ -120,7 +120,7 @@ public sealed class HttpCacheStore
 
             if (!_primaryIndex.TryGetValue(primaryKey, out var list))
             {
-                list = new List<LinkedListNode<(string key, CacheEntry entry)>>();
+                list = [];
                 _primaryIndex[primaryKey] = list;
             }
 

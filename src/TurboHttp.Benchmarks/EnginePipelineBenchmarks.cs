@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -12,16 +11,11 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using BenchmarkDotNet.Attributes;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 
 namespace TurboHttp.Benchmarks;
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Loopback transport stages (no real TCP — isolates stream/stage overhead)
-// ──────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
 /// Loopback stage for HTTP/1.x: accepts encoded request bytes, immediately
@@ -250,12 +244,11 @@ internal sealed class LoopbackHttp20Stage : GraphStage<FlowShape<IOutputItem, II
 internal sealed class BenchmarkMemoryOwner(byte[] data) : IMemoryOwner<byte>
 {
     public Memory<byte> Memory { get; } = data;
-    public void Dispose() { }
-}
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Benchmark configuration
-// ──────────────────────────────────────────────────────────────────────────────
+    public void Dispose()
+    {
+    }
+}
 
 /// <summary>
 /// BenchmarkDotNet config for the engine pipeline benchmarks.
@@ -271,10 +264,6 @@ public class EngineBenchmarkConfig : MicroBenchmarkConfig
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Benchmarks
-// ──────────────────────────────────────────────────────────────────────────────
-
 /// <summary>
 /// Measures request throughput and latency through the full Engine pipeline
 /// (encode → decode → correlate) using a loopback transport (no real TCP).
@@ -288,19 +277,15 @@ public class EngineBenchmarkConfig : MicroBenchmarkConfig
 [SimpleJob(warmupCount: 3, targetCount: 5)]
 public class EnginePipelineBenchmarks
 {
-    // ── Pre-baked response bytes ──────────────────────────────────────────────
     private static byte[] Http11OkResponse() =>
         "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
-    // ── Akka infrastructure ──────────────────────────────────────────────────
     private ActorSystem _actorSystem = null!;
     private IMaterializer _materializer = null!;
 
-    // ── HTTP/1.1 pipeline ────────────────────────────────────────────────────
     private ISourceQueueWithComplete<HttpRequestMessage> _http11Queue = null!;
     private Channel<HttpResponseMessage> _http11Responses = null!;
 
-    // ── HTTP/2 pipeline ──────────────────────────────────────────────────────
     private ISourceQueueWithComplete<HttpRequestMessage> _http20Queue = null!;
     private Channel<HttpResponseMessage> _http20Responses = null!;
 
@@ -362,8 +347,6 @@ public class EnginePipelineBenchmarks
         _actorSystem.Terminate().GetAwaiter().GetResult();
     }
 
-    // ── HTTP/1.1 benchmark ───────────────────────────────────────────────────
-
     /// <summary>
     /// Full HTTP/1.1 round-trip: enrich → encode → loopback → decode → correlate.
     /// </summary>
@@ -378,8 +361,6 @@ public class EnginePipelineBenchmarks
         await _http11Queue.OfferAsync(request);
         await _http11Responses.Reader.ReadAsync();
     }
-
-    // ── HTTP/2 benchmark ─────────────────────────────────────────────────────
 
     /// <summary>
     /// Full HTTP/2 round-trip: enrich → stream-ID alloc → encode → loopback → decode → correlate.

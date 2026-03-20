@@ -1,7 +1,4 @@
 using Akka.Actor;
-using Akka.TestKit;
-using TurboHttp.IO;
-using TurboHttp.IO.Stages;
 using TurboHttp.Lifecycle;
 
 namespace TurboHttp.StreamTests.IO;
@@ -14,7 +11,7 @@ namespace TurboHttp.StreamTests.IO;
 /// Actor under test: <see cref="HostPool"/>.
 /// Validates connection slot reservation, immediate dispatch, and requester queuing semantics.
 /// </remarks>
-public sealed class HostPoolActorEnsureHostTests : IoActorTestBase
+public sealed class HostPoolActorEnsureHostTests : IOActorTestBase
 {
     [Fact(DisplayName = "EH-001: Slot available returns handle immediately and marks connection busy")]
     public void Should_ReturnHandleImmediatelyAndMarkBusy_WhenSlotAvailable()

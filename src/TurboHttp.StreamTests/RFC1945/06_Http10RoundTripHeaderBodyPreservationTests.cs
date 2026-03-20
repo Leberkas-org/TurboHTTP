@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC1945;
@@ -233,11 +232,9 @@ public sealed class Http10RoundTripHeaderBodyPreservationTests : StreamTestBase
             var match = true;
             for (var j = 0; j < needle.Length; j++)
             {
-                if (haystack[i + j] != needle[j])
-                {
-                    match = false;
-                    break;
-                }
+                if (haystack[i + j] == needle[j]) continue;
+                match = false;
+                break;
             }
 
             if (match)

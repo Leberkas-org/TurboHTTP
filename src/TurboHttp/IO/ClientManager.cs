@@ -25,7 +25,7 @@ public sealed class ClientManager : ReceiveActor
         Receive<Terminated>(Handle);
     }
 
-    private void Handle(CreateRunner msg)
+    private static void Handle(CreateRunner msg)
     {
         var provider = msg.StreamProvider ?? msg.Options switch
         {

@@ -4,7 +4,6 @@ using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 
 namespace TurboHttp.Streams.Stages;
 
@@ -28,10 +27,10 @@ public sealed class Http1XCorrelationShape : Shape
     }
 
     public override ImmutableArray<Inlet> Inlets =>
-        ImmutableArray.Create<Inlet>(InRequest, InResponse);
+        [InRequest, InResponse];
 
     public override ImmutableArray<Outlet> Outlets =>
-        ImmutableArray.Create<Outlet>(Out, OutSignal);
+        [Out, OutSignal];
 
     public override Shape DeepCopy()
     {
