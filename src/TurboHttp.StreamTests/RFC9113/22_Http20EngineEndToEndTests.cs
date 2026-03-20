@@ -22,7 +22,7 @@ namespace TurboHttp.StreamTests.RFC9113;
 /// Stage under test: <see cref="Http20Engine"/>.
 /// RFC 9113 §3–§8: HTTP/2 connection setup, frame exchange, flow control, and HTTP message mapping.
 /// </remarks>
-public sealed class Http20EngineRfcRoundTripTests : EngineTestBase
+public sealed class Http20EngineEndToEndTests : EngineTestBase
 {
     private static Http20Engine Engine => new();
 

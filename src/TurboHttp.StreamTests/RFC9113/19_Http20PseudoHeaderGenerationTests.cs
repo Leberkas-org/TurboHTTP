@@ -14,7 +14,7 @@ namespace TurboHttp.StreamTests.RFC9113;
 /// Stage under test: <see cref="Request2FrameStage"/>.
 /// RFC 9113 §8.3: HTTP/2 pseudo-header fields, their required presence, and correct values.
 /// </remarks>
-public sealed class Http20PseudoHeaderRfcTests : StreamTestBase
+public sealed class Http20PseudoHeaderGenerationTests : StreamTestBase
 {
     private static HttpRequestMessage GetRequest(string uri = "http://example.com/")
         => new(HttpMethod.Get, uri);

@@ -399,11 +399,11 @@ Example:  01_Http10EncoderStageTests.cs
 5. `Http20EngineRfcRoundTripTests.cs` → `22_Http20EngineEndToEndTests.cs`
 
 **Acceptance Criteria:**
-- [ ] Files renamed via `git mv`
-- [ ] Class names updated (drop `Rfc` from pseudo-header, forbidden-header, engine round-trip)
-- [ ] Namespaces unchanged
-- [ ] `dotnet build` succeeds
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamTests.RFC9113"` passes (full RFC9113 suite)
+- [x] Files renamed via `git mv`
+- [x] Class names updated (drop `Rfc` from pseudo-header, forbidden-header, engine round-trip)
+- [x] Namespaces unchanged
+- [x] `dotnet build` succeeds
+- [x] `dotnet test --filter "FullyQualifiedName~StreamTests.RFC9113"` passes (full RFC9113 suite)
 
 ---
 
