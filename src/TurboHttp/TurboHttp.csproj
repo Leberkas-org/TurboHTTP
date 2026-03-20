@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka.Streams" Version="1.5.62" />
-        <PackageReference Include="Servus.Akka" Version="0.3.10"/>
+        <PackageReference Include="Akka.Streams" />
+        <PackageReference Include="Servus.Akka" />
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHttp.Tests"/>

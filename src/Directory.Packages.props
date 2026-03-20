@@ -1,0 +1,32 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <PropertyGroup Label="SharedVersions">
+        <AkkaVersion>1.5.62</AkkaVersion>
+        <XunitVersion>2.9.3</XunitVersion>
+        <XunitRunnerVersion>3.1.5</XunitRunnerVersion>
+    </PropertyGroup>
+
+    <ItemGroup Label="Akka.NET">
+        <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)" />
+        <PackageVersion Include="Akka.Streams.TestKit" Version="$(AkkaVersion)" />
+        <PackageVersion Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Label="Servus">
+        <PackageVersion Include="Servus.Akka" Version="0.3.10" />
+    </ItemGroup>
+
+    <ItemGroup Label="Testing">
+        <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+        <PackageVersion Include="xunit" Version="$(XunitVersion)" />
+        <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Label="Benchmarks">
+        <PackageVersion Include="BenchmarkDotNet" Version="0.13.2" />
+    </ItemGroup>
+</Project>

@@ -52,11 +52,11 @@ Transform TurboHttp from a working codebase into a polished, production-ready op
 **Description:** As a developer, I want centralized NuGet version management so that dependency versions are consistent and easy to update.
 
 **Acceptance Criteria:**
-- [ ] `src/Directory.Packages.props` created with `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`
-- [ ] All `<PackageReference>` versions moved from individual `.csproj` files to `Directory.Packages.props`
-- [ ] Individual `.csproj` files use `<PackageReference Include="..." />` without `Version` attribute
-- [ ] `dotnet restore` and `dotnet build` succeed
-- [ ] All tests pass
+- [x] `src/Directory.Packages.props` created with `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`
+- [x] All `<PackageReference>` versions moved from individual `.csproj` files to `Directory.Packages.props`
+- [x] Individual `.csproj` files use `<PackageReference Include="..." />` without `Version` attribute
+- [x] `dotnet restore` and `dotnet build` succeed
+- [x] All tests pass
 
 ### TASK-005: Add .editorconfig
 **Description:** As a developer, I want an .editorconfig that enforces the project's coding style so that contributions are consistent.
