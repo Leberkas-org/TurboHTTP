@@ -418,10 +418,10 @@ Example:  01_Http10EncoderStageTests.cs
 5. `ConnectionStageTests.cs` → `05_ConnectionStageTests.cs`
 
 **Acceptance Criteria:**
-- [ ] 3 files renamed via `git mv` (01_ and 02_ already correct)
-- [ ] Class names unchanged (only file prefix added)
-- [ ] Namespaces unchanged
-- [ ] `dotnet build` succeeds
+- [x] 3 files renamed via `git mv` (01_ and 02_ already correct)
+- [x] Class names unchanged (only file prefix added)
+- [x] Namespaces unchanged
+- [x] `dotnet build` succeeds
 
 ---
 
