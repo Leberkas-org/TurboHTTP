@@ -83,10 +83,10 @@ The following RFC supersession rules apply:
 1. `src/TurboHttp/Protocol/WellKnownHeaders.cs`
 
 **Acceptance Criteria:**
-- [ ] Verify RFC 7541 Appendix A (Static Table) references
-- [ ] Validate header definitions against current RFCs
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Verify RFC 7541 Appendix A (Static Table) references
+- [x] Validate header definitions against current RFCs
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 

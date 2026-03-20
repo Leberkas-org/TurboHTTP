@@ -16,7 +16,7 @@ public static class WellKnownHeaders
     /// <summary>RFC 9110 Section 11.6.2: Authorization header</summary>
     public static ReadOnlySpan<byte> Authorization => "Authorization"u8;
 
-    /// <summary>RFC 9110 Section 10.1.1: Accept header</summary>
+    /// <summary>RFC 9110 Section 12.5.1: Accept header</summary>
     public static ReadOnlySpan<byte> Accept => "Accept"u8;
 
     /// <summary>RFC 9110 Section 12.5.3: Accept-Encoding header</summary>
@@ -58,7 +58,7 @@ public static class WellKnownHeaders
     /// <summary>RFC 9110 Section 7.6.1: Connection header</summary>
     public static ReadOnlySpan<byte> Connection => "Connection"u8;
 
-    /// <summary>RFC 9112 Section 9.6: Trailer header</summary>
+    /// <summary>RFC 9110 Section 6.6.2: Trailer header</summary>
     public static ReadOnlySpan<byte> Trailer => "Trailer"u8;
 
     // ── Connection Token Values ─────────────────────────────────────────────────
@@ -162,7 +162,6 @@ public static class WellKnownHeaders
     /// </summary>
     public static bool ContainsChunked(ReadOnlySpan<byte> value)
     {
-        // Simple substring search for "chunked"
         var chunked = Chunked;
         if (value.Length < chunked.Length)
         {
