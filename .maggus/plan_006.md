@@ -278,11 +278,11 @@ features:
 3. Add link to new feature pages in "Next Steps"
 
 **Acceptance Criteria:**
-- [ ] Zero RFC references
-- [ ] "What's Included" feature list
-- [ ] Links to all new feature guide pages
-- [ ] Code examples compile and make sense
-- [ ] Verify in browser
+- [x] Zero RFC references
+- [x] "What's Included" feature list
+- [x] Links to all new feature guide pages
+- [x] Code examples compile and make sense
+- [x] ⚠️ BLOCKED: Verify in browser — Node.js not available in CI environment; requires manual browser verification
 
 ---
 

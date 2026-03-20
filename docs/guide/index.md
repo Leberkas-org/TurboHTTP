@@ -99,7 +99,31 @@ var request = new HttpRequestMessage(HttpMethod.Get, "/data");
 var response = await client.SendAsync(request, cts.Token);
 ```
 
+## What's Included
+
+TurboHttp works out of the box — no middleware to wire up, no Polly policies to configure.
+
+| Feature | Description |
+|---------|-------------|
+| **HTTP/1.0, HTTP/1.1 & HTTP/2** | Automatic version negotiation; HTTP/2 multiplexes multiple requests over one connection |
+| **Automatic Retries** | Idempotent methods (GET, PUT, DELETE) are retried automatically; respects `Retry-After` headers |
+| **Built-in Caching** | In-memory LRU cache with `ETag`/`Last-Modified` conditional requests and `Vary` support |
+| **Redirect Following** | Follows 301/302/303/307/308 with correct method rewriting, loop detection, and auth header stripping |
+| **Cookie Management** | `CookieJar` stores `Set-Cookie` responses and injects cookies on subsequent requests automatically |
+| **Content Encoding** | Automatic gzip, deflate, and Brotli decompression |
+| **Connection Pooling** | Per-host pools with idle eviction, automatic reconnect, and configurable concurrency limits |
+| **Channel-based API** | `ChannelWriter`/`ChannelReader` interface for backpressure-aware, high-throughput request pipelines |
+
 ## Next Steps
 
-- [Architecture Overview](./architecture) — understand the layered design and Akka.Streams pipeline
-- [Protocol Support](./protocols) — details on HTTP/1.0, HTTP/1.1, and HTTP/2 behaviour
+**Feature guides** — learn how each feature works and how to configure it:
+
+- [Configuration](./configuration) — all options, DI registration, named clients
+- [Automatic Retries](./retries) — which methods are retried, `Retry-After` support, custom policies
+- [HTTP Caching](./caching) — cache lifetime, conditional requests, `Vary`, disabling cache
+- [Cookie Management](./cookies) — domain/path matching, `Secure`/`HttpOnly`/`SameSite`, custom jar
+- [Redirects](./redirects) — status code behaviour, method rewriting, security rules
+- [Content Encoding](./content-encoding) — gzip, deflate, Brotli, disabling decompression
+- [Connection Pooling](./connection-pooling) — pool lifecycle, idle eviction, concurrency limits
+- [HTTP/2 & Multiplexing](./http2) — when to use HTTP/2, header compression, flow control
+- [Advanced Usage](./advanced) — channel API, custom retry/redirect/cookie/cache implementations
