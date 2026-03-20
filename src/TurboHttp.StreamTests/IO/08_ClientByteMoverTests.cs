@@ -77,7 +77,7 @@ public sealed class ClientByteMoverTests : TestKit
 
         // Act: run MovePipeToChannel; it will rent a buffer, try to write to the
         // closed channel, get false from TryWrite, and must dispose the buffer.
-        await ClientByteMover.MovePipeToChannel(state, ActorRefs.Nobody, cts.Token);
+        await ClientByteMover.MovePipeToChannel(state, ActorRefs.Nobody, Sys.Log, cts.Token);
 
         // Assert: verify the fix indirectly — the method must complete without
         // leaving an undisposed buffer.  We verify this by running it and asserting
@@ -104,7 +104,7 @@ public sealed class ClientByteMoverTests : TestKit
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
-        await ClientByteMover.MovePipeToChannel(state, ActorRefs.Nobody, cts.Token);
+        await ClientByteMover.MovePipeToChannel(state, ActorRefs.Nobody, Sys.Log, cts.Token);
 
         // The item should be readable from the inbound channel
         var ok = inbound.Reader.TryRead(out var item);

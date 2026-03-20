@@ -68,17 +68,17 @@ internal sealed class ClientRunner : ReceiveActor
         var log = Context.GetLogger();
         var self = _selfClosure;
 
-        var t1 = ClientByteMover.MoveStreamToPipe(_state, _selfClosure, _cts.Token);
+        var t1 = ClientByteMover.MoveStreamToPipe(_state, _selfClosure, log, _cts.Token);
         _ = t1.ContinueWith(
             t => { log.Error(t.Exception, "ClientRunner: MoveStreamToPipe faulted unexpectedly"); self.Tell(DoClose.Instance); },
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
-        var t2 = ClientByteMover.MovePipeToChannel(_state, _selfClosure, _cts.Token);
+        var t2 = ClientByteMover.MovePipeToChannel(_state, _selfClosure, log, _cts.Token);
         _ = t2.ContinueWith(
             t => { log.Error(t.Exception, "ClientRunner: MovePipeToChannel faulted unexpectedly"); self.Tell(DoClose.Instance); },
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
 
-        var t3 = ClientByteMover.MoveChannelToStream(_state, _selfClosure, _cts.Token);
+        var t3 = ClientByteMover.MoveChannelToStream(_state, _selfClosure, log, _cts.Token);
         _ = t3.ContinueWith(
             t => { log.Error(t.Exception, "ClientRunner: MoveChannelToStream faulted unexpectedly"); self.Tell(DoClose.Instance); },
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);

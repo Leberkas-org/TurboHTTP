@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Event;
 
 namespace TurboHttp.IO;
 
@@ -13,7 +14,7 @@ public sealed record DoClose
 
 internal static class ClientByteMover
 {
-    internal static async Task MoveStreamToPipe(ClientState state, IActorRef runner, CancellationToken ct)
+    internal static async Task MoveStreamToPipe(ClientState state, IActorRef runner, ILoggingAdapter log, CancellationToken ct)
     {
         Exception? pipeError = null;
         try
@@ -38,6 +39,7 @@ internal static class ClientByteMover
                 }
                 catch (Exception ex)
                 {
+                    log.Warning(ex, "ClientByteMover.MoveStreamToPipe: stream read faulted");
                     pipeError = ex;
                     runner.Tell(DoClose.Instance);
                     return;
@@ -62,7 +64,7 @@ internal static class ClientByteMover
         }
     }
 
-    internal static async Task MovePipeToChannel(ClientState state, IActorRef runner, CancellationToken ct)
+    internal static async Task MovePipeToChannel(ClientState state, IActorRef runner, ILoggingAdapter log, CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
@@ -105,19 +107,20 @@ internal static class ClientByteMover
                 runner.Tell(DoClose.Instance);
                 return;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // PipeWriter was completed with an exception (e.g. socket IOException propagated
                 // through DoWriteToPipeAsync). The faulted pipe surfaces as an exception here
                 // rather than as result.IsCompleted, so we must handle it explicitly to ensure
                 // ReadFinished is always self-told and BackgroundTasksCompleted can fire.
+                log.Warning(ex, "ClientByteMover.MovePipeToChannel: pipe read faulted");
                 runner.Tell(DoClose.Instance);
                 return;
             }
         }
     }
 
-    internal static async Task MoveChannelToStream(ClientState state, IActorRef runner, CancellationToken ct)
+    internal static async Task MoveChannelToStream(ClientState state, IActorRef runner, ILoggingAdapter log, CancellationToken ct)
     {
         while (!state.OutboundReader.Completion.IsCompleted)
         {
@@ -151,8 +154,9 @@ internal static class ClientByteMover
                 runner.Tell(DoClose.Instance);
                 return;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                log.Warning(ex, "ClientByteMover.MoveChannelToStream: stream write faulted");
                 runner.Tell(DoClose.Instance);
                 return;
             }

@@ -751,9 +751,9 @@ finally
 **Required Change:** Capture exception, include in `DoCloseWithReason(ex)` or log.
 
 **Acceptance Criteria:**
-- [ ] Exception captured, not swallowed
-- [ ] All existing tests pass
-- [ ] Build compiles with 0 errors
+- [x] Exception captured, not swallowed
+- [x] All existing tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
