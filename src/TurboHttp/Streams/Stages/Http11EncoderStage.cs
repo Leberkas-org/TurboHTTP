@@ -12,12 +12,12 @@ namespace TurboHttp.Streams.Stages;
 
 public sealed class Http11EncoderStage : GraphStage<FlowShape<HttpRequestMessage, IOutputItem>>
 {
-    private readonly Inlet<HttpRequestMessage> _inlet = new("http11.encoder.in");
-    private readonly Outlet<IOutputItem> _outlet = new("http11.encoder.out");
+    private readonly Inlet<HttpRequestMessage> _in = new("Http11Encoder.In");
+    private readonly Outlet<IOutputItem> _out = new("Http11Encoder.Out");
 
     public Http11EncoderStage()
     {
-        Shape = new FlowShape<HttpRequestMessage, IOutputItem>(_inlet, _outlet);
+        Shape = new FlowShape<HttpRequestMessage, IOutputItem>(_in, _out);
     }
 
     public override FlowShape<HttpRequestMessage, IOutputItem> Shape { get; }
@@ -39,10 +39,10 @@ public sealed class Http11EncoderStage : GraphStage<FlowShape<HttpRequestMessage
             _minBufferSize = memoryBuffer.Initial;
             _maxBufferSize = memoryBuffer.Max;
 
-            SetHandler(stage._inlet,
+            SetHandler(stage._in,
                 onPush: () =>
                 {
-                    var request = Grab(stage._inlet);
+                    var request = Grab(stage._in);
                     IMemoryOwner<byte>? owner = null;
 
                     try
@@ -56,24 +56,24 @@ public sealed class Http11EncoderStage : GraphStage<FlowShape<HttpRequestMessage
 
                         var written = Http11Encoder.Encode(request, ref buffer);
 
-                        Push(stage._outlet, new DataItem(owner, written) { Key = key });
+                        Push(stage._out, new DataItem(owner, written) { Key = key });
                     }
                     catch (Exception ex)
                     {
                         owner?.Dispose();
                         Log.Warning("Http11EncoderStage: Failed to encode request [{0}]: {1}",
                             request.RequestUri, ex.Message);
-                        if (!HasBeenPulled(stage._inlet))
+                        if (!HasBeenPulled(stage._in))
                         {
-                            Pull(stage._inlet);
+                            Pull(stage._in);
                         }
                     }
                 },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: ex => Log.Warning("Http11EncoderStage: Upstream failure absorbed: {0}", ex.Message));
 
-            SetHandler(stage._outlet,
-                onPull: () => Pull(stage._inlet),
+            SetHandler(stage._out,
+                onPull: () => Pull(stage._in),
                 onDownstreamFinish: _ => CompleteStage());
         }
     }
