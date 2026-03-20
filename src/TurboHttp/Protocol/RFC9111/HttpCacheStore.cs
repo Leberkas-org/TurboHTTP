@@ -144,7 +144,7 @@ public sealed class HttpCacheStore
     }
 
     /// <summary>
-    /// RFC 9111 §3.1 — Returns true if the response status code is cacheable by default.
+    /// RFC 9111 §3 — Returns true if the response status code is cacheable by default.
     /// Cacheable status codes: 200, 203, 204, 206, 300, 301, 308, 404, 405, 410, 414, 501.
     /// </summary>
     public static bool IsCacheable(HttpResponseMessage response)

@@ -172,12 +172,12 @@ The following RFC supersession rules apply:
 3. `src/TurboHttp/Protocol/RFC9111/HttpCacheStore.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 9111 §4.2 (Freshness) references in CacheFreshnessEvaluator are correct
-- [ ] RFC 9111 §4.3 (Validation) references in CacheValidationRequestBuilder are correct
-- [ ] RFC 9111 §3 (Storing) references in HttpCacheStore are correct
-- [ ] No references to RFC 7234 remain
-- [ ] Comments accurately describe current behaviour
-- [ ] `dotnet build` succeeds
+- [x] RFC 9111 §4.2 (Freshness) references in CacheFreshnessEvaluator are correct
+- [x] RFC 9111 §4.3 (Validation) references in CacheValidationRequestBuilder are correct
+- [x] RFC 9111 §3 (Storing) references in HttpCacheStore are correct
+- [x] No references to RFC 7234 remain
+- [x] Comments accurately describe current behaviour
+- [x] `dotnet build` succeeds
 
 ---
 
