@@ -15,8 +15,8 @@ public sealed class TurboHttpClientFactory(IOptionsMonitor<TurboClientOptions> o
     /// <inheritdoc />
     public ITurboHttpClient CreateClient(Action<TurboClientOptions>? configure = null)
     {
-        var options1 = options.CurrentValue;
-        configure?.Invoke(options1);
-        return new TurboHttpClient(options1, system);
+        var copy = options.CurrentValue with { };
+        configure?.Invoke(copy);
+        return new TurboHttpClient(copy, system);
     }
 }

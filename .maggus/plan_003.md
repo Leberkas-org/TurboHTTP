@@ -498,11 +498,11 @@ finally
 ```
 
 **Acceptance Criteria:**
-- [ ] TCS always removed from `_pending` after completion, timeout, or cancellation
-- [ ] Unit test verifies `_pending` is empty after timeout
-- [ ] Unit test verifies `_pending` is empty after cancellation
-- [ ] Unit test verifies `_pending` is empty after success
-- [ ] Build compiles with 0 errors
+- [x] TCS always removed from `_pending` after completion, timeout, or cancellation
+- [x] Unit test verifies `_pending` is empty after timeout
+- [x] Unit test verifies `_pending` is empty after cancellation
+- [x] Unit test verifies `_pending` is empty after success
+- [x] Build compiles with 0 errors
 
 ---
 
@@ -514,10 +514,10 @@ finally
 **Required Change:** Clone options before mutation.
 
 **Acceptance Criteria:**
-- [ ] Each `CreateClient` call gets an independent options copy
-- [ ] Unit test: create two clients with different configs, verify isolation
-- [ ] Unit test: verify `IOptionsMonitor.CurrentValue` is not mutated
-- [ ] Build compiles with 0 errors
+- [x] Each `CreateClient` call gets an independent options copy
+- [x] Unit test: create two clients with different configs, verify isolation
+- [x] Unit test: verify `IOptionsMonitor.CurrentValue` is not mutated
+- [x] Build compiles with 0 errors
 
 ---
 

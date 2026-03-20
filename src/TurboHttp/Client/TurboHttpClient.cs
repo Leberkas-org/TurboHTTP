@@ -68,7 +68,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
         {
             var request = response.RequestMessage!;
             if (request.Options.TryGetValue(_key, out var requestId) &&
-                _pending.TryGetValue(requestId, out var tcs))
+                _pending.TryRemove(requestId, out var tcs))
             {
                 tcs.TrySetResult(response);
             }
@@ -81,8 +81,15 @@ public sealed class TurboHttpClient : ITurboHttpClient
         var requestId = Guid.NewGuid();
         request.Options.Set(_key, requestId);
         _pending.TryAdd(requestId, tcs);
-        await _manager.Requests.WriteAsync(request, cancellationToken);
-        return await tcs.Task.WaitAsync(Timeout, cancellationToken);
+        try
+        {
+            await _manager.Requests.WriteAsync(request, cancellationToken);
+            return await tcs.Task.WaitAsync(Timeout, cancellationToken);
+        }
+        finally
+        {
+            _pending.TryRemove(requestId, out _);
+        }
     }
 
     public void CancelPendingRequests()

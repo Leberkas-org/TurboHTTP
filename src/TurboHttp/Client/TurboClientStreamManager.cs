@@ -21,6 +21,12 @@ internal sealed class TurboClientStreamManager
     internal ChannelWriter<HttpRequestMessage> Requests { get; }
     internal ChannelReader<HttpResponseMessage> Responses { get; }
 
+    /// <summary>
+    /// Exposes the response-channel writer so tests can inject synthetic responses
+    /// without requiring a live TCP connection.
+    /// </summary>
+    internal ChannelWriter<HttpResponseMessage> ResponseWriter { get; private set; } = null!;
+
     public TurboClientStreamManager(TurboClientOptions clientOptions, Func<TurboRequestOptions> requestOptionsFactory,
         ActorSystem system)
     {
@@ -37,6 +43,7 @@ internal sealed class TurboClientStreamManager
         Requests = requestsChannel.Writer;
         Responses = responsesChannel.Reader;
         var responseWriter = responsesChannel.Writer;
+        ResponseWriter = responseWriter;
         var requestReader = requestsChannel.Reader;
 
         // Create PoolRouter — supervises the actor-based connection pool hierarchy.
