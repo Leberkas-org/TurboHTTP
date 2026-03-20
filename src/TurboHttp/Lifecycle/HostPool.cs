@@ -19,8 +19,6 @@ public sealed class HostPool : ReceiveActor
         RequestEndpoint Key,
         Func<Props>? ConnectionFactory = null);
 
-    // ── Public message protocol ───────────────────────────────────────
-
     public sealed record ConnectionIdle(IActorRef Connection);
 
     public sealed record ConnectionFailed(IActorRef Connection);
@@ -36,8 +34,6 @@ public sealed class HostPool : ReceiveActor
     public sealed record StreamAcquired(IActorRef Connection);
 
     public sealed record UpdateMaxConcurrentStreams(IActorRef Connection, int MaxStreams);
-
-    // ── Fields ────────────────────────────────────────────────────────
 
     private readonly RequestEndpoint _key;
     private readonly TcpOptions _options;
@@ -94,8 +90,6 @@ public sealed class HostPool : ReceiveActor
         _scheduler?.Cancel();
     }
 
-    // ── ConnectionHandle forwarding ───────────────────────────────────
-
     private void HandleConnectionReady(ConnectionActor.ConnectionReady msg)
     {
         var conn = Find(msg.Handle.ConnectionActor);
@@ -136,8 +130,6 @@ public sealed class HostPool : ReceiveActor
         // Attempt to open a new connection (noop if limiter refuses)
         SpawnConnection();
     }
-
-    // ── Connection lifecycle ──────────────────────────────────────────
 
     private ConnectionState? SpawnConnection()
     {

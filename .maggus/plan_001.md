@@ -421,12 +421,12 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/Lifecycle/ConnectionState.cs`
 
 **Acceptance Criteria:**
-- [ ] Actor hierarchy comments match the current design
-- [ ] ConnectionHandle description (Writer + Reader bundle) is correct
-- [ ] ConnectionState comments (Active, Idle, Reusable) are up to date
-- [ ] No outdated architecture comments
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] Actor hierarchy comments match the current design
+- [x] ConnectionHandle description (Writer + Reader bundle) is correct
+- [x] ConnectionState comments (Active, Idle, Reusable) are up to date
+- [x] No outdated architecture comments
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 

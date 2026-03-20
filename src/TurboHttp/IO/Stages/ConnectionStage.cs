@@ -174,7 +174,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
             if (item is ConnectItem connect)
             {
-                // Send EnsureHost — HostPoolActor will reply with ConnectionHandle to our StageActor.
+                // Send EnsureHost — HostPool will reply with ConnectionHandle to our StageActor.
                 _stage.PoolRouter.Tell(
                     new PoolRouter.EnsureHost(connect.Key, connect.Options),
                     _stageActor!.Ref);
