@@ -6,7 +6,7 @@ namespace TurboHttp.Protocol.RFC9112;
 
 /// <summary>
 /// Tracks the number of active HTTP connections per host and enforces per-host limits.
-/// RFC 9112 §9.4 — Persistent Connection Pipelining recommends limiting concurrent connections.
+/// RFC 9112 §9.4 — Concurrency recommends limiting simultaneous open connections per host.
 /// </summary>
 /// <remarks>
 /// This class is thread-safe. All operations are protected by an internal lock.

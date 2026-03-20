@@ -227,11 +227,11 @@ The following RFC supersession rules apply:
 4. `src/TurboHttp/Protocol/RFC9112/PerHostConnectionLimiter.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 9112 §9 (Connection Management) references are correct
-- [ ] No references to RFC 7230 §6 (old Connection Management section) remain
-- [ ] Keep-alive/close logic is correctly documented
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] RFC 9112 §9 (Connection Management) references are correct
+- [x] No references to RFC 7230 §6 (old Connection Management section) remain
+- [x] Keep-alive/close logic is correctly documented
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
