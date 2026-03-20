@@ -26,7 +26,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
         BuildPersistentHttp11Pipeline()
     {
         var responses = Channel.CreateUnbounded<HttpResponseMessage>();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             http10Factory: () => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse)),
             http11Factory: () => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse)),

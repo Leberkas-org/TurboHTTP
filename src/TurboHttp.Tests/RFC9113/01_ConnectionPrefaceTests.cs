@@ -33,7 +33,7 @@ public sealed class Http2ConnectionPrefaceTests
         {
             switch (frame)
             {
-                case HeadersFrame h when h.EndHeaders:
+                case HeadersFrame { EndHeaders: true } h:
                     {
                         var hdrs = hpack.Decode(h.HeaderBlockFragment.Span);
                         var resp = BuildResponseFromHpack(hdrs);
@@ -65,7 +65,9 @@ public sealed class Http2ConnectionPrefaceTests
         foreach (var h in headers.Where(h => !h.Name.StartsWith(':')))
         {
             if (!response.Headers.TryAddWithoutValidation(h.Name, h.Value))
-                (response.Content ??= new ByteArrayContent([])).Headers.TryAddWithoutValidation(h.Name, h.Value);
+            {
+                response.Content.Headers.TryAddWithoutValidation(h.Name, h.Value);
+            }
         }
         return response;
     }

@@ -31,7 +31,7 @@ public sealed class EngineVersionRoutingTests : EngineTestBase
         var http11Response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         var h2Frames = new[] { new SettingsFrame([]).Serialize() };
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http10Response)),
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http11Response)),
@@ -56,7 +56,7 @@ public sealed class EngineVersionRoutingTests : EngineTestBase
         var http11Response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         var h2Frames = new[] { new SettingsFrame([]).Serialize() };
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http10Response)),
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http11Response)),
@@ -89,7 +89,7 @@ public sealed class EngineVersionRoutingTests : EngineTestBase
             endHeaders: true).Serialize();
         var h2Frames = new[] { settingsFrame, headersFrame };
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http10Response)),
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http11Response)),
@@ -113,7 +113,7 @@ public sealed class EngineVersionRoutingTests : EngineTestBase
         var http11Response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         var h2Frames = new[] { new SettingsFrame([]).Serialize() };
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http10Response)),
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http11Response)),

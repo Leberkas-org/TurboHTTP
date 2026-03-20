@@ -64,8 +64,6 @@ Every PR that changes production code must include corresponding unit tests (and
 
 ### 5. Code style
 
-Follow the existing conventions enforced by `.editorconfig`:
-
 - **Allman braces** — opening brace on its own line
 - **4-space indent**, no tabs
 - **`_fieldName`** prefix for private fields

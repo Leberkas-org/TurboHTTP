@@ -23,19 +23,19 @@ public sealed class CacheLookupStageTests : StreamTestBase
     /// The source is concatenated with Source.Never to prevent premature stream completion.
     /// </summary>
     private (TestSubscriber.ManualProbe<HttpRequestMessage> miss,
-             TestSubscriber.ManualProbe<HttpResponseMessage> hit) Run(
-        HttpCacheStore store,
-        CachePolicy? policy,
-        int demandEach,
-        params HttpRequestMessage[] requests)
+        TestSubscriber.ManualProbe<HttpResponseMessage> hit) Run(
+            HttpCacheStore store,
+            CachePolicy? policy,
+            int demandEach,
+            params HttpRequestMessage[] requests)
     {
         var probeMiss = this.CreateManualSubscriberProbe<HttpRequestMessage>();
-        var probeHit  = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probeHit = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
         {
             var stage = b.Add(new CacheLookupStage(store, policy));
-            var src   = b.Add(Source.From(requests).Concat(Source.Never<HttpRequestMessage>()));
+            var src = b.Add(Source.From(requests).Concat(Source.Never<HttpRequestMessage>()));
 
             b.From(src).To(stage.In);
             b.From(stage.Out0).To(Sink.FromSubscriber(probeMiss));
@@ -45,7 +45,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         })).Run(Materializer);
 
         var subMiss = probeMiss.ExpectSubscription();
-        var subHit  = probeHit.ExpectSubscription();
+        var subHit = probeHit.ExpectSubscription();
 
         subMiss.Request(demandEach);
         subHit.Request(demandEach);
@@ -56,7 +56,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
     /// <summary>Builds a store containing a fresh (max-age=3600) GET entry for the given URL.</summary>
     private static HttpCacheStore StoreWithFreshEntry(string url = "http://example.com/resource")
     {
-        var req  = new HttpRequestMessage(HttpMethod.Get, url);
+        var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = new HttpResponseMessage(HttpStatusCode.OK);
         resp.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
         resp.Headers.Date = DateTimeOffset.UtcNow;
@@ -76,7 +76,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         string? etag = "\"abc123\"",
         DateTimeOffset? lastModified = null)
     {
-        var req  = new HttpRequestMessage(HttpMethod.Get, url);
+        var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = new HttpResponseMessage(HttpStatusCode.OK);
         resp.Headers.TryAddWithoutValidation("Cache-Control", "max-age=1, must-revalidate");
         resp.Headers.Date = DateTimeOffset.UtcNow.AddSeconds(-100);
@@ -84,6 +84,7 @@ public sealed class CacheLookupStageTests : StreamTestBase
         {
             resp.Headers.TryAddWithoutValidation("ETag", etag);
         }
+
         if (lastModified.HasValue)
         {
             resp.Content.Headers.LastModified = lastModified;
@@ -95,10 +96,10 @@ public sealed class CacheLookupStageTests : StreamTestBase
         return store;
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-001: cache miss → request forwarded to Out0 unchanged")]
-    public async Task Should_ForwardToOut0_When_CacheMiss()
+    [Fact(DisplayName = "RFC9111-4-CLUP-001: cache miss → request forwarded to Out0 unchanged")]
+    public void Should_ForwardToOut0_When_CacheMiss()
     {
-        var store   = new HttpCacheStore();
+        var store = new HttpCacheStore();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
 
         var (miss, hit) = Run(store, null, 1, request);
@@ -107,10 +108,10 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-002: POST request → cache miss → forwarded to Out0")]
-    public async Task Should_ForwardToOut0_When_PostRequestHasCacheMiss()
+    [Fact(DisplayName = "RFC9111-4-CLUP-002: POST request → cache miss → forwarded to Out0")]
+    public void Should_ForwardToOut0_When_PostRequestHasCacheMiss()
     {
-        var store   = new HttpCacheStore();
+        var store = new HttpCacheStore();
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/resource");
 
         var (miss, hit) = Run(store, null, 1, request);
@@ -119,10 +120,10 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-003: fresh cache entry → cached response emitted on Out1")]
-    public async Task Should_EmitOnOut1_When_CacheEntryIsFresh()
+    [Fact(DisplayName = "RFC9111-4-CLUP-003: fresh cache entry → cached response emitted on Out1")]
+    public void Should_EmitOnOut1_When_CacheEntryIsFresh()
     {
-        var store   = StoreWithFreshEntry();
+        var store = StoreWithFreshEntry();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
 
         var (miss, hit) = Run(store, null, 1, request);
@@ -132,11 +133,11 @@ public sealed class CacheLookupStageTests : StreamTestBase
         miss.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-004: fresh cache entry → Out1 emits the exact stored response object")]
-    public async Task Should_EmitExactStoredResponseObject_When_CacheEntryIsFresh()
+    [Fact(DisplayName = "RFC9111-4-CLUP-004: fresh cache entry → Out1 emits the exact stored response object")]
+    public void Should_EmitExactStoredResponseObject_When_CacheEntryIsFresh()
     {
-        const string url  = "http://example.com/resource";
-        var req  = new HttpRequestMessage(HttpMethod.Get, url);
+        const string url = "http://example.com/resource";
+        var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = new HttpResponseMessage(HttpStatusCode.OK);
         resp.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
         resp.Headers.Date = DateTimeOffset.UtcNow;
@@ -151,10 +152,10 @@ public sealed class CacheLookupStageTests : StreamTestBase
         miss.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-005: stale must-revalidate with ETag → If-None-Match added on Out0")]
-    public async Task Should_AddIfNoneMatchHeader_When_StaleMustRevalidateWithETag()
+    [Fact(DisplayName = "RFC9111-4-CLUP-005: stale must-revalidate with ETag → If-None-Match added on Out0")]
+    public void Should_AddIfNoneMatchHeader_When_StaleMustRevalidateWithETag()
     {
-        var store   = StoreWithStaleEntry(etag: "\"v1\"");
+        var store = StoreWithStaleEntry(etag: "\"v1\"");
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
 
         var (miss, hit) = Run(store, null, 1, request);
@@ -165,12 +166,12 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-006: stale must-revalidate with Last-Modified → If-Modified-Since on Out0")]
-    public async Task Should_AddIfModifiedSinceHeader_When_StaleMustRevalidateWithLastModified()
+    [Fact(DisplayName = "RFC9111-4-CLUP-006: stale must-revalidate with Last-Modified → If-Modified-Since on Out0")]
+    public void Should_AddIfModifiedSinceHeader_When_StaleMustRevalidateWithLastModified()
     {
         var lastModified = DateTimeOffset.UtcNow.AddDays(-7);
-        var store        = StoreWithStaleEntry(etag: null, lastModified: lastModified);
-        var request      = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
+        var store = StoreWithStaleEntry(etag: null, lastModified: lastModified);
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
 
         var (miss, hit) = Run(store, null, 1, request);
 
@@ -179,11 +180,12 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-007: stale must-revalidate with no validators → plain request forwarded to Out0")]
-    public async Task Should_ForwardPlainRequestToOut0_When_MustRevalidateHasNoValidators()
+    [Fact(DisplayName =
+        "RFC9111-4-CLUP-007: stale must-revalidate with no validators → plain request forwarded to Out0")]
+    public void Should_ForwardPlainRequestToOut0_When_MustRevalidateHasNoValidators()
     {
         const string url = "http://example.com/resource";
-        var req  = new HttpRequestMessage(HttpMethod.Get, url);
+        var req = new HttpRequestMessage(HttpMethod.Get, url);
         var resp = new HttpResponseMessage(HttpStatusCode.OK);
         resp.Headers.TryAddWithoutValidation("Cache-Control", "max-age=1, must-revalidate");
         resp.Headers.Date = DateTimeOffset.UtcNow.AddSeconds(-100);
@@ -200,10 +202,10 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-008: request no-cache → forces MustRevalidate even for fresh entry")]
-    public async Task Should_ForceMustRevalidate_When_RequestHasNoCache()
+    [Fact(DisplayName = "RFC9111-4-CLUP-008: request no-cache → forces MustRevalidate even for fresh entry")]
+    public void Should_ForceMustRevalidate_When_RequestHasNoCache()
     {
-        var store   = StoreWithFreshEntry();
+        var store = StoreWithFreshEntry();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
         request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
 
@@ -213,12 +215,12 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-009: two sequential misses → both forwarded to Out0")]
-    public async Task Should_ForwardBothToOut0_When_TwoSequentialMisses()
+    [Fact(DisplayName = "RFC9111-4-CLUP-009: two sequential misses → both forwarded to Out0")]
+    public void Should_ForwardBothToOut0_When_TwoSequentialMisses()
     {
         var store = new HttpCacheStore();
-        var req1  = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
-        var req2  = new HttpRequestMessage(HttpMethod.Get, "http://example.com/b");
+        var req1 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
+        var req2 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/b");
 
         var (miss, hit) = Run(store, null, 2, req1, req2);
 
@@ -227,22 +229,12 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-010: two sequential hits → both served on Out1")]
-    public async Task Should_ServeBothFromOut1_When_TwoSequentialHits()
+    [Fact(DisplayName = "RFC9111-4-CLUP-010: two sequential hits → both served on Out1")]
+    public void Should_ServeBothFromOut1_When_TwoSequentialHits()
     {
         const string url1 = "http://example.com/a";
         const string url2 = "http://example.com/b";
         var store = new HttpCacheStore();
-
-        void Seed(string url)
-        {
-            var r = new HttpRequestMessage(HttpMethod.Get, url);
-            var s = new HttpResponseMessage(HttpStatusCode.OK);
-            s.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
-            s.Headers.Date = DateTimeOffset.UtcNow;
-            store.Put(r, s, Array.Empty<byte>(),
-                DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
-        }
 
         Seed(url1);
         Seed(url2);
@@ -254,17 +246,28 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNext();
         hit.ExpectNext();
         miss.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        return;
+
+        void Seed(string url)
+        {
+            var r = new HttpRequestMessage(HttpMethod.Get, url);
+            var s = new HttpResponseMessage(HttpStatusCode.OK);
+            s.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
+            s.Headers.Date = DateTimeOffset.UtcNow;
+            store.Put(r, s, Array.Empty<byte>(),
+                DateTimeOffset.UtcNow.AddSeconds(-1), DateTimeOffset.UtcNow);
+        }
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-011: mixed miss then hit → miss on Out0, hit on Out1")]
-    public async Task Should_RouteMissToOut0AndHitToOut1_When_RequestsAreMixed()
+    [Fact(DisplayName = "RFC9111-4-CLUP-011: mixed miss then hit → miss on Out0, hit on Out1")]
+    public void Should_RouteMissToOut0AndHitToOut1_When_RequestsAreMixed()
     {
         const string urlMiss = "http://example.com/miss";
-        const string urlHit  = "http://example.com/hit";
+        const string urlHit = "http://example.com/hit";
 
-        var store  = StoreWithFreshEntry(urlHit);
+        var store = StoreWithFreshEntry(urlHit);
         var reqMiss = new HttpRequestMessage(HttpMethod.Get, urlMiss);
-        var reqHit  = new HttpRequestMessage(HttpMethod.Get, urlHit);
+        var reqHit = new HttpRequestMessage(HttpMethod.Get, urlHit);
 
         var (miss, hit) = Run(store, null, 2, reqMiss, reqHit);
 
@@ -272,10 +275,11 @@ public sealed class CacheLookupStageTests : StreamTestBase
         Assert.Equal(HttpStatusCode.OK, hit.ExpectNext().StatusCode);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CLUP-012: null policy → defaults to CachePolicy.Default, fresh entries served from cache")]
-    public async Task Should_UseDefaultPolicyAndServeFreshEntriesFromCache_When_PolicyIsNull()
+    [Fact(DisplayName =
+        "RFC9111-4-CLUP-012: null policy → defaults to CachePolicy.Default, fresh entries served from cache")]
+    public void Should_UseDefaultPolicyAndServeFreshEntriesFromCache_When_PolicyIsNull()
     {
-        var store   = StoreWithFreshEntry();
+        var store = StoreWithFreshEntry();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
 
         var (miss, hit) = Run(store, null, 1, request);

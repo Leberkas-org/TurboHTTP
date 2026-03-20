@@ -60,7 +60,7 @@ public sealed class AsyncBoundaryTests : TestKit
     [Fact(Timeout = 15_000, DisplayName = "ABND-001: HTTP/1.1 request completes with async boundary islands")]
     public async Task Should_CompleteRequest_When_Http11UsesAsyncBoundaryIslands()
     {
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -81,7 +81,7 @@ public sealed class AsyncBoundaryTests : TestKit
     [Fact(Timeout = 15_000, DisplayName = "ABND-002: HTTP/1.0 request completes with async boundary islands")]
     public async Task Should_CompleteRequest_When_Http10UsesAsyncBoundaryIslands()
     {
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -102,7 +102,7 @@ public sealed class AsyncBoundaryTests : TestKit
     [Fact(Timeout = 15_000, DisplayName = "ABND-003: Multiple sequential requests complete with async boundaries")]
     public async Task Should_CompleteAllRequests_When_MultipleRequestsSentWithAsyncBoundaries()
     {
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -128,7 +128,7 @@ public sealed class AsyncBoundaryTests : TestKit
             .WithInputBuffer(initialSize: 4, maxSize: 16);
         var materializer = Sys.Materializer(settings: settings);
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -149,7 +149,7 @@ public sealed class AsyncBoundaryTests : TestKit
     public async Task Should_CompleteRequest_When_FullPipelineWithOptionsAndAsyncBoundaries()
     {
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -170,7 +170,7 @@ public sealed class AsyncBoundaryTests : TestKit
     [Fact(Timeout = 15_000, DisplayName = "ABND-006: CreateFlow with null options works with async boundaries")]
     public async Task Should_CompleteRequest_When_CreateFlowCalledWithNullOptionsAndAsyncBoundaries()
     {
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),

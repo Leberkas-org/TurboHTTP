@@ -524,7 +524,7 @@ public sealed class StageOrderingTests : EngineTestBase
         // The response should arrive successfully, proving the pipeline wired correctly
         // with CookieInjection before CacheLookup (empty cache → miss → engine → response).
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -549,7 +549,7 @@ public sealed class StageOrderingTests : EngineTestBase
         // all three islands: pre-processing → engine → post-processing.
         // ConnectionReuse (engine island) processes before CookieStorage/CacheStorage (post-processing).
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -583,7 +583,7 @@ public sealed class StageOrderingTests : EngineTestBase
         compressedBody.CopyTo(responseBytes, headerBytes.Length);
 
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(() => responseBytes),
             () => Http11Flow(() => responseBytes),
@@ -620,7 +620,7 @@ public sealed class StageOrderingTests : EngineTestBase
         }
 
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(ResponseFactory),
             () => Http11Flow(ResponseFactory),
@@ -649,7 +649,7 @@ public sealed class StageOrderingTests : EngineTestBase
         // It should pass through RetryStage → Merge → RedirectStage to the final output.
         // This verifies the full post-processing chain: CookieStorage → CacheStorage → Retry → Merge → Redirect.
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),

@@ -49,7 +49,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-001: All flags false — HTTP/1.1 request routes correctly")]
     public async Task Should_RouteHttp11Correctly_When_AllFlagsFalse()
     {
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -83,7 +83,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
         // We can't easily pass a pre-built cookie jar through TurboClientOptions (it creates its own),
         // so we validate indirectly: with EnableCookies = true the pipeline MUST complete without error.
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(ResponseFactory),
             () => Http11Flow(ResponseFactory),
@@ -115,7 +115,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
         var response11 = BuildGzipResponse(compressedBody);
 
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(() => response11),
             () => Http11Flow(() => response11),
@@ -160,7 +160,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     public async Task Should_AssemblePipelineWithoutError_When_EnableCachingIsTrue()
     {
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -183,7 +183,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     {
         // A non-retryable response (200) so the request goes through once
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -205,7 +205,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     public async Task Should_PassThroughNonRedirectResponse_When_EnableRedirectHandlingIsTrue()
     {
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -229,7 +229,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     {
         var options = new TurboClientOptions();
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
@@ -250,7 +250,7 @@ public sealed class EnginePipelineWiringTests : EngineTestBase
     [Fact(Timeout = 10_000, DisplayName = "EPIPE-008: CreateFlow with null options routes HTTP/1.1 correctly")]
     public async Task Should_RouteHttp11Correctly_When_OptionsIsNull()
     {
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),

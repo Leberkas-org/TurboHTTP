@@ -83,7 +83,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
     public async Task Should_CompleteViaFeedbackBuffer_When_Single301RedirectOccurs()
     {
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
 
         var flow = engine.CreateFlow(
             () => SequentialFlow(Ok200()),
@@ -110,7 +110,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         {
             RedirectPolicy = new RedirectPolicy { MaxRedirects = 10 }
         };
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
 
         var flow = engine.CreateFlow(
             () => SequentialFlow(Ok200()),
@@ -141,7 +141,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         {
             RetryPolicy = new RetryPolicy { MaxRetries = 3, RespectRetryAfter = false }
         };
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
 
         var flow = engine.CreateFlow(
             () => SequentialFlow(Ok200()),
@@ -168,7 +168,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         {
             RetryPolicy = new RetryPolicy { MaxRetries = 3, RespectRetryAfter = false }
         };
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
 
         var flow = engine.CreateFlow(
             () => SequentialFlow(Ok200()),
@@ -192,7 +192,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
     public async Task Should_PreserveOriginalMethod_When_307RedirectViaFeedbackLoop()
     {
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
 
         var flow = engine.CreateFlow(
             () => SequentialFlow(Ok200()),
@@ -216,7 +216,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
     public async Task Should_PassThroughDirectly_When_ResponseIsNonRetryable()
     {
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
 
         var flow = engine.CreateFlow(
             () => SequentialFlow(Ok200()),

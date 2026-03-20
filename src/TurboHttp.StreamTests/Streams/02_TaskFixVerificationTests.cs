@@ -16,7 +16,7 @@ using TurboHttp.Streams.Stages;
 namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
-/// Regression tests that verify fixes for async Task-related bugs in stage interaction.
+/// Regression tests that verify fixes for void-related bugs in stage interaction.
 /// Guards against re-introduction of known concurrency bugs caused by improper Task cancellation handling.
 /// </summary>
 /// <remarks>
@@ -25,9 +25,8 @@ namespace TurboHttp.StreamTests.Streams;
 /// </remarks>
 public sealed class TaskFixVerificationTests : StreamTestBase
 {
-    [Fact(Timeout = 10_000,
-        DisplayName = "TASK001-VFY-001: Retry attempt count stored in HttpRequestMessage.Options")]
-    public async Task Should_StoreRetryAttemptCountInOptions_When_RetryOccurs()
+    [Fact(DisplayName = "TASK001-VFY-001: Retry attempt count stored in HttpRequestMessage.Options")]
+    public void Should_StoreRetryAttemptCountInOptions_When_RetryOccurs()
     {
         // After a retry, the original request's Options should contain the updated attempt count.
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -53,9 +52,8 @@ public sealed class TaskFixVerificationTests : StreamTestBase
             new HttpRequestOptionsKey<int>("TurboHttp.RetryAttemptCount"), out _));
     }
 
-    [Fact(Timeout = 10_000,
-        DisplayName = "TASK001-VFY-003: Pre-seeded attempt count 2 on MaxRetries=3 still retries")]
-    public async Task Should_StillRetry_When_PreSeededAttemptCountBelowMaxRetries()
+    [Fact(DisplayName = "TASK001-VFY-003: Pre-seeded attempt count 2 on MaxRetries=3 still retries")]
+    public void Should_StillRetry_When_PreSeededAttemptCountBelowMaxRetries()
     {
         var policy = new RetryPolicy { MaxRetries = 3 };
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -72,9 +70,8 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         Assert.Same(request, retryRequest);
     }
 
-    [Fact(Timeout = 10_000,
-        DisplayName = "TASK001-VFY-004: Pre-seeded attempt count at MaxRetries is forwarded as final")]
-    public async Task Should_ForwardAsFinal_When_PreSeededAttemptCountAtMaxRetries()
+    [Fact(DisplayName = "TASK001-VFY-004: Pre-seeded attempt count at MaxRetries is forwarded as final")]
+    public void Should_ForwardAsFinal_When_PreSeededAttemptCountAtMaxRetries()
     {
         var policy = new RetryPolicy { MaxRetries = 3 };
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
@@ -209,8 +206,17 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     jar.ProcessResponse(uri, resp);
                     await Task.Delay(1, cts.Token);
                 }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex) { lock (exceptions) { exceptions.Add(ex); } }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lock (exceptions)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
             }
         });
 
@@ -225,8 +231,17 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     jar.AddCookiesToRequest(uri, ref req);
                     await Task.Delay(1, cts.Token);
                 }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex) { lock (exceptions) { exceptions.Add(ex); } }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lock (exceptions)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
             }
         });
 
@@ -260,8 +275,17 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     _ = jar.Count; // concurrent read
                     await Task.Delay(1, cts.Token);
                 }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex) { lock (exceptions) { exceptions.Add(ex); } }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lock (exceptions)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
             }
         })).ToArray();
 
@@ -292,8 +316,17 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     jar.ProcessResponse(uri, resp);
                     await Task.Delay(1, cts.Token);
                 }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex) { lock (exceptions) { exceptions.Add(ex); } }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lock (exceptions)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
             }
         });
 
@@ -306,8 +339,17 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     jar.Clear();
                     await Task.Delay(5, cts.Token);
                 }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex) { lock (exceptions) { exceptions.Add(ex); } }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    lock (exceptions)
+                    {
+                        exceptions.Add(ex);
+                    }
+                }
             }
         });
 

@@ -64,7 +64,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
             .WithInputBuffer(initialSize: 4, maxSize: 16);
         var materializer = Sys.Materializer(settings: settings);
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -89,7 +89,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
             .WithInputBuffer(initialSize: 4, maxSize: 16);
         var materializer = Sys.Materializer(settings: settings);
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -115,7 +115,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
             .WithInputBuffer(initialSize: 4, maxSize: 16);
         var materializer = Sys.Materializer(settings: settings);
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -145,7 +145,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
         var materializer = Sys.Materializer(settings: settings);
 
         var options = new TurboClientOptions();
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -173,7 +173,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
             .WithInputBuffer(initialSize: 4, maxSize: 16);
         var materializer = Sys.Materializer(settings: settings);
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
@@ -198,7 +198,7 @@ public sealed class MaterializerBufferTuningTests : TestKit
         // This ensures backward compatibility for tests and external consumers.
         var materializer = Sys.Materializer();
 
-        var engine = new TurboHttp.Streams.Engine();
+        var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),

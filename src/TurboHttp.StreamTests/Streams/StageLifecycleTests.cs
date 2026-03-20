@@ -132,7 +132,7 @@ public sealed class StageLifecycleTests : StreamTestBase
         // must cause Http11Decoder to throw HttpDecoderException(InvalidStatusLine).
         // The decoder stage catches it, calls FailStage(), and the stream fails.
         // We verify the inner exception is exactly HttpDecoderException.
-        IInputItem garbage = Chunk("GARBAGE DATA\r\n\r\n");
+        var garbage = Chunk("GARBAGE DATA\r\n\r\n");
 
         var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
             await Source.Single(garbage)

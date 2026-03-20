@@ -23,17 +23,17 @@ public sealed class RetryStageTests : StreamTestBase
     /// Source is concatenated with Source.Never to prevent premature completion.
     /// </summary>
     private (TestSubscriber.ManualProbe<HttpResponseMessage> final,
-             TestSubscriber.ManualProbe<HttpRequestMessage> retry) Run(
-        RetryStage stage,
-        int demandEach,
-        params HttpResponseMessage[] responses)
+        TestSubscriber.ManualProbe<HttpRequestMessage> retry) Run(
+            RetryStage stage,
+            int demandEach,
+            params HttpResponseMessage[] responses)
     {
         var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
         var probeRetry = this.CreateManualSubscriberProbe<HttpRequestMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
         {
-            var s   = b.Add(stage);
+            var s = b.Add(stage);
             var src = b.Add(Source.From(responses).Concat(Source.Never<HttpResponseMessage>()));
 
             b.From(src).To(s.In);
@@ -71,8 +71,8 @@ public sealed class RetryStageTests : StreamTestBase
         return response;
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-001: 200 OK on GET → forwarded on Out0 (final)")]
-    public async Task Should_ForwardOnOut0_When_GetReturns200()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-001: 200 OK on GET → forwarded on Out0 (final)")]
+    public void Should_ForwardOnOut0_When_GetReturns200()
     {
         var response = BuildResponse(HttpStatusCode.OK);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -81,8 +81,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-002: 404 Not Found → forwarded on Out0 (final)")]
-    public async Task Should_ForwardOnOut0_When_ResponseIs404()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-002: 404 Not Found → forwarded on Out0 (final)")]
+    public void Should_ForwardOnOut0_When_ResponseIs404()
     {
         var response = BuildResponse(HttpStatusCode.NotFound);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -91,8 +91,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-003: 500 Internal Server Error → forwarded on Out0 (not retryable)")]
-    public async Task Should_ForwardOnOut0_When_ResponseIs500()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-003: 500 Internal Server Error → forwarded on Out0 (not retryable)")]
+    public void Should_ForwardOnOut0_When_ResponseIs500()
     {
         var response = BuildResponse(HttpStatusCode.InternalServerError);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -101,8 +101,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-004: 408 on GET → retry request emitted on Out1")]
-    public async Task Should_EmitRetryOnOut1_When_GetReturns408()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-004: 408 on GET → retry request emitted on Out1")]
+    public void Should_EmitRetryOnOut1_When_GetReturns408()
     {
         var response = BuildResponse(HttpStatusCode.RequestTimeout, HttpMethod.Get);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -112,8 +112,8 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-005: 503 on GET → retry request emitted on Out1")]
-    public async Task Should_EmitRetryOnOut1_When_GetReturns503()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-005: 503 on GET → retry request emitted on Out1")]
+    public void Should_EmitRetryOnOut1_When_GetReturns503()
     {
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable, HttpMethod.Get);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -123,8 +123,8 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-006: 408 on POST → forwarded on Out0 (not idempotent)")]
-    public async Task Should_ForwardOnOut0_When_PostReturns408()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-006: 408 on POST → forwarded on Out0 (not idempotent)")]
+    public void Should_ForwardOnOut0_When_PostReturns408()
     {
         var response = BuildResponse(HttpStatusCode.RequestTimeout, HttpMethod.Post);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -133,8 +133,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-007: 503 on PATCH → forwarded on Out0 (not idempotent)")]
-    public async Task Should_ForwardOnOut0_When_PatchReturns503()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-007: 503 on PATCH → forwarded on Out0 (not idempotent)")]
+    public void Should_ForwardOnOut0_When_PatchReturns503()
     {
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable, HttpMethod.Patch);
         var (final, retry) = Run(new RetryStage(), 1, response);
@@ -143,8 +143,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-008: retry limit of 1 → second 408 forwarded as final on Out0")]
-    public async Task Should_ForwardOnOut0_When_RetryLimitExhausted()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-008: retry limit of 1 → second 408 forwarded as final on Out0")]
+    public void Should_ForwardOnOut0_When_RetryLimitExhausted()
     {
         var policy = new RetryPolicy { MaxRetries = 1 };
         // With MaxRetries = 1 and attemptCount starting at 1, the first 408 already fails the
@@ -156,8 +156,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-009: response with null RequestMessage → passes through on Out0")]
-    public async Task Should_ForwardOnOut0_When_RequestMessageIsNull()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-009: response with null RequestMessage → passes through on Out0")]
+    public void Should_ForwardOnOut0_When_RequestMessageIsNull()
     {
         // No RequestMessage — evaluator cannot determine idempotency.
         var response = new HttpResponseMessage(HttpStatusCode.RequestTimeout);
@@ -168,8 +168,8 @@ public sealed class RetryStageTests : StreamTestBase
         retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-010: retry request on Out1 is the original RequestMessage")]
-    public async Task Should_RetryWithOriginalRequestMessage_When_EmittingRetry()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-010: retry request on Out1 is the original RequestMessage")]
+    public void Should_RetryWithOriginalRequestMessage_When_EmittingRetry()
     {
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data");
         var response = new HttpResponseMessage(HttpStatusCode.RequestTimeout)
@@ -184,8 +184,8 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-011: Retry-After: 0 on 503 GET → immediate retry on Out1")]
-    public async Task Should_RetryImmediately_When_RetryAfterIsZero()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-011: Retry-After: 0 on 503 GET → immediate retry on Out1")]
+    public void Should_RetryImmediately_When_RetryAfterIsZero()
     {
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable, HttpMethod.Get,
             retryAfterSeconds: "0");
@@ -197,8 +197,8 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-012: null policy constructor → uses RetryPolicy.Default")]
-    public async Task Should_UseDefaultRetryPolicy_When_PolicyIsNull()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-012: null policy constructor → uses RetryPolicy.Default")]
+    public void Should_UseDefaultRetryPolicy_When_PolicyIsNull()
     {
         var stage = new RetryStage(null);
         var response = BuildResponse(HttpStatusCode.RequestTimeout, HttpMethod.Delete);
@@ -211,12 +211,12 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Theory(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-013: idempotent methods retry on 408")]
+    [Theory(DisplayName = "RFC9110-9.2.2-RTRY-013: idempotent methods retry on 408")]
     [InlineData("PUT")]
     [InlineData("DELETE")]
     [InlineData("HEAD")]
     [InlineData("OPTIONS")]
-    public async Task Should_RetryOn408_When_MethodIsIdempotent(string methodName)
+    public void Should_RetryOn408_When_MethodIsIdempotent(string methodName)
     {
         var method = new HttpMethod(methodName);
         var response = BuildResponse(HttpStatusCode.RequestTimeout, method);
@@ -228,8 +228,8 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-014: Request B starts at attempt 1 after Request A retried 2x")]
-    public async Task Should_StartFreshRetryBudget_When_RequestBIsAfterRequestA()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-014: Request B starts at attempt 1 after Request A retried 2x")]
+    public void Should_StartFreshRetryBudget_When_RequestBIsAfterRequestA()
     {
         // MaxRetries = 3 means attempts 1 and 2 are retried, attempt 3 is final.
         // Request A: two 503 responses → retried twice (attempts 1, 2).
@@ -261,8 +261,8 @@ public sealed class RetryStageTests : StreamTestBase
         final.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-015: Interleaved requests each get independent retry budgets")]
-    public async Task Should_HaveIndependentRetryBudgets_When_RequestsAreInterleaved()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-015: Interleaved requests each get independent retry budgets")]
+    public void Should_HaveIndependentRetryBudgets_When_RequestsAreInterleaved()
     {
         var policy = new RetryPolicy { MaxRetries = 2 };
 
@@ -295,8 +295,8 @@ public sealed class RetryStageTests : StreamTestBase
         Assert.Same(responseB2, finalB);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-016: Retry-After on Request A does not affect Request B's attempt count")]
-    public async Task Should_NotAffectOtherRequests_When_RetryAfterTimerIsRunning()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-016: Retry-After on Request A does not affect Request B's attempt count")]
+    public void Should_NotAffectOtherRequests_When_RetryAfterTimerIsRunning()
     {
         // Request A has Retry-After: 0 (immediate). Request B also gets 503.
         // Both should be retried independently — B at attempt 1, not affected by A's state.
@@ -389,8 +389,8 @@ public sealed class RetryStageTests : StreamTestBase
             probeRetry);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-017: Final response passes through while Retry-After timer is running")]
-    public async Task Should_PassFinalResponseThrough_When_RetryAfterTimerIsRunning()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-017: Final response passes through while Retry-After timer is running")]
+    public void Should_PassFinalResponseThrough_When_RetryAfterTimerIsRunning()
     {
         // Request A gets 503 with Retry-After: 10 (long delay).
         // Request B gets 200 OK — should pass through on Out0 immediately.
@@ -417,8 +417,8 @@ public sealed class RetryStageTests : StreamTestBase
         Assert.Same(responseB, finalResponse);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-018: Multiple immediate retries drain sequentially on demand")]
-    public async Task Should_DrainRetries_When_MultipleImmediateRetries()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-018: Multiple immediate retries drain sequentially on demand")]
+    public void Should_DrainRetries_When_MultipleImmediateRetries()
     {
         var stage = new RetryStage();
         var h = RunManual(stage, finalDemand: 5, retryDemand: 5);
@@ -449,8 +449,9 @@ public sealed class RetryStageTests : StreamTestBase
         h.FinalProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-019: Stage completes after upstream finish and all pending retries drained")]
-    public async Task Should_CompleteAfterDrain_When_UpstreamFinishes()
+    [Fact(DisplayName =
+        "RFC9110-9.2.2-RTRY-019: Stage completes after upstream finish and all pending retries drained")]
+    public void Should_CompleteAfterDrain_When_UpstreamFinishes()
     {
         var stage = new RetryStage();
         var h = RunManual(stage, finalDemand: 5, retryDemand: 5);
@@ -472,8 +473,8 @@ public sealed class RetryStageTests : StreamTestBase
         h.RetryProbe.ExpectComplete();
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-020: Mixed final and retry responses interleave correctly")]
-    public async Task Should_RouteCorrectly_When_FinalAndRetryResponsesAreInterleaved()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-020: Mixed final and retry responses interleave correctly")]
+    public void Should_RouteCorrectly_When_FinalAndRetryResponsesAreInterleaved()
     {
         var stage = new RetryStage();
         var h = RunManual(stage, finalDemand: 5, retryDemand: 5);
@@ -503,8 +504,8 @@ public sealed class RetryStageTests : StreamTestBase
         Assert.Same(responseD, h.FinalProbe.ExpectNext());
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2.2-RTRY-021: Parallel Retry-After timers fire independently")]
-    public async Task Should_FireIndependently_When_ParallelRetryAfterTimersSet()
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-021: Parallel Retry-After timers fire independently")]
+    public void Should_FireIndependently_When_ParallelRetryAfterTimersSet()
     {
         // Two requests with short Retry-After delays — both should fire their timers independently.
         var stage = new RetryStage();
