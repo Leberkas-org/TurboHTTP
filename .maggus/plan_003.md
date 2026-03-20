@@ -428,10 +428,10 @@ private static ReadOnlyMemory<byte> ReadBody(HttpContent? content)
 Check `Http11Encoder` for same pattern.
 
 **Acceptance Criteria:**
-- [ ] No `.Result` or `.Wait()` call remains in any encoder
-- [ ] Unit test verifies encoding with streaming content works correctly
-- [ ] All existing RFC1945/RFC9112 encoder tests pass
-- [ ] Build compiles with 0 errors
+- [x] No `.Result` or `.Wait()` call remains in any encoder
+- [x] Unit test verifies encoding with streaming content works correctly
+- [x] All existing RFC1945/RFC9112 encoder tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

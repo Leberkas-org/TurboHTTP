@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using TurboHttp.Protocol.RFC1945;
 
@@ -300,5 +301,28 @@ public sealed class Http10EncoderBodyTests
 
         Assert.True(sepIndex > 0, "Header-body separator \\r\\n\\r\\n must be present");
         Assert.Equal(body, raw[(sepIndex + 4)..]);
+    }
+
+    [Fact(DisplayName = "RFC1945-7.2-BD-016: Streaming content body encoded without .Result deadlock")]
+    public void Should_EncodeStreamingContent_When_ContentIsReadableStream()
+    {
+        const string bodyText = "streaming body content";
+        var bodyBytes = Encoding.ASCII.GetBytes(bodyText);
+
+        // Use StreamContent to simulate a streaming (non-buffered) HttpContent
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
+        {
+            Content = new StreamContent(new MemoryStream(bodyBytes))
+        };
+
+        var buffer = MakeBuffer();
+        var written = Http10Encoder.Encode(request, ref buffer);
+        var raw = buffer.Span[..written];
+
+        var separator = "\r\n\r\n"u8.ToArray();
+        var sepIndex = FindSequence(raw, separator);
+        var actualBody = Encoding.ASCII.GetString(raw[(sepIndex + 4)..]);
+
+        Assert.Equal(bodyText, actualBody);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -63,8 +64,10 @@ public static class Http10Encoder
             return ReadOnlyMemory<byte>.Empty;
         }
 
-        var bytes = content.ReadAsByteArrayAsync().Result;
-        return bytes.AsMemory();
+        using var stream = content.ReadAsStream();
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return ms.ToArray().AsMemory();
     }
 
     private static int WriteAscii(Span<byte> destination, string value)
