@@ -246,12 +246,12 @@ The following RFC supersession rules apply:
 5. `src/TurboHttp/Streams/Stages/Http1XCorrelationStage.cs`
 
 **Acceptance Criteria:**
-- [ ] RFC 1945 references in HTTP/1.0 stages are correct
-- [ ] RFC 9112 references in HTTP/1.1 stages are correct
-- [ ] No outdated RFC 7230 references in stages
-- [ ] Stage descriptions match current behaviour
-- [ ] Remove redundant comments
-- [ ] `dotnet build` succeeds
+- [x] RFC 1945 references in HTTP/1.0 stages are correct
+- [x] RFC 9112 references in HTTP/1.1 stages are correct
+- [x] No outdated RFC 7230 references in stages
+- [x] Stage descriptions match current behaviour
+- [x] Remove redundant comments
+- [x] `dotnet build` succeeds
 
 ---
 
