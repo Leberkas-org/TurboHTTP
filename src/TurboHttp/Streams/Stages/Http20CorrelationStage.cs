@@ -33,6 +33,9 @@ internal sealed class
         private readonly Dictionary<int, HttpRequestMessage> _pending = new();
         private readonly Dictionary<int, HttpResponseMessage> _waiting = new();
 
+        private bool _requestUpstreamFinished;
+        private bool _responseUpstreamFinished;
+
         public Logic(Http20CorrelationStage stage) : base(stage.Shape)
         {
             SetHandler(stage._requestIn,
@@ -48,7 +51,11 @@ internal sealed class
                         Pull(stage._requestIn);
                     }
                 },
-                onUpstreamFinish: TryComplete);
+                onUpstreamFinish: () =>
+                {
+                    _requestUpstreamFinished = true;
+                    TryComplete();
+                });
 
             SetHandler(stage._responseIn,
                 onPush: () =>
@@ -63,7 +70,11 @@ internal sealed class
                         Pull(stage._responseIn);
                     }
                 },
-                onUpstreamFinish: TryComplete);
+                onUpstreamFinish: () =>
+                {
+                    _responseUpstreamFinished = true;
+                    TryComplete();
+                });
 
             SetHandler(stage._out,
                 onPull: () =>
@@ -105,7 +116,7 @@ internal sealed class
 
         private void TryComplete()
         {
-            if (_pending.Count == 0 && _waiting.Count == 0)
+            if (_requestUpstreamFinished && _responseUpstreamFinished)
             {
                 CompleteStage();
             }

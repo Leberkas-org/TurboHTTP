@@ -145,16 +145,43 @@ public sealed class Http20ConnectionStageSettingsTests : StreamTestBase
         Assert.True(((SettingsFrame)serverBound[0]).IsAck);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-003: INITIAL_WINDOW_SIZE exceeded causes stage failure")]
-    public async Task Should_Cause_Failure_When_Initial_Window_Size_Exceeded()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-003: Inbound DATA exceeding stream window is logged and stream survives")]
+    public async Task Should_Survive_When_Inbound_Data_Exceeds_Stream_Window()
     {
         // Default stream recv window is 65535. Send 65536 bytes to exceed it.
-        // Server SETTINGS INITIAL_WINDOW_SIZE affects the client's SEND window (not recv),
-        // so we test inbound data exceeding the default recv window directly.
+        // Under "Stream Never Dies", the stage must log the violation and continue — not fault.
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
-        // The stage should fail — either the materialized task faults or we get an exception
-        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data));
+        var downstreamSink = Sink.Seq<Http2Frame>();
+        var serverBoundSink = Sink.Seq<Http2Frame>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink,
+                (m1, m2) => (m1, m2),
+                (b, dsSink, sbSink) =>
+                {
+                    var stage = b.Add(new Http20ConnectionStage());
+                    var serverSource = b.Add(Source.Single<Http2Frame>(data));
+                    var requestSource = b.Add(Source.Never<Http2Frame>());
+                    var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
+
+                    b.From(serverSource).To(stage.ServerIn);
+                    b.From(stage.AppOut).To(dsSink);
+                    b.From(requestSource).To(stage.AppIn);
+                    b.From(stage.ServerOut).To(sbSink);
+                    b.From(stage.OutletSignal).To(signalSink);
+
+                    return ClosedShape.Instance;
+                }));
+
+        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
+
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
+
+        Assert.False(downstreamTask.IsFaulted,
+            "Downstream task must not fault when inbound stream window is exceeded");
+        Assert.False(serverBoundTask.IsFaulted,
+            "ServerBound task must not fault when inbound stream window is exceeded");
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.5-20CS-004: SETTINGS frame is forwarded downstream")]

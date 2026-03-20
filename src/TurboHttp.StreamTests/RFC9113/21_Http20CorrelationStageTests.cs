@@ -183,19 +183,26 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
         }
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-006: Stage terminates on empty dictionaries after UpstreamFinish")]
-    public async Task Should_Terminate_When_Dicts_Empty_After_Finish()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-006: Stage stays alive after correlation when upstreams remain open")]
+    public async Task Should_StayAlive_When_Dicts_Empty_But_Upstream_Open()
     {
         var request = MakeRequest();
         var response = OkResponse();
+
+        // Sources emit one element each but never complete — stage must NOT self-complete
+        // when dictionaries drain to empty. Completion only valid when both upstreams finish.
+        var requestSource = Source.Single((request, 1))
+            .Concat(Source.Never<(HttpRequestMessage, int)>());
+        var responseSource = Source.Single((response, 1))
+            .Concat(Source.Never<(HttpResponseMessage, int)>());
 
         var sink = Sink.Seq<HttpResponseMessage>();
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
             var corr = b.Add(new Http20CorrelationStage());
-            var reqSrc = b.Add(Source.Single((request, 1)));
-            var resSrc = b.Add(Source.Single((response, 1)));
+            var reqSrc = b.Add(requestSource);
+            var resSrc = b.Add(responseSource);
 
             b.From(reqSrc).To(corr.In0);
             b.From(resSrc).To(corr.In1);
@@ -206,11 +213,8 @@ public sealed class Http20CorrelationStageTests : StreamTestBase
 
         var task = graph.Run(Materializer);
 
-        // The stream should complete without timeout, proving TryComplete fires correctly
-        var results = await task.WaitAsync(TimeSpan.FromSeconds(5));
-
-        Assert.Single(results);
-        Assert.Same(request, results[0].RequestMessage);
+        // Stage must NOT complete even though dictionaries are empty — upstreams are still open.
+        await Assert.ThrowsAsync<TimeoutException>(() => task.WaitAsync(TimeSpan.FromMilliseconds(500)));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20CR-007: Request(1), Response(3), Request(3) → correlation immediately on match")]

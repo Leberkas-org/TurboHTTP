@@ -1,9 +1,7 @@
-using System.Collections.Immutable;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages;
 
@@ -56,66 +54,6 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
         return (downstream, serverBound);
     }
 
-    /// <summary>
-    /// Runs the Http20ConnectionStage where a GOAWAY arrives from the server,
-    /// then a client request frame is pushed. Expects the stage to fail.
-    /// </summary>
-    private RunnableGraph<(Task<IImmutableList<Http2Frame>>, Task<IImmutableList<Http2Frame>>)>
-        BuildGraphWithRequestAfterGoAway(Http2Frame goAwayFrame, Http2Frame requestFrame)
-    {
-        var downstreamSink = Sink.Seq<Http2Frame>();
-        var serverBoundSink = Sink.Seq<Http2Frame>();
-
-        return RunnableGraph.FromGraph(
-            GraphDsl.Create(downstreamSink, serverBoundSink,
-                (m1, m2) => (m1, m2),
-                (b, dsSink, sbSink) =>
-                {
-                    var stage = b.Add(new Http20ConnectionStage());
-                    var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
-
-                    // Server sends GOAWAY then closes
-                    var serverSource = b.Add(
-                        Source.Single(goAwayFrame).Concat(Source.Never<Http2Frame>()));
-
-                    // Client sends a request after a delay (to ensure GOAWAY is processed first)
-                    var requestSource = b.Add(
-                        Source.Single(requestFrame)
-                            .InitialDelay(TimeSpan.FromMilliseconds(200))
-                            .Concat(Source.Never<Http2Frame>()));
-
-                    b.From(serverSource).To(stage.ServerIn);
-                    b.From(stage.AppOut).To(dsSink);
-                    b.From(requestSource).To(stage.AppIn);
-                    b.From(stage.ServerOut).To(sbSink);
-                    b.From(stage.OutletSignal).To(signalSink);
-
-                    return ClosedShape.Instance;
-                }));
-    }
-
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-001: GOAWAY received sets goAwayReceived flag (verified by rejecting subsequent request)")]
-    public async Task Should_Set_GoAway_Flag_When_GoAway_Received()
-    {
-        // We verify the flag is set indirectly: after GOAWAY, pushing a request
-        // must cause the stage to fail with Http2Exception.
-        var goAway = new GoAwayFrame(lastStreamId: 1, Http2ErrorCode.NoError);
-        var request = new HeadersFrame(streamId: 3, headerBlock: new byte[] { 0x82 }, endHeaders: true, endStream: true);
-
-        var graph = BuildGraphWithRequestAfterGoAway(goAway, request);
-        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
-
-        // The stage should fail — either task will throw
-        var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
-        {
-            await Task.WhenAll(
-                downstreamTask.WaitAsync(TimeSpan.FromSeconds(5)),
-                serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5)));
-        });
-
-        Assert.Contains("GOAWAY", ex.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-002: GOAWAY frame is forwarded downstream")]
     public async Task Should_Forward_GoAway_Downstream()
     {
@@ -130,24 +68,53 @@ public sealed class Http20ConnectionStageGoAwayTests : StreamTestBase
         Assert.Equal(new byte[] { 0x01, 0x02 }, goAwayFrame.DebugData);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-003: After GOAWAY new requests are rejected with Http2Exception")]
-    public async Task Should_Reject_New_Requests_When_GoAway_Already_Received()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.8-20CG-003: After GOAWAY new request frames are dropped without failing the stream")]
+    public async Task Should_Drop_New_Requests_Without_Failing_Stream_When_GoAway_Received()
     {
+        // After GOAWAY arrives from server, any new request from the app side must be
+        // silently dropped. The stream must NOT fault — it must remain alive.
         var goAway = new GoAwayFrame(lastStreamId: 1, Http2ErrorCode.InternalError);
         var request = new HeadersFrame(streamId: 3, headerBlock: new byte[] { 0x82 }, endHeaders: true, endStream: true);
 
-        var graph = BuildGraphWithRequestAfterGoAway(goAway, request);
+        var downstreamSink = Sink.Seq<Http2Frame>();
+        var serverBoundSink = Sink.Seq<Http2Frame>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink,
+                (m1, m2) => (m1, m2),
+                (b, dsSink, sbSink) =>
+                {
+                    var stage = b.Add(new Http20ConnectionStage());
+                    var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
+
+                    // Server sends GOAWAY then stays open (never finishes)
+                    var serverSource = b.Add(
+                        Source.Single<Http2Frame>(goAway).Concat(Source.Never<Http2Frame>()));
+
+                    // Client sends a request after GOAWAY is processed
+                    var requestSource = b.Add(
+                        Source.Single<Http2Frame>(request)
+                            .InitialDelay(TimeSpan.FromMilliseconds(200))
+                            .Concat(Source.Never<Http2Frame>()));
+
+                    b.From(serverSource).To(stage.ServerIn);
+                    b.From(stage.AppOut).To(dsSink);
+                    b.From(requestSource).To(stage.AppIn);
+                    b.From(stage.ServerOut).To(sbSink);
+                    b.From(stage.OutletSignal).To(signalSink);
+
+                    return ClosedShape.Instance;
+                }));
+
         var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
 
-        // Both sinks should eventually fail because the stage fails
-        var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
-        {
-            await Task.WhenAll(
-                downstreamTask.WaitAsync(TimeSpan.FromSeconds(5)),
-                serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5)));
-        });
+        // Wait long enough for both the GOAWAY and the delayed request to be processed
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-        // Verify it's specifically about GOAWAY rejection
-        Assert.Contains("GOAWAY", ex.Message, StringComparison.OrdinalIgnoreCase);
+        // Stream must NOT have faulted — the stage survives GOAWAY and drops the request
+        Assert.False(downstreamTask.IsFaulted,
+            "Downstream task must not fault after GOAWAY + dropped request");
+        Assert.False(serverBoundTask.IsFaulted,
+            "ServerBound task must not fault after GOAWAY + dropped request");
     }
 }

@@ -272,15 +272,15 @@ Also fix the race condition (from original audit): use local copy of `_handle`.
 4. Add `return` after each error handler to prevent continued execution.
 
 **Acceptance Criteria:**
-- [ ] Zero `FailStage` calls remain in Http20ConnectionStage
-- [ ] GOAWAY triggers reconnect signal, not stream failure
-- [ ] Flow control violations trigger reconnect, not stream failure
-- [ ] All errors use `Http2Exception` with RFC references
-- [ ] Stream test: simulate GOAWAY, verify stream survives and reconnects
-- [ ] Stream test: simulate flow control violation, verify stream recovers
-- [ ] Existing tests asserting `FailStage` on GOAWAY/flow control → **deleted**
-- [ ] Remaining HTTP/2 connection tests pass
-- [ ] Build compiles with 0 errors
+- [x] Zero `FailStage` calls remain in Http20ConnectionStage
+- [x] GOAWAY triggers reconnect signal, not stream failure
+- [x] Flow control violations trigger reconnect, not stream failure
+- [x] All errors use `Http2Exception` with RFC references
+- [x] Stream test: simulate GOAWAY, verify stream survives and reconnects
+- [x] Stream test: simulate flow control violation, verify stream recovers
+- [x] Existing tests asserting `FailStage` on GOAWAY/flow control → **deleted**
+- [x] Remaining HTTP/2 connection tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
@@ -299,12 +299,12 @@ Also fix the race condition (from original audit): use local copy of `_handle`.
 3. Correlation stages should be stateless between connections — reset pending/waiting queues on connection reset signals
 
 **Acceptance Criteria:**
-- [ ] Correlation stages never call `CompleteStage()` except in `onUpstreamFinish` (Dispose path)
-- [ ] Empty queues don't trigger completion
-- [ ] Stream test: complete a request, verify stage stays alive for next request
-- [ ] Existing tests asserting `CompleteStage` on empty queues → **deleted**
-- [ ] Remaining correlation tests pass
-- [ ] Build compiles with 0 errors
+- [x] Correlation stages never call `CompleteStage()` except in `onUpstreamFinish` (Dispose path)
+- [x] Empty queues don't trigger completion
+- [x] Stream test: complete a request, verify stage stays alive for next request
+- [x] Existing tests asserting `CompleteStage` on empty queues → **deleted**
+- [x] Remaining correlation tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

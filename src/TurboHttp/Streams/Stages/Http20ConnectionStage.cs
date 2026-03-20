@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
 using TurboHttp.IO.Stages;
+using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages;
@@ -115,7 +117,10 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                         break;
 
                     case DataFrame data:
-                        HandleInboundData(data);
+                        if (!HandleInboundData(data))
+                        {
+                            return;
+                        }
                         if (data.EndStream)
                         {
                             CloseStream(data.StreamId);
@@ -144,8 +149,12 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                         Pull(stage._inletRaw);
                         return;
 
-                    case GoAwayFrame:
+                    case GoAwayFrame goAway:
                         _goAwayReceived = true;
+                        Log.Warning("Http20ConnectionStage: RFC 9113 §6.8 — GOAWAY received (lastStreamId={0}, errorCode={1}). Triggering reconnect.",
+                            goAway.LastStreamId, goAway.ErrorCode);
+                        Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                            ConnectionReuseDecision.Close("RFC 9113 §6.8: GOAWAY received")));
                         break;
                 }
 
@@ -160,7 +169,12 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 
                 if (_goAwayReceived)
                 {
-                    FailStage(new Http2Exception("Connection received GOAWAY — new requests are not allowed"));
+                    Log.Warning("Http20ConnectionStage: RFC 9113 §6.8 — GOAWAY received; dropping new request frame (stream {0}).",
+                        frame is HeadersFrame hf ? hf.StreamId : -1);
+                    if (!HasBeenPulled(_stage._inletRequest) && !IsClosed(_stage._inletRequest))
+                    {
+                        Pull(_stage._inletRequest);
+                    }
                     return;
                 }
 
@@ -181,7 +195,10 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                         break;
 
                     case DataFrame data:
-                        HandleOutboundData(data);
+                        if (!HandleOutboundData(data))
+                        {
+                            return;
+                        }
                         break;
                 }
 
@@ -250,7 +267,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             EnqueueOutbound(new SettingsFrame([], isAck: true));
         }
 
-        private void HandleInboundData(DataFrame frame)
+        private bool HandleInboundData(DataFrame frame)
         {
             var dataLength = frame.Data.Length;
 
@@ -262,12 +279,22 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 
             if (_connectionWindow < 0)
             {
-                FailStage(new Exception("Connection window exceeded"));
+                Log.Warning("Http20ConnectionStage: RFC 9113 §6.9 — connection flow control window exceeded by {0} bytes. Triggering reconnect.",
+                    -_connectionWindow);
+                Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                    ConnectionReuseDecision.Close("RFC 9113 §6.9: connection window exceeded")));
+                Pull(_stage._inletRaw);
+                return false;
             }
 
             if (_streamWindows[frame.StreamId] < 0)
             {
-                FailStage(new Exception("Stream window exceeded"));
+                Log.Warning("Http20ConnectionStage: RFC 9113 §6.9 — stream {0} flow control window exceeded by {1} bytes. Triggering reconnect.",
+                    frame.StreamId, -_streamWindows[frame.StreamId]);
+                Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                    ConnectionReuseDecision.Close("RFC 9113 §6.9: stream window exceeded")));
+                Pull(_stage._inletRaw);
+                return false;
             }
 
             // RFC 9113 §6.9: WINDOW_UPDATE increment of 0 is a protocol error.
@@ -277,6 +304,8 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 EnqueueOutbound(new WindowUpdateFrame(0, dataLength));
                 EnqueueOutbound(new WindowUpdateFrame(frame.StreamId, dataLength));
             }
+
+            return true;
         }
 
         private void HandlePing(PingFrame ping)
@@ -323,14 +352,20 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             }
         }
 
-        private void HandleOutboundData(DataFrame frame)
+        private bool HandleOutboundData(DataFrame frame)
         {
             _connectionWindow -= frame.Data.Length;
 
             if (_connectionWindow < 0)
             {
-                FailStage(new Exception("Outbound flow control exceeded"));
+                Log.Warning("Http20ConnectionStage: RFC 9113 §6.9 — outbound flow control connection window exceeded by {0} bytes. Triggering reconnect.",
+                    -_connectionWindow);
+                Emit(_stage._outletSignal, new ConnectionReuseItem(_endpoint,
+                    ConnectionReuseDecision.Close("RFC 9113 §6.9: outbound flow control exceeded")));
+                return false;
             }
+
+            return true;
         }
     }
 }

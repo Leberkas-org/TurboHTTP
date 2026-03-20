@@ -141,21 +141,26 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
         Assert.Same(response, results[0]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-006: Stage terminates on empty queue after UpstreamFinish on both inlets")]
-    public async Task Should_Terminate_WhenBothUpstreamsFinishAndQueuesEmpty()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-006: Stage stays alive after correlation when upstreams remain open")]
+    public async Task Should_StayAlive_WhenQueuesEmptyButUpstreamOpen()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/done");
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/1");
         var response = OkResponse();
 
-        // Both sources emit one element and then complete.
-        // After correlation, both queues are empty → stage should complete.
+        // Sources emit one element each but never complete — stage must NOT self-complete
+        // when queues drain to empty. Completion is only valid when both upstreams finish.
+        var requestSource = Source.Single(request)
+            .Concat(Source.Never<HttpRequestMessage>());
+        var responseSource = Source.Single(response)
+            .Concat(Source.Never<HttpResponseMessage>());
+
         var sink = Sink.Seq<HttpResponseMessage>();
 
         var graph = RunnableGraph.FromGraph(GraphDsl.Create(sink, (b, s) =>
         {
             var corr = b.Add(new Http1XCorrelationStage());
-            var reqSrc = b.Add(Source.Single(request));
-            var resSrc = b.Add(Source.Single(response));
+            var reqSrc = b.Add(requestSource);
+            var resSrc = b.Add(responseSource);
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
             b.From(reqSrc).To(corr.RequestIn);
@@ -168,11 +173,8 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
 
         var task = graph.Run(Materializer);
 
-        // The stream should complete within the timeout — proving the stage terminates.
-        var results = await task.WaitAsync(TimeSpan.FromSeconds(5));
-
-        Assert.Single(results);
-        Assert.Same(request, results[0].RequestMessage);
+        // Stage must NOT complete even though queues are empty — upstreams are still open.
+        await Assert.ThrowsAsync<TimeoutException>(() => task.WaitAsync(TimeSpan.FromMilliseconds(500)));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-11CR-007: Stage remains open while pending requests still exist")]

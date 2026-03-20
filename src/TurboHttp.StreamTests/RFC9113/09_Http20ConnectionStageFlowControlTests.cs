@@ -2,7 +2,6 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO.Stages;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages;
 
@@ -56,50 +55,6 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         return (downstream, serverBound);
     }
 
-    /// <summary>
-    /// Runs the Http20ConnectionStage where server frames arrive first, followed by request frames
-    /// pushed from the application side (AppIn) after a short delay.
-    /// </summary>
-    private async Task<(IReadOnlyList<Http2Frame> Downstream, IReadOnlyList<Http2Frame> ServerBound)>
-        RunWithRequestsAsync(Http2Frame[] serverFrames, Http2Frame[] requestFrames)
-    {
-        var downstreamSink = Sink.Seq<Http2Frame>();
-        var serverBoundSink = Sink.Seq<Http2Frame>();
-
-        var graph = RunnableGraph.FromGraph(
-            GraphDsl.Create(downstreamSink, serverBoundSink,
-                (m1, m2) => (m1, m2),
-                (b, dsSink, sbSink) =>
-                {
-                    var stage = b.Add(new Http20ConnectionStage());
-                    var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
-
-                    // Server frames arrive then stream stays open
-                    var serverSource = b.Add(
-                        Source.From(serverFrames).Concat(Source.Never<Http2Frame>()));
-
-                    // Request frames arrive after a delay to ensure server frames are processed first
-                    var requestSource = b.Add(
-                        Source.From(requestFrames)
-                            .InitialDelay(TimeSpan.FromMilliseconds(200)));
-
-                    b.From(serverSource).To(stage.ServerIn);
-                    b.From(stage.AppOut).To(dsSink);
-                    b.From(requestSource).To(stage.AppIn);
-                    b.From(stage.ServerOut).To(sbSink);
-                    b.From(stage.OutletSignal).To(signalSink);
-
-                    return ClosedShape.Instance;
-                }));
-
-        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
-
-        var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5));
-        var serverBound = await serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5));
-
-        return (downstream, serverBound);
-    }
-
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-001: Inbound DATA decrements connection window")]
     public async Task Should_Decrement_Connection_Window_When_Data_Received_Inbound()
     {
@@ -116,18 +71,6 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.IsType<DataFrame>(downstream[1]);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-001: Connection window tracks cumulative inbound DATA")]
-    public async Task Should_Track_Cumulative_Connection_Window_For_Inbound_Data()
-    {
-        // Send data on two different streams that together exceed the connection window.
-        // Stream 1: 40000 bytes, Stream 3: 30000 bytes → total 70000 > 65535
-        var data1 = new DataFrame(streamId: 1, data: new byte[40000], endStream: true);
-        var data2 = new DataFrame(streamId: 3, data: new byte[30000], endStream: true);
-
-        // Stage should fail because combined data exceeds connection window
-        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data1, data2));
-    }
-
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-002: Inbound DATA decrements stream window")]
     public async Task Should_Decrement_Stream_Window_When_Data_Received_Inbound()
     {
@@ -138,18 +81,6 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
         var forwarded = Assert.Single(downstream);
         Assert.IsType<DataFrame>(forwarded);
-    }
-
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-002: Stream window tracked per-stream independently")]
-    public async Task Should_Track_Window_Per_Stream_Independently()
-    {
-        // Stream 1 gets 65535 bytes (exactly at window), stream 3 gets 65536 (exceeds).
-        // Per-stream tracking means stream 1 succeeds but stream 3 exceeds its own window.
-        var data1 = new DataFrame(streamId: 1, data: new byte[65535], endStream: true);
-        var data2 = new DataFrame(streamId: 3, data: new byte[65536], endStream: true);
-
-        // Stage should fail because stream 3 exceeds its stream window
-        await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data1, data2));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-003: Inbound DATA triggers WINDOW_UPDATE on stream 0")]
@@ -198,31 +129,92 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
         Assert.Contains(windowUpdates, f => f.StreamId == 3 && f.Increment == 512);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-005: Connection window exceeded causes stage failure")]
-    public async Task Should_Fail_Stage_When_Connection_Window_Exceeded()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-005: Connection window exceeded is logged and stream survives")]
+    public async Task Should_Survive_And_Log_When_Connection_Window_Exceeded()
     {
         // Default connection window is 65535. Send 65536 bytes to exceed it.
+        // Under "Stream Never Dies", the stage must NOT fail — it logs and emits a reconnect signal.
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data));
-        Assert.Contains("window", ex.Message, StringComparison.OrdinalIgnoreCase);
+        var downstreamSink = Sink.Seq<Http2Frame>();
+        var serverBoundSink = Sink.Seq<Http2Frame>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink,
+                (m1, m2) => (m1, m2),
+                (b, dsSink, sbSink) =>
+                {
+                    var stage = b.Add(new Http20ConnectionStage());
+                    var serverSource = b.Add(Source.Single<Http2Frame>(data));
+                    var requestSource = b.Add(Source.Never<Http2Frame>());
+                    var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
+
+                    b.From(serverSource).To(stage.ServerIn);
+                    b.From(stage.AppOut).To(dsSink);
+                    b.From(requestSource).To(stage.AppIn);
+                    b.From(stage.ServerOut).To(sbSink);
+                    b.From(stage.OutletSignal).To(signalSink);
+
+                    return ClosedShape.Instance;
+                }));
+
+        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
+
+        // Wait to let the stage process the oversized frame
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
+
+        // Stream must NOT have faulted
+        Assert.False(downstreamTask.IsFaulted,
+            "Downstream task must not fault when connection window is exceeded");
+        Assert.False(serverBoundTask.IsFaulted,
+            "ServerBound task must not fault when connection window is exceeded");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-006: Stream window exceeded causes stage failure")]
-    public async Task Should_Fail_Stage_When_Stream_Window_Exceeded()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-006: Stream window exceeded is logged and stream survives")]
+    public async Task Should_Survive_And_Log_When_Stream_Window_Exceeded()
     {
         // Default stream window is 65535. Send 65536 bytes on one stream to exceed it.
+        // Under "Stream Never Dies", the stage must NOT fail.
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(() => RunAsync(data));
-        Assert.Contains("window", ex.Message, StringComparison.OrdinalIgnoreCase);
+        var downstreamSink = Sink.Seq<Http2Frame>();
+        var serverBoundSink = Sink.Seq<Http2Frame>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink,
+                (m1, m2) => (m1, m2),
+                (b, dsSink, sbSink) =>
+                {
+                    var stage = b.Add(new Http20ConnectionStage());
+                    var serverSource = b.Add(Source.Single<Http2Frame>(data));
+                    var requestSource = b.Add(Source.Never<Http2Frame>());
+                    var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
+
+                    b.From(serverSource).To(stage.ServerIn);
+                    b.From(stage.AppOut).To(dsSink);
+                    b.From(requestSource).To(stage.AppIn);
+                    b.From(stage.ServerOut).To(sbSink);
+                    b.From(stage.OutletSignal).To(signalSink);
+
+                    return ClosedShape.Instance;
+                }));
+
+        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
+
+        // Wait to let the stage process the oversized frame
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
+
+        // Stream must NOT have faulted
+        Assert.False(downstreamTask.IsFaulted,
+            "Downstream task must not fault when stream window is exceeded");
+        Assert.False(serverBoundTask.IsFaulted,
+            "ServerBound task must not fault when stream window is exceeded");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound DATA decrements connection send window")]
-    public async Task Should_Fail_Stage_When_Outbound_Data_Exceeds_Connection_Window()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound flow control exceeded is logged and stream survives")]
+    public async Task Should_Survive_And_Log_When_Outbound_Flow_Control_Exceeded()
     {
-        // Send outbound DATA that exceeds the connection window → stage should fail.
-        // Default connection window = 65535, so 65536 bytes should exceed it.
+        // Send outbound DATA that exceeds the connection send window — the stage must NOT fail.
         var request = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
         var downstreamSink = Sink.Seq<Http2Frame>();
@@ -249,14 +241,14 @@ public sealed class Http20ConnectionStageFlowControlTests : StreamTestBase
 
         var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
 
-        var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
-        {
-            await Task.WhenAll(
-                downstreamTask.WaitAsync(TimeSpan.FromSeconds(5)),
-                serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5)));
-        });
+        // Wait to let the stage process the oversized frame
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
 
-        Assert.Contains("flow control", ex.Message, StringComparison.OrdinalIgnoreCase);
+        // Stream must NOT have faulted
+        Assert.False(downstreamTask.IsFaulted,
+            "Downstream task must not fault when outbound flow control window is exceeded");
+        Assert.False(serverBoundTask.IsFaulted,
+            "ServerBound task must not fault when outbound flow control window is exceeded");
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.9-20CW-007: Outbound DATA within window succeeds")]

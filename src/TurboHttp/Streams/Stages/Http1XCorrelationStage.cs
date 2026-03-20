@@ -76,6 +76,9 @@ internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape
 
         private readonly Queue<HttpResponseMessage> _waiting = new();
 
+        private bool _requestUpstreamFinished;
+        private bool _responseUpstreamFinished;
+
         public Logic(Http1XCorrelationStage stage) : base(stage.Shape)
         {
             SetHandler(stage._requestIn,
@@ -97,7 +100,8 @@ internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape
                 },
                 onUpstreamFinish: () =>
                 {
-                    if (_pending.Count == 0 && _waiting.Count == 0)
+                    _requestUpstreamFinished = true;
+                    if (_responseUpstreamFinished)
                     {
                         CompleteStage();
                     }
@@ -115,7 +119,8 @@ internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape
                 },
                 onUpstreamFinish: () =>
                 {
-                    if (_pending.Count == 0 && _waiting.Count == 0)
+                    _responseUpstreamFinished = true;
+                    if (_requestUpstreamFinished)
                     {
                         CompleteStage();
                     }
