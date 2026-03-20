@@ -690,9 +690,9 @@ finally
 **Required Change:** Remove dead assignment, fix logic to `return content.Headers.ContentLength ?? 0;`
 
 **Acceptance Criteria:**
-- [ ] Dead code removed
-- [ ] All existing tests pass
-- [ ] Build compiles with 0 errors
+- [x] Dead code removed
+- [x] All existing tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

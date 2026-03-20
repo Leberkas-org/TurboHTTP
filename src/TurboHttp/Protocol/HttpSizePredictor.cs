@@ -176,13 +176,7 @@ public static class HttpSizePredictor
     }
 
     private static long GetContentLength(HttpContent content)
-    {
-        if (content.Headers.ContentLength.HasValue)
-            return content.Headers.ContentLength.Value;
-
-        _ = content.Headers.ContentLength ?? 0;
-        return content.Headers.ContentLength!.Value;
-    }
+        => content.Headers.ContentLength ?? 0;
 
     private static string FormatAuthority(Uri uri)
         => uri.IsDefaultPort ? uri.Host : $"{uri.Host}:{uri.Port}";
