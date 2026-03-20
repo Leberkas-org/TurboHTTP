@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Akka.Streams.Dsl;
+using Akka.Streams.TestKit;
 using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Streams.Stages;
 
@@ -99,6 +100,27 @@ public sealed class CookieInjectionStageTests : StreamTestBase
         var result = Assert.Single(results);
         // No exception thrown; no Cookie header (RequestUri was null)
         Assert.False(result.Headers.Contains("Cookie"));
+    }
+
+    [Fact(DisplayName = "RFC6265-5.4-CINJ-007: upstream failure → stage absorbs it, downstream not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var stage = new CookieInjectionStage(null);
+        var publisher = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var subscriber = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+
+        Source.FromPublisher(publisher)
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.FromSubscriber(subscriber), Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        var clientSub = subscriber.ExpectSubscription();
+        clientSub.Request(10);
+
+        // Fail upstream — stage must absorb, downstream must NOT see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        subscriber.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.4-CINJ-006: multiple requests → each gets cookies injected independently")]

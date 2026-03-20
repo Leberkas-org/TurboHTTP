@@ -499,6 +499,41 @@ public sealed class RetryStageTests : StreamTestBase
         Assert.Same(responseD, h.FinalProbe.ExpectNext());
     }
 
+    [Fact(DisplayName = "RFC9110-9.2.2-RTRY-022: upstream failure → stage absorbs it, both outlets not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var stage = new RetryStage();
+        var h = RunManual(stage, finalDemand: 5, retryDemand: 5);
+
+        // Fail the upstream source — stage must absorb, neither outlet must see error
+        // Access the underlying probeSource via the ManualHarness doesn't expose fail directly,
+        // so we create a dedicated harness for this test.
+        var publisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probeRetry = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(new RetryStage());
+            var src = b.Add(Source.FromPublisher(publisher));
+
+            b.From(src).To(s.In);
+            b.From(s.Out0).To(Sink.FromSubscriber(probeFinal));
+            b.From(s.Out1).To(Sink.FromSubscriber(probeRetry));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        probeFinal.ExpectSubscription().Request(10);
+        probeRetry.ExpectSubscription().Request(10);
+
+        pubSub.SendError(new Exception("upstream boom"));
+
+        probeFinal.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        probeRetry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+    }
+
     [Fact(DisplayName = "RFC9110-9.2.2-RTRY-021: Parallel Retry-After timers fire independently")]
     public void Should_FireIndependently_When_ParallelRetryAfterTimersSet()
     {

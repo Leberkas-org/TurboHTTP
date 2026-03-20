@@ -445,4 +445,34 @@ public sealed class RedirectStageTests : StreamTestBase
         Assert.NotNull(handler);
         Assert.Equal(1, handler.RedirectCount);
     }
+
+    [Fact(DisplayName = "RFC9110-15.4-RDIR-022: upstream failure → stage absorbs it, both outlets not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var publisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probeRedirect = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(new RedirectStage());
+            var src = b.Add(Source.FromPublisher(publisher));
+
+            b.From(src).To(s.In);
+            b.From(s.Out0).To(Sink.FromSubscriber(probeFinal));
+            b.From(s.Out1).To(Sink.FromSubscriber(probeRedirect));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        probeFinal.ExpectSubscription().Request(10);
+        probeRedirect.ExpectSubscription().Request(10);
+
+        // Fail upstream — stage must absorb, neither outlet must see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        probeFinal.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        probeRedirect.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+    }
 }

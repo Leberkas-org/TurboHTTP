@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC9110;
@@ -68,7 +69,6 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
         private long _retryIdCounter;
         private bool _finalDemand;
         private bool _retryDemand;
-        private bool _upstreamFinished;
 
         public Logic(RetryStage stage) : base(stage.Shape)
         {
@@ -129,18 +129,8 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
 
                     TryPullInlet();
                 },
-                onUpstreamFinish: () =>
-                {
-                    if (_readyRetries.Count == 0 && _waitingRetries.Count == 0)
-                    {
-                        CompleteStage();
-                    }
-                    else
-                    {
-                        _upstreamFinished = true;
-                    }
-                },
-                onUpstreamFailure: FailStage);
+                onUpstreamFinish: CompleteStage,
+                onUpstreamFailure: ex => Log.Warning("RetryStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outFinal,
                 onPull: () =>
@@ -184,7 +174,6 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
                 var request = _readyRetries.Dequeue();
                 _retryDemand = false;
                 Push(_stage._outRetry, request);
-                CheckDrainComplete();
             }
         }
 
@@ -192,18 +181,10 @@ internal sealed class RetryStage : GraphStage<FanOutShape<HttpResponseMessage, H
         {
             if (_finalDemand
                 && !HasBeenPulled(_stage._in)
-                && !_upstreamFinished
+                && !IsClosed(_stage._in)
                 && _readyRetries.Count + _waitingRetries.Count < MaxPendingRetries)
             {
                 Pull(_stage._in);
-            }
-        }
-
-        private void CheckDrainComplete()
-        {
-            if (_upstreamFinished && _readyRetries.Count == 0 && _waitingRetries.Count == 0)
-            {
-                CompleteStage();
             }
         }
     }

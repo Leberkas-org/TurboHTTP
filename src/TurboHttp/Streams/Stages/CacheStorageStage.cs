@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC9111;
@@ -84,7 +85,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("CacheStorageStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet,
                 onPull: () => Pull(stage._inlet),

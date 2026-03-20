@@ -1,4 +1,5 @@
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
@@ -65,7 +66,7 @@ internal sealed class
                         CompleteStage();
                     }
                 },
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("ConnectionReuseStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outletResponse,
                 onPull: () =>

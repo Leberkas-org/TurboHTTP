@@ -1,4 +1,5 @@
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 
@@ -39,7 +40,8 @@ public sealed class StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequestMes
 
                     Push(stage._out, (request, streamId));
                 },
-                onUpstreamFinish: CompleteStage);
+                onUpstreamFinish: CompleteStage,
+                onUpstreamFailure: ex => Log.Warning("StreamIdAllocatorStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._out,
                 onPull: () =>

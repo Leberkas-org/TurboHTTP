@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
@@ -62,7 +63,8 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 {
                     _upstreamFinished = true;
                     TryFinish();
-                });
+                },
+                onUpstreamFailure: ex => Log.Warning("GroupByHostKeyStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet, onPull: HandleOutPull);
         }

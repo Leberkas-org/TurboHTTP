@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using Akka.Streams.Dsl;
+using Akka.Streams.TestKit;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9110;
@@ -187,6 +188,26 @@ public sealed class DecompressionStageTests : StreamTestBase
         Assert.True(result.Content.Headers.Contains("Content-Type"));
         var contentType = string.Join("", result.Content.Headers.GetValues("Content-Type"));
         Assert.Contains("application/json", contentType);
+    }
+
+    [Fact(DisplayName = "RFC9110-8.4-DCMP-011: upstream failure → stage absorbs it, downstream not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var publisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var subscriber = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        Source.FromPublisher(publisher)
+            .Via(Flow.FromGraph(new DecompressionStage()))
+            .RunWith(Sink.FromSubscriber(subscriber), Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        var clientSub = subscriber.ExpectSubscription();
+        clientSub.Request(10);
+
+        // Fail upstream — stage must absorb, downstream must NOT see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        subscriber.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DCMP-010: multiple responses with different encodings all decompressed")]

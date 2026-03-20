@@ -1,6 +1,7 @@
 using System.IO;
 using System.Net;
 using Akka.Streams.Dsl;
+using Akka.Streams.TestKit;
 using TurboHttp.Protocol.RFC9111;
 using TurboHttp.Streams.Stages;
 
@@ -314,6 +315,27 @@ public sealed class CacheStorageStageTests : StreamTestBase
         var entry = store.Get(request);
         Assert.NotNull(entry);
         Assert.Equal(bodyBytes, entry.Body);
+    }
+
+    [Fact(DisplayName = "RFC9111-3-CSTR-017: upstream failure → stage absorbs it, downstream not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var store = new HttpCacheStore();
+        var publisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var subscriber = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        Source.FromPublisher(publisher)
+            .Via(new CacheStorageStage(store))
+            .RunWith(Sink.FromSubscriber(subscriber), Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        var clientSub = subscriber.ExpectSubscription();
+        clientSub.Request(10);
+
+        // Fail upstream — stage must absorb, downstream must NOT see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        subscriber.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CSTR-016: async path — response pushed downstream after body read")]

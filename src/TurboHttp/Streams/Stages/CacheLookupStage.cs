@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC9111;
@@ -91,7 +92,7 @@ internal sealed class CacheLookupStage
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("CacheLookupStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage.Shape.Out0,
                 onPull: () =>

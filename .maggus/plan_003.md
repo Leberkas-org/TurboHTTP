@@ -331,13 +331,13 @@ Also fix the race condition (from original audit): use local copy of `_handle`.
 4. `ConnectionReuseStage`: when connection closes, reset state but don't complete
 
 **Acceptance Criteria:**
-- [ ] Zero `FailStage` calls remain in any business logic stage
-- [ ] Zero `CompleteStage` calls in `onPush` handlers
-- [ ] All stages have `onUpstreamFailure` → log-and-absorb
-- [ ] Stream tests: inject upstream failure, verify each stage survives
-- [ ] Existing tests asserting `FailStage`/`CompleteStage` on error scenarios → **deleted**
-- [ ] Remaining business logic stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] Zero `FailStage` calls remain in any business logic stage
+- [x] Zero `CompleteStage` calls in `onPush` handlers
+- [x] All stages have `onUpstreamFailure` → log-and-absorb
+- [x] Stream tests: inject upstream failure, verify each stage survives
+- [x] Existing tests asserting `FailStage`/`CompleteStage` on error scenarios → **deleted**
+- [x] Remaining business logic stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
@@ -360,13 +360,13 @@ Also fix the race condition (from original audit): use local copy of `_handle`.
 4. `MergeSubstreamsStage`: replace `_onSubstreamFailed = GetAsyncCallback<Exception>(FailStage)` with log-and-continue
 
 **Acceptance Criteria:**
-- [ ] Zero `FailStage` calls remain in infrastructure stages
-- [ ] `CompleteStage()` only called from `onUpstreamFinish` (Dispose path) and `onDownstreamFinish` (Dispose path)
-- [ ] `MergeSubstreamsStage` absorbs substream failures
-- [ ] Stream tests: verify infrastructure stages survive upstream failures
-- [ ] Existing tests asserting `FailStage`/`CompleteStage` on transient errors → **deleted**
-- [ ] Remaining stream tests pass
-- [ ] Build compiles with 0 errors
+- [x] Zero `FailStage` calls remain in infrastructure stages
+- [x] `CompleteStage()` only called from `onUpstreamFinish` (Dispose path) and `onDownstreamFinish` (Dispose path)
+- [x] `MergeSubstreamsStage` absorbs substream failures
+- [x] Stream tests: verify infrastructure stages survive upstream failures
+- [x] Existing tests asserting `FailStage`/`CompleteStage` on transient errors → **deleted**
+- [x] Remaining stream tests pass
+- [x] Build compiles with 0 errors
 
 ---
 

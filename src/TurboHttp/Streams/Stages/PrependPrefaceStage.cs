@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
@@ -67,7 +68,7 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("PrependPrefaceStage: Upstream failure absorbed: {0}", ex.Message));
         }
 
         // RFC 9113 §3.4 — Build HTTP/2 connection preface with default SETTINGS

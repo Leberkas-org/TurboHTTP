@@ -1,4 +1,5 @@
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Client;
@@ -53,7 +54,7 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequestMe
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("ExtractOptionsStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outletSignal,
                 onPull: () =>

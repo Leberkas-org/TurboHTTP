@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
@@ -77,7 +78,7 @@ internal sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, N
                         CompleteStage();
                     }
                 },
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("MergeSubstreamsStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet,
                 onPull: () =>
@@ -123,7 +124,22 @@ internal sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, N
                 }
             });
 
-            _onSubstreamFailed = GetAsyncCallback<Exception>(FailStage);
+            _onSubstreamFailed = GetAsyncCallback<Exception>(ex =>
+            {
+                _active--;
+                Log.Warning("MergeSubstreamsStage: Substream failed, absorbed: {0}", ex.Message);
+
+                if (_upstreamDone && _active == 0 && _buffer.Count == 0)
+                {
+                    CompleteStage();
+                    return;
+                }
+
+                if (!_upstreamDone && !HasBeenPulled(_stage._inlet) && _active < _stage._maxConcurrent)
+                {
+                    Pull(_stage._inlet);
+                }
+            });
 
             Pull(_stage._inlet);
         }

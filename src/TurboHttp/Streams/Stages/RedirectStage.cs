@@ -1,4 +1,5 @@
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC9110;
@@ -117,7 +118,7 @@ internal sealed class
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("RedirectStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outFinal,
                 onPull: () =>

@@ -274,4 +274,34 @@ public sealed class Http11ConnectionReuseStageTests : StreamTestBase
         Assert.Equal(string.Empty, decision.Key.Host);
         Assert.Equal(HttpVersion.Unknown, decision.Key.Version);
     }
+
+    [Fact(DisplayName = "RFC9112-9.3-CRUS-015: upstream failure → stage absorbs it, both outlets not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var publisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var probe0 = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probe1 = this.CreateManualSubscriberProbe<IOutputItem>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var stage = b.Add(new ConnectionReuseStage());
+            var src = b.Add(Source.FromPublisher(publisher));
+
+            b.From(src).To(stage.In);
+            b.From(stage.Out0).To(Sink.FromSubscriber(probe0));
+            b.From(stage.Out1).To(Sink.FromSubscriber(probe1));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        probe0.ExpectSubscription().Request(10);
+        probe1.ExpectSubscription().Request(10);
+
+        // Fail upstream — stage must absorb, neither outlet must see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        probe0.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        probe1.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+    }
 }

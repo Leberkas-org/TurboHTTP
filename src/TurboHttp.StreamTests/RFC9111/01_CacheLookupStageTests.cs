@@ -287,4 +287,35 @@ public sealed class CacheLookupStageTests : StreamTestBase
         hit.ExpectNext();
         miss.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
+
+    [Fact(DisplayName = "RFC9111-4-CLUP-013: upstream failure → stage absorbs it, both outlets not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var store = new HttpCacheStore();
+        var publisher = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var probeMiss = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var probeHit = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var stage = b.Add(new CacheLookupStage(store));
+            var src = b.Add(Source.FromPublisher(publisher));
+
+            b.From(src).To(stage.In);
+            b.From(stage.Out0).To(Sink.FromSubscriber(probeMiss));
+            b.From(stage.Out1).To(Sink.FromSubscriber(probeHit));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        probeMiss.ExpectSubscription().Request(10);
+        probeHit.ExpectSubscription().Request(10);
+
+        // Fail upstream — stage must absorb, neither outlet must see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        probeMiss.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        probeHit.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+    }
 }

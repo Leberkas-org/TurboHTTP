@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol;
@@ -41,7 +42,7 @@ internal sealed class DecompressionStage : GraphStage<FlowShape<HttpResponseMess
                     Push(stage._outlet, Decompress(response));
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("DecompressionStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet,
                 onPull: () => Pull(stage._inlet),

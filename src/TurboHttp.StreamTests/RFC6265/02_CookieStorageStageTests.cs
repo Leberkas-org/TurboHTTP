@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Akka.Streams.Dsl;
+using Akka.Streams.TestKit;
 using TurboHttp.Protocol.RFC6265;
 using TurboHttp.Streams.Stages;
 
@@ -109,6 +110,27 @@ public sealed class CookieStorageStageTests : StreamTestBase
         var nextRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         jar.AddCookiesToRequest(new Uri("http://example.com/"), ref nextRequest);
         Assert.False(nextRequest.Headers.Contains("Cookie"));
+    }
+
+    [Fact(DisplayName = "RFC6265-5.3-CSTO-007: upstream failure → stage absorbs it, downstream not faulted")]
+    public void Should_AbsorbUpstreamFailure_WhenUpstreamFails()
+    {
+        var stage = new CookieStorageStage(null);
+        var publisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var subscriber = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        Source.FromPublisher(publisher)
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.FromSubscriber(subscriber), Materializer);
+
+        var pubSub = publisher.ExpectSubscription();
+        var clientSub = subscriber.ExpectSubscription();
+        clientSub.Request(10);
+
+        // Fail upstream — stage must absorb, downstream must NOT see error
+        pubSub.SendError(new Exception("upstream boom"));
+
+        subscriber.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC6265-5.3-CSTO-006: multiple responses → cookies accumulated across all responses")]

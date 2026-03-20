@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
@@ -67,7 +68,7 @@ public sealed class Http20DecoderStage : GraphStage<FlowShape<IInputItem, Http2F
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("Http20DecoderStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet,
                 onPull: () => Pull(stage._inlet),

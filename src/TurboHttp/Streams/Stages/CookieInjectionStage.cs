@@ -1,4 +1,5 @@
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC6265;
@@ -45,7 +46,7 @@ internal sealed class CookieInjectionStage : GraphStage<FlowShape<HttpRequestMes
                     Push(stage._outlet, request);
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage);
+                onUpstreamFailure: ex => Log.Warning("CookieInjectionStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet,
                 onPull: () => Pull(stage._inlet),

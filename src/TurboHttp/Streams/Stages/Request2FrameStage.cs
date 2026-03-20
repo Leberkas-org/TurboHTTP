@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
+using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
@@ -62,7 +63,7 @@ public sealed class Request2FrameStage : GraphStage<FlowShape<(HttpRequestMessag
                 {
                     CompleteStage();
                 }
-            });
+            }, onUpstreamFailure: ex => Log.Warning("Request2FrameStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outlet, onPull: () => Drain(stage));
         }
