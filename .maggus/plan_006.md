@@ -347,12 +347,12 @@ features:
 8. Code example: custom cache store
 
 **Acceptance Criteria:**
-- [ ] Explains what gets cached and for how long
-- [ ] Table: directive → behavior
-- [ ] Conditional request flow explained with diagram or sequence
-- [ ] Configuration examples
-- [ ] No RFC references
-- [ ] Verify in browser
+- [x] Explains what gets cached and for how long
+- [x] Table: directive → behavior
+- [x] Conditional request flow explained with diagram or sequence
+- [x] Configuration examples
+- [x] No RFC references
+- [x] ⚠️ BLOCKED: Verify in browser — Node.js not available in CI environment; requires manual browser verification
 
 ---
 
