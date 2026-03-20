@@ -14,7 +14,7 @@ namespace TurboHttp.StreamTests.RFC9112;
 /// Stage under test: <see cref="Http11DecoderStage"/>.
 /// RFC 9112 §7.1: HTTP/1.1 chunked transfer encoding format and body reassembly.
 /// </remarks>
-public sealed class Http11DecoderStageChunkedRfcTests : StreamTestBase
+public sealed class Http11DecoderStageChunkedTransferTests : StreamTestBase
 {
     private static IInputItem Chunk(string ascii)
     {
