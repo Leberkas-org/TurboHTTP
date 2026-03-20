@@ -87,7 +87,10 @@ internal static class ClientByteMover
                 {
                     var pooled = MemoryPool<byte>.Shared.Rent(length);
                     buffer.CopyTo(pooled.Memory.Span);
-                    state.InboundWriter.TryWrite((pooled, length));
+                    if (!state.InboundWriter.TryWrite((pooled, length)))
+                    {
+                        pooled.Dispose();
+                    }
                 }
 
                 // tell the pipe we're done with this data

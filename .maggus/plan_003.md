@@ -450,11 +450,11 @@ if (!state.InboundWriter.TryWrite((pooled, length)))
 ```
 
 **Acceptance Criteria:**
-- [ ] `TryWrite` return value is checked
-- [ ] Buffer is disposed when `TryWrite` returns false
-- [ ] Unit test verifies disposal on closed channel
-- [ ] All existing IO tests pass
-- [ ] Build compiles with 0 errors
+- [x] `TryWrite` return value is checked
+- [x] Buffer is disposed when `TryWrite` returns false
+- [x] Unit test verifies disposal on closed channel
+- [x] All existing IO tests pass
+- [x] Build compiles with 0 errors
 
 ---
 
