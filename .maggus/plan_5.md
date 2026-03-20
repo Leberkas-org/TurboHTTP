@@ -38,15 +38,15 @@ Transform TurboHttp from a working codebase into a polished, production-ready op
 **Description:** As a developer, I want shared build properties so that version info, compiler settings, and package metadata are consistent across all projects.
 
 **Acceptance Criteria:**
-- [ ] `src/Directory.Build.props` created with:
+- [x] `src/Directory.Build.props` created with:
   - `<LangVersion>latest</LangVersion>`
   - `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` (or `false` if too many existing warnings — document decision)
   - `<Nullable>enable</Nullable>`
   - Package metadata: `Authors`, `PackageLicenseExpression` (MIT), `RepositoryUrl`, `PackageProjectUrl` (GitHub Pages URL), `PackageReadmeFile`, `PackageIcon`
   - `<TargetFramework>net10.0</TargetFramework>` (shared, remove from individual csproj)
-- [ ] Remove duplicated properties from individual `.csproj` files
-- [ ] Build still succeeds with `dotnet build --configuration Release ./src/TurboHttp.sln`
-- [ ] Unit tests still pass
+- [x] Remove duplicated properties from individual `.csproj` files
+- [x] Build still succeeds with `dotnet build --configuration Release ./src/TurboHttp.sln`
+- [x] Unit tests still pass
 
 ### TASK-004: Add Central Package Management (Directory.Packages.props)
 **Description:** As a developer, I want centralized NuGet version management so that dependency versions are consistent and easy to update.
