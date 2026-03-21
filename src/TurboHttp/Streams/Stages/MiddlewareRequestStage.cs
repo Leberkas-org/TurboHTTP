@@ -31,6 +31,8 @@ internal sealed class MiddlewareRequestStage : GraphStage<FlowShape<HttpRequestM
     {
         private readonly MiddlewareRequestStage _stage;
         private Action<HttpRequestMessage>? _onProcessed;
+        private bool _asyncInFlight;
+        private bool _upstreamFinished;
 
         public Logic(MiddlewareRequestStage stage) : base(stage.Shape)
         {
@@ -48,12 +50,23 @@ internal sealed class MiddlewareRequestStage : GraphStage<FlowShape<HttpRequestM
                         return;
                     }
 
+                    _asyncInFlight = true;
                     var callback = _onProcessed!;
                     task.AsTask().ContinueWith(
                         t => callback(t.Result),
                         TaskContinuationOptions.ExecuteSynchronously);
                 },
-                onUpstreamFinish: CompleteStage,
+                onUpstreamFinish: () =>
+                {
+                    if (_asyncInFlight)
+                    {
+                        _upstreamFinished = true;
+                    }
+                    else
+                    {
+                        CompleteStage();
+                    }
+                },
                 onUpstreamFailure: ex => Log.Warning("MiddlewareRequestStage: Upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._out,
@@ -65,7 +78,12 @@ internal sealed class MiddlewareRequestStage : GraphStage<FlowShape<HttpRequestM
         {
             _onProcessed = GetAsyncCallback<HttpRequestMessage>(result =>
             {
+                _asyncInFlight = false;
                 Push(_stage._out, result);
+                if (_upstreamFinished)
+                {
+                    CompleteStage();
+                }
             });
         }
     }

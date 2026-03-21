@@ -266,12 +266,12 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want stream tests for `MiddlewareRequestStage` so that I can verify async request transformation works inside an Akka graph.
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp.StreamTests/Streams/MiddlewareRequestStageTests.cs`
-- [ ] Test: stage adds an auth header (synchronous `ValueTask` return)
-- [ ] Test: stage transforms request asynchronously (real async via `Task.Delay(1)`)
-- [ ] Test: chained stages — second stage sees the output of the first
-- [ ] No deadlock on async callback
-- [ ] Unit tests are written and successful
+- [x] New file `src/TurboHttp.StreamTests/Streams/MiddlewareRequestStageTests.cs`
+- [x] Test: stage adds an auth header (synchronous `ValueTask` return)
+- [x] Test: stage transforms request asynchronously (real async via `Task.Delay(1)`)
+- [x] Test: chained stages — second stage sees the output of the first
+- [x] No deadlock on async callback
+- [x] Unit tests are written and successful
 
 ---
 
