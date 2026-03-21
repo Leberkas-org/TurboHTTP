@@ -26,12 +26,14 @@ public class Engine
         var requestOptions = BuildRequestOptions(options);
         requestOptionsFactory ??= () => requestOptions;
 
+#pragma warning disable CS0618 // TurboClientOptions.RedirectPolicy/RetryPolicy/CachePolicy obsolete — backward-compat read
         var descriptor = new PipelineDescriptor(
             options.RedirectPolicy,
             options.RetryPolicy,
             new CookieJar(),
             new HttpCacheStore(options.CachePolicy),
             []);
+#pragma warning restore CS0618
 
         return BuildExtendedPipeline(poolRouter, options, requestOptionsFactory, descriptor);
     }
@@ -149,7 +151,9 @@ public class Engine
             requestTip = retryMerge.Out;
 
             // Cache lookup
+#pragma warning disable CS0618 // TurboClientOptions.CachePolicy obsolete — backward-compat read
             var cacheLookup = builder.Add(new CacheLookupStage(descriptor.CacheStore, options.CachePolicy));
+#pragma warning restore CS0618
             builder.From(requestTip).To(cacheLookup.In);
 
             var engineRequest = cacheLookup.Out0; // cache miss

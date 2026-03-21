@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // TurboClientOptions.RedirectPolicy/RetryPolicy/CachePolicy obsolete — backward-compat test
 using System.Net;
 using Akka;
 using Akka.Streams.Dsl;

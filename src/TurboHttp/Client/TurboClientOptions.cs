@@ -51,12 +51,15 @@ public record TurboClientOptions
     public SslProtocols EnabledSslProtocols { get; init; } = SslProtocols.None;
 
     /// <summary>Redirect-following policy. <see langword="null"/> disables automatic redirect handling.</summary>
+    [Obsolete("Use .WithRedirect() on ITurboHttpClientBuilder instead.")]
     public RedirectPolicy? RedirectPolicy { get; init; }
 
     /// <summary>Retry policy for idempotent requests. <see langword="null"/> disables automatic retries.</summary>
+    [Obsolete("Use .WithRetry() on ITurboHttpClientBuilder instead.")]
     public RetryPolicy? RetryPolicy { get; init; }
 
     /// <summary>HTTP caching policy. <see langword="null"/> disables the response cache.</summary>
+    [Obsolete("Use .WithCache() on ITurboHttpClientBuilder instead.")]
     public CachePolicy? CachePolicy { get; init; }
 
     /// <summary>Connection management policy controlling per-host connection limits and HTTP/2 multiplexing.</summary>

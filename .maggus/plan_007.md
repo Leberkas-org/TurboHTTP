@@ -344,12 +344,12 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want `RedirectPolicy`, `RetryPolicy`, and `CachePolicy` on `TurboClientOptions` marked obsolete so that users are guided to the builder API while existing code still compiles.
 
 **Acceptance Criteria:**
-- [ ] `TurboClientOptions.RedirectPolicy` gets `[Obsolete("Use .WithRedirect() on ITurboHttpClientBuilder instead.")]`
-- [ ] `TurboClientOptions.RetryPolicy` gets `[Obsolete("Use .WithRetry() on ITurboHttpClientBuilder instead.")]`
-- [ ] `TurboClientOptions.CachePolicy` gets `[Obsolete("Use .WithCache() on ITurboHttpClientBuilder instead.")]`
-- [ ] Properties remain functional — no breaking change
-- [ ] Backward-compat path in `Engine.CreateFlow(poolRouter, options, factory)` reads these properties via `#pragma warning disable/restore` without compile errors
-- [ ] Typecheck/lint passes
+- [x] `TurboClientOptions.RedirectPolicy` gets `[Obsolete("Use .WithRedirect() on ITurboHttpClientBuilder instead.")]`
+- [x] `TurboClientOptions.RetryPolicy` gets `[Obsolete("Use .WithRetry() on ITurboHttpClientBuilder instead.")]`
+- [x] `TurboClientOptions.CachePolicy` gets `[Obsolete("Use .WithCache() on ITurboHttpClientBuilder instead.")]`
+- [x] Properties remain functional — no breaking change
+- [x] Backward-compat path in `Engine.CreateFlow(poolRouter, options, factory)` reads these properties via `#pragma warning disable/restore` without compile errors
+- [x] Typecheck/lint passes
 
 ---
 
