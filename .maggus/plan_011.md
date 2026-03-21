@@ -147,13 +147,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Change: Add `SanitizeReferer()` method in `Enrich()` after header merge
 
 **Acceptance Criteria:**
-- [ ] Fragment stripped from Referer header
-- [ ] Userinfo stripped from Referer header
-- [ ] Referer removed on HTTPS→HTTP downgrade
-- [ ] Referer preserved on same-scheme requests
-- [ ] No Referer header passes through unchanged
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] Fragment stripped from Referer header
+- [x] Userinfo stripped from Referer header
+- [x] Referer removed on HTTPS→HTTP downgrade
+- [x] Referer preserved on same-scheme requests
+- [x] No Referer header passes through unchanged
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.StreamTests/Streams/21_RefererSanitizationTests.cs`):
 

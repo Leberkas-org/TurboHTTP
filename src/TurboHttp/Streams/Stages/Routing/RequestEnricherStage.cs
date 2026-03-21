@@ -1,10 +1,12 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Client;
+using TurboHttp.Protocol.RFC9110;
 
 namespace TurboHttp.Streams.Stages.Routing;
 
@@ -92,6 +94,50 @@ internal sealed class RequestEnricherStage : GraphStage<FlowShape<HttpRequestMes
                 {
                     request.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
+            }
+
+            // Rule 4: Referer sanitization (RFC 9110 §10.5)
+            SanitizeReferer(request);
+        }
+
+        /// <summary>
+        /// RFC 9110 §10.5:
+        /// - "A user agent MUST NOT include a fragment component in the URI"
+        /// - "A user agent MUST NOT include the userinfo subcomponent"
+        /// - "A user agent MUST NOT send a Referer header field in an unsecured HTTP request
+        ///    if the referring page was received with a secure protocol"
+        /// </summary>
+        private static void SanitizeReferer(HttpRequestMessage request)
+        {
+            if (!request.Headers.TryGetValues("Referer", out var values))
+            {
+                return;
+            }
+
+            var refererValue = values.FirstOrDefault();
+            if (string.IsNullOrEmpty(refererValue) || !Uri.TryCreate(refererValue, UriKind.Absolute, out var refererUri))
+            {
+                return;
+            }
+
+            // HTTPS→HTTP downgrade: remove Referer entirely
+            if (refererUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)
+                && request.RequestUri is not null
+                && request.RequestUri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Headers.Remove("Referer");
+                return;
+            }
+
+            // Strip fragment and userinfo
+            var needsStrip = !string.IsNullOrEmpty(refererUri.Fragment)
+                             || !string.IsNullOrEmpty(refererUri.UserInfo);
+
+            if (needsStrip)
+            {
+                var sanitized = UriSanitizer.FormatAbsoluteWithoutUserInfo(refererUri);
+                request.Headers.Remove("Referer");
+                request.Headers.TryAddWithoutValidation("Referer", sanitized);
             }
         }
     }

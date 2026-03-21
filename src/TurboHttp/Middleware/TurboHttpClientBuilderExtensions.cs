@@ -21,37 +21,27 @@ public static class TurboHttpClientBuilderExtensions
 
     public static ITurboHttpClientBuilder WithCache(this ITurboHttpClientBuilder builder, CachePolicy policy)
     {
-        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
-        {
-            d.CachePolicy = policy;
-        });
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d => { d.CachePolicy = policy; });
         return builder;
     }
 
     public static ITurboHttpClientBuilder WithRetry(this ITurboHttpClientBuilder builder, RetryPolicy policy)
     {
-        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
-        {
-            d.RetryPolicy = policy;
-        });
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d => { d.RetryPolicy = policy; });
         return builder;
     }
 
-    public static ITurboHttpClientBuilder WithRedirect(this ITurboHttpClientBuilder builder, RedirectPolicy? policy = null)
+    public static ITurboHttpClientBuilder WithRedirect(this ITurboHttpClientBuilder builder,
+        RedirectPolicy? policy = null)
     {
-        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
-        {
-            d.RedirectPolicy = policy ?? new RedirectPolicy();
-        });
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name,
+            d => { d.RedirectPolicy = policy ?? new RedirectPolicy(); });
         return builder;
     }
 
     public static ITurboHttpClientBuilder WithDecompression(this ITurboHttpClientBuilder builder, bool enabled = true)
     {
-        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
-        {
-            d.AutomaticDecompression = enabled;
-        });
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d => { d.AutomaticDecompression = enabled; });
         return builder;
     }
 
@@ -79,10 +69,8 @@ public static class TurboHttpClientBuilderExtensions
         this ITurboHttpClientBuilder builder,
         Func<HttpRequestMessage, HttpRequestMessage> transform)
     {
-        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
-        {
-            d.HandlerFactories.Add(_ => new DelegateRequestHandler(transform));
-        });
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name,
+            d => { d.HandlerFactories.Add(_ => new DelegateRequestHandler(transform)); });
         return builder;
     }
 
@@ -94,32 +82,22 @@ public static class TurboHttpClientBuilderExtensions
         this ITurboHttpClientBuilder builder,
         Func<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> transform)
     {
-        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
-        {
-            d.HandlerFactories.Add(_ => new DelegateResponseHandler(transform));
-        });
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name,
+            d => { d.HandlerFactories.Add(_ => new DelegateResponseHandler(transform)); });
         return builder;
     }
 
-    private sealed class DelegateRequestHandler : TurboHandler
+    private sealed class DelegateRequestHandler(Func<HttpRequestMessage, HttpRequestMessage> transform) : TurboHandler
     {
-        private readonly Func<HttpRequestMessage, HttpRequestMessage> _transform;
-
-        public DelegateRequestHandler(Func<HttpRequestMessage, HttpRequestMessage> transform)
-            => _transform = transform;
-
         public override HttpRequestMessage ProcessRequest(HttpRequestMessage request)
-            => _transform(request);
+            => transform(request);
     }
 
-    private sealed class DelegateResponseHandler : TurboHandler
+    private sealed class DelegateResponseHandler(
+        Func<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> transform)
+        : TurboHandler
     {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> _transform;
-
-        public DelegateResponseHandler(Func<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> transform)
-            => _transform = transform;
-
         public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
-            => _transform(original, response);
+            => transform(original, response);
     }
 }
