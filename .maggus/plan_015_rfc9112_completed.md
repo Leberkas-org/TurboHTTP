@@ -69,9 +69,9 @@ RFC 9112 has 82 client-side MUSTs. After plan_011 (TASK-010-013), 80 are covered
 **RFC**: 9112 §2.2 — "A sender MUST NOT generate a bare CR"
 
 **Acceptance Criteria:**
-- [ ] Encoded HTTP/1.1 output contains no bare CR (only CRLF)
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] Encoded HTTP/1.1 output contains no bare CR (only CRLF)
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9112/03_EncoderHeaderTests.cs`):
 
