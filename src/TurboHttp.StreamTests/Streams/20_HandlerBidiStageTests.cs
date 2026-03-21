@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Akka;
 using Akka.Streams;
@@ -11,19 +10,19 @@ namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests the <see cref="HandlerBidiStage"/> covering both request and response directions,
-/// synchronous and asynchronous middleware, chaining via <c>Atop</c>, and stream completion.
+/// handler chaining via <c>Atop</c>, and stream completion.
 /// </summary>
 public sealed class HandlerBidiStageTests : StreamTestBase
 {
-    // ── Test middleware implementations ───────────────────────────────
+    // ── Test handler implementations ─────────────────────────────────
 
-    /// <summary>Synchronous handler that adds a custom header to requests.</summary>
-    private sealed class RequestHeaderMiddleware : TurboHandler
+    /// <summary>Handler that adds a custom header to requests.</summary>
+    private sealed class RequestHeaderHandler : TurboHandler
     {
         private readonly string _name;
         private readonly string _value;
 
-        public RequestHeaderMiddleware(string name, string value)
+        public RequestHeaderHandler(string name, string value)
         {
             _name = name;
             _value = value;
@@ -36,51 +35,13 @@ public sealed class HandlerBidiStageTests : StreamTestBase
         }
     }
 
-    /// <summary>Async handler that adds a custom header to requests after a delay.</summary>
-    private sealed class AsyncRequestHeaderMiddleware : TurboHandler
+    /// <summary>Handler that adds a custom header to responses.</summary>
+    private sealed class ResponseHeaderHandler : TurboHandler
     {
         private readonly string _name;
         private readonly string _value;
 
-        public AsyncRequestHeaderMiddleware(string name, string value)
-        {
-            _name = name;
-            _value = value;
-        }
-
-        public override HttpRequestMessage ProcessRequest(HttpRequestMessage request)
-        {
-            request.Headers.TryAddWithoutValidation(_name, _value);
-            return request;
-        }
-    }
-
-    /// <summary>Synchronous handler that adds a custom header to responses.</summary>
-    private sealed class ResponseHeaderMiddleware : TurboHandler
-    {
-        private readonly string _name;
-        private readonly string _value;
-
-        public ResponseHeaderMiddleware(string name, string value)
-        {
-            _name = name;
-            _value = value;
-        }
-
-        public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
-        {
-            response.Headers.TryAddWithoutValidation(_name, _value);
-            return response;
-        }
-    }
-
-    /// <summary>Async handler that adds a custom header to responses after a delay.</summary>
-    private sealed class AsyncResponseHeaderMiddleware : TurboHandler
-    {
-        private readonly string _name;
-        private readonly string _value;
-
-        public AsyncResponseHeaderMiddleware(string name, string value)
+        public ResponseHeaderHandler(string name, string value)
         {
             _name = name;
             _value = value;
@@ -211,11 +172,11 @@ public sealed class HandlerBidiStageTests : StreamTestBase
     // Sync request transformation
     // ============================
 
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-001: sync middleware adds header to request")]
+    [Fact(Timeout = 10_000, DisplayName = "MBIDI-001: sync handler adds header to request")]
     public async Task SyncRequestTransformation_Should_InjectHeader()
     {
-        var middleware = new RequestHeaderMiddleware("X-Trace", "abc");
-        var stage = new HandlerBidiStage(middleware, 0);
+        var handler = new RequestHeaderHandler("X-Trace", "abc");
+        var stage = new HandlerBidiStage(handler, 0);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var results = await RunRequestAsync(stage, request);
@@ -226,32 +187,14 @@ public sealed class HandlerBidiStageTests : StreamTestBase
     }
 
     // ============================
-    // Async request transformation
-    // ============================
-
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-002: async middleware with Task.Delay adds header to request")]
-    public async Task AsyncRequestTransformation_Should_InjectHeader()
-    {
-        var middleware = new AsyncRequestHeaderMiddleware("X-Async", "delayed");
-        var stage = new HandlerBidiStage(middleware, 0);
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-
-        var results = await RunRequestAsync(stage, request);
-
-        var result = Assert.Single(results);
-        Assert.True(result.Headers.Contains("X-Async"));
-        Assert.Equal("delayed", result.Headers.GetValues("X-Async").Single());
-    }
-
-    // ============================
     // Sync response transformation
     // ============================
 
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-003: sync middleware adds header to response")]
+    [Fact(Timeout = 10_000, DisplayName = "MBIDI-003: sync handler adds header to response")]
     public async Task SyncResponseTransformation_Should_InjectHeader()
     {
-        var middleware = new ResponseHeaderMiddleware("X-Resp", "injected");
-        var stage = new HandlerBidiStage(middleware, 0);
+        var handler = new ResponseHeaderHandler("X-Resp", "injected");
+        var stage = new HandlerBidiStage(handler, 0);
         var originalRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var response = MakeResponse(originalRequest);
 
@@ -263,35 +206,16 @@ public sealed class HandlerBidiStageTests : StreamTestBase
     }
 
     // ============================
-    // Async response transformation
-    // ============================
-
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-004: async middleware with Task.Delay adds header to response")]
-    public async Task AsyncResponseTransformation_Should_InjectHeader()
-    {
-        var middleware = new AsyncResponseHeaderMiddleware("X-AsyncResp", "async-val");
-        var stage = new HandlerBidiStage(middleware, 0);
-        var originalRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var response = MakeResponse(originalRequest);
-
-        var results = await RunResponseAsync(stage, response);
-
-        var result = Assert.Single(results);
-        Assert.True(result.Headers.Contains("X-AsyncResp"));
-        Assert.Equal("async-val", result.Headers.GetValues("X-AsyncResp").Single());
-    }
-
-    // ============================
     // Original request access in response direction
     // ============================
 
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-005: response middleware receives original request via response.RequestMessage")]
+    [Fact(Timeout = 10_000, DisplayName = "MBIDI-005: response handler receives original request via response.RequestMessage")]
     public async Task ResponseDirection_Should_ReceiveOriginalRequest()
     {
         var capturedOriginal = new TaskCompletionSource<HttpRequestMessage>();
 
-        var middleware = new CapturingResponseMiddleware(capturedOriginal);
-        var stage = new HandlerBidiStage(middleware, 0);
+        var handler = new CapturingResponseHandler(capturedOriginal);
+        var stage = new HandlerBidiStage(handler, 0);
         var originalRequest = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
         originalRequest.Headers.TryAddWithoutValidation("X-OriginalMarker", "present");
         var response = MakeResponse(originalRequest);
@@ -304,12 +228,12 @@ public sealed class HandlerBidiStageTests : StreamTestBase
         Assert.True(captured.Headers.Contains("X-OriginalMarker"));
     }
 
-    /// <summary>Middleware that captures the original request passed to ProcessResponseAsync.</summary>
-    private sealed class CapturingResponseMiddleware : TurboHandler
+    /// <summary>Handler that captures the original request passed to ProcessResponse.</summary>
+    private sealed class CapturingResponseHandler : TurboHandler
     {
         private readonly TaskCompletionSource<HttpRequestMessage> _tcs;
 
-        public CapturingResponseMiddleware(TaskCompletionSource<HttpRequestMessage> tcs) => _tcs = tcs;
+        public CapturingResponseHandler(TaskCompletionSource<HttpRequestMessage> tcs) => _tcs = tcs;
 
         public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
         {
@@ -319,17 +243,17 @@ public sealed class HandlerBidiStageTests : StreamTestBase
     }
 
     // ============================
-    // Multiple BidiStages via Atop
+    // Multiple HandlerBidiStages via Atop
     // ============================
 
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-006: Atop composes middlewares — request gets headers from both in FIFO order")]
+    [Fact(Timeout = 10_000, DisplayName = "MBIDI-006: Atop composes handlers — request gets headers from both in FIFO order")]
     public async Task Atop_Should_ApplyCumulativeRequestHeaders()
     {
-        var mw1 = new RequestHeaderMiddleware("X-First", "1");
-        var mw2 = new RequestHeaderMiddleware("X-Second", "2");
+        var h1 = new RequestHeaderHandler("X-First", "1");
+        var h2 = new RequestHeaderHandler("X-Second", "2");
 
-        var bidi = BidiFlow.FromGraph(new HandlerBidiStage(mw1, 0))
-            .Atop(BidiFlow.FromGraph(new HandlerBidiStage(mw2, 1)));
+        var bidi = BidiFlow.FromGraph(new HandlerBidiStage(h1, 0))
+            .Atop(BidiFlow.FromGraph(new HandlerBidiStage(h2, 1)));
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
@@ -340,14 +264,14 @@ public sealed class HandlerBidiStageTests : StreamTestBase
         Assert.Equal("2", result.Headers.GetValues("X-Second").Single());
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "MBIDI-007: Atop composes middlewares — response gets headers from both")]
+    [Fact(Timeout = 10_000, DisplayName = "MBIDI-007: Atop composes handlers — response gets headers from both")]
     public async Task Atop_Should_ApplyCumulativeResponseHeaders()
     {
-        var mw1 = new ResponseHeaderMiddleware("X-RFirst", "r1");
-        var mw2 = new ResponseHeaderMiddleware("X-RSecond", "r2");
+        var h1 = new ResponseHeaderHandler("X-RFirst", "r1");
+        var h2 = new ResponseHeaderHandler("X-RSecond", "r2");
 
-        var bidi = BidiFlow.FromGraph(new HandlerBidiStage(mw1, 0))
-            .Atop(BidiFlow.FromGraph(new HandlerBidiStage(mw2, 1)));
+        var bidi = BidiFlow.FromGraph(new HandlerBidiStage(h1, 0))
+            .Atop(BidiFlow.FromGraph(new HandlerBidiStage(h2, 1)));
 
         var originalRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var response = MakeResponse(originalRequest);
@@ -366,8 +290,8 @@ public sealed class HandlerBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "MBIDI-008: multiple requests flow through and stream completes")]
     public async Task MultipleRequests_Should_FlowThroughWithCompletion()
     {
-        var middleware = new RequestHeaderMiddleware("X-Count", "yes");
-        var stage = new HandlerBidiStage(middleware, 0);
+        var handler = new RequestHeaderHandler("X-Count", "yes");
+        var stage = new HandlerBidiStage(handler, 0);
 
         var requests = Enumerable.Range(1, 5)
             .Select(i => new HttpRequestMessage(HttpMethod.Get, $"http://example.com/{i}"))
@@ -386,8 +310,8 @@ public sealed class HandlerBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "MBIDI-009: multiple responses flow through and stream completes")]
     public async Task MultipleResponses_Should_FlowThroughWithCompletion()
     {
-        var middleware = new ResponseHeaderMiddleware("X-Processed", "true");
-        var stage = new HandlerBidiStage(middleware, 0);
+        var handler = new ResponseHeaderHandler("X-Processed", "true");
+        var stage = new HandlerBidiStage(handler, 0);
 
         var responses = Enumerable.Range(1, 5)
             .Select(i =>

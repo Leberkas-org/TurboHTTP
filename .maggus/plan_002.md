@@ -117,15 +117,15 @@ Renaming to `TurboHandler` aligns with .NET's `HttpMessageHandler` / `Delegating
 **Description:** As a developer, I want the BidiStage test file updated to the new sync API and renamed.
 
 **Acceptance Criteria:**
-- [ ] Rename file `20_MiddlewareBidiStageTests.cs` → `20_HandlerBidiStageTests.cs`
-- [ ] Test class name: `HandlerBidiStageTests`
-- [ ] Test handler classes extend `TurboHandler` instead of `TurboMiddleware`
-- [ ] Override `ProcessRequest` / `ProcessResponse` (sync, no CancellationToken)
-- [ ] Remove `AsyncRequestHeaderMiddleware` and `AsyncResponseHeaderMiddleware` classes
-- [ ] Remove test MBIDI-002 (async request transformation) and MBIDI-004 (async response transformation)
-- [ ] Update `MiddlewareBidiStage` → `HandlerBidiStage` in all remaining test code
-- [ ] Update `using TurboHttp.Middleware` → keep (namespace unchanged) or adjust if needed
-- [ ] All remaining tests pass (`dotnet test`)
+- [x] Rename file `20_MiddlewareBidiStageTests.cs` → `20_HandlerBidiStageTests.cs`
+- [x] Test class name: `HandlerBidiStageTests`
+- [x] Test handler classes extend `TurboHandler` instead of `TurboMiddleware`
+- [x] Override `ProcessRequest` / `ProcessResponse` (sync, no CancellationToken)
+- [x] Remove `AsyncRequestHeaderMiddleware` and `AsyncResponseHeaderMiddleware` classes
+- [x] Remove test MBIDI-002 (async request transformation) and MBIDI-004 (async response transformation)
+- [x] Update `MiddlewareBidiStage` → `HandlerBidiStage` in all remaining test code
+- [x] Update `using TurboHttp.Middleware` → keep (namespace unchanged) or adjust if needed
+- [x] All remaining tests pass (`dotnet test`)
 
 ### TASK-009: Update Hosting Tests
 **Description:** As a developer, I want the builder handler tests updated to new naming.
