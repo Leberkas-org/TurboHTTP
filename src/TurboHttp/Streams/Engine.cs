@@ -73,6 +73,27 @@ public class Engine
             http10Factory, http11Factory, http20Factory);
     }
 
+    internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(
+        Func<Flow<IOutputItem, IInputItem, NotUsed>> http10Factory,
+        Func<Flow<IOutputItem, IInputItem, NotUsed>> http11Factory,
+        Func<Flow<IOutputItem, IInputItem, NotUsed>> http20Factory,
+        Func<Flow<IOutputItem, IInputItem, NotUsed>> http30Factory,
+        PipelineDescriptor descriptor)
+    {
+        var holder = new HttpRequestMessage();
+        var defaultOptions = new TurboRequestOptions(
+            BaseAddress: null,
+            DefaultRequestHeaders: holder.Headers,
+            DefaultRequestVersion: HttpVersion.Version11,
+            DefaultVersionPolicy: HttpVersionPolicy.RequestVersionOrHigher,
+            Timeout: TimeSpan.FromSeconds(30),
+            MaxResponseContentBufferSize: 1024 * 1024);
+
+        return BuildExtendedPipeline(ActorRefs.Nobody, new TurboClientOptions(), () => defaultOptions,
+            descriptor,
+            http10Factory, http11Factory, http20Factory);
+    }
+
     private static TurboRequestOptions BuildRequestOptions(TurboClientOptions options)
     {
         var holder = new HttpRequestMessage();

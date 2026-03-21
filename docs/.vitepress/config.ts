@@ -39,6 +39,7 @@ export default defineConfig({
                     text: 'Architecture',
                     items: [
                         { text: 'Overview', link: '/architecture/' },
+                        { text: 'Middleware', link: '/architecture/middleware' },
                         { text: 'Layers', link: '/architecture/layers' },
                         { text: 'Protocol Engines', link: '/architecture/engines' },
                         { text: 'Request Pipeline', link: '/architecture/pipeline' },

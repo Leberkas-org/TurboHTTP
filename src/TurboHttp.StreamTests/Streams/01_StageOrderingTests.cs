@@ -7,6 +7,7 @@ using Akka.Streams.TestKit;
 using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC6265;
+using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9111;
 using TurboHttp.Streams;
 using TurboHttp.Streams.Stages;
@@ -524,14 +525,20 @@ public sealed class StageOrderingTests : EngineTestBase
         // Full engine pipeline: send a GET request to a domain with cookies in jar.
         // The response should arrive successfully, proving the pipeline wired correctly
         // with CookieInjection before CacheLookup (empty cache → miss → engine → response).
-        var options = new TurboClientOptions();
+        // Explicitly activates only CookieJar — no redirect/retry/cache needed for this assertion.
+        var descriptor = new PipelineDescriptor(
+            RedirectPolicy: null,
+            RetryPolicy: null,
+            CookieJar: new CookieJar(),
+            CacheStore: null,
+            Middlewares: []);
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
             NoOpH2Flow,
             NoOpH2Flow,
-            options);
+            descriptor);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page")
         {
@@ -549,14 +556,14 @@ public sealed class StageOrderingTests : EngineTestBase
         // Verify that the full pipeline successfully processes a response through
         // all three islands: pre-processing → engine → post-processing.
         // ConnectionReuse (engine island) processes before CookieStorage/CacheStorage (post-processing).
-        var options = new TurboClientOptions();
+        // No features needed — empty descriptor proves the bare pipeline wires correctly.
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
             NoOpH2Flow,
             NoOpH2Flow,
-            options);
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api")
         {
@@ -575,6 +582,7 @@ public sealed class StageOrderingTests : EngineTestBase
     {
         // Full engine pipeline with gzip response: DecompressionStage (engine island)
         // decompresses before the response enters post-processing.
+        // Decompression is always-on (not feature-gated) — empty descriptor is correct.
         const string originalText = "Decompressed by engine island!";
         var compressedBody = GzipCompress(System.Text.Encoding.UTF8.GetBytes(originalText));
         var header = $"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {compressedBody.Length}\r\n\r\n";
@@ -583,14 +591,13 @@ public sealed class StageOrderingTests : EngineTestBase
         headerBytes.CopyTo(responseBytes, 0);
         compressedBody.CopyTo(responseBytes, headerBytes.Length);
 
-        var options = new TurboClientOptions();
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(() => responseBytes),
             () => Http11Flow(() => responseBytes),
             NoOpH2Flow,
             NoOpH2Flow,
-            options);
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/gzipped")
         {
@@ -612,6 +619,7 @@ public sealed class StageOrderingTests : EngineTestBase
     {
         // First request → 301 redirect, second request (from redirect) → 200 OK.
         // This proves the redirect feedback loop works: redirect → redirectMerge → CookieInjection → pipeline.
+        // Explicitly activates RedirectPolicy — only this feature is required for this test.
         var callCount = 0;
 
         byte[] ResponseFactory()
@@ -622,14 +630,19 @@ public sealed class StageOrderingTests : EngineTestBase
                 : "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         }
 
-        var options = new TurboClientOptions();
+        var descriptor = new PipelineDescriptor(
+            RedirectPolicy: new RedirectPolicy(),
+            RetryPolicy: null,
+            CookieJar: null,
+            CacheStore: null,
+            Middlewares: []);
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(ResponseFactory),
             () => Http11Flow(ResponseFactory),
             NoOpH2Flow,
             NoOpH2Flow,
-            options);
+            descriptor);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old")
         {
@@ -651,14 +664,14 @@ public sealed class StageOrderingTests : EngineTestBase
         // A 200 OK response is not retryable (not 408/503) and not a redirect (not 3xx).
         // It should pass through RetryStage → Merge → RedirectStage to the final output.
         // This verifies the full post-processing chain: CookieStorage → CacheStorage → Retry → Merge → Redirect.
-        var options = new TurboClientOptions();
+        // No features needed — empty descriptor proves a 200 OK traverses all stages unmodified.
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
             () => Http11Flow(Ok11Response),
             NoOpH2Flow,
             NoOpH2Flow,
-            options);
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/stable")
         {

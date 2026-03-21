@@ -361,10 +361,10 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Background:** These tests verify RFC ordering invariants (INV-1 through INV-10) — e.g. that cookie injection runs before cache lookup. The invariants themselves are unchanged; only the test setup needs updating.
 
 **Acceptance Criteria:**
-- [ ] All tests that activate features via `TurboClientOptions` policies are rewritten to activate them via `PipelineDescriptor` directly (StreamTests call the engine internally)
-- [ ] No test implicitly assumes cookie/cache/retry/redirect are active — each test explicitly enables only the features it exercises
-- [ ] All existing stage-ordering assertions are preserved unchanged
-- [ ] Unit tests are written and successful
+- [x] All tests that activate features via `TurboClientOptions` policies are rewritten to activate them via `PipelineDescriptor` directly (StreamTests call the engine internally)
+- [x] No test implicitly assumes cookie/cache/retry/redirect are active — each test explicitly enables only the features it exercises
+- [x] All existing stage-ordering assertions are preserved unchanged
+- [x] Unit tests are written and successful
 
 ---
 
