@@ -4,7 +4,6 @@ using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.TestKit.Xunit2;
-using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
@@ -64,7 +63,8 @@ public sealed class AsyncBoundaryTests : TestKit
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
             () => Flow.FromGraph(new H2EngineFakeConnectionStage(new SettingsFrame([]).Serialize())),
-            NoOpH2Flow);
+            NoOpH2Flow,
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {
@@ -85,7 +85,8 @@ public sealed class AsyncBoundaryTests : TestKit
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
             () => Flow.FromGraph(new H2EngineFakeConnectionStage(new SettingsFrame([]).Serialize())),
-            NoOpH2Flow);
+            NoOpH2Flow,
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {
@@ -106,7 +107,8 @@ public sealed class AsyncBoundaryTests : TestKit
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
             () => Flow.FromGraph(new H2EngineFakeConnectionStage(new SettingsFrame([]).Serialize())),
-            NoOpH2Flow);
+            NoOpH2Flow,
+            PipelineDescriptor.Empty);
 
         for (var i = 0; i < 5; i++)
         {
@@ -132,7 +134,8 @@ public sealed class AsyncBoundaryTests : TestKit
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
             () => Flow.FromGraph(new H2EngineFakeConnectionStage(new SettingsFrame([]).Serialize())),
-            NoOpH2Flow);
+            NoOpH2Flow,
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {
@@ -147,14 +150,13 @@ public sealed class AsyncBoundaryTests : TestKit
     [Fact(Timeout = 15_000, DisplayName = "ABND-005: Full pipeline with TurboClientOptions completes with async boundaries")]
     public async Task Should_CompleteRequest_When_FullPipelineWithOptionsAndAsyncBoundaries()
     {
-        var options = new TurboClientOptions();
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok10Response),
             () => Http11Flow(Ok11Response),
             NoOpH2Flow,
             NoOpH2Flow,
-            options);
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {
@@ -175,7 +177,7 @@ public sealed class AsyncBoundaryTests : TestKit
             () => Http11Flow(Ok11Response),
             NoOpH2Flow,
             NoOpH2Flow,
-            options: null);
+            PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
         {

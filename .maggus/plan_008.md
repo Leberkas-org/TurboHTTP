@@ -30,14 +30,14 @@ and zero `#pragma warning disable CS0618` suppressions in the production codebas
 they no longer depend on the `TurboClientOptions?` overload slated for deletion.
 
 **Acceptance Criteria:**
-- [ ] ABND-001 through ABND-004: 4-argument `engine.CreateFlow(http10, http11, h20, h30)` calls
+- [x] ABND-001 through ABND-004: 4-argument `engine.CreateFlow(http10, http11, h20, h30)` calls
       each gain an explicit 5th argument `PipelineDescriptor.Empty`.
-- [ ] ABND-005 (`options = new TurboClientOptions()`): replaced with `PipelineDescriptor.Empty`.
+- [x] ABND-005 (`options = new TurboClientOptions()`): replaced with `PipelineDescriptor.Empty`.
       The local `options` variable and `TurboClientOptions` import (if unused after the change) are removed.
-- [ ] ABND-006 (`options: null`): replaced with `PipelineDescriptor.Empty`.
-- [ ] No `#pragma warning` suppressions are added.
-- [ ] All 6 ABND tests remain structurally identical (same assertions, same request/response bytes).
-- [ ] `dotnet build` passes with no new errors.
+- [x] ABND-006 (`options: null`): replaced with `PipelineDescriptor.Empty`.
+- [x] No `#pragma warning` suppressions are added.
+- [x] All 6 ABND tests remain structurally identical (same assertions, same request/response bytes).
+- [x] `dotnet build` passes with no new errors.
 
 **Migration pattern:**
 ```csharp
