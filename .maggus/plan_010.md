@@ -20,16 +20,16 @@ This creates an inconsistency: built-in features are BidiFlows, user middlewares
 **Description:** As a developer, I want a `MiddlewareBidiStage` that wraps a `TurboMiddleware` instance as a bidirectional stage so that it can compose via `Atop`.
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp/Streams/Stages/MiddlewareBidiStage.cs`
-- [ ] Implements `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
-- [ ] Constructor takes `TurboMiddleware middleware` and `int index`
-- [ ] Port names use middleware class name with index fallback for uniqueness: e.g. `"AuthMiddleware.In.Request"` for named types, `"Middleware0.In.Request"` as fallback for delegates sharing names
-- [ ] Request direction: `OnPush` calls `ProcessRequestAsync()`, supports ValueTask fast-path and async callback via `GetAsyncCallback<T>`
-- [ ] Response direction: `OnPush` calls `ProcessResponseAsync(response.RequestMessage!, response, ...)`, same async pattern
-- [ ] Each direction manages completion independently (`Complete(outlet)` / `Cancel(inlet)`, not `CompleteStage()`)
-- [ ] Async in-flight tracking per direction: `_requestAsyncInFlight`, `_responseAsyncInFlight`
-- [ ] Deferred completion: if upstream finishes while async is in-flight, complete the outlet after the callback fires
-- [ ] Typecheck passes (`dotnet build`)
+- [x] New file `src/TurboHttp/Streams/Stages/MiddlewareBidiStage.cs`
+- [x] Implements `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
+- [x] Constructor takes `TurboMiddleware middleware` and `int index`
+- [x] Port names use middleware class name with index fallback for uniqueness: e.g. `"AuthMiddleware.In.Request"` for named types, `"Middleware0.In.Request"` as fallback for delegates sharing names
+- [x] Request direction: `OnPush` calls `ProcessRequestAsync()`, supports ValueTask fast-path and async callback via `GetAsyncCallback<T>`
+- [x] Response direction: `OnPush` calls `ProcessResponseAsync(response.RequestMessage!, response, ...)`, same async pattern
+- [x] Each direction manages completion independently (`Complete(outlet)` / `Cancel(inlet)`, not `CompleteStage()`)
+- [x] Async in-flight tracking per direction: `_requestAsyncInFlight`, `_responseAsyncInFlight`
+- [x] Deferred completion: if upstream finishes while async is in-flight, complete the outlet after the callback fires
+- [x] Typecheck passes (`dotnet build`)
 
 ### TASK-002: Update Engine Pipeline Composition
 **Description:** As a developer, I want `Engine.BuildExtendedPipeline()` to compose user middleware BidiFlows via `Atop` so that the pipeline is uniform.
