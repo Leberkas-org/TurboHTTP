@@ -327,13 +327,16 @@ The `docs/likec4/` workspace contains 12+ named views:
 
 # Custom Agents (`.claude/agents/`)
 
-Three project-specific agents are available via `/agent-name` or the Agent tool:
+Six project-specific agents are available via `/agent-name` or the Agent tool:
 
 | Agent | When to use |
 |-------|-------------|
 | `rfc-test-writer` | Generate a new RFC test file following exact project conventions |
 | `akka-stage-builder` | Implement a new Akka.Streams `GraphStage` |
 | `build-guardian` | Run full build + tests; produce RFC-breakdown coverage report |
+| `namespace-refactorer` | Execute one TASK from `.maggus/plan_010.md` (move files, update namespaces, verify build+tests) |
+| `stream-test-writer` | Generate `TurboHttp.StreamTests` files following `StreamTestBase` conventions |
+| `stage-port-validator` | Read-only quality gate — scan all stages for port naming convention violations |
 
 # Agent Guidance: dotnet-skills
 

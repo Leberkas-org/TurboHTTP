@@ -291,14 +291,14 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want unit tests for each `.With*()` method so that I can verify they correctly populate the named `TurboClientDescriptor`.
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp.Tests/Hosting/TurboHttpClientBuilderFeatureTests.cs`
-- [ ] Test: `.WithCookies()` → `descriptor.EnableCookies == true`
-- [ ] Test: `.WithCookies(jar)` → `descriptor.CustomCookieJar == jar`
-- [ ] Test: `.WithCache(policy)` → `descriptor.CachePolicy == policy`
-- [ ] Test: `.WithRetry(policy)` → `descriptor.RetryPolicy == policy`
-- [ ] Test: `.WithRedirect()` → `descriptor.RedirectPolicy != null` (default policy)
-- [ ] Test: `.WithRedirect(policy)` → `descriptor.RedirectPolicy == policy`
-- [ ] Unit tests are written and successful
+- [x] New file `src/TurboHttp.Tests/Hosting/TurboHttpClientBuilderFeatureTests.cs`
+- [x] Test: `.WithCookies()` → `descriptor.EnableCookies == true`
+- [x] Test: `.WithCookies(jar)` → `descriptor.CustomCookieJar == jar`
+- [x] Test: `.WithCache(policy)` → `descriptor.CachePolicy == policy`
+- [x] Test: `.WithRetry(policy)` → `descriptor.RetryPolicy == policy`
+- [x] Test: `.WithRedirect()` → `descriptor.RedirectPolicy != null` (default policy)
+- [x] Test: `.WithRedirect(policy)` → `descriptor.RedirectPolicy == policy`
+- [x] Unit tests are written and successful
 
 ---
 
@@ -306,13 +306,13 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want unit tests for `.AddMiddleware<T>()` and the factory's DI resolution so that I can verify middleware is registered and resolved correctly.
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp.Tests/Hosting/TurboHttpClientBuilderMiddlewareTests.cs`
-- [ ] Test: `.AddMiddleware<TestMiddleware>()` → `descriptor.MiddlewareTypes` contains `typeof(TestMiddleware)`
-- [ ] Test: `TestMiddleware` is registered as Transient in `Services`
-- [ ] Test: `.UseRequest(transform)` → one anonymous middleware in `MiddlewareTypes`
-- [ ] Test: FIFO order preserved across multiple `.AddMiddleware<>()` calls
-- [ ] Test: factory resolves middleware correctly from a real `IServiceProvider`
-- [ ] Unit tests are written and successful
+- [x] New file `src/TurboHttp.Tests/Hosting/TurboHttpClientBuilderMiddlewareTests.cs`
+- [x] Test: `.AddMiddleware<TestMiddleware>()` → `descriptor.MiddlewareTypes` contains `typeof(TestMiddleware)`
+- [x] Test: `TestMiddleware` is registered as Transient in `Services`
+- [x] Test: `.UseRequest(transform)` → one anonymous middleware in `MiddlewareTypes`
+- [x] Test: FIFO order preserved across multiple `.AddMiddleware<>()` calls
+- [x] Test: factory resolves middleware correctly from a real `IServiceProvider`
+- [x] Unit tests are written and successful
 
 ---
 

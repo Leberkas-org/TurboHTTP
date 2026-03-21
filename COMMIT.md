@@ -1,13 +1,8 @@
-TASK-007: BuildExtendedPipeline — Accept PipelineDescriptor
+TASK-023: Tests — Middleware Registration and DI Resolution
 
-- `BuildExtendedPipeline` now receives a `PipelineDescriptor` parameter instead of
-  always instantiating `CookieJar` and `HttpCacheStore` internally.
-- `CreateFlow(poolRouter, options, factory)` (backward-compat public method) derives
-  a `PipelineDescriptor` with `new CookieJar()` and `new HttpCacheStore(options.CachePolicy)`
-  so existing callers are unaffected.
-- `BuildPostProcessGraph` refactored to accept `PipelineDescriptor` directly, using
-  `descriptor.RetryPolicy`, `descriptor.RedirectPolicy`, `descriptor.CookieJar`, and
-  `descriptor.CacheStore` for all stage instantiation.
-- `CacheLookupStage` and `CacheStorageStage` updated to accept nullable `HttpCacheStore?`
-  (pass-through / always-miss when null), consistent with the existing nullable-CookieJar
-  pattern in `CookieInjectionStage` and `CookieStorageStage`.
+Add unit tests for `.AddMiddleware<T>()` and factory DI resolution in
+`TurboHttpClientBuilderMiddlewareTests`. Covers: type registration in
+MiddlewareTypes, Transient lifetime in ServiceCollection, UseRequest
+adding to MiddlewareFactories only, FIFO ordering across multiple calls,
+and factory resolving the correct instance from a real IServiceProvider.
+7 tests, all green.
