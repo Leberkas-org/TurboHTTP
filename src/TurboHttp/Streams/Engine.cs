@@ -99,9 +99,16 @@ internal sealed class Engine
         BidiFlow<HttpRequestMessage, HttpRequestMessage,
             HttpResponseMessage, HttpResponseMessage, NotUsed>? features = null;
 
+        if (descriptor.RequestCompressionPolicy is not null)
+        {
+            var compression = BidiFlow.FromGraph(new RequestCompressionBidiStage(descriptor.RequestCompressionPolicy));
+            features = features is not null ? compression.Atop(features) : compression;
+        }
+
         if (descriptor.AutomaticDecompression)
         {
-            features = BidiFlow.FromGraph(new DecompressionBidiStage());
+            var decomp = BidiFlow.FromGraph(new DecompressionBidiStage());
+            features = features is not null ? decomp.Atop(features) : decomp;
         }
 
         if (descriptor.CacheStore is not null)
