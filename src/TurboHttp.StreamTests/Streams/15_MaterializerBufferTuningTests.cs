@@ -140,8 +140,8 @@ public sealed class MaterializerBufferTuningTests : TestKit
     [Fact(Timeout = 10_000, DisplayName = "MBUF-004: Lightweight stages inherit global default — pipeline with cookies completes")]
     public async Task Should_CompletePipelineWithCookies_When_LightweightStagesInheritGlobalBuffer()
     {
-        // Enable cookies so CookieInjectionStage and CookieStorageStage are in the pipeline.
-        // These lightweight stages should work fine with the reduced 4/16 global default.
+        // Enable cookies so CookieBidiStage is in the pipeline.
+        // This lightweight stage should work fine with the reduced 4/16 global default.
         var settings = ActorMaterializerSettings.Create(Sys)
             .WithInputBuffer(initialSize: 4, maxSize: 16);
         var materializer = Sys.Materializer(settings: settings);

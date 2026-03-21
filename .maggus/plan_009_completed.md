@@ -202,19 +202,19 @@ to verify the BidiFlow architecture and conditional inclusion.
 architecture is fully in place.
 
 **Acceptance Criteria:**
-- [ ] `CookieInjectionStage.cs` removed
-- [ ] `CookieStorageStage.cs` removed
-- [ ] `CacheLookupStage.cs` removed
-- [ ] `CacheStorageStage.cs` removed
-- [ ] `RetryStage.cs` removed
-- [ ] `RedirectStage.cs` removed
-- [ ] `DecompressionStage.cs` removed
-- [ ] `PostProcessShape` class removed
-- [ ] `BuildPostProcessGraph` method removed
-- [ ] No dead code or unused references remaining
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — zero errors, zero warnings
-- [ ] `dotnet test src/TurboHttp.sln` — all tests green
-- [ ] Stage port validator — no naming violations
+- [x] `CookieInjectionStage.cs` removed
+- [x] `CookieStorageStage.cs` removed
+- [x] `CacheLookupStage.cs` removed
+- [x] `CacheStorageStage.cs` removed
+- [x] `RetryStage.cs` removed
+- [x] `RedirectStage.cs` removed
+- [x] `DecompressionStage.cs` removed
+- [x] `PostProcessShape` class removed
+- [x] `BuildPostProcessGraph` method removed
+- [x] No dead code or unused references remaining
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — zero errors, zero warnings
+- [x] `dotnet test src/TurboHttp.sln` — all tests green
+- [x] Stage port validator — no naming violations
 
 ---
 

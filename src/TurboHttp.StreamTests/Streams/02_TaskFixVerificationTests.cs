@@ -17,7 +17,7 @@ namespace TurboHttp.StreamTests.Streams;
 /// Guards against re-introduction of known concurrency bugs caused by improper Task cancellation handling.
 /// </summary>
 /// <remarks>
-/// Stage under test: various pipeline stages.
+/// Stage under test: various pipeline stages (BidiFlow architecture).
 /// Ensures specific concurrency edge cases that were previously broken remain correctly handled.
 /// </remarks>
 public sealed class TaskFixVerificationTests : StreamTestBase
@@ -32,9 +32,16 @@ public sealed class TaskFixVerificationTests : StreamTestBase
             RequestMessage = request
         };
 
-        var (_, retry) = RunRetry(new RetryStage(new RetryPolicy()), 1, response);
+        var (reqOut, _, pushResp, _) = RunRetryBidi(new RetryBidiStage(new RetryPolicy()), 5, 5, request);
 
-        var retryRequest = retry.ExpectNext();
+        // Original request forwarded on Out1
+        reqOut.ExpectNext();
+
+        // Push retryable response on In2
+        pushResp(response);
+
+        // Retry request appears on Out1 with updated attempt count
+        var retryRequest = reqOut.ExpectNext();
         Assert.True(retryRequest.Options.TryGetValue(
             new HttpRequestOptionsKey<int>("TurboHttp.RetryAttemptCount"), out var count));
         Assert.Equal(2, count); // attempt 1 → incremented to 2
@@ -60,10 +67,13 @@ public sealed class TaskFixVerificationTests : StreamTestBase
             RequestMessage = request
         };
 
-        var (_, retry) = RunRetry(new RetryStage(policy), 1, response);
+        var (reqOut, _, pushResp, _) = RunRetryBidi(new RetryBidiStage(policy), 5, 5, request);
+
+        reqOut.ExpectNext(); // original forwarded
+        pushResp(response);
 
         // attempt 2 < MaxRetries 3 → should retry
-        var retryRequest = retry.ExpectNext();
+        var retryRequest = reqOut.ExpectNext();
         Assert.Same(request, retryRequest);
     }
 
@@ -78,11 +88,14 @@ public sealed class TaskFixVerificationTests : StreamTestBase
             RequestMessage = request
         };
 
-        var (final, retry) = RunRetry(new RetryStage(policy), 1, response);
+        var (reqOut, respOut, pushResp, _) = RunRetryBidi(new RetryBidiStage(policy), 5, 5, request);
 
-        // attempt 3 >= MaxRetries 3 → final
-        Assert.Same(response, final.ExpectNext());
-        retry.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        reqOut.ExpectNext(); // original forwarded
+        pushResp(response);
+
+        // attempt 3 >= MaxRetries 3 → final response on Out2
+        Assert.Same(response, respOut.ExpectNext());
+        reqOut.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
     [Fact(DisplayName = "TASK002-VFY-001: RedirectHandler.BuildRedirectRequest preserves HTTP/2 Version")]
@@ -124,33 +137,40 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         // First redirect creates a handler and stores it in Options.
         // When the redirect request comes back as a response (second redirect), the SAME handler
         // should be retrieved from Options, preserving the redirect count.
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
+        var stage = new RedirectBidiStage(new RedirectPolicy());
+        var (reqOut, _, pushResp, _) = RunRedirectBidi(stage, 10, 10, request);
+
+        // Original request forwarded
+        reqOut.ExpectNext();
+
+        // Push 302 redirect response
         var response1 = new HttpResponseMessage(HttpStatusCode.Found)
         {
-            RequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a")
+            RequestMessage = request
         };
         response1.Headers.TryAddWithoutValidation("Location", "http://example.com/b");
+        pushResp(response1);
 
-        var (_, redirect) = RunRedirect(new RedirectStage(new RedirectPolicy()), 2, response1);
-
-        var newReq1 = await redirect.ExpectNextAsync();
+        var newReq1 = reqOut.ExpectNext();
 
         // Verify handler was set
-        Assert.True(newReq1.Options.TryGetValue(RedirectStage.RedirectHandlerKey, out var handler));
+        Assert.True(newReq1.Options.TryGetValue(RedirectBidiStage.RedirectHandlerKey, out var handler));
         Assert.Equal(1, handler!.RedirectCount);
 
-        // Now simulate second redirect from the new request
+        // Push second redirect response for the redirect request
         var response2 = new HttpResponseMessage(HttpStatusCode.Found)
         {
             RequestMessage = newReq1
         };
         response2.Headers.TryAddWithoutValidation("Location", "http://example.com/c");
+        pushResp(response2);
 
-        // Feed response2 through a new stage (simulating pipeline re-entry)
-        var (_, redirect2) = RunRedirect(new RedirectStage(new RedirectPolicy()), 1, response2);
-        var newReq2 = await redirect2.ExpectNextAsync();
+        var newReq2 = reqOut.ExpectNext();
 
-        Assert.True(newReq2.Options.TryGetValue(RedirectStage.RedirectHandlerKey, out var handler2));
+        Assert.True(newReq2.Options.TryGetValue(RedirectBidiStage.RedirectHandlerKey, out var handler2));
         Assert.Equal(2, handler2!.RedirectCount); // same handler, count incremented
+        await Task.CompletedTask;
     }
 
     [Fact(DisplayName = "TASK002-VFY-004: Cross-scheme redirect preserves Version")]
@@ -523,11 +543,21 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
         response.Headers.Date = DateTimeOffset.UtcNow;
 
-        var results = await Source.Single(response)
-            .Via(new CacheStorageStage(store))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+        var (reqOut, respOut, pushResp, _) = RunCacheBidi(store, request);
 
-        Assert.Single(results);
+        // Request forwarded (cache miss on empty store)
+        await reqOut.ExpectNextAsync(CancellationToken.None);
+
+        // Push response on In2 — triggers cache storage
+        pushResp(response);
+
+        // Response appears on Out2 after being stored
+        var result = await respOut.ExpectNextAsync(CancellationToken.None);
+        Assert.Same(response, result);
+
+        // Allow async callback to complete
+        await Task.Delay(100);
+
         var entry = store.Get(request);
         Assert.NotNull(entry);
         Assert.Equal(bodyBytes, entry.Body);
@@ -549,6 +579,12 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         syncResponse.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
         syncResponse.Headers.Date = DateTimeOffset.UtcNow;
 
+        // First request/response through BidiStage
+        var (reqOut1, respOut1, pushResp1, _) = RunCacheBidi(store, syncRequest);
+        await reqOut1.ExpectNextAsync(CancellationToken.None);
+        pushResp1(syncResponse);
+        await respOut1.ExpectNextAsync(CancellationToken.None);
+
         // Async path: StreamContent
         var asyncRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/async");
         var asyncResponse = new HttpResponseMessage(HttpStatusCode.OK)
@@ -559,11 +595,15 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         asyncResponse.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
         asyncResponse.Headers.Date = DateTimeOffset.UtcNow;
 
-        var results = await Source.From([syncResponse, asyncResponse])
-            .Via(new CacheStorageStage(store))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+        // Second request/response through a fresh BidiStage with same store
+        var (reqOut2, respOut2, pushResp2, _) = RunCacheBidi(store, asyncRequest);
+        await reqOut2.ExpectNextAsync(CancellationToken.None);
+        pushResp2(asyncResponse);
+        await respOut2.ExpectNextAsync(CancellationToken.None);
 
-        Assert.Equal(2, results.Count);
+        // Allow async callback to complete
+        await Task.Delay(100);
+
         Assert.NotNull(store.Get(syncRequest));
         Assert.NotNull(store.Get(asyncRequest));
         Assert.Equal("sync"u8.ToArray(), store.Get(syncRequest)!.Body);
@@ -571,76 +611,118 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "CROSS-VFY-001: Retry then redirect — independent state tracking")]
-    public async Task Should_TrackStateIndependently_When_RetryAndRedirectInSequence()
+        DisplayName = "CROSS-VFY-001: Retry then redirect via BidiFlow.Atop — independent state tracking")]
+    public async Task Should_TrackStateIndependently_When_RetryAndRedirectStacked()
     {
-        // A response that is NOT retryable (200 OK) but IS a redirect (301)
-        // should pass through RetryStage to final, then RedirectStage picks it up.
-        // This verifies RetryStage and RedirectStage operate independently.
+        // A response that is NOT retryable but IS a redirect (301)
+        // should pass through RetryBidiStage unchanged, then RedirectBidiStage handles it.
+        // This verifies the BidiFlow.Atop stacking operates independently.
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old")
         {
             Version = new Version(1, 1)
         };
+
+        var retryBidi = new RetryBidiStage();
+        var redirectBidi = new RedirectBidiStage(new RedirectPolicy());
+
+        // Stack: redirect atop retry (outermost → innermost)
+        var stacked = BidiFlow.FromGraph(redirectBidi).Atop(BidiFlow.FromGraph(retryBidi));
+
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var bidi = b.Add(stacked);
+            var reqSrc = b.Add(Source.Single(original).Concat(Source.Never<HttpRequestMessage>()));
+            var respSrc = b.Add(Source.FromPublisher(responsePublisher));
+
+            b.From(reqSrc).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(respSrc).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var respSub = responsePublisher.ExpectSubscription();
+        var reqOutSub = requestOutProbe.ExpectSubscription();
+        var respOutSub = responseOutProbe.ExpectSubscription();
+        reqOutSub.Request(10);
+        respOutSub.Request(10);
+
+        // Original request forwarded through both stages
+        requestOutProbe.ExpectNext();
+
+        // Push 301 redirect response — not retryable, but redirectable
         var response = new HttpResponseMessage(HttpStatusCode.MovedPermanently)
         {
             RequestMessage = original
         };
         response.Headers.TryAddWithoutValidation("Location", "http://example.com/new");
+        respSub.SendNext(response);
 
-        var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
-        var probeRedirect = this.CreateManualSubscriberProbe<HttpRequestMessage>();
-
-        RunnableGraph.FromGraph(GraphDsl.Create(b =>
-        {
-            var retry = b.Add(new RetryStage());
-            var merge = b.Add(new Merge<HttpResponseMessage>(2));
-            var redirect = b.Add(new RedirectStage(new RedirectPolicy()));
-            var src = b.Add(Source.Single(response).Concat(Source.Never<HttpResponseMessage>()));
-            var empty = b.Add(Source.Never<HttpResponseMessage>());
-
-            b.From(src).To(retry.In);
-            b.From(retry.Out0).To(merge.In(0));
-            b.From(empty).To(merge.In(1));
-            b.From(merge.Out).To(redirect.In);
-            b.From(redirect.Out0).To(Sink.FromSubscriber(probeFinal));
-            b.From(redirect.Out1).To(Sink.FromSubscriber(probeRedirect));
-            b.From(retry.Out1).To(Sink.Ignore<HttpRequestMessage>().MapMaterializedValue(_ => NotUsed.Instance));
-
-            return ClosedShape.Instance;
-        })).Run(Materializer);
-
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRedirect = probeRedirect.ExpectSubscription();
-        subFinal.Request(1);
-        subRedirect.Request(1);
-
-        // 301 is not retryable → passes through RetryStage → picked up by RedirectStage
-        var redirectRequest = await probeRedirect.ExpectNextAsync(CancellationToken.None);
+        // RedirectBidiStage should produce a redirect request on Out1
+        var redirectRequest = requestOutProbe.ExpectNext();
         Assert.Equal("http://example.com/new", redirectRequest.RequestUri?.AbsoluteUri);
         Assert.Equal(new Version(1, 1), redirectRequest.Version); // Version preserved (TASK-002)
-        await probeFinal.ExpectNoMsgAsync(TimeSpan.FromMilliseconds(100));
+        responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        await Task.CompletedTask;
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "CROSS-VFY-002: CookieStorage then CacheStorage — both run on same response")]
-    public async Task Should_StoreCookieAndCache_When_CookieStorageThenCacheStorageInSequence()
+        DisplayName = "CROSS-VFY-002: CookieBidi then CacheBidi — both run on same response via Atop")]
+    public async Task Should_StoreCookieAndCache_When_CookieBidiAndCacheBidiStacked()
     {
         var jar = new CookieJar();
         var store = new HttpCacheStore();
 
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://cross.example.com/test");
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            RequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://cross.example.com/test"),
+            RequestMessage = request,
             Content = new ByteArrayContent("cross-test"u8.ToArray())
         };
         response.Headers.TryAddWithoutValidation("Set-Cookie", "sid=abc; Domain=cross.example.com; Path=/");
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
         response.Headers.Date = DateTimeOffset.UtcNow;
 
-        await Source.Single(response)
-            .Via(new CookieStorageStage(jar))
-            .Via(new CacheStorageStage(store))
-            .RunWith(Sink.Ignore<HttpResponseMessage>(), Materializer);
+        // Stack: cookie atop cache (cookie processes first on response path)
+        var cookieBidi = new CookieBidiStage(jar);
+        var cacheBidi = new CacheBidiStage(store);
+        var stacked = BidiFlow.FromGraph(cookieBidi).Atop(BidiFlow.FromGraph(cacheBidi));
+
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var bidi = b.Add(stacked);
+            var reqSrc = b.Add(Source.Single(request).Concat(Source.Never<HttpRequestMessage>()));
+            var respSrc = b.Add(Source.FromPublisher(responsePublisher));
+
+            b.From(reqSrc).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(respSrc).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var respSub = responsePublisher.ExpectSubscription();
+        requestOutProbe.ExpectSubscription().Request(10);
+        responseOutProbe.ExpectSubscription().Request(10);
+
+        // Request forwarded through both stages (cache miss)
+        await requestOutProbe.ExpectNextAsync(CancellationToken.None);
+
+        // Push response on In2 — flows through cache storage then cookie storage
+        respSub.SendNext(response);
+
+        var result = await responseOutProbe.ExpectNextAsync(CancellationToken.None);
+        Assert.Same(response, result);
 
         // Cookie stored (TASK-003)
         Assert.Equal(1, jar.Count);
@@ -687,62 +769,122 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         dataItem.Memory.Dispose();
     }
 
-    private (TestSubscriber.ManualProbe<HttpResponseMessage> final,
-        TestSubscriber.ManualProbe<HttpRequestMessage> retry) RunRetry(
-            RetryStage stage,
-            int demandEach,
-            params HttpResponseMessage[] responses)
+    /// <summary>
+    /// Materialises a <see cref="RetryBidiStage"/> with manual publisher/subscriber probes.
+    /// Sends the given requests on In1 (concat with Never to prevent completion).
+    /// Returns probes for Out1 (request output, including retries), Out2 (final responses),
+    /// and a push function for In2 (response input).
+    /// </summary>
+    private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
+        TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
+        Action<HttpResponseMessage> pushResponse,
+        Action completeResponse) RunRetryBidi(
+            RetryBidiStage stage,
+            int requestOutDemand,
+            int responseOutDemand,
+            params HttpRequestMessage[] requests)
     {
-        var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
-        var probeRetry = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
         {
-            var s = b.Add(stage);
-            var src = b.Add(Source.From(responses).Concat(Source.Never<HttpResponseMessage>()));
+            var bidi = b.Add(stage);
+            var reqSrc = b.Add(Source.From(requests).Concat(Source.Never<HttpRequestMessage>()));
+            var respSrc = b.Add(Source.FromPublisher(responsePublisher));
 
-            b.From(src).To(s.In);
-            b.From(s.Out0).To(Sink.FromSubscriber(probeFinal));
-            b.From(s.Out1).To(Sink.FromSubscriber(probeRetry));
+            b.From(reqSrc).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(respSrc).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
 
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRetry = probeRetry.ExpectSubscription();
-        subFinal.Request(demandEach);
-        subRetry.Request(demandEach);
+        var respSub = responsePublisher.ExpectSubscription();
+        requestOutProbe.ExpectSubscription().Request(requestOutDemand);
+        responseOutProbe.ExpectSubscription().Request(responseOutDemand);
 
-        return (probeFinal, probeRetry);
+        return (requestOutProbe, responseOutProbe, respSub.SendNext, respSub.SendComplete);
     }
 
-    private (TestSubscriber.ManualProbe<HttpResponseMessage> final,
-        TestSubscriber.ManualProbe<HttpRequestMessage> redirect) RunRedirect(
-            RedirectStage stage,
-            int demandEach,
-            params HttpResponseMessage[] responses)
+    /// <summary>
+    /// Materialises a <see cref="RedirectBidiStage"/> with manual publisher/subscriber probes.
+    /// Sends the given requests on In1 (concat with Never to prevent completion).
+    /// Returns probes for Out1 (request output, including redirects), Out2 (final responses),
+    /// and a push function for In2 (response input).
+    /// </summary>
+    private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
+        TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
+        Action<HttpResponseMessage> pushResponse,
+        Action completeResponse) RunRedirectBidi(
+            RedirectBidiStage stage,
+            int requestOutDemand,
+            int responseOutDemand,
+            params HttpRequestMessage[] requests)
     {
-        var probeFinal = this.CreateManualSubscriberProbe<HttpResponseMessage>();
-        var probeRedirect = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
         {
-            var s = b.Add(stage);
-            var src = b.Add(Source.From(responses).Concat(Source.Never<HttpResponseMessage>()));
+            var bidi = b.Add(stage);
+            var reqSrc = b.Add(Source.From(requests).Concat(Source.Never<HttpRequestMessage>()));
+            var respSrc = b.Add(Source.FromPublisher(responsePublisher));
 
-            b.From(src).To(s.In);
-            b.From(s.Out0).To(Sink.FromSubscriber(probeFinal));
-            b.From(s.Out1).To(Sink.FromSubscriber(probeRedirect));
+            b.From(reqSrc).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(respSrc).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
 
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var subFinal = probeFinal.ExpectSubscription();
-        var subRedirect = probeRedirect.ExpectSubscription();
-        subFinal.Request(demandEach);
-        subRedirect.Request(demandEach);
+        var respSub = responsePublisher.ExpectSubscription();
+        requestOutProbe.ExpectSubscription().Request(requestOutDemand);
+        responseOutProbe.ExpectSubscription().Request(responseOutDemand);
 
-        return (probeFinal, probeRedirect);
+        return (requestOutProbe, responseOutProbe, respSub.SendNext, respSub.SendComplete);
+    }
+
+    /// <summary>
+    /// Materialises a <see cref="CacheBidiStage"/> with manual publisher/subscriber probes.
+    /// Sends a single request on In1 (concat with Never to prevent completion).
+    /// Returns probes for Out1, Out2, and a push function for In2.
+    /// </summary>
+    private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
+        TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
+        Action<HttpResponseMessage> pushResponse,
+        Action completeResponse) RunCacheBidi(
+            HttpCacheStore store,
+            params HttpRequestMessage[] requests)
+    {
+        var stage = new CacheBidiStage(store);
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var bidi = b.Add(stage);
+            var reqSrc = b.Add(Source.From(requests).Concat(Source.Never<HttpRequestMessage>()));
+            var respSrc = b.Add(Source.FromPublisher(responsePublisher));
+
+            b.From(reqSrc).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(respSrc).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var respSub = responsePublisher.ExpectSubscription();
+        requestOutProbe.ExpectSubscription().Request(10);
+        responseOutProbe.ExpectSubscription().Request(10);
+
+        return (requestOutProbe, responseOutProbe, respSub.SendNext, respSub.SendComplete);
     }
 
     private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)>

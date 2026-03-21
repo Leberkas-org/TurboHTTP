@@ -131,7 +131,7 @@ public sealed class RedirectBidiStageTests : StreamTestBase
 
     private static void SeedRedirectHandler(HttpRequestMessage request, RedirectHandler handler)
     {
-        request.Options.Set(RedirectStage.RedirectHandlerKey, handler);
+        request.Options.Set(RedirectBidiStage.RedirectHandlerKey, handler);
     }
 
     // ============================
@@ -357,7 +357,7 @@ public sealed class RedirectBidiStageTests : StreamTestBase
         pushResp(response);
 
         var redirectReq = reqOut.ExpectNext();
-        Assert.True(redirectReq.Options.TryGetValue(RedirectStage.RedirectHandlerKey, out var handler));
+        Assert.True(redirectReq.Options.TryGetValue(RedirectBidiStage.RedirectHandlerKey, out var handler));
         Assert.NotNull(handler);
         Assert.Equal(1, handler.RedirectCount);
     }

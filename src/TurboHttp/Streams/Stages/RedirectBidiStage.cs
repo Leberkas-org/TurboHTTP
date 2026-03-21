@@ -27,7 +27,7 @@ namespace TurboHttp.Streams.Stages;
 /// <para>
 /// Internal state machine per request chain: IDLE → AWAITING_RESPONSE → (REDIRECTING | IDLE).
 /// The stage-level state tracks pending redirects; per-chain state is carried in
-/// <see cref="HttpRequestMessage.Options"/> via <see cref="RedirectStage.RedirectHandlerKey"/>.
+/// <see cref="HttpRequestMessage.Options"/> via <see cref="RedirectHandlerKey"/>.
 /// </para>
 /// <para>
 /// When no <see cref="RedirectPolicy"/> is provided the stage is a pass-through in both directions.
@@ -36,6 +36,9 @@ namespace TurboHttp.Streams.Stages;
 internal sealed class RedirectBidiStage
     : GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
+    internal static readonly HttpRequestOptionsKey<RedirectHandler> RedirectHandlerKey
+        = new("TurboHttp.RedirectHandler");
+
     private readonly RedirectPolicy? _policy;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("Redirect.In.Request");
@@ -158,7 +161,7 @@ internal sealed class RedirectBidiStage
                     try
                     {
                         // Get or create a per-request-chain RedirectHandler via Options
-                        if (!original.Options.TryGetValue(RedirectStage.RedirectHandlerKey, out var handler))
+                        if (!original.Options.TryGetValue(RedirectHandlerKey, out var handler))
                         {
                             handler = new RedirectHandler(_stage._policy!);
                         }
@@ -166,7 +169,7 @@ internal sealed class RedirectBidiStage
                         var newRequest = handler.BuildRedirectRequest(original, response);
 
                         // Carry the handler forward with the redirect request
-                        newRequest.Options.Set(RedirectStage.RedirectHandlerKey, handler);
+                        newRequest.Options.Set(RedirectHandlerKey, handler);
 
                         // Dispose the redirect response — it won't reach the caller
                         response.Dispose();

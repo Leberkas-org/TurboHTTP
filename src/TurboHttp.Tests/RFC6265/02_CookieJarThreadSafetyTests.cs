@@ -6,8 +6,8 @@ namespace TurboHttp.Tests.RFC6265;
 
 /// <summary>
 /// RFC 6265 — CookieJar thread-safety tests.
-/// Verifies that concurrent access from CookieInjectionStage (pre-processing island)
-/// and CookieStorageStage (post-processing island) doesn't corrupt cookie state.
+/// Verifies that concurrent access from CookieBidiStage (request and response directions)
+/// doesn't corrupt cookie state.
 /// </summary>
 /// <remarks>
 /// Class under test: <see cref="CookieJar"/>.
@@ -97,7 +97,7 @@ public sealed class CookieJarThreadSafetyTests
                 ResponseWithCookie($"init{i}=v{i}"));
         }
 
-        // Simulate CookieInjectionStage (reads) and CookieStorageStage (writes) concurrently
+        // Simulate CookieBidiStage request direction (reads) and response direction (writes) concurrently
         var writerTasks = Enumerable.Range(0, 100).Select(i => Task.Run(() =>
         {
             try
