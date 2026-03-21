@@ -96,10 +96,16 @@ internal sealed class RequestEnricherStage : GraphStage<FlowShape<HttpRequestMes
                 }
             }
 
-            // Rule 4: Referer sanitization (RFC 9110 §10.5)
+            // Rule 4: Date header auto-generation (RFC 9110 §5.6.7)
+            if (!request.Headers.Contains("Date"))
+            {
+                request.Headers.Date = DateTimeOffset.UtcNow;
+            }
+
+            // Rule 5: Referer sanitization (RFC 9110 §10.5)
             SanitizeReferer(request);
 
-            // Rule 5: If-Range validation (RFC 9110 §13.1.5)
+            // Rule 6: If-Range validation (RFC 9110 §13.1.5)
             IfRangeValidator.Validate(request);
         }
 
