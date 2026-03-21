@@ -36,6 +36,18 @@ public class Engine
         return BuildExtendedPipeline(poolRouter, options, requestOptionsFactory, descriptor);
     }
 
+    internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef poolRouter,
+        TurboClientOptions? options,
+        Func<TurboRequestOptions>? requestOptionsFactory,
+        PipelineDescriptor descriptor)
+    {
+        options ??= new TurboClientOptions();
+        var requestOptions = BuildRequestOptions(options);
+        requestOptionsFactory ??= () => requestOptions;
+
+        return BuildExtendedPipeline(poolRouter, options, requestOptionsFactory, descriptor);
+    }
+
     internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(
         Func<Flow<IOutputItem, IInputItem, NotUsed>> http10Factory,
         Func<Flow<IOutputItem, IInputItem, NotUsed>> http11Factory,

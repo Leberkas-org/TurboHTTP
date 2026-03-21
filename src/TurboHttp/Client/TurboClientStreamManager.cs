@@ -29,6 +29,12 @@ internal sealed class TurboClientStreamManager
 
     public TurboClientStreamManager(TurboClientOptions clientOptions, Func<TurboRequestOptions> requestOptionsFactory,
         ActorSystem system)
+        : this(clientOptions, requestOptionsFactory, system, PipelineDescriptor.Empty)
+    {
+    }
+
+    internal TurboClientStreamManager(TurboClientOptions clientOptions, Func<TurboRequestOptions> requestOptionsFactory,
+        ActorSystem system, PipelineDescriptor descriptor)
     {
         var streamManagerId = Guid.NewGuid();
         var requestsChannel = Channel.CreateUnbounded<HttpRequestMessage>(new UnboundedChannelOptions
@@ -50,14 +56,9 @@ internal sealed class TurboClientStreamManager
         // PoolRouter → HostPool → ConnectionActor → TCP
         var poolRouter = system.ResolveActor<PoolRouter>($"pool-router-{streamManagerId}", clientOptions);
 
-        // Build the full pipeline flow from Engine.
-        // Engine.CreateFlow internally creates per-client instances:
-        //   - CookieJar (one per client, thread-safe) when EnableCookies is set
-        //   - HttpCacheStore (one per client, thread-safe LRU) when EnableCaching is set
-        //   - RedirectHandler (one per pipeline, stateful redirect count) when EnableRedirectHandling is set
-        //   - Stages for retry, decompression, cookie injection/storage, cache lookup/storage
+        // Build the full pipeline flow from Engine using the provided descriptor.
         var engine = new Engine();
-        var engineFlow = engine.CreateFlow(poolRouter, clientOptions, requestOptionsFactory);
+        var engineFlow = engine.CreateFlow(poolRouter, clientOptions, requestOptionsFactory, descriptor);
 
 
         var sink = Sink.ForEachAsync<HttpResponseMessage>(1, async r => await responseWriter.WriteAsync(r));

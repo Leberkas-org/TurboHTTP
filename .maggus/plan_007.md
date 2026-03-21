@@ -146,10 +146,10 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want `TurboClientStreamManager` to accept a `PipelineDescriptor` so that the factory can pass the fully configured descriptor without going through `TurboClientOptions`.
 
 **Acceptance Criteria:**
-- [ ] New internal constructor: `TurboClientStreamManager(TurboClientOptions, Func<TurboRequestOptions>, ActorSystem, PipelineDescriptor)`
-- [ ] Calls `engine.CreateFlow(poolRouter, options, factory, descriptor)` internally
-- [ ] Existing `public` constructor without `PipelineDescriptor` remains and delegates to the new one with `PipelineDescriptor.Empty`
-- [ ] Typecheck/lint passes
+- [x] New internal constructor: `TurboClientStreamManager(TurboClientOptions, Func<TurboRequestOptions>, ActorSystem, PipelineDescriptor)`
+- [x] Calls `engine.CreateFlow(poolRouter, options, factory, descriptor)` internally
+- [x] Existing `public` constructor without `PipelineDescriptor` remains and delegates to the new one with `PipelineDescriptor.Empty`
+- [x] Typecheck/lint passes
 
 ---
 
