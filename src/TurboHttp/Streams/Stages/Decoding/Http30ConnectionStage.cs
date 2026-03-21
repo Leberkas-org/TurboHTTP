@@ -1,0 +1,245 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using Akka.Event;
+using Akka.Streams;
+using Akka.Streams.Stage;
+using TurboHttp.Protocol.RFC9114;
+
+namespace TurboHttp.Streams.Stages.Decoding;
+
+/// <summary>
+/// Custom shape for the HTTP/3 connection stage.
+/// Two inlets: server frames (control stream) and app frames (request stream).
+/// Two outlets: app-bound frames (assembled responses) and server-bound frames (requests + control acks).
+/// </summary>
+public sealed class Http30ConnectionShape : Shape
+{
+    public Inlet<Http3Frame> InServer { get; }
+    public Outlet<Http3Frame> OutApp { get; }
+    public Inlet<Http3Frame> InApp { get; }
+    public Outlet<Http3Frame> OutServer { get; }
+
+    public Http30ConnectionShape(
+        Inlet<Http3Frame> inServer,
+        Outlet<Http3Frame> outApp,
+        Inlet<Http3Frame> inApp,
+        Outlet<Http3Frame> outServer)
+    {
+        InServer = inServer;
+        OutApp = outApp;
+        InApp = inApp;
+        OutServer = outServer;
+    }
+
+    public override ImmutableArray<Inlet> Inlets =>
+        [InServer, InApp];
+
+    public override ImmutableArray<Outlet> Outlets =>
+        [OutApp, OutServer];
+
+    public override Shape DeepCopy()
+    {
+        return new Http30ConnectionShape(
+            (Inlet<Http3Frame>)InServer.CarbonCopy(),
+            (Outlet<Http3Frame>)OutApp.CarbonCopy(),
+            (Inlet<Http3Frame>)InApp.CarbonCopy(),
+            (Outlet<Http3Frame>)OutServer.CarbonCopy());
+    }
+
+    public override Shape CopyFromPorts(ImmutableArray<Inlet> inlets, ImmutableArray<Outlet> outlets)
+    {
+        return new Http30ConnectionShape(
+            (Inlet<Http3Frame>)inlets[0],
+            (Outlet<Http3Frame>)outlets[0],
+            (Inlet<Http3Frame>)inlets[1],
+            (Outlet<Http3Frame>)outlets[1]);
+    }
+}
+
+/// <summary>
+/// RFC 9114 §6.2.1, §5.2, §7.2.4 — HTTP/3 connection-level stage.
+///
+/// Manages the HTTP/3 control stream (SETTINGS/GOAWAY) and routes frames between
+/// app and server. Unlike HTTP/2, QUIC handles flow control at the transport layer,
+/// so this stage does not track per-stream windows.
+///
+/// Responsibilities:
+/// - Process SETTINGS frames on the control stream (via <see cref="Http3ControlStream"/>)
+/// - Process GOAWAY frames for graceful shutdown (via <see cref="Http3GoAwayHandler"/>)
+/// - Drop new outbound requests after GOAWAY received
+/// - Forward DATA and HEADERS frames between app and server
+/// - Reject invalid control-stream frames (DATA/HEADERS on control stream)
+/// </summary>
+public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
+{
+    private readonly Inlet<Http3Frame> _inServer = new("H3Connection.In.Server");
+    private readonly Outlet<Http3Frame> _outApp = new("H3Connection.Out.App");
+    private readonly Inlet<Http3Frame> _inApp = new("H3Connection.In.App");
+    private readonly Outlet<Http3Frame> _outServer = new("H3Connection.Out.Server");
+
+    public override Http30ConnectionShape Shape =>
+        new(_inServer, _outApp, _inApp, _outServer);
+
+    protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
+        => new Logic(this);
+
+    private sealed class Logic : GraphStageLogic
+    {
+        private readonly Http30ConnectionStage _stage;
+        private readonly Http3ControlStream _controlStream = new();
+        private readonly Http3GoAwayHandler _goAwayHandler = new();
+        private readonly Queue<Http3Frame> _outboundQueue = new();
+
+        private bool _goAwayReceived;
+        private bool _controlStreamOpened;
+
+        public Logic(Http30ConnectionStage stage) : base(stage.Shape)
+        {
+            _stage = stage;
+
+            SetHandler(stage._inServer, onPush: () =>
+            {
+                var frame = Grab(stage._inServer);
+                HandleServerFrame(frame);
+            });
+
+            SetHandler(stage._outApp, onPull: () => Pull(stage._inServer));
+
+            SetHandler(stage._inApp, onPush: () =>
+            {
+                var frame = Grab(stage._inApp);
+
+                if (_goAwayReceived)
+                {
+                    Log.Warning("Http30ConnectionStage: RFC 9114 §5.2 — GOAWAY received; dropping outbound frame.");
+                    TryPullApp();
+                    return;
+                }
+
+                EnqueueOutbound(frame);
+            }, onUpstreamFinish: () =>
+            {
+                // App stream finished — keep stage alive to receive server responses.
+            });
+
+            SetHandler(stage._outServer, onPull: () =>
+            {
+                TryDrainOutbound();
+            });
+        }
+
+        public override void PreStart()
+        {
+            // Open the local control stream and send SETTINGS as the first outbound data.
+            if (!_controlStreamOpened)
+            {
+                _controlStreamOpened = true;
+                var controlStreamBytes = _controlStream.OpenLocalStream();
+
+                // Wrap the control stream init bytes in a DATA frame for transport.
+                // The downstream encoder/transport will handle the raw bytes.
+                EnqueueOutbound(new Http3SettingsFrame([]));
+            }
+        }
+
+        private void HandleServerFrame(Http3Frame frame)
+        {
+            switch (frame)
+            {
+                case Http3SettingsFrame settings:
+                    HandleSettings(settings);
+                    // SETTINGS is connection-level — don't forward to app.
+                    Pull(_stage._inServer);
+                    return;
+
+                case Http3GoAwayFrame goAway:
+                    HandleGoAway(goAway);
+                    // GOAWAY is connection-level — don't forward to app.
+                    Pull(_stage._inServer);
+                    return;
+
+                case Http3CancelPushFrame:
+                    // Control-stream frame — absorb, don't forward to app.
+                    Pull(_stage._inServer);
+                    return;
+
+                case Http3MaxPushIdFrame:
+                    // Control-stream frame — absorb (client doesn't need to act on MAX_PUSH_ID from server).
+                    Pull(_stage._inServer);
+                    return;
+
+                default:
+                    // DATA and HEADERS frames go to the app (request stream).
+                    Push(_stage._outApp, frame);
+                    break;
+            }
+        }
+
+        private void HandleSettings(Http3SettingsFrame settings)
+        {
+            try
+            {
+                // Ensure the remote control stream is registered before processing.
+                if (_controlStream.RemoteState == ControlStreamState.NotOpened)
+                {
+                    _controlStream.OnRemoteControlStreamOpened();
+                }
+
+                _controlStream.OnRemoteFrame(settings);
+
+                Log.Debug("Http30ConnectionStage: RFC 9114 §7.2.4 — remote SETTINGS received ({0} parameters).",
+                    settings.Parameters.Count);
+            }
+            catch (Http3ConnectionException ex)
+            {
+                Log.Error(ex, "Http30ConnectionStage: SETTINGS error — {0}", ex.Message);
+                FailStage(ex);
+            }
+        }
+
+        private void HandleGoAway(Http3GoAwayFrame goAway)
+        {
+            try
+            {
+                _goAwayHandler.OnServerGoAway(goAway);
+                _goAwayReceived = true;
+
+                Log.Warning("Http30ConnectionStage: RFC 9114 §5.2 — GOAWAY received (streamId={0}).",
+                    goAway.StreamId);
+            }
+            catch (Http3ConnectionException ex)
+            {
+                Log.Error(ex, "Http30ConnectionStage: GOAWAY error — {0}", ex.Message);
+                FailStage(ex);
+            }
+        }
+
+        private void EnqueueOutbound(Http3Frame frame)
+        {
+            _outboundQueue.Enqueue(frame);
+            TryDrainOutbound();
+        }
+
+        private void TryDrainOutbound()
+        {
+            if (_outboundQueue.Count > 0 && IsAvailable(_stage._outServer))
+            {
+                Push(_stage._outServer, _outboundQueue.Dequeue());
+                return;
+            }
+
+            if (_outboundQueue.Count == 0)
+            {
+                TryPullApp();
+            }
+        }
+
+        private void TryPullApp()
+        {
+            if (!HasBeenPulled(_stage._inApp) && !IsClosed(_stage._inApp))
+            {
+                Pull(_stage._inApp);
+            }
+        }
+    }
+}
