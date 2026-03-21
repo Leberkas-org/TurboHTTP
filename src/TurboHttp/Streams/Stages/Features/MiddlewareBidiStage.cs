@@ -1,7 +1,4 @@
-using System;
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -14,10 +11,10 @@ namespace TurboHttp.Streams.Stages.Features;
 /// and <see cref="TurboHandler.ProcessResponse"/> on inbound responses.
 /// Composes via <c>BidiFlow.Atop</c> alongside built-in feature stages.
 /// </summary>
-internal sealed class MiddlewareBidiStage
+internal sealed class HandlerBidiStage
     : GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
-    private readonly TurboHandler _middleware;
+    private readonly TurboHandler _handler;
 
     private readonly Inlet<HttpRequestMessage> _inRequest;
     private readonly Outlet<HttpRequestMessage> _outRequest;
@@ -26,14 +23,11 @@ internal sealed class MiddlewareBidiStage
 
     public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
-    public MiddlewareBidiStage(TurboHandler middleware, int index)
+    public HandlerBidiStage(TurboHandler handler, int index)
     {
-        _middleware = middleware;
+        _handler = handler;
 
-        var name = middleware.GetType().Name;
-        // Use the middleware class name for readable port names.
-        // Always append index to guarantee global uniqueness when multiple
-        // middlewares share the same class name (e.g. delegates).
+        var name = handler.GetType().Name;
         var prefix = $"{name}{index}";
 
         _inRequest = new Inlet<HttpRequestMessage>($"{prefix}.In.Request");
@@ -50,40 +44,13 @@ internal sealed class MiddlewareBidiStage
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly MiddlewareBidiStage _stage;
-
-        private Action<HttpRequestMessage>? _onRequestProcessed;
-        private Action<HttpResponseMessage>? _onResponseProcessed;
-
-        private bool _requestAsyncInFlight;
-        private bool _responseAsyncInFlight;
-        private bool _requestUpstreamFinished;
-        private bool _responseUpstreamFinished;
-
-        public Logic(MiddlewareBidiStage stage) : base(stage.Shape)
+        public Logic(HandlerBidiStage stage) : base(stage.Shape)
         {
-            _stage = stage;
-
             // ── Request direction ──────────────────────────────────────
             SetHandler(stage._inRequest,
-                onPush: () =>
-                {
-                    var request = Grab(stage._inRequest);
-                    var result = stage._middleware.ProcessRequest(request);
-                    Push(stage._outRequest, result);
-                },
-                onUpstreamFinish: () =>
-                {
-                    if (_requestAsyncInFlight)
-                    {
-                        _requestUpstreamFinished = true;
-                    }
-                    else
-                    {
-                        Complete(stage._outRequest);
-                    }
-                },
-                onUpstreamFailure: ex => Log.Warning("MiddlewareBidiStage: Request upstream failure absorbed: {0}", ex.Message));
+                onPush: () => Push(stage._outRequest, stage._handler.ProcessRequest(Grab(stage._inRequest))),
+                onUpstreamFinish: () => Complete(stage._outRequest),
+                onUpstreamFailure: ex => Log.Warning("HandlerBidiStage: Request upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outRequest,
                 onPull: () => Pull(stage._inRequest),
@@ -93,50 +60,15 @@ internal sealed class MiddlewareBidiStage
             SetHandler(stage._inResponse,
                 onPush: () =>
                 {
-                    var response = Grab(stage._inResponse);
-                    var original = response.RequestMessage!;
-                    var result = stage._middleware.ProcessResponse(original, response);
-                    Push(stage._outResponse, result);
+                    var resp = Grab(stage._inResponse);
+                    Push(stage._outResponse, stage._handler.ProcessResponse(resp.RequestMessage!, resp));
                 },
-                onUpstreamFinish: () =>
-                {
-                    if (_responseAsyncInFlight)
-                    {
-                        _responseUpstreamFinished = true;
-                    }
-                    else
-                    {
-                        Complete(stage._outResponse);
-                    }
-                },
-                onUpstreamFailure: ex => Log.Warning("MiddlewareBidiStage: Response upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFinish: () => Complete(stage._outResponse),
+                onUpstreamFailure: ex => Log.Warning("HandlerBidiStage: Response upstream failure absorbed: {0}", ex.Message));
 
             SetHandler(stage._outResponse,
                 onPull: () => Pull(stage._inResponse),
                 onDownstreamFinish: _ => Cancel(stage._inResponse));
-        }
-
-        public override void PreStart()
-        {
-            _onRequestProcessed = GetAsyncCallback<HttpRequestMessage>(result =>
-            {
-                _requestAsyncInFlight = false;
-                Push(_stage._outRequest, result);
-                if (_requestUpstreamFinished)
-                {
-                    Complete(_stage._outRequest);
-                }
-            });
-
-            _onResponseProcessed = GetAsyncCallback<HttpResponseMessage>(result =>
-            {
-                _responseAsyncInFlight = false;
-                Push(_stage._outResponse, result);
-                if (_responseUpstreamFinished)
-                {
-                    Complete(_stage._outResponse);
-                }
-            });
         }
     }
 }

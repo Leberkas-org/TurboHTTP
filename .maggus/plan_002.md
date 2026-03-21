@@ -51,17 +51,17 @@ Renaming to `TurboHandler` aligns with .NET's `HttpMessageHandler` / `Delegating
 **Description:** As a developer, I want the BidiStage simplified to call sync handler methods directly, removing all async callback machinery.
 
 **Acceptance Criteria:**
-- [ ] `src/TurboHttp/Streams/Stages/MiddlewareBidiStage.cs`: class renamed to `HandlerBidiStage`
-- [ ] Constructor parameter: `TurboHandler handler` instead of `TurboMiddleware middleware`
-- [ ] Remove fields: `_onRequestProcessed`, `_onResponseProcessed`, `_requestAsyncInFlight`, `_responseAsyncInFlight`, `_requestUpstreamFinished`, `_responseUpstreamFinished`
-- [ ] Remove `PreStart()` override (no more `GetAsyncCallback`)
-- [ ] Request `onPush`: `Push(_outRequest, _handler.ProcessRequest(Grab(_inRequest)))`
-- [ ] Response `onPush`: `var resp = Grab(_inResponse); Push(_outResponse, _handler.ProcessResponse(resp.RequestMessage!, resp))`
-- [ ] `onUpstreamFinish` directly calls `Complete(outlet)` (no deferred completion needed)
-- [ ] `onUpstreamFailure` log message updated: `"HandlerBidiStage: …"`
-- [ ] Port name prefix uses handler type name (unchanged logic, just `_handler` field name)
-- [ ] Remove `using System.Threading.Tasks`
-- [ ] Typecheck passes
+- [x] `src/TurboHttp/Streams/Stages/MiddlewareBidiStage.cs`: class renamed to `HandlerBidiStage`
+- [x] Constructor parameter: `TurboHandler handler` instead of `TurboMiddleware middleware`
+- [x] Remove fields: `_onRequestProcessed`, `_onResponseProcessed`, `_requestAsyncInFlight`, `_responseAsyncInFlight`, `_requestUpstreamFinished`, `_responseUpstreamFinished`
+- [x] Remove `PreStart()` override (no more `GetAsyncCallback`)
+- [x] Request `onPush`: `Push(_outRequest, _handler.ProcessRequest(Grab(_inRequest)))`
+- [x] Response `onPush`: `var resp = Grab(_inResponse); Push(_outResponse, _handler.ProcessResponse(resp.RequestMessage!, resp))`
+- [x] `onUpstreamFinish` directly calls `Complete(outlet)` (no deferred completion needed)
+- [x] `onUpstreamFailure` log message updated: `"HandlerBidiStage: …"`
+- [x] Port name prefix uses handler type name (unchanged logic, just `_handler` field name)
+- [x] Remove `using System.Threading.Tasks`
+- [x] Typecheck passes
 
 ### TASK-003: Update TurboClientDescriptor
 **Description:** As a developer, I want internal descriptor field names updated to reflect handler naming.

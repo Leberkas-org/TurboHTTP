@@ -10,10 +10,10 @@ using TurboHttp.Streams.Stages.Features;
 namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
-/// Tests the <see cref="MiddlewareBidiStage"/> covering both request and response directions,
+/// Tests the <see cref="HandlerBidiStage"/> covering both request and response directions,
 /// synchronous and asynchronous middleware, chaining via <c>Atop</c>, and stream completion.
 /// </summary>
-public sealed class MiddlewareBidiStageTests : StreamTestBase
+public sealed class HandlerBidiStageTests : StreamTestBase
 {
     // ── Test middleware implementations ───────────────────────────────
 
@@ -96,7 +96,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     // ── Graph helpers ────────────────────────────────────────────────
 
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
-        MiddlewareBidiStage stage,
+        HandlerBidiStage stage,
         params HttpRequestMessage[] requests)
     {
         var graph = GraphDsl.Create(
@@ -120,7 +120,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     }
 
     private Task<IImmutableList<HttpResponseMessage>> RunResponseAsync(
-        MiddlewareBidiStage stage,
+        HandlerBidiStage stage,
         params HttpResponseMessage[] responses)
     {
         var graph = GraphDsl.Create(
@@ -215,7 +215,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     public async Task SyncRequestTransformation_Should_InjectHeader()
     {
         var middleware = new RequestHeaderMiddleware("X-Trace", "abc");
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var results = await RunRequestAsync(stage, request);
@@ -233,7 +233,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     public async Task AsyncRequestTransformation_Should_InjectHeader()
     {
         var middleware = new AsyncRequestHeaderMiddleware("X-Async", "delayed");
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var results = await RunRequestAsync(stage, request);
@@ -251,7 +251,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     public async Task SyncResponseTransformation_Should_InjectHeader()
     {
         var middleware = new ResponseHeaderMiddleware("X-Resp", "injected");
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
         var originalRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var response = MakeResponse(originalRequest);
 
@@ -270,7 +270,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     public async Task AsyncResponseTransformation_Should_InjectHeader()
     {
         var middleware = new AsyncResponseHeaderMiddleware("X-AsyncResp", "async-val");
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
         var originalRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var response = MakeResponse(originalRequest);
 
@@ -291,7 +291,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
         var capturedOriginal = new TaskCompletionSource<HttpRequestMessage>();
 
         var middleware = new CapturingResponseMiddleware(capturedOriginal);
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
         var originalRequest = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
         originalRequest.Headers.TryAddWithoutValidation("X-OriginalMarker", "present");
         var response = MakeResponse(originalRequest);
@@ -328,8 +328,8 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
         var mw1 = new RequestHeaderMiddleware("X-First", "1");
         var mw2 = new RequestHeaderMiddleware("X-Second", "2");
 
-        var bidi = BidiFlow.FromGraph(new MiddlewareBidiStage(mw1, 0))
-            .Atop(BidiFlow.FromGraph(new MiddlewareBidiStage(mw2, 1)));
+        var bidi = BidiFlow.FromGraph(new HandlerBidiStage(mw1, 0))
+            .Atop(BidiFlow.FromGraph(new HandlerBidiStage(mw2, 1)));
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
@@ -346,8 +346,8 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
         var mw1 = new ResponseHeaderMiddleware("X-RFirst", "r1");
         var mw2 = new ResponseHeaderMiddleware("X-RSecond", "r2");
 
-        var bidi = BidiFlow.FromGraph(new MiddlewareBidiStage(mw1, 0))
-            .Atop(BidiFlow.FromGraph(new MiddlewareBidiStage(mw2, 1)));
+        var bidi = BidiFlow.FromGraph(new HandlerBidiStage(mw1, 0))
+            .Atop(BidiFlow.FromGraph(new HandlerBidiStage(mw2, 1)));
 
         var originalRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var response = MakeResponse(originalRequest);
@@ -367,7 +367,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     public async Task MultipleRequests_Should_FlowThroughWithCompletion()
     {
         var middleware = new RequestHeaderMiddleware("X-Count", "yes");
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
 
         var requests = Enumerable.Range(1, 5)
             .Select(i => new HttpRequestMessage(HttpMethod.Get, $"http://example.com/{i}"))
@@ -387,7 +387,7 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     public async Task MultipleResponses_Should_FlowThroughWithCompletion()
     {
         var middleware = new ResponseHeaderMiddleware("X-Processed", "true");
-        var stage = new MiddlewareBidiStage(middleware, 0);
+        var stage = new HandlerBidiStage(middleware, 0);
 
         var responses = Enumerable.Range(1, 5)
             .Select(i =>

@@ -131,7 +131,7 @@ internal sealed class Engine
         // Middlewares[0] ends up outermost (sees initial request first, final response last).
         for (var i = descriptor.Middlewares.Count - 1; i >= 0; i--)
         {
-            var mw = BidiFlow.FromGraph(new MiddlewareBidiStage(descriptor.Middlewares[i], i));
+            var mw = BidiFlow.FromGraph(new HandlerBidiStage(descriptor.Middlewares[i], i));
             features = features is not null ? mw.Atop(features) : mw;
         }
 
