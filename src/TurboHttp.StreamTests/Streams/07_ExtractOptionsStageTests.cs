@@ -3,6 +3,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using TurboHttp.Internal;
 using TurboHttp.Streams.Stages;
+using TurboHttp.Streams.Stages.Routing;
 
 namespace TurboHttp.StreamTests.Streams;
 

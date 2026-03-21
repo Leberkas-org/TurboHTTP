@@ -3,7 +3,7 @@ using System.Net.Http;
 using Akka.Streams;
 using Akka.Streams.Stage;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Routing;
 
 internal sealed class
     Http20CorrelationStage :

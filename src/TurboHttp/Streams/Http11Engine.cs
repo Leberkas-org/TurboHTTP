@@ -8,6 +8,7 @@ using TurboHttp.Internal;
 using TurboHttp.Streams.Stages;
 using TurboHttp.Streams.Stages.Decoding;
 using TurboHttp.Streams.Stages.Encoding;
+using TurboHttp.Streams.Stages.Routing;
 
 namespace TurboHttp.Streams;
 

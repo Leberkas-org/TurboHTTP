@@ -3,8 +3,9 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Implementation;
+using TurboHttp.Internal;
 
-namespace TurboHttp.Internal.Stages;
+namespace TurboHttp.Streams.Stages.Routing;
 
 internal static class FlowHostKeyGroupByExtensions
 {

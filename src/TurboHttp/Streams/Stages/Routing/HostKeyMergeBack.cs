@@ -2,8 +2,9 @@
 using Akka;
 using Akka.Streams.Dsl;
 using Akka.Streams.Implementation;
+using TurboHttp.Internal;
 
-namespace TurboHttp.Internal.Stages;
+namespace TurboHttp.Streams.Stages.Routing;
 
 /// <summary>
 /// Implements Akka's public <see cref="IMergeBack{TIn,TMat}"/> interface so that

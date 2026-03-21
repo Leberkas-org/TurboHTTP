@@ -5,7 +5,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Routing;
 
 public sealed class Http1XCorrelationShape : Shape
 {

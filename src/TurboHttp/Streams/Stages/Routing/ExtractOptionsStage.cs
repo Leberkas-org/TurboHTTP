@@ -6,7 +6,7 @@ using TurboHttp.Client;
 using TurboHttp.Internal;
 using TurboHttp.Transport;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Routing;
 
 internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequestMessage, HttpRequestMessage, IOutputItem>>
 {

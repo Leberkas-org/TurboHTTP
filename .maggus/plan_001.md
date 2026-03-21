@@ -250,14 +250,14 @@ New namespace: `TurboHttp.Streams.Stages.Routing`
 **Reference counts:** ~3 files contain `using TurboHttp.Internal.Stages;`
 
 **Acceptance Criteria:**
-- [ ] Folder `TurboHttp/Streams/Stages/Routing/` created with all 9 files
-- [ ] All 9 files declare `namespace TurboHttp.Streams.Stages.Routing`
-- [ ] `TurboHttp/Internal/Stages/` folder emptied and deleted
-- [ ] All `using TurboHttp.Internal.Stages;` replaced across the solution
-- [ ] All engines, `Engine.cs`, and referencing files updated
-- [ ] All referencing test files updated
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
-- [ ] `dotnet test src/TurboHttp.sln` → all tests pass
+- [x] Folder `TurboHttp/Streams/Stages/Routing/` created with all 9 files
+- [x] All 9 files declare `namespace TurboHttp.Streams.Stages.Routing`
+- [x] `TurboHttp/Internal/Stages/` folder emptied and deleted
+- [x] All `using TurboHttp.Internal.Stages;` replaced across the solution
+- [x] All engines, `Engine.cs`, and referencing files updated
+- [x] All referencing test files updated
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `dotnet test src/TurboHttp.sln` → all tests pass
 
 ---
 

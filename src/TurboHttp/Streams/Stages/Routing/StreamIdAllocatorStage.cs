@@ -3,7 +3,7 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Routing;
 
 public sealed class StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequestMessage, (HttpRequestMessage, int)>>
 {
