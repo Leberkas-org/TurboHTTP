@@ -45,7 +45,8 @@ internal sealed class TurboHttpClientFactory(
             CookieJar: cookieJar,
             CacheStore: cacheStore,
             CachePolicy: descriptor.CachePolicy,
-            Middlewares: middlewares);
+            Middlewares: middlewares,
+            AutomaticDecompression: descriptor.AutomaticDecompression);
 
         return new TurboHttpClient(clientOptions, system, pipeline);
     }

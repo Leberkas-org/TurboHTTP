@@ -67,11 +67,11 @@ var pipeline = enricherFlow.Via(features.Join(engineFlow));
 so that decompression can be conditionally included in the pipeline.
 
 **Acceptance Criteria:**
-- [ ] `PipelineDescriptor` has new property `bool AutomaticDecompression` (default `true`)
-- [ ] `PipelineDescriptor.Empty` has `AutomaticDecompression: true` (backward compatibility)
-- [ ] Builder API has `.WithDecompression(bool enabled = true)` extension method
-- [ ] Typecheck/lint passes
-- [ ] Unit tests are written and successful
+- [x] `PipelineDescriptor` has new property `bool AutomaticDecompression` (default `true`)
+- [x] `PipelineDescriptor.Empty` has `AutomaticDecompression: true` (backward compatibility)
+- [x] Builder API has `.WithDecompression(bool enabled = true)` extension method
+- [x] Typecheck/lint passes
+- [x] Unit tests are written and successful
 
 ### TASK-002: Create CookieBidiStage
 **Description:** As a developer, I want a single `CookieBidiStage` that replaces both

@@ -87,4 +87,37 @@ public sealed class TurboHttpClientBuilderFeatureTests
 
         Assert.Equal(policy, descriptor.RedirectPolicy);
     }
+
+    [Fact(DisplayName = "Default descriptor has AutomaticDecompression true")]
+    public void Default_AutomaticDecompression_IsTrue()
+    {
+        var services = new ServiceCollection();
+        services.AddTurboHttpClient("test");
+
+        var descriptor = GetDescriptor(services, "test");
+
+        Assert.True(descriptor.AutomaticDecompression);
+    }
+
+    [Fact(DisplayName = "WithDecompression() sets AutomaticDecompression to true")]
+    public void WithDecompression_NoArg_SetsTrue()
+    {
+        var services = new ServiceCollection();
+        services.AddTurboHttpClient("test").WithDecompression();
+
+        var descriptor = GetDescriptor(services, "test");
+
+        Assert.True(descriptor.AutomaticDecompression);
+    }
+
+    [Fact(DisplayName = "WithDecompression(false) sets AutomaticDecompression to false")]
+    public void WithDecompression_False_SetsFalse()
+    {
+        var services = new ServiceCollection();
+        services.AddTurboHttpClient("test").WithDecompression(false);
+
+        var descriptor = GetDescriptor(services, "test");
+
+        Assert.False(descriptor.AutomaticDecompression);
+    }
 }

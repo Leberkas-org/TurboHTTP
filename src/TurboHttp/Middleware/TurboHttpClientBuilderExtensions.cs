@@ -48,6 +48,15 @@ public static class TurboHttpClientBuilderExtensions
         return builder;
     }
 
+    public static ITurboHttpClientBuilder WithDecompression(this ITurboHttpClientBuilder builder, bool enabled = true)
+    {
+        builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
+        {
+            d.AutomaticDecompression = enabled;
+        });
+        return builder;
+    }
+
     /// <summary>
     /// Registers <typeparamref name="T"/> as a Transient service and appends it to the middleware pipeline.
     /// Registration order is preserved (FIFO).
