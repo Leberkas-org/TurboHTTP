@@ -213,6 +213,40 @@ public sealed class CacheStoreTests
         Assert.True(HttpCacheStore.ShouldStore(request, response));
     }
 
+    [Fact(DisplayName = "RFC9111-3.1-CS-033: 206 Partial Content not stored in cache")]
+    public void Should_NotStore_When_206PartialContent()
+    {
+        var request = GetRequest();
+        var response = new HttpResponseMessage(HttpStatusCode.PartialContent);
+        response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
+        response.Headers.Date = _baseTime;
+
+        Assert.False(HttpCacheStore.ShouldStore(request, response));
+    }
+
+    [Fact(DisplayName = "RFC9111-3.1-CS-034: response with Content-Range not stored in cache")]
+    public void Should_NotStore_When_ResponseHasContentRange()
+    {
+        var request = GetRequest();
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        response.Content = new ByteArrayContent([1, 2, 3]);
+        response.Content.Headers.ContentRange =
+            new System.Net.Http.Headers.ContentRangeHeaderValue(0, 2, 100);
+        response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
+        response.Headers.Date = _baseTime;
+
+        Assert.False(HttpCacheStore.ShouldStore(request, response));
+    }
+
+    [Fact(DisplayName = "RFC9111-3.1-CS-035: 200 without Content-Range stored normally")]
+    public void Should_Store_When_200WithoutContentRange()
+    {
+        var request = GetRequest();
+        var response = OkResponse();
+
+        Assert.True(HttpCacheStore.ShouldStore(request, response));
+    }
+
     [Fact(DisplayName = "RFC9111-3-CS-014: LRU eviction when MaxEntries exceeded")]
     public void Should_EvictEntries_When_MaxEntriesExceeded()
     {

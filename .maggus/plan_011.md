@@ -539,11 +539,11 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9111/HttpCacheStore.cs` — reject 206 and Content-Range
 
 **Acceptance Criteria:**
-- [ ] 206 Partial Content response not stored in cache
-- [ ] Response with Content-Range header not stored in cache
-- [ ] 200 without Content-Range stored normally
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] 206 Partial Content response not stored in cache
+- [x] Response with Content-Range header not stored in cache
+- [x] 200 without Content-Range stored normally
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/04_CacheStoreTests.cs`):
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 
 namespace TurboHttp.Protocol.RFC9111;
@@ -206,6 +207,20 @@ public sealed class HttpCacheStore
         }
 
         if (!IsCacheable(response))
+        {
+            return false;
+        }
+
+        // RFC 9111 §3.1 — incomplete responses (206 Partial Content) must not be
+        // stored unless the cache supports combining partial content, which we do not.
+        if (response.StatusCode == HttpStatusCode.PartialContent)
+        {
+            return false;
+        }
+
+        // A response carrying Content-Range indicates a partial payload even on a 200;
+        // caching it would serve incomplete content on subsequent requests.
+        if (response.Content?.Headers?.ContentRange is not null)
         {
             return false;
         }
