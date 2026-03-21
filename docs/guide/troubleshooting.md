@@ -142,7 +142,7 @@ options.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // grace
 
 ### Channel Backpressure (WriteAsync Blocks)
 
-**Symptom:** `RequestWriter.WriteAsync` hangs.
+**Symptom:** `Requests.WriteAsync` hangs.
 
 **Cause:** The outbound channel is full — the connection cannot send requests as fast as you produce them. This is **correct behaviour** (backpressure).
 

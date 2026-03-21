@@ -234,10 +234,20 @@ internal sealed class CacheBidiStage
 
             if (isUnsafe)
             {
-                // RFC 9111 §4.4 — invalidate stored entries after unsafe method
-                if (request.RequestUri is not null)
+                // RFC 9111 §4.4 — invalidate stored entries after unsafe method,
+                // but only when the response indicates success (non-error status).
+                var statusCode = (int)response.StatusCode;
+                if (statusCode >= 200 && statusCode < 400 && request.RequestUri is not null)
                 {
                     _stage._store!.Invalidate(request.RequestUri);
+
+                    // Also invalidate URIs from Location and Content-Location (same-origin only)
+                    InvalidateIfSameOrigin(request.RequestUri, response.Headers.Location);
+
+                    if (response.Content?.Headers?.ContentLocation is { } contentLocation)
+                    {
+                        InvalidateIfSameOrigin(request.RequestUri, contentLocation);
+                    }
                 }
 
                 return (response, false);
@@ -304,6 +314,33 @@ internal sealed class CacheBidiStage
             {
                 response.Headers.Remove(field);
                 response.Content?.Headers.Remove(field);
+            }
+        }
+
+        /// <summary>
+        /// RFC 9111 §4.4 — Invalidates the target URI in the cache store if it shares
+        /// the same origin (scheme + host + port) as the request URI.
+        /// Handles relative URIs by resolving them against the request URI.
+        /// </summary>
+        private void InvalidateIfSameOrigin(Uri requestUri, Uri? targetUri)
+        {
+            if (targetUri is null)
+            {
+                return;
+            }
+
+            // Resolve relative URI against request URI
+            if (!targetUri.IsAbsoluteUri)
+            {
+                targetUri = new Uri(requestUri, targetUri);
+            }
+
+            // Same-origin check: scheme + host + port must match
+            if (string.Equals(requestUri.Scheme, targetUri.Scheme, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(requestUri.Host, targetUri.Host, StringComparison.OrdinalIgnoreCase)
+                && requestUri.Port == targetUri.Port)
+            {
+                _stage._store!.Invalidate(targetUri);
             }
         }
 

@@ -566,14 +566,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Change: On unsafe method (POST/PUT/DELETE) + 2xx, invalidate URIs from Location and Content-Location headers (same-origin only)
 
 **Acceptance Criteria:**
-- [ ] POST 201 with Location header invalidates that URI in cache
-- [ ] PUT 200 with Content-Location invalidates that URI
-- [ ] Cross-origin Location not invalidated
-- [ ] Safe methods (GET) do not trigger invalidation
-- [ ] Error responses (POST 500) do not trigger invalidation
-- [ ] DELETE 204 invalidates request URI + Location
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] POST 201 with Location header invalidates that URI in cache
+- [x] PUT 200 with Content-Location invalidates that URI
+- [x] Cross-origin Location not invalidated
+- [x] Safe methods (GET) do not trigger invalidation
+- [x] Error responses (POST 500) do not trigger invalidation
+- [x] DELETE 204 invalidates request URI + Location
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC9111/06_CacheInvalidationTests.cs`):
 
