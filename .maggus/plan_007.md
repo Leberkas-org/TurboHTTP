@@ -168,13 +168,13 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a library user, I want fluent extension methods for built-in features so that I can enable cookies, cache, retry, and redirect with a single call on `ITurboHttpClientBuilder`.
 
 **Acceptance Criteria:**
-- [ ] `public static class TurboHttpClientBuilderExtensions` in `src/TurboHttp/Middleware/TurboHttpClientBuilderExtensions.cs`
-- [ ] `.WithCookies(CookieJar? jar = null)` — calls `services.Configure<TurboClientDescriptor>(name, d => { d.EnableCookies = true; d.CustomCookieJar = jar; })`
-- [ ] `.WithCache(CachePolicy policy)` — sets `d.CachePolicy = policy`
-- [ ] `.WithRetry(RetryPolicy policy)` — sets `d.RetryPolicy = policy`
-- [ ] `.WithRedirect(RedirectPolicy? policy = null)` — sets `d.RedirectPolicy = policy ?? new RedirectPolicy()`
-- [ ] All methods return `ITurboHttpClientBuilder`
-- [ ] Typecheck/lint passes
+- [x] `public static class TurboHttpClientBuilderExtensions` in `src/TurboHttp/Middleware/TurboHttpClientBuilderExtensions.cs`
+- [x] `.WithCookies(CookieJar? jar = null)` — calls `services.Configure<TurboClientDescriptor>(name, d => { d.EnableCookies = true; d.CustomCookieJar = jar; })`
+- [x] `.WithCache(CachePolicy policy)` — sets `d.CachePolicy = policy`
+- [x] `.WithRetry(RetryPolicy policy)` — sets `d.RetryPolicy = policy`
+- [x] `.WithRedirect(RedirectPolicy? policy = null)` — sets `d.RedirectPolicy = policy ?? new RedirectPolicy()`
+- [x] All methods return `ITurboHttpClientBuilder`
+- [x] Typecheck/lint passes
 
 ---
 
