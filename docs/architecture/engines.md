@@ -15,7 +15,7 @@ HTTP/1.0 uses a **close-then-respond** model. Each connection handles exactly on
 **Stage sequence:**
 
 ```
-Http10EncoderStage → ConnectionStage → TCP → ConnectionStage → Http10DecoderStage → CorrelationHttp1XStage
+Http10EncoderStage → ConnectionStage → TCP → ConnectionStage → Http10DecoderStage → Http1XCorrelationStage
 ```
 
 | Stage | Role |
@@ -47,7 +47,7 @@ HTTP/1.1 adds **persistent connections** and **keep-alive control** via a feedba
 ```
 Http11EncoderStage → ConnectionStage → TCP → ConnectionStage
                                                   ↓
-                               Http11DecoderStage → CorrelationHttp1XStage
+                               Http11DecoderStage → Http1XCorrelationStage
                                                          ↓              ↓
                                               ConnectionReuseStage   (response downstream)
                                                          ↓

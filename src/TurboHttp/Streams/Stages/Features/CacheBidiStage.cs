@@ -163,16 +163,20 @@ internal sealed class CacheBidiStage
 
             if (result.Status is CacheLookupStatus.Fresh or CacheLookupStatus.Stale)
             {
+                // RFC 9111 §5.1 — inject Age header on every cached response
+                var cachedResponse = result.Entry!.Response;
+                CacheFreshnessEvaluator.InjectAgeHeader(cachedResponse, result.Entry, DateTimeOffset.UtcNow);
+
                 // Cache hit — short-circuit to response output
                 if (IsAvailable(_stage._outResponse))
                 {
-                    Push(_stage._outResponse, result.Entry!.Response);
+                    Push(_stage._outResponse, cachedResponse);
                     // Stay Idle, pull next request if engine has demand
                     MaybePullNextRequest();
                 }
                 else
                 {
-                    _bufferedHitResponse = result.Entry!.Response;
+                    _bufferedHitResponse = cachedResponse;
                     _state = CacheState.HitBuffered;
                 }
             }

@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using TurboHttp.Protocol.RFC9111;
 
@@ -175,5 +176,50 @@ public sealed class CacheFreshnessTests
         var now = _baseTime.AddSeconds(10);
         var result = CacheFreshnessEvaluator.Evaluate(entry, request, now);
         Assert.Equal(CacheLookupStatus.Fresh, result.Status);
+    }
+
+
+    [Fact(DisplayName = "RFC9111-5.1-AGE-001: Age header added to cached response")]
+    public void Should_AddAgeHeader_When_ServingFromCache()
+    {
+        var entry = MakeEntry(maxAgeSeconds: 300);
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        var now = _baseTime.AddSeconds(50);
+
+        CacheFreshnessEvaluator.InjectAgeHeader(response, entry, now);
+
+        Assert.True(response.Headers.Contains("Age"));
+    }
+
+    [Fact(DisplayName = "RFC9111-5.1-AGE-002: Age value matches current age")]
+    public void Should_MatchCurrentAge_When_AgeHeaderGenerated()
+    {
+        var entry = MakeEntry(maxAgeSeconds: 300);
+        var now = _baseTime.AddSeconds(50);
+
+        var expectedAge = CacheFreshnessEvaluator.GetCurrentAge(entry, now);
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        CacheFreshnessEvaluator.InjectAgeHeader(response, entry, now);
+
+        var ageValue = response.Headers.GetValues("Age").Single();
+        Assert.Equal(((long)expectedAge.TotalSeconds).ToString(), ageValue);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.1-AGE-003: Existing Age header overwritten")]
+    public void Should_OverwriteAge_When_AlreadyPresent()
+    {
+        var entry = MakeEntry(maxAgeSeconds: 300);
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        response.Headers.TryAddWithoutValidation("Age", "9999");
+
+        var now = _baseTime.AddSeconds(50);
+        CacheFreshnessEvaluator.InjectAgeHeader(response, entry, now);
+
+        var values = response.Headers.GetValues("Age").ToList();
+        Assert.Single(values);
+        Assert.NotEqual("9999", values[0]);
+        // Value should match the calculated current age
+        var expectedAge = (long)CacheFreshnessEvaluator.GetCurrentAge(entry, now).TotalSeconds;
+        Assert.Equal(expectedAge.ToString(), values[0]);
     }
 }

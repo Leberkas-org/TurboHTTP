@@ -120,6 +120,25 @@ public static class CacheFreshnessEvaluator
     }
 
     /// <summary>
+    /// RFC 9111 §5.1 — Injects (or overwrites) the Age header on <paramref name="response"/>
+    /// with the current age of the <paramref name="entry"/> at <paramref name="now"/>.
+    /// A cache MUST generate an Age header field in every response it sends.
+    /// </summary>
+    public static void InjectAgeHeader(HttpResponseMessage response, CacheEntry entry, DateTimeOffset now)
+    {
+        var currentAge = GetCurrentAge(entry, now);
+        var ageSeconds = (long)currentAge.TotalSeconds;
+        if (ageSeconds < 0)
+        {
+            ageSeconds = 0;
+        }
+
+        // Remove existing Age header and set the correct value
+        response.Headers.Remove("Age");
+        response.Headers.TryAddWithoutValidation("Age", ageSeconds.ToString());
+    }
+
+    /// <summary>
     /// RFC 9111 §4 — Full evaluation of the cache entry against the incoming request.
     /// Applies request directives (no-cache, max-age, min-fresh, max-stale, only-if-cached)
     /// and response directives (must-revalidate) to determine the lookup outcome.

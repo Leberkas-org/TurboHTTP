@@ -402,11 +402,11 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Change: On cache hit, inject Age header before push
 
 **Acceptance Criteria:**
-- [ ] Age header added to responses served from cache
-- [ ] Age value matches calculated current age
-- [ ] Existing Age header overwritten with correct value
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] Age header added to responses served from cache
+- [x] Age value matches calculated current age
+- [x] Existing Age header overwritten with correct value
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/02_CacheFreshnessTests.cs`):
 
