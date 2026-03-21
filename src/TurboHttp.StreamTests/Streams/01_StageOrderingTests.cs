@@ -386,7 +386,7 @@ public sealed class StageOrderingTests : EngineTestBase
             CookieJar: jar,
             CacheStore: store,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -473,7 +473,7 @@ public sealed class StageOrderingTests : EngineTestBase
             CookieJar: new CookieJar(),
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(Ok11Response),
@@ -574,7 +574,7 @@ public sealed class StageOrderingTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Http10Flow(ResponseFactory),

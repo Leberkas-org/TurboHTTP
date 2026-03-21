@@ -77,9 +77,9 @@ Renaming to `TurboHandler` aligns with .NET's `HttpMessageHandler` / `Delegating
 **Description:** As a developer, I want the pipeline descriptor to use handler naming.
 
 **Acceptance Criteria:**
-- [ ] `src/TurboHttp/Streams/PipelineDescriptor.cs`: `IReadOnlyList<TurboMiddleware> Middlewares` → `IReadOnlyList<TurboHandler> Handlers`
-- [ ] `PipelineDescriptor.Empty` updated accordingly
-- [ ] Typecheck passes
+- [x] `src/TurboHttp/Streams/PipelineDescriptor.cs`: `IReadOnlyList<TurboMiddleware> Middlewares` → `IReadOnlyList<TurboHandler> Handlers`
+- [x] `PipelineDescriptor.Empty` updated accordingly
+- [x] Typecheck passes
 
 ### TASK-005: Update TurboHttpClientBuilderExtensions
 **Description:** As a developer, I want the builder API renamed and converted to sync delegates.

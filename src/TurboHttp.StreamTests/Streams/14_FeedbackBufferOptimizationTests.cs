@@ -67,7 +67,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -97,7 +97,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -131,7 +131,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -161,7 +161,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -191,7 +191,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(

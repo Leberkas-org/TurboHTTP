@@ -141,7 +141,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
             CookieJar: cookieJar,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -182,7 +182,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -216,7 +216,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         var engine = new Engine();
         var flow = engine.CreateFlow(

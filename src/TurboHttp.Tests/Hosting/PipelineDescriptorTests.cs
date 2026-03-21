@@ -14,7 +14,7 @@ public sealed class PipelineDescriptorTests
     }
 
     [Fact(DisplayName = "PipelineDescriptor.Empty has null policies and empty middlewares")]
-    public void Empty_HasNullPoliciesAndEmptyMiddlewares()
+    public void Empty_HasNullPoliciesAndEmptyHandlers()
     {
         var empty = PipelineDescriptor.Empty;
 
@@ -23,7 +23,7 @@ public sealed class PipelineDescriptorTests
         Assert.Null(empty.CookieJar);
         Assert.Null(empty.CacheStore);
         Assert.Null(empty.CachePolicy);
-        Assert.Empty(empty.Middlewares);
+        Assert.Empty(empty.Handlers);
     }
 
     [Fact(DisplayName = "AutomaticDecompression defaults to true when not specified")]
@@ -35,7 +35,7 @@ public sealed class PipelineDescriptorTests
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: []);
+            Handlers: []);
 
         Assert.True(descriptor.AutomaticDecompression);
     }
@@ -49,7 +49,7 @@ public sealed class PipelineDescriptorTests
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
-            Middlewares: [],
+            Handlers: [],
             AutomaticDecompression: false);
 
         Assert.False(descriptor.AutomaticDecompression);

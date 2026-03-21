@@ -114,7 +114,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         // This test verifies the pipeline still works correctly with the flag disabled.
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null, RetryPolicy: null, CookieJar: null,
-            CacheStore: null, CachePolicy: null, Middlewares: [],
+            CacheStore: null, CachePolicy: null, Handlers: [],
             AutomaticDecompression: false);
 
         var flow = BuildFlow(descriptor);
@@ -138,7 +138,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
 
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null, RetryPolicy: new RetryPolicy(),
-            CookieJar: null, CacheStore: null, CachePolicy: null, Middlewares: []);
+            CookieJar: null, CacheStore: null, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Factory);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -160,7 +160,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
 
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(), RetryPolicy: null,
-            CookieJar: null, CacheStore: null, CachePolicy: null, Middlewares: []);
+            CookieJar: null, CacheStore: null, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Factory);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old")
@@ -180,7 +180,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         var jar = new CookieJar();
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null, RetryPolicy: null,
-            CookieJar: jar, CacheStore: null, CachePolicy: null, Middlewares: []);
+            CookieJar: jar, CacheStore: null, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Response200WithSetCookie);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -213,7 +213,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
 
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null, RetryPolicy: null,
-            CookieJar: null, CacheStore: store, CachePolicy: null, Middlewares: []);
+            CookieJar: null, CacheStore: store, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Factory);
 
@@ -250,7 +250,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
             CookieJar: new CookieJar(),
             CacheStore: new HttpCacheStore(),
             CachePolicy: null,
-            Middlewares: [],
+            Handlers: [],
             AutomaticDecompression: true);
 
         var flow = BuildFlow(descriptor);
@@ -280,7 +280,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
             CookieJar: jar,
             CacheStore: store,
             CachePolicy: null,
-            Middlewares: [],
+            Handlers: [],
             AutomaticDecompression: true);
 
         var flow = BuildFlow(descriptor, Factory);
@@ -344,7 +344,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
 
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null, RetryPolicy: null, CookieJar: null,
-            CacheStore: null, CachePolicy: null, Middlewares: [],
+            CacheStore: null, CachePolicy: null, Handlers: [],
             AutomaticDecompression: false);
 
         var flow = BuildFlow(descriptor, () => responseBytes);
