@@ -9,6 +9,7 @@ using Akka.Streams.Stage;
 using Akka.TestKit.Xunit2;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
+using TurboHttp.Protocol.RFC9114;
 
 namespace TurboHttp.StreamTests;
 
@@ -367,4 +368,152 @@ public abstract class EngineTestBase : TestKit
         return (results, frames);
     }
 
+    /// <summary>
+    /// Runs Http30Engine against pre-queued server frames.
+    /// Returns the decoded response and all outbound H3 frames.
+    /// </summary>
+    protected async Task<(HttpResponseMessage Response, IReadOnlyList<Http3Frame> OutboundFrames)> SendH3EngineAsync(
+        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
+        HttpRequestMessage request,
+        params byte[][] serverFrames)
+    {
+        var fake = new H3EngineFakeConnectionStage(serverFrames);
+        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+
+        var tcs = new TaskCompletionSource<HttpResponseMessage>();
+
+        _ = Source.Single(request)
+            .Via(flow)
+            .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
+
+        var response = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var outboundBytes = new List<byte>();
+        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        {
+            outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
+        }
+
+        var frames = outboundBytes.Count > 0
+            ? new Http3FrameDecoder().DecodeAll(outboundBytes.ToArray(), out _)
+            : [];
+
+        return (response, frames);
+    }
+}
+
+/// <summary>
+/// Fake TCP connection stage for HTTP/3 engine tests.
+/// Intercepts outbound H3 frames and injects pre-queued server frames one per outbound push.
+/// </summary>
+public sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
+{
+    private readonly IReadOnlyList<byte[]> _serverFrames;
+
+    public Channel<(IMemoryOwner<byte>, int)> OutboundChannel { get; } =
+        Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+
+    public Inlet<IOutputItem> In { get; } = new("h3-engine-fake.in");
+    public Outlet<IInputItem> Out { get; } = new("h3-engine-fake.out");
+
+    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
+
+    public H3EngineFakeConnectionStage(params byte[][] serverFrames)
+    {
+        _serverFrames = serverFrames;
+        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
+    }
+
+    protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
+
+    private sealed class Logic : GraphStageLogic
+    {
+        private readonly H3EngineFakeConnectionStage _stage;
+        private int _serverFrameIndex;
+        private int _unlockedFrames;
+        private bool _downstreamWaiting;
+
+        public Logic(H3EngineFakeConnectionStage stage) : base(stage.Shape)
+        {
+            _stage = stage;
+
+            SetHandler(stage.In,
+                onPush: () =>
+                {
+                    var item = Grab(stage.In);
+                    if (item is DataItem(var owner, var length))
+                    {
+                        var copy = new byte[length];
+                        owner.Memory.Span[..length].CopyTo(copy);
+                        stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), copy.Length));
+                        owner.Dispose();
+                        Unlock();
+                    }
+
+                    if (!IsClosed(stage.In))
+                    {
+                        Pull(stage.In);
+                    }
+                },
+                onUpstreamFinish: () =>
+                {
+                    if (!IsClosed(stage.Out))
+                    {
+                        Complete(stage.Out);
+                    }
+                },
+                onUpstreamFailure: FailStage);
+
+            SetHandler(stage.Out,
+                onPull: () =>
+                {
+                    if (_unlockedFrames > 0 && _serverFrameIndex < _stage._serverFrames.Count)
+                    {
+                        _unlockedFrames--;
+                        PushNextFrame();
+                    }
+                    else
+                    {
+                        _downstreamWaiting = true;
+                    }
+                },
+                onDownstreamFinish: _ =>
+                {
+                    if (!IsClosed(stage.In))
+                    {
+                        Cancel(stage.In);
+                    }
+                });
+        }
+
+        private void Unlock()
+        {
+            if (_downstreamWaiting && _serverFrameIndex < _stage._serverFrames.Count)
+            {
+                _downstreamWaiting = false;
+                PushNextFrame();
+            }
+            else
+            {
+                _unlockedFrames++;
+            }
+        }
+
+        private void PushNextFrame()
+        {
+            var frameBytes = _stage._serverFrames[_serverFrameIndex++];
+            IMemoryOwner<byte> frameOwner = new SimpleMemoryOwner(frameBytes);
+            Push(_stage.Out, new DataItem(frameOwner, frameBytes.Length) { Key = RequestEndpoint.Default });
+
+            // HTTP/3 relies on QUIC FIN (upstream completion) to signal stream end.
+            // After all server frames are delivered, complete the output to propagate
+            // through the decoder → connection → stream pipeline.
+            if (_serverFrameIndex >= _stage._serverFrames.Count)
+            {
+                Complete(_stage.Out);
+            }
+        }
+
+        public override void PreStart() => Pull(_stage.In);
+    }
 }
