@@ -69,11 +69,12 @@ internal sealed class Engine
     ///   <item><description>RedirectBidiStage — RFC 9110 §15.4, internal feedback loop</description></item>
     ///   <item><description>CookieBidiStage — RFC 6265 §5.3–§5.4</description></item>
     ///   <item><description>RetryBidiStage — RFC 9110 §9.2, internal feedback loop</description></item>
+    ///   <item><description>ExpectContinueBidiStage — RFC 9110 §10.1.1, Expect: 100-continue</description></item>
     ///   <item><description>CacheBidiStage — RFC 9111, internal short-circuit</description></item>
     ///   <item><description>DecompressionBidiStage — RFC 9110 §8.4</description></item>
     /// </list>
-    /// <para>Request direction: Handler[0] → … → Handler[N] → Redirect → Cookie → Retry → Cache → Decomp → Engine</para>
-    /// <para>Response direction: Engine → Decomp → Cache → Retry → Cookie → Redirect → Handler[N] → … → Handler[0]</para>
+    /// <para>Request direction: Handler[0] → … → Handler[N] → Redirect → Cookie → Retry → Expect100 → Cache → Decomp → Engine</para>
+    /// <para>Response direction: Engine → Decomp → Cache → Expect100 → Retry → Cookie → Redirect → Handler[N] → … → Handler[0]</para>
     /// <para>Only BidiFlows for non-null policies are included. When all policies are null,
     /// no handlers exist, and <see cref="PipelineDescriptor.AutomaticDecompression"/> is true,
     /// the graph is: Enricher → DecompressionBidi(Engine) → Output.</para>
@@ -107,6 +108,12 @@ internal sealed class Engine
         {
             var cache = BidiFlow.FromGraph(new CacheBidiStage(descriptor.CacheStore, descriptor.CachePolicy));
             features = features is not null ? cache.Atop(features) : cache;
+        }
+
+        if (descriptor.Expect100Policy is not null)
+        {
+            var expect = BidiFlow.FromGraph(new ExpectContinueBidiStage(descriptor.Expect100Policy));
+            features = features is not null ? expect.Atop(features) : expect;
         }
 
         if (descriptor.RetryPolicy is not null)

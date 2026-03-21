@@ -32,6 +32,7 @@ public sealed class PipelineDescriptorTests
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
@@ -46,6 +47,7 @@ public sealed class PipelineDescriptorTests
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,

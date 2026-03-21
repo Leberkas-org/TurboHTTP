@@ -64,6 +64,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(),
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
@@ -94,6 +95,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy { MaxRedirects = 10 },
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
@@ -128,6 +130,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: new RetryPolicy { MaxRetries = 3, RespectRetryAfter = false },
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
@@ -158,6 +161,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: new RetryPolicy { MaxRetries = 3, RespectRetryAfter = false },
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
@@ -188,6 +192,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(),
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,

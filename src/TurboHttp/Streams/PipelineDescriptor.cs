@@ -8,6 +8,7 @@ namespace TurboHttp.Streams;
 internal sealed record PipelineDescriptor(
     RedirectPolicy? RedirectPolicy,
     RetryPolicy? RetryPolicy,
+    Expect100Policy? Expect100Policy,
     CookieJar? CookieJar,
     HttpCacheStore? CacheStore,
     CachePolicy? CachePolicy,
@@ -17,6 +18,7 @@ internal sealed record PipelineDescriptor(
     public static readonly PipelineDescriptor Empty = new(
         RedirectPolicy: null,
         RetryPolicy: null,
+        Expect100Policy: null,
         CookieJar: null,
         CacheStore: null,
         CachePolicy: null,

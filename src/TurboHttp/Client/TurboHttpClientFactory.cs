@@ -41,6 +41,7 @@ internal sealed class TurboHttpClientFactory(
         var pipeline = new PipelineDescriptor(
             RedirectPolicy: descriptor.RedirectPolicy,
             RetryPolicy: descriptor.RetryPolicy,
+            Expect100Policy: descriptor.Expect100Policy,
             CookieJar: cookieJar,
             CacheStore: cacheStore,
             CachePolicy: descriptor.CachePolicy,

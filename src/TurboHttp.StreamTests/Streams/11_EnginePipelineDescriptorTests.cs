@@ -138,6 +138,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: cookieJar,
             CacheStore: null,
             CachePolicy: null,
@@ -179,6 +180,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: new RetryPolicy(),
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,
@@ -213,6 +215,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(),
             RetryPolicy: null,
+            Expect100Policy: null,
             CookieJar: null,
             CacheStore: null,
             CachePolicy: null,

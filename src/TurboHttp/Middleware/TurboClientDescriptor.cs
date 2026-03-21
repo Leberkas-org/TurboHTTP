@@ -10,6 +10,7 @@ internal sealed class TurboClientDescriptor
 {
     public RedirectPolicy? RedirectPolicy { get; set; }
     public RetryPolicy? RetryPolicy { get; set; }
+    public Expect100Policy? Expect100Policy { get; set; }
     public bool EnableCookies { get; set; }
     public CookieJar? CustomCookieJar { get; set; }
     public CachePolicy? CachePolicy { get; set; }
