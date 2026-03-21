@@ -38,7 +38,7 @@ namespace TurboHttp.Streams.Stages;
 /// </summary>
 internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>
 {
-    private readonly HttpCacheStore _store;
+    private readonly HttpCacheStore? _store;
 
     private readonly Inlet<HttpResponseMessage> _in = new("CacheStorage.In");
     private readonly Outlet<HttpResponseMessage> _out = new("CacheStorage.Out");
@@ -46,7 +46,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
     public override FlowShape<HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
 
-    public CacheStorageStage(HttpCacheStore store)
+    public CacheStorageStage(HttpCacheStore? store)
     {
         _store = store;
         Shape = new FlowShape<HttpResponseMessage, HttpResponseMessage>(_in, _out);
@@ -70,7 +70,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                     var response = Grab(stage._in);
                     var request = response.RequestMessage;
 
-                    if (request is not null)
+                    if (stage._store is not null && request is not null)
                     {
                         var (result, needsAsyncRead) = Process(request, response);
                         if (!needsAsyncRead)
@@ -98,7 +98,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
             {
                 var (response, body) = tuple;
                 var now = DateTimeOffset.UtcNow;
-                _stage._store.Put(response.RequestMessage!, response, body, now, now);
+                _stage._store!.Put(response.RequestMessage!, response, body, now, now);
                 Push(_stage._out, response);
             });
         }
@@ -122,7 +122,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                 // RFC 9111 §4.4 — invalidate stored entries after unsafe method
                 if (request.RequestUri is not null)
                 {
-                    _stage._store.Invalidate(request.RequestUri);
+                    _stage._store!.Invalidate(request.RequestUri);
                 }
 
                 return (response, false);
@@ -131,14 +131,14 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
             if (response.StatusCode == HttpStatusCode.NotModified)
             {
                 // RFC 9111 §4.3.4 — merge 304 with cached entry and push 200 downstream
-                var entry = _stage._store.Get(request);
+                var entry = _stage._store!.Get(request);
                 if (entry is not null)
                 {
                     var merged = CacheValidationRequestBuilder.MergeNotModifiedResponse(response, entry);
                     merged.RequestMessage = request;
 
                     var now = DateTimeOffset.UtcNow;
-                    _stage._store.Put(request, merged, entry.Body, now, now);
+                    _stage._store!.Put(request, merged, entry.Body, now, now);
 
                     return (merged, false);
                 }
@@ -156,7 +156,7 @@ internal sealed class CacheStorageStage : GraphStage<FlowShape<HttpResponseMessa
                 {
                     var body = task.Result;
                     var now = DateTimeOffset.UtcNow;
-                    _stage._store.Put(request, response, body, now, now);
+                    _stage._store!.Put(request, response, body, now, now);
                     return (response, false);
                 }
 

@@ -26,7 +26,14 @@ public class Engine
         var requestOptions = BuildRequestOptions(options);
         requestOptionsFactory ??= () => requestOptions;
 
-        return BuildExtendedPipeline(poolRouter, options, requestOptionsFactory);
+        var descriptor = new PipelineDescriptor(
+            options.RedirectPolicy,
+            options.RetryPolicy,
+            new CookieJar(),
+            new HttpCacheStore(options.CachePolicy),
+            []);
+
+        return BuildExtendedPipeline(poolRouter, options, requestOptionsFactory, descriptor);
     }
 
     internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(
@@ -48,6 +55,7 @@ public class Engine
             MaxResponseContentBufferSize: 1024 * 1024);
 
         return BuildExtendedPipeline(ActorRefs.Nobody, options, () => defaultOptions,
+            PipelineDescriptor.Empty,
             http10Factory, http11Factory, http20Factory);
     }
 
@@ -93,13 +101,11 @@ public class Engine
         IActorRef poolRouter,
         TurboClientOptions options,
         Func<TurboRequestOptions> requestOptionsFactory,
+        PipelineDescriptor descriptor,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http10Factory = null,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http11Factory = null,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory = null)
     {
-        var cookieJar = new CookieJar();
-        var cacheStore = new HttpCacheStore(options.CachePolicy);
-
         return Flow.FromGraph(GraphDsl.Create(builder =>
         {
             // ---- PRE-PROCESSING ISLAND (fused island 1: lightweight request stages) ----
@@ -107,13 +113,21 @@ public class Engine
             var enricher = builder.Add(new RequestEnricherStage(requestOptionsFactory));
             var requestTip = enricher.Outlet;
 
+            // Request middleware stages (FIFO, initial requests only — redirect feedback bypasses these)
+            foreach (var mw in descriptor.Middlewares)
+            {
+                var middlewareStage = builder.Add(new MiddlewareRequestStage(mw));
+                builder.From(requestTip).To(middlewareStage.Inlet);
+                requestTip = middlewareStage.Outlet;
+            }
+
             // Redirect merge (feedback from redirect stage in post-processing island)
             var redirectMerge = builder.Add(new MergePreferred<HttpRequestMessage>(1));
             builder.From(requestTip).To(redirectMerge.In(0));
             requestTip = redirectMerge.Out;
 
             // Cookie injection
-            var cookieInject = builder.Add(new CookieInjectionStage(cookieJar));
+            var cookieInject = builder.Add(new CookieInjectionStage(descriptor.CookieJar));
             builder.From(requestTip).To(cookieInject.Inlet);
             requestTip = cookieInject.Outlet;
 
@@ -123,7 +137,7 @@ public class Engine
             requestTip = retryMerge.Out;
 
             // Cache lookup
-            var cacheLookup = builder.Add(new CacheLookupStage(cacheStore, options.CachePolicy));
+            var cacheLookup = builder.Add(new CacheLookupStage(descriptor.CacheStore, options.CachePolicy));
             builder.From(requestTip).To(cacheLookup.In);
 
             var engineRequest = cacheLookup.Out0; // cache miss
@@ -145,7 +159,7 @@ public class Engine
             // Async boundary separates this from the protocol engine island.
 
             var postProcess = builder.Add(
-                BuildPostProcessGraph(cookieJar, cacheStore, options)
+                BuildPostProcessGraph(descriptor)
                     .Async());
 
             builder.From(engineAndDecomp.Outlet).To(postProcess.ResponseIn);
@@ -192,18 +206,15 @@ public class Engine
     /// <para>Exposed ports: 2 inlets (response from engine, cache hits from lookup),
     /// 3 outlets (final response, retry feedback, redirect feedback).</para>
     /// </summary>
-    private static IGraph<PostProcessShape, NotUsed> BuildPostProcessGraph(
-        CookieJar cookieJar,
-        HttpCacheStore cacheStore,
-        TurboClientOptions options)
+    private static IGraph<PostProcessShape, NotUsed> BuildPostProcessGraph(PipelineDescriptor descriptor)
     {
         return GraphDsl.Create(builder =>
         {
-            var cookieStorage = builder.Add(new CookieStorageStage(cookieJar));
-            var cacheStorage = builder.Add(new CacheStorageStage(cacheStore));
-            var retry = builder.Add(new RetryStage(options.RetryPolicy));
+            var cookieStorage = builder.Add(new CookieStorageStage(descriptor.CookieJar));
+            var cacheStorage = builder.Add(new CacheStorageStage(descriptor.CacheStore));
+            var retry = builder.Add(new RetryStage(descriptor.RetryPolicy));
             var cacheMerge = builder.Add(new Merge<HttpResponseMessage>(2));
-            var redirect = builder.Add(new RedirectStage(options.RedirectPolicy));
+            var redirect = builder.Add(new RedirectStage(descriptor.RedirectPolicy));
 
             // CookieStorage → CacheStorage → Retry
             builder.From(cookieStorage.Outlet).To(cacheStorage.Inlet);

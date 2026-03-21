@@ -103,16 +103,16 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want `BuildExtendedPipeline` to accept a `PipelineDescriptor` and use its CookieJar/CacheStore instead of always creating new instances so that features are only active when configured.
 
 **Acceptance Criteria:**
-- [ ] `BuildExtendedPipeline` receives `PipelineDescriptor descriptor` as an additional parameter
-- [ ] `var cookieJar = new CookieJar()` and `var cacheStore = new HttpCacheStore(...)` removed
-- [ ] Stage instantiation uses `descriptor.CookieJar` / `descriptor.CacheStore` (may be null)
-- [ ] `CreateFlow(poolRouter, options, factory)` — the existing public method — derives a `PipelineDescriptor` internally for backward-compat:
+- [x] `BuildExtendedPipeline` receives `PipelineDescriptor descriptor` as an additional parameter
+- [x] `var cookieJar = new CookieJar()` and `var cacheStore = new HttpCacheStore(...)` removed
+- [x] Stage instantiation uses `descriptor.CookieJar` / `descriptor.CacheStore` (may be null)
+- [x] `CreateFlow(poolRouter, options, factory)` — the existing public method — derives a `PipelineDescriptor` internally for backward-compat:
   ```csharp
   new PipelineDescriptor(options.RedirectPolicy, options.RetryPolicy,
       new CookieJar(), new HttpCacheStore(options.CachePolicy), [])
   ```
-- [ ] All existing tests continue to pass
-- [ ] Typecheck/lint passes
+- [x] All existing tests continue to pass
+- [x] Typecheck/lint passes
 
 ---
 

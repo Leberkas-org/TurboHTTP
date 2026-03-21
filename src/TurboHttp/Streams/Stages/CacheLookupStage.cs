@@ -33,7 +33,7 @@ namespace TurboHttp.Streams.Stages;
 internal sealed class CacheLookupStage
     : GraphStage<FanOutShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage>>
 {
-    private readonly HttpCacheStore _store;
+    private readonly HttpCacheStore? _store;
     private readonly CachePolicy _policy;
 
     private readonly Inlet<HttpRequestMessage> _in
@@ -48,7 +48,7 @@ internal sealed class CacheLookupStage
     public override FanOutShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage> Shape { get; }
 
 
-    public CacheLookupStage(HttpCacheStore store, CachePolicy? policy = null)
+    public CacheLookupStage(HttpCacheStore? store, CachePolicy? policy = null)
     {
         _store = store;
         _policy = policy ?? CachePolicy.Default;
@@ -73,6 +73,14 @@ internal sealed class CacheLookupStage
                 onPush: () =>
                 {
                     var request = Grab(stage.Shape.In);
+
+                    if (_stage._store is null)
+                    {
+                        _missHasDemand = false;
+                        Push(stage.Shape.Out0, request);
+                        return;
+                    }
+
                     var entry = _stage._store.Get(request);
                     var result =
                         CacheFreshnessEvaluator.Evaluate(entry, request, DateTimeOffset.UtcNow, _stage._policy);
