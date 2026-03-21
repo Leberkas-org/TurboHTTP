@@ -56,12 +56,12 @@ engine.CreateFlow(() => Http10Flow(…), () => Http11Flow(…), NoOpH2Flow, NoOp
 so that their two `CreateFlow` call sites no longer depend on the obsolete overload.
 
 **Acceptance Criteria:**
-- [ ] `SetupHttp11Pipeline` (line ≈307): `options: null` replaced with
+- [x] `SetupHttp11Pipeline` (line ≈307): `options: null` replaced with
       `descriptor: PipelineDescriptor.Empty`.
-- [ ] `SetupHttp20Pipeline` (line ≈327): `options: null` replaced with
+- [x] `SetupHttp20Pipeline` (line ≈327): `options: null` replaced with
       `descriptor: PipelineDescriptor.Empty`.
-- [ ] No other benchmark logic is changed.
-- [ ] `dotnet build` passes with no new errors.
+- [x] No other benchmark logic is changed.
+- [x] `dotnet build` passes with no new errors.
 
 ---
 

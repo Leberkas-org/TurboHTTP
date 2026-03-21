@@ -309,7 +309,7 @@ public class EnginePipelineBenchmarks
             http11Factory: () => Flow.FromGraph(new LoopbackHttp1Stage(Http11OkResponse)),
             http20Factory: () => Flow.FromGraph(new LoopbackHttp1Stage(Http11OkResponse)),
             http30Factory: () => Flow.FromGraph(new LoopbackHttp1Stage(Http11OkResponse)),
-            options: null);
+            descriptor: PipelineDescriptor.Empty);
 
         (_http11Queue, _) = Source.Queue<HttpRequestMessage>(16, OverflowStrategy.Backpressure)
             .Via(flow)
@@ -329,7 +329,7 @@ public class EnginePipelineBenchmarks
             http11Factory: () => Flow.FromGraph(new LoopbackHttp1Stage(Http11OkResponse)),
             http20Factory: () => Flow.FromGraph(new LoopbackHttp20Stage()),
             http30Factory: () => Flow.FromGraph(new LoopbackHttp1Stage(Http11OkResponse)),
-            options: null);
+            descriptor: PipelineDescriptor.Empty);
 
         (_http20Queue, _) = Source.Queue<HttpRequestMessage>(16, OverflowStrategy.Backpressure)
             .Via(flow)
