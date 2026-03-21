@@ -163,6 +163,14 @@ public static class CacheFreshnessEvaluator
                 "RFC 9111 §5.2.1.4: Request no-cache forces revalidation.");
         }
 
+        // RFC 9111 §5.2.2.3 — response unqualified no-cache requires revalidation
+        var resCcEarly = entry.CacheControl;
+        if (resCcEarly is { NoCache: true, NoCacheFields: null })
+        {
+            return CacheLookupResult.MustRevalidate(entry,
+                "RFC 9111 §5.2.2.3: Response unqualified no-cache requires revalidation.");
+        }
+
         var freshnessLifetime = GetFreshnessLifetime(entry, policy);
         var currentAge = GetCurrentAge(entry, now);
         var isFresh = freshnessLifetime > currentAge;

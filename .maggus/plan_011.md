@@ -483,12 +483,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Change: Strip named fields from response when serving without revalidation
 
 **Acceptance Criteria:**
-- [ ] `no-cache="Set-Cookie"` strips Set-Cookie from cached response on reuse
-- [ ] `no-cache="A, B"` strips both fields
-- [ ] Unqualified `no-cache` requires full revalidation
-- [ ] `private="Set-Cookie"` excludes Set-Cookie from shared cache storage
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `no-cache="Set-Cookie"` strips Set-Cookie from cached response on reuse
+- [x] `no-cache="A, B"` strips both fields
+- [x] Unqualified `no-cache` requires full revalidation
+- [x] `private="Set-Cookie"` excludes Set-Cookie from shared cache storage
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC9111/05_QualifiedDirectiveTests.cs`):
 

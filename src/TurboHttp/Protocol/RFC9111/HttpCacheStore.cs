@@ -93,6 +93,21 @@ public sealed class HttpCacheStore
             return;
         }
 
+        // RFC 9111 §5.2.2.7 — shared cache must not store unqualified-private responses
+        if (_policy.SharedCache)
+        {
+            if (response.Headers.TryGetValues("Cache-Control", out var ccVals))
+            {
+                var cc = CacheControlParser.Parse(string.Join(", ", ccVals));
+                if (cc is { Private: true, PrivateFields: null })
+                {
+                    return; // Unqualified private — reject entirely
+                }
+            }
+
+            StripPrivateFields(response);
+        }
+
         if (body.Length > _policy.MaxBodyBytes)
         {
             return;
@@ -400,6 +415,30 @@ public sealed class HttpCacheStore
 
     private static string NormalizeUri(Uri uri)
         => uri.GetLeftPart(UriPartial.Query).ToLowerInvariant();
+
+    /// <summary>
+    /// RFC 9111 §5.2.2.7 — Strips header fields listed in private="field1, field2"
+    /// from the response before storing in a shared cache.
+    /// </summary>
+    private static void StripPrivateFields(HttpResponseMessage response)
+    {
+        if (!response.Headers.TryGetValues("Cache-Control", out var ccValues))
+        {
+            return;
+        }
+
+        var cc = CacheControlParser.Parse(string.Join(", ", ccValues));
+        if (cc?.PrivateFields is not { Count: > 0 } fields)
+        {
+            return;
+        }
+
+        foreach (var field in fields)
+        {
+            response.Headers.Remove(field);
+            response.Content?.Headers.Remove(field);
+        }
+    }
 
     private static string GetVaryKey(CacheEntry entry)
     {

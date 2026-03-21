@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -167,6 +168,9 @@ internal sealed class CacheBidiStage
                 var cachedResponse = result.Entry!.Response;
                 CacheFreshnessEvaluator.InjectAgeHeader(cachedResponse, result.Entry, DateTimeOffset.UtcNow);
 
+                // RFC 9111 §5.2.2.3 — strip qualified no-cache fields before serving
+                StripNoCacheFields(cachedResponse, result.Entry.CacheControl);
+
                 // Cache hit — short-circuit to response output
                 if (IsAvailable(_stage._outResponse))
                 {
@@ -283,6 +287,24 @@ internal sealed class CacheBidiStage
             }
 
             return (response, false);
+        }
+
+        /// <summary>
+        /// RFC 9111 §5.2.2.3 — Strips header fields listed in no-cache="field1, field2"
+        /// from the response before serving from cache.
+        /// </summary>
+        private static void StripNoCacheFields(HttpResponseMessage response, CacheControl? cc)
+        {
+            if (cc?.NoCacheFields is not { Count: > 0 } fields)
+            {
+                return;
+            }
+
+            foreach (var field in fields)
+            {
+                response.Headers.Remove(field);
+                response.Content?.Headers.Remove(field);
+            }
         }
 
         private void MaybePullNextRequest()
