@@ -59,12 +59,35 @@ public sealed class Http11EncoderRequestLineTests
     [InlineData("HEAD")]
     [InlineData("OPTIONS")]
     [InlineData("TRACE")]
-    [InlineData("CONNECT")]
     public void Should_ProduceCorrectRequestLine_When_HttpMethod(string method)
     {
         var request = new HttpRequestMessage(new HttpMethod(method), "https://example.com/resource");
         var result = Encode(request);
         Assert.StartsWith($"{method} /resource HTTP/1.1\r\n", result);
+    }
+
+    [Fact(DisplayName = "RFC9110-9.3.6-CP-001: CONNECT includes default HTTPS port")]
+    public void Should_IncludePort443_When_ConnectHttps()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Connect, "https://example.com/");
+        var result = Encode(request);
+        Assert.StartsWith("CONNECT example.com:443 HTTP/1.1\r\n", result);
+    }
+
+    [Fact(DisplayName = "RFC9110-9.3.6-CP-002: CONNECT includes default HTTP port")]
+    public void Should_IncludePort80_When_ConnectHttp()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Connect, "http://example.com/");
+        var result = Encode(request);
+        Assert.StartsWith("CONNECT example.com:80 HTTP/1.1\r\n", result);
+    }
+
+    [Fact(DisplayName = "RFC9110-9.3.6-CP-003: CONNECT preserves custom port")]
+    public void Should_IncludePort_When_ConnectCustomPort()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Connect, "http://example.com:8080/");
+        var result = Encode(request);
+        Assert.StartsWith("CONNECT example.com:8080 HTTP/1.1\r\n", result);
     }
 
     [Fact(DisplayName = "RFC9112-3-RL-005: OPTIONS * HTTP/1.1 encoded correctly")]

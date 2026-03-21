@@ -110,8 +110,14 @@ public static class Http11Encoder
         // Request-target (RFC 9112 Section 3.2)
         var uri = request.RequestUri!;
 
+        // CONNECT uses authority-form (RFC 9110 §9.3.6: host:port, always include port)
+        if (request.Method == HttpMethod.Connect)
+        {
+            var authority = UriSanitizer.FormatAuthorityWithPort(uri);
+            bytesWritten += WriteAscii(ref buffer, authority);
+        }
         // OPTIONS * case (asterisk-form)
-        if (request.Method == HttpMethod.Options && uri.PathAndQuery is "*" or "/*")
+        else if (request.Method == HttpMethod.Options && uri.PathAndQuery is "*" or "/*")
         {
             bytesWritten += WriteBytes(ref buffer, "*"u8);
         }

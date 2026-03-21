@@ -206,11 +206,11 @@ RFC 9110 has 99 client-side MUSTs. After plan_011 Tier 1-2 (TASK-001-009), 92 ar
 - Change: In `WriteRequestLine()` for CONNECT: always include port, even default ports
 
 **Acceptance Criteria:**
-- [ ] CONNECT to `https://example.com/` → request-target: `example.com:443`
-- [ ] CONNECT to `http://example.com/` → request-target: `example.com:80`
-- [ ] CONNECT to `http://example.com:8080/` → request-target: `example.com:8080`
-- [ ] Non-CONNECT requests unchanged
-- [ ] Unit tests written and passing
+- [x] CONNECT to `https://example.com/` → request-target: `example.com:443`
+- [x] CONNECT to `http://example.com/` → request-target: `example.com:80`
+- [x] CONNECT to `http://example.com:8080/` → request-target: `example.com:8080`
+- [x] Non-CONNECT requests unchanged
+- [x] Unit tests written and passing
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9112/01_EncoderRequestLineTests.cs`):
 
