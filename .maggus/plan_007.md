@@ -41,12 +41,12 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a library author, I want an interface analogous to `IHttpClientBuilder` so that all feature and middleware extension methods share a common target type.
 
 **Acceptance Criteria:**
-- [ ] `public interface ITurboHttpClientBuilder` in `src/TurboHttp/Middleware/ITurboHttpClientBuilder.cs`
-- [ ] Property `string Name { get; }`
-- [ ] Property `IServiceCollection Services { get; }`
-- [ ] No Akka imports — only `Microsoft.Extensions.DependencyInjection`
-- [ ] Namespace: `TurboHttp.Middleware`
-- [ ] Typecheck/lint passes
+- [x] `public interface ITurboHttpClientBuilder` in `src/TurboHttp/Middleware/ITurboHttpClientBuilder.cs`
+- [x] Property `string Name { get; }`
+- [x] Property `IServiceCollection Services { get; }`
+- [x] No Akka imports — only `Microsoft.Extensions.DependencyInjection`
+- [x] Namespace: `TurboHttp.Middleware`
+- [x] Typecheck/lint passes
 
 ---
 
