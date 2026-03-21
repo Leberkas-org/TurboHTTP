@@ -209,13 +209,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Call from: `RequestEnricherStage.Enrich()` after header merge
 
 **Acceptance Criteria:**
-- [ ] If-Range without Range header throws
-- [ ] If-Range with weak ETag throws
-- [ ] If-Range with HTTP-date when ETag available throws
-- [ ] If-Range with strong ETag + Range passes validation
-- [ ] No If-Range header passes through unchanged
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] If-Range without Range header throws
+- [x] If-Range with weak ETag throws
+- [x] If-Range with HTTP-date when ETag available throws
+- [x] If-Range with strong ETag + Range passes validation
+- [x] No If-Range header passes through unchanged
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC9110/05_IfRangeValidatorTests.cs`):
 

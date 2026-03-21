@@ -98,6 +98,9 @@ internal sealed class RequestEnricherStage : GraphStage<FlowShape<HttpRequestMes
 
             // Rule 4: Referer sanitization (RFC 9110 §10.5)
             SanitizeReferer(request);
+
+            // Rule 5: If-Range validation (RFC 9110 §13.1.5)
+            IfRangeValidator.Validate(request);
         }
 
         /// <summary>

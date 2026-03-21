@@ -46,7 +46,7 @@ internal sealed class ConnectionState
         {
             var version = HttpVersion;
 
-            if (version.Major == 1 && version.Minor == 0)
+            if (version is { Major: 1, Minor: 0 })
             {
                 return 1;
             }
