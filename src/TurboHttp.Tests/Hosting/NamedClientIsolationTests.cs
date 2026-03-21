@@ -98,21 +98,4 @@ public sealed class NamedClientIsolationTests
         Assert.Null(descriptorB.CustomCookieJar);
         Assert.Empty(descriptorB.MiddlewareFactories);
     }
-
-    // ---------------------------------------------------------------------------
-    // AddTurboHttpClientFactory obsolete API — compile-time warning, runtime works
-    // ---------------------------------------------------------------------------
-
-    [Fact(DisplayName = "AddTurboHttpClientFactory registers ITurboHttpClientFactory despite being obsolete")]
-    public void AddTurboHttpClientFactory_IsObsoleteButRegistersFactory()
-    {
-        var services = new ServiceCollection();
-
-#pragma warning disable CS0618
-        services.AddTurboHttpClientFactory(opts => { });
-#pragma warning restore CS0618
-
-        // Verify the factory service is registered in DI — runtime resolution works
-        Assert.Contains(services, sd => sd.ServiceType == typeof(ITurboHttpClientFactory));
-    }
 }

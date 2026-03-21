@@ -70,11 +70,11 @@ so that their two `CreateFlow` call sites no longer depend on the obsolete overl
 test so that no test file suppresses CS0618 for a method that no longer exists.
 
 **Acceptance Criteria:**
-- [ ] The entire test `AddTurboHttpClientFactory_IsObsoleteButRegistersFactory` (lines ≈103–113)
+- [x] The entire test `AddTurboHttpClientFactory_IsObsoleteButRegistersFactory` (lines ≈103–113)
       is deleted, including its comment block and the two `#pragma warning` lines.
-- [ ] All other tests in `NamedClientIsolationTests.cs` are untouched.
-- [ ] No `#pragma warning disable CS0618` remains in that file.
-- [ ] `dotnet build` passes with no new errors.
+- [x] All other tests in `NamedClientIsolationTests.cs` are untouched.
+- [x] No `#pragma warning disable CS0618` remains in that file.
+- [x] `dotnet build` passes with no new errors.
 
 ---
 
