@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using TurboHttp.Protocol.RFC9111;
 
@@ -245,6 +246,35 @@ public sealed class CacheStoreTests
         var response = OkResponse();
 
         Assert.True(HttpCacheStore.ShouldStore(request, response));
+    }
+
+    [Fact(DisplayName = "RFC9111-3.1-CS-036: Trailers not merged into cached headers")]
+    public void Should_NotMergeTrailers_When_CachedWithTrailers()
+    {
+        var store = new HttpCacheStore();
+        var request = GetRequest();
+
+        // Simulate a chunked response with trailing headers
+        var response = OkResponse();
+        response.TrailingHeaders.TryAddWithoutValidation("Checksum", "abc123");
+        response.TrailingHeaders.TryAddWithoutValidation("Signature", "xyz789");
+
+        store.Put(request, response, [1, 2, 3], _baseTime.AddSeconds(-1), _baseTime);
+
+        var entry = store.Get(GetRequest());
+        Assert.NotNull(entry);
+
+        // RFC 9111 §3.1: trailers MUST NOT be combined with header fields
+        Assert.False(entry.Response.Headers.Contains("Checksum"),
+            "Trailer field 'Checksum' must not appear in response headers");
+        Assert.False(entry.Response.Headers.Contains("Signature"),
+            "Trailer field 'Signature' must not appear in response headers");
+
+        // Verify trailers are still available on TrailingHeaders
+        Assert.True(entry.Response.TrailingHeaders.Contains("Checksum"));
+        Assert.True(entry.Response.TrailingHeaders.Contains("Signature"));
+        Assert.Equal("abc123", entry.Response.TrailingHeaders.GetValues("Checksum").Single());
+        Assert.Equal("xyz789", entry.Response.TrailingHeaders.GetValues("Signature").Single());
     }
 
     [Fact(DisplayName = "RFC9111-3-CS-014: LRU eviction when MaxEntries exceeded")]
