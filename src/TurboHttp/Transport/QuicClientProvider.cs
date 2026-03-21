@@ -24,6 +24,15 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 
     public async Task<Stream> GetStreamAsync(CancellationToken ct = default)
     {
+        // RFC 9114 §3.2: TLS handshake MUST include SNI extension.
+        // A null or empty host means no SNI can be sent, which is a protocol violation.
+        if (string.IsNullOrEmpty(options.Host))
+        {
+            throw new InvalidOperationException(
+                "QUIC connections require a non-empty hostname for TLS SNI (RFC 9114 §3.2). "
+                + "Cannot establish HTTP/3 connection without Server Name Indication.");
+        }
+
         var clientConnectionOptions = new QuicClientConnectionOptions
         {
             RemoteEndPoint = new DnsEndPoint(options.Host, options.Port),
