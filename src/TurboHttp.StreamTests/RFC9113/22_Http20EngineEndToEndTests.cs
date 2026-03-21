@@ -10,6 +10,7 @@ using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
 using TurboHttp.Streams.Stages;
+using TurboHttp.Streams.Stages.Decoding;
 using TurboHttp.Streams.Stages.Encoding;
 
 namespace TurboHttp.StreamTests.RFC9113;

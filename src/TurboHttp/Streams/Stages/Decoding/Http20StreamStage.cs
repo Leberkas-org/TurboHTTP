@@ -11,7 +11,7 @@ using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9113;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Decoding;
 
 public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpResponseMessage>>
 {

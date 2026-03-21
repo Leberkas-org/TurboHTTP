@@ -5,7 +5,7 @@ using Akka.Streams.Stage;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Decoding;
 
 public sealed class Http20DecoderStage : GraphStage<FlowShape<IInputItem, Http2Frame>>
 {

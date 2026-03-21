@@ -215,12 +215,12 @@ Streams/Stages/Http20StreamStage.cs    → Streams/Stages/Decoding/
 New namespace: `TurboHttp.Streams.Stages.Decoding`
 
 **Acceptance Criteria:**
-- [ ] Folder `TurboHttp/Streams/Stages/Decoding/` created with the 4 files
-- [ ] All 4 files declare `namespace TurboHttp.Streams.Stages.Decoding`
-- [ ] All engines and referencing streams files updated
-- [ ] All referencing test files updated
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
-- [ ] `dotnet test src/TurboHttp.sln` → all tests pass
+- [x] Folder `TurboHttp/Streams/Stages/Decoding/` created with the 4 files
+- [x] All 4 files declare `namespace TurboHttp.Streams.Stages.Decoding`
+- [x] All engines and referencing streams files updated
+- [x] All referencing test files updated
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `dotnet test src/TurboHttp.sln` → all tests pass
 
 ---
 
