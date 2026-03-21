@@ -8,7 +8,7 @@ Some namespace names are misleading (`Middleware`, `Lifecycle`), others are too 
 flat with 23 files. The goal is a clean, consistent namespace hierarchy that reflects
 the actual purpose of each component — without changing the public `TurboHttp.Client.*` API.
 
-**Status (2026-03-21):** No tasks executed yet. All old namespaces remain unchanged.
+**Status (2026-03-21):** All 8 tasks completed. Namespace reorganisation is fully done.
 File inventory updated to reflect BidiStage refactoring (MiddlewareBidiStage replaced
 MiddlewareRequestStage/ResponseStage; cache/cookie/decompression/redirect/retry stages
 consolidated into `*BidiStage` pattern).
@@ -297,16 +297,16 @@ namespace references remain, empty folders are deleted, and the full build and
 test suite runs clean.
 
 **Acceptance Criteria:**
-- [ ] No `using TurboHttp.IO;` or `using TurboHttp.IO.Stages;` anywhere in the solution
-- [ ] No `using TurboHttp.Lifecycle;` anywhere in the solution
-- [ ] No `using TurboHttp.Middleware;` or `using TurboHttp.Hosting;` anywhere in the solution
-- [ ] No `using TurboHttp.Internal.Stages;` anywhere in the solution
-- [ ] No unqualified `using TurboHttp.Streams.Stages;` for files now in sub-namespaces
-- [ ] Empty folders `IO/Stages/` and `Internal/Stages/` deleted
-- [ ] `Streams/Stages/` root contains only `TurboAttributes.cs`
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors, 0 namespace-related warnings
-- [ ] `dotnet test src/TurboHttp.sln` → all tests pass
-- [ ] Grep across solution for old namespace strings → no matches
+- [x] No `using TurboHttp.IO;` or `using TurboHttp.IO.Stages;` anywhere in the solution
+- [x] No `using TurboHttp.Lifecycle;` anywhere in the solution
+- [x] No `using TurboHttp.Middleware;` or `using TurboHttp.Hosting;` anywhere in the solution
+- [x] No `using TurboHttp.Internal.Stages;` anywhere in the solution
+- [x] No unqualified `using TurboHttp.Streams.Stages;` for files now in sub-namespaces
+- [x] Empty folders `IO/Stages/` and `Internal/Stages/` deleted
+- [x] `Streams/Stages/` root contains only `TurboAttributes.cs`
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors, 0 namespace-related warnings
+- [x] `dotnet test src/TurboHttp.sln` → all tests pass
+- [x] Grep across solution for old namespace strings → no matches
 
 ---
 

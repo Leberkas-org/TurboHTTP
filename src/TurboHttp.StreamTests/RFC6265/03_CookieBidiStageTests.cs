@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Protocol.RFC6265;
-using TurboHttp.Streams.Stages;
 using TurboHttp.Streams.Stages.Features;
 
 namespace TurboHttp.StreamTests.RFC6265;
