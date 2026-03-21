@@ -146,19 +146,19 @@ internally on the response path, re-injecting redirect requests on the request o
 without any external feedback loop.
 
 **Acceptance Criteria:**
-- [ ] `RedirectBidiStage` is a `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
-- [ ] Request direction (In1→Out1): forward request unchanged
-- [ ] Response direction (In2): evaluate redirect via `RedirectHandler`
+- [x] `RedirectBidiStage` is a `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
+- [x] Request direction (In1→Out1): forward request unchanged
+- [x] Response direction (In2): evaluate redirect via `RedirectHandler`
   - Not redirect: push final response on Out2
   - Redirect: build new request via `RedirectHandler.BuildRedirectRequest()`, push on Out1 (internally loops)
   - Max redirects or loop detected: push response on Out2 as final
-- [ ] Internal state machine: IDLE → AWAITING_RESPONSE → (REDIRECTING | IDLE)
-- [ ] `RedirectHandler` per request chain stored in `HttpRequestMessage.Options`
-- [ ] Pass-through when `RedirectPolicy` is null
-- [ ] Reuses `RedirectHandler` from Protocol layer
-- [ ] Port names: `"Redirect.In.Request"`, `"Redirect.Out.Request"`, `"Redirect.In.Response"`, `"Redirect.Out.Response"`
-- [ ] Typecheck/lint passes
-- [ ] Unit tests are written and successful
+- [x] Internal state machine: IDLE → AWAITING_RESPONSE → (REDIRECTING | IDLE)
+- [x] `RedirectHandler` per request chain stored in `HttpRequestMessage.Options`
+- [x] Pass-through when `RedirectPolicy` is null
+- [x] Reuses `RedirectHandler` from Protocol layer
+- [x] Port names: `"Redirect.In.Request"`, `"Redirect.Out.Request"`, `"Redirect.In.Response"`, `"Redirect.Out.Response"`
+- [x] Typecheck/lint passes
+- [x] Unit tests are written and successful
 
 ### TASK-007: Refactor Engine to BidiFlow Atop chain with conditional inclusion
 **Description:** As a developer, I want `Engine.BuildExtendedPipeline` to compose feature
