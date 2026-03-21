@@ -73,7 +73,7 @@ This creates an inconsistency: built-in features are BidiFlows, user middlewares
 **Acceptance Criteria:**
 - [x] Delete `src/TurboHttp.StreamTests/Streams/18_MiddlewareRequestStageTests.cs`
 - [x] Delete `src/TurboHttp.StreamTests/Streams/19_MiddlewareResponseStageTests.cs`
-- [ ] All remaining tests pass (`dotnet test`)
+- [x] All remaining tests pass (`dotnet test`)
 
 ### TASK-006: Validate Port Naming
 **Description:** As a developer, I want to verify that all port names remain globally unique after the changes.
