@@ -106,18 +106,18 @@ the request path and cache storage on the response path, with internal short-cir
 cache hits.
 
 **Acceptance Criteria:**
-- [ ] `CacheBidiStage` is a `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
-- [ ] Request direction (In1): cache lookup
+- [x] `CacheBidiStage` is a `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
+- [x] Request direction (In1): cache lookup
   - Cache miss: forward request on Out1 (to engine)
   - Cache hit: push cached response directly on Out2 (short-circuit, Out1 never gets the request)
   - Must-revalidate: build conditional request (If-None-Match/If-Modified-Since), forward on Out1
-- [ ] Response direction (In2→Out2): store cacheable 2xx responses, handle 304 merge, invalidate on unsafe methods
-- [ ] Internal demand management: buffer hit response if Out2 has no demand yet
-- [ ] Pass-through when `HttpCacheStore` is null
-- [ ] Reuses `CacheFreshnessEvaluator`, `CacheValidationRequestBuilder`, `HttpCacheStore` from Protocol layer
-- [ ] Port names: `"Cache.In.Request"`, `"Cache.Out.Request"`, `"Cache.In.Response"`, `"Cache.Out.Response"`
-- [ ] Typecheck/lint passes
-- [ ] Unit tests are written and successful
+- [x] Response direction (In2→Out2): store cacheable 2xx responses, handle 304 merge, invalidate on unsafe methods
+- [x] Internal demand management: buffer hit response if Out2 has no demand yet
+- [x] Pass-through when `HttpCacheStore` is null
+- [x] Reuses `CacheFreshnessEvaluator`, `CacheValidationRequestBuilder`, `HttpCacheStore` from Protocol layer
+- [x] Port names: `"Cache.In.Request"`, `"Cache.Out.Request"`, `"Cache.In.Response"`, `"Cache.Out.Response"`
+- [x] Typecheck/lint passes
+- [x] Unit tests are written and successful
 
 ### TASK-005: Create RetryBidiStage
 **Description:** As a developer, I want a `RetryBidiStage` that evaluates retry internally
