@@ -6,11 +6,10 @@ export default defineConfig({
     base: '/TurboHttp/',
     ignoreDeadLinks: true,
     head: [
-        ['link', { rel: 'icon', type: 'image/svg+xml', href: '/TurboHttp/logo/logo_small.svg' }],
-        ['link', { rel: 'icon', type: 'image/png', href: '/TurboHttp/logo/logo.png' }],
+        ['link', { rel: 'icon', type: 'image/png', href: '/TurboHttp/logo/icon.png' }],
     ],
     themeConfig: {
-        logo: '/logo/logo_small.svg',
+        logo: '/logo/logo_small.png',
 
         nav: [
             { text: 'Home', link: '/' },

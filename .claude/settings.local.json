@@ -25,7 +25,20 @@
       "Bash(sed:*)",
       "WebFetch(domain:likec4.dev)",
       "WebSearch",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:www.rfc-editor.org)",
+      "Bash(curl -s https://www.rfc-editor.org/rfc/rfc9110.txt)",
+      "Bash(curl -s https://www.rfc-editor.org/rfc/rfc9112.txt)",
+      "Bash(curl -s https://www.rfc-editor.org/rfc/rfc1945.txt)",
+      "Bash(/tmp/extract_rfc.sh:*)",
+      "Bash(chmod +x /tmp/extract_rfc.sh)",
+      "Bash(/tmp/extract_rfc.sh)",
+      "Bash(/tmp/parse_sections.py:*)",
+      "Bash(__NEW_LINE_9361dbedfd31515a__ python3:*)",
+      "Bash(/tmp/extract_requirements.txt:*)",
+      "Bash(du -sh /d/GIT/Akka.Streams.Http/RFC9111*.*)",
+      "Bash(du -sh /d/GIT/Akka.Streams.Http/RFC1945_*.md)",
+      "Bash(xargs cat:*)"
     ]
   },
   "enabledPlugins": {}

@@ -6,7 +6,7 @@ hero:
   text: High-Performance HTTP Client for .NET
   tagline: Built on Akka.Streams — automatic retries, caching, cookies, and HTTP/2 multiplexing out of the box.
   image:
-    src: /logo/logo.svg
+    src: /logo/logo.png
     alt: TurboHttp
   actions:
     - theme: brand
