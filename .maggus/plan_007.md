@@ -333,10 +333,10 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a documentation reader, I want `docs/architecture/middleware-design.md` to reflect the final implementation so that the architecture is accurately documented.
 
 **Acceptance Criteria:**
-- [ ] Types match implementation: `TurboClientDescriptor`, `PipelineDescriptor`, exact method signatures
-- [ ] `[Obsolete]` notes for both `AddTurboHttpClientFactory` and the policies on `TurboClientOptions`
-- [ ] Example code is syntactically valid and matches real signatures
-- [ ] Pipeline diagram shows middleware stage insertion points correctly
+- [x] Types match implementation: `TurboClientDescriptor`, `PipelineDescriptor`, exact method signatures
+- [x] ⚠️ BLOCKED: `[Obsolete]` notes for both `AddTurboHttpClientFactory` and the policies on `TurboClientOptions` — `AddTurboHttpClientFactory` is documented as `[Obsolete]`; `TurboClientOptions` policies are NOT yet marked `[Obsolete]` (pending TASK-026), doc notes this as future change
+- [x] Example code is syntactically valid and matches real signatures
+- [x] Pipeline diagram shows middleware stage insertion points correctly
 
 ---
 

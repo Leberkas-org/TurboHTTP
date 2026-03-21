@@ -67,6 +67,9 @@ services.AddTurboHttpClient<IGitHubClient, GitHubClient>(options =>
 
 Der Rückgabewert ist `ITurboHttpClientBuilder` — darauf werden alle weiteren Optionen als Extension-Methoden registriert. Der Graph wird nicht hier, sondern erst beim ersten `CreateClient(name)` des Factory materialisiert.
 
+> **Veraltete API:** `AddTurboHttpClientFactory(services, configure)` ist mit `[Obsolete]` markiert
+> und wird in einer künftigen Version entfernt. Neu: `services.AddTurboHttpClient(name, configure)`.
+
 ---
 
 ## Built-in Features als Extension-Methoden
@@ -75,8 +78,8 @@ Analog zu `AddStandardResilienceHandler()` / `ConfigurePrimaryHttpMessageHandler
 
 ```csharp
 services.AddTurboHttpClient("myapi", options => { ... })
-    // Redirect ist standardmässig an (wie HttpClient)
-    .WithRedirect()                                  // Default: max 10, kein HTTPS→HTTP Downgrade
+    // Redirect ist standardmässig aus, opt-in
+    .WithRedirect()                                  // Default-Policy: max 10, kein HTTPS→HTTP Downgrade
     .WithRedirect(new RedirectPolicy(MaxRedirects: 20))
 
     // Cookies: aus by default, opt-in
@@ -92,6 +95,10 @@ services.AddTurboHttpClient("myapi", options => { ... })
 
 Diese Methoden tragen ihre Konfiguration lediglich in `IServiceCollection` ein (als `IOptions`/`IConfigureOptions`). Die `TurboHttpClientFactory` liest beim `CreateClient()` alle registrierten Optionen aus und übergibt sie der Engine.
 
+> **Hinweis:** `TurboClientOptions.RedirectPolicy`, `RetryPolicy` und `CachePolicy` sind backward-kompatibel
+> und werden in einer künftigen Version mit `[Obsolete]` markiert. Neu-Code sollte stattdessen die
+> Builder-Extensions (`.WithRedirect()`, `.WithRetry()`, `.WithCache()`) verwenden.
+
 ---
 
 ## User-Middleware
@@ -104,13 +111,13 @@ public abstract class TurboMiddleware
     // Optional: Request-Transform — Standard ist Pass-through
     public virtual ValueTask<HttpRequestMessage> ProcessRequestAsync(
         HttpRequestMessage request,
-        CancellationToken cancellationToken) => new(request);
+        CancellationToken ct) => ValueTask.FromResult(request);
 
     // Optional: Response-Transform — Standard ist Pass-through
     public virtual ValueTask<HttpResponseMessage> ProcessResponseAsync(
         HttpRequestMessage original,
         HttpResponseMessage response,
-        CancellationToken cancellationToken) => new(response);
+        CancellationToken ct) => ValueTask.FromResult(response);
 }
 ```
 
@@ -118,6 +125,7 @@ Registrierung via DI und `ITurboHttpClientBuilder`:
 
 ```csharp
 // Klasse — wird per DI aufgelöst (kann Dependencies injecten)
+// AddMiddleware<T>() registriert T automatisch als Transient in IServiceCollection
 services.AddTurboHttpClient("myapi", options => { ... })
     .AddMiddleware<AuthMiddleware>()
     .AddMiddleware<LoggingMiddleware>()
@@ -125,19 +133,19 @@ services.AddTurboHttpClient("myapi", options => { ... })
 
 // Inline-Delegate für einfache Fälle
 services.AddTurboHttpClient("myapi", options => { ... })
-    .UseRequest(req =>
+    .UseRequest((req, ct) =>
     {
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return new ValueTask<HttpRequestMessage>(req);
+        return ValueTask.FromResult(req);
     })
-    .UseResponse((req, resp) =>
+    .UseResponse((req, resp, ct) =>
     {
         metrics.Record(req.RequestUri!, resp.StatusCode);
-        return new ValueTask<HttpResponseMessage>(resp);
+        return ValueTask.FromResult(resp);
     });
 ```
 
-`AddMiddleware<T>()` registriert `T` als `Transient` in `IServiceCollection` und merkt sich die Reihenfolge. Beim Materialisieren wird pro registrierter Middleware eine Stage in die Akka-Pipeline eingefügt.
+`AddMiddleware<T>()` registriert `T` als `Transient` in `IServiceCollection` und merkt sich die Reihenfolge. `UseRequest`/`UseResponse` wrappen den Delegate direkt — kein separater DI-Eintrag nötig. Beim Materialisieren wird pro registrierter Middleware eine Stage in die Akka-Pipeline eingefügt.
 
 ---
 
@@ -147,8 +155,10 @@ services.AddTurboHttpClient("myapi", options => { ... })
 [RequestEnricher]          ← BaseAddress, DefaultHeaders, Version
       ↓
 [User-Middleware Request]  ← ProcessRequestAsync — Auth, Correlation-ID, Custom-Headers
-      ↓
+      ↓                       (nur initiale Requests; Redirect-Feedback tritt NACH dieser
+      |                        Stelle in die Pipeline ein und bypasses die Middleware)
 [CookieInjection]          ← .WithCookies()
+      ↓                       (Retry-Feedback tritt NACH dieser Stelle ein)
 [CacheLookup]              ← .WithCache()
       ↓
 ── ASYNC BOUNDARY ──
@@ -160,16 +170,16 @@ services.AddTurboHttpClient("myapi", options => { ... })
       ↓
 [CookieStorage]            ← .WithCookies()
 [CacheStorage]             ← .WithCache()
-[RetryStage]               ← .WithRetry()
-[RedirectStage]            ← .WithRedirect()
+[RetryStage]               ← .WithRetry()   → retry feedback (zurück zu CacheLookup)
+[RedirectStage]            ← .WithRedirect() → redirect feedback (zurück zu CookieInjection)
       ↓
 [User-Middleware Response] ← ProcessResponseAsync — Logging, Metrics, Tracing
-      ↓
+      ↓                       (nur finale Responses — nach Redirect und Retry)
 [Client]
 ```
 
 User-Middleware läuft absichtlich **ausserhalb** der Feedback-Schleifen:
-- `ProcessRequestAsync` sieht jeden angereicherten Request, bevor er gecacht oder gesendet wird.
+- `ProcessRequestAsync` sieht jeden angereicherten initialen Request. Redirect-Requests (die der `RedirectStage` zurückschickt) gehen direkt in den `redirectMerge` und überspringen die Middleware.
 - `ProcessResponseAsync` sieht nur **finale** Responses — nach Redirect und Retry abgearbeitet. Keine Zwischenergebnisse, kein interner Lärm.
 
 ---
@@ -179,9 +189,6 @@ User-Middleware läuft absichtlich **ausserhalb** der Feedback-Schleifen:
 ```csharp
 // Program.cs / Startup.cs
 
-services.AddTransient<AuthMiddleware>();
-services.AddTransient<ObservabilityMiddleware>();
-
 services.AddTurboHttpClient("payments", options =>
     {
         options.BaseAddress          = new Uri("https://api.payments.example.com");
@@ -190,8 +197,8 @@ services.AddTurboHttpClient("payments", options =>
     })
     .WithRedirect()
     .WithRetry(new RetryPolicy(MaxRetries: 2))
-    .AddMiddleware<AuthMiddleware>()
-    .AddMiddleware<ObservabilityMiddleware>();
+    .AddMiddleware<AuthMiddleware>()         // registriert AuthMiddleware als Transient
+    .AddMiddleware<ObservabilityMiddleware>(); // registriert ObservabilityMiddleware als Transient
 
 // Irgendwo im Code:
 public class PaymentService(ITurboHttpClientFactory factory)
@@ -206,9 +213,9 @@ public sealed class AuthMiddleware(ITokenProvider tokens) : TurboMiddleware
 {
     public override async ValueTask<HttpRequestMessage> ProcessRequestAsync(
         HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
-        var token = await tokens.GetTokenAsync(cancellationToken);
+        var token = await tokens.GetTokenAsync(ct);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return request;
     }
@@ -232,18 +239,51 @@ public sealed class AuthMiddleware(ITokenProvider tokens) : TurboMiddleware
 
 ## Interne Umsetzung: Engine-Parametrisierung
 
-`Engine.CreateFlow()` bekommt eine `PipelineDescriptor` übergeben, die alle registrierten Features und Middlewares enthält:
+### `TurboClientDescriptor`
+
+Ein internes, mutabless Objekt, das alle per-`ITurboHttpClientBuilder` registrierten Einstellungen sammelt. Es wird von `IConfigureNamedOptions` in-place mutiert und beim `CreateClient()` ausgelesen:
+
+```csharp
+internal sealed class TurboClientDescriptor
+{
+    public RedirectPolicy? RedirectPolicy { get; set; }
+    public RetryPolicy? RetryPolicy { get; set; }
+    public bool EnableCookies { get; set; }
+    public CookieJar? CustomCookieJar { get; set; }
+    public CachePolicy? CachePolicy { get; set; }
+
+    // Typ-basierte Middleware (AddMiddleware<T>) — für DI-Lookup nach Typ
+    public List<Type> MiddlewareTypes { get; } = [];
+
+    // Unified FIFO factory list: deckt type-based (AddMiddleware<T>) UND
+    // delegate-based (UseRequest/UseResponse) Middleware ab.
+    // AddMiddleware<T> trägt sich in BEIDE Listen ein; UseRequest/UseResponse nur hier.
+    public List<Func<IServiceProvider, TurboMiddleware>> MiddlewareFactories { get; } = [];
+}
+```
+
+### `PipelineDescriptor`
+
+Ein immutabler Record, der vom Factory zur Engine übergeben wird. Er enthält alle materialisierten Objekte — CookieJar-Instanz, CacheStore-Instanz, aufgelöste Middleware-Instanzen:
 
 ```csharp
 internal sealed record PipelineDescriptor(
-    IReadOnlyList<TurboMiddleware> Middlewares,
     RedirectPolicy?  RedirectPolicy,
     RetryPolicy?     RetryPolicy,
     CookieJar?       CookieJar,
-    HttpCacheStore?  CacheStore);
+    HttpCacheStore?  CacheStore,
+    IReadOnlyList<TurboMiddleware> Middlewares)
+{
+    public static readonly PipelineDescriptor Empty = new(
+        RedirectPolicy: null,
+        RetryPolicy: null,
+        CookieJar: null,
+        CacheStore: null,
+        Middlewares: []);
+}
 ```
 
-Die Factory baut diesen Descriptor beim `CreateClient()` aus den DI-registrierten Optionen zusammen und übergibt ihn dem `Engine`-Konstruktor. Die Engine selbst bleibt intern — kein Akka-Wissen tritt nach aussen.
+`Engine.CreateFlow()` bekommt diesen Descriptor übergeben und verdrahtet nur die Stages, die tatsächlich konfiguriert sind — kein versteckter Overhead bei leerer Pipeline. Die Engine selbst bleibt intern — kein Akka-Wissen tritt nach aussen.
 
 ---
 
@@ -253,7 +293,7 @@ Die Factory baut diesen Descriptor beim `CreateClient()` aus den DI-registrierte
 |---|---|---|
 | Registrierung | `services.AddHttpClient("name", ...)` | `services.AddTurboHttpClient("name", ...)` |
 | Middleware | `.AddHttpMessageHandler<T>()` | `.AddMiddleware<T>()` |
-| Redirect | an by default | an by default (`.WithRedirect()` implizit) |
+| Redirect | an by default | aus — opt-in via `.WithRedirect()` |
 | Retry | aus — Polly via `.AddStandardResilienceHandler()` | aus — opt-in via `.WithRetry(policy)` |
 | Cache | nicht vorhanden | aus — opt-in via `.WithCache(policy)` |
 | Cookies | aus (SocketsHttpHandler) | aus — opt-in via `.WithCookies()` |
