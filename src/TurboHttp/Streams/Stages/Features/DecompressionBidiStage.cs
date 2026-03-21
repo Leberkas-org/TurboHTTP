@@ -7,7 +7,7 @@ using Akka.Streams.Stage;
 using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC9110;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Features;
 
 /// <summary>
 /// Bidirectional stage that passes requests through unchanged and decompresses

@@ -7,7 +7,7 @@ using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Protocol.RFC9113;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Features;
 
 public sealed class Http20ConnectionShape : Shape
 {

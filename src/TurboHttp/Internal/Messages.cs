@@ -21,7 +21,7 @@ public interface IControlItem : IOutputItem;
 
 /// <summary>
 /// Signals the connection-reuse decision for the current request/response cycle.
-/// Emitted by <see cref="TurboHttp.Streams.Stages.ConnectionReuseStage"/> based on RFC 9112 §9.
+/// Emitted by <see cref="TurboHttp.Streams.Stages.Features.ConnectionReuseStage"/> based on RFC 9112 §9.
 /// </summary>
 public record ConnectionReuseItem(RequestEndpoint Key, ConnectionReuseDecision Decision) : IControlItem;
 

@@ -351,3 +351,5 @@ coverage-results/
 .maggus/usage.csv
 
 .maggus/usage_v2.csv
+
+docs/color-preview.html

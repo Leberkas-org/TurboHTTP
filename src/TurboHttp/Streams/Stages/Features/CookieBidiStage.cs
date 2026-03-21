@@ -4,7 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC6265;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Features;
 
 /// <summary>
 /// Bidirectional stage that injects cookies into outgoing requests (RFC 6265 §5.4)

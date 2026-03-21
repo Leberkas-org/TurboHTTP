@@ -5,7 +5,7 @@ using Akka.Streams.Stage;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9112;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Features;
 
 internal sealed class
     ConnectionReuseStage : GraphStage<FanOutShape<HttpResponseMessage, HttpResponseMessage, IOutputItem>>

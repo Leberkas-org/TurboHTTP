@@ -7,7 +7,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol.RFC9111;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Features;
 
 /// <summary>
 /// Bidirectional stage that performs cache lookup on the request path and cache storage

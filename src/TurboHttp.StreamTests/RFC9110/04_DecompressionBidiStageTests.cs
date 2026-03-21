@@ -3,6 +3,7 @@ using System.IO.Compression;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Streams.Stages;
+using TurboHttp.Streams.Stages.Features;
 
 namespace TurboHttp.StreamTests.RFC9110;
 

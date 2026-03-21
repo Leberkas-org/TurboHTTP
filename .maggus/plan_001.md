@@ -281,12 +281,12 @@ Streams/Stages/RetryBidiStage.cs            → Streams/Stages/Features/
 New namespace: `TurboHttp.Streams.Stages.Features`
 
 **Acceptance Criteria:**
-- [ ] Folder `TurboHttp/Streams/Stages/Features/` created with all 8 files
-- [ ] All 8 files declare `namespace TurboHttp.Streams.Stages.Features`
-- [ ] All engines and referencing streams files updated
-- [ ] All referencing test files updated
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
-- [ ] `dotnet test src/TurboHttp.sln` → all tests pass
+- [x] Folder `TurboHttp/Streams/Stages/Features/` created with all 8 files
+- [x] All 8 files declare `namespace TurboHttp.Streams.Stages.Features`
+- [x] All engines and referencing streams files updated
+- [x] All referencing test files updated
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `dotnet test src/TurboHttp.sln` → all tests pass
 
 ---
 
