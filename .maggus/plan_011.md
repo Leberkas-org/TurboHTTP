@@ -42,6 +42,10 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Namespace: `TurboHttp.Tests.RFC9110`
 - Class: `public sealed class UserinfoStrippingTests`
 
+**Acceptance Criteria:**
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 | DisplayName | Method | Description |
 |-------------|--------|-------------|
 | `RFC9110-4.2.4-UI-001: H2 authority strips userinfo from http URI` | `H2_Should_StripUserinfo_When_HttpUri` | `http://user:pass@host/` → `:authority` = `host` |
@@ -63,6 +67,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9112/Http11Encoder.cs`
 - Change: In `WriteRequestLine()` with `absoluteForm`: rebuild URI without userinfo
 
+**Acceptance Criteria:**
+- [ ] `Http11Encoder.WriteRequestLine()` with `absoluteForm=true` strips userinfo from URI
+- [ ] Origin-form requests are unaffected
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (extends `src/TurboHttp.Tests/RFC9110/03_UserinfoStrippingTests.cs`):
 
 | DisplayName | Method | Description |
@@ -82,6 +92,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC1945/Http10Encoder.cs`
 - Change: Same sanitization as TASK-002
 
+**Acceptance Criteria:**
+- [ ] `Http10Encoder` absolute-form strips userinfo from URI
+- [ ] Origin-form requests are unaffected
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (extends `src/TurboHttp.Tests/RFC9110/03_UserinfoStrippingTests.cs`):
 
 | DisplayName | Method |
@@ -100,6 +116,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Namespace: `TurboHttp.Protocol.RFC9110`
 - Class: `internal static class UriSanitizer`
 - Methods: `FormatAuthority(Uri)`, `StripUserInfo(Uri)`, `FormatAbsoluteWithoutUserInfo(Uri)`
+
+**Acceptance Criteria:**
+- [ ] `UriSanitizer.FormatAuthority(Uri)` returns host without userinfo
+- [ ] `FormatAuthority` includes non-default port
+- [ ] `FormatAuthority` brackets IPv6 addresses
+- [ ] `StripUserInfo` preserves path, query, and fragment
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9110/03_UserinfoStrippingTests.cs`):
 
@@ -121,6 +145,15 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - File: `src/TurboHttp/Streams/Stages/Routing/RequestEnricherStage.cs`
 - Change: Add `SanitizeReferer()` method in `Enrich()` after header merge
+
+**Acceptance Criteria:**
+- [ ] Fragment stripped from Referer header
+- [ ] Userinfo stripped from Referer header
+- [ ] Referer removed on HTTPS→HTTP downgrade
+- [ ] Referer preserved on same-scheme requests
+- [ ] No Referer header passes through unchanged
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.StreamTests/Streams/21_RefererSanitizationTests.cs`):
 
@@ -146,6 +179,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Change: Add `bool DangerousAcceptAnyServerCertificate { get; init; }` (default: false)
 - Verify default .NET validation uses DNS-ID/IP-ID (not CN-ID)
 
+**Acceptance Criteria:**
+- [ ] Default options enable certificate validation
+- [ ] `DangerousAcceptAnyServerCertificate` property added (default: false)
+- [ ] Custom `ServerCertificateValidationCallback` is invoked during TLS handshake
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (new file: `src/TurboHttp.Tests/RFC9110/04_CertificateValidationTests.cs`):
 
 | DisplayName | Method |
@@ -167,6 +207,15 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - New file: `src/TurboHttp/Protocol/RFC9110/IfRangeValidator.cs`
 - Call from: `RequestEnricherStage.Enrich()` after header merge
+
+**Acceptance Criteria:**
+- [ ] If-Range without Range header throws
+- [ ] If-Range with weak ETag throws
+- [ ] If-Range with HTTP-date when ETag available throws
+- [ ] If-Range with strong ETag + Range passes validation
+- [ ] No If-Range header passes through unchanged
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC9110/05_IfRangeValidatorTests.cs`):
 
@@ -191,6 +240,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9112/Http11Decoder.cs`
 - Change: When method == CONNECT and status 2xx → body length = 0
 
+**Acceptance Criteria:**
+- [ ] CONNECT 200 response ignores Content-Length (body length = 0)
+- [ ] CONNECT 200 response ignores Transfer-Encoding
+- [ ] CONNECT 407 response processes body normally
+- [ ] Non-CONNECT 200 responses respect Content-Length
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (new file: `src/TurboHttp.Tests/RFC9110/06_ConnectResponseTests.cs`):
 
 | DisplayName | Method |
@@ -211,6 +268,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - New file: `src/TurboHttp/Protocol/RFC9110/PartialContentValidator.cs`
 
+**Acceptance Criteria:**
+- [ ] 206 response with Content-Range bytes is valid
+- [ ] 206 response without Content-Range is flagged invalid
+- [ ] 206 multipart/byteranges detected
+- [ ] Non-206 responses skip validation
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (new file: `src/TurboHttp.Tests/RFC9110/07_PartialContentTests.cs`):
 
 | DisplayName | Method |
@@ -229,6 +294,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 ### TASK-010: TE + Connection Header Auto-Addition Tests
 
 **RFC**: 9112 §7.4
+
+**Acceptance Criteria:**
+- [ ] TE header presence auto-adds "TE" to Connection header
+- [ ] No duplicate when Connection already lists "TE"
+- [ ] "chunked" excluded from TE field value
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9112/04_EncoderConnectionTests.cs`):
 
@@ -250,6 +322,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Streams/Stages/Routing/Http1XCorrelationStage.cs`
 - Change: `_isFirstRequestAfterReconnect` flag — wait for response before pipelining
 
+**Acceptance Criteria:**
+- [ ] First request after connect waits for response before pipelining
+- [ ] Second request may pipeline after first response received
+- [ ] Reconnect resets the pipeline guard
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (new file: `src/TurboHttp.StreamTests/RFC9112/14_Http11PipelineReconnectTests.cs`):
 
 | DisplayName | Method |
@@ -270,6 +349,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Transport/ClientByteMover.cs`
 - Change: Distinguish clean TLS close from abrupt TCP close
 
+**Acceptance Criteria:**
+- [ ] Clean TLS close completes response without Content-Length
+- [ ] Abrupt TCP close marks response as incomplete
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (new file: `src/TurboHttp.StreamTests/RFC9112/15_TlsClosureTests.cs`):
 
 | DisplayName | Method |
@@ -284,6 +369,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 ### TASK-013: Incomplete Close Recovery Tests
 
 **RFC**: 9112 §8 + §9.8
+
+**Acceptance Criteria:**
+- [ ] Chunked response without zero-chunk is marked incomplete
+- [ ] Content-Length body truncated is marked incomplete
+- [ ] No Content-Length + clean close is marked complete
+- [ ] Engine retries idempotent requests after incomplete close
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.StreamTests/RFC9112/16_IncompleteCloseRecoveryTests.cs`):
 
@@ -308,6 +401,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Streams/Stages/Features/CacheBidiStage.cs`
 - Change: On cache hit, inject Age header before push
 
+**Acceptance Criteria:**
+- [ ] Age header added to responses served from cache
+- [ ] Age value matches calculated current age
+- [ ] Existing Age header overwritten with correct value
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/02_CacheFreshnessTests.cs`):
 
 | DisplayName | Method |
@@ -327,6 +427,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControlParser.cs` — parse `no-cache="field"`
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControl.cs` — new `IReadOnlyList<string>? NoCacheFields`
+
+**Acceptance Criteria:**
+- [ ] `no-cache="Set-Cookie"` parses field list into `NoCacheFields`
+- [ ] `no-cache="A, B"` parses multiple fields
+- [ ] Unqualified `no-cache` sets flag without field list
+- [ ] Empty-quoted `no-cache=""` treated as unqualified
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/01_CacheControlParserTests.cs`):
 
@@ -349,6 +457,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControlParser.cs`
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControl.cs` — new `IReadOnlyList<string>? PrivateFields`
 
+**Acceptance Criteria:**
+- [ ] `private="Authorization"` parses field into `PrivateFields`
+- [ ] Unqualified `private` sets flag without field list
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/01_CacheControlParserTests.cs`):
 
 | DisplayName | Method |
@@ -367,6 +481,14 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - File: `src/TurboHttp/Streams/Stages/Features/CacheBidiStage.cs`
 - Change: Strip named fields from response when serving without revalidation
+
+**Acceptance Criteria:**
+- [ ] `no-cache="Set-Cookie"` strips Set-Cookie from cached response on reuse
+- [ ] `no-cache="A, B"` strips both fields
+- [ ] Unqualified `no-cache` requires full revalidation
+- [ ] `private="Set-Cookie"` excludes Set-Cookie from shared cache storage
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC9111/05_QualifiedDirectiveTests.cs`):
 
@@ -390,6 +512,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControl.cs` — new `bool MustUnderstand`
 - File: `src/TurboHttp/Protocol/RFC9111/HttpCacheStore.cs` — reject unknown status codes
 
+**Acceptance Criteria:**
+- [ ] `must-understand` + known status code (200) allows cache storage
+- [ ] `must-understand` + unknown status code (299) prevents cache storage
+- [ ] Absent `must-understand` allows any cacheable status
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/04_CacheStoreTests.cs`):
 
 | DisplayName | Method |
@@ -408,6 +537,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 
 **Implementation**:
 - File: `src/TurboHttp/Protocol/RFC9111/HttpCacheStore.cs` — reject 206 and Content-Range
+
+**Acceptance Criteria:**
+- [ ] 206 Partial Content response not stored in cache
+- [ ] Response with Content-Range header not stored in cache
+- [ ] 200 without Content-Range stored normally
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/04_CacheStoreTests.cs`):
 
@@ -428,6 +564,16 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - File: `src/TurboHttp/Streams/Stages/Features/CacheBidiStage.cs`
 - Change: On unsafe method (POST/PUT/DELETE) + 2xx, invalidate URIs from Location and Content-Location headers (same-origin only)
+
+**Acceptance Criteria:**
+- [ ] POST 201 with Location header invalidates that URI in cache
+- [ ] PUT 200 with Content-Location invalidates that URI
+- [ ] Cross-origin Location not invalidated
+- [ ] Safe methods (GET) do not trigger invalidation
+- [ ] Error responses (POST 500) do not trigger invalidation
+- [ ] DELETE 204 invalidates request URI + Location
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC9111/06_CacheInvalidationTests.cs`):
 
@@ -452,6 +598,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9111/CacheValidationRequestBuilder.cs` — new `BuildHeadValidation()`
 - File: `src/TurboHttp/Streams/Stages/Features/CacheBidiStage.cs` — HEAD 304 → freshen stored GET
 
+**Acceptance Criteria:**
+- [ ] HEAD validation request built correctly for stale cache entry
+- [ ] HEAD 304 with matching ETag freshens stored GET response
+- [ ] HEAD with mismatched ETag does not freshen
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/03_ConditionalRequestTests.cs`):
 
 | DisplayName | Method |
@@ -473,6 +626,13 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 **Implementation**:
 - File: `src/TurboHttp/Streams/Http10Engine.cs` — verify DecompressionBidiStage is in pipeline
 
+**Acceptance Criteria:**
+- [ ] Http10Engine decompresses gzip Content-Encoding responses
+- [ ] Http10Engine decompresses x-gzip Content-Encoding responses
+- [ ] Http10Engine passes identity encoding unchanged
+- [ ] Unit tests written and passing
+- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+
 **Tests** (new file: `src/TurboHttp.StreamTests/RFC1945/09_Http10DecompressionPipelineTests.cs`):
 
 | DisplayName | Method |
@@ -485,81 +645,11 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 
 ---
 
-## TIER 6 — HTTP/3 Foundation
-
-### TASK-023: HTTP/3 Error Code Enum
-
-**RFC**: 9114 §8.1. **Detail**: See plan_016_rfc9114.md TASK-003.
-**Effort**: 1h
-
-### TASK-024: HTTP/3 Frame Type Hierarchy
-
-**RFC**: 9114 §7. **Detail**: See plan_016_rfc9114.md TASK-004.
-**Effort**: 6-8h
-
-### TASK-025: QUIC Variable-Length Integer Codec
-
-**RFC**: 9000 §16. **Detail**: See plan_016_rfc9114.md TASK-002.
-**Effort**: 3-4h
-
-### TASK-026: HTTP/3 Settings Parameter Registry
-
-**RFC**: 9114 §7.2.4. **Detail**: See plan_016_rfc9114.md TASK-005.
-**Effort**: 3-4h
-
-### TASK-027: HTTP/3 Frame Decoder
-
-**RFC**: 9114 §7.1. **Detail**: See plan_016_rfc9114.md TASK-007.
-**Effort**: 8-10h
-
-### TASK-028: HTTP/3 Frame Encoder
-
-**RFC**: 9114 §7.1. **Detail**: See plan_016_rfc9114.md TASK-006.
-**Effort**: 4-6h
-
----
-
-## TIER 7 — RFC 9110 Extra (for 99%)
-
-### TASK-029: Expect 100-Continue BidiStage
-
-**RFC**: 9110 §10.1.1. **Detail**: See plan_013_rfc9110.md TASK-001.
-**Effort**: 6-8h
-
-### TASK-030: Auth Challenge Parser + Authorization Builder
-
-**RFC**: 9110 §11.2.1, §11.2.2. **Detail**: See plan_013_rfc9110.md TASK-002.
-**Effort**: 4-6h
-
-### TASK-031: Date Header Auto-Generation
-
-**RFC**: 9110 §5.6.7. **Detail**: See plan_013_rfc9110.md TASK-003.
-**Effort**: 1h
-
-### TASK-032: Range Header Large Decimal Parsing
-
-**RFC**: 9110 §14.1.1. **Detail**: See plan_013_rfc9110.md TASK-004.
-**Effort**: 1-2h
-
-### TASK-033: Request Body Compression
-
-**RFC**: 9110 §8.4. **Detail**: See plan_013_rfc9110.md TASK-005.
-**Effort**: 4-6h
-
-### TASK-034: CONNECT Port Enforcement
-
-**RFC**: 9110 §9.3.6. **Detail**: See plan_013_rfc9110.md TASK-006.
-**Effort**: 1h
-
----
-
 ## Non-Goals
 
 - Server-side HTTP (client only)
-- HTTP/3 server push acceptance (framing only, no push handling)
-- 0-RTT QUIC (post-HTTP/3-MVP)
-- WebSocket upgrade over HTTP/3
-- QPACK codec (separate plan — plan_017, ~59-84h)
+- HTTP/3 protocol (separate plan)
+- QPACK codec (separate plan)
 
 ## Effort Summary
 
@@ -570,36 +660,18 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 | 3: RFC 9112 | TASK-010-013 | 1 prod, 3 test | ~13 | 10-12h |
 | 4: Caching | TASK-014-021 | 2 prod, 2 test | ~28 | 16-19h |
 | 5: RFC 1945 | TASK-022 | 0 prod, 1 test | ~3 | 1-2h |
-| 6: HTTP/3 Foundation | TASK-023-028 | 7 prod, 6 test | ~28 | 25-33h |
-| 7: RFC 9110 Extra | TASK-029-034 | 5 prod, 5 test | ~24 | 17-24h |
-| **Total Tier 1-5** | **22** | **10 prod, 11 test** | **~84** | **42-54h** |
-| **Total Tier 1-7** | **34** | **22 prod, 22 test** | **~136** | **84-111h** |
+| **Total** | **22** | **10 prod, 11 test** | **~84** | **42-54h** |
 
 ## Compliance Target After Plan
 
-| RFC | Before | After Tier 1-5 | After Tier 1-7 |
-|-----|--------|---------------|---------------|
-| RFC 1945 | 86% | 96% | 96% |
-| RFC 9110 | 73% | 93% | **99%** |
-| RFC 9111 | 90.6% | 99% | 99% |
-| RFC 9112 | 91.5% | 98% | 98% |
-| RFC 9114 | 1.4% | 1.4% | ~25% |
-
-### Full 99% Roadmap (all plans)
-
-| RFC | Plan | Tasks | Hours | Target |
-|-----|------|-------|-------|--------|
-| RFC 1945 | plan_012 | 1 | 3-4h | 100% |
-| RFC 9110 | plan_011 + plan_013 | 20 | 59-78h | 99% |
-| RFC 9111 | plan_011 + plan_014 | 10 | 19h | 99% |
-| RFC 9112 | plan_011 + plan_015 | 7 | 11.25h | 99% |
-| RFC 9114 | plan_016 | 40 | 154-211h | 99% |
-| QPACK | plan_017 | 13 | 59-84h | Enabler |
-| **Total** | **7 plans** | **91 tasks** | **305-409h** | **99%** |
+| RFC | Before | After This Plan |
+|-----|--------|----------------|
+| RFC 1945 | 86% | 96% |
+| RFC 9110 | 73% | 93% |
+| RFC 9111 | 90.6% | 99% |
+| RFC 9112 | 91.5% | 98% |
 
 ## Open Questions
 
-1. Should HTTP/3 push support be included in the MVP, or deferred entirely?
-2. Is System.Net.Quic stable enough on Windows for production use in .NET 10?
-3. Should we implement a `ReferrerPolicy` enum or just sanitize per RFC minimum?
-4. For certificate validation: integrate via existing Servus.Akka TLS layer or separate stage?
+1. Should we implement a `ReferrerPolicy` enum or just sanitize per RFC minimum?
+2. For certificate validation: integrate via existing Servus.Akka TLS layer or separate stage?
