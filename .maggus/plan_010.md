@@ -57,15 +57,15 @@ This creates an inconsistency: built-in features are BidiFlows, user middlewares
 **Description:** As a developer, I want comprehensive tests for `MiddlewareBidiStage` covering both directions, async, chaining, and completion.
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp.StreamTests/Streams/20_MiddlewareBidiStageTests.cs`
-- [ ] Test: sync request transformation (header injection)
-- [ ] Test: async request transformation (with `Task.Delay`)
-- [ ] Test: sync response transformation (header injection)
-- [ ] Test: async response transformation
-- [ ] Test: original request access in response direction (`response.RequestMessage`)
-- [ ] Test: multiple BidiStages in series via `Atop` (FIFO order, cumulative changes)
-- [ ] Test: multiple requests/responses flow through correctly with stream completion
-- [ ] All tests pass
+- [x] New file `src/TurboHttp.StreamTests/Streams/20_MiddlewareBidiStageTests.cs`
+- [x] Test: sync request transformation (header injection)
+- [x] Test: async request transformation (with `Task.Delay`)
+- [x] Test: sync response transformation (header injection)
+- [x] Test: async response transformation
+- [x] Test: original request access in response direction (`response.RequestMessage`)
+- [x] Test: multiple BidiStages in series via `Atop` (FIFO order, cumulative changes)
+- [x] Test: multiple requests/responses flow through correctly with stream completion
+- [x] All tests pass
 
 ### TASK-005: Remove Old Test Files
 **Description:** As a developer, I want to remove the old middleware test files since they test deleted stages.
