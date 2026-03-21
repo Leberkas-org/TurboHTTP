@@ -231,10 +231,10 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want the factory to have access to `IServiceProvider` and the named descriptor monitor so that it can read per-client feature configuration at `CreateClient()` time.
 
 **Acceptance Criteria:**
-- [ ] `TurboHttpClientFactory` receives `IServiceProvider provider` and `IOptionsMonitor<TurboClientDescriptor> descriptors` in its constructor
-- [ ] `TurboClientServiceCollectionExtensions` registers the factory so both are resolved from DI
-- [ ] `CreateClient(string name)` reads `descriptors.Get(name)` for the descriptor
-- [ ] Typecheck/lint passes
+- [x] `TurboHttpClientFactory` receives `IServiceProvider provider` and `IOptionsMonitor<TurboClientDescriptor> descriptors` in its constructor
+- [x] `TurboClientServiceCollectionExtensions` registers the factory so both are resolved from DI
+- [x] `CreateClient(string name)` reads `descriptors.Get(name)` for the descriptor
+- [x] Typecheck/lint passes
 
 ---
 

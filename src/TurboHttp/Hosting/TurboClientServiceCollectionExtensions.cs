@@ -38,7 +38,8 @@ public static class TurboClientServiceCollectionExtensions
             }
 
             var options = provider.GetRequiredService<IOptionsMonitor<TurboClientOptions>>();
-            return new TurboHttpClientFactory(options, system);
+            var descriptors = provider.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>();
+            return new TurboHttpClientFactory(options, descriptors, provider, system);
         });
 
         return services;
@@ -56,6 +57,8 @@ public static class TurboClientServiceCollectionExtensions
     public static ITurboHttpClientBuilder AddTurboHttpClient(this IServiceCollection services,
         string name, Action<TurboClientOptions>? configure = null)
     {
+        services.AddOptions();
+
         if (configure is not null)
         {
             services.Configure<TurboClientOptions>(name, configure);
@@ -72,7 +75,8 @@ public static class TurboClientServiceCollectionExtensions
             }
 
             var options = provider.GetRequiredService<IOptionsMonitor<TurboClientOptions>>();
-            return new TurboHttpClientFactory(options, system);
+            var descriptors = provider.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>();
+            return new TurboHttpClientFactory(options, descriptors, provider, system);
         });
 
         return new TurboHttpClientBuilder(name, services);

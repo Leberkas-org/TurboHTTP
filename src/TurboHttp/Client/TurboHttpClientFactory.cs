@@ -1,19 +1,31 @@
+using System;
 using Akka.Actor;
 using Microsoft.Extensions.Options;
+using TurboHttp.Middleware;
 
 namespace TurboHttp.Client;
 
 /// <summary>
 /// Default implementation of <see cref="ITurboHttpClientFactory"/>.
-/// Reads the current <see cref="TurboClientOptions"/> snapshot from <see cref="IOptionsMonitor{TOptions}"/>
-/// so that options changes are picked up without restarting the application.
+/// Reads per-client configuration from <see cref="IOptionsMonitor{TOptions}"/> at
+/// <see cref="CreateClient"/> time so that changes are picked up without restarting.
 /// </summary>
-public sealed class TurboHttpClientFactory(IOptionsMonitor<TurboClientOptions> options, ActorSystem system)
+internal sealed class TurboHttpClientFactory(
+    IOptionsMonitor<TurboClientOptions> options,
+    IOptionsMonitor<TurboClientDescriptor> descriptors,
+    IServiceProvider provider,
+    ActorSystem system)
     : ITurboHttpClientFactory
 {
+    /// <summary>
+    /// Root service provider used to resolve per-client middleware instances (TASK-019).
+    /// </summary>
+    internal readonly IServiceProvider Provider = provider;
+
     public ITurboHttpClient CreateClient(string name)
     {
-        var options1 = options.CurrentValue;
-        return new TurboHttpClient(options1, system);
+        var clientOptions = options.Get(name);
+        var descriptor = descriptors.Get(name);
+        return new TurboHttpClient(clientOptions, system);
     }
 }
