@@ -85,7 +85,8 @@ public sealed class Http3ResponseDecoder
         // Decode headers via QPACK
         var headers = _qpack.Decode(headersFrame.HeaderBlock.Span, streamId);
 
-        // Extract :status pseudo-header
+        // Validate and extract :status pseudo-header
+        ValidateResponsePseudoHeaders(headers);
         var statusCode = ExtractStatusCode(headers);
 
         var response = new HttpResponseMessage((HttpStatusCode)statusCode);
@@ -156,6 +157,58 @@ public sealed class Http3ResponseDecoder
     {
         ArgumentNullException.ThrowIfNull(headersFrame);
         return _qpack.Decode(headersFrame.HeaderBlock.Span, streamId);
+    }
+
+    /// <summary>
+    /// Validates response pseudo-headers per RFC 9114 §4.3.2:
+    /// - Only :status is allowed as a pseudo-header
+    /// - Must appear before regular headers
+    /// - No duplicates
+    /// - No unknown pseudo-headers
+    /// </summary>
+    internal static void ValidateResponsePseudoHeaders(IReadOnlyList<(string Name, string Value)> headers)
+    {
+        var hasStatus = false;
+        var lastPseudoIndex = -1;
+        var firstRegularIndex = int.MaxValue;
+
+        for (var i = 0; i < headers.Count; i++)
+        {
+            var (name, _) = headers[i];
+
+            if (name.StartsWith(':'))
+            {
+                lastPseudoIndex = i;
+
+                if (name == ":status")
+                {
+                    if (hasStatus)
+                    {
+                        throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                            "RFC 9114 §4.3.2: Duplicate :status pseudo-header");
+                    }
+                    hasStatus = true;
+                }
+                else
+                {
+                    throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                        $"RFC 9114 §4.3.2: Unknown response pseudo-header '{name}'");
+                }
+            }
+            else
+            {
+                if (firstRegularIndex == int.MaxValue)
+                {
+                    firstRegularIndex = i;
+                }
+            }
+        }
+
+        if (lastPseudoIndex > firstRegularIndex)
+        {
+            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                $"RFC 9114 §4.3.2: Pseudo-header at index {lastPseudoIndex} appears after regular header at index {firstRegularIndex}");
+        }
     }
 
     /// <summary>
