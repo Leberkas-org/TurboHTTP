@@ -90,12 +90,12 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want a FlowShape stage that calls `TurboMiddleware.ProcessResponseAsync` per element so that response transformation happens inside the Akka graph.
 
 **Acceptance Criteria:**
-- [ ] `internal sealed class MiddlewareResponseStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>` in `src/TurboHttp/Streams/Stages/MiddlewareResponseStage.cs`
-- [ ] Constructor: `MiddlewareResponseStage(TurboMiddleware middleware)`
-- [ ] Port names: `"MiddlewareResponse.In"` / `"MiddlewareResponse.Out"`
-- [ ] `original` read from `response.RequestMessage!` — no second inlet needed
-- [ ] Async invocation via `GetAsyncCallback<HttpResponseMessage>` — same pattern as TASK-005
-- [ ] Typecheck/lint passes
+- [x] `internal sealed class MiddlewareResponseStage : GraphStage<FlowShape<HttpResponseMessage, HttpResponseMessage>>` in `src/TurboHttp/Streams/Stages/MiddlewareResponseStage.cs`
+- [x] Constructor: `MiddlewareResponseStage(TurboMiddleware middleware)`
+- [x] Port names: `"MiddlewareResponse.In"` / `"MiddlewareResponse.Out"`
+- [x] `original` read from `response.RequestMessage!` — no second inlet needed
+- [x] Async invocation via `GetAsyncCallback<HttpResponseMessage>` — same pattern as TASK-005
+- [x] Typecheck/lint passes
 
 ---
 
