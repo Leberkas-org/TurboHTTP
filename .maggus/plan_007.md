@@ -194,13 +194,13 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a library user, I want `services.AddTurboHttpClient(name, configure)` so that I can register named clients using the familiar `IHttpClientFactory` pattern.
 
 **Acceptance Criteria:**
-- [ ] `public static ITurboHttpClientBuilder AddTurboHttpClient(this IServiceCollection services, string name, Action<TurboClientOptions>? configure = null)` in `TurboClientServiceCollectionExtensions.cs`
-- [ ] `public static ITurboHttpClientBuilder AddTurboHttpClient(this IServiceCollection services, Action<TurboClientOptions>? configure = null)` — delegates to above with `name = string.Empty`
-- [ ] `configure` registered as `services.Configure<TurboClientOptions>(name, configure)` (named options)
-- [ ] `ITurboHttpClientFactory` registered as a singleton — idempotent (no double-registration on multiple calls)
-- [ ] ActorSystem auto-create logic unchanged
-- [ ] Returns `new TurboHttpClientBuilder(name, services)`
-- [ ] Typecheck/lint passes
+- [x] `public static ITurboHttpClientBuilder AddTurboHttpClient(this IServiceCollection services, string name, Action<TurboClientOptions>? configure = null)` in `TurboClientServiceCollectionExtensions.cs`
+- [x] `public static ITurboHttpClientBuilder AddTurboHttpClient(this IServiceCollection services, Action<TurboClientOptions>? configure = null)` — delegates to above with `name = string.Empty`
+- [x] `configure` registered as `services.Configure<TurboClientOptions>(name, configure)` (named options)
+- [x] `ITurboHttpClientFactory` registered as a singleton — idempotent (no double-registration on multiple calls)
+- [x] ActorSystem auto-create logic unchanged
+- [x] Returns `new TurboHttpClientBuilder(name, services)`
+- [x] Typecheck/lint passes
 
 ---
 
