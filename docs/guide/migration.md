@@ -6,11 +6,11 @@ This guide shows how to migrate common `HttpClient` patterns to TurboHttp. The A
 
 | HttpClient | TurboHttp |
 |---|---|
-| `new HttpClient()` | `TurboHttpClientFactory.Create(opts => ...)` |
+| `new HttpClient()` | `new TurboHttpClient(options, actorSystem)` |
 | `IHttpClientFactory` | `ITurboHttpClientFactory` |
 | `services.AddHttpClient()` | `services.AddTurboHttpClient()` |
 | `client.GetAsync(url)` | `client.SendAsync(new HttpRequestMessage(Get, url), ct)` |
-| `DelegatingHandler` | `TurboHandler` or Akka.Streams `GraphStage` |
+| `DelegatingHandler` | `TurboHandler` (stream-compatible) |
 | Polly retry policies | Built-in `RetryPolicy` |
 | No caching | Built-in `CachePolicy` |
 | `CookieContainer` (manual) | `CookieJar` (automatic) |
@@ -28,10 +28,11 @@ var body = await response.Content.ReadAsStringAsync();
 **After (TurboHttp):**
 
 ```csharp
-await using var client = TurboHttpClientFactory.Create(opts =>
+var actorSystem = ActorSystem.Create("turbo");
+await using var client = new TurboHttpClient(new TurboClientOptions
 {
-    opts.BaseAddress = new Uri("https://api.example.com");
-});
+    BaseAddress = new Uri("https://api.example.com"),
+}, actorSystem);
 
 var response = await client.SendAsync(
     new HttpRequestMessage(HttpMethod.Get, "/users/42"),
@@ -107,7 +108,7 @@ No Polly dependency needed. TurboHttp automatically:
 - Respects `Retry-After` headers
 - Applies exponential backoff
 
-For custom retry logic, implement `IRetryEvaluator` (see [Advanced Usage](./advanced)).
+Retry behavior is controlled via the built-in `.WithRetry()` builder extension — see [Advanced Usage](./advanced) for custom policies.
 
 ## Cookie Management
 
@@ -161,17 +162,18 @@ builder.Services.AddHttpClient("my-api")
 ```csharp
 public sealed class LoggingHandler : TurboHandler
 {
-    public override HttpRequestMessage ProcessRequest(HttpRequestMessage request)
+    public override ValueTask<HttpRequestMessage> ProcessRequestAsync(
+        HttpRequestMessage request, CancellationToken ct)
     {
         Console.WriteLine($"→ {request.Method} {request.RequestUri}");
-        return request;
+        return ValueTask.FromResult(request);
     }
 
-    public override HttpResponseMessage ProcessResponse(
-        HttpRequestMessage request, HttpResponseMessage response)
+    public override ValueTask<HttpResponseMessage> ProcessResponseAsync(
+        HttpRequestMessage original, HttpResponseMessage response, CancellationToken ct)
     {
         Console.WriteLine($"← {(int)response.StatusCode}");
-        return response;
+        return ValueTask.FromResult(response);
     }
 }
 
@@ -183,8 +185,8 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 ```
 
 ::: info
-`TurboHandler.ProcessRequest` sees initial requests only (not retries or redirects).
-`TurboHandler.ProcessResponse` sees final responses only (after all retries and redirects).
+`TurboHandler.ProcessRequestAsync` sees initial requests only (not retries or redirects).
+`TurboHandler.ProcessResponseAsync` sees final responses only (after all retries and redirects).
 :::
 
 ## HTTP/2
@@ -201,11 +203,12 @@ client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 **After (TurboHttp):**
 
 ```csharp
-await using var client = TurboHttpClientFactory.Create(options =>
+var actorSystem = ActorSystem.Create("turbo");
+await using var client = new TurboHttpClient(new TurboClientOptions
 {
-    options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestVersion = HttpVersion.Version20;
-});
+    BaseAddress = new Uri("https://api.example.com"),
+    DefaultRequestVersion = HttpVersion.Version20,
+}, actorSystem);
 ```
 
 TurboHttp provides full HTTP/2 multiplexing — all requests to the same host share a single TCP connection with concurrent streams. See [HTTP/2 & Multiplexing](./http2).

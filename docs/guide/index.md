@@ -15,10 +15,11 @@ dotnet add package TurboHttp
 ```csharp
 using TurboHttp.Client;
 
-await using var client = TurboHttpClientFactory.Create(options =>
+var actorSystem = ActorSystem.Create("turbo");
+await using var client = new TurboHttpClient(new TurboClientOptions
 {
-    options.BaseAddress = new Uri("https://api.example.com");
-});
+    BaseAddress = new Uri("https://api.example.com"),
+}, actorSystem);
 
 var response = await client.SendAsync(
     new HttpRequestMessage(HttpMethod.Get, "/users"),
@@ -33,18 +34,19 @@ Console.WriteLine(await response.Content.ReadAsStringAsync());
 For high-throughput scenarios, use the channel API to decouple request production from response consumption:
 
 ```csharp
-await using var client = TurboHttpClientFactory.Create(options =>
+var actorSystem = ActorSystem.Create("turbo");
+await using var client = new TurboHttpClient(new TurboClientOptions
 {
-    options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestVersion = HttpVersion.Version20;
-});
+    BaseAddress = new Uri("https://api.example.com"),
+    DefaultRequestVersion = HttpVersion.Version20,
+}, actorSystem);
 
 // Producer: write requests without waiting for responses
-await client.RequestWriter.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/1"));
-await client.RequestWriter.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/2"));
+await client.Requests.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/1"));
+await client.Requests.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/2"));
 
 // Consumer: read responses as they arrive
-await foreach (var response in client.ResponseReader.ReadAllAsync())
+await foreach (var response in client.Responses.ReadAllAsync())
 {
     Console.WriteLine($"{response.StatusCode}");
 }

@@ -229,4 +229,58 @@ public sealed class CacheControlParserTests
         Assert.Contains("Authorization", result.NoCacheFields);
         Assert.Equal(TimeSpan.FromSeconds(300), result.MaxAge);
     }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.7-CC-034: private=\"Authorization\" parses field")]
+    public void Should_ParseField_When_PrivateQualified()
+    {
+        var result = CacheControlParser.Parse("private=\"Authorization\"");
+        Assert.NotNull(result);
+        Assert.True(result.Private);
+        Assert.NotNull(result.PrivateFields);
+        Assert.Single(result.PrivateFields);
+        Assert.Equal("Authorization", result.PrivateFields[0]);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.7-CC-035: Unqualified private sets flag only")]
+    public void Should_SetFlag_When_UnqualifiedPrivate()
+    {
+        var result = CacheControlParser.Parse("private");
+        Assert.NotNull(result);
+        Assert.True(result.Private);
+        Assert.Null(result.PrivateFields);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.7-CC-036: private=\"A, B\" parses multiple fields")]
+    public void Should_ParseMultipleFields_When_PrivateQualified()
+    {
+        var result = CacheControlParser.Parse("private=\"A, B\"");
+        Assert.NotNull(result);
+        Assert.True(result.Private);
+        Assert.NotNull(result.PrivateFields);
+        Assert.Equal(2, result.PrivateFields.Count);
+        Assert.Equal("A", result.PrivateFields[0]);
+        Assert.Equal("B", result.PrivateFields[1]);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.7-CC-037: private with empty quotes treated as unqualified")]
+    public void Should_TreatAsUnqualified_When_PrivateEmptyQuotes()
+    {
+        var result = CacheControlParser.Parse("private=\"\"");
+        Assert.NotNull(result);
+        Assert.True(result.Private);
+        Assert.Null(result.PrivateFields);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.7-CC-038: private with field list alongside other directives")]
+    public void Should_ParseFieldListAndOtherDirectives_When_PrivateWithFieldsAndMaxAge()
+    {
+        var result = CacheControlParser.Parse("private=\"Set-Cookie, Authorization\", max-age=300");
+        Assert.NotNull(result);
+        Assert.True(result.Private);
+        Assert.NotNull(result.PrivateFields);
+        Assert.Equal(2, result.PrivateFields.Count);
+        Assert.Contains("Set-Cookie", result.PrivateFields);
+        Assert.Contains("Authorization", result.PrivateFields);
+        Assert.Equal(TimeSpan.FromSeconds(300), result.MaxAge);
+    }
 }

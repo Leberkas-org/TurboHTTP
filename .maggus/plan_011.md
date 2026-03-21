@@ -458,10 +458,10 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControl.cs` — new `IReadOnlyList<string>? PrivateFields`
 
 **Acceptance Criteria:**
-- [ ] `private="Authorization"` parses field into `PrivateFields`
-- [ ] Unqualified `private` sets flag without field list
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `private="Authorization"` parses field into `PrivateFields`
+- [x] Unqualified `private` sets flag without field list
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/01_CacheControlParserTests.cs`):
 

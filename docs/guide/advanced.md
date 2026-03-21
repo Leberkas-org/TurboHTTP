@@ -10,13 +10,13 @@ In addition to `SendAsync`, TurboHttp exposes a lower-level channel API for scen
 var client = new TurboHttpClient(new TurboClientOptions
 {
     BaseAddress = new Uri("https://api.example.com"),
-});
+}, actorSystem);
 
 // Write requests to the input channel
-ChannelWriter<HttpRequestMessage> requestWriter = client.RequestWriter;
+ChannelWriter<HttpRequestMessage> requestWriter = client.Requests;
 
 // Read responses from the output channel
-ChannelReader<HttpResponseMessage> responseReader = client.ResponseReader;
+ChannelReader<HttpResponseMessage> responseReader = client.Responses;
 ```
 
 This API is useful when:
@@ -33,7 +33,7 @@ var client = new TurboHttpClient(new TurboClientOptions
 {
     BaseAddress = new Uri("https://api.example.com"),
     DefaultRequestVersion = HttpVersion.Version20,
-});
+}, actorSystem);
 
 var ids = Enumerable.Range(1, 1000).ToList();
 
@@ -43,15 +43,15 @@ var producer = Task.Run(async () =>
     foreach (var id in ids)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"/items/{id}");
-        await client.RequestWriter.WriteAsync(request);
+        await client.Requests.WriteAsync(request);
     }
-    client.RequestWriter.Complete();
+    client.Requests.Complete();
 });
 
 // Consumer: process responses as they arrive
 var consumer = Task.Run(async () =>
 {
-    await foreach (var response in client.ResponseReader.ReadAllAsync())
+    await foreach (var response in client.Responses.ReadAllAsync())
     {
         var body = await response.Content.ReadAsStringAsync();
         Console.WriteLine($"{(int)response.StatusCode}: {body.Length} bytes");
@@ -66,15 +66,6 @@ With HTTP/2, all 1000 requests flow over a single TCP connection as concurrent s
 ### Backpressure
 
 The channel has a bounded capacity. If the connection cannot keep up with your producer, `WriteAsync` will pause automatically until there is room. You never drop requests — the channel applies backpressure instead.
-
-To configure channel capacity:
-
-```csharp
-var options = new TurboClientOptions
-{
-    ChannelCapacity = 256,   // max requests buffered before producer blocks (default: 64)
-};
-```
 
 ## Extension Points
 

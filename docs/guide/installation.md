@@ -129,11 +129,12 @@ builder.Services.AddTurboHttpClient("full-featured", options =>
 For scripts, tests, or applications without a DI container:
 
 ```csharp
-await using var client = TurboHttpClientFactory.Create(options =>
+var actorSystem = ActorSystem.Create("turbo");
+await using var client = new TurboHttpClient(new TurboClientOptions
 {
-    options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestVersion = HttpVersion.Version20;
-});
+    BaseAddress = new Uri("https://api.example.com"),
+    DefaultRequestVersion = HttpVersion.Version20,
+}, actorSystem);
 
 var response = await client.SendAsync(
     new HttpRequestMessage(HttpMethod.Get, "/health"),
@@ -150,12 +151,13 @@ A complete console application:
 
 ```csharp
 using TurboHttp.Client;
-using System.Net.Http;
+using Akka.Actor;
 
-await using var client = TurboHttpClientFactory.Create(options =>
+var actorSystem = ActorSystem.Create("turbo");
+await using var client = new TurboHttpClient(new TurboClientOptions
 {
-    options.BaseAddress = new Uri("https://jsonplaceholder.typicode.com");
-});
+    BaseAddress = new Uri("https://jsonplaceholder.typicode.com"),
+}, actorSystem);
 
 var request = new HttpRequestMessage(HttpMethod.Get, "/posts/1");
 var response = await client.SendAsync(request, CancellationToken.None);
