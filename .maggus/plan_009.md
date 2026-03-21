@@ -79,13 +79,13 @@ so that decompression can be conditionally included in the pipeline.
 path and Set-Cookie storage on the response path.
 
 **Acceptance Criteria:**
-- [ ] `CookieBidiStage` is a `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
-- [ ] Request direction (In1→Out1): injects cookies from `CookieJar` into request headers
-- [ ] Response direction (In2→Out2): extracts Set-Cookie headers and stores in `CookieJar`
-- [ ] Pass-through when `CookieJar` is null (no-op in both directions)
-- [ ] Port names: `"Cookie.In.Request"`, `"Cookie.Out.Request"`, `"Cookie.In.Response"`, `"Cookie.Out.Response"`
-- [ ] Typecheck/lint passes
-- [ ] Unit tests are written and successful
+- [x] `CookieBidiStage` is a `GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>`
+- [x] Request direction (In1→Out1): injects cookies from `CookieJar` into request headers
+- [x] Response direction (In2→Out2): extracts Set-Cookie headers and stores in `CookieJar`
+- [x] Pass-through when `CookieJar` is null (no-op in both directions)
+- [x] Port names: `"Cookie.In.Request"`, `"Cookie.Out.Request"`, `"Cookie.In.Response"`, `"Cookie.Out.Response"`
+- [x] Typecheck/lint passes
+- [x] Unit tests are written and successful
 
 ### TASK-003: Create DecompressionBidiStage
 **Description:** As a developer, I want a `DecompressionBidiStage` that decompresses
