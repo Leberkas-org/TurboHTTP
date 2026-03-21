@@ -207,13 +207,22 @@ public sealed class Http10DecoderStatusLineTests
         Assert.Equal("", response.ReasonPhrase);
     }
 
-    [Fact(DisplayName = "RFC1945-6-SL-014: Only header separator without status-line rejected")]
-    public void Should_ThrowDecoderException_When_OnlyHeaderSeparatorPresent()
+    [Fact(DisplayName = "RFC1945-6-SL-014: Only header separator without status-line treated as HTTP/0.9")]
+    public void Should_TreatAsHttp09_When_OnlyHeaderSeparatorPresent()
     {
+        // RFC 1945 §3.1: data without HTTP/ prefix is a Simple-Response (HTTP/0.9)
         var decoder = new Http10Decoder();
         var data = Bytes("\r\n\r\n");
 
-        var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(data, out _));
-        Assert.Equal(HttpDecoderError.InvalidStatusLine, ex.DecodeError);
+        var result = decoder.TryDecode(data, out var response);
+        Assert.False(result);
+        Assert.Null(response);
+
+        // EOF completes as HTTP/0.9 with body = "\r\n\r\n"
+        result = decoder.TryDecodeEof(out response);
+        Assert.True(result);
+        Assert.NotNull(response);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(new Version(0, 9), response.Version);
     }
 }

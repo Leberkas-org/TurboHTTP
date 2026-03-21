@@ -32,12 +32,12 @@ RFC 1945 has 24 client-side MUSTs. After plan_011, 23 are covered (96%). This pl
 - `TryDecodeEof()` completes HTTP/0.9 body
 
 **Acceptance Criteria:**
-- [ ] Http10Decoder recognizes responses without `HTTP/` prefix as HTTP/0.9
-- [ ] HTTP/0.9 response has StatusCode 200
-- [ ] HTTP/0.9 response has empty Headers
-- [ ] HTTP/0.9 body is read until EOF
-- [ ] HTTP/1.0 responses remain unchanged
-- [ ] Unit tests written and passing
+- [x] Http10Decoder recognizes responses without `HTTP/` prefix as HTTP/0.9
+- [x] HTTP/0.9 response has StatusCode 200
+- [x] HTTP/0.9 response has empty Headers
+- [x] HTTP/0.9 body is read until EOF
+- [x] HTTP/1.0 responses remain unchanged
+- [x] Unit tests written and passing
 
 **Tests** (new file: `src/TurboHttp.Tests/RFC1945/18_Http09SimpleResponseTests.cs`):
 

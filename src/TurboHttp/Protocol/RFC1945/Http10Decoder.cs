@@ -9,13 +9,49 @@ namespace TurboHttp.Protocol.RFC1945;
 
 public sealed class Http10Decoder
 {
+    private static readonly byte[] HttpSlashPrefix = "HTTP/"u8.ToArray();
+
     private ReadOnlyMemory<byte> _remainder = ReadOnlyMemory<byte>.Empty;
+    private bool _isHttp09;
 
     public bool TryDecode(ReadOnlyMemory<byte> incomingData, out HttpResponseMessage? response)
     {
         response = null;
         var working = Combine(_remainder, incomingData);
         _remainder = ReadOnlyMemory<byte>.Empty;
+
+        // HTTP/0.9 continuation: accumulate body until EOF
+        if (_isHttp09)
+        {
+            _remainder = working;
+            return false;
+        }
+
+        // HTTP/0.9 detection (RFC 1945 §3.1): if first bytes do not start with "HTTP/"
+        if (!working.IsEmpty)
+        {
+            var span = working.Span;
+            if (span.Length >= HttpSlashPrefix.Length)
+            {
+                // Enough bytes to decide: not HTTP/ means HTTP/0.9
+                if (!span.StartsWith(HttpSlashPrefix))
+                {
+                    _isHttp09 = true;
+                    _remainder = working;
+                    return false;
+                }
+            }
+            else
+            {
+                // Not enough bytes yet — check if current bytes are a valid prefix of "HTTP/"
+                if (!HttpSlashPrefix.AsSpan(0, span.Length).SequenceEqual(span))
+                {
+                    _isHttp09 = true;
+                    _remainder = working;
+                    return false;
+                }
+            }
+        }
 
         var headerEnd = FindHeaderEnd(working.Span);
         if (headerEnd < 0)
@@ -67,7 +103,24 @@ public sealed class Http10Decoder
         response = null;
         if (_remainder.IsEmpty)
         {
+            // HTTP/0.9 with zero bytes before EOF: empty body
+            if (_isHttp09)
+            {
+                response = BuildHttp09Response([]);
+                _isHttp09 = false;
+                return true;
+            }
+
             return false;
+        }
+
+        // HTTP/0.9: entire remainder is body
+        if (_isHttp09)
+        {
+            response = BuildHttp09Response(_remainder.ToArray());
+            _remainder = ReadOnlyMemory<byte>.Empty;
+            _isHttp09 = false;
+            return true;
         }
 
         var span = _remainder.Span;
@@ -162,7 +215,11 @@ public sealed class Http10Decoder
         return true;
     }
 
-    public void Reset() => _remainder = ReadOnlyMemory<byte>.Empty;
+    public void Reset()
+    {
+        _remainder = ReadOnlyMemory<byte>.Empty;
+        _isHttp09 = false;
+    }
 
     private static void ValidateStatusLine(string statusLine)
     {
@@ -283,6 +340,18 @@ public sealed class Http10Decoder
         WellKnownHeaders.Names.ContentEncoding, "Content-Language", "Content-Location", "Content-MD5",
         "Content-Range", "Content-Disposition", "Expires", "Last-Modified"
     };
+
+    /// <summary>
+    /// Builds an HTTP/0.9 Simple-Response: status 200, no headers, body until EOF.
+    /// </summary>
+    private static HttpResponseMessage BuildHttp09Response(byte[] body)
+    {
+        return new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Version = new Version(0, 9),
+            Content = new ByteArrayContent(body)
+        };
+    }
 
     private static HttpResponseMessage BuildResponse(string statusLine, Dictionary<string, List<string>> headers,
         byte[] body)
