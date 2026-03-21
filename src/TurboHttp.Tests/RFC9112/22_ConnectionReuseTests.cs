@@ -256,4 +256,62 @@ public sealed class ConnectionReuseTests
         Assert.Null(decision.KeepAliveTimeout);
         Assert.Null(decision.MaxRequests);
     }
+
+    // ── RFC 9112 §9.3: Response body consumption before reuse ──────────────
+
+    [Theory(DisplayName = "RFC9112-9.3-CR-026: Reuse denied when body not fully consumed")]
+    [InlineData("1.0")]
+    [InlineData("1.1")]
+    public void Should_DenyReuse_When_BodyNotConsumed(string version)
+    {
+        // RFC 9112 §9.3: "If the client intends to reuse the connection, it MUST
+        // read the entire response message body."
+        var httpVersion = version == "1.0" ? HttpVersion.Version10 : HttpVersion.Version11;
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        if (version == "1.0")
+        {
+            response.Headers.Connection.Add("Keep-Alive");
+        }
+
+        var decision = ConnectionReuseEvaluator.Evaluate(
+            response, httpVersion, bodyFullyConsumed: false);
+
+        Assert.False(decision.CanReuse);
+        Assert.Contains("body not fully consumed", decision.Reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory(DisplayName = "RFC9112-9.3-CR-027: Reuse allowed when body fully consumed")]
+    [InlineData("1.0")]
+    [InlineData("1.1")]
+    public void Should_AllowReuse_When_BodyFullyConsumed(string version)
+    {
+        // RFC 9112 §9.3: When the body is fully consumed and no close signal
+        // is present, the connection is eligible for reuse.
+        var httpVersion = version == "1.0" ? HttpVersion.Version10 : HttpVersion.Version11;
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        if (version == "1.0")
+        {
+            response.Headers.Connection.Add("Keep-Alive");
+        }
+
+        var decision = ConnectionReuseEvaluator.Evaluate(
+            response, httpVersion, bodyFullyConsumed: true);
+
+        Assert.True(decision.CanReuse);
+    }
+
+    [Fact(DisplayName = "RFC9112-9.3-CR-028: Reuse denied for 101 Switching Protocols")]
+    public void Should_DenyReuse_When_101SwitchingProtocols()
+    {
+        // RFC 9112 §9.6: A 101 response means the connection has been upgraded
+        // to a different protocol; it cannot be returned to an HTTP pool.
+        var response = new HttpResponseMessage(HttpStatusCode.SwitchingProtocols);
+        response.Headers.TryAddWithoutValidation("Upgrade", "websocket");
+
+        var decision = ConnectionReuseEvaluator.Evaluate(response, HttpVersion.Version11);
+
+        Assert.False(decision.CanReuse);
+        Assert.Contains("101", decision.Reason);
+        Assert.Contains("Switching Protocols", decision.Reason);
+    }
 }
