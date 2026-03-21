@@ -66,6 +66,10 @@ public sealed class Http3RequestEncoder
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.RequestUri);
 
+        // RFC 9114 §10.3: Validate origin before encoding
+        Http3OriginValidator.Validate(request.RequestUri,
+            isConnect: request.Method == HttpMethod.Connect);
+
         var headers = BuildHeaderList(request);
         ValidatePseudoHeaders(headers);
         Http3FieldValidator.Validate(headers);
@@ -100,6 +104,9 @@ public sealed class Http3RequestEncoder
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.RequestUri);
+
+        Http3OriginValidator.Validate(request.RequestUri,
+            isConnect: request.Method == HttpMethod.Connect);
 
         var headers = BuildHeaderList(request);
         ValidatePseudoHeaders(headers);
