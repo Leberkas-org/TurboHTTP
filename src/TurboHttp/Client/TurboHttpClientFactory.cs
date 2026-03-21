@@ -34,9 +34,9 @@ internal sealed class TurboHttpClientFactory(
             ? new HttpCacheStore(descriptor.CachePolicy)
             : null;
 
-        IReadOnlyList<TurboHandler> middlewares = descriptor.MiddlewareFactories.Count == 0
+        IReadOnlyList<TurboHandler> middlewares = descriptor.HandlerFactories.Count == 0
             ? []
-            : descriptor.MiddlewareFactories.Select(f => f(provider)).ToList();
+            : descriptor.HandlerFactories.Select(f => f(provider)).ToList();
 
         var pipeline = new PipelineDescriptor(
             RedirectPolicy: descriptor.RedirectPolicy,

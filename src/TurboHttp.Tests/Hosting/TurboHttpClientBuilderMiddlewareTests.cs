@@ -33,26 +33,26 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
     // AddMiddleware<T> — type registration
     // ---------------------------------------------------------------------------
 
-    [Fact(DisplayName = "AddMiddleware<T>() adds typeof(T) to MiddlewareTypes")]
-    public void AddMiddleware_AddsTypeToMiddlewareTypes()
+    [Fact(DisplayName = "AddMiddleware<T>() adds typeof(T) to HandlerTypes")]
+    public void AddMiddleware_AddsTypeToHandlerTypes()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").AddMiddleware<TestMiddleware>();
 
         var descriptor = GetDescriptor(services, "test");
 
-        Assert.Contains(typeof(TestMiddleware), descriptor.MiddlewareTypes);
+        Assert.Contains(typeof(TestMiddleware), descriptor.HandlerTypes);
     }
 
-    [Fact(DisplayName = "AddMiddleware<T>() also appends one factory to MiddlewareFactories")]
-    public void AddMiddleware_AddsFactoryToMiddlewareFactories()
+    [Fact(DisplayName = "AddMiddleware<T>() also appends one factory to HandlerFactories")]
+    public void AddMiddleware_AddsFactoryToHandlerFactories()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").AddMiddleware<TestMiddleware>();
 
         var descriptor = GetDescriptor(services, "test");
 
-        Assert.Single(descriptor.MiddlewareFactories);
+        Assert.Single(descriptor.HandlerFactories);
     }
 
     // ---------------------------------------------------------------------------
@@ -74,7 +74,7 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
     // UseRequest — anonymous middleware
     // ---------------------------------------------------------------------------
 
-    [Fact(DisplayName = "UseRequest() adds one factory to MiddlewareFactories without touching MiddlewareTypes")]
+    [Fact(DisplayName = "UseRequest() adds one factory to HandlerFactories without touching HandlerTypes")]
     public void UseRequest_AddsOneFactoryWithNoTypeEntry()
     {
         var services = new ServiceCollection();
@@ -83,15 +83,15 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
 
         var descriptor = GetDescriptor(services, "test");
 
-        Assert.Single(descriptor.MiddlewareFactories);
-        Assert.Empty(descriptor.MiddlewareTypes);
+        Assert.Single(descriptor.HandlerFactories);
+        Assert.Empty(descriptor.HandlerTypes);
     }
 
     // ---------------------------------------------------------------------------
     // FIFO ordering
     // ---------------------------------------------------------------------------
 
-    [Fact(DisplayName = "Multiple AddMiddleware<T>() calls preserve FIFO order in MiddlewareTypes")]
+    [Fact(DisplayName = "Multiple AddMiddleware<T>() calls preserve FIFO order in HandlerTypes")]
     public void AddMiddleware_PreservesFifoOrderInTypes()
     {
         var services = new ServiceCollection();
@@ -101,11 +101,11 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
 
         var descriptor = GetDescriptor(services, "test");
 
-        Assert.Equal(typeof(AlphaMiddleware), descriptor.MiddlewareTypes[0]);
-        Assert.Equal(typeof(BetaMiddleware), descriptor.MiddlewareTypes[1]);
+        Assert.Equal(typeof(AlphaMiddleware), descriptor.HandlerTypes[0]);
+        Assert.Equal(typeof(BetaMiddleware), descriptor.HandlerTypes[1]);
     }
 
-    [Fact(DisplayName = "Multiple AddMiddleware<T>() calls preserve FIFO order in MiddlewareFactories")]
+    [Fact(DisplayName = "Multiple AddMiddleware<T>() calls preserve FIFO order in HandlerFactories")]
     public void AddMiddleware_PreservesFifoOrderInFactories()
     {
         var services = new ServiceCollection();
@@ -116,9 +116,9 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
         var sp = services.BuildServiceProvider();
         var descriptor = sp.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>().Get("test");
 
-        Assert.Equal(2, descriptor.MiddlewareFactories.Count);
-        Assert.IsType<AlphaMiddleware>(descriptor.MiddlewareFactories[0](sp));
-        Assert.IsType<BetaMiddleware>(descriptor.MiddlewareFactories[1](sp));
+        Assert.Equal(2, descriptor.HandlerFactories.Count);
+        Assert.IsType<AlphaMiddleware>(descriptor.HandlerFactories[0](sp));
+        Assert.IsType<BetaMiddleware>(descriptor.HandlerFactories[1](sp));
     }
 
     // ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
         var sp = services.BuildServiceProvider();
         var descriptor = sp.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>().Get("test");
 
-        var resolved = descriptor.MiddlewareFactories[0](sp);
+        var resolved = descriptor.HandlerFactories[0](sp);
 
         Assert.IsType<TestMiddleware>(resolved);
     }

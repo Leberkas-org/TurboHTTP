@@ -94,6 +94,6 @@ public sealed class NamedClientIsolationTests
         // "b" has no cookies and is otherwise unaffected
         Assert.False(descriptorB.EnableCookies);
         Assert.Null(descriptorB.CustomCookieJar);
-        Assert.Empty(descriptorB.MiddlewareFactories);
+        Assert.Empty(descriptorB.HandlerFactories);
     }
 }

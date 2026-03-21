@@ -67,8 +67,8 @@ public static class TurboHttpClientBuilderExtensions
         builder.Services.AddTransient<T>();
         builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
         {
-            d.MiddlewareTypes.Add(typeof(T));
-            d.MiddlewareFactories.Add(sp => sp.GetRequiredService<T>());
+            d.HandlerTypes.Add(typeof(T));
+            d.HandlerFactories.Add(sp => sp.GetRequiredService<T>());
         });
         return builder;
     }
@@ -83,7 +83,7 @@ public static class TurboHttpClientBuilderExtensions
     {
         builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
         {
-            d.MiddlewareFactories.Add(_ => new DelegateRequestMiddleware(transform));
+            d.HandlerFactories.Add(_ => new DelegateRequestMiddleware(transform));
         });
         return builder;
     }
@@ -98,7 +98,7 @@ public static class TurboHttpClientBuilderExtensions
     {
         builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
         {
-            d.MiddlewareFactories.Add(_ => new DelegateResponseMiddleware(transform));
+            d.HandlerFactories.Add(_ => new DelegateResponseMiddleware(transform));
         });
         return builder;
     }

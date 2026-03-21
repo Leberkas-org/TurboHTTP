@@ -67,11 +67,11 @@ Renaming to `TurboHandler` aligns with .NET's `HttpMessageHandler` / `Delegating
 **Description:** As a developer, I want internal descriptor field names updated to reflect handler naming.
 
 **Acceptance Criteria:**
-- [ ] `src/TurboHttp/Middleware/TurboClientDescriptor.cs`: `MiddlewareTypes` → `HandlerTypes`
-- [ ] `MiddlewareFactories` → `HandlerFactories`
-- [ ] Type reference: `Func<IServiceProvider, TurboMiddleware>` → `Func<IServiceProvider, TurboHandler>`
-- [ ] XML doc comments updated accordingly
-- [ ] Typecheck passes
+- [x] `src/TurboHttp/Middleware/TurboClientDescriptor.cs`: `MiddlewareTypes` → `HandlerTypes`
+- [x] `MiddlewareFactories` → `HandlerFactories`
+- [x] Type reference: `Func<IServiceProvider, TurboMiddleware>` → `Func<IServiceProvider, TurboHandler>`
+- [x] XML doc comments updated accordingly
+- [x] Typecheck passes
 
 ### TASK-004: Update PipelineDescriptor
 **Description:** As a developer, I want the pipeline descriptor to use handler naming.
