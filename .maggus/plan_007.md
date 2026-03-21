@@ -157,10 +157,10 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want a concrete implementation of `ITurboHttpClientBuilder` so that `AddTurboHttpClient` has something to return.
 
 **Acceptance Criteria:**
-- [ ] `internal sealed class TurboHttpClientBuilder(string name, IServiceCollection services) : ITurboHttpClientBuilder` in `src/TurboHttp/Middleware/TurboHttpClientBuilder.cs`
-- [ ] Implements `Name` and `Services` — no other logic
-- [ ] Namespace: `TurboHttp.Middleware`
-- [ ] Typecheck/lint passes
+- [x] `internal sealed class TurboHttpClientBuilder(string name, IServiceCollection services) : ITurboHttpClientBuilder` in `src/TurboHttp/Middleware/TurboHttpClientBuilder.cs`
+- [x] Implements `Name` and `Services` — no other logic
+- [x] Namespace: `TurboHttp.Middleware`
+- [x] Typecheck/lint passes
 
 ---
 
