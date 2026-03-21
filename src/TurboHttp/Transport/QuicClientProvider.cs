@@ -53,7 +53,7 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 
         try
         {
-            _connection.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            _ = _connection.DisposeAsync();
         }
         catch (ObjectDisposedException)
         {
