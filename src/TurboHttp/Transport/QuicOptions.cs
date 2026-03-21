@@ -20,4 +20,7 @@ public record QuicOptions : TcpOptions
 
     /// <summary>ALPN protocols advertised during the QUIC handshake. Defaults to h3.</summary>
     public List<SslApplicationProtocol> ApplicationProtocols { get; init; } = [new("h3")];
+
+    /// <summary>Optional callback to validate the server certificate during the QUIC/TLS handshake.</summary>
+    public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; init; }
 }
