@@ -131,14 +131,14 @@ Renaming to `TurboHandler` aligns with .NET's `HttpMessageHandler` / `Delegating
 **Description:** As a developer, I want the builder handler tests updated to new naming.
 
 **Acceptance Criteria:**
-- [ ] Rename file `TurboHttpClientBuilderMiddlewareTests.cs` → `TurboHttpClientBuilderHandlerTests.cs`
-- [ ] Test class name: `TurboHttpClientBuilderHandlerTests`
-- [ ] `TurboMiddleware` → `TurboHandler` in test doubles (`TestMiddleware` → `TestHandler`, `AlphaMiddleware` → `AlphaHandler`, `BetaMiddleware` → `BetaHandler`)
-- [ ] `AddMiddleware<T>()` → `AddHandler<T>()` in test calls
-- [ ] `MiddlewareTypes` → `HandlerTypes`, `MiddlewareFactories` → `HandlerFactories` in assertions
-- [ ] `UseRequest` lambda updated to sync signature: `(req) => req`
-- [ ] DisplayName attributes updated to reflect new naming
-- [ ] All tests pass
+- [x] Rename file `TurboHttpClientBuilderMiddlewareTests.cs` → `TurboHttpClientBuilderHandlerTests.cs`
+- [x] Test class name: `TurboHttpClientBuilderHandlerTests`
+- [x] `TurboMiddleware` → `TurboHandler` in test doubles (`TestMiddleware` → `TestHandler`, `AlphaMiddleware` → `AlphaHandler`, `BetaMiddleware` → `BetaHandler`)
+- [x] `AddMiddleware<T>()` → `AddHandler<T>()` in test calls
+- [x] `MiddlewareTypes` → `HandlerTypes`, `MiddlewareFactories` → `HandlerFactories` in assertions
+- [x] `UseRequest` lambda updated to sync signature: `(req) => req`
+- [x] DisplayName attributes updated to reflect new naming
+- [x] All tests pass
 
 ### TASK-010: Full Validation
 **Description:** As a developer, I want to verify zero regressions across the entire solution.
