@@ -1,0 +1,145 @@
+// TurboHttp — Internals Views
+// Views for the Internals documentation section: protocol layer, HPACK, data path.
+
+views {
+  // ── Protocol Layer: All protocol components ────────────────────────────
+  view protocolLayer of turbohttp.protocol {
+    title 'TurboHttp — Protocol Layer'
+    description 'All encoders, decoders, HPACK, and RFC business logic. Pure protocol components — no I/O, no Akka dependencies.'
+
+    include turbohttp.protocol.*
+
+    // Group by function
+    style turbohttp.protocol.Http10Encoder { color green }
+    style turbohttp.protocol.Http11Encoder { color green }
+    style turbohttp.protocol.Http2RequestEncoder { color green }
+
+    style turbohttp.protocol.Http10Decoder { color blue }
+    style turbohttp.protocol.Http11Decoder { color blue }
+    style turbohttp.protocol.Http2FrameDecoder { color blue }
+
+    style turbohttp.protocol.HpackEncoder { color sky }
+    style turbohttp.protocol.HpackDecoder { color sky }
+    style turbohttp.protocol.HpackDynamicTable { color sky }
+    style turbohttp.protocol.HuffmanCodec { color sky }
+
+    style turbohttp.protocol.RedirectHandler { color amber }
+    style turbohttp.protocol.RetryEvaluator { color amber }
+    style turbohttp.protocol.ConnectionReuseEvaluator { color amber }
+    style turbohttp.protocol.CookieJar { color amber }
+    style turbohttp.protocol.ContentEncodingDecoder { color amber }
+
+    style turbohttp.protocol.HttpCacheStore { color secondary }
+    style turbohttp.protocol.CacheFreshnessEvaluator { color secondary }
+    style turbohttp.protocol.CacheValidationRequestBuilder { color secondary }
+    style turbohttp.protocol.CacheControlParser { color secondary }
+  }
+
+  // ── HPACK Subsystem ────────────────────────────────────────────────────
+  view hpackSubsystem {
+    title 'TurboHttp — HPACK Header Compression (RFC 7541)'
+    description 'HPACK encoder/decoder with synchronized dynamic tables and Huffman encoding. Used by HTTP/2 stages for header compression.'
+
+    // HPACK protocol components
+    include turbohttp.protocol.HpackEncoder
+    include turbohttp.protocol.HpackDecoder
+    include turbohttp.protocol.HpackDynamicTable
+    include turbohttp.protocol.HuffmanCodec
+
+    // Stages that use HPACK
+    include turbohttp.streams.Request2FrameStage
+    include turbohttp.streams.Http20StreamStage
+
+    style turbohttp.protocol.HpackEncoder { color green }
+    style turbohttp.protocol.HpackDecoder { color blue }
+    style turbohttp.protocol.HpackDynamicTable { color amber }
+    style turbohttp.protocol.HuffmanCodec { color sky }
+    style turbohttp.streams.Request2FrameStage { color secondary }
+    style turbohttp.streams.Http20StreamStage { color secondary }
+  }
+
+  // ── Zero-Copy Data Path ────────────────────────────────────────────────
+  view dataPath {
+    title 'TurboHttp — Zero-Copy Data Path'
+    description 'How bytes flow from TCP to HttpResponseMessage with minimal copies. Actors manage lifecycle; channels carry data.'
+
+    // The data path chain
+    include tcp
+    include turbohttp.io.ClientByteMover
+    include turbohttp.io.ClientState
+    include turbohttp.io.ConnectionHandle
+    include turbohttp.streams.ConnectionStage
+
+    // Lifecycle actors (shown for context, not in data path)
+    include turbohttp.io.ConnectionActor
+    include turbohttp.io.ClientRunner
+
+    style tcp { color muted }
+    style turbohttp.io.ClientByteMover { color green }
+    style turbohttp.io.ClientState { color green }
+    style turbohttp.io.ConnectionHandle { color green }
+    style turbohttp.streams.ConnectionStage { color green }
+    style turbohttp.io.ConnectionActor { color amber }
+    style turbohttp.io.ClientRunner { color amber }
+  }
+
+  // ── Stage-to-Protocol Delegation ───────────────────────────────────────
+  view stageDelegation {
+    title 'TurboHttp — Stage ↔ Protocol Delegation'
+    description 'How Akka.Streams stages delegate to pure protocol components. Stages handle flow control and backpressure; protocol components handle encoding/decoding.'
+
+    // HTTP/1.x delegation
+    include turbohttp.streams.Http10EncoderStage
+    include turbohttp.streams.Http10DecoderStage
+    include turbohttp.streams.Http11EncoderStage
+    include turbohttp.streams.Http11DecoderStage
+    include turbohttp.protocol.Http10Encoder
+    include turbohttp.protocol.Http10Decoder
+    include turbohttp.protocol.Http11Encoder
+    include turbohttp.protocol.Http11Decoder
+
+    // HTTP/2 delegation
+    include turbohttp.streams.Http20EncoderStage
+    include turbohttp.streams.Http20DecoderStage
+    include turbohttp.streams.Request2FrameStage
+    include turbohttp.streams.Http20StreamStage
+    include turbohttp.protocol.Http2RequestEncoder
+    include turbohttp.protocol.Http2FrameDecoder
+    include turbohttp.protocol.HpackEncoder
+    include turbohttp.protocol.HpackDecoder
+
+    // Business logic delegation
+    include turbohttp.streams.RedirectStage
+    include turbohttp.streams.RetryStage
+    include turbohttp.streams.DecompressionStage
+    include turbohttp.streams.CookieInjectionStage
+    include turbohttp.streams.CookieStorageStage
+    include turbohttp.streams.CacheLookupStage
+    include turbohttp.streams.CacheStorageStage
+    include turbohttp.streams.ConnectionReuseStage
+    include turbohttp.protocol.RedirectHandler
+    include turbohttp.protocol.RetryEvaluator
+    include turbohttp.protocol.ContentEncodingDecoder
+    include turbohttp.protocol.CookieJar
+    include turbohttp.protocol.HttpCacheStore
+    include turbohttp.protocol.ConnectionReuseEvaluator
+
+    // Color by role
+    style turbohttp.streams.Http10EncoderStage { color green }
+    style turbohttp.streams.Http11EncoderStage { color green }
+    style turbohttp.streams.Http20EncoderStage { color green }
+    style turbohttp.streams.Request2FrameStage { color green }
+    style turbohttp.streams.Http10DecoderStage { color blue }
+    style turbohttp.streams.Http11DecoderStage { color blue }
+    style turbohttp.streams.Http20DecoderStage { color blue }
+    style turbohttp.streams.Http20StreamStage { color blue }
+    style turbohttp.streams.RedirectStage { color amber }
+    style turbohttp.streams.RetryStage { color amber }
+    style turbohttp.streams.DecompressionStage { color amber }
+    style turbohttp.streams.CookieInjectionStage { color amber }
+    style turbohttp.streams.CookieStorageStage { color amber }
+    style turbohttp.streams.CacheLookupStage { color amber }
+    style turbohttp.streams.CacheStorageStage { color amber }
+    style turbohttp.streams.ConnectionReuseStage { color amber }
+  }
+}

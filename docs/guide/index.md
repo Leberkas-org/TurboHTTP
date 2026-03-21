@@ -1,103 +1,56 @@
 # Getting Started
 
-## Installation
+TurboHttp is a high-performance HTTP client for .NET built on Akka.Streams. It supports HTTP/1.0, HTTP/1.1, and HTTP/2 with automatic retries, caching, cookies, and connection pooling — all built in.
 
-Add TurboHttp to your .NET project:
+::: tip New to TurboHttp?
+See [Installation & Setup](./installation) for DI registration, named clients, and the fluent builder API. Coming from HttpClient? Check the [Migration Guide](./migration).
+:::
+
+## Quick Start
 
 ```bash
 dotnet add package TurboHttp
 ```
 
-**Requirements:** .NET 10.0 or later.
-
-## Basic Usage
-
-### Simple Request
-
 ```csharp
 using TurboHttp.Client;
-using System.Net.Http;
 
+await using var client = TurboHttpClientFactory.Create(options =>
+{
+    options.BaseAddress = new Uri("https://api.example.com");
+});
+
+var response = await client.SendAsync(
+    new HttpRequestMessage(HttpMethod.Get, "/users"),
+    CancellationToken.None);
+
+Console.WriteLine($"Status: {response.StatusCode}");
+Console.WriteLine(await response.Content.ReadAsStringAsync());
+```
+
+## Channel-Based API
+
+For high-throughput scenarios, use the channel API to decouple request production from response consumption:
+
+```csharp
 await using var client = TurboHttpClientFactory.Create(options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
     options.DefaultRequestVersion = HttpVersion.Version20;
 });
 
-var request = new HttpRequestMessage(HttpMethod.Get, "/users");
-var response = await client.SendAsync(request);
+// Producer: write requests without waiting for responses
+await client.RequestWriter.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/1"));
+await client.RequestWriter.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/2"));
 
-Console.WriteLine($"Status: {response.StatusCode}");
-var body = await response.Content.ReadAsStringAsync();
-Console.WriteLine(body);
-```
-
-### Channel-based API
-
-For high-throughput scenarios, use the channel-based API directly:
-
-```csharp
-await using var client = TurboHttpClientFactory.Create(options =>
+// Consumer: read responses as they arrive
+await foreach (var response in client.ResponseReader.ReadAllAsync())
 {
-    options.BaseAddress = new Uri("https://api.example.com");
-});
-
-// Write requests
-await client.RequestWriter.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/ping"));
-
-// Read responses
-var response = await client.ResponseReader.ReadAsync();
-Console.WriteLine($"Status: {response.StatusCode}");
+    Console.WriteLine($"{response.StatusCode}");
+}
 ```
 
-## Configuration
-
-### HTTP Version
-
-```csharp
-var client = TurboHttpClientFactory.Create(options =>
-{
-    options.BaseAddress = new Uri("https://api.example.com");
-
-    // Force HTTP/2
-    options.DefaultRequestVersion = HttpVersion.Version20;
-
-    // Or force HTTP/1.1
-    options.DefaultRequestVersion = HttpVersion.Version11;
-});
-```
-
-### Default Headers
-
-```csharp
-var client = TurboHttpClientFactory.Create(options =>
-{
-    options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestHeaders.Add("Authorization", "Bearer <token>");
-    options.DefaultRequestHeaders.Add("Accept", "application/json");
-});
-```
-
-### Per-Host Connection Limits
-
-```csharp
-var client = TurboHttpClientFactory.Create(options =>
-{
-    options.BaseAddress = new Uri("https://api.example.com");
-    options.MaxConnectionsPerHost = 6; // default: 8
-});
-```
-
-### Timeout and Cancellation
-
-TurboHttp respects `CancellationToken` on every async call:
-
-```csharp
-using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-
-var request = new HttpRequestMessage(HttpMethod.Get, "/data");
-var response = await client.SendAsync(request, cts.Token);
-```
+With HTTP/2, all requests flow over a single TCP connection as concurrent streams.
 
 ## What's Included
 
@@ -116,7 +69,12 @@ TurboHttp works out of the box — no middleware to wire up, no Polly policies t
 
 ## Next Steps
 
-**Feature guides** — learn how each feature works and how to configure it:
+**Setup & migration:**
+
+- [Installation & Setup](./installation) — DI registration, named clients, typed clients, fluent builder
+- [Migration from HttpClient](./migration) — side-by-side comparison, step-by-step migration
+
+**Feature guides:**
 
 - [Configuration](./configuration) — all options, DI registration, named clients
 - [Automatic Retries](./retries) — which methods are retried, `Retry-After` support, custom policies
@@ -127,3 +85,9 @@ TurboHttp works out of the box — no middleware to wire up, no Polly policies t
 - [Connection Pooling](./connection-pooling) — pool lifecycle, idle eviction, concurrency limits
 - [HTTP/2 & Multiplexing](./http2) — when to use HTTP/2, header compression, flow control
 - [Advanced Usage](./advanced) — channel API, custom retry/redirect/cookie/cache implementations
+- [Troubleshooting](./troubleshooting) — FAQ, common issues, debugging tips
+
+**Deep dive:**
+
+- [Architecture Overview](/architecture/) — four-layer design, data flow
+- [Internals](/internals/) — protocol implementation, memory management, HPACK, testing

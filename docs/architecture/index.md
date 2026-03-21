@@ -45,3 +45,11 @@ Every protocol decision in TurboHttp is driven by the relevant HTTP specificatio
 - [**Engines**](./engines) — Per-protocol engine internals
 - [**Pipeline Flow**](./pipeline) — Full pipeline with feedback loops
 - [**Scenarios**](./scenarios) — End-to-end request walkthroughs
+
+**Deep Dive (Internals):**
+
+- [**Protocol Layer**](/internals/protocol-layer) — Encoder, Decoder, HPACK, Business Logic
+- [**Memory Management**](/internals/memory-management) — Zero-Copy Datenpfad
+- [**HPACK**](/internals/hpack) — HTTP/2 Header Compression
+- [**Testing**](/internals/testing) — 1800+ Tests, RFC-Organisation
+- [**RFC Compliance**](/internals/rfc-compliance) — Compliance-Matrix

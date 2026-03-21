@@ -35,8 +35,10 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             var resSrc = b.Add(responseSource);
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
+            var resetSrc = b.Add(Source.Never<NotUsed>());
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
+            b.From(resetSrc).To(corr.InReset);
             b.From(corr.Out).To(s);
             b.From(corr.OutSignal).To(signalSink);
 
@@ -162,8 +164,10 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             var resSrc = b.Add(responseSource);
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
+            var resetSrc = b.Add(Source.Never<NotUsed>());
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
+            b.From(resetSrc).To(corr.InReset);
             b.From(corr.Out).To(s);
             b.From(corr.OutSignal).To(signalSink);
 
@@ -199,8 +203,10 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             var resSrc = b.Add(neverEndingResponses);
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
 
+            var resetSrc = b.Add(Source.Never<NotUsed>());
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
+            b.From(resetSrc).To(corr.InReset);
             b.From(corr.Out).To(s);
             b.From(corr.OutSignal).To(signalSink);
 
@@ -231,8 +237,10 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             var resSrc = b.Add(Source.Single(response));
             var responseSink = b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
 
+            var resetSrc = b.Add(Source.Never<NotUsed>());
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
+            b.From(resetSrc).To(corr.InReset);
             b.From(corr.Out).To(responseSink);
             b.From(corr.OutSignal).To(s);
 
@@ -270,8 +278,10 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             var resSrc = b.Add(Source.From(responses));
             var responseSink = b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
 
+            var resetSrc = b.Add(Source.Never<NotUsed>());
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
+            b.From(resetSrc).To(corr.InReset);
             b.From(corr.Out).To(responseSink);
             b.From(corr.OutSignal).To(s);
 

@@ -323,11 +323,11 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Change: `_isFirstRequestAfterReconnect` flag — wait for response before pipelining
 
 **Acceptance Criteria:**
-- [ ] First request after connect waits for response before pipelining
-- [ ] Second request may pipeline after first response received
-- [ ] Reconnect resets the pipeline guard
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] First request after connect waits for response before pipelining
+- [x] Second request may pipeline after first response received
+- [x] Reconnect resets the pipeline guard
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (new file: `src/TurboHttp.StreamTests/RFC9112/14_Http11PipelineReconnectTests.cs`):
 

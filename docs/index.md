@@ -13,8 +13,11 @@ hero:
       text: Get Started
       link: /guide/
     - theme: alt
-      text: Why TurboHttp?
-      link: /why/
+      text: Architecture
+      link: /architecture/
+    - theme: alt
+      text: Internals
+      link: /internals/
     - theme: alt
       text: GitHub
       link: https://github.com/st0o0/TurboHttp

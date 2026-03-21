@@ -29,6 +29,9 @@ public class Http10Engine : IHttpProtocolEngine
 
             b.From(decoder.Outlet).To(correlation.InResponse);
 
+            var resetSrc = b.Add(Source.Never<NotUsed>());
+            b.From(resetSrc).To(correlation.InReset);
+
             return new BidiShape<
                 HttpRequestMessage,
                 IOutputItem,

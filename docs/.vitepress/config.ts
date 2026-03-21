@@ -10,11 +10,20 @@ export default defineConfig({
     ],
     themeConfig: {
         logo: '/logo/logo_small.png',
+        search: {
+            provider: 'local',
+        },
 
         nav: [
             { text: 'Home', link: '/' },
             { text: 'Guide', link: '/guide/' },
-            { text: 'Architecture', link: '/architecture/' },
+            {
+                text: 'Architecture',
+                items: [
+                    { text: 'Overview', link: '/architecture/' },
+                    { text: 'Internals', link: '/internals/' },
+                ],
+            },
             { text: 'API', link: '/api/' },
             { text: 'Why TurboHttp?', link: '/why/' },
         ],
@@ -22,10 +31,17 @@ export default defineConfig({
         sidebar: {
             '/guide/': [
                 {
-                    text: 'Guide',
+                    text: 'Getting Started',
                     items: [
-                        { text: 'Getting Started', link: '/guide/' },
+                        { text: 'Quick Start', link: '/guide/' },
+                        { text: 'Installation & Setup', link: '/guide/installation' },
                         { text: 'Configuration', link: '/guide/configuration' },
+                        { text: 'Migration from HttpClient', link: '/guide/migration' },
+                    ],
+                },
+                {
+                    text: 'Features',
+                    items: [
                         { text: 'Automatic Retries', link: '/guide/retries' },
                         { text: 'HTTP Caching', link: '/guide/caching' },
                         { text: 'Cookie Management', link: '/guide/cookies' },
@@ -33,7 +49,13 @@ export default defineConfig({
                         { text: 'Content Encoding', link: '/guide/content-encoding' },
                         { text: 'Connection Pooling', link: '/guide/connection-pooling' },
                         { text: 'HTTP/2 & Multiplexing', link: '/guide/http2' },
+                    ],
+                },
+                {
+                    text: 'Advanced',
+                    items: [
                         { text: 'Advanced Usage', link: '/guide/advanced' },
+                        { text: 'Troubleshooting & FAQ', link: '/guide/troubleshooting' },
                     ],
                 },
             ],
@@ -42,11 +64,31 @@ export default defineConfig({
                     text: 'Architecture',
                     items: [
                         { text: 'Overview', link: '/architecture/' },
-                        { text: 'Middleware', link: '/architecture/middleware' },
-                        { text: 'Layers', link: '/architecture/layers' },
+                        { text: 'Middleware Design', link: '/architecture/middleware' },
+                        { text: 'Architectural Layers', link: '/architecture/layers' },
                         { text: 'Protocol Engines', link: '/architecture/engines' },
                         { text: 'Request Pipeline', link: '/architecture/pipeline' },
-                        { text: 'Request Scenarios', link: '/architecture/scenarios' },
+                        { text: 'End-to-End Scenarios', link: '/architecture/scenarios' },
+                    ],
+                },
+            ],
+            '/internals/': [
+                {
+                    text: 'Internals',
+                    items: [
+                        { text: 'Overview', link: '/internals/' },
+                        { text: 'Protocol Layer', link: '/internals/protocol-layer' },
+                        { text: 'Memory Management', link: '/internals/memory-management' },
+                        { text: 'HPACK Compression', link: '/internals/hpack' },
+                        { text: 'Testing Architecture', link: '/internals/testing' },
+                        { text: 'RFC Compliance', link: '/internals/rfc-compliance' },
+                    ],
+                },
+                {
+                    text: 'See Also',
+                    items: [
+                        { text: 'Architecture Overview', link: '/architecture/' },
+                        { text: 'Performance', link: '/performance/release-1.0' },
                     ],
                 },
             ],
@@ -63,6 +105,14 @@ export default defineConfig({
                     text: 'Why TurboHttp?',
                     items: [
                         { text: 'Comparison', link: '/why/' },
+                    ],
+                },
+            ],
+            '/performance/': [
+                {
+                    text: 'Performance',
+                    items: [
+                        { text: 'Release 1.0 Benchmarks', link: '/performance/release-1.0' },
                     ],
                 },
             ],
