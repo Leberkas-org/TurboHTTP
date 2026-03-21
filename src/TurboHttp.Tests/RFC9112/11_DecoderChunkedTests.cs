@@ -164,6 +164,36 @@ public sealed class Http11DecoderChunkedTests
         Assert.Equal("", result); // Empty body
     }
 
+    [Fact(DisplayName = "RFC9112-7.1.2-CH-020: Trailers not merged into response headers")]
+    public void Should_NotMergeTrailers_When_ChunkedWithTrailers()
+    {
+        const string chunkedBody = "5\r\nHello\r\n0\r\nX-Checksum: abc123\r\nX-Signature: def456\r\n\r\n";
+        var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
+
+        var decoded = _decoder.TryDecode(raw, out var responses);
+
+        Assert.True(decoded);
+        Assert.False(responses[0].Headers.Contains("X-Checksum"));
+        Assert.False(responses[0].Headers.Contains("X-Signature"));
+        Assert.False(responses[0].Content.Headers.Contains("X-Checksum"));
+        Assert.False(responses[0].Content.Headers.Contains("X-Signature"));
+    }
+
+    [Fact(DisplayName = "RFC9112-7.1.2-CH-021: Trailers available in TrailingHeaders")]
+    public void Should_HaveTrailers_When_ChunkedWithTrailers()
+    {
+        const string chunkedBody = "5\r\nHello\r\n0\r\nX-Checksum: abc123\r\nX-Signature: def456\r\n\r\n";
+        var raw = BuildRaw(200, "OK", chunkedBody, ("Transfer-Encoding", "chunked"));
+
+        var decoded = _decoder.TryDecode(raw, out var responses);
+
+        Assert.True(decoded);
+        Assert.True(responses[0].TrailingHeaders.TryGetValues("X-Checksum", out var checksumValues));
+        Assert.Equal("abc123", checksumValues.Single());
+        Assert.True(responses[0].TrailingHeaders.TryGetValues("X-Signature", out var signatureValues));
+        Assert.Equal("def456", signatureValues.Single());
+    }
+
     private static ReadOnlyMemory<byte> BuildRaw(int code, string reason, string rawBody,
         params (string Name, string Value)[] headers)
     {
