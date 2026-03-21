@@ -62,7 +62,7 @@ public static class TurboHttpClientBuilderExtensions
     /// Registration order is preserved (FIFO).
     /// </summary>
     public static ITurboHttpClientBuilder AddMiddleware<T>(this ITurboHttpClientBuilder builder)
-        where T : TurboMiddleware
+        where T : TurboHandler
     {
         builder.Services.AddTransient<T>();
         builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
@@ -103,25 +103,25 @@ public static class TurboHttpClientBuilderExtensions
         return builder;
     }
 
-    private sealed class DelegateRequestMiddleware : TurboMiddleware
+    private sealed class DelegateRequestMiddleware : TurboHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, ValueTask<HttpRequestMessage>> _transform;
 
         public DelegateRequestMiddleware(Func<HttpRequestMessage, CancellationToken, ValueTask<HttpRequestMessage>> transform)
             => _transform = transform;
 
-        public override ValueTask<HttpRequestMessage> ProcessRequestAsync(HttpRequestMessage request, CancellationToken ct)
-            => _transform(request, ct);
+        public override HttpRequestMessage ProcessRequest(HttpRequestMessage request)
+            => _transform(request, CancellationToken.None).Result;
     }
 
-    private sealed class DelegateResponseMiddleware : TurboMiddleware
+    private sealed class DelegateResponseMiddleware : TurboHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage, CancellationToken, ValueTask<HttpResponseMessage>> _transform;
 
         public DelegateResponseMiddleware(Func<HttpRequestMessage, HttpResponseMessage, CancellationToken, ValueTask<HttpResponseMessage>> transform)
             => _transform = transform;
 
-        public override ValueTask<HttpResponseMessage> ProcessResponseAsync(HttpRequestMessage original, HttpResponseMessage response, CancellationToken ct)
-            => _transform(original, response, ct);
+        public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
+            => _transform(original, response, CancellationToken.None).Result;
     }
 }

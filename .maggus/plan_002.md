@@ -40,12 +40,12 @@ Renaming to `TurboHandler` aligns with .NET's `HttpMessageHandler` / `Delegating
 **Description:** As a developer, I want the user-facing handler base class renamed and converted to sync so that the API is simpler and follows HttpClient conventions.
 
 **Acceptance Criteria:**
-- [ ] `src/TurboHttp/Middleware/TurboMiddleware.cs`: class renamed to `TurboHandler`
-- [ ] `ProcessRequestAsync(HttpRequestMessage, CancellationToken)` → `ProcessRequest(HttpRequestMessage)` returning `HttpRequestMessage`
-- [ ] `ProcessResponseAsync(HttpRequestMessage, HttpResponseMessage, CancellationToken)` → `ProcessResponse(HttpRequestMessage, HttpResponseMessage)` returning `HttpResponseMessage`
-- [ ] Default implementations return the input unchanged (same semantics as before)
-- [ ] Remove `using System.Threading` and `using System.Threading.Tasks`
-- [ ] Typecheck passes (`dotnet build`)
+- [x] `src/TurboHttp/Middleware/TurboMiddleware.cs`: class renamed to `TurboHandler`
+- [x] `ProcessRequestAsync(HttpRequestMessage, CancellationToken)` → `ProcessRequest(HttpRequestMessage)` returning `HttpRequestMessage`
+- [x] `ProcessResponseAsync(HttpRequestMessage, HttpResponseMessage, CancellationToken)` → `ProcessResponse(HttpRequestMessage, HttpResponseMessage)` returning `HttpResponseMessage`
+- [x] Default implementations return the input unchanged (same semantics as before)
+- [x] Remove `using System.Threading` and `using System.Threading.Tasks`
+- [x] Typecheck passes (`dotnet build`)
 
 ### TASK-002: Simplify MiddlewareBidiStage → HandlerBidiStage (Sync)
 **Description:** As a developer, I want the BidiStage simplified to call sync handler methods directly, removing all async callback machinery.

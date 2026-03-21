@@ -1,14 +1,12 @@
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace TurboHttp;
 
-public abstract class TurboMiddleware
+public abstract class TurboHandler
 {
-    public virtual ValueTask<HttpRequestMessage> ProcessRequestAsync(HttpRequestMessage request, CancellationToken ct)
-        => ValueTask.FromResult(request);
+    public virtual HttpRequestMessage ProcessRequest(HttpRequestMessage request)
+        => request;
 
-    public virtual ValueTask<HttpResponseMessage> ProcessResponseAsync(HttpRequestMessage original, HttpResponseMessage response, CancellationToken ct)
-        => ValueTask.FromResult(response);
+    public virtual HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
+        => response;
 }

@@ -9,15 +9,15 @@ using Akka.Streams.Stage;
 namespace TurboHttp.Streams.Stages.Features;
 
 /// <summary>
-/// Bidirectional stage that wraps a <see cref="TurboMiddleware"/> instance,
-/// calling <see cref="TurboMiddleware.ProcessRequestAsync"/> on outbound requests
-/// and <see cref="TurboMiddleware.ProcessResponseAsync"/> on inbound responses.
+/// Bidirectional stage that wraps a <see cref="TurboHandler"/> instance,
+/// calling <see cref="TurboHandler.ProcessRequest"/> on outbound requests
+/// and <see cref="TurboHandler.ProcessResponse"/> on inbound responses.
 /// Composes via <c>BidiFlow.Atop</c> alongside built-in feature stages.
 /// </summary>
 internal sealed class MiddlewareBidiStage
     : GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
-    private readonly TurboMiddleware _middleware;
+    private readonly TurboHandler _middleware;
 
     private readonly Inlet<HttpRequestMessage> _inRequest;
     private readonly Outlet<HttpRequestMessage> _outRequest;
@@ -26,7 +26,7 @@ internal sealed class MiddlewareBidiStage
 
     public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
-    public MiddlewareBidiStage(TurboMiddleware middleware, int index)
+    public MiddlewareBidiStage(TurboHandler middleware, int index)
     {
         _middleware = middleware;
 
@@ -69,19 +69,8 @@ internal sealed class MiddlewareBidiStage
                 onPush: () =>
                 {
                     var request = Grab(stage._inRequest);
-                    var task = stage._middleware.ProcessRequestAsync(request, CancellationToken.None);
-
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        Push(stage._outRequest, task.Result);
-                        return;
-                    }
-
-                    _requestAsyncInFlight = true;
-                    var callback = _onRequestProcessed!;
-                    task.AsTask().ContinueWith(
-                        t => callback(t.Result),
-                        TaskContinuationOptions.ExecuteSynchronously);
+                    var result = stage._middleware.ProcessRequest(request);
+                    Push(stage._outRequest, result);
                 },
                 onUpstreamFinish: () =>
                 {
@@ -106,19 +95,8 @@ internal sealed class MiddlewareBidiStage
                 {
                     var response = Grab(stage._inResponse);
                     var original = response.RequestMessage!;
-                    var task = stage._middleware.ProcessResponseAsync(original, response, CancellationToken.None);
-
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        Push(stage._outResponse, task.Result);
-                        return;
-                    }
-
-                    _responseAsyncInFlight = true;
-                    var callback = _onResponseProcessed!;
-                    task.AsTask().ContinueWith(
-                        t => callback(t.Result),
-                        TaskContinuationOptions.ExecuteSynchronously);
+                    var result = stage._middleware.ProcessResponse(original, response);
+                    Push(stage._outResponse, result);
                 },
                 onUpstreamFinish: () =>
                 {

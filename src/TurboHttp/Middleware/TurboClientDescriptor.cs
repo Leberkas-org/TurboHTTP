@@ -20,6 +20,6 @@ internal sealed class TurboClientDescriptor
     /// Type-based registrations (AddMiddleware&lt;T&gt;) add to both MiddlewareTypes and this list.
     /// Delegate-based registrations (UseRequest/UseResponse) add only to this list.
     /// </summary>
-    public List<Func<IServiceProvider, TurboMiddleware>> MiddlewareFactories { get; } = [];
+    public List<Func<IServiceProvider, TurboHandler>> MiddlewareFactories { get; } = [];
     public bool AutomaticDecompression { get; set; } = true;
 }

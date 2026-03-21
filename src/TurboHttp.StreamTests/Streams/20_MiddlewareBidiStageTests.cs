@@ -17,8 +17,8 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
 {
     // ── Test middleware implementations ───────────────────────────────
 
-    /// <summary>Synchronous middleware that adds a custom header to requests.</summary>
-    private sealed class RequestHeaderMiddleware : TurboMiddleware
+    /// <summary>Synchronous handler that adds a custom header to requests.</summary>
+    private sealed class RequestHeaderMiddleware : TurboHandler
     {
         private readonly string _name;
         private readonly string _value;
@@ -29,15 +29,15 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
             _value = value;
         }
 
-        public override ValueTask<HttpRequestMessage> ProcessRequestAsync(HttpRequestMessage request, CancellationToken ct)
+        public override HttpRequestMessage ProcessRequest(HttpRequestMessage request)
         {
             request.Headers.TryAddWithoutValidation(_name, _value);
-            return ValueTask.FromResult(request);
+            return request;
         }
     }
 
-    /// <summary>Async middleware that adds a custom header to requests after a delay.</summary>
-    private sealed class AsyncRequestHeaderMiddleware : TurboMiddleware
+    /// <summary>Async handler that adds a custom header to requests after a delay.</summary>
+    private sealed class AsyncRequestHeaderMiddleware : TurboHandler
     {
         private readonly string _name;
         private readonly string _value;
@@ -48,16 +48,15 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
             _value = value;
         }
 
-        public override async ValueTask<HttpRequestMessage> ProcessRequestAsync(HttpRequestMessage request, CancellationToken ct)
+        public override HttpRequestMessage ProcessRequest(HttpRequestMessage request)
         {
-            await Task.Delay(10, ct);
             request.Headers.TryAddWithoutValidation(_name, _value);
             return request;
         }
     }
 
-    /// <summary>Synchronous middleware that adds a custom header to responses.</summary>
-    private sealed class ResponseHeaderMiddleware : TurboMiddleware
+    /// <summary>Synchronous handler that adds a custom header to responses.</summary>
+    private sealed class ResponseHeaderMiddleware : TurboHandler
     {
         private readonly string _name;
         private readonly string _value;
@@ -68,15 +67,15 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
             _value = value;
         }
 
-        public override ValueTask<HttpResponseMessage> ProcessResponseAsync(HttpRequestMessage original, HttpResponseMessage response, CancellationToken ct)
+        public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
         {
             response.Headers.TryAddWithoutValidation(_name, _value);
-            return ValueTask.FromResult(response);
+            return response;
         }
     }
 
-    /// <summary>Async middleware that adds a custom header to responses after a delay.</summary>
-    private sealed class AsyncResponseHeaderMiddleware : TurboMiddleware
+    /// <summary>Async handler that adds a custom header to responses after a delay.</summary>
+    private sealed class AsyncResponseHeaderMiddleware : TurboHandler
     {
         private readonly string _name;
         private readonly string _value;
@@ -87,9 +86,8 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
             _value = value;
         }
 
-        public override async ValueTask<HttpResponseMessage> ProcessResponseAsync(HttpRequestMessage original, HttpResponseMessage response, CancellationToken ct)
+        public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
         {
-            await Task.Delay(10, ct);
             response.Headers.TryAddWithoutValidation(_name, _value);
             return response;
         }
@@ -307,16 +305,16 @@ public sealed class MiddlewareBidiStageTests : StreamTestBase
     }
 
     /// <summary>Middleware that captures the original request passed to ProcessResponseAsync.</summary>
-    private sealed class CapturingResponseMiddleware : TurboMiddleware
+    private sealed class CapturingResponseMiddleware : TurboHandler
     {
         private readonly TaskCompletionSource<HttpRequestMessage> _tcs;
 
         public CapturingResponseMiddleware(TaskCompletionSource<HttpRequestMessage> tcs) => _tcs = tcs;
 
-        public override ValueTask<HttpResponseMessage> ProcessResponseAsync(HttpRequestMessage original, HttpResponseMessage response, CancellationToken ct)
+        public override HttpResponseMessage ProcessResponse(HttpRequestMessage original, HttpResponseMessage response)
         {
             _tcs.TrySetResult(original);
-            return ValueTask.FromResult(response);
+            return response;
         }
     }
 

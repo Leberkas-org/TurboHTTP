@@ -13,11 +13,11 @@ public sealed class TurboHttpClientBuilderMiddlewareTests
     // Test doubles
     // ---------------------------------------------------------------------------
 
-    private sealed class TestMiddleware : TurboMiddleware { }
+    private sealed class TestMiddleware : TurboHandler { }
 
-    private sealed class AlphaMiddleware : TurboMiddleware { }
+    private sealed class AlphaMiddleware : TurboHandler { }
 
-    private sealed class BetaMiddleware : TurboMiddleware { }
+    private sealed class BetaMiddleware : TurboHandler { }
 
     // ---------------------------------------------------------------------------
     // Helpers

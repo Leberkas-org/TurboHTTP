@@ -11,7 +11,7 @@ internal sealed record PipelineDescriptor(
     CookieJar? CookieJar,
     HttpCacheStore? CacheStore,
     CachePolicy? CachePolicy,
-    IReadOnlyList<TurboMiddleware> Middlewares,
+    IReadOnlyList<TurboHandler> Middlewares,
     bool AutomaticDecompression = true)
 {
     public static readonly PipelineDescriptor Empty = new(
