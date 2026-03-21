@@ -118,12 +118,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - Methods: `FormatAuthority(Uri)`, `StripUserInfo(Uri)`, `FormatAbsoluteWithoutUserInfo(Uri)`
 
 **Acceptance Criteria:**
-- [ ] `UriSanitizer.FormatAuthority(Uri)` returns host without userinfo
-- [ ] `FormatAuthority` includes non-default port
-- [ ] `FormatAuthority` brackets IPv6 addresses
-- [ ] `StripUserInfo` preserves path, query, and fragment
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `UriSanitizer.FormatAuthority(Uri)` returns host without userinfo
+- [x] `FormatAuthority` includes non-default port
+- [x] `FormatAuthority` brackets IPv6 addresses
+- [x] `StripUserInfo` preserves path, query, and fragment
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9110/03_UserinfoStrippingTests.cs`):
 

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using TurboHttp.Protocol.RFC1945;
 using TurboHttp.Protocol.RFC7541;
+using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Protocol.RFC9113;
 
@@ -131,6 +132,101 @@ public sealed class UserinfoStrippingTests
         var result = EncodeHttp10Absolute(request);
 
         Assert.Contains("GET http://example.com/resource HTTP/1.0\r\n", result);
+    }
+
+    // ── UriSanitizer Direct Tests ─────────────────────────────────────────────
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-010: FormatAuthority excludes userinfo")]
+    public void FormatAuthority_Should_ExcludeUserinfo()
+    {
+        var uri = new Uri("http://user:pass@example.com/path");
+
+        var authority = UriSanitizer.FormatAuthority(uri);
+
+        Assert.Equal("example.com", authority);
+        Assert.DoesNotContain("user", authority);
+        Assert.DoesNotContain("@", authority);
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-011: FormatAuthority includes non-default port")]
+    public void FormatAuthority_Should_IncludePort()
+    {
+        var uri = new Uri("http://user:pass@example.com:9090/path");
+
+        var authority = UriSanitizer.FormatAuthority(uri);
+
+        Assert.Equal("example.com:9090", authority);
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-012: FormatAuthority omits default port")]
+    public void FormatAuthority_Should_OmitDefaultPort()
+    {
+        var uriHttp = new Uri("http://example.com:80/path");
+        var uriHttps = new Uri("https://example.com:443/path");
+
+        Assert.Equal("example.com", UriSanitizer.FormatAuthority(uriHttp));
+        Assert.Equal("example.com", UriSanitizer.FormatAuthority(uriHttps));
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-013: FormatAuthority brackets IPv6")]
+    public void FormatAuthority_Should_BracketIPv6()
+    {
+        var uri = new Uri("http://[::1]:8080/path");
+
+        var authority = UriSanitizer.FormatAuthority(uri);
+
+        Assert.Equal("[::1]:8080", authority);
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-014: FormatAuthority brackets IPv6 default port")]
+    public void FormatAuthority_Should_BracketIPv6_DefaultPort()
+    {
+        var uri = new Uri("http://[::1]/path");
+
+        var authority = UriSanitizer.FormatAuthority(uri);
+
+        Assert.Equal("[::1]", authority);
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-015: StripUserInfo preserves path, query, and fragment")]
+    public void StripUserInfo_Should_PreservePath()
+    {
+        var uri = new Uri("http://user:pass@example.com:8080/path/to/resource?q=1&r=2#section");
+
+        var result = UriSanitizer.StripUserInfo(uri);
+
+        Assert.Contains("http://example.com:8080/path/to/resource", result);
+        Assert.Contains("q=1", result);
+        Assert.Contains("r=2", result);
+        Assert.Contains("#section", result);
+        Assert.DoesNotContain("user", result);
+        Assert.DoesNotContain("pass", result);
+        Assert.DoesNotContain("@", result);
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-016: StripUserInfo no-op when no userinfo")]
+    public void StripUserInfo_Should_NotChange_When_NoUserinfo()
+    {
+        var uri = new Uri("https://example.com/path?q=1#frag");
+
+        var result = UriSanitizer.StripUserInfo(uri);
+
+        Assert.Contains("https://example.com/path", result);
+        Assert.Contains("q=1", result);
+        Assert.Contains("#frag", result);
+    }
+
+    [Fact(DisplayName = "RFC9110-4.2.4-UI-017: FormatAbsoluteWithoutUserInfo strips userinfo and fragment")]
+    public void FormatAbsoluteWithoutUserInfo_Should_StripUserinfoAndFragment()
+    {
+        var uri = new Uri("http://user:pass@example.com:8080/path?q=1#frag");
+
+        var result = UriSanitizer.FormatAbsoluteWithoutUserInfo(uri);
+
+        Assert.Contains("http://example.com:8080/path", result);
+        Assert.Contains("q=1", result);
+        Assert.DoesNotContain("user", result);
+        Assert.DoesNotContain("#frag", result);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
