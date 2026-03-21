@@ -27,12 +27,20 @@ public sealed class ClientManager : ReceiveActor
 
     private static void Handle(CreateRunner msg)
     {
+#pragma warning disable CA1416 // QuicClientProvider is guarded by QuicOptions at runtime
         var provider = msg.StreamProvider ?? msg.Options switch
         {
+            QuicOptions quic => new QuicClientProvider(quic),
             TlsOptions tls => new TlsClientProvider(tls),
             _ => new TcpClientProvider(msg.Options)
         };
-        var prefix = msg.Options is TlsOptions ? "TLS" : "TCP";
+#pragma warning restore CA1416
+        var prefix = msg.Options switch
+        {
+            QuicOptions => "QUIC",
+            TlsOptions => "TLS",
+            _ => "TCP"
+        };
         var host = msg.Options.Host;
         var port = msg.Options.Port;
         var name = $"tcp-runner-{prefix}-{host.Replace(".", "-")}-{port}-{Guid.NewGuid()}";

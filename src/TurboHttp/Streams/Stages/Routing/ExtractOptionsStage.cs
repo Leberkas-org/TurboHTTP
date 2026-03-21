@@ -41,7 +41,7 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequestMe
 
                     if (!_initialSent)
                     {
-                        var options = TcpOptionsFactory.Build(request.RequestUri!, stage._clientOptions);
+                        var options = TcpOptionsFactory.Build(request.RequestUri!, stage._clientOptions, request.Version);
                         _pending = request;
                         _initialSent = true;
                         Push(stage._outSignal, new ConnectItem(options) { Key = RequestEndpoint.FromRequest(request) });

@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Sockets;
 using TurboHttp.Client;
 
@@ -12,7 +13,14 @@ internal static class TcpOptionsFactory
                || string.Equals(value.Scheme, "wss", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static TcpOptions Build(Uri requestUri, TurboClientOptions clientOptions)
+    private static bool IsHttp3(Version? requestVersion)
+    {
+        return requestVersion is not null
+               && requestVersion.Major == 3
+               && requestVersion.Minor == 0;
+    }
+
+    internal static TcpOptions Build(Uri requestUri, TurboClientOptions clientOptions, Version? requestVersion = null)
     {
         var host = requestUri.Host;
         var isTls = requestUri.IsTls();
@@ -27,6 +35,21 @@ internal static class TcpOptionsFactory
         }
 
         var af = AddressFamilyOf(requestUri.HostNameType);
+
+        if (IsHttp3(requestVersion))
+        {
+            return new QuicOptions
+            {
+                Host = host,
+                Port = port,
+                AddressFamily = af,
+                ServerCertificateValidationCallback = clientOptions.EffectiveServerCertificateValidationCallback,
+                ConnectTimeout = clientOptions.ConnectTimeout,
+                ReconnectInterval = clientOptions.ReconnectInterval,
+                MaxReconnectAttempts = clientOptions.MaxReconnectAttempts,
+                MaxFrameSize = clientOptions.MaxFrameSize,
+            };
+        }
 
         if (isTls)
         {
