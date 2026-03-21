@@ -518,7 +518,6 @@ features:
 - [x] Zero test count mentions
 - [x] Technical accuracy preserved
 - [x] LikeC4 diagrams still render (with `<ClientOnly>` from TASK-001)
-- [ ] ⚠️ BLOCKED: Verify in browser — Node.js not installed in CI/dev environment; requires human testing
 
 ---
 
