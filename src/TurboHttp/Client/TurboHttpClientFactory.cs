@@ -44,6 +44,7 @@ internal sealed class TurboHttpClientFactory(
             RetryPolicy: descriptor.RetryPolicy,
             CookieJar: cookieJar,
             CacheStore: cacheStore,
+            CachePolicy: descriptor.CachePolicy,
             Middlewares: middlewares);
 
         return new TurboHttpClient(clientOptions, system, pipeline);

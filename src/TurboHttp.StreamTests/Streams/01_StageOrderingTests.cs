@@ -531,6 +531,7 @@ public sealed class StageOrderingTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: new CookieJar(),
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
         var engine = new Engine();
         var flow = engine.CreateFlow(
@@ -635,6 +636,7 @@ public sealed class StageOrderingTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
         var engine = new Engine();
         var flow = engine.CreateFlow(

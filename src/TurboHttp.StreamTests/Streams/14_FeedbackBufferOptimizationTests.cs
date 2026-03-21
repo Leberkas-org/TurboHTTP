@@ -66,6 +66,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();
@@ -95,6 +96,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();
@@ -128,6 +130,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             RetryPolicy: new RetryPolicy { MaxRetries = 3, RespectRetryAfter = false },
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();
@@ -157,6 +160,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             RetryPolicy: new RetryPolicy { MaxRetries = 3, RespectRetryAfter = false },
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();
@@ -186,6 +190,7 @@ public sealed class FeedbackBufferOptimizationTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();

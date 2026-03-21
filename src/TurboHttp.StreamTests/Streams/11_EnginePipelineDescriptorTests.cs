@@ -140,6 +140,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: cookieJar,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();
@@ -180,6 +181,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
             RetryPolicy: new RetryPolicy(),
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();
@@ -213,6 +215,7 @@ public sealed class EnginePipelineDescriptorTests : EngineTestBase
             RetryPolicy: null,
             CookieJar: null,
             CacheStore: null,
+            CachePolicy: null,
             Middlewares: []);
 
         var engine = new Engine();

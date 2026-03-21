@@ -406,27 +406,27 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Acceptance Criteria:**
 
 **Access modifiers:**
-- [ ] `Engine` changed to `internal sealed class` — it is never part of the public API
-- [ ] `BuildConnectionFlowPublic` removed — tests that call it are refactored to use the transport factory injection overload of `Engine.CreateFlow` (the `internal` overload that accepts `http10Factory`, `http11Factory`, etc.)
+- [x] `Engine` changed to `internal sealed class` — it is never part of the public API
+- [x] `BuildConnectionFlowPublic` removed — tests that call it are refactored to use the transport factory injection overload of `Engine.CreateFlow` (the `internal` overload that accepts `http10Factory`, `http11Factory`, etc.)
 
 **Responsibility split — three new `internal static` builder classes:**
-- [ ] `PreProcessingGraphBuilder.Build(PipelineDescriptor, Func<TurboRequestOptions>)` — builds island 1: `RequestEnricherStage` → user request middleware → redirect merge → `CookieInjectionStage` → retry merge → `CacheLookupStage`
-- [ ] `ProtocolCoreGraphBuilder.Build(IActorRef, TurboClientOptions, transport factories...)` — builds island 2: `Partition` → per-version `BuildProtocolFlow` → `Merge` → `DecompressionStage`
-- [ ] `PostProcessingGraphBuilder.Build(PipelineDescriptor)` — builds island 3: `CookieStorageStage` → `CacheStorageStage` → `RetryStage` → cache hit merge → `RedirectStage` → user response middleware
+- [x] `PreProcessingGraphBuilder.Build(PipelineDescriptor, Func<TurboRequestOptions>)` — builds island 1: `RequestEnricherStage` → user request middleware → redirect merge → `CookieInjectionStage` → retry merge → `CacheLookupStage`
+- [x] `ProtocolCoreGraphBuilder.Build(IActorRef, TurboClientOptions, transport factories...)` — builds island 2: `Partition` → per-version `BuildProtocolFlow` → `Merge` → `DecompressionStage`
+- [x] `PostProcessingGraphBuilder.Build(PipelineDescriptor)` — builds island 3: `CookieStorageStage` → `CacheStorageStage` → `RetryStage` → cache hit merge → `RedirectStage` → user response middleware
 
 **Shape extraction:**
-- [ ] `PostProcessShape` moved to its own file `src/TurboHttp/Streams/PostProcessShape.cs`
+- [x] `PostProcessShape` moved to its own file `src/TurboHttp/Streams/PostProcessShape.cs`
 
 **`Engine` class after refactor:**
-- [ ] `Engine` is a thin orchestrator only — calls the three builders and wires their outputs together (async boundaries, feedback loops)
-- [ ] Public API: `CreateFlow(IActorRef, TurboClientOptions, Func<TurboRequestOptions>)` remains for backward-compat (builds `PipelineDescriptor` internally from options)
-- [ ] Internal API: `CreateFlow(IActorRef, TurboClientOptions, Func<TurboRequestOptions>, PipelineDescriptor)` — used by `TurboClientStreamManager`
-- [ ] Test API: `CreateFlow(http10Factory, http11Factory, http20Factory, http30Factory, TurboClientOptions?)` — existing internal overload retained
+- [x] `Engine` is a thin orchestrator only — calls the three builders and wires their outputs together (async boundaries, feedback loops)
+- [x] Public API: `CreateFlow(IActorRef, TurboClientOptions, Func<TurboRequestOptions>)` remains for backward-compat (builds `PipelineDescriptor` internally from options)
+- [x] Internal API: `CreateFlow(IActorRef, TurboClientOptions, Func<TurboRequestOptions>, PipelineDescriptor)` — used by `TurboClientStreamManager`
+- [x] Test API: `CreateFlow(http10Factory, http11Factory, http20Factory, http30Factory, TurboClientOptions?)` — existing internal overload retained
 
 **Tests:**
-- [ ] All stream tests that previously called `Engine.BuildConnectionFlowPublic` are updated to use the transport factory injection overload instead
-- [ ] All existing stream tests pass without modification to their assertions
-- [ ] Build green, no new warnings introduced
+- [x] All stream tests that previously called `Engine.BuildConnectionFlowPublic` are updated to use the transport factory injection overload instead
+- [x] All existing stream tests pass without modification to their assertions
+- [x] Build green, no new warnings introduced
 
 ---
 

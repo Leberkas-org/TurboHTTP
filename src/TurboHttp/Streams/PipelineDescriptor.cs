@@ -11,6 +11,7 @@ internal sealed record PipelineDescriptor(
     RetryPolicy? RetryPolicy,
     CookieJar? CookieJar,
     HttpCacheStore? CacheStore,
+    CachePolicy? CachePolicy,
     IReadOnlyList<TurboMiddleware> Middlewares)
 {
     public static readonly PipelineDescriptor Empty = new(
@@ -18,5 +19,6 @@ internal sealed record PipelineDescriptor(
         RetryPolicy: null,
         CookieJar: null,
         CacheStore: null,
+        CachePolicy: null,
         Middlewares: []);
 }
