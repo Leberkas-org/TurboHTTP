@@ -1,5 +1,6 @@
 using System.Text;
 using TurboHttp.Protocol.RFC1945;
+using TurboHttp.Streams.Stages.Encoding;
 
 namespace TurboHttp.Tests.RFC1945;
 

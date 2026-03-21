@@ -6,7 +6,7 @@ using Akka.Streams.Stage;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Encoding;
 
 public sealed class Request2FrameStage : GraphStage<FlowShape<(HttpRequestMessage, int), Http2Frame>>
 {

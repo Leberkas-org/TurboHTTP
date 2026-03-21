@@ -1,5 +1,7 @@
 using System.Net;
 using TurboHttp.Streams;
+using TurboHttp.Streams.Stages;
+using TurboHttp.Streams.Stages.Encoding;
 
 namespace TurboHttp.StreamTests.RFC9112;
 

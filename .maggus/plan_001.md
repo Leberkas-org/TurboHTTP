@@ -191,12 +191,12 @@ Streams/Stages/Request2FrameStage.cs   → Streams/Stages/Encoding/
 New namespace: `TurboHttp.Streams.Stages.Encoding`
 
 **Acceptance Criteria:**
-- [ ] Folder `TurboHttp/Streams/Stages/Encoding/` created with the 5 files
-- [ ] All 5 files declare `namespace TurboHttp.Streams.Stages.Encoding`
-- [ ] All engines (`Http10Engine`, `Http11Engine`, `Http20Engine`) updated
-- [ ] All referencing test files updated
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
-- [ ] `dotnet test src/TurboHttp.sln` → all tests pass
+- [x] Folder `TurboHttp/Streams/Stages/Encoding/` created with the 5 files
+- [x] All 5 files declare `namespace TurboHttp.Streams.Stages.Encoding`
+- [x] All engines (`Http10Engine`, `Http11Engine`, `Http20Engine`) updated
+- [x] All referencing test files updated
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `dotnet test src/TurboHttp.sln` → all tests pass
 
 ---
 

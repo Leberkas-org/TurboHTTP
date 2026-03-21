@@ -349,3 +349,5 @@ coverage-results/
 .maggus/locks/
 .maggus-work/
 .maggus/usage.csv
+
+.maggus/usage_v2.csv

@@ -9,7 +9,7 @@ using TurboHttp.Internal;
 using TurboHttp.Transport;
 using TurboHttp.Protocol.RFC9113;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHttp.Streams.Stages.Encoding;
 
 // RFC 9113 §3.4 — prepend connection preface to the first outbound bytes
 public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOutputItem>>
