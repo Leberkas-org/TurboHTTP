@@ -1,7 +1,7 @@
 using System.Net;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 
 namespace TurboHttp.StreamTests.IO;
 

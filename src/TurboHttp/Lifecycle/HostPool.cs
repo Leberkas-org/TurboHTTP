@@ -5,7 +5,7 @@ using Akka.Event;
 using Servus.Akka;
 using TurboHttp.Client;
 using TurboHttp.Internal;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp.Lifecycle;

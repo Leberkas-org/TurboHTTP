@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Threading.Channels;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 
 namespace TurboHttp.StreamTests.IO;
 

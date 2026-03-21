@@ -2,11 +2,16 @@
 
 ## Introduction
 
-The TurboHttp project has grown to 98 production files across 18 namespaces.
+The TurboHttp project has grown to ~100 production files across 18 namespaces.
 Some namespace names are misleading (`Middleware`, `Lifecycle`), others are too thin
 (`IO.Stages` with 1 file, `Hosting` with 1 file), and `Streams.Stages` is completely
-flat with 22 files. The goal is a clean, consistent namespace hierarchy that reflects
+flat with 23 files. The goal is a clean, consistent namespace hierarchy that reflects
 the actual purpose of each component — without changing the public `TurboHttp.Client.*` API.
+
+**Status (2026-03-21):** No tasks executed yet. All old namespaces remain unchanged.
+File inventory updated to reflect BidiStage refactoring (MiddlewareBidiStage replaced
+MiddlewareRequestStage/ResponseStage; cache/cookie/decompression/redirect/retry stages
+consolidated into `*BidiStage` pattern).
 
 **Decisions:**
 - `TurboHttp.Client.*` remains untouched (breaking changes excluded)
@@ -63,17 +68,14 @@ TurboHttp.Streams.Stages            split (see below)
 | HostKeyGroupByExtensions.cs | Routing (from Internal.Stages) |
 | HostKeyMergeBack.cs | Routing (from Internal.Stages) |
 | MergeSubstreamsStage.cs | Routing (from Internal.Stages) |
-| CacheLookupStage.cs | Features |
-| CacheStorageStage.cs | Features |
+| CacheBidiStage.cs | Features |
 | ConnectionReuseStage.cs | Features |
-| CookieInjectionStage.cs | Features |
-| CookieStorageStage.cs | Features |
-| DecompressionStage.cs | Features |
+| CookieBidiStage.cs | Features |
+| DecompressionBidiStage.cs | Features |
 | Http20ConnectionStage.cs | Features |
-| MiddlewareRequestStage.cs | Features |
-| MiddlewareResponseStage.cs | Features |
-| RedirectStage.cs | Features |
-| RetryStage.cs | Features |
+| MiddlewareBidiStage.cs | Features |
+| RedirectBidiStage.cs | Features |
+| RetryBidiStage.cs | Features |
 | TurboAttributes.cs | Streams.Stages (root, stays) |
 
 ---
@@ -108,12 +110,14 @@ IO/TcpOptionsFactory.cs        → namespace TurboHttp.Transport
 IO/Stages/ConnectionStage.cs   → namespace TurboHttp.Transport (move file into Transport/)
 ```
 
+**Reference counts:** ~16 files contain `using TurboHttp.IO;`, additional files reference `TurboHttp.IO.Stages;`
+
 **Acceptance Criteria:**
-- [ ] Folder `TurboHttp/IO/Stages/` emptied and deleted
-- [ ] All 7 files declare `namespace TurboHttp.Transport`
-- [ ] All `using TurboHttp.IO;` and `using TurboHttp.IO.Stages;` replaced across the solution
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
-- [ ] `dotnet test src/TurboHttp.sln` → all tests pass
+- [x] Folder `TurboHttp/IO/Stages/` emptied and deleted
+- [x] All 7 files declare `namespace TurboHttp.Transport`
+- [x] All `using TurboHttp.IO;` and `using TurboHttp.IO.Stages;` replaced across the solution
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `dotnet test src/TurboHttp.sln` → all tests pass
 
 ---
 
@@ -130,6 +134,8 @@ Lifecycle/ConnectionState.cs   → namespace TurboHttp.Pooling
 Lifecycle/HostPool.cs          → namespace TurboHttp.Pooling
 Lifecycle/PoolRouter.cs        → namespace TurboHttp.Pooling
 ```
+
+**Reference counts:** ~11 files contain `using TurboHttp.Lifecycle;`
 
 **Acceptance Criteria:**
 - [ ] Folder `TurboHttp/Lifecycle/` renamed to `TurboHttp/Pooling/`
@@ -241,6 +247,8 @@ From Internal/Stages/ (namespace migration!):
 ```
 New namespace: `TurboHttp.Streams.Stages.Routing`
 
+**Reference counts:** ~3 files contain `using TurboHttp.Internal.Stages;`
+
 **Acceptance Criteria:**
 - [ ] Folder `TurboHttp/Streams/Stages/Routing/` created with all 9 files
 - [ ] All 9 files declare `namespace TurboHttp.Streams.Stages.Routing`
@@ -261,23 +269,20 @@ grouped in `TurboHttp.Streams.Stages.Features`.
 
 **Affected files:**
 ```
-Streams/Stages/CacheLookupStage.cs        → Streams/Stages/Features/
-Streams/Stages/CacheStorageStage.cs       → Streams/Stages/Features/
-Streams/Stages/ConnectionReuseStage.cs    → Streams/Stages/Features/
-Streams/Stages/CookieInjectionStage.cs    → Streams/Stages/Features/
-Streams/Stages/CookieStorageStage.cs      → Streams/Stages/Features/
-Streams/Stages/DecompressionStage.cs      → Streams/Stages/Features/
-Streams/Stages/Http20ConnectionStage.cs   → Streams/Stages/Features/
-Streams/Stages/MiddlewareRequestStage.cs  → Streams/Stages/Features/
-Streams/Stages/MiddlewareResponseStage.cs → Streams/Stages/Features/
-Streams/Stages/RedirectStage.cs           → Streams/Stages/Features/
-Streams/Stages/RetryStage.cs              → Streams/Stages/Features/
+Streams/Stages/CacheBidiStage.cs            → Streams/Stages/Features/
+Streams/Stages/ConnectionReuseStage.cs      → Streams/Stages/Features/
+Streams/Stages/CookieBidiStage.cs           → Streams/Stages/Features/
+Streams/Stages/DecompressionBidiStage.cs    → Streams/Stages/Features/
+Streams/Stages/Http20ConnectionStage.cs     → Streams/Stages/Features/
+Streams/Stages/MiddlewareBidiStage.cs       → Streams/Stages/Features/
+Streams/Stages/RedirectBidiStage.cs         → Streams/Stages/Features/
+Streams/Stages/RetryBidiStage.cs            → Streams/Stages/Features/
 ```
 New namespace: `TurboHttp.Streams.Stages.Features`
 
 **Acceptance Criteria:**
-- [ ] Folder `TurboHttp/Streams/Stages/Features/` created with all 11 files
-- [ ] All 11 files declare `namespace TurboHttp.Streams.Stages.Features`
+- [ ] Folder `TurboHttp/Streams/Stages/Features/` created with all 8 files
+- [ ] All 8 files declare `namespace TurboHttp.Streams.Stages.Features`
 - [ ] All engines and referencing streams files updated
 - [ ] All referencing test files updated
 - [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
@@ -307,7 +312,7 @@ test suite runs clean.
 
 ## Functional Requirements
 
-- FR-1: `TurboHttp.Client.*` (7 files, public API) must not be touched — no using changes, no namespace changes
+- FR-1: `TurboHttp.Client.*` (public API) must not be touched — no using changes, no namespace changes
 - FR-2: Each task (TASK-001 through TASK-008) must be independently buildable and testable
 - FR-3: Namespace declarations must exactly match the folder path (convention)
 - FR-4: No compatibility shims, no `[Obsolete]` forwarding — clean cut
@@ -333,13 +338,14 @@ test suite runs clean.
 - **Engine files**: `Http10Engine.cs`, `Http11Engine.cs`, `Http20Engine.cs`, `Engine.cs` import many stages and must be updated during TASK-004 through TASK-007
 - **`HostKeyGroupByExtensions.cs`**: extension methods file — verify if it is `internal`; if so, the namespace change is not a breaking change for consumers
 - **No global using directives**: the project does not use `GlobalUsings.cs` for these namespaces — update individual files manually
+- **BidiStage pattern**: Several stages were consolidated during the middleware refactoring (cache, cookie, decompression, redirect, retry all use BidiStage now) — reduced TASK-007 from 11 files to 8
 
 ---
 
 ## Success Metrics
 
 - 18 namespaces → 14 namespaces (4 eliminated: `IO`, `IO.Stages`, `Lifecycle`, `Internal.Stages`)
-- `Streams.Stages` reduced from 22 flat files to at most 1 (`TurboAttributes.cs`)
+- `Streams.Stages` reduced from 23 flat files to at most 1 (`TurboAttributes.cs`)
 - `Middleware` and `Hosting` no longer visible as namespaces to library consumers
 - Grep for `TurboHttp.IO`, `TurboHttp.Lifecycle`, `TurboHttp.Middleware`, `TurboHttp.Hosting`, `TurboHttp.Internal.Stages` → 0 matches after TASK-008
 

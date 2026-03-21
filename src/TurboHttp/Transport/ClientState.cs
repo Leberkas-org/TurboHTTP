@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Pipelines;
 using System.Threading.Channels;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Transport;
 
 internal sealed class ClientState : IDisposable
 {

@@ -1,7 +1,7 @@
 using System.Buffers;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 using TurboHttp.Streams.Stages;
 
 namespace TurboHttp.StreamTests.RFC9113;

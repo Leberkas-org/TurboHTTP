@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Threading.Channels;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 
 namespace TurboHttp.StreamTests.IO;
 

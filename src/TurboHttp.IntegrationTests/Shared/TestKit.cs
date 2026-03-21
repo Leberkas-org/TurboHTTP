@@ -2,7 +2,7 @@ using Akka.Actor;
 using Akka.DependencyInjection;
 using Akka.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 
 namespace TurboHttp.IntegrationTests.Shared;
 

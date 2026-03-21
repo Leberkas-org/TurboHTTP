@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Transport;
 
 public sealed record DoClose
 {

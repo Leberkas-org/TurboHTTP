@@ -4,7 +4,7 @@ using Akka.Actor;
 using Servus.Akka;
 using TurboHttp.Client;
 using TurboHttp.Internal;
-using TurboHttp.IO;
+using TurboHttp.Transport;
 
 namespace TurboHttp.Lifecycle;
 

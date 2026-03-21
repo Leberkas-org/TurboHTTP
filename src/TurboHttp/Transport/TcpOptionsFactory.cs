@@ -2,7 +2,7 @@ using System;
 using System.Net.Sockets;
 using TurboHttp.Client;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Transport;
 
 internal static class TcpOptionsFactory
 {

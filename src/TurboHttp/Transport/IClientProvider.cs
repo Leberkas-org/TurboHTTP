@@ -8,7 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TurboHttp.IO;
+namespace TurboHttp.Transport;
 
 /// <summary>
 /// Abstracts a raw TCP or TLS connection so that <see cref="ClientState"/> is independent

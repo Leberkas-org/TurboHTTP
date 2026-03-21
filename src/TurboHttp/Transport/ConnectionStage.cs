@@ -10,7 +10,7 @@ using Akka.Streams.Stage;
 using TurboHttp.Internal;
 using TurboHttp.Lifecycle;
 
-namespace TurboHttp.IO.Stages;
+namespace TurboHttp.Transport;
 
 public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
