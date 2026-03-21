@@ -28,7 +28,7 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 
 ## TIER 1 — Security-Critical (RFC 9110 §4, §10)
 
-### TASK-001: Userinfo Stripping — Http2RequestEncoder `:authority`
+### TASK-001: Userinfo Stripping — Http2RequestEncoder `:authority` ✅
 
 **RFC**: 9110 §4.2.4 — "A sender MUST NOT generate the userinfo subcomponent"
 

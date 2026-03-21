@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using TurboHttp.Protocol.RFC7541;
+using TurboHttp.Protocol.RFC9110;
 
 namespace TurboHttp.Protocol.RFC9113;
 
@@ -165,7 +166,7 @@ public sealed class Http2RequestEncoder(bool useHuffman = false, int maxFrameSiz
             (":method", request.Method.Method),
             (":path", pathAndQuery),
             (":scheme", uri.Scheme),
-            (":authority", uri.Authority),
+            (":authority", UriSanitizer.FormatAuthority(uri)),
         };
 
         headers.AddRange(request.Headers.Where(x => !IsForbidden(x.Key))
