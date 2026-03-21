@@ -224,10 +224,19 @@ public class Engine
             builder.From(retry.Out0).To(cacheMerge.In(0));
             builder.From(cacheMerge.Out).To(redirect.In);
 
+            // Response middleware stages (FIFO, final responses only — after redirect resolution)
+            var responseTip = redirect.Out0;
+            foreach (var mw in descriptor.Middlewares)
+            {
+                var middlewareStage = builder.Add(new MiddlewareResponseStage(mw));
+                builder.From(responseTip).To(middlewareStage.Inlet);
+                responseTip = middlewareStage.Outlet;
+            }
+
             return new PostProcessShape(
                 cookieStorage.Inlet, // response input from engine+decompression
                 cacheMerge.In(1), // cache hit input from cache lookup
-                redirect.Out0, // final response output
+                responseTip, // final response output (last middleware stage or redirect.Out0 if none)
                 retry.Out1, // retry feedback → pre-processing
                 redirect.Out1); // redirect feedback → pre-processing
         });

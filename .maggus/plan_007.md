@@ -133,12 +133,12 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want response middleware stages wired after `RedirectStage.Out0` so that only final responses (after redirect and retry) reach user middleware.
 
 **Acceptance Criteria:**
-- [ ] `BuildPostProcessGraph` receives `IReadOnlyList<TurboMiddleware> middlewares` parameter
-- [ ] For each middleware: `builder.Add(new MiddlewareResponseStage(mw))`
-- [ ] Stages chained **after** `redirect.Out0` (final responses only)
-- [ ] When empty → last stage outlet is used directly as `ResponseOut` in `PostProcessShape`
-- [ ] `PostProcessShape.ResponseOut` points to the last response stage outlet
-- [ ] Typecheck/lint passes
+- [x] `BuildPostProcessGraph` receives `IReadOnlyList<TurboMiddleware> middlewares` parameter
+- [x] For each middleware: `builder.Add(new MiddlewareResponseStage(mw))`
+- [x] Stages chained **after** `redirect.Out0` (final responses only)
+- [x] When empty → last stage outlet is used directly as `ResponseOut` in `PostProcessShape`
+- [x] `PostProcessShape.ResponseOut` points to the last response stage outlet
+- [x] Typecheck/lint passes
 
 ---
 
