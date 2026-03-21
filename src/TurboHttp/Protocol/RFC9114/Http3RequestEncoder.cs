@@ -111,21 +111,39 @@ public sealed class Http3RequestEncoder
     /// Builds the ordered header list from an <see cref="HttpRequestMessage"/>.
     /// Pseudo-headers come first per RFC 9114 §4.3, followed by regular headers.
     /// Connection-specific headers are filtered out per RFC 9114 §4.2.
+    ///
+    /// For CONNECT requests (RFC 9114 §4.4), only :method and :authority are included.
+    /// The :scheme and :path pseudo-headers MUST NOT be present.
     /// </summary>
     private static List<(string Name, string Value)> BuildHeaderList(HttpRequestMessage request)
     {
         var uri = request.RequestUri!;
-        var pathAndQuery = string.IsNullOrEmpty(uri.Query)
-            ? uri.AbsolutePath
-            : uri.AbsolutePath + uri.Query;
 
-        var headers = new List<(string Name, string Value)>
+        List<(string Name, string Value)> headers;
+
+        if (request.Method == HttpMethod.Connect)
         {
-            (":method", request.Method.Method),
-            (":path", pathAndQuery),
-            (":scheme", uri.Scheme),
-            (":authority", UriSanitizer.FormatAuthority(uri)),
-        };
+            // RFC 9114 §4.4: CONNECT uses only :method and :authority
+            headers =
+            [
+                (":method", "CONNECT"),
+                (":authority", UriSanitizer.FormatAuthorityWithPort(uri)),
+            ];
+        }
+        else
+        {
+            var pathAndQuery = string.IsNullOrEmpty(uri.Query)
+                ? uri.AbsolutePath
+                : uri.AbsolutePath + uri.Query;
+
+            headers =
+            [
+                (":method", request.Method.Method),
+                (":path", pathAndQuery),
+                (":scheme", uri.Scheme),
+                (":authority", UriSanitizer.FormatAuthority(uri)),
+            ];
+        }
 
         // Regular headers (excluding connection-specific headers)
         headers.AddRange(request.Headers
@@ -142,8 +160,9 @@ public sealed class Http3RequestEncoder
     }
 
     /// <summary>
-    /// Validates pseudo-headers per RFC 9114 §4.3.1:
-    /// - All four required: :method, :path, :scheme, :authority
+    /// Validates pseudo-headers per RFC 9114 §4.3.1 and §4.4:
+    /// - Normal requests: all four required (:method, :path, :scheme, :authority)
+    /// - CONNECT requests: only :method and :authority (:scheme and :path MUST NOT be present)
     /// - Must appear before regular headers
     /// - Must have exactly one of each (no duplicates)
     /// - No unknown pseudo-headers allowed
@@ -156,10 +175,11 @@ public sealed class Http3RequestEncoder
         var hasAuthority = false;
         var lastPseudoIndex = -1;
         var firstRegularIndex = int.MaxValue;
+        string? methodValue = null;
 
         for (var i = 0; i < headers.Count; i++)
         {
-            var (name, _) = headers[i];
+            var (name, value) = headers[i];
 
             if (name.StartsWith(':'))
             {
@@ -174,6 +194,7 @@ public sealed class Http3RequestEncoder
                                 "RFC 9114 §4.3.1: Duplicate :method pseudo-header");
                         }
                         hasMethod = true;
+                        methodValue = value;
                         break;
                     case ":path":
                         if (hasPath)
@@ -217,6 +238,30 @@ public sealed class Http3RequestEncoder
         {
             throw new Http3ConnectionException(Http3ErrorCode.MessageError,
                 $"RFC 9114 §4.3.1: Pseudo-header at index {lastPseudoIndex} appears after regular header at index {firstRegularIndex}");
+        }
+
+        // RFC 9114 §4.4: CONNECT requests MUST NOT include :scheme or :path
+        if (string.Equals(methodValue, "CONNECT", StringComparison.Ordinal))
+        {
+            if (hasScheme)
+            {
+                throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    "RFC 9114 §4.4: CONNECT request MUST NOT include :scheme pseudo-header");
+            }
+
+            if (hasPath)
+            {
+                throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    "RFC 9114 §4.4: CONNECT request MUST NOT include :path pseudo-header");
+            }
+
+            if (!hasAuthority)
+            {
+                throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    "RFC 9114 §4.4: CONNECT request MUST include :authority pseudo-header");
+            }
+
+            return;
         }
 
         var missing = new System.Text.StringBuilder();

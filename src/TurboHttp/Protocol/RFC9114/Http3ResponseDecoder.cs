@@ -64,8 +64,14 @@ public sealed class Http3ResponseDecoder
     /// <param name="streamId">
     /// The QUIC stream ID (used for QPACK Section Acknowledgment).
     /// </param>
+    /// <param name="isConnect">
+    /// When true, indicates the response is for a CONNECT request.
+    /// A successful (2xx) CONNECT response establishes a tunnel and has no body
+    /// (DATA frames after a 2xx CONNECT are tunnel data, not HTTP body).
+    /// Per RFC 9114 §4.4.
+    /// </param>
     /// <returns>The decoded HTTP response message.</returns>
-    public HttpResponseMessage Decode(IReadOnlyList<Http3Frame> frames, int streamId = 0)
+    public HttpResponseMessage Decode(IReadOnlyList<Http3Frame> frames, int streamId = 0, bool isConnect = false)
     {
         ArgumentNullException.ThrowIfNull(frames);
 
@@ -110,6 +116,13 @@ public sealed class Http3ResponseDecoder
             {
                 response.Headers.TryAddWithoutValidation(name, value);
             }
+        }
+
+        // RFC 9114 §4.4: A successful (2xx) CONNECT response establishes a tunnel.
+        // DATA frames after a 2xx CONNECT are tunnel data, not HTTP body content.
+        if (isConnect && statusCode is >= 200 and < 300)
+        {
+            return response;
         }
 
         // Assemble body from DATA frames
