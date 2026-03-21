@@ -320,12 +320,12 @@ The goal is to port the well-known `IHttpClientFactory` pattern from `Microsoft.
 **Description:** As a developer, I want integration-level tests verifying that two named clients with different configurations receive independent pipelines so that cookie jars and middleware instances are never shared.
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp.Tests/Hosting/NamedClientIsolationTests.cs`
-- [ ] Test: `factory.CreateClient("a")` and `factory.CreateClient("b")` return two distinct instances
-- [ ] Test: cookies from client "a" do not appear in client "b"'s `CookieJar` (separate instances)
-- [ ] Test: client "a" with `.WithCookies()`, client "b" without — both function correctly
-- [ ] Test: `AddTurboHttpClientFactory` (old API) produces a compile-time warning; runtime still works
-- [ ] Unit tests are written and successful
+- [x] New file `src/TurboHttp.Tests/Hosting/NamedClientIsolationTests.cs`
+- [x] Test: `factory.CreateClient("a")` and `factory.CreateClient("b")` return two distinct instances
+- [x] Test: cookies from client "a" do not appear in client "b"'s `CookieJar` (separate instances)
+- [x] Test: client "a" with `.WithCookies()`, client "b" without — both function correctly
+- [x] Test: `AddTurboHttpClientFactory` (old API) produces a compile-time warning; runtime still works
+- [x] Unit tests are written and successful
 
 ---
 
