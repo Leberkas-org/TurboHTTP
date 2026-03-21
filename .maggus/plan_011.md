@@ -429,12 +429,12 @@ Full-sweep MUST/MUST NOT extraction across RFC 1945, 9110, 9111, 9112, and 9114 
 - File: `src/TurboHttp/Protocol/RFC9111/CacheControl.cs` — new `IReadOnlyList<string>? NoCacheFields`
 
 **Acceptance Criteria:**
-- [ ] `no-cache="Set-Cookie"` parses field list into `NoCacheFields`
-- [ ] `no-cache="A, B"` parses multiple fields
-- [ ] Unqualified `no-cache` sets flag without field list
-- [ ] Empty-quoted `no-cache=""` treated as unqualified
-- [ ] Unit tests written and passing
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
+- [x] `no-cache="Set-Cookie"` parses field list into `NoCacheFields`
+- [x] `no-cache="A, B"` parses multiple fields
+- [x] Unqualified `no-cache` sets flag without field list
+- [x] Empty-quoted `no-cache=""` treated as unqualified
+- [x] Unit tests written and passing
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` → 0 errors
 
 **Tests** (extends `src/TurboHttp.Tests/RFC9111/01_CacheControlParserTests.cs`):
 

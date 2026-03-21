@@ -42,8 +42,8 @@ public static class CacheControlParser
 
         while (!span.IsEmpty)
         {
-            // Find the next comma delimiter
-            var commaIdx = span.IndexOf(',');
+            // Find the next comma delimiter, skipping commas inside quoted strings
+            var commaIdx = FindUnquotedComma(span);
             ReadOnlySpan<char> token;
 
             if (commaIdx < 0)
@@ -177,6 +177,29 @@ public static class CacheControlParser
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Finds the index of the first comma not inside a quoted string.
+    /// Returns -1 if no unquoted comma is found.
+    /// </summary>
+    private static int FindUnquotedComma(ReadOnlySpan<char> span)
+    {
+        var inQuotes = false;
+        for (var i = 0; i < span.Length; i++)
+        {
+            var c = span[i];
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /// <summary>

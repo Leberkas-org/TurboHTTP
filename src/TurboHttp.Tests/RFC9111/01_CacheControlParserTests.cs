@@ -175,4 +175,58 @@ public sealed class CacheControlParserTests
         Assert.NotNull(result);
         Assert.Equal(TimeSpan.MaxValue, result.MaxStale);
     }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.3-CC-030: no-cache=\"Set-Cookie\" parses field list")]
+    public void Should_ParseFieldList_When_NoCacheQualified()
+    {
+        var result = CacheControlParser.Parse("no-cache=\"Set-Cookie\"");
+        Assert.NotNull(result);
+        Assert.True(result.NoCache);
+        Assert.NotNull(result.NoCacheFields);
+        Assert.Single(result.NoCacheFields);
+        Assert.Equal("Set-Cookie", result.NoCacheFields[0]);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.3-CC-031: no-cache=\"A, B\" parses multiple fields")]
+    public void Should_ParseMultipleFields_When_NoCacheQualified()
+    {
+        var result = CacheControlParser.Parse("no-cache=\"A, B\"");
+        Assert.NotNull(result);
+        Assert.True(result.NoCache);
+        Assert.NotNull(result.NoCacheFields);
+        Assert.Equal(2, result.NoCacheFields.Count);
+        Assert.Equal("A", result.NoCacheFields[0]);
+        Assert.Equal("B", result.NoCacheFields[1]);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.3-CC-032: Unqualified no-cache sets flag, no fields")]
+    public void Should_SetFlag_When_UnqualifiedNoCache()
+    {
+        var result = CacheControlParser.Parse("no-cache");
+        Assert.NotNull(result);
+        Assert.True(result.NoCache);
+        Assert.Null(result.NoCacheFields);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.3-CC-033: no-cache with empty quotes treated as unqualified")]
+    public void Should_TreatAsUnqualified_When_EmptyQuotes()
+    {
+        var result = CacheControlParser.Parse("no-cache=\"\"");
+        Assert.NotNull(result);
+        Assert.True(result.NoCache);
+        Assert.Null(result.NoCacheFields);
+    }
+
+    [Fact(DisplayName = "RFC9111-5.2.2.3-CC-034: no-cache with field list alongside other directives")]
+    public void Should_ParseFieldListAndOtherDirectives_When_NoCacheWithFieldsAndMaxAge()
+    {
+        var result = CacheControlParser.Parse("no-cache=\"Set-Cookie, Authorization\", max-age=300");
+        Assert.NotNull(result);
+        Assert.True(result.NoCache);
+        Assert.NotNull(result.NoCacheFields);
+        Assert.Equal(2, result.NoCacheFields.Count);
+        Assert.Contains("Set-Cookie", result.NoCacheFields);
+        Assert.Contains("Authorization", result.NoCacheFields);
+        Assert.Equal(TimeSpan.FromSeconds(300), result.MaxAge);
+    }
 }
