@@ -221,11 +221,14 @@ public sealed class ConnectionStageTests : StreamTestBase
         inputQueue.Complete();
 
         var results = await resultTask.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Single(results);
+        Assert.Equal(2, results.Count);
 
         var inbound = (DataItem)results[0];
         Assert.Equal(12, inbound.Length);
         Assert.Equal(0x02, inbound.Memory.Memory.Span[0]);
+
+        // Inbound channel completion now emits a CloseSignalItem (TASK-007-004).
+        Assert.IsType<CloseSignalItem>(results[1]);
     }
 
     [Fact(Timeout = 15_000,
@@ -418,8 +421,9 @@ public sealed class ConnectionStageTests : StreamTestBase
         inputQueue.Complete();
         var results = await outputTask.WaitAsync(TimeSpan.FromSeconds(10));
 
-        // No inbound data was injected after connect, so results are empty.
-        Assert.Empty(results);
+        // Inbound channel completion now emits a CloseSignalItem (TASK-007-004).
+        var closeSignal = Assert.Single(results);
+        Assert.IsType<CloseSignalItem>(closeSignal);
     }
 
     /// <summary>Stub router that never replies so the ConnectionHandle is never set.</summary>

@@ -204,12 +204,12 @@ _ = handle.OutboundWriter
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
-- [ ] `dotnet test src/TurboHttp.Tests/TurboHttp.Tests.csproj` — all tests pass
-- [ ] `dotnet test src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj` — all tests pass
-- [ ] No new compiler warnings related to changed files
-- [ ] Grep codebase for remaining `_ = *.DisposeAsync()` patterns — zero hits
-- [ ] Grep codebase for `ContinueWith` without explicit `TaskContinuationOptions.OnlyOn*` — zero hits in ConnectionStage
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] `dotnet test src/TurboHttp.Tests/TurboHttp.Tests.csproj` — all tests pass
+- [x] `dotnet test src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj` — all tests pass
+- [x] No new compiler warnings related to changed files
+- [x] Grep codebase for remaining `_ = *.DisposeAsync()` patterns — zero hits
+- [x] Grep codebase for `ContinueWith` without explicit `TaskContinuationOptions.OnlyOn*` — zero hits in ConnectionStage
 
 ## Task Dependency Graph
 
