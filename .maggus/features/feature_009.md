@@ -60,10 +60,10 @@
 | `07_EncoderLegacyTests.cs` | 15–16 | LG | Mixed sections: `RFC9112-3-LG-001` (RL), `RFC9112-5.4-LG-00N` (HH), `RFC9112-9-LG-00N` (CN), `RFC9112-6-LG-00N` (BD) |
 
 **Acceptance Criteria:**
-- [ ] 20–21 tests get RFC-tagged DisplayName attributes
-- [ ] Legacy tests use `LG` category with correct RFC section per functionality
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
-- [ ] `dotnet test src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9112"` passes
+- [x] 20–21 tests get RFC-tagged DisplayName attributes
+- [x] Legacy tests use `LG` category with correct RFC section per functionality
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] `dotnet test src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9112"` passes
 
 ---
 

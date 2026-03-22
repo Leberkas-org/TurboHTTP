@@ -178,7 +178,7 @@ public sealed class Http11EncoderBodyTests
         Assert.Contains("Transfer-Encoding: chunked\r\n", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-6-BD-010: Bodyless GET ends with blank line")]
     public void Should_EndWithBlankLine_When_GetRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -186,7 +186,7 @@ public sealed class Http11EncoderBodyTests
         Assert.EndsWith("\r\n\r\n", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-6-BD-011: POST JSON body sets Content-Type and Content-Length")]
     public void Should_SetContentTypeAndLength_When_PostJsonBody()
     {
         const string json = """{"name":"test"}""";
@@ -202,7 +202,7 @@ public sealed class Http11EncoderBodyTests
         Assert.Contains($"Content-Length: {Encoding.UTF8.GetByteCount(json)}", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-6-BD-012: Body placed after blank line separator")]
     public void Should_PlaceBodyAfterBlankLine_When_PostJsonBody()
     {
         const string json = """{"x":1}""";
@@ -218,7 +218,7 @@ public sealed class Http11EncoderBodyTests
         Assert.Equal(json, result[(separatorIdx + 4)..]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-6-BD-013: ArgumentException when buffer too small for body")]
     public void Should_Throw_When_BufferTooSmallForBody()
     {
         var content = new ByteArrayContent(new byte[3000]);
@@ -234,7 +234,7 @@ public sealed class Http11EncoderBodyTests
         });
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-6-BD-014: ArgumentException when buffer too small for headers")]
     public void Should_Throw_When_BufferTooSmallForHeaders()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
