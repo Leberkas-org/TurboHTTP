@@ -7,13 +7,13 @@ namespace TurboHttp.Streams.Stages.Routing;
 
 internal sealed class
     Http30CorrelationStage :
-    GraphStage<FanInShape<(HttpRequestMessage, long), (HttpResponseMessage, long), HttpResponseMessage>>
+    GraphStage<FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
-    private readonly Inlet<(HttpRequestMessage, long)> _inRequest = new("Http30Correlation.In.Request");
-    private readonly Inlet<(HttpResponseMessage, long)> _inResponse = new("Http30Correlation.In.Response");
+    private readonly Inlet<HttpRequestMessage> _inRequest = new("Http30Correlation.In.Request");
+    private readonly Inlet<HttpResponseMessage> _inResponse = new("Http30Correlation.In.Response");
     private readonly Outlet<HttpResponseMessage> _out = new("Http30Correlation.Out");
 
-    public override FanInShape<(HttpRequestMessage, long), (HttpResponseMessage, long), HttpResponseMessage> Shape
+    public override FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape
     {
         get;
     }
@@ -21,7 +21,7 @@ internal sealed class
 
     public Http30CorrelationStage()
     {
-        Shape = new FanInShape<(HttpRequestMessage, long), (HttpResponseMessage, long), HttpResponseMessage>(
+        Shape = new FanInShape<HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>(
             _out, _inRequest, _inResponse);
     }
 
@@ -30,8 +30,8 @@ internal sealed class
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly Dictionary<long, HttpRequestMessage> _pending = new();
-        private readonly Dictionary<long, HttpResponseMessage> _waiting = new();
+        private readonly Queue<HttpRequestMessage> _pendingRequests = new();
+        private readonly Queue<HttpResponseMessage> _pendingResponses = new();
 
         private bool _requestUpstreamFinished;
         private bool _responseUpstreamFinished;
@@ -41,9 +41,9 @@ internal sealed class
             SetHandler(stage._inRequest,
                 onPush: () =>
                 {
-                    var (request, streamId) = Grab(stage._inRequest);
+                    var request = Grab(stage._inRequest);
 
-                    _pending[streamId] = request;
+                    _pendingRequests.Enqueue(request);
                     TryCorrelateAndEmit(stage);
 
                     if (!HasBeenPulled(stage._inRequest))
@@ -60,9 +60,9 @@ internal sealed class
             SetHandler(stage._inResponse,
                 onPush: () =>
                 {
-                    var (response, streamId) = Grab(stage._inResponse);
+                    var response = Grab(stage._inResponse);
 
-                    _waiting[streamId] = response;
+                    _pendingResponses.Enqueue(response);
                     TryCorrelateAndEmit(stage);
 
                     if (!HasBeenPulled(stage._inResponse))
@@ -100,17 +100,14 @@ internal sealed class
                 return;
             }
 
-            foreach (var (streamId, response) in _waiting)
+            if (_pendingRequests.Count > 0 && _pendingResponses.Count > 0)
             {
-                if (_pending.Remove(streamId, out var request))
-                {
-                    _waiting.Remove(streamId);
+                var request = _pendingRequests.Dequeue();
+                var response = _pendingResponses.Dequeue();
 
-                    response.RequestMessage = request;
+                response.RequestMessage = request;
 
-                    Push(stage._out, response);
-                    return;
-                }
+                Push(stage._out, response);
             }
         }
 

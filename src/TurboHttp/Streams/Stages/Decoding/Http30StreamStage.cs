@@ -22,13 +22,13 @@ namespace TurboHttp.Streams.Stages.Decoding;
 /// Uses QPACK (RFC 9204) for header decompression and ContentEncodingDecoder
 /// for body decompression (gzip, deflate, br).
 /// </summary>
-public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, (HttpResponseMessage Response, long StreamId)>>
+public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpResponseMessage>>
 {
     private readonly Inlet<Http3Frame> _in = new("Http30Stream.In");
 
-    private readonly Outlet<(HttpResponseMessage Response, long StreamId)> _out = new("Http30Stream.Out");
+    private readonly Outlet<HttpResponseMessage> _out = new("Http30Stream.Out");
 
-    public override FlowShape<Http3Frame, (HttpResponseMessage Response, long StreamId)> Shape => new(_in, _out);
+    public override FlowShape<Http3Frame, HttpResponseMessage> Shape => new(_in, _out);
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         => new Logic(this);
@@ -37,7 +37,6 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, (HttpRe
     {
         private readonly Http30StreamStage _stage;
         private readonly QpackDecoder _qpack = new();
-        private long _nextStreamId;
 
         private readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
         private IMemoryOwner<byte>? _bodyOwner;
@@ -154,10 +153,7 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, (HttpRe
                 response.Content = new ByteArrayContent(bodyBytes);
             }
 
-            var streamId = _nextStreamId;
-            _nextStreamId += 4;
-
-            Emit(_stage._out, (response, streamId));
+            Emit(_stage._out, response);
 
             _bodyOwner?.Dispose();
             _bodyOwner = null;

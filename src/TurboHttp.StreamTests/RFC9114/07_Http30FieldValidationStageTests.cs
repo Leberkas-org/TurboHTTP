@@ -20,11 +20,11 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
 {
     private readonly QpackEncoder _qpack = new(maxTableCapacity: 0);
 
-    private async Task<IReadOnlyList<(HttpResponseMessage Response, long StreamId)>> RunAsync(params Http3Frame[] frames)
+    private async Task<IReadOnlyList<HttpResponseMessage>> RunAsync(params Http3Frame[] frames)
     {
         return await Source.From(frames)
             .Via(Flow.FromGraph(new Http30StreamStage()))
-            .RunWith(Sink.Seq<(HttpResponseMessage Response, long StreamId)>(), Materializer);
+            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
     }
 
     private ReadOnlyMemory<byte> EncodeHeaders(params (string Name, string Value)[] headers)
@@ -106,7 +106,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-4.2-FV-005: TE header with non-trailers value rejected")]
@@ -165,7 +165,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-4.2-FV-008: HEADERS + DATA frames produce complete response")]
@@ -182,6 +182,6 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
     }
 }
