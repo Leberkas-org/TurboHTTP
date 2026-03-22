@@ -75,11 +75,11 @@ TurboHttpException (abstract)
 **Parallel:** yes — can run alongside TASK-007-003 and TASK-007-004
 
 **Acceptance Criteria:**
-- [ ] `HpackException` extracted from `src/TurboHttp/Protocol/RFC7541/HpackDecoder.cs` → new file `src/TurboHttp/Protocol/RFC7541/HpackException.cs`
-- [ ] `AbruptCloseException` extracted from `src/TurboHttp/Transport/ClientByteMover.cs` → new file `src/TurboHttp/Transport/AbruptCloseException.cs`
-- [ ] Original files no longer contain the class definitions
-- [ ] No logic changes in original files
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
+- [x] `HpackException` extracted from `src/TurboHttp/Protocol/RFC7541/HpackDecoder.cs` → new file `src/TurboHttp/Protocol/RFC7541/HpackException.cs`
+- [x] `AbruptCloseException` extracted from `src/TurboHttp/Transport/ClientByteMover.cs` → new file `src/TurboHttp/Transport/AbruptCloseException.cs`
+- [x] Original files no longer contain the class definitions
+- [x] No logic changes in original files
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
 
 ### TASK-007-003: Re-base exception classes on new hierarchy
 **Description:** As a developer, I want all exceptions to inherit from the appropriate category base so I can catch by category.
