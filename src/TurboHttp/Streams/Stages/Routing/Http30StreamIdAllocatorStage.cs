@@ -15,8 +15,8 @@ namespace TurboHttp.Streams.Stages.Routing;
 /// </remarks>
 public sealed class Http30StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequestMessage, (HttpRequestMessage, long)>>
 {
-    private readonly Inlet<HttpRequestMessage> _in = new("H3StreamIdAllocator.In");
-    private readonly Outlet<(HttpRequestMessage, long)> _out = new("H3StreamIdAllocator.Out");
+    private readonly Inlet<HttpRequestMessage> _in = new("Http30StreamIdAllocator.In");
+    private readonly Outlet<(HttpRequestMessage, long)> _out = new("Http30StreamIdAllocator.Out");
 
     public override FlowShape<HttpRequestMessage, (HttpRequestMessage, long)> Shape { get; }
 

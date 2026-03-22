@@ -76,10 +76,10 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
 {
     private static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromSeconds(30);
 
-    private readonly Inlet<Http3Frame> _inServer = new("H3Connection.In.Server");
-    private readonly Outlet<Http3Frame> _outApp = new("H3Connection.Out.App");
-    private readonly Inlet<Http3Frame> _inApp = new("H3Connection.In.App");
-    private readonly Outlet<Http3Frame> _outServer = new("H3Connection.Out.Server");
+    private readonly Inlet<Http3Frame> _inServer = new("Http30Connection.In.Server");
+    private readonly Outlet<Http3Frame> _outApp = new("Http30Connection.Out.App");
+    private readonly Inlet<Http3Frame> _inApp = new("Http30Connection.In.App");
+    private readonly Outlet<Http3Frame> _outServer = new("Http30Connection.Out.Server");
 
     private readonly TimeSpan _idleTimeout;
 

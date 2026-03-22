@@ -43,12 +43,12 @@ GraphStage port strings in TurboHttp use inconsistent prefixes: HTTP/2 stages us
 **Parallel:** yes — can run alongside TASK-006-001
 
 **Acceptance Criteria:**
-- [ ] `Http30ConnectionStage`: `"H3Connection.*"` → `"Http30Connection.*"` (4 ports)
-- [ ] `Http30CorrelationStage`: `"H3Correlation.*"` → `"Http30Correlation.*"` (3 ports)
-- [ ] `Http30StreamIdAllocatorStage`: `"H3StreamIdAllocator.*"` → `"Http30StreamIdAllocator.*"` (2 ports)
-- [ ] `Http30ControlStreamPrefaceStage`: `"H3ControlPreface.*"` → `"Http30ControlStreamPreface.*"` (2 ports)
-- [ ] `Http30QpackEncoderPrefaceStage`: `"H3QpackEncoderPreface.*"` → `"Http30QpackEncoderPreface.*"` (2 ports)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
+- [x] `Http30ConnectionStage`: `"H3Connection.*"` → `"Http30Connection.*"` (4 ports)
+- [x] `Http30CorrelationStage`: `"H3Correlation.*"` → `"Http30Correlation.*"` (3 ports)
+- [x] `Http30StreamIdAllocatorStage`: `"H3StreamIdAllocator.*"` → `"Http30StreamIdAllocator.*"` (2 ports)
+- [x] `Http30ControlStreamPrefaceStage`: `"H3ControlPreface.*"` → `"Http30ControlStreamPreface.*"` (2 ports)
+- [x] `Http30QpackEncoderPrefaceStage`: `"H3QpackEncoderPreface.*"` → `"Http30QpackEncoderPreface.*"` (2 ports)
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
 
 ### TASK-006-003: Update tests and validation gate
 **Description:** As a developer, I want to ensure all test assertions and the stage-port-validator pass after the rename.

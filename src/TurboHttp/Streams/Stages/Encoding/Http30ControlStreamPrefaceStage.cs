@@ -22,8 +22,8 @@ namespace TurboHttp.Streams.Stages.Encoding;
 /// </remarks>
 public sealed class Http30ControlStreamPrefaceStage : GraphStage<FlowShape<IOutputItem, IOutputItem>>
 {
-    private readonly Inlet<IOutputItem> _in = new("H3ControlPreface.In");
-    private readonly Outlet<IOutputItem> _out = new("H3ControlPreface.Out");
+    private readonly Inlet<IOutputItem> _in = new("Http30ControlStreamPreface.In");
+    private readonly Outlet<IOutputItem> _out = new("Http30ControlStreamPreface.Out");
 
     private readonly Http3Settings? _localSettings;
 

@@ -9,9 +9,9 @@ internal sealed class
     Http30CorrelationStage :
     GraphStage<FanInShape<(HttpRequestMessage, long), (HttpResponseMessage, long), HttpResponseMessage>>
 {
-    private readonly Inlet<(HttpRequestMessage, long)> _inRequest = new("H3Correlation.In.Request");
-    private readonly Inlet<(HttpResponseMessage, long)> _inResponse = new("H3Correlation.In.Response");
-    private readonly Outlet<HttpResponseMessage> _out = new("H3Correlation.Out");
+    private readonly Inlet<(HttpRequestMessage, long)> _inRequest = new("Http30Correlation.In.Request");
+    private readonly Inlet<(HttpResponseMessage, long)> _inResponse = new("Http30Correlation.In.Response");
+    private readonly Outlet<HttpResponseMessage> _out = new("Http30Correlation.Out");
 
     public override FanInShape<(HttpRequestMessage, long), (HttpResponseMessage, long), HttpResponseMessage> Shape
     {

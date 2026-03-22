@@ -255,9 +255,9 @@ public sealed class Http30ConnectionStageTests : StreamTestBase
         var stage = new Http30ConnectionStage();
         var shape = stage.Shape;
 
-        Assert.Equal("H3Connection.In.Server", shape.InServer.Name);
-        Assert.Equal("H3Connection.Out.App", shape.OutApp.Name);
-        Assert.Equal("H3Connection.In.App", shape.InApp.Name);
-        Assert.Equal("H3Connection.Out.Server", shape.OutServer.Name);
+        Assert.Equal("Http30Connection.In.Server", shape.InServer.Name);
+        Assert.Equal("Http30Connection.Out.App", shape.OutApp.Name);
+        Assert.Equal("Http30Connection.In.App", shape.InApp.Name);
+        Assert.Equal("Http30Connection.Out.Server", shape.OutServer.Name);
     }
 }

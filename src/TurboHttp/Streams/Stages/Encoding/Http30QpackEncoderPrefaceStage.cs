@@ -18,8 +18,8 @@ namespace TurboHttp.Streams.Stages.Encoding;
 /// </remarks>
 public sealed class Http30QpackEncoderPrefaceStage : GraphStage<FlowShape<ReadOnlyMemory<byte>, IOutputItem>>
 {
-    private readonly Inlet<ReadOnlyMemory<byte>> _in = new("H3QpackEncoderPreface.In");
-    private readonly Outlet<IOutputItem> _out = new("H3QpackEncoderPreface.Out");
+    private readonly Inlet<ReadOnlyMemory<byte>> _in = new("Http30QpackEncoderPreface.In");
+    private readonly Outlet<IOutputItem> _out = new("Http30QpackEncoderPreface.Out");
 
     public override FlowShape<ReadOnlyMemory<byte>, IOutputItem> Shape => new(_in, _out);
 
