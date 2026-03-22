@@ -75,7 +75,7 @@ public static class Http3SettingId
     /// raw payloads before deserialization.
     /// </summary>
     /// <param name="parameters">The setting identifier-value pairs to validate.</param>
-    /// <exception cref="Http3SettingsException">
+    /// <exception cref="Http3Exception">
     /// Thrown if any parameter uses a reserved HTTP/2 identifier.
     /// </exception>
     public static void RejectForbiddenH2Settings(IReadOnlyList<(long Identifier, long Value)> parameters)
@@ -85,7 +85,7 @@ public static class Http3SettingId
             var (id, _) = parameters[i];
             if (IsReservedH2Setting(id))
             {
-                throw new Http3SettingsException(
+                throw new Http3Exception(Http3ErrorCode.SettingsError,
                     $"Setting identifier 0x{id:x2} is a reserved HTTP/2 setting and MUST NOT appear in HTTP/3 (RFC 9114 §7.2.4.1).");
             }
         }
@@ -137,7 +137,7 @@ public sealed class Http3Settings
     {
         if (Http3SettingId.IsReservedH2Setting(identifier))
         {
-            throw new Http3SettingsException(
+            throw new Http3Exception(Http3ErrorCode.SettingsError,
                 $"Setting identifier 0x{identifier:x2} is reserved (HTTP/2 setting) and MUST NOT be sent in HTTP/3 (RFC 9114 §7.2.4.1).");
         }
 
@@ -173,8 +173,8 @@ public sealed class Http3Settings
     /// <summary>
     /// Deserializes a SETTINGS frame payload (sequence of identifier-value QUIC varint pairs).
     /// Unknown identifiers are preserved. Reserved HTTP/2 identifiers cause a
-    /// <see cref="Http3SettingsException"/> (RFC 9114 §7.2.4.1).
-    /// Duplicate identifiers cause a <see cref="Http3SettingsException"/> (RFC 9114 §7.2.4).
+    /// <see cref="Http3Exception"/> (RFC 9114 §7.2.4.1).
+    /// Duplicate identifiers cause a <see cref="Http3Exception"/> (RFC 9114 §7.2.4).
     /// </summary>
     public static Http3Settings Deserialize(ReadOnlySpan<byte> payload)
     {
@@ -184,27 +184,27 @@ public sealed class Http3Settings
         {
             if (!QuicVarInt.TryDecode(payload, out var identifier, out var consumed))
             {
-                throw new Http3SettingsException("Incomplete setting identifier in SETTINGS payload.");
+                throw new Http3Exception(Http3ErrorCode.SettingsError,"Incomplete setting identifier in SETTINGS payload.");
             }
 
             payload = payload[consumed..];
 
             if (!QuicVarInt.TryDecode(payload, out var value, out consumed))
             {
-                throw new Http3SettingsException("Incomplete setting value in SETTINGS payload.");
+                throw new Http3Exception(Http3ErrorCode.SettingsError,"Incomplete setting value in SETTINGS payload.");
             }
 
             payload = payload[consumed..];
 
             if (Http3SettingId.IsReservedH2Setting(identifier))
             {
-                throw new Http3SettingsException(
+                throw new Http3Exception(Http3ErrorCode.SettingsError,
                     $"Setting identifier 0x{identifier:x2} is reserved (HTTP/2 setting) and MUST NOT appear in HTTP/3 (RFC 9114 §7.2.4.1).");
             }
 
             if (settings._parameters.ContainsKey(identifier))
             {
-                throw new Http3SettingsException(
+                throw new Http3Exception(Http3ErrorCode.SettingsError,
                     $"Duplicate setting identifier 0x{identifier:x2} in SETTINGS payload (RFC 9114 §7.2.4).");
             }
 
@@ -227,13 +227,4 @@ public sealed class Http3Settings
 
         return new Http3SettingsFrame(parameters);
     }
-}
-
-/// <summary>
-/// Thrown when an HTTP/3 SETTINGS violation is detected (RFC 9114 §7.2.4).
-/// </summary>
-public sealed class Http3SettingsException : Exception
-{
-    public Http3SettingsException(string message) : base(message) { }
-    public Http3SettingsException(string message, Exception innerException) : base(message, innerException) { }
 }

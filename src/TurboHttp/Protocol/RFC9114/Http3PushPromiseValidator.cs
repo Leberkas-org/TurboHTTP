@@ -56,7 +56,7 @@ public sealed class Http3PushPromiseValidator
     /// The decoded header list from the PUSH_PROMISE header block.
     /// Must include pseudo-headers (:method, :scheme, :path).
     /// </param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if the push ID exceeds
     /// the MAX_PUSH_ID limit or is a duplicate.
     /// Thrown with <see cref="Http3ErrorCode.MessageError"/> if promised headers
@@ -72,7 +72,7 @@ public sealed class Http3PushPromiseValidator
     /// Validates only the push ID portion: range check and duplicate detection.
     /// </summary>
     /// <param name="pushId">The push ID from the PUSH_PROMISE frame.</param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if the push ID is out
     /// of range or has already been used.
     /// </exception>
@@ -84,7 +84,7 @@ public sealed class Http3PushPromiseValidator
         // RFC 9114 §4.6: "each push ID MUST only be used once"
         if (!_usedPushIds.Add(pushId))
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"Duplicate push ID {pushId} in PUSH_PROMISE (RFC 9114 §4.6).");
         }
@@ -97,7 +97,7 @@ public sealed class Http3PushPromiseValidator
     /// Connection-specific headers are also forbidden (§4.2).
     /// </summary>
     /// <param name="headers">The decoded header list from the PUSH_PROMISE.</param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.MessageError"/> if the promised
     /// headers violate any constraint.
     /// </exception>
@@ -116,7 +116,7 @@ public sealed class Http3PushPromiseValidator
             {
                 if (method is not null)
                 {
-                    throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
                         "RFC 9114 §4.3.1: Duplicate :method pseudo-header in PUSH_PROMISE");
                 }
 
@@ -126,7 +126,7 @@ public sealed class Http3PushPromiseValidator
             {
                 if (scheme is not null)
                 {
-                    throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
                         "RFC 9114 §4.3.1: Duplicate :scheme pseudo-header in PUSH_PROMISE");
                 }
 
@@ -136,7 +136,7 @@ public sealed class Http3PushPromiseValidator
             {
                 if (path is not null)
                 {
-                    throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
                         "RFC 9114 §4.3.1: Duplicate :path pseudo-header in PUSH_PROMISE");
                 }
 
@@ -157,28 +157,28 @@ public sealed class Http3PushPromiseValidator
         // RFC 9114 §4.6: PUSH_PROMISE MUST NOT include :status
         if (hasStatus)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 "RFC 9114 §4.6: PUSH_PROMISE MUST NOT contain :status pseudo-header");
         }
 
         // RFC 9114 §4.3.1: :method is required
         if (method is null)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 "RFC 9114 §4.3.1: PUSH_PROMISE missing required :method pseudo-header");
         }
 
         // RFC 9114 §4.3.1: :scheme is required
         if (scheme is null)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 "RFC 9114 §4.3.1: PUSH_PROMISE missing required :scheme pseudo-header");
         }
 
         // RFC 9114 §4.3.1: :path is required
         if (path is null)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 "RFC 9114 §4.3.1: PUSH_PROMISE missing required :path pseudo-header");
         }
 
@@ -189,7 +189,7 @@ public sealed class Http3PushPromiseValidator
         if (!string.Equals(method, "GET", StringComparison.Ordinal) &&
             !string.Equals(method, "HEAD", StringComparison.Ordinal))
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 $"RFC 9114 §4.6: PUSH_PROMISE method '{method}' is not safe and cacheable; only GET and HEAD are allowed");
         }
     }

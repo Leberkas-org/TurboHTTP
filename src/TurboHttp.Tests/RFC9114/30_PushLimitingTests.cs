@@ -86,7 +86,7 @@ public sealed class PushLimitingTests
         limiter.RecordPush();
         limiter.RecordPush();
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => limiter.RecordPush());
+        var ex = Assert.Throws<Http3Exception>(() => limiter.RecordPush());
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
         Assert.Contains("push limit", ex.Message);
         Assert.Contains("3", ex.Message);
@@ -97,7 +97,7 @@ public sealed class PushLimitingTests
     {
         var limiter = new Http3PushLimiter(0);
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => limiter.RecordPush());
+        var ex = Assert.Throws<Http3Exception>(() => limiter.RecordPush());
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
 
@@ -109,7 +109,7 @@ public sealed class PushLimitingTests
         limiter.RecordPush();
         Assert.True(limiter.IsExhausted);
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => limiter.RecordPush());
+        var ex = Assert.Throws<Http3Exception>(() => limiter.RecordPush());
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
 
@@ -175,7 +175,7 @@ public sealed class PushLimitingTests
         }
 
         // 4th push triggers H3_EXCESSIVE_LOAD even though push ID 3 is within MAX_PUSH_ID
-        var ex = Assert.Throws<Http3ConnectionException>(() => limiter.RecordPush());
+        var ex = Assert.Throws<Http3Exception>(() => limiter.RecordPush());
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
 
@@ -212,7 +212,7 @@ public sealed class PushLimitingTests
         Assert.True(limiter.IsExhausted);
         Assert.Equal(0, limiter.Remaining);
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => limiter.RecordPush());
+        var ex = Assert.Throws<Http3Exception>(() => limiter.RecordPush());
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
 
@@ -225,7 +225,7 @@ public sealed class PushLimitingTests
 
         for (var i = 0; i < 5; i++)
         {
-            var ex = Assert.Throws<Http3ConnectionException>(() => limiter.RecordPush());
+            var ex = Assert.Throws<Http3Exception>(() => limiter.RecordPush());
             Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
         }
 

@@ -44,7 +44,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
             ("Content-Type", "text/plain")
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -59,7 +59,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
             ("X-Request-Id", "abc")
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -82,7 +82,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
             (name, value)
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -117,7 +117,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
             ("te", "gzip")
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -139,7 +139,7 @@ public sealed class Http30FieldValidationStageTests : StreamTestBase
             (name, value)
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 

@@ -36,7 +36,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":method", ex.Message);
@@ -52,7 +52,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":scheme", ex.Message);
@@ -68,7 +68,7 @@ public sealed class PseudoHeaderValidationTests
             (":scheme", "https"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":authority", ex.Message);
@@ -84,7 +84,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":path", ex.Message);
@@ -120,7 +120,7 @@ public sealed class PseudoHeaderValidationTests
             (":status", "200"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
@@ -139,7 +139,7 @@ public sealed class PseudoHeaderValidationTests
             (":protocol", "websocket"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
@@ -157,7 +157,7 @@ public sealed class PseudoHeaderValidationTests
             (":custom", "value"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":custom", ex.Message);
@@ -177,7 +177,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular header", ex.Message);
@@ -195,7 +195,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -214,7 +214,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -232,7 +232,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -250,7 +250,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -268,7 +268,7 @@ public sealed class PseudoHeaderValidationTests
             (":authority", "other.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -370,7 +370,7 @@ public sealed class PseudoHeaderValidationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":status", ex.Message);
     }
@@ -388,7 +388,7 @@ public sealed class PseudoHeaderValidationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 
@@ -425,7 +425,7 @@ public sealed class PseudoHeaderValidationTests
             (":method", "GET"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3ResponseDecoder.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":method", ex.Message);
@@ -440,7 +440,7 @@ public sealed class PseudoHeaderValidationTests
             (":path", "/"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3ResponseDecoder.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":path", ex.Message);
@@ -455,7 +455,7 @@ public sealed class PseudoHeaderValidationTests
             (":custom", "value"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3ResponseDecoder.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":custom", ex.Message);
@@ -472,7 +472,7 @@ public sealed class PseudoHeaderValidationTests
             (":status", "200"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3ResponseDecoder.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular header", ex.Message);
@@ -489,7 +489,7 @@ public sealed class PseudoHeaderValidationTests
             (":status", "301"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3ResponseDecoder.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -512,7 +512,7 @@ public sealed class PseudoHeaderValidationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 }

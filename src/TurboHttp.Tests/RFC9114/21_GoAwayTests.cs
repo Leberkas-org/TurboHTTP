@@ -63,7 +63,7 @@ public sealed class GoAwayTests
         var handler = new Http3GoAwayHandler();
         handler.OnServerGoAway(new Http3GoAwayFrame(4));
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.OnServerGoAway(new Http3GoAwayFrame(8)));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -73,7 +73,7 @@ public sealed class GoAwayTests
     {
         var handler = new Http3GoAwayHandler();
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.OnServerGoAway(new Http3GoAwayFrame(5)));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -88,7 +88,7 @@ public sealed class GoAwayTests
     {
         var handler = new Http3GoAwayHandler();
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.OnServerGoAway(new Http3GoAwayFrame(streamId)));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -253,7 +253,7 @@ public sealed class GoAwayTests
         var handler = new Http3GoAwayHandler();
         handler.CreateClientGoAway(5);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.CreateClientGoAway(10));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -344,7 +344,7 @@ public sealed class GoAwayTests
         cs.OnRemoteControlStreamOpened();
 
         var goaway = new Http3GoAwayFrame(4);
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(goaway));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(goaway));
         Assert.Equal(Http3ErrorCode.MissingSettings, ex.ErrorCode);
     }
 }

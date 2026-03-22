@@ -78,7 +78,7 @@ public sealed class Http3PushLimiter
     /// Records an incoming push promise and enforces the limit.
     /// Call this for every validated PUSH_PROMISE frame.
     /// </summary>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.ExcessiveLoad"/> if the push count
     /// would exceed the configured maximum (RFC 9114 §10.5).
     /// </exception>
@@ -86,7 +86,7 @@ public sealed class Http3PushLimiter
     {
         if (_pushCount >= _maxPushCount)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.ExcessiveLoad,
                 $"Server exceeded push limit of {_maxPushCount} push promises (RFC 9114 §10.5).");
         }

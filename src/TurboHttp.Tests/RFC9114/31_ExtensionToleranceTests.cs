@@ -212,7 +212,7 @@ public sealed class ExtensionToleranceTests
     {
         // Extension tolerance does NOT apply to specifically reserved HTTP/2 identifiers
         var settings = new Http3Settings();
-        Assert.Throws<Http3SettingsException>(() => settings.Set(reservedId, 0));
+        Assert.Throws<Http3Exception>(() => settings.Set(reservedId, 0));
     }
 
     // ───────────────────── Partial Unknown Frames ─────────────────────

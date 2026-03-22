@@ -61,7 +61,7 @@ public sealed class PushPromiseValidationTests
         var validator = CreateValidator(10);
         var frame = new Http3PushPromiseFrame(11, ReadOnlyMemory<byte>.Empty);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => validator.Validate(frame, ValidHeaders));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -73,7 +73,7 @@ public sealed class PushPromiseValidationTests
         var validator = new Http3PushPromiseValidator(handler);
         var frame = new Http3PushPromiseFrame(0, ReadOnlyMemory<byte>.Empty);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => validator.Validate(frame, ValidHeaders));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -89,7 +89,7 @@ public sealed class PushPromiseValidationTests
 
         validator.Validate(frame1, ValidHeaders);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => validator.Validate(frame2, ValidHeaders));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -160,7 +160,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/resource"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":method", ex.Message);
@@ -175,7 +175,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/resource"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":scheme", ex.Message);
@@ -190,7 +190,7 @@ public sealed class PushPromiseValidationTests
             (":scheme", "https"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":path", ex.Message);
@@ -207,7 +207,7 @@ public sealed class PushPromiseValidationTests
             (":status", "200"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":status", ex.Message);
@@ -227,7 +227,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/resource"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("safe and cacheable", ex.Message);
@@ -245,7 +245,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/resource"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -261,7 +261,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/resource"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate :method", ex.Message);
@@ -278,7 +278,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/resource"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate :scheme", ex.Message);
@@ -295,7 +295,7 @@ public sealed class PushPromiseValidationTests
             (":path", "/b"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate :path", ex.Message);
@@ -314,7 +314,7 @@ public sealed class PushPromiseValidationTests
             ("connection", "keep-alive"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -330,7 +330,7 @@ public sealed class PushPromiseValidationTests
             ("transfer-encoding", "chunked"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -346,7 +346,7 @@ public sealed class PushPromiseValidationTests
             ("Content-Type", "text/html"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -376,7 +376,7 @@ public sealed class PushPromiseValidationTests
             ("te", "gzip"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3PushPromiseValidator.ValidatePromisedHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -401,7 +401,7 @@ public sealed class PushPromiseValidationTests
         var frame = new Http3PushPromiseFrame(99, ReadOnlyMemory<byte>.Empty);
         var badHeaders = new List<(string, string)>(); // also invalid
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => validator.Validate(frame, badHeaders));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }

@@ -106,7 +106,7 @@ public sealed class ConnectMethodTests
             (":authority", "example.com:443"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Contains(":scheme", ex.Message);
         Assert.Contains("4.4", ex.Message);
@@ -122,7 +122,7 @@ public sealed class ConnectMethodTests
             (":authority", "example.com:443"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Contains(":path", ex.Message);
         Assert.Contains("4.4", ex.Message);
@@ -139,7 +139,7 @@ public sealed class ConnectMethodTests
             (":authority", "example.com:443"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         // Should reject :scheme first
         Assert.Contains(":scheme", ex.Message);
@@ -153,7 +153,7 @@ public sealed class ConnectMethodTests
             (":method", "CONNECT"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Contains(":authority", ex.Message);
         Assert.Contains("4.4", ex.Message);

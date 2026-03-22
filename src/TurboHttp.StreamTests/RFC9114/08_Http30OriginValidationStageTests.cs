@@ -54,7 +54,7 @@ public sealed class Http30OriginValidationStageTests : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://user:pass@example.com/path");
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => EncodeRequestAsync(request));
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => EncodeRequestAsync(request));
 
         Assert.Contains("userinfo", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -64,7 +64,7 @@ public sealed class Http30OriginValidationStageTests : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://admin@example.com/path");
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => EncodeRequestAsync(request));
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => EncodeRequestAsync(request));
 
         Assert.Contains("userinfo", ex.Message, StringComparison.OrdinalIgnoreCase);
     }

@@ -227,7 +227,7 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                     {
                         _pushLimiter.RecordPush();
                     }
-                    catch (Http3ConnectionException ex)
+                    catch (Http3Exception ex)
                     {
                         Log.Error(ex, "Http30ConnectionStage: RFC 9114 §10.5 — server push rejected; push limit is zero.");
                         FailStage(ex);
@@ -293,7 +293,7 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                 Log.Debug("Http30ConnectionStage: RFC 9114 §7.2.4 — remote SETTINGS received ({0} parameters).",
                     settings.Parameters.Count);
             }
-            catch (Http3ConnectionException ex)
+            catch (Http3Exception ex)
             {
                 Log.Error(ex, "Http30ConnectionStage: SETTINGS error — {0}", ex.Message);
                 FailStage(ex);
@@ -310,7 +310,7 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                 Log.Warning("Http30ConnectionStage: RFC 9114 §5.2 — GOAWAY received (streamId={0}).",
                     goAway.StreamId);
             }
-            catch (Http3ConnectionException ex)
+            catch (Http3Exception ex)
             {
                 Log.Error(ex, "Http30ConnectionStage: GOAWAY error — {0}", ex.Message);
                 FailStage(ex);

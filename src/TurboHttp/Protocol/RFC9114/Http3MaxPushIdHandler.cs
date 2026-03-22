@@ -47,7 +47,7 @@ public sealed class Http3MaxPushIdHandler
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown if <paramref name="pushId"/> is negative.
     /// </exception>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if <paramref name="pushId"/>
     /// is less than the previously sent value (RFC 9114 §7.2.7).
     /// </exception>
@@ -61,7 +61,7 @@ public sealed class Http3MaxPushIdHandler
         // RFC 9114 §7.2.7: The maximum push ID MUST NOT be reduced.
         if (_currentMaxPushId >= 0 && pushId < _currentMaxPushId)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"MAX_PUSH_ID {pushId} must not decrease below previous value {_currentMaxPushId} (RFC 9114 §7.2.7).");
         }
@@ -75,7 +75,7 @@ public sealed class Http3MaxPushIdHandler
     /// does not exceed the current MAX_PUSH_ID limit.
     /// </summary>
     /// <param name="pushId">The push ID used by the server.</param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if no MAX_PUSH_ID has
     /// been sent (server push is not permitted) or if <paramref name="pushId"/>
     /// exceeds the current limit (RFC 9114 §7.2.7).
@@ -84,14 +84,14 @@ public sealed class Http3MaxPushIdHandler
     {
         if (!HasSentMaxPushId)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"Server used push ID {pushId} but no MAX_PUSH_ID has been sent; server push is not permitted (RFC 9114 §7.2.7).");
         }
 
         if (pushId > _currentMaxPushId)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"Server push ID {pushId} exceeds MAX_PUSH_ID {_currentMaxPushId} (RFC 9114 §7.2.7).");
         }

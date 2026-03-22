@@ -58,11 +58,11 @@ public sealed class Http3GoAwayHandler
     /// </summary>
     /// <param name="frame">The GOAWAY frame received from the server.</param>
     /// <exception cref="ArgumentNullException">If <paramref name="frame"/> is null.</exception>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if the stream ID
     /// increases compared to a previously received GOAWAY (RFC 9114 §5.2).
     /// </exception>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if the stream ID
     /// is not a valid client-initiated bidirectional stream ID (not divisible by 4).
     /// </exception>
@@ -76,7 +76,7 @@ public sealed class Http3GoAwayHandler
         // stream ID (divisible by 4) when sent from server to client.
         if (streamId % 4 != 0)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"Server GOAWAY stream ID {streamId} is not a valid client-initiated bidirectional stream ID (must be divisible by 4, RFC 9114 §5.2).");
         }
@@ -85,7 +85,7 @@ public sealed class Http3GoAwayHandler
         // but the identifier MUST NOT increase.
         if (_lastServerGoAwayStreamId >= 0 && streamId > _lastServerGoAwayStreamId)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"Server GOAWAY stream ID {streamId} must not increase beyond previous value {_lastServerGoAwayStreamId} (RFC 9114 §5.2).");
         }
@@ -171,7 +171,7 @@ public sealed class Http3GoAwayHandler
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown if <paramref name="pushId"/> is negative.
     /// </exception>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if the push ID
     /// increases compared to a previously sent client GOAWAY (RFC 9114 §5.2).
     /// </exception>
@@ -185,7 +185,7 @@ public sealed class Http3GoAwayHandler
         // RFC 9114 §5.2: The identifier MUST NOT increase between GOAWAY frames.
         if (_lastClientGoAwayPushId >= 0 && pushId > _lastClientGoAwayPushId)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"Client GOAWAY push ID {pushId} must not increase beyond previous value {_lastClientGoAwayPushId} (RFC 9114 §5.2).");
         }

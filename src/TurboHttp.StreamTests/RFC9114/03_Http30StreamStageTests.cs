@@ -266,7 +266,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
             ("Content-Type", "text/plain")
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -285,7 +285,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
             (name, value)
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -316,7 +316,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
             ("te", "gzip")
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 
@@ -334,7 +334,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
             (name, value)
         );
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(
             new Http3HeadersFrame(headerBlock)
         ));
 

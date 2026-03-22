@@ -50,7 +50,7 @@ Generated: 2026-03-10
 | 25 | `BuildRedirectRequest_Preserves_Authorization_On_Same_Origin` | Fact | RH-025: Preserves Authorization header on same-origin redirect |
 | 26 | `BuildRedirectRequest_Strips_Authorization_When_Scheme_Changes` | Fact | RH-026: Strips Authorization header when scheme changes (HTTPS→HTTP) |
 | 27 | `BuildRedirectRequest_Strips_Authorization_When_Port_Changes` | Fact | RH-027: Strips Authorization header when port changes |
-| 28 | `BuildRedirectRequest_Throws_On_Https_To_Http_Downgrade` | Fact | RH-028: Throws RedirectDowngradeException on HTTPS to HTTP redirect |
+| 28 | `BuildRedirectRequest_Throws_On_Https_To_Http_Downgrade` | Fact | RH-028: Throws RedirectException with ProtocolDowngrade on HTTPS to HTTP redirect |
 | 29 | `BuildRedirectRequest_Allows_Downgrade_When_Policy_Permits` | Fact | RH-029: Allows HTTPS to HTTP downgrade when policy permits |
 | 30 | `BuildRedirectRequest_Allows_Http_To_Https_Upgrade` | Fact | RH-030: Allows HTTP to HTTPS upgrade (no downgrade block) |
 | 31 | `Reset_Clears_Redirect_Count_And_History` | Fact | RH-031: Reset clears redirect count and history |

@@ -87,7 +87,7 @@ public sealed class Http30PushRejectionStageTests : StreamTestBase
         var settings = new Http3SettingsFrame([]);
         var pushPromise = new Http3PushPromiseFrame(0, new byte[] { 0x00 });
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(settings, pushPromise));
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(settings, pushPromise));
 
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
@@ -98,7 +98,7 @@ public sealed class Http30PushRejectionStageTests : StreamTestBase
         var settings = new Http3SettingsFrame([]);
         var pushPromise = new Http3PushPromiseFrame(42, new byte[] { 0x00, 0x01 });
 
-        var ex = await Assert.ThrowsAsync<Http3ConnectionException>(() => RunAsync(settings, pushPromise));
+        var ex = await Assert.ThrowsAsync<Http3Exception>(() => RunAsync(settings, pushPromise));
 
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }

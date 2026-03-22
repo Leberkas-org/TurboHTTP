@@ -18,6 +18,9 @@ public enum RedirectError
 
     /// <summary>The Location header value is not a valid URI.</summary>
     InvalidLocationHeader,
+
+    /// <summary>The redirect would downgrade from HTTPS to HTTP and the policy forbids it.</summary>
+    ProtocolDowngrade,
 }
 
 /// <summary>
@@ -41,13 +44,4 @@ public sealed class RedirectException : TurboHttpException
     {
         Error = error;
     }
-}
-
-/// <summary>
-/// Thrown when a redirect would downgrade from HTTPS to HTTP and the policy forbids it.
-/// </summary>
-public sealed class RedirectDowngradeException : TurboHttpException
-{
-    /// <inheritdoc />
-    public RedirectDowngradeException(string message) : base(message) { }
 }

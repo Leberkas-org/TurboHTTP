@@ -433,15 +433,16 @@ public sealed class RedirectHandlerTests
     }
 
 
-    [Fact(DisplayName = "RFC9110-15.4-RH-028: Throws RedirectDowngradeException on HTTPS to HTTP redirect")]
-    public void Should_ThrowRedirectDowngradeException_When_HttpsToHttpDowngrade()
+    [Fact(DisplayName = "RFC9110-15.4-RH-028: Throws RedirectException with ProtocolDowngrade on HTTPS to HTTP redirect")]
+    public void Should_ThrowRedirectException_ProtocolDowngrade_When_HttpsToHttpDowngrade()
     {
         var handler = new RedirectHandler(); // AllowHttpsToHttpDowngrade = false by default
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure");
         var response = BuildRedirect(HttpStatusCode.Found, "http://example.com/insecure");
 
-        Assert.Throws<RedirectDowngradeException>(() =>
+        var ex = Assert.Throws<RedirectException>(() =>
             handler.BuildRedirectRequest(original, response));
+        Assert.Equal(RedirectError.ProtocolDowngrade, ex.Error);
     }
 
     [Fact(DisplayName = "RFC9110-15.4-RH-029: Allows HTTPS to HTTP downgrade when policy permits")]

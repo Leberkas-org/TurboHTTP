@@ -180,7 +180,7 @@ internal sealed class RedirectBidiStage
                         // Pull next response (demand still outstanding since we didn't push to Out2)
                         TryPullResponse();
                     }
-                    catch (RedirectDowngradeException)
+                    catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)
                     {
                         // HTTPS→HTTP downgrade blocked — forward as final response
                         _responseDemand = false;

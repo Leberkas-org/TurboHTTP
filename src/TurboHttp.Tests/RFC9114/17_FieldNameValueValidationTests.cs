@@ -33,7 +33,7 @@ public sealed class FieldNameValueValidationTests
             ("Content-Type", "text/html"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("uppercase", ex.Message);
@@ -52,7 +52,7 @@ public sealed class FieldNameValueValidationTests
             ("Accept-Encoding", "gzip"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Accept-Encoding", ex.Message);
@@ -67,7 +67,7 @@ public sealed class FieldNameValueValidationTests
             ("HOST", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("HOST", ex.Message);
@@ -117,7 +117,7 @@ public sealed class FieldNameValueValidationTests
             (name, "value"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -133,7 +133,7 @@ public sealed class FieldNameValueValidationTests
             ("connection", "keep-alive"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Connection", ex.Message);
@@ -148,7 +148,7 @@ public sealed class FieldNameValueValidationTests
             ("transfer-encoding", "chunked"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Transfer-Encoding", ex.Message);
@@ -163,7 +163,7 @@ public sealed class FieldNameValueValidationTests
             ("upgrade", "h2c"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Upgrade", ex.Message);
@@ -178,7 +178,7 @@ public sealed class FieldNameValueValidationTests
             ("proxy-connection", "keep-alive"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Proxy-Connection", ex.Message);
@@ -193,7 +193,7 @@ public sealed class FieldNameValueValidationTests
             ("keep-alive", "timeout=5"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Keep-Alive", ex.Message);
@@ -225,7 +225,7 @@ public sealed class FieldNameValueValidationTests
             ("te", "gzip"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("TE", ex.Message);
@@ -241,7 +241,7 @@ public sealed class FieldNameValueValidationTests
             ("te", "chunked"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -255,7 +255,7 @@ public sealed class FieldNameValueValidationTests
             ("te", "trailers, gzip"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -269,7 +269,7 @@ public sealed class FieldNameValueValidationTests
             ("te", ""),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.Validate(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -348,7 +348,7 @@ public sealed class FieldNameValueValidationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("uppercase", ex.Message);
     }
@@ -367,7 +367,7 @@ public sealed class FieldNameValueValidationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Connection", ex.Message);
     }
@@ -386,7 +386,7 @@ public sealed class FieldNameValueValidationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 
@@ -401,7 +401,7 @@ public sealed class FieldNameValueValidationTests
     [Fact(DisplayName = "RFC-9114-4.2-fv-025: ValidateFieldName reports position of uppercase char")]
     public void ValidateFieldName_reports_position()
     {
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.ValidateFieldName("content-Type"));
         Assert.Contains("position 8", ex.Message);
     }
@@ -416,7 +416,7 @@ public sealed class FieldNameValueValidationTests
     [InlineData("keep-alive")]
     public void All_connection_specific_headers_rejected(string name)
     {
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3FieldValidator.ValidateConnectionSpecific(name, "value"));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }

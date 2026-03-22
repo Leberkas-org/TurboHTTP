@@ -254,7 +254,7 @@ public sealed class QpackIntegrationTests
         var frames = new List<Http3Frame> { new Http3HeadersFrame(headerBlock) };
 
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":status", ex.Message);
     }
@@ -263,7 +263,7 @@ public sealed class QpackIntegrationTests
     public void Decoder_rejects_empty_frames()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(new List<Http3Frame>()));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(new List<Http3Frame>()));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
 
@@ -272,7 +272,7 @@ public sealed class QpackIntegrationTests
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
         var frames = new List<Http3Frame> { new Http3DataFrame(new byte[] { 0x01 }) };
-        var ex = Assert.Throws<Http3ConnectionException>(() => decoder.Decode(frames));
+        var ex = Assert.Throws<Http3Exception>(() => decoder.Decode(frames));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
 

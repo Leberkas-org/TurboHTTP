@@ -77,14 +77,14 @@ public sealed class Http3ResponseDecoder
 
         if (frames.Count == 0)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.FrameUnexpected,
+            throw new Http3Exception(Http3ErrorCode.FrameUnexpected,
                 "RFC 9114 §4.1: No frames received on request stream.");
         }
 
         // First frame must be HEADERS
         if (frames[0] is not Http3HeadersFrame headersFrame)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.FrameUnexpected,
+            throw new Http3Exception(Http3ErrorCode.FrameUnexpected,
                 $"RFC 9114 §4.1: Expected HEADERS frame, got {frames[0].Type}.");
         }
 
@@ -198,14 +198,14 @@ public sealed class Http3ResponseDecoder
                 {
                     if (hasStatus)
                     {
-                        throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                        throw new Http3Exception(Http3ErrorCode.MessageError,
                             "RFC 9114 §4.3.2: Duplicate :status pseudo-header");
                     }
                     hasStatus = true;
                 }
                 else
                 {
-                    throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
                         $"RFC 9114 §4.3.2: Unknown response pseudo-header '{name}'");
                 }
             }
@@ -220,7 +220,7 @@ public sealed class Http3ResponseDecoder
 
         if (lastPseudoIndex > firstRegularIndex)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 $"RFC 9114 §4.3.2: Pseudo-header at index {lastPseudoIndex} appears after regular header at index {firstRegularIndex}");
         }
     }
@@ -237,7 +237,7 @@ public sealed class Http3ResponseDecoder
             {
                 if (!int.TryParse(headers[i].Value, out var code) || code < 100 || code > 999)
                 {
-                    throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
                         $"RFC 9114 §4.3.2: Invalid :status value '{headers[i].Value}'.");
                 }
 
@@ -245,7 +245,7 @@ public sealed class Http3ResponseDecoder
             }
         }
 
-        throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+        throw new Http3Exception(Http3ErrorCode.MessageError,
             "RFC 9114 §4.3.2: Missing required :status pseudo-header in response.");
     }
 

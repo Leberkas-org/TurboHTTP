@@ -84,7 +84,8 @@ public sealed class SettingsTests
     public void Set_ReservedH2Identifier_Throws(long reservedId)
     {
         var settings = new Http3Settings();
-        var ex = Assert.Throws<Http3SettingsException>(() => settings.Set(reservedId, 0));
+        var ex = Assert.Throws<Http3Exception>(() => settings.Set(reservedId, 0));
+        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -96,7 +97,8 @@ public sealed class SettingsTests
     public void Deserialize_ReservedH2Identifier_Throws(long reservedId)
     {
         var payload = BuildSingleSettingPayload(reservedId, 0);
-        var ex = Assert.Throws<Http3SettingsException>(() => Http3Settings.Deserialize(payload));
+        var ex = Assert.Throws<Http3Exception>(() => Http3Settings.Deserialize(payload));
+        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -104,7 +106,8 @@ public sealed class SettingsTests
     public void Deserialize_DuplicateIdentifier_Throws()
     {
         var payload = BuildDuplicatePayload();
-        var ex = Assert.Throws<Http3SettingsException>(() => Http3Settings.Deserialize(payload));
+        var ex = Assert.Throws<Http3Exception>(() => Http3Settings.Deserialize(payload));
+        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 

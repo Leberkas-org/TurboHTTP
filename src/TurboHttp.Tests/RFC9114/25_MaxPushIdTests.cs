@@ -75,7 +75,7 @@ public sealed class MaxPushIdTests
         var handler = new Http3MaxPushIdHandler();
         handler.CreateMaxPushId(10);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.CreateMaxPushId(5));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -113,7 +113,7 @@ public sealed class MaxPushIdTests
     {
         var handler = new Http3MaxPushIdHandler();
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.ValidatePushId(0));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -136,7 +136,7 @@ public sealed class MaxPushIdTests
         var handler = new Http3MaxPushIdHandler();
         handler.CreateMaxPushId(10);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.ValidatePushId(11));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -150,7 +150,7 @@ public sealed class MaxPushIdTests
         var handler = new Http3MaxPushIdHandler();
         handler.CreateMaxPushId(10);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.ValidatePushId(pushId));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
     }
@@ -162,7 +162,7 @@ public sealed class MaxPushIdTests
         handler.CreateMaxPushId(5);
 
         // Push ID 10 exceeds limit of 5
-        Assert.Throws<Http3ConnectionException>(() => handler.ValidatePushId(10));
+        Assert.Throws<Http3Exception>(() => handler.ValidatePushId(10));
 
         // Raise limit to 15
         handler.CreateMaxPushId(15);
@@ -236,7 +236,7 @@ public sealed class MaxPushIdTests
         cs.OnRemoteControlStreamOpened();
 
         var maxPushId = new Http3MaxPushIdFrame(10);
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(maxPushId));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(maxPushId));
         Assert.Equal(Http3ErrorCode.MissingSettings, ex.ErrorCode);
     }
 

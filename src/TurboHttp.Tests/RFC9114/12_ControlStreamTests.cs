@@ -24,7 +24,7 @@ public sealed class ControlStreamTests
         var cs = new Http3ControlStream();
         cs.OpenLocalStream();
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OpenLocalStream());
+        var ex = Assert.Throws<Http3Exception>(() => cs.OpenLocalStream());
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }
 
@@ -88,7 +88,7 @@ public sealed class ControlStreamTests
         var cs = new Http3ControlStream();
         cs.OnRemoteControlStreamOpened();
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteControlStreamOpened());
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteControlStreamOpened());
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }
 
@@ -99,7 +99,7 @@ public sealed class ControlStreamTests
         cs.OnRemoteControlStreamOpened();
 
         var goaway = new Http3GoAwayFrame(0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(goaway));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(goaway));
         Assert.Equal(Http3ErrorCode.MissingSettings, ex.ErrorCode);
     }
 
@@ -130,7 +130,7 @@ public sealed class ControlStreamTests
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>());
         cs.OnRemoteFrame(settingsFrame);
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(settingsFrame));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(settingsFrame));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
 
@@ -143,7 +143,7 @@ public sealed class ControlStreamTests
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>());
         cs.OnRemoteFrame(settingsFrame);
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteControlStreamClosed());
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteControlStreamClosed());
         Assert.Equal(Http3ErrorCode.ClosedCriticalStream, ex.ErrorCode);
         Assert.Equal(ControlStreamState.Closed, cs.RemoteState);
     }
@@ -154,7 +154,7 @@ public sealed class ControlStreamTests
         var cs = new Http3ControlStream();
         cs.OpenLocalStream();
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnLocalControlStreamClosed());
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnLocalControlStreamClosed());
         Assert.Equal(Http3ErrorCode.ClosedCriticalStream, ex.ErrorCode);
         Assert.Equal(ControlStreamState.Closed, cs.LocalState);
     }
@@ -169,7 +169,7 @@ public sealed class ControlStreamTests
         cs.OnRemoteFrame(settingsFrame);
 
         var dataFrame = new Http3DataFrame(new byte[] { 0x01, 0x02 });
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(dataFrame));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(dataFrame));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
 
@@ -183,7 +183,7 @@ public sealed class ControlStreamTests
         cs.OnRemoteFrame(settingsFrame);
 
         var headersFrame = new Http3HeadersFrame(new byte[] { 0x01 });
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(headersFrame));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(headersFrame));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
 

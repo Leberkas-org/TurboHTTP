@@ -194,7 +194,7 @@ public sealed class Http3RequestEncoder
                     case ":method":
                         if (hasMethod)
                         {
-                            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(Http3ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :method pseudo-header");
                         }
                         hasMethod = true;
@@ -203,7 +203,7 @@ public sealed class Http3RequestEncoder
                     case ":path":
                         if (hasPath)
                         {
-                            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(Http3ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :path pseudo-header");
                         }
                         hasPath = true;
@@ -211,7 +211,7 @@ public sealed class Http3RequestEncoder
                     case ":scheme":
                         if (hasScheme)
                         {
-                            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(Http3ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :scheme pseudo-header");
                         }
                         hasScheme = true;
@@ -219,13 +219,13 @@ public sealed class Http3RequestEncoder
                     case ":authority":
                         if (hasAuthority)
                         {
-                            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(Http3ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :authority pseudo-header");
                         }
                         hasAuthority = true;
                         break;
                     default:
-                        throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                        throw new Http3Exception(Http3ErrorCode.MessageError,
                             $"RFC 9114 §4.3.1: Unknown request pseudo-header '{name}'");
                 }
             }
@@ -240,7 +240,7 @@ public sealed class Http3RequestEncoder
 
         if (lastPseudoIndex > firstRegularIndex)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 $"RFC 9114 §4.3.1: Pseudo-header at index {lastPseudoIndex} appears after regular header at index {firstRegularIndex}");
         }
 
@@ -249,19 +249,19 @@ public sealed class Http3RequestEncoder
         {
             if (hasScheme)
             {
-                throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                throw new Http3Exception(Http3ErrorCode.MessageError,
                     "RFC 9114 §4.4: CONNECT request MUST NOT include :scheme pseudo-header");
             }
 
             if (hasPath)
             {
-                throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                throw new Http3Exception(Http3ErrorCode.MessageError,
                     "RFC 9114 §4.4: CONNECT request MUST NOT include :path pseudo-header");
             }
 
             if (!hasAuthority)
             {
-                throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+                throw new Http3Exception(Http3ErrorCode.MessageError,
                     "RFC 9114 §4.4: CONNECT request MUST include :authority pseudo-header");
             }
 
@@ -276,7 +276,7 @@ public sealed class Http3RequestEncoder
 
         if (missing.Length > 0)
         {
-            throw new Http3ConnectionException(Http3ErrorCode.MessageError,
+            throw new Http3Exception(Http3ErrorCode.MessageError,
                 $"RFC 9114 §4.3.1: Missing required pseudo-headers: {missing}");
         }
     }

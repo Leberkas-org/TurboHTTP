@@ -61,7 +61,7 @@ public sealed class Http3CancelPushHandler
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown if <paramref name="pushId"/> is negative.
     /// </exception>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.IdError"/> if <paramref name="pushId"/>
     /// exceeds the MAX_PUSH_ID limit (RFC 9114 §7.2.3).
     /// </exception>
@@ -75,7 +75,7 @@ public sealed class Http3CancelPushHandler
         // RFC 9114 §7.2.3: push ID must not exceed MAX_PUSH_ID limit
         if (_maxPushIdHandler.HasSentMaxPushId && pushId > _maxPushIdHandler.CurrentMaxPushId)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.IdError,
                 $"CANCEL_PUSH push ID {pushId} exceeds MAX_PUSH_ID {_maxPushIdHandler.CurrentMaxPushId} (RFC 9114 §7.2.3).");
         }

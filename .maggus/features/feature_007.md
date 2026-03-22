@@ -109,15 +109,15 @@ TurboHttpException (abstract)
 **Model:** opus — requires careful refactoring across multiple files
 
 **Acceptance Criteria:**
-- [ ] `Http3ConnectionException` renamed to `Http3Exception` (file: `Http3Exception.cs`)
-- [ ] `Http3SettingsException` removed from `Http3Settings.cs`
-- [ ] All `throw new Http3SettingsException(...)` → `throw new Http3Exception(Http3ErrorCode.SettingsError, ...)`
-- [ ] `RedirectDowngradeException` removed from `RedirectException.cs`
-- [ ] New enum value: `RedirectError.ProtocolDowngrade`
-- [ ] All `throw new RedirectDowngradeException(...)` → `throw new RedirectException(..., RedirectError.ProtocolDowngrade)`
-- [ ] All `catch (RedirectDowngradeException)` → `catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)`
-- [ ] All `catch (Http3SettingsException)` → `catch (Http3Exception ex) when (ex.ErrorCode == Http3ErrorCode.SettingsError)`
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
+- [x] `Http3ConnectionException` renamed to `Http3Exception` (file: `Http3Exception.cs`)
+- [x] `Http3SettingsException` removed from `Http3Settings.cs`
+- [x] All `throw new Http3SettingsException(...)` → `throw new Http3Exception(Http3ErrorCode.SettingsError, ...)`
+- [x] `RedirectDowngradeException` removed from `RedirectException.cs`
+- [x] New enum value: `RedirectError.ProtocolDowngrade`
+- [x] All `throw new RedirectDowngradeException(...)` → `throw new RedirectException(..., RedirectError.ProtocolDowngrade)`
+- [x] All `catch (RedirectDowngradeException)` → `catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)`
+- [x] All `catch (Http3SettingsException)` → `catch (Http3Exception ex) when (ex.ErrorCode == Http3ErrorCode.SettingsError)`
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
 
 ### TASK-007-005: Update tests and validation gate
 **Description:** As a developer, I want to ensure all tests pass after the exception refactoring.

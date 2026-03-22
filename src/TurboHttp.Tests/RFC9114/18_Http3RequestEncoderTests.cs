@@ -423,7 +423,7 @@ public sealed class Http3RequestEncoderTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
@@ -438,7 +438,7 @@ public sealed class Http3RequestEncoderTests
             // missing :path, :scheme, :authority
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Missing", ex.Message);
@@ -456,7 +456,7 @@ public sealed class Http3RequestEncoderTests
             (":unknown", "value"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
@@ -474,7 +474,7 @@ public sealed class Http3RequestEncoderTests
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular", ex.Message);

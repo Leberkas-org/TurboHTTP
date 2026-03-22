@@ -103,7 +103,7 @@ public sealed class UniStreamTests
 
         handler.TryIdentify(data, out _, out _, out _);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.TryIdentify(data, out _, out _, out _));
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }
@@ -116,7 +116,7 @@ public sealed class UniStreamTests
 
         handler.TryIdentify(data, out _, out _, out _);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.TryIdentify(data, out _, out _, out _));
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }
@@ -129,7 +129,7 @@ public sealed class UniStreamTests
 
         handler.TryIdentify(data, out _, out _, out _);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => handler.TryIdentify(data, out _, out _, out _));
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }

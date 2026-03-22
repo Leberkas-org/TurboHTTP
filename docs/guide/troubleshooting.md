@@ -84,7 +84,7 @@ var client = factory.CreateClient(opts => opts with
 
 ### HTTPS to HTTP Downgrade Blocked
 
-**Symptom:** `RedirectDowngradeException` on a redirect.
+**Symptom:** `RedirectException` with `RedirectError.ProtocolDowngrade` on a redirect.
 
 **Cause:** A server redirected from `https://` to `http://`, which TurboHttp blocks by default for security.
 

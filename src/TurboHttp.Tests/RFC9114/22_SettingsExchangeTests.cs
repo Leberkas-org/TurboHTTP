@@ -65,7 +65,7 @@ public sealed class SettingsExchangeTests
         var cs = new Http3ControlStream();
         cs.OpenLocalStream();
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OpenLocalStream());
+        var ex = Assert.Throws<Http3Exception>(() => cs.OpenLocalStream());
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }
 
@@ -132,7 +132,7 @@ public sealed class SettingsExchangeTests
         cs.OnRemoteControlStreamOpened();
 
         var goaway = new Http3GoAwayFrame(0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(goaway));
+        var ex = Assert.Throws<Http3Exception>(() => cs.OnRemoteFrame(goaway));
         Assert.Equal(Http3ErrorCode.MissingSettings, ex.ErrorCode);
     }
 
@@ -212,7 +212,7 @@ public sealed class SettingsExchangeTests
             (":authority", "a"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => cs.ValidateFieldSectionSize(headers));
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
         Assert.Contains("SETTINGS_MAX_FIELD_SECTION_SIZE", ex.Message);
@@ -264,7 +264,7 @@ public sealed class SettingsExchangeTests
         cs.ValidateFieldSectionSize(499L); // OK
         cs.ValidateFieldSectionSize(500L); // OK (at limit)
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => cs.ValidateFieldSectionSize(501L));
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
@@ -288,8 +288,9 @@ public sealed class SettingsExchangeTests
         });
 
         // OnRemoteFrame calls Http3Settings.Set() which rejects reserved IDs
-        var ex = Assert.Throws<Http3SettingsException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => cs.OnRemoteFrame(settingsFrame));
+        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -302,8 +303,9 @@ public sealed class SettingsExchangeTests
     {
         var parameters = new List<(long, long)> { (reservedId, 0) };
 
-        var ex = Assert.Throws<Http3SettingsException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3SettingId.RejectForbiddenH2Settings(parameters));
+        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("HTTP/2", ex.Message);
     }
@@ -330,7 +332,7 @@ public sealed class SettingsExchangeTests
     public void LocalSettings_ReservedH2Setting_ThrowsOnSet(long reservedId)
     {
         var settings = new Http3Settings();
-        Assert.Throws<Http3SettingsException>(() => settings.Set(reservedId, 0));
+        Assert.Throws<Http3Exception>(() => settings.Set(reservedId, 0));
     }
 
     // ───────────────────────── Full Exchange Lifecycle ─────────────────────────
@@ -372,7 +374,7 @@ public sealed class SettingsExchangeTests
     {
         // Http3Settings.Deserialize() rejects duplicates
         var payload = BuildDuplicatePayload(Http3SettingId.MaxFieldSectionSize, 1024, 2048);
-        Assert.Throws<Http3SettingsException>(() => Http3Settings.Deserialize(payload));
+        Assert.Throws<Http3Exception>(() => Http3Settings.Deserialize(payload));
     }
 
     [Fact(DisplayName = "RFC-9114-7.2.4-se-024: Second SETTINGS frame on control stream is connection error")]
@@ -384,7 +386,7 @@ public sealed class SettingsExchangeTests
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>());
         cs.OnRemoteFrame(settingsFrame);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => cs.OnRemoteFrame(settingsFrame));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }

@@ -70,7 +70,7 @@ public sealed class Http3UniStream
     /// <c>true</c> if the stream type was successfully decoded;
     /// <c>false</c> if the buffer is too short to decode the varint.
     /// </returns>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.StreamCreationError"/> if a
     /// duplicate critical stream (control, QPACK encoder, or QPACK decoder)
     /// is received.
@@ -97,7 +97,7 @@ public sealed class Http3UniStream
         {
             if (ControlStreamReceived)
             {
-                throw new Http3ConnectionException(
+                throw new Http3Exception(
                     Http3ErrorCode.StreamCreationError,
                     "Receiving a second control stream is a connection error (RFC 9114 §6.2.1).");
             }
@@ -117,7 +117,7 @@ public sealed class Http3UniStream
         {
             if (QpackEncoderStreamReceived)
             {
-                throw new Http3ConnectionException(
+                throw new Http3Exception(
                     Http3ErrorCode.StreamCreationError,
                     "Receiving a second QPACK encoder stream is a connection error (RFC 9114 §6.2.1).");
             }
@@ -131,7 +131,7 @@ public sealed class Http3UniStream
         {
             if (QpackDecoderStreamReceived)
             {
-                throw new Http3ConnectionException(
+                throw new Http3Exception(
                     Http3ErrorCode.StreamCreationError,
                     "Receiving a second QPACK decoder stream is a connection error (RFC 9114 §6.2.1).");
             }

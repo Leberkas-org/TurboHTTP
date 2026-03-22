@@ -275,7 +275,7 @@ public sealed class Http3ResponseDecoderTests
 
     // ───────────────────────── Pseudo-Header Validation (§4.3.2) ─────────────────────────
 
-    [Fact(DisplayName = "RFC-9114-4.3.2-dec-017: Missing :status throws Http3ConnectionException")]
+    [Fact(DisplayName = "RFC-9114-4.3.2-dec-017: Missing :status throws Http3Exception")]
     public void Missing_status_throws()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
@@ -284,12 +284,12 @@ public sealed class Http3ResponseDecoderTests
             ("server", "test"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 
-    [Fact(DisplayName = "RFC-9114-4.3.2-dec-018: Duplicate :status throws Http3ConnectionException")]
+    [Fact(DisplayName = "RFC-9114-4.3.2-dec-018: Duplicate :status throws Http3Exception")]
     public void Duplicate_status_throws()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
@@ -299,13 +299,13 @@ public sealed class Http3ResponseDecoderTests
             (":status", "404"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
-    [Fact(DisplayName = "RFC-9114-4.3.2-dec-019: Unknown pseudo-header throws Http3ConnectionException")]
+    [Fact(DisplayName = "RFC-9114-4.3.2-dec-019: Unknown pseudo-header throws Http3Exception")]
     public void Unknown_pseudo_header_throws()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
@@ -315,7 +315,7 @@ public sealed class Http3ResponseDecoderTests
             (":method", "GET"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
@@ -331,12 +331,12 @@ public sealed class Http3ResponseDecoderTests
             (":status", "200"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 
-    [Fact(DisplayName = "RFC-9114-4.3.2-dec-021: Invalid :status value throws Http3ConnectionException")]
+    [Fact(DisplayName = "RFC-9114-4.3.2-dec-021: Invalid :status value throws Http3Exception")]
     public void Invalid_status_value_throws()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
@@ -345,7 +345,7 @@ public sealed class Http3ResponseDecoderTests
             (":status", "abc"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -359,7 +359,7 @@ public sealed class Http3ResponseDecoderTests
             (":status", "99"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
@@ -373,19 +373,19 @@ public sealed class Http3ResponseDecoderTests
             (":status", "1000"),
         });
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new[] { headersFrame }));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 
     // ───────────────────────── Frame Ordering ─────────────────────────
 
-    [Fact(DisplayName = "RFC-9114-4.1-dec-024: Empty frame list throws Http3ConnectionException")]
+    [Fact(DisplayName = "RFC-9114-4.1-dec-024: Empty frame list throws Http3Exception")]
     public void Empty_frames_throws()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(Array.Empty<Http3Frame>()));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
@@ -397,13 +397,13 @@ public sealed class Http3ResponseDecoderTests
         Assert.Throws<ArgumentNullException>(() => decoder.Decode(null!));
     }
 
-    [Fact(DisplayName = "RFC-9114-4.1-dec-026: DATA frame before HEADERS throws Http3ConnectionException")]
+    [Fact(DisplayName = "RFC-9114-4.1-dec-026: DATA frame before HEADERS throws Http3Exception")]
     public void Data_before_headers_throws()
     {
         var decoder = new Http3ResponseDecoder(maxTableCapacity: 0);
         var dataFrame = new Http3DataFrame("data"u8.ToArray());
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => decoder.Decode(new Http3Frame[] { dataFrame }));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
@@ -525,7 +525,7 @@ public sealed class Http3ResponseDecoderTests
             (":path", "/"),
         };
 
-        var ex = Assert.Throws<Http3ConnectionException>(
+        var ex = Assert.Throws<Http3Exception>(
             () => Http3ResponseDecoder.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }

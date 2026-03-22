@@ -146,7 +146,7 @@ public sealed class CancelPushTests
         maxHandler.CreateMaxPushId(5);
         var handler = new Http3CancelPushHandler(maxHandler);
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => handler.CancelPush(6));
+        var ex = Assert.Throws<Http3Exception>(() => handler.CancelPush(6));
         Assert.Equal(Http3ErrorCode.IdError, ex.ErrorCode);
         Assert.Contains("MAX_PUSH_ID", ex.Message);
     }

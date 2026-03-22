@@ -54,8 +54,9 @@ public sealed class RedirectHandler
     /// Thrown when the max redirect limit is exceeded, a redirect loop is detected,
     /// or the Location header is missing/invalid.
     /// </exception>
-    /// <exception cref="RedirectDowngradeException">
-    /// Thrown when the redirect would downgrade from HTTPS to HTTP and
+    /// <exception cref="RedirectException">
+    /// Also thrown with <see cref="RedirectError.ProtocolDowngrade"/> when the redirect
+    /// would downgrade from HTTPS to HTTP and
     /// <see cref="RedirectPolicy.AllowHttpsToHttpDowngrade"/> is false.
     /// </exception>
     public HttpRequestMessage BuildRedirectRequest(HttpRequestMessage original, HttpResponseMessage response)
@@ -85,9 +86,10 @@ public sealed class RedirectHandler
             original.RequestUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) &&
             locationUri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
         {
-            throw new RedirectDowngradeException(
+            throw new RedirectException(
                 $"RFC 9110 §15.4: Redirect from HTTPS to HTTP is not allowed (downgrade detected). " +
-                $"Redirect location: {locationUri}");
+                $"Redirect location: {locationUri}",
+                RedirectError.ProtocolDowngrade);
         }
 
         // Detect redirect loops

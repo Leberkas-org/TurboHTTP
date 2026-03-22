@@ -55,7 +55,7 @@ public sealed class Http3ControlStream
     /// </summary>
     /// <param name="localSettings">The client's SETTINGS to send. If null, sends empty SETTINGS.</param>
     /// <returns>Serialized bytes: stream type prefix + SETTINGS frame.</returns>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.StreamCreationError"/> if a local
     /// control stream has already been opened.
     /// </exception>
@@ -63,7 +63,7 @@ public sealed class Http3ControlStream
     {
         if (LocalState != ControlStreamState.NotOpened)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.StreamCreationError,
                 "Client MUST NOT open more than one control stream per connection (RFC 9114 §6.2.1).");
         }
@@ -92,7 +92,7 @@ public sealed class Http3ControlStream
     /// as a control stream (stream type = 0x00). Call this when the stream type
     /// byte has been read and identified as <see cref="Http3StreamType.Control"/>.
     /// </summary>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.StreamCreationError"/> if a remote
     /// control stream has already been received (RFC 9114 §6.2.1).
     /// </exception>
@@ -100,7 +100,7 @@ public sealed class Http3ControlStream
     {
         if (RemoteState != ControlStreamState.NotOpened)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.StreamCreationError,
                 "Receiving a second control stream from the server is a connection error (RFC 9114 §6.2.1).");
         }
@@ -114,11 +114,11 @@ public sealed class Http3ControlStream
     /// for control-stream legality.
     /// </summary>
     /// <param name="frame">The decoded frame from the remote control stream.</param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.MissingSettings"/> if the first frame
     /// is not SETTINGS (RFC 9114 §6.2.1).
     /// </exception>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.FrameUnexpected"/> if a second SETTINGS
     /// frame is received (RFC 9114 §7.2.4).
     /// </exception>
@@ -126,14 +126,14 @@ public sealed class Http3ControlStream
     {
         if (RemoteState == ControlStreamState.NotOpened)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.ClosedCriticalStream,
                 "Received frame on control stream before it was opened.");
         }
 
         if (RemoteState == ControlStreamState.Closed)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.ClosedCriticalStream,
                 "Received frame on closed control stream.");
         }
@@ -142,7 +142,7 @@ public sealed class Http3ControlStream
         {
             if (frame is not Http3SettingsFrame settingsFrame)
             {
-                throw new Http3ConnectionException(
+                throw new Http3Exception(
                     Http3ErrorCode.MissingSettings,
                     $"First frame on control stream MUST be SETTINGS, got {frame.Type} (RFC 9114 §6.2.1).");
             }
@@ -162,21 +162,21 @@ public sealed class Http3ControlStream
         // Active state — reject duplicate SETTINGS and DATA/HEADERS (request-stream only frames)
         if (frame is Http3SettingsFrame)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.FrameUnexpected,
                 "A second SETTINGS frame on the control stream is a connection error (RFC 9114 §7.2.4).");
         }
 
         if (frame is Http3DataFrame)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.FrameUnexpected,
                 "DATA frames are not permitted on the control stream (RFC 9114 §7.2.1).");
         }
 
         if (frame is Http3HeadersFrame)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.FrameUnexpected,
                 "HEADERS frames are not permitted on the control stream (RFC 9114 §7.2.2).");
         }
@@ -188,13 +188,13 @@ public sealed class Http3ControlStream
     /// Signals that the remote control stream has been closed by the server.
     /// This is always a connection error of type H3_CLOSED_CRITICAL_STREAM (RFC 9114 §6.2.1).
     /// </summary>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Always thrown with <see cref="Http3ErrorCode.ClosedCriticalStream"/>.
     /// </exception>
     public void OnRemoteControlStreamClosed()
     {
         RemoteState = ControlStreamState.Closed;
-        throw new Http3ConnectionException(
+        throw new Http3Exception(
             Http3ErrorCode.ClosedCriticalStream,
             "Closure of the control stream MUST be treated as a connection error of type H3_CLOSED_CRITICAL_STREAM (RFC 9114 §6.2.1).");
     }
@@ -203,13 +203,13 @@ public sealed class Http3ControlStream
     /// Signals that the local control stream has been closed (e.g. by transport).
     /// This is always a connection error of type H3_CLOSED_CRITICAL_STREAM (RFC 9114 §6.2.1).
     /// </summary>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Always thrown with <see cref="Http3ErrorCode.ClosedCriticalStream"/>.
     /// </exception>
     public void OnLocalControlStreamClosed()
     {
         LocalState = ControlStreamState.Closed;
-        throw new Http3ConnectionException(
+        throw new Http3Exception(
             Http3ErrorCode.ClosedCriticalStream,
             "Closure of the control stream MUST be treated as a connection error of type H3_CLOSED_CRITICAL_STREAM (RFC 9114 §6.2.1).");
     }
@@ -229,7 +229,7 @@ public sealed class Http3ControlStream
     /// (same definition as HTTP/2, RFC 9113 §6.5.2).
     /// </summary>
     /// <param name="headers">The header list to validate.</param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.ExcessiveLoad"/> if the field section
     /// exceeds the peer's advertised limit.
     /// </exception>
@@ -244,7 +244,7 @@ public sealed class Http3ControlStream
 
         if (size > maxSize)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.ExcessiveLoad,
                 $"Field section size {size} exceeds peer's SETTINGS_MAX_FIELD_SECTION_SIZE {maxSize} (RFC 9114 §4.2.2).");
         }
@@ -272,7 +272,7 @@ public sealed class Http3ControlStream
     /// the peer's SETTINGS_MAX_FIELD_SECTION_SIZE.
     /// </summary>
     /// <param name="fieldSectionSize">The calculated field section size in bytes.</param>
-    /// <exception cref="Http3ConnectionException">
+    /// <exception cref="Http3Exception">
     /// Thrown with <see cref="Http3ErrorCode.ExcessiveLoad"/> if the size exceeds the limit.
     /// </exception>
     public void ValidateFieldSectionSize(long fieldSectionSize)
@@ -284,7 +284,7 @@ public sealed class Http3ControlStream
 
         if (fieldSectionSize > maxSize)
         {
-            throw new Http3ConnectionException(
+            throw new Http3Exception(
                 Http3ErrorCode.ExcessiveLoad,
                 $"Field section size {fieldSectionSize} exceeds peer's SETTINGS_MAX_FIELD_SECTION_SIZE {maxSize} (RFC 9114 §4.2.2).");
         }

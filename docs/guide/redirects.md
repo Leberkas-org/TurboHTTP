@@ -50,7 +50,7 @@ Same-origin redirects preserve the `Authorization` header.
 
 ### HTTPS → HTTP Downgrade Protection
 
-TurboHttp blocks redirects that would downgrade from `https://` to `http://`. If a server responds with a redirect pointing to a plain HTTP URL, TurboHttp throws `RedirectDowngradeException` instead of following it.
+TurboHttp blocks redirects that would downgrade from `https://` to `http://`. If a server responds with a redirect pointing to a plain HTTP URL, TurboHttp throws `RedirectException` with `RedirectError.ProtocolDowngrade` instead of following it.
 
 ```
 Original:  GET https://secure.example.com/data
@@ -122,10 +122,10 @@ catch (RedirectException ex) when (ex.Error == RedirectError.RedirectLoop)
 {
     Console.WriteLine($"Redirect loop detected: {ex.Message}");
 }
-catch (RedirectDowngradeException ex)
+catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)
 {
     Console.WriteLine($"Blocked HTTPS→HTTP downgrade: {ex.Message}");
 }
 ```
 
-`RedirectDowngradeException` is a separate exception type, distinct from `RedirectException`, so you can handle it independently.
+Protocol downgrade errors use `RedirectError.ProtocolDowngrade`, so you can handle them independently with a `when` filter.
