@@ -37,10 +37,10 @@
 | `04_EncoderConnectionTests.cs` | 2 | CN | RFC9112-9-CN-005..006 |
 
 **Acceptance Criteria:**
-- [ ] 7 tests get RFC-tagged DisplayName attributes
-- [ ] Numbers continue from existing sequences (no gaps, no duplicates)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
-- [ ] `dotnet test src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9112"` passes
+- [x] 7 tests get RFC-tagged DisplayName attributes
+- [x] Numbers continue from existing sequences (no gaps, no duplicates)
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors
+- [x] `dotnet test src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9112"` passes
 
 ---
 

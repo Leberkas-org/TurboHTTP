@@ -110,7 +110,7 @@ public sealed class Http11EncoderHeaderTests
         Assert.Contains("Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\r\n", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-5-HD-009: Authorization bearer token preserved verbatim")]
     public void Should_SetAuthorizationHeader_When_BearerToken()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/protected")

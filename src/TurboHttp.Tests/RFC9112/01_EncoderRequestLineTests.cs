@@ -14,7 +14,7 @@ namespace TurboHttp.Tests.RFC9112;
 /// </remarks>
 public sealed class Http11EncoderRequestLineTests
 {
-    [Fact]
+    [Fact(DisplayName = "RFC9112-3-RL-011: GET request produces correct request-line")]
     public void Should_ProduceCorrectRequestLine_When_GetRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/index.html");

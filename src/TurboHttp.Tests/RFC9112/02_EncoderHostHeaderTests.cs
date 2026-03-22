@@ -56,7 +56,7 @@ public sealed class Http11EncoderHostHeaderTests
         Assert.DoesNotContain("Host: example.com:80", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-5.4-HH-006: Default HTTP port 80 omitted from Host")]
     public void Should_OmitPort_When_HttpPort80()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:80/");
@@ -64,7 +64,7 @@ public sealed class Http11EncoderHostHeaderTests
         Assert.Contains("Host: example.com\r\n", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-5.4-HH-007: Default HTTPS port 443 omitted from Host")]
     public void Should_OmitPort_When_HttpsPort443()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure");
@@ -72,7 +72,7 @@ public sealed class Http11EncoderHostHeaderTests
         Assert.Contains("Host: example.com\r\n", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-5.4-HH-008: Non-standard port included in Host")]
     public void Should_IncludePortInHost_When_NonStandardPort()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/");

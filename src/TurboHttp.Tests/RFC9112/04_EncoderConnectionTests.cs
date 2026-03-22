@@ -54,7 +54,7 @@ public sealed class Http11EncoderConnectionTests
         Assert.DoesNotContain("Upgrade:", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-9-CN-005: Default Connection header is keep-alive")]
     public void Should_SetKeepAlive_When_DefaultConnectionHeader()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -62,7 +62,7 @@ public sealed class Http11EncoderConnectionTests
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9112-9-CN-006: Explicit Connection close preserved")]
     public void Should_PreserveConnectionClose_When_ExplicitlySet()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
