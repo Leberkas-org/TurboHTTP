@@ -233,8 +233,8 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 |-----------|--------------|----------------|---------|
 | FlowShape (1 in, 1 out) | `StageName.In` | `StageName.Out` | `"Http11Encoder.In"` / `"Http11Encoder.Out"` |
 | FanOutShape (1 in, 2+ out) | `StageName.In` | `StageName.Out.Role` | `"Redirect.In"` / `"Redirect.Out.Final"` / `"Redirect.Out.Redirect"` |
-| FanInShape (2+ in, 1 out) | `StageName.In.Role` | `StageName.Out` | `"H2Correlation.In.Request"` / `"H2Correlation.In.Response"` / `"H2Correlation.Out"` |
-| Custom multi-port | `StageName.In.Role` | `StageName.Out.Role` | `"H2Connection.In.Server"` / `"H2Connection.Out.Stream"` |
+| FanInShape (2+ in, 1 out) | `StageName.In.Role` | `StageName.Out` | `"Http20Correlation.In.Request"` / `"Http20Correlation.In.Response"` / `"Http20Correlation.Out"` |
+| Custom multi-port | `StageName.In.Role` | `StageName.Out.Role` | `"Http20Connection.In.Server"` / `"Http20Connection.Out.Stream"` |
 
 **C# field name pattern:**
 

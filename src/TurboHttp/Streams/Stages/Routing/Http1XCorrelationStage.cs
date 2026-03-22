@@ -59,11 +59,11 @@ public sealed class Http1XCorrelationShape : Shape
 
 internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape>
 {
-    private readonly Inlet<HttpRequestMessage> _inRequest = new("H1XCorrelation.In.Request");
-    private readonly Inlet<HttpResponseMessage> _inResponse = new("H1XCorrelation.In.Response");
-    private readonly Inlet<NotUsed> _inReset = new("H1XCorrelation.In.Reset");
-    private readonly Outlet<HttpResponseMessage> _out = new("H1XCorrelation.Out");
-    private readonly Outlet<IControlItem> _outSignal = new("H1XCorrelation.Out.Signal");
+    private readonly Inlet<HttpRequestMessage> _inRequest = new("Http1XCorrelation.In.Request");
+    private readonly Inlet<HttpResponseMessage> _inResponse = new("Http1XCorrelation.In.Response");
+    private readonly Inlet<NotUsed> _inReset = new("Http1XCorrelation.In.Reset");
+    private readonly Outlet<HttpResponseMessage> _out = new("Http1XCorrelation.Out");
+    private readonly Outlet<IControlItem> _outSignal = new("Http1XCorrelation.Out.Signal");
 
     public override Http1XCorrelationShape Shape { get; }
 

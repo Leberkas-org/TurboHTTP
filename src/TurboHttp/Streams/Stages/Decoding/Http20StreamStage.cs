@@ -15,9 +15,9 @@ namespace TurboHttp.Streams.Stages.Decoding;
 
 public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpResponseMessage Response, int StreamId)>>
 {
-    private readonly Inlet<Http2Frame> _in = new("H2Stream.In");
+    private readonly Inlet<Http2Frame> _in = new("Http20Stream.In");
 
-    private readonly Outlet<(HttpResponseMessage Response, int StreamId)> _out = new("H2Stream.Out");
+    private readonly Outlet<(HttpResponseMessage Response, int StreamId)> _out = new("Http20Stream.Out");
 
     public override FlowShape<Http2Frame, (HttpResponseMessage Response, int StreamId)> Shape => new(_in, _out);
 

@@ -60,11 +60,11 @@ public sealed class Http20ConnectionShape : Shape
 
 public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 {
-    private readonly Inlet<Http2Frame> _inServer = new("H2Connection.In.Server");
-    private readonly Outlet<Http2Frame> _outStream = new("H2Connection.Out.Stream");
-    private readonly Inlet<Http2Frame> _inApp = new("H2Connection.In.App");
-    private readonly Outlet<Http2Frame> _outServer = new("H2Connection.Out.Server");
-    private readonly Outlet<IControlItem> _outSignal = new("H2Connection.Out.Signal");
+    private readonly Inlet<Http2Frame> _inServer = new("Http20Connection.In.Server");
+    private readonly Outlet<Http2Frame> _outStream = new("Http20Connection.Out.Stream");
+    private readonly Inlet<Http2Frame> _inApp = new("Http20Connection.In.App");
+    private readonly Outlet<Http2Frame> _outServer = new("Http20Connection.Out.Server");
+    private readonly Outlet<IControlItem> _outSignal = new("Http20Connection.Out.Signal");
 
     private readonly int _initialRecvWindowSize;
     private readonly int _maxConcurrentStreams;
