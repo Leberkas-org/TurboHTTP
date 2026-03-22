@@ -22,35 +22,35 @@ public sealed class Http2ConnectionActor : ConnectionActorBase
 
     private protected override void Connect()
     {
-        _clientManager.Tell(new ClientManager.CreateRunnerWithChannels(_options, Self, _out, _in));
+        ClientManager.Tell(new ClientManager.CreateRunnerWithChannels(Options, Self, Out, In));
     }
 
     private protected override void HandleConnected(ClientRunner.ClientConnected msg)
     {
-        _log.Debug("HTTP/2 connected {0}", msg.RemoteEndPoint);
+        Log.Debug("HTTP/2 connected {0}", msg.RemoteEndPoint);
 
-        _runner = Sender;
-        _reconnectAttempt = 0;
+        Runner = Sender;
+        ReconnectAttempt = 0;
 
-        Context.Watch(_runner);
+        Context.Watch(Runner);
 
         NotifyParentReady(BuildHandle(msg));
     }
 
     private protected override void HandleDisconnected(ClientRunner.ClientDisconnected msg)
     {
-        _log.Warning("HTTP/2 disconnected {0}", msg.RemoteEndPoint);
+        Log.Warning("HTTP/2 disconnected {0}", msg.RemoteEndPoint);
         Reconnect();
     }
 
     private protected override void HandleTerminated(Terminated msg)
     {
-        if (!msg.ActorRef.Equals(_runner))
+        if (!msg.ActorRef.Equals(Runner))
         {
             return;
         }
 
-        _log.Warning("HTTP/2 ClientRunner terminated");
+        Log.Warning("HTTP/2 ClientRunner terminated");
         Reconnect();
     }
 
@@ -58,7 +58,7 @@ public sealed class Http2ConnectionActor : ConnectionActorBase
     {
         try
         {
-            _runner?.Tell(new DoClose());
+            Runner?.Tell(new DoClose());
         }
         catch
         {

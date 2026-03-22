@@ -312,11 +312,7 @@ public abstract class EngineTestBase : TestKit
 
         var response = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        var outboundBytes = new List<byte>();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
-        {
-            outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
-        }
+        var outboundBytes = await DrainOutboundH2Async(fake);
 
         var frames = outboundBytes.Count > 0
             ? new Http2FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
@@ -355,11 +351,7 @@ public abstract class EngineTestBase : TestKit
 
         await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        var outboundBytes = new List<byte>();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
-        {
-            outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
-        }
+        var outboundBytes = await DrainOutboundH2Async(fake);
 
         var frames = outboundBytes.Count > 0
             ? new Http2FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
@@ -399,6 +391,37 @@ public abstract class EngineTestBase : TestKit
             : [];
 
         return (response, frames);
+    }
+
+    /// <summary>
+    /// Drains the H2 fake stage outbound channel, waiting briefly for in-flight frames
+    /// that may still be traversing the outbound pipeline after the response has arrived.
+    /// </summary>
+    private static async Task<List<byte>> DrainOutboundH2Async(H2EngineFakeConnectionStage fake)
+    {
+        var outboundBytes = new List<byte>();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+
+        try
+        {
+            while (await fake.OutboundChannel.Reader.WaitToReadAsync(cts.Token))
+            {
+                while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+                {
+                    outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout — drain any remaining items synchronously.
+            while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+            {
+                outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
+            }
+        }
+
+        return outboundBytes;
     }
 }
 

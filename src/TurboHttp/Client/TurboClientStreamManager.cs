@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -79,10 +80,14 @@ internal sealed class TurboClientStreamManager
         {
             if (task.Exception is not null)
             {
+                File.AppendAllText(@"D:\GIT\Akka.Streams.Http\diag.log",
+                    $"[DIAG-MGR] SinkTask FAULTED: {task.Exception}\n");
                 responseWriter.Complete(task.Exception);
             }
             else
             {
+                File.AppendAllText(@"D:\GIT\Akka.Streams.Http\diag.log",
+                    "[DIAG-MGR] SinkTask completed normally\n");
                 responseWriter.Complete();
             }
         }, TaskContinuationOptions.ExecuteSynchronously);
@@ -104,7 +109,11 @@ internal sealed class TurboClientStreamManager
         {
             await foreach (var request in reader.ReadAllAsync())
             {
-                await queue.OfferAsync(request);
+                File.AppendAllText(@"D:\GIT\Akka.Streams.Http\diag.log",
+                    $"[DIAG-MGR] Offering request: {request.Method} {request.RequestUri} v{request.Version}\n");
+                var result = await queue.OfferAsync(request);
+                File.AppendAllText(@"D:\GIT\Akka.Streams.Http\diag.log",
+                    $"[DIAG-MGR] OfferAsync result: {result}\n");
             }
         }
 

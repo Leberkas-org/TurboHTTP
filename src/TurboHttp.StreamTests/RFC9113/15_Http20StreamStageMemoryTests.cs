@@ -20,9 +20,10 @@ public sealed class Http20StreamStageMemoryTests : StreamTestBase
 
     private async Task<IReadOnlyList<HttpResponseMessage>> RunAsync(params Http2Frame[] frames)
     {
-        return await Source.From(frames)
+        var tuples = await Source.From(frames)
             .Via(Flow.FromGraph(new Http20StreamStage()))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+            .RunWith(Sink.Seq<(HttpResponseMessage Response, int StreamId)>(), Materializer);
+        return tuples.Select(t => t.Response).ToList();
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-6.1-20DS-001: StreamState.Dispose() called — HEADERS path: stream completes without DATA")]

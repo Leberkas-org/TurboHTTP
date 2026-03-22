@@ -14,3 +14,6 @@ git:
         - master
         - dev
     check_sync: false
+on_complete:
+    feature: ""
+    bug: ""

@@ -25,26 +25,27 @@ public abstract class ConnectionActorBase : ReceiveActor
     /// <summary>
     /// Internal message used to trigger a scheduled reconnect attempt.
     /// </summary>
-    private protected sealed record DoReconnect;
+    protected sealed record DoReconnect;
 
-    private protected readonly TcpOptions _options;
-    private protected readonly IActorRef _clientManager;
-    private protected readonly RequestEndpoint _requestEndpoint;
-    private protected readonly TurboClientOptions _config;
-    private protected readonly ILoggingAdapter _log = Context.GetLogger();
+    protected readonly TcpOptions Options;
+    protected readonly IActorRef ClientManager;
+    protected readonly RequestEndpoint RequestEndpoint;
+    protected readonly TurboClientOptions Config;
+    protected readonly ILoggingAdapter Log = Context.GetLogger();
 
-    private protected Channel<(IMemoryOwner<byte>, int)> _out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
-    private protected Channel<(IMemoryOwner<byte>, int)> _in = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+    protected Channel<(IMemoryOwner<byte>, int)> Out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+    protected Channel<(IMemoryOwner<byte>, int)> In = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
 
-    private protected IActorRef? _runner;
-    private protected int _reconnectAttempt;
+    protected IActorRef? Runner;
+    protected int ReconnectAttempt;
 
-    private protected ConnectionActorBase(TcpOptions options, IActorRef clientManager, RequestEndpoint requestEndpoint, TurboClientOptions config)
+    private protected ConnectionActorBase(TcpOptions options, IActorRef clientManager, RequestEndpoint requestEndpoint,
+        TurboClientOptions config)
     {
-        _options = options;
-        _clientManager = clientManager;
-        _requestEndpoint = requestEndpoint;
-        _config = config;
+        Options = options;
+        ClientManager = clientManager;
+        RequestEndpoint = requestEndpoint;
+        Config = config;
 
         Receive<ClientRunner.ClientConnected>(HandleConnected);
         Receive<ClientRunner.ClientDisconnected>(HandleDisconnected);
@@ -93,32 +94,32 @@ public abstract class ConnectionActorBase : ReceiveActor
     /// </summary>
     private protected virtual void Reconnect()
     {
-        _runner = null;
+        Runner = null;
 
         // Complete both channels so old pump tasks exit cleanly before new channels are created.
-        _in.Writer.TryComplete();
-        _out.Writer.TryComplete();
+        In.Writer.TryComplete();
+        Out.Writer.TryComplete();
 
         // Notify parent of connection failure
         Context.Parent.Tell(new HostPool.ConnectionFailed(Self));
 
-        if (_reconnectAttempt >= _config.MaxReconnectAttempts)
+        if (ReconnectAttempt >= Config.MaxReconnectAttempts)
         {
-            _log.Warning("Max reconnect attempts ({0}) reached for {1}:{2} — giving up",
-                _config.MaxReconnectAttempts, _options.Host, _options.Port);
+            Log.Warning("Max reconnect attempts ({0}) reached for {1}:{2} — giving up",
+                Config.MaxReconnectAttempts, Options.Host, Options.Port);
             return;
         }
 
         // Exponential backoff: base * 2^attempt (capped at 30s)
         var delay = TimeSpan.FromTicks(
             Math.Min(
-                _config.ReconnectInterval.Ticks * (1L << _reconnectAttempt),
+                Config.ReconnectInterval.Ticks * (1L << ReconnectAttempt),
                 TimeSpan.FromSeconds(30).Ticks));
 
-        _reconnectAttempt++;
+        ReconnectAttempt++;
 
-        _log.Debug("Scheduling reconnect attempt {0}/{1} in {2}",
-            _reconnectAttempt, _config.MaxReconnectAttempts, delay);
+        Log.Debug("Scheduling reconnect attempt {0}/{1} in {2}",
+            ReconnectAttempt, Config.MaxReconnectAttempts, delay);
 
         Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new DoReconnect(), Self);
     }
@@ -129,8 +130,8 @@ public abstract class ConnectionActorBase : ReceiveActor
     private protected virtual void AttemptReconnect()
     {
         // Create fresh channels — the previous _in.Writer was completed to signal stale handles.
-        _out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
-        _in = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+        Out = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+        In = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
         Connect();
     }
 
@@ -139,7 +140,7 @@ public abstract class ConnectionActorBase : ReceiveActor
     /// </summary>
     private protected ConnectionHandle BuildHandle(ClientRunner.ClientConnected msg)
     {
-        return new ConnectionHandle(msg.OutboundWriter, msg.InboundReader, _requestEndpoint, Self);
+        return new ConnectionHandle(msg.OutboundWriter, msg.InboundReader, RequestEndpoint, Self);
     }
 
     /// <summary>

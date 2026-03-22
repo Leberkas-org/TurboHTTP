@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TurboHttp is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, and HTTP/2 with full RFC compliance, including connection pooling, redirect handling, retry logic, and cookie management.
+TurboHttp is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with full RFC compliance, including connection pooling, redirect handling, retry logic, and cookie management.
 
 ## Build Commands
 
@@ -51,26 +51,32 @@ npx likec4 export svg --output docs/public/diagrams docs/likec4
 
 ```
 Client Layer (TurboHttp/Client/)
-    ITurboHttpClient — channel-based request/response API
+    ITurboHttpClient, ITurboHttpClientFactory — DI-friendly factory pattern
+    TurboHttpClientBuilder — fluent handler pipeline configuration
+         ↓
+Handlers Layer (TurboHttp/Handlers/)
+    TurboHandler — delegating handler bridge to Akka pipeline
+         ↓
+Hosting Layer (TurboHttp/Hosting/)
+    TurboClientServiceCollectionExtensions — DI registration
          ↓
 Streams Layer (TurboHttp/Streams/)
-    Akka.Streams GraphStages — Engine, ConnectionStage, Protocol Engines
+    Akka.Streams GraphStages — Engine, Protocol Engines, Feature BidiStages
+    Stages organised into: Encoding/, Decoding/, Features/, Routing/
          ↓
 Protocol Layer (TurboHttp/Protocol/)
-    Encoders/Decoders, HPACK, RedirectHandler, RetryEvaluator, CookieJar
+    Encoders/Decoders, HPACK/QPACK, RedirectHandler, RetryEvaluator, CookieJar
+    RFC subfolders: RFC1945/, RFC6265/, RFC7541/, RFC9000/, RFC9110/, RFC9111/, RFC9112/, RFC9113/, RFC9114/, RFC9204/
          ↓
-I/O Layer (TurboHttp/IO/) — Hybrid: actors for lifecycle, Channels for data
-    ┌─ Lifecycle (actor hierarchy) ──────────────────────────────┐
-    │  PoolRouterActor → HostPoolActor → ConnectionActor         │
-    │  (spawn, supervise, reconnect, idle eviction, per-host     │
-    │   limits — no data touches actor mailboxes)                │
-    └────────────────────────────────────────────────────────────┘
-    ┌─ Data path (zero actor hops) ──────────────────────────────┐
-    │  ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP│
-    │  (ConnectionHandle bundles ChannelWriter + ChannelReader)  │
-    └────────────────────────────────────────────────────────────┘
+Pooling Layer (TurboHttp/Pooling/) — actors for connection lifecycle
+    PoolRouter → HostPool → ConnectionActorBase (Http1/Http2/Http3ConnectionActor)
+    ConnectionHandle, ConnectionState — zero data touches actor mailboxes
          ↓
-Network (TCP)
+Transport Layer (TurboHttp/Transport/) — data path, zero actor hops
+    ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP/QUIC
+    ClientRunner, ClientManager, ClientState, QuicClientProvider
+         ↓
+Network (TCP / QUIC)
 ```
 
 ### Protocol Layer (`TurboHttp/Protocol/`)
@@ -95,6 +101,21 @@ Network (TCP)
 - Subclasses: `DataFrame`, `HeadersFrame`, `ContinuationFrame`, `RstStreamFrame`, `SettingsFrame`, `PingFrame`, `GoAwayFrame`, `WindowUpdateFrame`, `PushPromiseFrame`
 - `SerializedSize` for buffer pre-allocation, `WriteTo(ref Span<byte>)` for serialisation
 
+**HTTP/3 Frame Types** (`RFC9114/Http3Frame.cs`):
+- Variable-length frame header using QUIC variable-length integers
+- `Http3FrameEncoder`/`Http3FrameDecoder` — frame serialisation/parsing
+- `Http3RequestEncoder`/`Http3ResponseDecoder` — request/response handling
+- `Http3Settings`, `Http3ErrorCode`, `Http3StreamType` — protocol primitives
+- `Http3ControlStream`, `Http3RequestStream`, `Http3UniStream` — stream types
+- `Http3GoAwayHandler`, `Http3IdleTimeoutHandler`, `Http3MaxPushIdHandler` — connection management
+- `Http3FieldValidator`, `Http3OriginValidator`, `Http3CertificateValidator` — validation
+
+**QPACK (RFC 9204)**:
+- `QpackDecoder`/`QpackDecoderInstructionWriter` — header compression for HTTP/3
+
+**QUIC (RFC 9000)**:
+- `QuicVarInt` — QUIC variable-length integer encoding/decoding
+
 **Business Logic** (RFC 9110 / RFC 9112):
 - `RedirectHandler` — RFC 9110 §15.4: 301/302/303/307/308 with correct method rewriting, HTTPS→HTTP protection, loop detection
 - `RetryEvaluator` — RFC 9110 §9.2: idempotency-based retry, Retry-After parsing
@@ -112,51 +133,81 @@ Network (TCP)
 
 ### Streams Layer (`TurboHttp/Streams/`)
 
+**Engines** (`IProtocolEngine`):
 - `Engine` — version demultiplexer (Partition → Http*Engine → Merge)
-- `Http10Engine`, `Http11Engine`, `Http20Engine` — per-version routing flows (`IHttpProtocolEngine`)
-- `ConnectionStage` — TCP connection wrapper (Akka `GraphStage`)
+- `Http10Engine`, `Http11Engine`, `Http20Engine`, `Http30Engine` — per-version routing flows
+- `PipelineDescriptor` — describes pipeline topology
+- `ProtocolCoreGraphBuilder` — constructs the full stream graph
+
+**Stages** are organised into four subfolders under `Streams/Stages/`:
+
+**Encoding/** — serialize requests to wire format:
+- `Http10EncoderStage` / `Http11EncoderStage` / `Http20EncoderStage` / `Http30EncoderStage`
+- `Request2FrameStage` (HTTP/2), `Http30Request2FrameStage` (HTTP/3)
+- `PrependPrefaceStage` — HTTP/2 connection preface
+- `QpackEncoderStreamStage` — QPACK encoder instructions (HTTP/3)
+
+**Decoding/** — parse wire format to responses:
+- `Http10DecoderStage` / `Http11DecoderStage` / `Http20DecoderStage` / `Http30DecoderStage`
+- `Http20ConnectionStage` / `Http30ConnectionStage` — connection-level frame handling (SETTINGS/PING/GOAWAY)
+- `Http20StreamStage` / `Http30StreamStage` — assemble frames into `HttpResponseMessage`
+- `QpackDecoderStreamStage` — QPACK decoder instructions (HTTP/3)
+
+**Features/** — cross-cutting BidiStages:
+- `RedirectBidiStage` — RFC 9110 §15.4 redirect following
+- `RetryBidiStage` — RFC 9110 §9.2 idempotent retry
+- `CookieBidiStage` — RFC 6265 cookie injection/storage
+- `CacheBidiStage` — RFC 9111 cache lookup/storage
+- `DecompressionBidiStage` — gzip/deflate/brotli response decompression
+- `RequestCompressionBidiStage` — request body compression
+- `ExpectContinueBidiStage` — 100-continue handling
+- `ConnectionReuseStage` — keep-alive/close decisions
+- `HandlerBidiStage` — delegating handler bridge
+
+**Routing/** — request routing and correlation:
 - `RequestEnricherStage` — applies BaseAddress, DefaultRequestVersion, DefaultRequestHeaders
-- `ExtractOptionsStage` — splits `HttpRequest(Options, RequestMessage)` into transport + request
-
-**HTTP/1.x Stages**:
-- `Http10EncoderStage` / `Http11EncoderStage` — serialize `HttpRequestMessage` to bytes
-- `Http10DecoderStage` / `Http11DecoderStage` — parse bytes to `HttpResponseMessage`
-- `CorrelationHttp1XStage` — FIFO request-response matching
-
-**HTTP/2 Stages**:
+- `ExtractOptionsStage` — splits transport options from request
+- `Http1XCorrelationStage` — FIFO request-response matching (HTTP/1.x)
+- `Http20CorrelationStage` — stream-ID-based request-response matching (HTTP/2)
 - `StreamIdAllocatorStage` — allocates client stream IDs (1, 3, 5, …)
-- `Request2FrameStage` — `(HttpRequestMessage, streamId)` → `Http2Frame` list
-- `Http20EncoderStage` — serialise `Http2Frame` to bytes
-- `Http20DecoderStage` — parse bytes to `Http2Frame` (stateful buffer)
-- `Http20ConnectionStage` — bidirectional flow control, SETTINGS/PING/GOAWAY handling
-- `Http20StreamStage` — assemble frames into `HttpResponseMessage` (HPACK decode, decompression)
-- `PrependPrefaceStage` — inject HTTP/2 connection preface on first connect
-- `CorrelationHttp20Stage` — stream-ID-based request-response matching
+- `GroupByHostKeyStage` / `HostKeyMergeBack` / `MergeSubstreamsStage` — per-host sub-stream routing
 
-### I/O Layer (`TurboHttp/IO/`)
+### Pooling Layer (`TurboHttp/Pooling/`)
 
-**Hybrid architecture**: actors manage connection lifecycle; data flows through `System.Threading.Channels` with zero actor mailbox hops.
+**Actor hierarchy (lifecycle only)** — actors manage connection lifecycle; no data touches actor mailboxes:
+- `PoolRouter` — routes to per-host actors
+- `HostPool` — pools connections per host, enforces limits, handles reconnect/idle eviction
+- `ConnectionActorBase` → `Http1ConnectionActor`, `Http2ConnectionActor`, `Http3ConnectionActor` — per-protocol connection lifecycle
+- `ConnectionHandle` — record bundling writer/reader, passed from actors to `ConnectionStage`
+- `ConnectionState` — per-connection metadata (Active, Idle, Reusable, HttpVersion, stream capacity)
 
-**Actor hierarchy (lifecycle only)**:
-- `PoolRouterActor` — routes `EnsureHost` to per-host actors, creates `HostPoolActor` on demand
-- `HostPoolActor` — pools connections per host, enforces `PerHostConnectionLimiter`, handles reconnect/idle eviction, delivers `ConnectionHandle` to requesters
-- `ConnectionActor` — owns TCP socket lifecycle, creates `Channel<(IMemoryOwner<byte>, int)>` pairs, spawns `ClientRunner`, sends `ConnectionReady(ConnectionHandle)` to parent on connect, exponential backoff on reconnect
+### Transport Layer (`TurboHttp/Transport/`)
 
-**Data path (zero actor hops)**:
-- `ConnectionHandle` — record bundling `OutboundWriter`, `InboundReader`, `HostKey`, and `ConnectionActor` ref; passed from actors to `ConnectionStage`
-- `ConnectionStage` — Akka `GraphStage` that writes outbound bytes directly to `ConnectionHandle.OutboundWriter` and reads inbound bytes from `ConnectionHandle.InboundReader` via async pump
-- `ClientByteMover` — three static async tasks per connection: TCP→Pipe, Pipe→InboundChannel, OutboundChannel→TCP
-- `ClientRunner` — per-connection actor that spawns the `ClientByteMover` tasks and signals lifecycle events
-- `ClientManager` — actor that spawns `ClientRunner` instances
+**Data path (zero actor hops)** — data flows through `System.Threading.Channels`:
+- `ConnectionStage` — Akka `GraphStage` that writes/reads directly via `ConnectionHandle`
+- `ClientByteMover` — async tasks per connection: TCP→Pipe, Pipe→InboundChannel, OutboundChannel→TCP
+- `ClientRunner` — per-connection actor that spawns `ClientByteMover` tasks and signals lifecycle events
+- `ClientManager` — spawns `ClientRunner` instances
 - `ClientState` — holds TCP stream, `System.IO.Pipelines.Pipe`, and channel reader/writers
-
-**Connection state tracking**:
-- `ConnectionState` — per-connection metadata (Active, Idle, Reusable, HttpVersion, stream capacity) tracked by `HostPoolActor`
-- `HostKey` — connection identity: Scheme + Host + Port + Version
+- `QuicClientProvider` / `QuicOptions` / `TcpOptionsFactory` — transport-specific configuration
 
 ### Client Layer (`TurboHttp/Client/`)
 
 - `ITurboHttpClient` — channel-based API (`ChannelWriter<HttpRequestMessage>` / `ChannelReader<HttpResponseMessage>`), `SendAsync`, `BaseAddress`, `DefaultRequestVersion`
+- `ITurboHttpClientFactory` / `TurboHttpClientFactory` — DI-friendly factory pattern for named/typed clients
+- `TurboHttpClientFactoryExtensions` — extension methods for factory registration
+- `TurboClientOptions` — per-client configuration (timeouts, redirects, retries)
+- `TurboClientStreamManager` — manages Akka stream lifecycle per client
+
+### Handlers Layer (`TurboHttp/Handlers/`)
+
+- `ITurboHttpClientBuilder` / `TurboHttpClientBuilder` — fluent API for composing handler pipeline
+- `TurboHandler` — delegating handler bridge to Akka stream pipeline
+- `TurboClientDescriptor` — describes a configured client instance
+
+### Hosting Layer (`TurboHttp/Hosting/`)
+
+- `TurboClientServiceCollectionExtensions` — `AddTurboHttpClient()` DI registration
 
 ## Key Patterns
 
@@ -217,6 +268,7 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 - Never use `async void`, `.Result`, or `.Wait()`
 - Always pass `CancellationToken` through async call chains
 - Always use braces for control structures (even single-line)
+- `TreatWarningsAsErrors` is enabled globally in `Directory.Build.props` — all warnings are build errors
 
 ### API Design
 - `Task<T>` instead of Future, `TimeSpan` instead of Duration
@@ -246,6 +298,9 @@ Tests live in `src/TurboHttp.Tests/` organised by RFC:
 | `RFC9110/` (01–02) | HTTP Semantics | 2 | 123 |
 | `RFC9111/` (01–04) | Caching | 4 | 75 |
 | `RFC6265/` (01–02) | Cookies | 2 | 66 |
+| `RFC9114/` (01–32) | HTTP/3 | 32 | — |
+| `RFC9204/` (01–11) | QPACK | 11 | — |
+| `Hosting/` | Client Builder | 4 | — |
 
 Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and stage behaviour. Organised by RFC (mirroring `TurboHttp.Tests`):
 - `RFC1945/` — HTTP/1.0 encoder/decoder/roundtrip stages, TCP fragmentation
@@ -255,12 +310,14 @@ Stream tests: `src/TurboHttp.StreamTests/` — Akka graph construction and stage
 - `RFC9111/` — Cache lookup and storage stage tests
 - `RFC9112/` — HTTP/1.1 encoder/decoder/chunked/correlation/pipeline/connection stages
 - `RFC9113/` — HTTP/2 encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control/correlation stages
+- `RFC9114/` — HTTP/3 encoder/decoder/connection/stream/field-validation/origin-validation/certificate/idle-timeout stages
+- `RFC9204/` — QPACK stream stage tests
 - `Streams/` — stage infrastructure: connection, engine routing, enricher, buffer lifecycle, pipeline wiring
-- `IO/` — ConnectionActor, HostPoolActor, ConnectionState, ConnectionHandle
+- `IO/` — ConnectionActor, HostPool, ConnectionState, ConnectionHandle, ClientByteMover, ClientRunner, QUIC tests
 - File naming: RFC subfolder files use descriptive names (`Http11EncoderStageTests.cs`); `Streams/` uses `NN_` prefix for ordered tests
-- Base classes: `StreamTestBase` (extends `TestKit`, creates `IMaterializer`), `EngineTestBase` (full engine round-trip helper)
+- Base classes: `StreamTestBase` (extends `TestKit`, creates `IMaterializer`), `EngineTestBase` (full engine round-trip helper), `IOActorTestBase` (actor lifecycle tests)
 
-Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures (`KestrelFixture`, `KestrelH2Fixture`, `KestrelTlsFixture`) with 60+ routes registered. No end-to-end test classes yet — fixtures are infrastructure-only, ready for future integration tests.
+Integration tests: `src/TurboHttp.IntegrationTests/` — Kestrel fixtures (`KestrelFixture`, `KestrelH2Fixture`, `KestrelH3Fixture`, `KestrelTlsFixture`) with 60+ routes registered. `SmokeTests.cs` exists as initial end-to-end coverage.
 
 ## RFC Compliance
 
@@ -268,53 +325,19 @@ Integration tests: `src/TurboHttp.IntegrationTests/Shared/` — Kestrel fixtures
 - **HTTP/1.1**: RFC 9112 (message framing), RFC 9112 §9 (connection management)
 - **HTTP/2**: RFC 9113 (protocol), RFC 7541 (HPACK)
 - **HTTP Semantics**: RFC 9110 (redirects, retries, content negotiation)
+- **HTTP/3**: RFC 9114 (protocol), RFC 9000 (QUIC variable-length integers)
+- **QPACK**: RFC 9204 (header compression for HTTP/3)
 - **Cookies**: RFC 6265
 - **Caching**: RFC 9111 (freshness, validation, storage)
 
 ## Documentation Site
 
-The documentation site lives in `docs/` and is built with [VitePress](https://vitepress.dev/) with interactive [LikeC4](https://likec4.dev/) architecture diagrams.
-
-### Directory Structure
-
-```
-docs/
-  .vitepress/
-    config.ts             — VitePress configuration (nav, sidebar, base path)
-    theme/index.ts        — Custom theme extending VitePress default
-    components/
-      LikeC4Diagram.vue   — Vue wrapper for LikeC4 React components
-  likec4/                 — LikeC4 architecture model (.c4 files, 12+ views)
-  logo/                   — Project logos (logo.svg, logo.png, logo_small.svg)
-  public/
-    diagrams/             — Static SVG fallback exports from LikeC4
-  guide/                  — Getting started, architecture overview, protocols
-  architecture/           — Per-layer and per-scenario architecture pages
-  rfc/                    — RFC coverage details (one page per RFC)
-  api/                    — Public API overview
-  index.md                — VitePress home page (hero, features, CTA)
-  package.json            — VitePress + LikeC4 npm dependencies
-  vite.config.ts          — LikeC4 Vite plugin configuration
-```
-
-### Deployment
-
-The docs site is automatically built and deployed to [https://st0o0.github.io/TurboHttp/](https://st0o0.github.io/TurboHttp/) via `.github/workflows/docs.yml` on every push to `main` that touches `docs/**` or `README.md`. GitHub Pages must be enabled in repository settings with "GitHub Actions" as the source.
-
-### LikeC4 Architecture Views
-
-The `docs/likec4/` workspace contains 12+ named views:
-- `index` — System overview
-- `turbohttp` — Container view
-- `clientLayer`, `streamsLayer`, `ioLayer` — Layer views
-- `http10Engine`, `http11Engine`, `http2Engine` — Engine views
-- `pipelineFlow` — Full pipeline
-- `scenarioHttp10`, `scenarioHttp11`, `scenarioHttp2` — Dynamic scenarios
+The documentation site lives in `docs/` and is built with [VitePress](https://vitepress.dev/) with interactive [LikeC4](https://likec4.dev/) architecture diagrams. Auto-deployed to GitHub Pages via `.github/workflows/docs.yml` on pushes to `main` that touch `docs/**` or `README.md`.
 
 ## Current Limitations
 
-- **No end-to-end integration tests**: Kestrel fixtures are defined with 60+ routes but no test classes consume them yet.
-- **LikeC4 diagrams**: Require Node.js 20+ to render interactively. Static SVG fallbacks in `docs/public/diagrams/` are placeholders until regenerated via `npx likec4 export svg`.
+- **Limited integration test coverage**: Kestrel fixtures are defined with 60+ routes; `SmokeTests.cs` provides initial coverage but most routes are not yet exercised.
+- **LikeC4 diagrams**: Require Node.js 20+ to render interactively. Regenerate SVGs via `npx likec4 export svg --output docs/public/diagrams docs/likec4`.
 
 
 ## Dependencies

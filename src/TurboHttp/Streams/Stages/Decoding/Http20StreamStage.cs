@@ -13,13 +13,13 @@ using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages.Decoding;
 
-public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpResponseMessage>>
+public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpResponseMessage Response, int StreamId)>>
 {
     private readonly Inlet<Http2Frame> _in = new("H2Stream.In");
 
-    private readonly Outlet<HttpResponseMessage> _out = new("H2Stream.Out");
+    private readonly Outlet<(HttpResponseMessage Response, int StreamId)> _out = new("H2Stream.Out");
 
-    public override FlowShape<Http2Frame, HttpResponseMessage> Shape => new(_in, _out);
+    public override FlowShape<Http2Frame, (HttpResponseMessage Response, int StreamId)> Shape => new(_in, _out);
 
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
@@ -219,7 +219,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpRes
             response.Content = new ByteArrayContent(bodyBytes);
 
             _responsePushed = true;
-            Push(_stage._out, response);
+            Push(_stage._out, (response, frame.StreamId));
 
             state.Dispose();
             _streams.Remove(frame.StreamId);
@@ -262,7 +262,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, HttpRes
             }
 
             _responsePushed = true;
-            Push(_stage._out, response);
+            Push(_stage._out, (response, streamId));
 
             state.Dispose();
             _streams.Remove(streamId);

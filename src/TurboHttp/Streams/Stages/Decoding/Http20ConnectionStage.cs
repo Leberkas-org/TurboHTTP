@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Akka.Event;
@@ -159,7 +160,10 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 Push(stage._outStream, frame);
             });
 
-            SetHandler(stage._outStream, onPull: () => Pull(stage._inServer));
+            SetHandler(stage._outStream, onPull: () =>
+            {
+                Pull(stage._inServer);
+            });
 
             SetHandler(stage._inApp, onPush: () =>
             {

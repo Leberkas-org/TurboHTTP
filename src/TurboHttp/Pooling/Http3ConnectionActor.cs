@@ -49,20 +49,20 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
     {
         // Create and store the shared QUIC provider so subsequent streams reuse it.
 #pragma warning disable CA1416 // QuicClientProvider is guarded by QuicOptions at runtime
-        _sharedProvider = new QuicClientProvider((QuicOptions)_options);
+        _sharedProvider = new QuicClientProvider((QuicOptions)Options);
 #pragma warning restore CA1416
-        _clientManager.Tell(new ClientManager.CreateRunnerWithChannels(_options, Self, _out, _in, _sharedProvider));
+        ClientManager.Tell(new ClientManager.CreateRunnerWithChannels(Options, Self, Out, In, _sharedProvider));
     }
 
     private protected override void HandleConnected(ClientRunner.ClientConnected msg)
     {
-        _log.Debug("HTTP/3 connected {0}", msg.RemoteEndPoint);
+        Log.Debug("HTTP/3 connected {0}", msg.RemoteEndPoint);
 
-        _runner = Sender;
-        _reconnectAttempt = 0;
+        Runner = Sender;
+        ReconnectAttempt = 0;
 
-        Context.Watch(_runner);
-        _activeRunners.Add(_runner);
+        Context.Watch(Runner);
+        _activeRunners.Add(Runner);
 
         NotifyParentReady(BuildHandle(msg));
 
@@ -72,7 +72,7 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
 
     private protected override void HandleDisconnected(ClientRunner.ClientDisconnected msg)
     {
-        _log.Warning("HTTP/3 stream disconnected {0}", msg.RemoteEndPoint);
+        Log.Warning("HTTP/3 stream disconnected {0}", msg.RemoteEndPoint);
 
         _activeRunners.Remove(Sender);
 
@@ -89,9 +89,9 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
     {
         _activeRunners.Remove(msg.ActorRef);
 
-        if (msg.ActorRef.Equals(_runner))
+        if (msg.ActorRef.Equals(Runner))
         {
-            _runner = null;
+            Runner = null;
         }
 
         // Only reconnect if all runners are gone
@@ -100,7 +100,7 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
             return;
         }
 
-        _log.Warning("All HTTP/3 stream runners terminated");
+        Log.Warning("All HTTP/3 stream runners terminated");
         Reconnect();
     }
 
@@ -111,7 +111,7 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
     {
         // Dispose the shared QUIC provider — the connection is dead
         _sharedProvider?.DisposeAsync().AsTask().ContinueWith(
-            t => { if (t.IsFaulted) _log.Warning(t.Exception, "Failed to dispose QUIC provider"); },
+            t => { if (t.IsFaulted) Log.Warning(t.Exception, "Failed to dispose QUIC provider"); },
             System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
         _sharedProvider = null;
         _activeRunners.Clear();
@@ -162,8 +162,8 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
         var streamIn = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
 
         // Spawn a new runner with the shared QUIC provider — opens a new bidirectional stream
-        _clientManager.Tell(new ClientManager.CreateRunnerWithChannels(
-            _options, Self, streamOut, streamIn, _sharedProvider));
+        ClientManager.Tell(new ClientManager.CreateRunnerWithChannels(
+            Options, Self, streamOut, streamIn, _sharedProvider));
 
         // Associate the requester with the upcoming ClientConnected message.
         // BecomeStacked temporarily intercepts the next ClientConnected for this stream.
@@ -177,7 +177,7 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
                 Context.Watch(runner);
                 _activeRunners.Add(runner);
 
-                var handle = new ConnectionHandle(connected.OutboundWriter, connected.InboundReader, _requestEndpoint, Self);
+                var handle = new ConnectionHandle(connected.OutboundWriter, connected.InboundReader, RequestEndpoint, Self);
                 requester.Tell(handle);
 
                 return;
@@ -186,7 +186,7 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
             if (message is ClientRunner.ClientDisconnected disconnected)
             {
                 UnbecomeStacked();
-                _log.Warning("HTTP/3 stream failed to open for {0}", disconnected.RemoteEndPoint);
+                Log.Warning("HTTP/3 stream failed to open for {0}", disconnected.RemoteEndPoint);
                 return;
             }
 

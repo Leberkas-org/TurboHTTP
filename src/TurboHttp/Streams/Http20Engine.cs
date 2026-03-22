@@ -35,19 +35,28 @@ public class Http20Engine : IHttpProtocolEngine
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
             var streamIdAllocator = b.Add(new StreamIdAllocatorStage());
+            var broadcast = b.Add(new Broadcast<(HttpRequestMessage, int)>(2));
             var requestToFrame = b.Add(new Request2FrameStage(requestEncoder));
             var frameEncoder = b.Add(new Http20EncoderStage());
             var frameDecoder = b.Add(new Http20DecoderStage());
             var streamDecoder = b.Add(new Http20StreamStage());
+            var correlation = b.Add(new Http20CorrelationStage());
             var prependPreface = b.Add(new PrependPrefaceStage());
             var connection = b.Add(new Http20ConnectionStage(windowSize));
             var signalMerge = b.Add(new MergePreferred<IOutputItem>(1));
 
-            b.From(streamIdAllocator.Outlet).To(requestToFrame.Inlet);
+            // Request path: allocate stream ID → broadcast to both frame encoder and correlation
+            b.From(streamIdAllocator.Outlet).To(broadcast.In);
+            b.From(broadcast.Out(0)).To(requestToFrame.Inlet);
+            b.From(broadcast.Out(1)).To(correlation.In0);
+
             b.From(requestToFrame.Outlet).To(connection.InApp);
             b.From(connection.OutServer).To(frameEncoder.Inlet);
             b.From(frameDecoder.Outlet).To(connection.InServer);
+
+            // Response path: frames → stream decoder → correlation (sets RequestMessage)
             b.From(connection.OutStream).To(streamDecoder.Inlet);
+            b.From(streamDecoder.Outlet).To(correlation.In1);
 
             var signalCast = b.Add(Flow.Create<IControlItem>().Select(IOutputItem (x) => x));
 
@@ -71,7 +80,7 @@ public class Http20Engine : IHttpProtocolEngine
                 streamIdAllocator.Inlet,
                 prependPreface.Outlet,
                 frameDecoder.Inlet,
-                streamDecoder.Outlet);
+                correlation.Out);
         }));
     }
 

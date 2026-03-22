@@ -19,35 +19,35 @@ public sealed class Http1ConnectionActor : ConnectionActorBase
 
     private protected override void Connect()
     {
-        _clientManager.Tell(new ClientManager.CreateRunnerWithChannels(_options, Self, _out, _in));
+        ClientManager.Tell(new ClientManager.CreateRunnerWithChannels(Options, Self, Out, In));
     }
 
     private protected override void HandleConnected(ClientRunner.ClientConnected msg)
     {
-        _log.Debug("Connected {0}", msg.RemoteEndPoint);
+        Log.Debug("Connected {0}", msg.RemoteEndPoint);
 
-        _runner = Sender;
-        _reconnectAttempt = 0;
+        Runner = Sender;
+        ReconnectAttempt = 0;
 
-        Context.Watch(_runner);
+        Context.Watch(Runner);
 
         NotifyParentReady(BuildHandle(msg));
     }
 
     private protected override void HandleDisconnected(ClientRunner.ClientDisconnected msg)
     {
-        _log.Warning("Disconnected {0}", msg.RemoteEndPoint);
+        Log.Warning("Disconnected {0}", msg.RemoteEndPoint);
         Reconnect();
     }
 
     private protected override void HandleTerminated(Terminated msg)
     {
-        if (!msg.ActorRef.Equals(_runner))
+        if (!msg.ActorRef.Equals(Runner))
         {
             return;
         }
 
-        _log.Warning("ClientRunner terminated");
+        Log.Warning("ClientRunner terminated");
         Reconnect();
     }
 
@@ -55,7 +55,7 @@ public sealed class Http1ConnectionActor : ConnectionActorBase
     {
         try
         {
-            _runner?.Tell(new DoClose());
+            Runner?.Tell(new DoClose());
         }
         catch
         {

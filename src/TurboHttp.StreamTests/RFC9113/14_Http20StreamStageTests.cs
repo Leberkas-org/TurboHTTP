@@ -21,9 +21,10 @@ public sealed class Http20StreamStageTests : StreamTestBase
 
     private async Task<IReadOnlyList<HttpResponseMessage>> RunAsync(params Http2Frame[] frames)
     {
-        return await Source.From(frames)
+        var tuples = await Source.From(frames)
             .Via(Flow.FromGraph(new Http20StreamStage()))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+            .RunWith(Sink.Seq<(HttpResponseMessage Response, int StreamId)>(), Materializer);
+        return tuples.Select(t => t.Response).ToList();
     }
 
     private ReadOnlyMemory<byte> EncodeHeaders(params (string Name, string Value)[] headers)
@@ -267,9 +268,10 @@ public sealed class Http20StreamStageTests : StreamTestBase
             new HeadersFrame(streamId: 1, headerBlock: headerBlock, endStream: true, endHeaders: true)
         };
 
-        var responses = await Source.From(frames)
+        var tuples = await Source.From(frames)
             .Via(Flow.FromGraph(new Http20StreamStage()))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+            .RunWith(Sink.Seq<(HttpResponseMessage Response, int StreamId)>(), Materializer);
+        var responses = tuples.Select(t => t.Response).ToList();
 
         Assert.Single(responses);
         Assert.Equal(expected, responses[0].StatusCode);
