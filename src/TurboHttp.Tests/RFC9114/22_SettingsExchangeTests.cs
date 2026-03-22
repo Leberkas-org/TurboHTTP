@@ -13,8 +13,8 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-6.2.1-se-001: Client sends SETTINGS as first frame on control stream")]
     public void SendSettings_IsFirstFrameOnControlStream()
     {
-        var exchange = new Http3SettingsExchange();
-        var bytes = exchange.SendSettings();
+        var cs = new Http3ControlStream();
+        var bytes = cs.OpenLocalStream();
         var span = bytes.AsSpan();
 
         // First: stream type = 0x00 (Control)
@@ -34,19 +34,19 @@ public sealed class SettingsExchangeTests
         settings.Set(Http3SettingId.MaxFieldSectionSize, 16384);
         settings.Set(Http3SettingId.QpackMaxTableCapacity, 4096);
 
-        var exchange = new Http3SettingsExchange(settings);
-        var bytes = exchange.SendSettings();
+        var cs = new Http3ControlStream();
+        var bytes = cs.OpenLocalStream(settings);
 
         // Verify non-empty (stream type + frame with payload)
         Assert.True(bytes.Length > 4);
-        Assert.True(exchange.LocalSettingsSent);
+        Assert.Equal(ControlStreamState.Active, cs.LocalState);
     }
 
     [Fact(DisplayName = "RFC-9114-6.2.1-se-003: Client with empty settings sends zero-payload SETTINGS")]
     public void SendSettings_EmptySettings_ProducesMinimalFrame()
     {
-        var exchange = new Http3SettingsExchange();
-        var bytes = exchange.SendSettings();
+        var cs = new Http3ControlStream();
+        var bytes = cs.OpenLocalStream();
         var span = bytes.AsSpan();
 
         // Stream type (1 byte: 0x00)
@@ -65,10 +65,10 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-6.2.1-se-004: Sending settings twice is connection error")]
     public void SendSettings_Twice_ThrowsStreamCreationError()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.SendSettings();
+        var cs = new Http3ControlStream();
+        cs.OpenLocalStream();
 
-        var ex = Assert.Throws<Http3ConnectionException>(() => exchange.SendSettings());
+        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OpenLocalStream());
         Assert.Equal(Http3ErrorCode.StreamCreationError, ex.ErrorCode);
     }
 
@@ -77,8 +77,8 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-7.2.4-se-005: Server SETTINGS are parsed and stored")]
     public void ReceiveServerSettings_ParsedAndStored()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>
         {
@@ -87,34 +87,34 @@ public sealed class SettingsExchangeTests
             (Http3SettingId.QpackBlockedStreams, 100),
         });
 
-        exchange.OnRemoteFrame(settingsFrame);
+        cs.OnRemoteFrame(settingsFrame);
 
-        Assert.True(exchange.RemoteSettingsReceived);
-        Assert.NotNull(exchange.RemoteSettings);
-        Assert.Equal(8192, exchange.RemoteSettings!.MaxFieldSectionSize);
-        Assert.Equal(2048, exchange.RemoteSettings.QpackMaxTableCapacity);
-        Assert.Equal(100, exchange.RemoteSettings.QpackBlockedStreams);
+        Assert.Equal(ControlStreamState.Active, cs.RemoteState);
+        Assert.NotNull(cs.RemoteSettings);
+        Assert.Equal(8192, cs.RemoteSettings!.MaxFieldSectionSize);
+        Assert.Equal(2048, cs.RemoteSettings.QpackMaxTableCapacity);
+        Assert.Equal(100, cs.RemoteSettings.QpackBlockedStreams);
     }
 
     [Fact(DisplayName = "RFC-9114-7.2.4-se-006: Empty server SETTINGS are valid")]
     public void ReceiveServerSettings_Empty_IsValid()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>());
-        exchange.OnRemoteFrame(settingsFrame);
+        cs.OnRemoteFrame(settingsFrame);
 
-        Assert.True(exchange.RemoteSettingsReceived);
-        Assert.NotNull(exchange.RemoteSettings);
-        Assert.Null(exchange.RemoteSettings!.MaxFieldSectionSize);
+        Assert.Equal(ControlStreamState.Active, cs.RemoteState);
+        Assert.NotNull(cs.RemoteSettings);
+        Assert.Null(cs.RemoteSettings!.MaxFieldSectionSize);
     }
 
     [Fact(DisplayName = "RFC-9114-7.2.4-se-007: Unknown server settings are preserved (extension tolerance)")]
     public void ReceiveServerSettings_UnknownSettings_Preserved()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>
         {
@@ -122,52 +122,52 @@ public sealed class SettingsExchangeTests
             (0xFF, 42),    // Another unknown
         });
 
-        exchange.OnRemoteFrame(settingsFrame);
+        cs.OnRemoteFrame(settingsFrame);
 
-        Assert.Equal(999, exchange.RemoteSettings![0x33]);
-        Assert.Equal(42, exchange.RemoteSettings[0xFF]);
+        Assert.Equal(999, cs.RemoteSettings![0x33]);
+        Assert.Equal(42, cs.RemoteSettings[0xFF]);
     }
 
     [Fact(DisplayName = "RFC-9114-6.2.1-se-008: First frame on remote control stream must be SETTINGS")]
     public void ReceiveServerFrame_NotSettings_ThrowsMissingSettings()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         var goaway = new Http3GoAwayFrame(0);
-        var ex = Assert.Throws<Http3ConnectionException>(() => exchange.OnRemoteFrame(goaway));
+        var ex = Assert.Throws<Http3ConnectionException>(() => cs.OnRemoteFrame(goaway));
         Assert.Equal(Http3ErrorCode.MissingSettings, ex.ErrorCode);
     }
 
     [Fact(DisplayName = "RFC-9114-7.2.4-se-009: RemoteMaxFieldSectionSize reflects server setting")]
     public void RemoteMaxFieldSectionSize_ReflectsServerSetting()
     {
-        var exchange = new Http3SettingsExchange();
-        Assert.Null(exchange.RemoteMaxFieldSectionSize);
+        var cs = new Http3ControlStream();
+        Assert.Null(cs.RemoteMaxFieldSectionSize);
 
-        exchange.OnRemoteControlStreamOpened();
+        cs.OnRemoteControlStreamOpened();
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>
         {
             (Http3SettingId.MaxFieldSectionSize, 16384)
         });
-        exchange.OnRemoteFrame(settingsFrame);
+        cs.OnRemoteFrame(settingsFrame);
 
-        Assert.Equal(16384, exchange.RemoteMaxFieldSectionSize);
+        Assert.Equal(16384, cs.RemoteMaxFieldSectionSize);
     }
 
     [Fact(DisplayName = "RFC-9114-7.2.4-se-010: No MaxFieldSectionSize means no limit")]
     public void RemoteMaxFieldSectionSize_NotSet_ReturnsNull()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>
         {
             (Http3SettingId.QpackMaxTableCapacity, 4096)
         });
-        exchange.OnRemoteFrame(settingsFrame);
+        cs.OnRemoteFrame(settingsFrame);
 
-        Assert.Null(exchange.RemoteMaxFieldSectionSize);
+        Assert.Null(cs.RemoteMaxFieldSectionSize);
     }
 
     // ───────────────────────── SETTINGS_MAX_FIELD_SECTION_SIZE Enforced ─────────────────────────
@@ -175,7 +175,7 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-4.2.2-se-011: Field section under limit passes validation")]
     public void ValidateFieldSectionSize_UnderLimit_Passes()
     {
-        var exchange = SetupWithRemoteMaxFieldSectionSize(4096);
+        var cs = SetupWithRemoteMaxFieldSectionSize(4096);
 
         // Small headers: 2 fields × (name + value + 32) well under 4096
         var headers = new List<(string Name, string Value)>
@@ -184,27 +184,27 @@ public sealed class SettingsExchangeTests
             (":path", "/"),
         };
 
-        exchange.ValidateFieldSectionSize(headers); // Should not throw
+        cs.ValidateFieldSectionSize(headers); // Should not throw
     }
 
     [Fact(DisplayName = "RFC-9114-4.2.2-se-012: Field section at exact limit passes validation")]
     public void ValidateFieldSectionSize_AtExactLimit_Passes()
     {
         // Calculate exact size: 1 field with name "x" (1) + value "y" (1) + 32 = 34
-        var exchange = SetupWithRemoteMaxFieldSectionSize(34);
+        var cs = SetupWithRemoteMaxFieldSectionSize(34);
 
         var headers = new List<(string Name, string Value)>
         {
             ("x", "y"),
         };
 
-        exchange.ValidateFieldSectionSize(headers); // Should not throw
+        cs.ValidateFieldSectionSize(headers); // Should not throw
     }
 
     [Fact(DisplayName = "RFC-9114-4.2.2-se-013: Field section exceeding limit throws ExcessiveLoad")]
     public void ValidateFieldSectionSize_ExceedsLimit_ThrowsExcessiveLoad()
     {
-        var exchange = SetupWithRemoteMaxFieldSectionSize(100);
+        var cs = SetupWithRemoteMaxFieldSectionSize(100);
 
         // 4 headers × (7 + 1 + 32) = 160, exceeds 100
         var headers = new List<(string Name, string Value)>
@@ -216,7 +216,7 @@ public sealed class SettingsExchangeTests
         };
 
         var ex = Assert.Throws<Http3ConnectionException>(
-            () => exchange.ValidateFieldSectionSize(headers));
+            () => cs.ValidateFieldSectionSize(headers));
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
         Assert.Contains("SETTINGS_MAX_FIELD_SECTION_SIZE", ex.Message);
     }
@@ -224,9 +224,9 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-4.2.2-se-014: No MAX_FIELD_SECTION_SIZE means no limit enforced")]
     public void ValidateFieldSectionSize_NoLimit_AlwaysPasses()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
-        exchange.OnRemoteFrame(new Http3SettingsFrame(new List<(long, long)>()));
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
+        cs.OnRemoteFrame(new Http3SettingsFrame(new List<(long, long)>()));
 
         // Even a huge header list should pass
         var headers = new List<(string Name, string Value)>();
@@ -235,7 +235,7 @@ public sealed class SettingsExchangeTests
             headers.Add(($"x-header-{i}", new string('v', 1000)));
         }
 
-        exchange.ValidateFieldSectionSize(headers); // Should not throw
+        cs.ValidateFieldSectionSize(headers); // Should not throw
     }
 
     [Fact(DisplayName = "RFC-9114-4.2.2-se-015: CalculateFieldSectionSize uses 32-byte overhead per field")]
@@ -247,14 +247,14 @@ public sealed class SettingsExchangeTests
             ("x", ""),         // 1 + 0 + 32 = 33
         };
 
-        var size = Http3SettingsExchange.CalculateFieldSectionSize(headers);
+        var size = Http3ControlStream.CalculateFieldSectionSize(headers);
         Assert.Equal(71, size);
     }
 
     [Fact(DisplayName = "RFC-9114-4.2.2-se-016: Empty header list has zero field section size")]
     public void CalculateFieldSectionSize_EmptyList_ReturnsZero()
     {
-        var size = Http3SettingsExchange.CalculateFieldSectionSize(
+        var size = Http3ControlStream.CalculateFieldSectionSize(
             new List<(string Name, string Value)>());
         Assert.Equal(0, size);
     }
@@ -262,13 +262,13 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-4.2.2-se-017: ValidateFieldSectionSize with pre-calculated size")]
     public void ValidateFieldSectionSize_PreCalculated_EnforcesLimit()
     {
-        var exchange = SetupWithRemoteMaxFieldSectionSize(500);
+        var cs = SetupWithRemoteMaxFieldSectionSize(500);
 
-        exchange.ValidateFieldSectionSize(499L); // OK
-        exchange.ValidateFieldSectionSize(500L); // OK (at limit)
+        cs.ValidateFieldSectionSize(499L); // OK
+        cs.ValidateFieldSectionSize(500L); // OK (at limit)
 
         var ex = Assert.Throws<Http3ConnectionException>(
-            () => exchange.ValidateFieldSectionSize(501L));
+            () => cs.ValidateFieldSectionSize(501L));
         Assert.Equal(Http3ErrorCode.ExcessiveLoad, ex.ErrorCode);
     }
 
@@ -281,8 +281,8 @@ public sealed class SettingsExchangeTests
     [InlineData(0x05, "MAX_FRAME_SIZE")]
     public void ReceiveServerSettings_ReservedH2Setting_Throws(long reservedId, string _)
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         // Build frame with reserved HTTP/2 setting
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>
@@ -292,7 +292,7 @@ public sealed class SettingsExchangeTests
 
         // OnRemoteFrame calls Http3Settings.Set() which rejects reserved IDs
         var ex = Assert.Throws<Http3SettingsException>(
-            () => exchange.OnRemoteFrame(settingsFrame));
+            () => cs.OnRemoteFrame(settingsFrame));
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -306,7 +306,7 @@ public sealed class SettingsExchangeTests
         var parameters = new List<(long, long)> { (reservedId, 0) };
 
         var ex = Assert.Throws<Http3SettingsException>(
-            () => Http3SettingsExchange.RejectForbiddenH2Settings(parameters));
+            () => Http3SettingId.RejectForbiddenH2Settings(parameters));
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("HTTP/2", ex.Message);
     }
@@ -322,7 +322,7 @@ public sealed class SettingsExchangeTests
             (0x33, 999), // Unknown extension
         };
 
-        Http3SettingsExchange.RejectForbiddenH2Settings(parameters); // Should not throw
+        Http3SettingId.RejectForbiddenH2Settings(parameters); // Should not throw
     }
 
     [Theory(DisplayName = "RFC-9114-7.2.4.1-se-021: Client cannot include HTTP/2 settings in local SETTINGS")]
@@ -345,50 +345,35 @@ public sealed class SettingsExchangeTests
         clientSettings.Set(Http3SettingId.MaxFieldSectionSize, 16384);
         clientSettings.Set(Http3SettingId.QpackMaxTableCapacity, 4096);
 
-        var exchange = new Http3SettingsExchange(clientSettings);
+        var cs = new Http3ControlStream();
 
         // Step 1: Client sends SETTINGS
-        Assert.False(exchange.LocalSettingsSent);
-        var bytes = exchange.SendSettings();
-        Assert.True(exchange.LocalSettingsSent);
+        Assert.Equal(ControlStreamState.NotOpened, cs.LocalState);
+        var bytes = cs.OpenLocalStream(clientSettings);
+        Assert.Equal(ControlStreamState.Active, cs.LocalState);
         Assert.True(bytes.Length > 0);
 
         // Step 2: Server control stream opens and sends SETTINGS
-        Assert.False(exchange.RemoteSettingsReceived);
-        exchange.OnRemoteControlStreamOpened();
+        Assert.NotEqual(ControlStreamState.Active, cs.RemoteState);
+        cs.OnRemoteControlStreamOpened();
 
         var serverSettings = new Http3SettingsFrame(new List<(long, long)>
         {
             (Http3SettingId.MaxFieldSectionSize, 8192),
             (Http3SettingId.QpackBlockedStreams, 50),
         });
-        exchange.OnRemoteFrame(serverSettings);
+        cs.OnRemoteFrame(serverSettings);
 
         // Step 3: Both sides active
-        Assert.True(exchange.RemoteSettingsReceived);
-        Assert.Equal(8192, exchange.RemoteMaxFieldSectionSize);
-        Assert.Equal(16384, exchange.LocalSettings.MaxFieldSectionSize);
+        Assert.Equal(ControlStreamState.Active, cs.RemoteState);
+        Assert.Equal(8192, cs.RemoteMaxFieldSectionSize);
+        Assert.Equal(16384, clientSettings.MaxFieldSectionSize);
     }
 
     [Fact(DisplayName = "RFC-9114-7.2.4-se-023: Server SETTINGS with duplicate identifier is rejected")]
     public void ReceiveServerSettings_DuplicateIdentifier_Throws()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
-
-        // Create a frame with duplicate identifiers by encoding manually
-        var settingsFrame = new Http3SettingsFrame(new List<(long, long)>
-        {
-            (Http3SettingId.MaxFieldSectionSize, 1024),
-            (Http3SettingId.MaxFieldSectionSize, 2048), // Duplicate!
-        });
-
-        // OnRemoteFrame calls Http3Settings.Set() which detects duplicates
-        // The second Set(0x06, 2048) overwrites, but Http3ControlStream
-        // currently iterates the frame parameters sequentially.
-        // Since Set() overwrites, duplicates in the frame don't throw via Set().
-        // However, Http3Settings.Deserialize() rejects duplicates.
-        // The control stream uses Set() directly, so we test via Deserialize.
+        // Http3Settings.Deserialize() rejects duplicates
         var payload = BuildDuplicatePayload(Http3SettingId.MaxFieldSectionSize, 1024, 2048);
         Assert.Throws<Http3SettingsException>(() => Http3Settings.Deserialize(payload));
     }
@@ -396,40 +381,37 @@ public sealed class SettingsExchangeTests
     [Fact(DisplayName = "RFC-9114-7.2.4-se-024: Second SETTINGS frame on control stream is connection error")]
     public void ReceiveSecondSettings_ThrowsFrameUnexpected()
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
 
         var settingsFrame = new Http3SettingsFrame(new List<(long, long)>());
-        exchange.OnRemoteFrame(settingsFrame);
+        cs.OnRemoteFrame(settingsFrame);
 
         var ex = Assert.Throws<Http3ConnectionException>(
-            () => exchange.OnRemoteFrame(settingsFrame));
+            () => cs.OnRemoteFrame(settingsFrame));
         Assert.Equal(Http3ErrorCode.FrameUnexpected, ex.ErrorCode);
     }
 
-    [Fact(DisplayName = "RFC-9114-7.2.4-se-025: LocalSettings are accessible before sending")]
+    [Fact(DisplayName = "RFC-9114-7.2.4-se-025: LocalSettings are accessible via Http3Settings before sending")]
     public void LocalSettings_AccessibleBeforeSending()
     {
         var settings = new Http3Settings();
         settings.Set(Http3SettingId.MaxFieldSectionSize, 32768);
 
-        var exchange = new Http3SettingsExchange(settings);
-
-        Assert.Equal(32768, exchange.LocalSettings.MaxFieldSectionSize);
-        Assert.False(exchange.LocalSettingsSent);
+        Assert.Equal(32768, settings.MaxFieldSectionSize);
     }
 
     // ───────────────────────── Helpers ─────────────────────────
 
-    private static Http3SettingsExchange SetupWithRemoteMaxFieldSectionSize(long maxSize)
+    private static Http3ControlStream SetupWithRemoteMaxFieldSectionSize(long maxSize)
     {
-        var exchange = new Http3SettingsExchange();
-        exchange.OnRemoteControlStreamOpened();
-        exchange.OnRemoteFrame(new Http3SettingsFrame(new List<(long, long)>
+        var cs = new Http3ControlStream();
+        cs.OnRemoteControlStreamOpened();
+        cs.OnRemoteFrame(new Http3SettingsFrame(new List<(long, long)>
         {
             (Http3SettingId.MaxFieldSectionSize, maxSize)
         }));
-        return exchange;
+        return cs;
     }
 
     private static byte[] BuildDuplicatePayload(long identifier, long value1, long value2)

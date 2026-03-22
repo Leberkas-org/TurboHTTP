@@ -68,6 +68,28 @@ public static class Http3SettingId
             or ReservedH2MaxConcurrentStreams
             or ReservedH2InitialWindowSize
             or ReservedH2MaxFrameSize;
+
+    /// <summary>
+    /// Validates that a list of setting parameters does not contain HTTP/2-specific
+    /// identifiers (RFC 9114 §7.2.4.1). This can be used for pre-validation of
+    /// raw payloads before deserialization.
+    /// </summary>
+    /// <param name="parameters">The setting identifier-value pairs to validate.</param>
+    /// <exception cref="Http3SettingsException">
+    /// Thrown if any parameter uses a reserved HTTP/2 identifier.
+    /// </exception>
+    public static void RejectForbiddenH2Settings(IReadOnlyList<(long Identifier, long Value)> parameters)
+    {
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            var (id, _) = parameters[i];
+            if (IsReservedH2Setting(id))
+            {
+                throw new Http3SettingsException(
+                    $"Setting identifier 0x{id:x2} is a reserved HTTP/2 setting and MUST NOT appear in HTTP/3 (RFC 9114 §7.2.4.1).");
+            }
+        }
+    }
 }
 
 /// <summary>

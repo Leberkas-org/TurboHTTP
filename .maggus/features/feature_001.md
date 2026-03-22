@@ -164,14 +164,14 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Parallel:** no — depends on ConnectionStage integration being done first
 
 **Acceptance Criteria:**
-- [ ] Analysis: compare `Http3SettingsExchange` methods vs `Http3ControlStream` — document which methods are unique
-- [ ] If `ValidateFieldSectionSize()` is useful: move it to `Http3ControlStream` or a static helper, then remove `Http3SettingsExchange`
-- [ ] If `RejectForbiddenH2Settings()` is useful: move it to `Http3Settings` or `Http3ControlStream`, then remove `Http3SettingsExchange`
-- [ ] If unique methods exist that aren't covered elsewhere: integrate them into `Http30ConnectionStage` before removing
-- [ ] Remove `Http3SettingsExchange.cs` from project
-- [ ] Remove or migrate corresponding tests from `22_SettingsExchangeTests.cs`
-- [ ] Build succeeds with zero errors
-- [ ] All tests pass
+- [x] Analysis: compare `Http3SettingsExchange` methods vs `Http3ControlStream` — document which methods are unique
+- [x] If `ValidateFieldSectionSize()` is useful: move it to `Http3ControlStream` or a static helper, then remove `Http3SettingsExchange`
+- [x] If `RejectForbiddenH2Settings()` is useful: move it to `Http3Settings` or `Http3ControlStream`, then remove `Http3SettingsExchange`
+- [x] If unique methods exist that aren't covered elsewhere: integrate them into `Http30ConnectionStage` before removing
+- [x] Remove `Http3SettingsExchange.cs` from project
+- [x] Remove or migrate corresponding tests from `22_SettingsExchangeTests.cs`
+- [x] Build succeeds with zero errors
+- [x] All tests pass
 
 ---
 

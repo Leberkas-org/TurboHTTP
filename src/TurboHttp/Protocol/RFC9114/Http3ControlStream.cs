@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TurboHttp.Protocol.RFC9114;
 
@@ -211,5 +212,81 @@ public sealed class Http3ControlStream
         throw new Http3ConnectionException(
             Http3ErrorCode.ClosedCriticalStream,
             "Closure of the control stream MUST be treated as a connection error of type H3_CLOSED_CRITICAL_STREAM (RFC 9114 §6.2.1).");
+    }
+
+    /// <summary>
+    /// The effective MAX_FIELD_SECTION_SIZE limit advertised by the remote peer,
+    /// or <c>null</c> if no limit was received (meaning unlimited).
+    /// </summary>
+    public long? RemoteMaxFieldSectionSize => RemoteSettings?.MaxFieldSectionSize;
+
+    /// <summary>
+    /// Validates that a field section does not exceed the peer's
+    /// SETTINGS_MAX_FIELD_SECTION_SIZE (RFC 9114 §4.2.2).
+    ///
+    /// The field section size is the sum of the uncompressed name length,
+    /// value length, and an overhead of 32 bytes per field line
+    /// (same definition as HTTP/2, RFC 9113 §6.5.2).
+    /// </summary>
+    /// <param name="headers">The header list to validate.</param>
+    /// <exception cref="Http3ConnectionException">
+    /// Thrown with <see cref="Http3ErrorCode.ExcessiveLoad"/> if the field section
+    /// exceeds the peer's advertised limit.
+    /// </exception>
+    public void ValidateFieldSectionSize(IReadOnlyList<(string Name, string Value)> headers)
+    {
+        if (RemoteMaxFieldSectionSize is not { } maxSize)
+        {
+            return; // No limit advertised
+        }
+
+        var size = CalculateFieldSectionSize(headers);
+
+        if (size > maxSize)
+        {
+            throw new Http3ConnectionException(
+                Http3ErrorCode.ExcessiveLoad,
+                $"Field section size {size} exceeds peer's SETTINGS_MAX_FIELD_SECTION_SIZE {maxSize} (RFC 9114 §4.2.2).");
+        }
+    }
+
+    /// <summary>
+    /// Calculates the uncompressed field section size as defined by
+    /// RFC 9110 §5.2 and referenced by RFC 9114 §4.2.2.
+    /// Size = sum of (name_length + value_length + 32) for each field.
+    /// </summary>
+    public static long CalculateFieldSectionSize(IReadOnlyList<(string Name, string Value)> headers)
+    {
+        var size = 0L;
+        for (var i = 0; i < headers.Count; i++)
+        {
+            var (name, value) = headers[i];
+            size += name.Length + value.Length + 32;
+        }
+
+        return size;
+    }
+
+    /// <summary>
+    /// Validates that a pre-calculated field section size does not exceed
+    /// the peer's SETTINGS_MAX_FIELD_SECTION_SIZE.
+    /// </summary>
+    /// <param name="fieldSectionSize">The calculated field section size in bytes.</param>
+    /// <exception cref="Http3ConnectionException">
+    /// Thrown with <see cref="Http3ErrorCode.ExcessiveLoad"/> if the size exceeds the limit.
+    /// </exception>
+    public void ValidateFieldSectionSize(long fieldSectionSize)
+    {
+        if (RemoteMaxFieldSectionSize is not { } maxSize)
+        {
+            return;
+        }
+
+        if (fieldSectionSize > maxSize)
+        {
+            throw new Http3ConnectionException(
+                Http3ErrorCode.ExcessiveLoad,
+                $"Field section size {fieldSectionSize} exceeds peer's SETTINGS_MAX_FIELD_SECTION_SIZE {maxSize} (RFC 9114 §4.2.2).");
+        }
     }
 }
