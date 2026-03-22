@@ -36,6 +36,16 @@ public sealed class Http30Engine : IHttpProtocolEngine
             b.From(requestToFrame.OutEncoder).To(encoderPreface.Inlet);
             b.From(encoderPreface.Outlet).To(merge.In(1));
 
+            // Inbound: partition decoder stream bytes from regular frames
+            var partition = b.Add(new Partition<IInputItem>(2, ClassifyInputItem));
+            var extractBytes = b.Add(
+                Flow.Create<IInputItem>().Select(ExtractDecoderStreamBytes));
+            var decoderStream = b.Add(new QpackDecoderStreamStage());
+            var feedback = b.Add(new QpackDecoderFeedbackStage(requestEncoder.QpackEncoder));
+
+            b.From(partition.Out(0)).To(frameDecoder.Inlet);
+            b.From(partition.Out(1)).Via(extractBytes).Via(decoderStream).To(feedback);
+
             // Server path: bytes → frames → connection → stream assembly
             b.From(frameDecoder.Outlet).To(connection.InServer);
             b.From(connection.OutApp).To(streamDecoder.Inlet);
@@ -59,9 +69,21 @@ public sealed class Http30Engine : IHttpProtocolEngine
                 HttpResponseMessage>(
                 requestToFrame.In,
                 merge.Out,
-                frameDecoder.Inlet,
+                partition.In,
                 streamDecoder.Outlet);
         }));
+    }
+
+    internal static int ClassifyInputItem(IInputItem item)
+    {
+        return item is Http3InputTaggedItem { StreamType: InputStreamType.QpackDecoder } ? 1 : 0;
+    }
+
+    internal static ReadOnlyMemory<byte> ExtractDecoderStreamBytes(IInputItem item)
+    {
+        var tagged = (Http3InputTaggedItem)item;
+        var data = (DataItem)tagged.Inner;
+        return data.Memory.Memory[..data.Length];
     }
 
     internal static IOutputItem BatchConsolidate(IOutputItem accumulated, IOutputItem next)

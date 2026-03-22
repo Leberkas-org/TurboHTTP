@@ -153,12 +153,12 @@ This feature makes HTTP/3 production-ready by:
 - Key decision: additional inlet on `Http30ConnectionStage`, OR a separate merge before the engine input
 
 **Acceptance Criteria:**
-- [ ] QPACK decoder stream bytes are routed to `QpackDecoderStreamStage`
-- [ ] Decoded instructions are fed back to `QpackEncoder` state
-- [ ] Section Acknowledgment updates encoder's known received count
-- [ ] Insert Count Increment allows encoder to reference more dynamic table entries
-- [ ] Unit test verifies decoder instruction feedback loop
-- [ ] Build passes with zero warnings
+- [x] QPACK decoder stream bytes are routed to `QpackDecoderStreamStage`
+- [x] Decoded instructions are fed back to `QpackEncoder` state
+- [x] Section Acknowledgment updates encoder's known received count
+- [x] Insert Count Increment allows encoder to reference more dynamic table entries
+- [x] Unit test verifies decoder instruction feedback loop
+- [x] Build passes with zero warnings
 
 ### TASK-005-006: Http30StreamDemuxStage — Route Output to Multiple QUIC Streams
 **Description:** As a developer, I want a demultiplexer stage that routes tagged output items to the correct QUIC stream (bidirectional request, unidirectional control, unidirectional QPACK encoder) so that a single pipeline can drive multiple QUIC streams.

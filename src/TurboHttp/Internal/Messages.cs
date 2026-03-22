@@ -117,3 +117,31 @@ public record Http3TaggedItem(IOutputItem Inner, OutputStreamType StreamType) : 
 {
     public RequestEndpoint Key => Inner.Key;
 }
+
+/// <summary>
+/// Identifies the QUIC unidirectional stream that an inbound HTTP/3 item arrived on.
+/// Used to route inbound items to the correct processing pipeline.
+/// </summary>
+public enum InputStreamType
+{
+    /// <summary>Bidirectional request/response stream (default).</summary>
+    Request,
+
+    /// <summary>Unidirectional control stream (type 0x00) — carries SETTINGS and GOAWAY frames.</summary>
+    Control,
+
+    /// <summary>Unidirectional QPACK encoder instruction stream (type 0x02).</summary>
+    QpackEncoder,
+
+    /// <summary>Unidirectional QPACK decoder instruction stream (type 0x03).</summary>
+    QpackDecoder,
+}
+
+/// <summary>
+/// Wraps an <see cref="IInputItem"/> with an <see cref="InputStreamType"/> tag
+/// so the engine can route it to the correct processing pipeline.
+/// </summary>
+public record Http3InputTaggedItem(IInputItem Inner, InputStreamType StreamType) : IInputItem
+{
+    public RequestEndpoint Key => Inner.Key;
+}

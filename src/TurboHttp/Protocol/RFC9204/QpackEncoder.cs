@@ -41,6 +41,8 @@ public sealed class QpackEncoder
     private readonly int _maxTableCapacity;
     private readonly bool _enableDynamicTable;
     private readonly ArrayBufferWriter<byte> _instructionBuffer = new(256);
+    private readonly Dictionary<int, int> _pendingSections = new();
+    private int _knownReceivedCount;
 
     /// <summary>
     /// Creates a new QPACK encoder.
@@ -70,6 +72,79 @@ public sealed class QpackEncoder
     /// is transmitted on the request stream.
     /// </summary>
     public ReadOnlyMemory<byte> EncoderInstructions => _instructionBuffer.WrittenMemory;
+
+    /// <summary>
+    /// RFC 9204 §4.4 — The Known Received Count: the number of dynamic table inserts
+    /// that the decoder has confirmed it has received (via Section Acknowledgment and
+    /// Insert Count Increment instructions on the decoder stream).
+    /// </summary>
+    public int KnownReceivedCount => _knownReceivedCount;
+
+    /// <summary>
+    /// Records that a header block with the given Required Insert Count was sent on
+    /// the specified stream. Must be called after <see cref="Encode"/> when the
+    /// Required Insert Count is greater than zero, so that
+    /// <see cref="ApplyDecoderInstruction"/> can process Section Acknowledgment.
+    /// </summary>
+    /// <param name="streamId">The QUIC stream ID the header block was sent on.</param>
+    /// <param name="requiredInsertCount">The Required Insert Count from the header block prefix.</param>
+    public void TrackSection(int streamId, int requiredInsertCount)
+    {
+        if (requiredInsertCount > 0)
+        {
+            _pendingSections[streamId] = requiredInsertCount;
+        }
+    }
+
+    /// <summary>
+    /// RFC 9204 §4.4 — Applies a decoder instruction received on the decoder stream.
+    ///
+    /// <list type="bullet">
+    ///   <item>
+    ///     <term>Section Acknowledgment (§4.4.1)</term>
+    ///     <description>Updates <see cref="KnownReceivedCount"/> to at least the
+    ///     Required Insert Count of the acknowledged section.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Insert Count Increment (§4.4.3)</term>
+    ///     <description>Directly increments <see cref="KnownReceivedCount"/>.</description>
+    ///   </item>
+    ///   <item>
+    ///     <term>Stream Cancellation (§4.4.2)</term>
+    ///     <description>Removes the pending section for the given stream.</description>
+    ///   </item>
+    /// </list>
+    /// </summary>
+    public void ApplyDecoderInstruction(DecoderInstruction instruction)
+    {
+        ArgumentNullException.ThrowIfNull(instruction);
+
+        switch (instruction.Type)
+        {
+            case DecoderInstructionType.SectionAcknowledgment:
+                if (_pendingSections.Remove(instruction.IntValue, out var ric))
+                {
+                    _knownReceivedCount = Math.Max(_knownReceivedCount, ric);
+                }
+                break;
+
+            case DecoderInstructionType.InsertCountIncrement:
+                if (instruction.IntValue <= 0)
+                {
+                    throw new QpackException(
+                        "RFC 9204 §4.4.3 violation: Insert Count Increment must be positive.");
+                }
+                _knownReceivedCount += instruction.IntValue;
+                break;
+
+            case DecoderInstructionType.StreamCancellation:
+                _pendingSections.Remove(instruction.IntValue);
+                break;
+
+            default:
+                throw new QpackException($"Unknown decoder instruction type: {instruction.Type}");
+        }
+    }
 
     /// <summary>
     /// Encodes a list of header fields into a QPACK header block.
