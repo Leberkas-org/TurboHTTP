@@ -181,14 +181,14 @@ This feature makes HTTP/3 production-ready by:
 - Consider adding `OutputStreamType` to `IOutputItem` or creating a wrapper type
 
 **Acceptance Criteria:**
-- [ ] Routes items to correct outlet based on stream type tag
-- [ ] Handles backpressure correctly per outlet
-- [ ] Control stream outlet receives preface first, then nothing (control stream is write-once for SETTINGS)
-- [ ] QPACK encoder outlet receives instruction bytes as they are generated
-- [ ] Request outlet receives all request data frames
-- [ ] Port names follow convention
-- [ ] Unit test verifies routing with mixed tagged items
-- [ ] Build passes with zero warnings
+- [x] Routes items to correct outlet based on stream type tag
+- [x] Handles backpressure correctly per outlet
+- [x] Control stream outlet receives preface first, then nothing (control stream is write-once for SETTINGS)
+- [x] QPACK encoder outlet receives instruction bytes as they are generated
+- [x] Request outlet receives all request data frames
+- [x] Port names follow convention
+- [x] Unit test verifies routing with mixed tagged items
+- [x] Build passes with zero warnings
 
 ### TASK-005-007: Rewire Http30Engine — Assemble Full Pipeline
 **Description:** As a developer, I want Http30Engine to wire all new stages (allocator, correlation, control preface, QPACK streams, demux) into a coherent pipeline so that the full HTTP/3 protocol is handled in the stage layer.
