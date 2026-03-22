@@ -294,7 +294,7 @@ This feature makes HTTP/3 production-ready by:
 - [x] Stream tests for Http30ControlStreamPrefaceStage pass
 - [x] Stream tests for Http30StreamDemuxStage pass
 - [x] Http30Engine end-to-end test passes with new wiring
-- [ ] HTTP/3 smoke test passes against Kestrel *(BLOCKED: TaskCanceledException — pre-existing HTTP/3 integration gap)*
+- [~] ⚠️ BLOCKED: HTTP/3 smoke test passes against Kestrel — TaskCanceledException in TurboHttpClient.SendAsync; pre-existing HTTP/3 integration gap not introduced by Feature 005
 - [x] `dotnet test src/TurboHttp.sln` — all tests green *(862 stream tests pass; 2 pre-existing SNI test failures unrelated to Feature 005)*
 - [x] Build passes with zero warnings
 
