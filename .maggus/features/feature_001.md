@@ -58,15 +58,15 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Parallel:** yes — can run alongside TASK-001-001, TASK-001-003, TASK-001-004, TASK-001-005
 
 **Acceptance Criteria:**
-- [ ] `Http3OriginValidator.Validate(request.RequestUri, isConnect)` called in `Http30Request2FrameStage.OnPush()` before `_encoder.Encode()`
-- [ ] CONNECT method detected via `request.Method == HttpMethod.Connect` and passed as `isConnect=true`
-- [ ] URIs with userinfo (`user:pass@host`) rejected
-- [ ] Empty scheme rejected
-- [ ] Empty path rejected (non-CONNECT)
-- [ ] Fragment in URI rejected
-- [ ] `Http3ConnectionException` propagates as stage failure
-- [ ] Existing unit tests still pass
-- [ ] Build succeeds with zero errors
+- [x] `Http3OriginValidator.Validate(request.RequestUri, isConnect)` called in `Http30Request2FrameStage.OnPush()` before `_encoder.Encode()`
+- [x] CONNECT method detected via `request.Method == HttpMethod.Connect` and passed as `isConnect=true`
+- [x] URIs with userinfo (`user:pass@host`) rejected
+- [x] Empty scheme rejected
+- [x] Empty path rejected (non-CONNECT)
+- [x] Fragment in URI rejected
+- [x] `Http3ConnectionException` propagates as stage failure
+- [x] Existing unit tests still pass
+- [x] Build succeeds with zero errors
 
 ---
 

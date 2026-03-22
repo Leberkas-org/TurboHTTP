@@ -39,6 +39,8 @@ public sealed class Http30Request2FrameStage : GraphStage<FlowShape<HttpRequestM
             SetHandler(stage._in, onPush: () =>
             {
                 var request = Grab(stage._in);
+                var isConnect = request.Method == HttpMethod.Connect;
+                Http3OriginValidator.Validate(request.RequestUri!, isConnect);
                 var frames = stage._encoder.Encode(request);
 
                 foreach (var f in frames)
