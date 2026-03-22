@@ -80,14 +80,14 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Model:** opus — needs careful analysis of QuicConnection certificate access API
 
 **Acceptance Criteria:**
-- [ ] After `QuicConnection.ConnectAsync()`, retrieve server certificate via `_connection.RemoteCertificate`
-- [ ] Call `Http3CertificateValidator.CoversHostname(cert, hostname)` to validate SAN/CN match
-- [ ] If validation fails, close connection and throw descriptive exception
-- [ ] Wildcard matching works (`*.example.com` matches `api.example.com`)
-- [ ] CN fallback used when no SAN dNSName entries exist
-- [ ] Validation skipped if custom `ServerCertificateValidationCallback` is set in `QuicOptions`
-- [ ] Existing unit tests still pass
-- [ ] Build succeeds with zero errors
+- [x] After `QuicConnection.ConnectAsync()`, retrieve server certificate via `_connection.RemoteCertificate`
+- [x] Call `Http3CertificateValidator.CoversHostname(cert, hostname)` to validate SAN/CN match
+- [x] If validation fails, close connection and throw descriptive exception
+- [x] Wildcard matching works (`*.example.com` matches `api.example.com`)
+- [x] CN fallback used when no SAN dNSName entries exist
+- [x] Validation skipped if custom `ServerCertificateValidationCallback` is set in `QuicOptions`
+- [x] Existing unit tests still pass
+- [x] Build succeeds with zero errors
 
 ---
 

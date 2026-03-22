@@ -4,8 +4,10 @@ using System.Net;
 using System.Net.Quic;
 using System.Net.Security;
 using System.Runtime.Versioning;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using TurboHttp.Protocol.RFC9114;
 
 namespace TurboHttp.Transport;
 
@@ -50,7 +52,53 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
         };
 
         _connection = await QuicConnection.ConnectAsync(clientConnectionOptions, ct).ConfigureAwait(false);
+
+        // RFC 9114 §3.3: Validate server certificate covers the target hostname
+        // for safe connection coalescing. Skip if user provides a custom callback
+        // (they are handling validation themselves).
+        if (options.ServerCertificateValidationCallback is null)
+        {
+            ValidateCertificateHostname(_connection, options.Host);
+        }
+
         return await _connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, ct).ConfigureAwait(false);
+    }
+
+    private void ValidateCertificateHostname(QuicConnection connection, string hostname)
+    {
+        var remoteCert = connection.RemoteCertificate;
+        if (remoteCert is null)
+        {
+            CloseConnection(connection);
+            throw new Http3ConnectionException(
+                Http3ErrorCode.GeneralProtocolError,
+                $"QUIC connection to '{hostname}' did not provide a server certificate (RFC 9114 §3.3).");
+        }
+
+        // QuicConnection.RemoteCertificate returns X509Certificate; convert to X509Certificate2 if needed.
+        var cert2 = remoteCert as X509Certificate2 ?? new X509Certificate2(remoteCert);
+
+        if (!Http3CertificateValidator.CoversHostname(cert2, hostname))
+        {
+            CloseConnection(connection);
+            throw new Http3ConnectionException(
+                Http3ErrorCode.GeneralProtocolError,
+                $"Server certificate does not cover hostname '{hostname}'. "
+                + "Connection coalescing is unsafe (RFC 9114 §3.3). "
+                + $"Certificate subject: {cert2.Subject}");
+        }
+    }
+
+    private static void CloseConnection(QuicConnection connection)
+    {
+        try
+        {
+            _ = connection.DisposeAsync();
+        }
+        catch (ObjectDisposedException)
+        {
+            // noop
+        }
     }
 
     public void Close()
