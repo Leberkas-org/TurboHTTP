@@ -22,11 +22,11 @@ public sealed class Http30StreamStageTests : StreamTestBase
 {
     private readonly QpackEncoder _qpack = new(maxTableCapacity: 0);
 
-    private async Task<IReadOnlyList<HttpResponseMessage>> RunAsync(params Http3Frame[] frames)
+    private async Task<IReadOnlyList<(HttpResponseMessage Response, long StreamId)>> RunAsync(params Http3Frame[] frames)
     {
         return await Source.From(frames)
             .Via(Flow.FromGraph(new Http30StreamStage()))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+            .RunWith(Sink.Seq<(HttpResponseMessage Response, long StreamId)>(), Materializer);
     }
 
     private ReadOnlyMemory<byte> EncodeHeaders(params (string Name, string Value)[] headers)
@@ -46,11 +46,12 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
+        Assert.Equal(0L, responses[0].StreamId);
         // HEADERS-only (no DATA frames) — no body content set by stage
-        if (responses[0].Content is not null)
+        if (responses[0].Response.Content is not null)
         {
-            var body = await responses[0].Content.ReadAsByteArrayAsync();
+            var body = await responses[0].Response.Content.ReadAsByteArrayAsync();
             Assert.Empty(body);
         }
     }
@@ -69,8 +70,8 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
-        var responseBody = await responses[0].Content!.ReadAsByteArrayAsync();
+        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
+        var responseBody = await responses[0].Response.Content!.ReadAsByteArrayAsync();
         Assert.Equal(body, responseBody);
     }
 
@@ -90,7 +91,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        var responseBody = await responses[0].Content!.ReadAsByteArrayAsync();
+        var responseBody = await responses[0].Response.Content!.ReadAsByteArrayAsync();
         Assert.Equal("Hello, World!"u8.ToArray(), responseBody);
     }
 
@@ -107,10 +108,10 @@ public sealed class Http30StreamStageTests : StreamTestBase
 
         var responses = await Source.From<Http3Frame>([new Http3HeadersFrame(headerBlock)])
             .Via(Flow.FromGraph(new Http30StreamStage()))
-            .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer);
+            .RunWith(Sink.Seq<(HttpResponseMessage Response, long StreamId)>(), Materializer);
 
         Assert.Single(responses);
-        Assert.Equal(expected, responses[0].StatusCode);
+        Assert.Equal(expected, responses[0].Response.StatusCode);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-4.1-30S-005: Regular headers present in response headers")]
@@ -128,9 +129,9 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal("abc-123", responses[0].Headers.GetValues("x-request-id").Single());
-        Assert.Equal("custom-value", responses[0].Headers.GetValues("x-custom").Single());
-        Assert.Equal("TurboHttp", responses[0].Headers.GetValues("server").Single());
+        Assert.Equal("abc-123", responses[0].Response.Headers.GetValues("x-request-id").Single());
+        Assert.Equal("custom-value", responses[0].Response.Headers.GetValues("x-custom").Single());
+        Assert.Equal("TurboHttp", responses[0].Response.Headers.GetValues("server").Single());
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-4.1-30S-006: Pseudo-headers excluded from response headers collection")]
@@ -146,8 +147,8 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.False(responses[0].Headers.Contains(":status"));
-        Assert.Equal("yes", responses[0].Headers.GetValues("x-visible").Single());
+        Assert.False(responses[0].Response.Headers.Contains(":status"));
+        Assert.Equal("yes", responses[0].Response.Headers.GetValues("x-visible").Single());
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-4.1-30S-007: Content-Encoding gzip triggers decompression")]
@@ -176,7 +177,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        var responseBody = await responses[0].Content!.ReadAsByteArrayAsync();
+        var responseBody = await responses[0].Response.Content!.ReadAsByteArrayAsync();
         Assert.Equal(originalBody, responseBody);
     }
 
@@ -194,7 +195,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        var responseBody = await responses[0].Content!.ReadAsByteArrayAsync();
+        var responseBody = await responses[0].Response.Content!.ReadAsByteArrayAsync();
         Assert.Equal(body, responseBody);
     }
 
@@ -212,8 +213,8 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
-        var body = await responses[0].Content!.ReadAsByteArrayAsync();
+        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
+        var body = await responses[0].Response.Content!.ReadAsByteArrayAsync();
         Assert.Equal("ok"u8.ToArray(), body);
     }
 
@@ -231,7 +232,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        var body = await responses[0].Content!.ReadAsByteArrayAsync();
+        var body = await responses[0].Response.Content!.ReadAsByteArrayAsync();
         Assert.Equal("data"u8.ToArray(), body);
     }
 
@@ -247,11 +248,11 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.NoContent, responses[0].StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, responses[0].Response.StatusCode);
         // HEADERS-only (no DATA frames) — no body content set by stage
-        if (responses[0].Content is not null)
+        if (responses[0].Response.Content is not null)
         {
-            var body = await responses[0].Content.ReadAsByteArrayAsync();
+            var body = await responses[0].Response.Content.ReadAsByteArrayAsync();
             Assert.Empty(body);
         }
     }
@@ -305,7 +306,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-4.2-30S-004: TE header rejected with non-trailers value")]
@@ -356,6 +357,6 @@ public sealed class Http30StreamStageTests : StreamTestBase
         );
 
         Assert.Single(responses);
-        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[0].Response.StatusCode);
     }
 }

@@ -96,17 +96,7 @@ public sealed class Http30Engine : IHttpProtocolEngine
             b.From(frameDecoder.Outlet).To(connection.InServer);
             b.From(connection.OutApp).To(streamDecoder.Inlet);
 
-            // Assign response stream IDs to match allocator pattern (0, 4, 8, ...)
-            long responseStreamId = 0;
-            var responseIdFlow = b.Add(
-                Flow.Create<HttpResponseMessage>().Select(r =>
-                {
-                    var id = responseStreamId;
-                    responseStreamId += 4;
-                    return (r, id);
-                }));
-
-            b.From(streamDecoder.Outlet).Via(responseIdFlow).To(correlation.In1);
+            b.From(streamDecoder.Outlet).To(correlation.In1);
 
             return new BidiShape<
                 HttpRequestMessage,
