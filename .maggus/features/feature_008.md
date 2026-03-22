@@ -32,7 +32,7 @@ Request:  StreamIdAllocator → Broadcast → [stripStreamId → Request2Frame, 
           Request2Frame.OutEncoder → QpackEncoderPreface
 Outbound: Connection.OutServer → FrameEncoder → Batch → Merge ← QpackEncoderPreface
           Merge → ControlPreface → [wire]
-Inbound:  [wire] → FrameDecoder → Connection(+QpackFeedback) → StreamDecoder(+streamId) → Correlation
+Inbound:  [wire] → FrameDecoder(+QpackFeedback) → Connection → StreamDecoder(+streamId) → Correlation
 ```
 
 ## Goals

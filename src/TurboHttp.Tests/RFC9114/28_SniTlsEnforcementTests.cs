@@ -48,7 +48,7 @@ public sealed class SniTlsEnforcementTests
             () => provider.GetStreamAsync());
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
-        Assert.Contains("RFC 9114", ex.Message);
+        Assert.Contains("Server Name Indication", ex.Message);
     }
 
     [Fact(DisplayName = "RFC9114-3.2-SNI-004: QuicClientProvider rejects empty host")]
@@ -63,7 +63,7 @@ public sealed class SniTlsEnforcementTests
             () => provider.GetStreamAsync());
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
-        Assert.Contains("RFC 9114", ex.Message);
+        Assert.Contains("Server Name Indication", ex.Message);
     }
 
     [Fact(DisplayName = "RFC9114-3.2-SNI-005: ALPN protocol h3 is set for HTTP/3")]

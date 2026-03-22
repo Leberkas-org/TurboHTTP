@@ -128,13 +128,13 @@ TurboHttpException (abstract)
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] All `Assert.Throws<Http3SettingsException>` → `Assert.Throws<Http3Exception>` (with ErrorCode check)
-- [ ] All `Assert.Throws<RedirectDowngradeException>` → `Assert.Throws<RedirectException>` (with Error check)
-- [ ] Grep for `Http3SettingsException` across entire repo returns 0 matches
-- [ ] Grep for `RedirectDowngradeException` across entire repo returns 0 matches
-- [ ] Grep for `class \w+Exception\b.*: Exception\b` in production code returns 0 matches (all inherit from TurboHttp base)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors, 0 warnings
-- [ ] `dotnet test src/TurboHttp.sln` — all tests green
+- [x] All `Assert.Throws<Http3SettingsException>` → `Assert.Throws<Http3Exception>` (with ErrorCode check)
+- [x] All `Assert.Throws<RedirectDowngradeException>` → `Assert.Throws<RedirectException>` (with Error check)
+- [x] Grep for `Http3SettingsException` across entire repo returns 0 matches
+- [x] Grep for `RedirectDowngradeException` across entire repo returns 0 matches
+- [x] Grep for `class \w+Exception\b.*: Exception\b` in production code returns 0 matches (all inherit from TurboHttp base)
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors, 0 warnings
+- [x] `dotnet test src/TurboHttp.sln` — all tests green
 
 ## Task Dependency Graph
 
