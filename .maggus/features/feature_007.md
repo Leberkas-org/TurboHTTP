@@ -59,12 +59,12 @@ TurboHttpException (abstract)
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp/TurboHttpException.cs` containing:
+- [x] New file `src/TurboHttp/TurboHttpException.cs` containing:
   - `public abstract class TurboHttpException : Exception` (3 constructors: message, message+inner, default)
   - `public abstract class TurboProtocolException : TurboHttpException`
   - `public abstract class TurboTransportException : TurboHttpException`
-- [ ] All classes are `abstract` (not directly instantiable)
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
+- [x] All classes are `abstract` (not directly instantiable)
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors
 
 ### TASK-007-002: Extract embedded exceptions into own files
 **Description:** As a developer, I want each exception class to live in its own file so it's easy to find and maintain.
