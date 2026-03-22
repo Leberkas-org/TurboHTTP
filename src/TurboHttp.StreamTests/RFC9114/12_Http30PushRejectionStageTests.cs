@@ -58,23 +58,24 @@ public sealed class Http30PushRejectionStageTests : StreamTestBase
     // MAX_PUSH_ID=0 Sent at Startup (RFC 9114 §10.5)
     // ──────────────────────────────────────────────────────────────────────
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9114-10.5-PR-001: MAX_PUSH_ID=0 sent on PreStart")]
-    public async Task Should_SendMaxPushIdZero_When_StageStarts()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9114-10.5-PR-001: MAX_PUSH_ID not emitted by ConnectionStage (moved to ControlStreamPrefaceStage)")]
+    public async Task Should_NotSendMaxPushId_When_StageStarts()
     {
         var (_, serverBound) = await RunAsync();
 
-        var maxPushId = serverBound.OfType<Http3MaxPushIdFrame>().FirstOrDefault();
-        Assert.NotNull(maxPushId);
-        Assert.Equal(0L, maxPushId.PushId);
+        // MAX_PUSH_ID now belongs on the unidirectional control stream, emitted by
+        // Http30ControlStreamPrefaceStage — ConnectionStage no longer emits it.
+        Assert.DoesNotContain(serverBound, f => f is Http3MaxPushIdFrame);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9114-10.5-PR-002: SETTINGS and MAX_PUSH_ID both sent on PreStart")]
-    public async Task Should_SendSettingsAndMaxPushId_When_StageStarts()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9114-10.5-PR-002: Neither SETTINGS nor MAX_PUSH_ID emitted by ConnectionStage")]
+    public async Task Should_NotSendSettingsOrMaxPushId_When_StageStarts()
     {
         var (_, serverBound) = await RunAsync();
 
-        Assert.Contains(serverBound, f => f is Http3SettingsFrame);
-        Assert.Contains(serverBound, f => f is Http3MaxPushIdFrame);
+        // Both SETTINGS and MAX_PUSH_ID now go through the control stream preface stage.
+        Assert.DoesNotContain(serverBound, f => f is Http3SettingsFrame);
+        Assert.DoesNotContain(serverBound, f => f is Http3MaxPushIdFrame);
     }
 
     // ──────────────────────────────────────────────────────────────────────

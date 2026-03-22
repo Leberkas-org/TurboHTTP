@@ -115,14 +115,15 @@ public sealed class Http30ConnectionStageTests : StreamTestBase
         Assert.Empty(downstream);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9114-7.2.4-H3C-003: SETTINGS sent on PreStart")]
-    public async Task Should_SendSettings_When_StageStarts()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9114-7.2.4-H3C-003: SETTINGS not emitted by ConnectionStage (moved to ControlStreamPrefaceStage)")]
+    public async Task Should_NotSendSettings_When_StageStarts()
     {
         // No server frames — just let the stage start and capture outbound
         var (_, serverBound) = await RunAsync();
 
-        // PreStart enqueues a SETTINGS frame for the local control stream
-        Assert.Contains(serverBound, f => f is Http3SettingsFrame);
+        // SETTINGS now belongs on the unidirectional control stream, emitted by
+        // Http30ControlStreamPrefaceStage — ConnectionStage no longer emits it.
+        Assert.DoesNotContain(serverBound, f => f is Http3SettingsFrame);
     }
 
     // ──────────────────────────────────────────────────────────────────────
