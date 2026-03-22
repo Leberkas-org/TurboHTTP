@@ -81,15 +81,15 @@ This feature refactors `ConnectionActor` into a class hierarchy with `Connection
 **Parallel:** yes — can run alongside TASK-004-002 and TASK-004-004
 
 **Acceptance Criteria:**
-- [ ] `Http2ConnectionActor` created in `src/TurboHttp/Pooling/Http2ConnectionActor.cs`
-- [ ] Inherits from `ConnectionActorBase`
-- [ ] `Connect()` — simple `ClientManager.CreateRunnerWithChannels` (like Http1, no SharedProvider)
-- [ ] `HandleConnected()` — sets `_runner`, sends `ConnectionReady` to parent
-- [ ] Stream lifecycle: `StreamAcquired`/`StreamCompleted` messages correctly forwarded to parent
-- [ ] No `MarkBusy()` in HostPool for HTTP/2 — stream accounting exclusively via stage signals
-- [ ] `HandleDisconnected()` / `HandleTerminated()` — calls `Reconnect()`
-- [ ] `PostStop()` — stops runner
-- [ ] Build green
+- [x] `Http2ConnectionActor` created in `src/TurboHttp/Pooling/Http2ConnectionActor.cs`
+- [x] Inherits from `ConnectionActorBase`
+- [x] `Connect()` — simple `ClientManager.CreateRunnerWithChannels` (like Http1, no SharedProvider)
+- [x] `HandleConnected()` — sets `_runner`, sends `ConnectionReady` to parent
+- [x] Stream lifecycle: `StreamAcquired`/`StreamCompleted` messages correctly forwarded to parent
+- [x] No `MarkBusy()` in HostPool for HTTP/2 — stream accounting exclusively via stage signals
+- [x] `HandleDisconnected()` / `HandleTerminated()` — calls `Reconnect()`
+- [x] `PostStop()` — stops runner
+- [x] Build green
 
 ### TASK-004-004: Implement Http3ConnectionActor
 
