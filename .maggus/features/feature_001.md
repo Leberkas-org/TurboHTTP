@@ -121,14 +121,14 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Parallel:** yes — can run alongside TASK-001-001, TASK-001-002, TASK-001-003, TASK-001-004
 
 **Acceptance Criteria:**
-- [ ] In `ConnectionReuseStage.Logic.OnPush()`: check `response.Version.Major >= 3`
-- [ ] HTTP/3 responses evaluated via `Http3ConnectionReuseEvaluator.Evaluate()` instead of `ConnectionReuseEvaluator`
-- [ ] Parameters sourced from response: scheme, host, port from `RequestMessage.RequestUri`
-- [ ] `serverCertificate` passed from connection state (may need to thread through pipeline — document if not available)
-- [ ] `isGoingAway` from connection state (may need signal from `Http30ConnectionStage`)
-- [ ] HTTP/1.x and HTTP/2 behavior unchanged (regression-safe)
-- [ ] Existing unit tests still pass
-- [ ] Build succeeds with zero errors
+- [x] In `ConnectionReuseStage.Logic.OnPush()`: check `response.Version.Major >= 3`
+- [x] HTTP/3 responses evaluated via `Http3ConnectionReuseEvaluator.Evaluate()` instead of `ConnectionReuseEvaluator`
+- [x] Parameters sourced from response: scheme, host, port from `RequestMessage.RequestUri`
+- [x] `serverCertificate` passed from connection state (may need to thread through pipeline — document if not available)
+- [x] `isGoingAway` from connection state (may need signal from `Http30ConnectionStage`)
+- [x] HTTP/1.x and HTTP/2 behavior unchanged (regression-safe)
+- [x] Existing unit tests still pass
+- [x] Build succeeds with zero errors
 
 ---
 
