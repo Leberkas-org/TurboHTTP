@@ -100,7 +100,7 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
             // (they are handling validation themselves).
             if (options.ServerCertificateValidationCallback is null)
             {
-                ValidateCertificateHostname(connection, options.Host);
+                await ValidateCertificateHostnameAsync(connection, options.Host).ConfigureAwait(false);
             }
 
             Volatile.Write(ref _connection, connection);
@@ -112,12 +112,12 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
         }
     }
 
-    private void ValidateCertificateHostname(QuicConnection connection, string hostname)
+    private async Task ValidateCertificateHostnameAsync(QuicConnection connection, string hostname)
     {
         var remoteCert = connection.RemoteCertificate;
         if (remoteCert is null)
         {
-            CloseConnection(connection);
+            await CloseConnectionAsync(connection).ConfigureAwait(false);
             throw new Http3ConnectionException(
                 Http3ErrorCode.GeneralProtocolError,
                 $"QUIC connection to '{hostname}' did not provide a server certificate (RFC 9114 §3.3).");
@@ -128,7 +128,7 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 
         if (!Http3CertificateValidator.CoversHostname(cert2, hostname))
         {
-            CloseConnection(connection);
+            await CloseConnectionAsync(connection).ConfigureAwait(false);
             throw new Http3ConnectionException(
                 Http3ErrorCode.GeneralProtocolError,
                 $"Server certificate does not cover hostname '{hostname}'. "
@@ -137,11 +137,11 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
         }
     }
 
-    private static void CloseConnection(QuicConnection connection)
+    private static async ValueTask CloseConnectionAsync(QuicConnection connection)
     {
         try
         {
-            _ = connection.DisposeAsync();
+            await connection.DisposeAsync().ConfigureAwait(false);
         }
         catch (ObjectDisposedException)
         {
@@ -157,13 +157,18 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
             return;
         }
 
-        try
+        connection.DisposeAsync().AsTask().GetAwaiter().GetResult();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        var connection = Interlocked.Exchange(ref _connection, null);
+        if (connection is null)
         {
-            _ = connection.DisposeAsync();
+            return;
         }
-        catch (ObjectDisposedException)
-        {
-            // noop
-        }
+
+        await CloseConnectionAsync(connection).ConfigureAwait(false);
+        _connectLock.Dispose();
     }
 }

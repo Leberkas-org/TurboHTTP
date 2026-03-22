@@ -14,7 +14,7 @@ namespace TurboHttp.Transport;
 /// Abstracts a raw TCP or TLS connection so that <see cref="ClientState"/> is independent
 /// of the underlying transport.
 /// </summary>
-public interface IClientProvider
+public interface IClientProvider : IAsyncDisposable
 {
     /// <summary>Gets the remote endpoint the socket is connected to, or <see langword="null"/> if not yet connected.</summary>
     EndPoint? RemoteEndPoint { get; }
@@ -77,6 +77,12 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         {
             _socket = null;
         }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Close();
+        return ValueTask.CompletedTask;
     }
 
     private Socket CreateSocket()
@@ -159,6 +165,27 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
         }
 
         _tcpClientProvider.Close();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_sslStream is not null)
+        {
+            try
+            {
+                await _sslStream.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop
+            }
+            finally
+            {
+                _sslStream = null;
+            }
+        }
+
+        await _tcpClientProvider.DisposeAsync().ConfigureAwait(false);
     }
 }
 

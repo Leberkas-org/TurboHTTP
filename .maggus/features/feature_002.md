@@ -98,12 +98,12 @@ Analysis of the TurboHttp client transport layer revealed three bugs that will s
 - Default implementation in `TcpClientProvider`/`TlsClientProvider`: close socket/stream synchronously (wrap in ValueTask)
 
 **Acceptance Criteria:**
-- [ ] `IClientProvider` extends `IAsyncDisposable`
-- [ ] `QuicClientProvider.DisposeAsync()` awaits `QuicConnection.DisposeAsync()`
-- [ ] `TcpClientProvider` and `TlsClientProvider` implement `DisposeAsync()` (close socket)
-- [ ] No fire-and-forget `_ = DisposeAsync()` calls remain in codebase
-- [ ] `ConnectionActor.PostStop()` disposes provider asynchronously
-- [ ] Unit test: verify disposal completes before actor terminates
+- [x] `IClientProvider` extends `IAsyncDisposable`
+- [x] `QuicClientProvider.DisposeAsync()` awaits `QuicConnection.DisposeAsync()`
+- [x] `TcpClientProvider` and `TlsClientProvider` implement `DisposeAsync()` (close socket)
+- [x] No fire-and-forget `_ = DisposeAsync()` calls remain in codebase
+- [x] `ConnectionActor.PostStop()` disposes provider asynchronously
+- [x] Unit test: verify disposal completes before actor terminates
 
 ---
 

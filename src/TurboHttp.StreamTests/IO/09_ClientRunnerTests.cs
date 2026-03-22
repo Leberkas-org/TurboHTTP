@@ -13,11 +13,22 @@ public sealed class ClientRunnerTests : TestKit
 {
     private sealed class FakeClientProvider(Task<Stream> streamTask, EndPoint remoteEndPoint) : IClientProvider
     {
+        private readonly TaskCompletionSource _disposeTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public EndPoint? RemoteEndPoint => remoteEndPoint;
+        public bool IsDisposed { get; private set; }
+        public Task DisposedTask => _disposeTcs.Task;
 
         public Task<Stream> GetStreamAsync(CancellationToken ct = default) => streamTask;
 
         public void Close() { }
+
+        public ValueTask DisposeAsync()
+        {
+            IsDisposed = true;
+            _disposeTcs.TrySetResult();
+            return ValueTask.CompletedTask;
+        }
     }
 
     [Fact(DisplayName = "TASK-017-001: ClientConnected sent to handler when GetStreamAsync succeeds")]
@@ -53,5 +64,34 @@ public sealed class ClientRunnerTests : TestKit
             "runner-fail");
 
         handlerProbe.ExpectMsg<ClientRunner.ClientDisconnected>(TimeSpan.FromSeconds(5));
+    }
+
+    [Fact(DisplayName = "TASK-007-002: DisposeAsync completes before actor terminates")]
+    public void Should_DisposeProviderAsync_BeforeActorTerminates()
+    {
+        var remoteEndPoint = new IPEndPoint(IPAddress.Loopback, 9999);
+        Stream stream = new MemoryStream();
+        var provider = new FakeClientProvider(Task.FromResult(stream), remoteEndPoint);
+        var handlerProbe = CreateTestProbe("handler");
+
+        var runner = Sys.ActorOf(
+            Props.Create(() => new ClientRunner(provider, handlerProbe.Ref, 65536)),
+            "runner-dispose");
+
+        // Wait for connection to be established
+        handlerProbe.ExpectMsg<ClientRunner.ClientConnected>(TimeSpan.FromSeconds(5));
+
+        // Watch the runner for termination
+        var watchProbe = CreateTestProbe("watcher");
+        watchProbe.Watch(runner);
+
+        // Stop the runner — PostStop should call DisposeAsync
+        runner.Tell(new DoClose());
+
+        // Wait for actor to terminate
+        watchProbe.ExpectTerminated(runner, TimeSpan.FromSeconds(5));
+
+        // Provider should have been disposed by PostStop
+        Assert.True(provider.IsDisposed, "IClientProvider.DisposeAsync() must complete before actor terminates");
     }
 }

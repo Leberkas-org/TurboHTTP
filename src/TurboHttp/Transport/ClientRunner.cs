@@ -107,7 +107,7 @@ internal sealed class ClientRunner : ReceiveActor
         try
         {
             _state.Dispose();
-            _clientProvider.Close();
+            _clientProvider.DisposeAsync().AsTask().GetAwaiter().GetResult();
             _cts.Dispose();
         }
         catch (Exception ex)

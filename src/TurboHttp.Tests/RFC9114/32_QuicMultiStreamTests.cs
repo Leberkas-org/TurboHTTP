@@ -193,6 +193,7 @@ public sealed class QuicMultiStreamTests
         public EndPoint? RemoteEndPoint => null;
         public Task<Stream> GetStreamAsync(CancellationToken ct = default) => Task.FromResult<Stream>(new MemoryStream());
         public void Close() { }
+        public ValueTask DisposeAsync() { Close(); return ValueTask.CompletedTask; }
     }
 
     /// <summary>
@@ -245,6 +246,8 @@ public sealed class QuicMultiStreamTests
         {
             Interlocked.Exchange(ref _connection, null);
         }
+
+        public ValueTask DisposeAsync() { Close(); return ValueTask.CompletedTask; }
 
         private async Task EnsureConnectedAsync(CancellationToken ct)
         {
