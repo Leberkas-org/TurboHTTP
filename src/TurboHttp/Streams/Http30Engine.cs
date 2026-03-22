@@ -16,7 +16,9 @@ public sealed class Http30Engine : IHttpProtocolEngine
 
     public BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> CreateFlow()
     {
-        var requestEncoder = new Http3RequestEncoder();
+        // Disable QPACK dynamic table — no QPACK encoder instruction stream is wired yet,
+        // so all headers must use static table + literal encoding only.
+        var requestEncoder = new Http3RequestEncoder(maxTableCapacity: 0);
 
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {

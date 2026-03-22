@@ -95,6 +95,13 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 
             var connection = await QuicConnection.ConnectAsync(clientConnectionOptions, ct).ConfigureAwait(false);
 
+            // RFC 9114 §6.2.1: Open a unidirectional control stream and send SETTINGS
+            // as the very first frame. This MUST happen before any request streams.
+            var controlStreamBytes = new Http3ControlStream().OpenLocalStream();
+            var controlStream = await connection.OpenOutboundStreamAsync(
+                QuicStreamType.Unidirectional, ct).ConfigureAwait(false);
+            await controlStream.WriteAsync(controlStreamBytes, ct).ConfigureAwait(false);
+
             // RFC 9114 §3.3: Validate server certificate covers the target hostname
             // for safe connection coalescing. Skip if user provides a custom callback
             // (they are handling validation themselves).

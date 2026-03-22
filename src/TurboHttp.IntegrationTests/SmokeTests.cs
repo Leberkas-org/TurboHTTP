@@ -145,7 +145,7 @@ public sealed class Http3SmokeTests : IAsyncLifetime
         }
     }
 
-    [Fact(Skip = "HTTP/3 QUIC transport not yet implemented — QuicClientProvider cannot establish connections")]
+    [Fact]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));

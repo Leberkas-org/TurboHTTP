@@ -127,7 +127,6 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
         private readonly Queue<Http3Frame> _outboundQueue = new();
 
         private bool _goAwayReceived;
-        private bool _controlStreamOpened;
 
         public Logic(Http30ConnectionStage stage) : base(stage.Shape)
         {
@@ -175,19 +174,10 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
 
         public override void PreStart()
         {
-            // Open the local control stream and send SETTINGS as the first outbound data.
-            if (!_controlStreamOpened)
-            {
-                _controlStreamOpened = true;
-                var controlStreamBytes = _controlStream.OpenLocalStream();
-
-                // Wrap the control stream init bytes in a DATA frame for transport.
-                // The downstream encoder/transport will handle the raw bytes.
-                EnqueueOutbound(new Http3SettingsFrame([]));
-
-                // RFC 9114 §10.5 — Send MAX_PUSH_ID=0 to reject all server pushes.
-                EnqueueOutbound(_maxPushIdHandler.CreateMaxPushId(0));
-            }
+            // RFC 9114 §6.2.1: SETTINGS and MAX_PUSH_ID belong on the unidirectional
+            // control stream, NOT on bidirectional request streams. The control stream
+            // is now opened by QuicClientProvider after the QUIC connection is established.
+            // This stage only handles routing frames on the bidirectional request stream.
 
             // Schedule periodic idle timeout checks if timeout is enabled.
             ScheduleIdleCheck();
