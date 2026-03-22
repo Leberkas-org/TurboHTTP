@@ -14,7 +14,7 @@ namespace TurboHttp.Tests.RFC9113;
 /// </remarks>
 public sealed class Http2EncoderBaselineTests
 {
-    [Fact]
+    [Fact(DisplayName = "RFC9113-3.4-CP-001: Connection preface starts with PRI magic octets")]
     public void Should_StartWithMagic_WhenBuildingConnectionPreface()
     {
         var preface = Http2FrameUtils.BuildConnectionPreface();
@@ -24,14 +24,14 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal(magic, preface[..magic.Length]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-3.4-CP-002: Connection preface contains SETTINGS frame after magic")]
     public void Should_ContainSettingsFrame_WhenBuildingConnectionPreface()
     {
         var preface = Http2FrameUtils.BuildConnectionPreface();
         Assert.Equal((byte)FrameType.Settings, preface[27]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-001: GET request produces HEADERS frame")]
     public void Should_ProduceHeadersFrame_WhenEncodingGetRequest()
     {
         var request = CreateGetRequest("example.com", "/index.html");
@@ -42,7 +42,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.IsType<HeadersFrame>(frames[0]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-002: GET HEADERS has END_STREAM and END_HEADERS flags")]
     public void Should_HaveEndStreamAndEndHeaders_WhenEncodingGetRequest()
     {
         var request = CreateGetRequest("example.com", "/");
@@ -54,7 +54,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.True(hf.EndHeaders);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.2.2-ENC-003: Encoder excludes connection-specific headers from request")]
     public void Should_ExcludeBannedHeaders_WhenEncodingGetRequest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
@@ -77,7 +77,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.DoesNotContain("te", names);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.3.1-ENC-004: GET request includes all required pseudo-headers")]
     public void Should_ContainAllPseudoHeaders_WhenEncodingGetRequest()
     {
         var request = CreateGetRequest("example.com", "/v1/data", 443, isHttps: true);
@@ -91,7 +91,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal("example.com", dict[":authority"]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.3.1-ENC-005: Non-standard port included in :authority pseudo-header")]
     public void Should_IncludePortInAuthority_WhenGetRequestHasNonStandardPort()
     {
         var request = CreateGetRequest("example.com", "/", 8080);
@@ -102,7 +102,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal("example.com:8080", dict[":authority"]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-006: POST request produces HEADERS and DATA frames")]
     public void Should_ProduceDataFrame_WhenEncodingPostRequest()
     {
         var request = CreatePostRequest("example.com", "/api", "{\"key\":\"value\"}");
@@ -114,7 +114,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.IsType<DataFrame>(frames[1]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-007: POST HEADERS frame does not set END_STREAM")]
     public void Should_NotSetEndStreamOnHeaders_WhenEncodingPostRequest()
     {
         var request = CreatePostRequest("example.com", "/api", "{}");
@@ -126,7 +126,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.True(hf.EndHeaders);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-008: POST DATA frame sets END_STREAM")]
     public void Should_SetEndStreamOnDataFrame_WhenEncodingPostRequest()
     {
         var request = CreatePostRequest("example.com", "/api", "{\"x\":1}");
@@ -137,7 +137,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.True(df.EndStream);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-009: POST request includes content-type header")]
     public void Should_IncludeContentHeaders_WhenEncodingPostRequest()
     {
         const string json = "{\"name\":\"test\"}";
@@ -149,7 +149,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal("application/json; charset=utf-8", dict["content-type"]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-8.1-ENC-010: POST with empty body produces zero-length DATA with END_STREAM")]
     public void Should_ProduceEmptyDataFrame_WhenEncodingPostWithEmptyBody()
     {
         var request = CreatePostRequest("example.com", "/api", "");
@@ -161,7 +161,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.True(df.EndStream);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.5-FS-001: SETTINGS ACK produces correct frame type and ACK flag")]
     public void Should_ProduceAckFrame_WhenEncodingSettingsAck()
     {
         var ack = Http2FrameUtils.EncodeSettingsAck();
@@ -170,7 +170,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal((byte)Settings.Ack, ack[4]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.5-FS-002: SETTINGS produces correct frame type without ACK flag")]
     public void Should_ProduceSettingsFrame_WhenEncodingSettings()
     {
         var frame = Http2FrameUtils.EncodeSettings(
@@ -182,7 +182,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal(0, frame[4]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.7-FS-003: PING produces correct frame type without ACK flag")]
     public void Should_ProducePingFrame_WhenEncodingPing()
     {
         byte[] data = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -192,7 +192,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal(0, frame[4]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.7-FS-004: PING ACK produces correct frame type and ACK flag")]
     public void Should_ProducePingAckFrame_WhenEncodingPingAck()
     {
         byte[] data = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -202,7 +202,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal((byte)PingFlags.Ack, frame[4]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.9-FS-005: WINDOW_UPDATE produces correct frame type and increment value")]
     public void Should_ProduceWindowUpdateFrame_WhenEncodingWindowUpdate()
     {
         var frame = Http2FrameUtils.EncodeWindowUpdate(streamId: 1, increment: 65535);
@@ -212,7 +212,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal(65535u, increment);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.4-FS-006: RST_STREAM produces correct frame type and error code")]
     public void Should_ProduceRstStreamFrame_WhenEncodingRstStream()
     {
         var frame = Http2FrameUtils.EncodeRstStream(streamId: 3, Http2ErrorCode.Cancel);
@@ -222,7 +222,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal((uint)Http2ErrorCode.Cancel, errorCode);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.8-FS-007: GOAWAY with debug data includes debug message")]
     public void Should_ProduceGoAwayFrame_WhenEncodingGoAwayWithDebugMessage()
     {
         var frame = Http2FrameUtils.EncodeGoAway(5, Http2ErrorCode.NoError, "shutdown");
@@ -232,7 +232,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal("shutdown", debug);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.8-FS-008: GOAWAY without debug data has minimal frame length")]
     public void Should_ProduceGoAwayFrame_WhenEncodingGoAwayWithoutDebugMessage()
     {
         var frame = Http2FrameUtils.EncodeGoAway(0, Http2ErrorCode.NoError);
@@ -241,7 +241,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.Equal(9 + 8, frame.Length);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.5-SET-001: Encoder applies MAX_FRAME_SIZE server setting")]
     public void Should_UpdateEncoder_WhenApplyingMaxFrameSizeSetting()
     {
         var encoder = new Http2RequestEncoder(useHuffman: false);
@@ -252,7 +252,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.NotEmpty(frames);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.5-SET-002: Encoder ignores non-MAX_FRAME_SIZE server settings")]
     public void Should_IgnoreParameter_WhenApplyingNonMaxFrameSizeSetting()
     {
         var encoder = new Http2RequestEncoder(useHuffman: false);
@@ -263,7 +263,7 @@ public sealed class Http2EncoderBaselineTests
         Assert.NotEmpty(frames);
     }
 
-    [Fact]
+    [Fact(DisplayName = "RFC9113-6.10-ENC-011: Large headers produce CONTINUATION frames with END_HEADERS unset")]
     public void Should_ProduceContinuationFrames_WhenEncodingRequestWithLargeHeaders()
     {
         var encoder = new Http2RequestEncoder(useHuffman: false);
