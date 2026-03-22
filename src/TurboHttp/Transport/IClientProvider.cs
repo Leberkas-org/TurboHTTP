@@ -24,6 +24,12 @@ public interface IClientProvider
 
     /// <summary>Closes the connection and releases all transport resources.</summary>
     void Close();
+
+    /// <summary>
+    /// Indicates whether this provider supports opening multiple streams on a single connection.
+    /// Returns <see langword="true"/> for QUIC (HTTP/3), <see langword="false"/> for TCP/TLS.
+    /// </summary>
+    bool SupportsMultipleStreams => false;
 }
 
 /// <summary>

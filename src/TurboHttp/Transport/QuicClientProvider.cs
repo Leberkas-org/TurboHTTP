@@ -12,8 +12,9 @@ using TurboHttp.Protocol.RFC9114;
 namespace TurboHttp.Transport;
 
 /// <summary>
-/// QUIC implementation of <see cref="IClientProvider"/>. Establishes a QUIC connection
-/// and opens a bidirectional stream for HTTP/3 communication.
+/// QUIC implementation of <see cref="IClientProvider"/>. Establishes a single QUIC connection
+/// on the first call and opens a new bidirectional stream for each subsequent call,
+/// enabling HTTP/3 request multiplexing per RFC 9114.
 /// </summary>
 [SupportedOSPlatform("linux")]
 [SupportedOSPlatform("macOS")]
@@ -21,47 +22,94 @@ namespace TurboHttp.Transport;
 public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 {
     private QuicConnection? _connection;
+    private readonly SemaphoreSlim _connectLock = new(1, 1);
 
     public EndPoint? RemoteEndPoint => _connection?.RemoteEndPoint;
 
+    public bool SupportsMultipleStreams => true;
+
     public async Task<Stream> GetStreamAsync(CancellationToken ct = default)
     {
-        // RFC 9114 §3.2: TLS handshake MUST include SNI extension.
-        // A null or empty host means no SNI can be sent, which is a protocol violation.
-        if (string.IsNullOrEmpty(options.Host))
+        var connection = await EnsureConnectedAsync(ct).ConfigureAwait(false);
+
+        try
         {
+            return await connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, ct).ConfigureAwait(false);
+        }
+        catch (QuicException ex)
+        {
+            // Connection is dead — clear it so the next call triggers reconnect.
+            Interlocked.CompareExchange(ref _connection, null, connection);
             throw new InvalidOperationException(
-                "QUIC connections require a non-empty hostname for TLS SNI (RFC 9114 §3.2). "
-                + "Cannot establish HTTP/3 connection without Server Name Indication.");
+                $"QUIC connection to '{options.Host}:{options.Port}' is no longer usable. "
+                + "A new connection will be established on the next request.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Ensures a QUIC connection is established. The first caller connects; concurrent callers
+    /// wait on the semaphore and then reuse the established connection.
+    /// </summary>
+    private async Task<QuicConnection> EnsureConnectedAsync(CancellationToken ct)
+    {
+        // Fast path: connection already established.
+        var existing = Volatile.Read(ref _connection);
+        if (existing is not null)
+        {
+            return existing;
         }
 
-        var clientConnectionOptions = new QuicClientConnectionOptions
+        await _connectLock.WaitAsync(ct).ConfigureAwait(false);
+        try
         {
-            RemoteEndPoint = new DnsEndPoint(options.Host, options.Port),
-            DefaultStreamErrorCode = 0x0100, // H3_NO_ERROR
-            DefaultCloseErrorCode = 0x0100,  // H3_NO_ERROR
-            MaxInboundBidirectionalStreams = options.MaxBidirectionalStreams,
-            MaxInboundUnidirectionalStreams = options.MaxUnidirectionalStreams,
-            IdleTimeout = options.IdleTimeout,
-            ClientAuthenticationOptions = new SslClientAuthenticationOptions
+            // Double-check after acquiring the lock.
+            existing = Volatile.Read(ref _connection);
+            if (existing is not null)
             {
-                TargetHost = options.Host,
-                ApplicationProtocols = options.ApplicationProtocols,
-                RemoteCertificateValidationCallback = options.ServerCertificateValidationCallback,
-            },
-        };
+                return existing;
+            }
 
-        _connection = await QuicConnection.ConnectAsync(clientConnectionOptions, ct).ConfigureAwait(false);
+            // RFC 9114 §3.2: TLS handshake MUST include SNI extension.
+            if (string.IsNullOrEmpty(options.Host))
+            {
+                throw new InvalidOperationException(
+                    "QUIC connections require a non-empty hostname for TLS SNI (RFC 9114 §3.2). "
+                    + "Cannot establish HTTP/3 connection without Server Name Indication.");
+            }
 
-        // RFC 9114 §3.3: Validate server certificate covers the target hostname
-        // for safe connection coalescing. Skip if user provides a custom callback
-        // (they are handling validation themselves).
-        if (options.ServerCertificateValidationCallback is null)
-        {
-            ValidateCertificateHostname(_connection, options.Host);
+            var clientConnectionOptions = new QuicClientConnectionOptions
+            {
+                RemoteEndPoint = new DnsEndPoint(options.Host, options.Port),
+                DefaultStreamErrorCode = 0x0100, // H3_NO_ERROR
+                DefaultCloseErrorCode = 0x0100,  // H3_NO_ERROR
+                MaxInboundBidirectionalStreams = options.MaxBidirectionalStreams,
+                MaxInboundUnidirectionalStreams = options.MaxUnidirectionalStreams,
+                IdleTimeout = options.IdleTimeout,
+                ClientAuthenticationOptions = new SslClientAuthenticationOptions
+                {
+                    TargetHost = options.Host,
+                    ApplicationProtocols = options.ApplicationProtocols,
+                    RemoteCertificateValidationCallback = options.ServerCertificateValidationCallback,
+                },
+            };
+
+            var connection = await QuicConnection.ConnectAsync(clientConnectionOptions, ct).ConfigureAwait(false);
+
+            // RFC 9114 §3.3: Validate server certificate covers the target hostname
+            // for safe connection coalescing. Skip if user provides a custom callback
+            // (they are handling validation themselves).
+            if (options.ServerCertificateValidationCallback is null)
+            {
+                ValidateCertificateHostname(connection, options.Host);
+            }
+
+            Volatile.Write(ref _connection, connection);
+            return connection;
         }
-
-        return await _connection.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, ct).ConfigureAwait(false);
+        finally
+        {
+            _connectLock.Release();
+        }
     }
 
     private void ValidateCertificateHostname(QuicConnection connection, string hostname)
@@ -103,22 +151,19 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 
     public void Close()
     {
-        if (_connection is null)
+        var connection = Interlocked.Exchange(ref _connection, null);
+        if (connection is null)
         {
             return;
         }
 
         try
         {
-            _ = _connection.DisposeAsync();
+            _ = connection.DisposeAsync();
         }
         catch (ObjectDisposedException)
         {
             // noop
-        }
-        finally
-        {
-            _connection = null;
         }
     }
 }

@@ -62,13 +62,13 @@ Analysis of the TurboHttp client transport layer revealed three bugs that will s
 - This lets ConnectionActor/HostPool query whether to request new streams vs. new connections
 
 **Acceptance Criteria:**
-- [ ] First `GetStreamAsync()` call establishes QUIC connection and opens stream
-- [ ] Subsequent calls reuse the connection and open new streams
-- [ ] Connection establishment is thread-safe (concurrent calls don't create multiple connections)
-- [ ] `QuicException` on dead connection is caught and thrown as reconnectable error
-- [ ] `SupportsMultipleStreams` returns `true` for `QuicClientProvider`, `false` for TCP/TLS
-- [ ] Existing `TcpClientProvider` and `TlsClientProvider` are unchanged
-- [ ] Unit tests verify multi-stream behavior
+- [x] First `GetStreamAsync()` call establishes QUIC connection and opens stream
+- [x] Subsequent calls reuse the connection and open new streams
+- [x] Connection establishment is thread-safe (concurrent calls don't create multiple connections)
+- [x] `QuicException` on dead connection is caught and thrown as reconnectable error
+- [x] `SupportsMultipleStreams` returns `true` for `QuicClientProvider`, `false` for TCP/TLS
+- [x] Existing `TcpClientProvider` and `TlsClientProvider` are unchanged
+- [x] Unit tests verify multi-stream behavior
 
 ---
 
