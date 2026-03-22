@@ -142,16 +142,16 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Model:** opus — complex multi-handler coordination
 
 **Acceptance Criteria:**
-- [ ] `Http3MaxPushIdHandler` created in Logic constructor
-- [ ] `Http3PushLimiter` created with `maxPushCount: 0` (reject all pushes)
-- [ ] `Http3CancelPushHandler` created with `maxPushIdHandler` dependency
-- [ ] `Http3PushPromiseValidator` created with `maxPushIdHandler` dependency
-- [ ] In `PreStart()`: send `MAX_PUSH_ID` frame with pushId=0 on control stream via `_maxPushIdHandler.CreateMaxPushId(0)`
-- [ ] In `HandleServerFrame()`: if `Http3PushPromiseFrame` received, call `_pushLimiter.RecordPush()` → throws `Http3ConnectionException(ExcessiveLoad)`
-- [ ] In `HandleServerFrame()`: if `Http3CancelPushFrame` received, call `_cancelPushHandler.HandleReceivedCancelPush(frame)`
-- [ ] GOAWAY-state prevents new MAX_PUSH_ID frames
-- [ ] Existing unit tests still pass
-- [ ] Build succeeds with zero errors
+- [x] `Http3MaxPushIdHandler` created in Logic constructor
+- [x] `Http3PushLimiter` created with `maxPushCount: 0` (reject all pushes)
+- [x] `Http3CancelPushHandler` created with `maxPushIdHandler` dependency
+- [x] `Http3PushPromiseValidator` created with `maxPushIdHandler` dependency
+- [x] In `PreStart()`: send `MAX_PUSH_ID` frame with pushId=0 on control stream via `_maxPushIdHandler.CreateMaxPushId(0)`
+- [x] In `HandleServerFrame()`: if `Http3PushPromiseFrame` received, call `_pushLimiter.RecordPush()` → throws `Http3ConnectionException(ExcessiveLoad)`
+- [x] In `HandleServerFrame()`: if `Http3CancelPushFrame` received, call `_cancelPushHandler.HandleReceivedCancelPush(frame)`
+- [x] GOAWAY-state prevents new MAX_PUSH_ID frames
+- [x] Existing unit tests still pass
+- [x] Build succeeds with zero errors
 
 ---
 

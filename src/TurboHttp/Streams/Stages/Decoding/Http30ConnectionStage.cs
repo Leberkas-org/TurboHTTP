@@ -120,6 +120,10 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
         private readonly Http3ControlStream _controlStream = new();
         private readonly Http3GoAwayHandler _goAwayHandler = new();
         private readonly Http3IdleTimeoutHandler _idleTimeoutHandler;
+        private readonly Http3MaxPushIdHandler _maxPushIdHandler = new();
+        private readonly Http3PushLimiter _pushLimiter = new(maxPushCount: 0);
+        private readonly Http3CancelPushHandler _cancelPushHandler;
+        private readonly Http3PushPromiseValidator _pushPromiseValidator;
         private readonly Queue<Http3Frame> _outboundQueue = new();
 
         private bool _goAwayReceived;
@@ -129,6 +133,8 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
         {
             _stage = stage;
             _idleTimeoutHandler = new Http3IdleTimeoutHandler(stage._idleTimeout);
+            _cancelPushHandler = new Http3CancelPushHandler(_maxPushIdHandler);
+            _pushPromiseValidator = new Http3PushPromiseValidator(_maxPushIdHandler);
 
             SetHandler(stage._inServer, onPush: () =>
             {
@@ -178,6 +184,9 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                 // Wrap the control stream init bytes in a DATA frame for transport.
                 // The downstream encoder/transport will handle the raw bytes.
                 EnqueueOutbound(new Http3SettingsFrame([]));
+
+                // RFC 9114 §10.5 — Send MAX_PUSH_ID=0 to reject all server pushes.
+                EnqueueOutbound(_maxPushIdHandler.CreateMaxPushId(0));
             }
 
             // Schedule periodic idle timeout checks if timeout is enabled.
@@ -222,8 +231,25 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                     Pull(_stage._inServer);
                     return;
 
-                case Http3CancelPushFrame:
-                    // Control-stream frame — absorb, don't forward to app.
+                case Http3PushPromiseFrame:
+                    // RFC 9114 §10.5 — With MAX_PUSH_ID=0, any push promise exceeds the limit.
+                    try
+                    {
+                        _pushLimiter.RecordPush();
+                    }
+                    catch (Http3ConnectionException ex)
+                    {
+                        Log.Error(ex, "Http30ConnectionStage: RFC 9114 §10.5 — server push rejected; push limit is zero.");
+                        FailStage(ex);
+                        return;
+                    }
+
+                    Pull(_stage._inServer);
+                    return;
+
+                case Http3CancelPushFrame cancelPush:
+                    // RFC 9114 §7.2.3 — Record the cancellation.
+                    _cancelPushHandler.HandleReceivedCancelPush(cancelPush);
                     Pull(_stage._inServer);
                     return;
 
