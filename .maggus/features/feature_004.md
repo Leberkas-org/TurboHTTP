@@ -62,14 +62,14 @@ This feature refactors `ConnectionActor` into a class hierarchy with `Connection
 **Parallel:** yes — can run alongside TASK-004-003 and TASK-004-004
 
 **Acceptance Criteria:**
-- [ ] `Http1ConnectionActor` created in `src/TurboHttp/Pooling/Http1ConnectionActor.cs`
-- [ ] Inherits from `ConnectionActorBase`
-- [ ] `Connect()` — simple `ClientManager.CreateRunnerWithChannels` without SharedProvider
-- [ ] `HandleConnected()` — sets `_runner`, sends `ConnectionReady` to parent
-- [ ] `HandleDisconnected()` / `HandleTerminated()` — calls `Reconnect()` directly
-- [ ] `PostStop()` — stops single runner
-- [ ] No `_isMultiStream`, no `_sharedProvider`, no `_activeRunners`
-- [ ] Build green
+- [x] `Http1ConnectionActor` created in `src/TurboHttp/Pooling/Http1ConnectionActor.cs`
+- [x] Inherits from `ConnectionActorBase`
+- [x] `Connect()` — simple `ClientManager.CreateRunnerWithChannels` without SharedProvider
+- [x] `HandleConnected()` — sets `_runner`, sends `ConnectionReady` to parent
+- [x] `HandleDisconnected()` / `HandleTerminated()` — calls `Reconnect()` directly
+- [x] `PostStop()` — stops single runner
+- [x] No `_isMultiStream`, no `_sharedProvider`, no `_activeRunners`
+- [x] Build green
 
 ### TASK-004-003: Implement Http2ConnectionActor
 
