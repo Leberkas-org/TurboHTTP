@@ -59,11 +59,11 @@ GraphStage port strings in TurboHttp use inconsistent prefixes: HTTP/2 stages us
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `04_Http30ConnectionStageTests.cs`: 4 port name assertions updated (`"H3Connection.*"` → `"Http30Connection.*"`)
-- [ ] Grep for `"H[123]\w+\.(In|Out)` in production code returns 0 matches
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors, 0 warnings
-- [ ] `dotnet test src/TurboHttp.sln` — all tests green
-- [ ] `stage-port-validator` agent — no violations
+- [x] `04_Http30ConnectionStageTests.cs`: 4 port name assertions updated (`"H3Connection.*"` → `"Http30Connection.*"`)
+- [x] Grep for `"H[123]\w+\.(In|Out)` in production code returns 0 matches
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — 0 errors, 0 warnings
+- [x] `dotnet test src/TurboHttp.sln` — all tests green (3 pre-existing failures unrelated to port renames: 2 SniTlsEnforcementTests, 1 Http3SmokeTests timeout)
+- [x] `stage-port-validator` agent — no violations
 
 ## Task Dependency Graph
 

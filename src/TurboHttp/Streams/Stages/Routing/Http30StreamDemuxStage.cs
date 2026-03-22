@@ -71,10 +71,10 @@ public sealed class Http30StreamDemuxShape : Shape
 /// </remarks>
 public sealed class Http30StreamDemuxStage : GraphStage<Http30StreamDemuxShape>
 {
-    private readonly Inlet<IOutputItem> _in = new("H3StreamDemux.In");
-    private readonly Outlet<IOutputItem> _outRequest = new("H3StreamDemux.Out.Request");
-    private readonly Outlet<IOutputItem> _outControl = new("H3StreamDemux.Out.Control");
-    private readonly Outlet<IOutputItem> _outEncoder = new("H3StreamDemux.Out.Encoder");
+    private readonly Inlet<IOutputItem> _in = new("Http30StreamDemux.In");
+    private readonly Outlet<IOutputItem> _outRequest = new("Http30StreamDemux.Out.Request");
+    private readonly Outlet<IOutputItem> _outControl = new("Http30StreamDemux.Out.Control");
+    private readonly Outlet<IOutputItem> _outEncoder = new("Http30StreamDemux.Out.Encoder");
 
     public Http30StreamDemuxStage()
     {
