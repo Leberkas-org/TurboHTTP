@@ -73,7 +73,7 @@ public sealed class HostPool : ReceiveActor
         Receive<StreamCompleted>(HandleStreamCompleted);
         Receive<StreamAcquired>(HandleStreamAcquired);
         Receive<UpdateMaxConcurrentStreams>(HandleUpdateMaxConcurrentStreams);
-        Receive<ConnectionActor.ConnectionReady>(HandleConnectionReady);
+        Receive<ConnectionActorBase.ConnectionReady>(HandleConnectionReady);
         Receive<PoolRouter.EnsureHost>(HandleEnsureHost);
     }
 
@@ -95,7 +95,7 @@ public sealed class HostPool : ReceiveActor
         _scheduler?.Cancel();
     }
 
-    private void HandleConnectionReady(ConnectionActor.ConnectionReady msg)
+    private void HandleConnectionReady(ConnectionActorBase.ConnectionReady msg)
     {
         var conn = Find(msg.Handle.ConnectionActor);
 
@@ -136,7 +136,7 @@ public sealed class HostPool : ReceiveActor
                 // QUIC: request a new stream on the existing connection.
                 // Each requester gets its own channel pair via OpenNewStream.
                 conn.MarkBusy();
-                conn.Actor.Tell(new ConnectionActor.OpenNewStream(Sender));
+                conn.Actor.Tell(new Http3ConnectionActor.OpenNewStream(Sender));
                 return;
             }
 
@@ -186,7 +186,12 @@ public sealed class HostPool : ReceiveActor
         else
         {
             var clientManager = Context.GetActor<ClientManager>();
-            props = Props.Create(() => new ConnectionActor(_options, clientManager, _key, _config));
+            props = _key.Version.Major switch
+            {
+                3 => Props.Create(() => new Http3ConnectionActor((QuicOptions)_options, clientManager, _key, _config)),
+                2 => Props.Create(() => new Http2ConnectionActor(_options, clientManager, _key, _config)),
+                _ => Props.Create(() => new Http1ConnectionActor(_options, clientManager, _key, _config)),
+            };
         }
 
         var actor = Context.ActorOf(props);
@@ -323,7 +328,7 @@ public sealed class HostPool : ReceiveActor
                 // QUIC: each requester needs its own stream (own channel pair).
                 // MarkBusy here — no StreamAcquired from Http20ConnectionStage for QUIC.
                 conn.MarkBusy();
-                conn.Actor.Tell(new ConnectionActor.OpenNewStream(requester));
+                conn.Actor.Tell(new Http3ConnectionActor.OpenNewStream(requester));
             }
             else if (IsMultiStream)
             {

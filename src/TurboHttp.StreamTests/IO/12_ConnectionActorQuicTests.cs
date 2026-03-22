@@ -12,7 +12,7 @@ using TurboHttp.Pooling;
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Tests <see cref="ConnectionActor"/> QUIC-specific behavior: <see cref="ConnectionActor.OpenNewStream"/>
+/// Tests QUIC-specific behavior: <see cref="Http3Http3ConnectionActor.OpenNewStream"/>
 /// message handling and multi-stream lifecycle management.
 /// </summary>
 public sealed class ConnectionActorQuicTests : TestKit
@@ -32,7 +32,7 @@ public sealed class ConnectionActorQuicTests : TestKit
         public ParentProxy(IActorRef parentProbe, IActorRef clientManager, TcpOptions options, RequestEndpoint key, TurboClientOptions config)
         {
             Context.ActorOf(
-                Props.Create(() => new ConnectionActor(options, clientManager, key, config)),
+                Props.Create(() => new Http1ConnectionActor(options, clientManager, key, config)),
                 "conn");
 
             ReceiveAny(msg => parentProbe.Tell(msg));
@@ -77,11 +77,11 @@ public sealed class ConnectionActorQuicTests : TestKit
 
         // Simulate successful connect
         connectionActor.Tell(MakeConnected(), CreateTestProbe().Ref);
-        parentProbe.ExpectMsg<ConnectionActor.ConnectionReady>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<ConnectionActorBase.ConnectionReady>(TimeSpan.FromSeconds(5));
 
         // Send OpenNewStream to a TCP connection — should be silently ignored
         var requester = CreateTestProbe("requester");
-        connectionActor.Tell(new ConnectionActor.OpenNewStream(requester.Ref));
+        connectionActor.Tell(new Http3ConnectionActor.OpenNewStream(requester.Ref));
 
         // Requester should NOT receive anything (no handle, no error)
         requester.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
@@ -95,7 +95,7 @@ public sealed class ConnectionActorQuicTests : TestKit
     public void Should_HaveCorrectProperties_WhenOpenNewStreamCreated()
     {
         var requester = CreateTestProbe("requester");
-        var msg = new ConnectionActor.OpenNewStream(requester.Ref);
+        var msg = new Http3ConnectionActor.OpenNewStream(requester.Ref);
 
         Assert.Equal(requester.Ref, msg.Requester);
     }
@@ -107,7 +107,7 @@ public sealed class ConnectionActorQuicTests : TestKit
         var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
         var handle = new ConnectionHandle(outbound.Writer, inbound.Reader, TestKey11, TestActor);
 
-        var msg = new ConnectionActor.ConnectionReady(handle);
+        var msg = new ConnectionActorBase.ConnectionReady(handle);
 
         Assert.Same(handle, msg.Handle);
     }

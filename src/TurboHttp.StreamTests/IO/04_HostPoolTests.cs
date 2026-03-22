@@ -56,7 +56,7 @@ public sealed class HostPoolTests : IOActorTestBase
 
         // Simulate the new connection reporting ConnectionReady.
         var handle2 = CreateHandle(fakeConn2, Key11);
-        pool.Tell(new ConnectionActor.ConnectionReady(handle2), fakeConn2);
+        pool.Tell(new ConnectionActorBase.ConnectionReady(handle2), fakeConn2);
 
         // The queued requester should now receive the new handle.
         ExpectMsg<ConnectionHandle>(h => h == handle2, TimeSpan.FromSeconds(5));

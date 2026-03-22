@@ -13,7 +13,7 @@ namespace TurboHttp.StreamTests;
 
 /// <summary>
 /// Abstract base class for I/O actor tests.
-/// Provides factory helpers for constructing <see cref="HostPool"/>, <see cref="ConnectionActor"/>, and <see cref="ConnectionHandle"/> test doubles.
+/// Provides factory helpers for constructing <see cref="HostPool"/>, connection actor, and <see cref="ConnectionHandle"/> test doubles.
 /// </summary>
 /// <remarks>
 /// Inherits from TestKit; all derived tests use Akka's TestProbe infrastructure for actor interaction verification.
@@ -98,7 +98,7 @@ public abstract class IOActorTestBase : TestKit
 
     /// <summary>
     /// Creates a pool, waits for the eagerly-spawned connection actor, delivers
-    /// <see cref="ConnectionActor.ConnectionReady"/>, and returns all three pieces.
+    /// <see cref="ConnectionActorBase.ConnectionReady"/>, and returns all three pieces.
     /// </summary>
     protected (IActorRef Pool, IActorRef FakeConn, ConnectionHandle Handle) SetupReadyPool(
         TestProbe controlProbe, RequestEndpoint key, TimeSpan? reconnectInterval = null)
@@ -110,7 +110,7 @@ public abstract class IOActorTestBase : TestKit
         var pool = CreatePool(controlProbe, key, options, reconnectInterval);
         var fakeConn = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
         var handle = CreateHandle(fakeConn, key);
-        pool.Tell(new ConnectionActor.ConnectionReady(handle), fakeConn);
+        pool.Tell(new ConnectionActorBase.ConnectionReady(handle), fakeConn);
         return (pool, fakeConn, handle);
     }
 }

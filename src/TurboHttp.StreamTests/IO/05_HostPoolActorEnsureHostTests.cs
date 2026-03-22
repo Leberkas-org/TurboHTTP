@@ -61,7 +61,7 @@ public sealed class HostPoolActorEnsureHostTests : IOActorTestBase
 
         // Simulate the new connection becoming ready.
         var handle2 = CreateHandle(fakeConn2, Key10);
-        pool.Tell(new ConnectionActor.ConnectionReady(handle2), fakeConn2);
+        pool.Tell(new ConnectionActorBase.ConnectionReady(handle2), fakeConn2);
 
         // The queued requester should now receive the handle.
         requesterProbe.ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
@@ -86,7 +86,7 @@ public sealed class HostPoolActorEnsureHostTests : IOActorTestBase
             pool.Tell(new PoolRouter.EnsureHost(Key10, TestOptions), probe.Ref);
 
             var connN = controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
-            pool.Tell(new ConnectionActor.ConnectionReady(CreateHandle(connN, Key10)), connN);
+            pool.Tell(new ConnectionActorBase.ConnectionReady(CreateHandle(connN, Key10)), connN);
 
             probe.ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
 

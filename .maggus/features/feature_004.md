@@ -123,15 +123,15 @@ This feature refactors `ConnectionActor` into a class hierarchy with `Connection
 **Parallel:** no — requires all three subclasses
 
 **Acceptance Criteria:**
-- [ ] `HostPool.SpawnConnection()` contains version switch:
+- [x] `HostPool.SpawnConnection()` contains version switch:
   - HTTP/1.x -> `Http1ConnectionActor`
   - HTTP/2 -> `Http2ConnectionActor`
   - HTTP/3 -> `Http3ConnectionActor`
-- [ ] `ConnectionReady` message type remains compatible (either in base or re-exported)
-- [ ] `IsQuic` and `IsMultiStream` properties in HostPool remain as routing helpers, but branching in message handlers reduced where possible
-- [ ] Old monolithic `ConnectionActor.cs` deleted (logic distributed across base + 3 subclasses)
-- [ ] Build green: `dotnet build --configuration Release src/TurboHttp.sln`
-- [ ] All existing tests green: `dotnet test src/TurboHttp.sln`
+- [x] `ConnectionReady` message type remains compatible (either in base or re-exported)
+- [x] `IsQuic` and `IsMultiStream` properties in HostPool remain as routing helpers, but branching in message handlers reduced where possible
+- [x] Old monolithic `ConnectionActor.cs` deleted (logic distributed across base + 3 subclasses)
+- [x] Build green: `dotnet build --configuration Release src/TurboHttp.sln`
+- [x] All existing tests green: `dotnet test src/TurboHttp.sln`
 
 ### TASK-004-006: Migrate StreamTests and IO tests
 

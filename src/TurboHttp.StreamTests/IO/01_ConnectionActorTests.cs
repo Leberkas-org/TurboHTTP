@@ -12,11 +12,11 @@ using TurboHttp.Pooling;
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Tests the <see cref="ConnectionActor"/> lifecycle: connect, reconnect, exponential backoff, and idle eviction.
+/// Tests the <see cref="Http1ConnectionActor"/> lifecycle: connect, reconnect, exponential backoff, and idle eviction.
 /// Verifies that ConnectionReady is sent to the parent on successful connect and backoff intervals are respected.
 /// </summary>
 /// <remarks>
-/// Actor under test: <see cref="ConnectionActor"/>.
+/// Actor under test: <see cref="Http1ConnectionActor"/>.
 /// Validates actor message handling for the full connection lifecycle.
 /// </remarks>
 public sealed class  ConnectionActorTests : TestKit
@@ -32,8 +32,8 @@ public sealed class  ConnectionActorTests : TestKit
     private static readonly TcpOptions TestOptions = new() { Host = "localhost", Port = 8080 };
 
     /// <summary>
-    /// Wraps <see cref="ConnectionActor"/> as a child actor so parent-directed messages
-    /// (e.g. <see cref="HostPool.ConnectionFailed"/>, <see cref="ConnectionActor.ConnectionReady"/>)
+    /// Wraps <see cref="Http1ConnectionActor"/> as a child actor so parent-directed messages
+    /// (e.g. <see cref="HostPool.ConnectionFailed"/>, <see cref="ConnectionActorBase.ConnectionReady"/>)
     /// can be intercepted via a <see cref="TestProbe"/>.
     /// </summary>
     private sealed class ParentProxy : ReceiveActor
@@ -41,7 +41,7 @@ public sealed class  ConnectionActorTests : TestKit
         public ParentProxy(IActorRef parentProbe, IActorRef clientManager, TurboClientOptions config)
         {
             Context.ActorOf(
-                Props.Create(() => new ConnectionActor(TestOptions, clientManager, TestKey, config)),
+                Props.Create(() => new Http1ConnectionActor(TestOptions, clientManager, TestKey, config)),
                 "conn");
 
             ReceiveAny(msg => parentProbe.Tell(msg));
@@ -49,7 +49,7 @@ public sealed class  ConnectionActorTests : TestKit
     }
 
     /// <summary>
-    /// Creates a <see cref="ConnectionActor"/> under a <see cref="ParentProxy"/> and waits
+    /// Creates a <see cref="Http1ConnectionActor"/> under a <see cref="ParentProxy"/> and waits
     /// for the initial connect message to arrive at the client-manager probe.
     /// Returns references needed to drive each test.
     /// </summary>
@@ -112,7 +112,7 @@ public sealed class  ConnectionActorTests : TestKit
         // sets _runner = probe.Ref and watches it.
         var runnerProbe = CreateTestProbe("runner");
         connectionActor.Tell(MakeConnected(), runnerProbe.Ref);
-        parentProbe.ExpectMsg<ConnectionActor.ConnectionReady>(TimeSpan.FromSeconds(5));
+        parentProbe.ExpectMsg<ConnectionActorBase.ConnectionReady>(TimeSpan.FromSeconds(5));
 
         // Terminate the runner — ConnectionActor is watching it and will call Reconnect().
         Sys.Stop(runnerProbe.Ref);
@@ -291,7 +291,7 @@ public sealed class  ConnectionActorTests : TestKit
         connectionActorRef.Tell(MakeConnected(), TestActor);
 
         // Parent should receive ConnectionReady with a fresh ConnectionHandle
-        var ready = parentProbe.ExpectMsg<ConnectionActor.ConnectionReady>(TimeSpan.FromSeconds(5));
+        var ready = parentProbe.ExpectMsg<ConnectionActorBase.ConnectionReady>(TimeSpan.FromSeconds(5));
         Assert.NotNull(ready.Handle);
     }
 }
