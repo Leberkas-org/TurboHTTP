@@ -143,11 +143,11 @@ This feature refactors `ConnectionActor` into a class hierarchy with `Connection
 **Parallel:** no — requires the new architecture
 
 **Acceptance Criteria:**
-- [ ] All references to `ConnectionActor` in tests reviewed and migrated to `Http1ConnectionActor` / `Http2ConnectionActor` / `Http3ConnectionActor` as appropriate
-- [ ] `ConnectionState` tests unchanged (ConnectionState is actor-agnostic)
-- [ ] `HostPoolActorStreamLifecycleTests` work with new version-switch logic
-- [ ] All tests green: `dotnet test src/TurboHttp.sln`
-- [ ] No `ConnectionActor` imports remaining in test files (only base or specific subclasses)
+- [x] All references to `ConnectionActor` in tests reviewed and migrated to `Http1ConnectionActor` / `Http2ConnectionActor` / `Http3ConnectionActor` as appropriate
+- [x] `ConnectionState` tests unchanged (ConnectionState is actor-agnostic)
+- [x] `HostPoolActorStreamLifecycleTests` work with new version-switch logic
+- [x] All tests green: `dotnet test src/TurboHttp.sln`
+- [x] No `ConnectionActor` imports remaining in test files (only base or specific subclasses)
 
 ### TASK-004-007: SmokeTests for all HTTP versions
 

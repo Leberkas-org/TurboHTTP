@@ -12,7 +12,7 @@ using TurboHttp.Pooling;
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Tests QUIC-specific behavior: <see cref="Http3Http3ConnectionActor.OpenNewStream"/>
+/// Tests QUIC-specific behavior: <see cref="Http3ConnectionActor.OpenNewStream"/>
 /// message handling and multi-stream lifecycle management.
 /// </summary>
 public sealed class ConnectionActorQuicTests : TestKit
