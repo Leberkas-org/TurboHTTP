@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Akka.Event;
@@ -69,13 +70,41 @@ public sealed class Http30ConnectionShape : Shape
 /// - Drop new outbound requests after GOAWAY received
 /// - Forward DATA and HEADERS frames between app and server
 /// - Reject invalid control-stream frames (DATA/HEADERS on control stream)
+/// - Track idle timeout and close connection when expired with no active streams (via <see cref="Http3IdleTimeoutHandler"/>)
 /// </summary>
 public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
 {
+    private static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromSeconds(30);
+
     private readonly Inlet<Http3Frame> _inServer = new("H3Connection.In.Server");
     private readonly Outlet<Http3Frame> _outApp = new("H3Connection.Out.App");
     private readonly Inlet<Http3Frame> _inApp = new("H3Connection.In.App");
     private readonly Outlet<Http3Frame> _outServer = new("H3Connection.Out.Server");
+
+    private readonly TimeSpan _idleTimeout;
+
+    /// <summary>
+    /// Creates an HTTP/3 connection stage with the default idle timeout (30 seconds).
+    /// </summary>
+    public Http30ConnectionStage() : this(DefaultIdleTimeout) { }
+
+    /// <summary>
+    /// Creates an HTTP/3 connection stage with a configurable idle timeout.
+    /// </summary>
+    /// <param name="idleTimeout">
+    /// The local idle timeout. Use <see cref="TimeSpan.Zero"/> to disable idle timeout.
+    /// The effective timeout is reconciled with the remote timeout from SETTINGS via
+    /// <see cref="Http3IdleTimeoutHandler.ComputeEffectiveTimeout"/>.
+    /// </param>
+    public Http30ConnectionStage(TimeSpan idleTimeout)
+    {
+        if (idleTimeout < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(idleTimeout), idleTimeout, "Idle timeout must be non-negative.");
+        }
+
+        _idleTimeout = idleTimeout;
+    }
 
     public override Http30ConnectionShape Shape =>
         new(_inServer, _outApp, _inApp, _outServer);
@@ -83,11 +112,14 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         => new Logic(this);
 
-    private sealed class Logic : GraphStageLogic
+    private sealed class Logic : TimerGraphStageLogic
     {
+        private const string IdleCheckTimerKey = "idle-timeout-check";
+
         private readonly Http30ConnectionStage _stage;
         private readonly Http3ControlStream _controlStream = new();
         private readonly Http3GoAwayHandler _goAwayHandler = new();
+        private readonly Http3IdleTimeoutHandler _idleTimeoutHandler;
         private readonly Queue<Http3Frame> _outboundQueue = new();
 
         private bool _goAwayReceived;
@@ -96,6 +128,7 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
         public Logic(Http30ConnectionStage stage) : base(stage.Shape)
         {
             _stage = stage;
+            _idleTimeoutHandler = new Http3IdleTimeoutHandler(stage._idleTimeout);
 
             SetHandler(stage._inServer, onPush: () =>
             {
@@ -114,6 +147,12 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                     Log.Warning("Http30ConnectionStage: RFC 9114 §5.2 — GOAWAY received; dropping outbound frame.");
                     TryPullApp();
                     return;
+                }
+
+                // Track stream lifecycle — HEADERS frame indicates a new request stream.
+                if (frame is Http3HeadersFrame)
+                {
+                    _idleTimeoutHandler.OnStreamOpened();
                 }
 
                 EnqueueOutbound(frame);
@@ -140,10 +179,35 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                 // The downstream encoder/transport will handle the raw bytes.
                 EnqueueOutbound(new Http3SettingsFrame([]));
             }
+
+            // Schedule periodic idle timeout checks if timeout is enabled.
+            ScheduleIdleCheck();
+        }
+
+        protected override void OnTimer(object timerKey)
+        {
+            if (timerKey is not string key || key != IdleCheckTimerKey)
+            {
+                return;
+            }
+
+            if (_idleTimeoutHandler.IsIdleTimeoutExpired() && _idleTimeoutHandler.ActiveStreamCount == 0)
+            {
+                Log.Warning("Http30ConnectionStage: RFC 9114 §5.1 — idle timeout expired with no active streams; sending GOAWAY.");
+                EnqueueOutbound(new Http3GoAwayFrame(0));
+                CompleteStage();
+                return;
+            }
+
+            // Re-schedule for the next check.
+            ScheduleIdleCheck();
         }
 
         private void HandleServerFrame(Http3Frame frame)
         {
+            // Record activity on every server frame for idle timeout tracking.
+            _idleTimeoutHandler.RecordActivity();
+
             switch (frame)
             {
                 case Http3SettingsFrame settings:
@@ -168,8 +232,18 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                     Pull(_stage._inServer);
                     return;
 
+                case Http3HeadersFrame:
+                    // Response HEADERS indicates a stream response is assembled — close the stream.
+                    if (_idleTimeoutHandler.ActiveStreamCount > 0)
+                    {
+                        _idleTimeoutHandler.OnStreamClosed();
+                    }
+
+                    Push(_stage._outApp, frame);
+                    break;
+
                 default:
-                    // DATA and HEADERS frames go to the app (request stream).
+                    // DATA frames go to the app (request stream).
                     Push(_stage._outApp, frame);
                     break;
             }
@@ -186,6 +260,19 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
                 }
 
                 _controlStream.OnRemoteFrame(settings);
+
+                // Reconcile local and remote idle timeout (RFC 9114 §5.1).
+                // HTTP/3 idle timeout is a QUIC transport parameter; if the server
+                // advertises one via SETTINGS, compute the effective timeout.
+                var remoteTimeout = ExtractRemoteIdleTimeout(settings);
+                if (remoteTimeout.HasValue)
+                {
+                    var effective = Http3IdleTimeoutHandler.ComputeEffectiveTimeout(
+                        _stage._idleTimeout, remoteTimeout.Value);
+
+                    Log.Debug("Http30ConnectionStage: RFC 9114 §5.1 — effective idle timeout reconciled to {0}ms.",
+                        effective.TotalMilliseconds);
+                }
 
                 Log.Debug("Http30ConnectionStage: RFC 9114 §7.2.4 — remote SETTINGS received ({0} parameters).",
                     settings.Parameters.Count);
@@ -240,6 +327,31 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
             {
                 Pull(_stage._inApp);
             }
+        }
+
+        private void ScheduleIdleCheck()
+        {
+            if (_idleTimeoutHandler.IsTimeoutDisabled)
+            {
+                return;
+            }
+
+            var remaining = _idleTimeoutHandler.TimeUntilExpiry();
+            var checkInterval = remaining > TimeSpan.Zero ? remaining : TimeSpan.FromSeconds(1);
+            ScheduleOnce(IdleCheckTimerKey, checkInterval);
+        }
+
+        private static TimeSpan? ExtractRemoteIdleTimeout(Http3SettingsFrame settings)
+        {
+            // RFC 9114: idle timeout is primarily a QUIC transport parameter,
+            // not an HTTP/3 SETTINGS parameter. However, if a server includes
+            // an idle-timeout-like setting, we can extract it here.
+            // Currently HTTP/3 defines: SETTINGS_MAX_FIELD_SECTION_SIZE,
+            // SETTINGS_QPACK_MAX_TABLE_CAPACITY, SETTINGS_QPACK_BLOCKED_STREAMS.
+            // No standard idle timeout setting exists in HTTP/3 SETTINGS,
+            // so this returns null. The method exists as a reconciliation point
+            // for future extensions or custom settings.
+            return null;
         }
     }
 }

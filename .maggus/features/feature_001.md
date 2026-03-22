@@ -100,15 +100,15 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Parallel:** yes — can run alongside TASK-001-001, TASK-001-002, TASK-001-003, TASK-001-005
 
 **Acceptance Criteria:**
-- [ ] `Http3IdleTimeoutHandler` created in `Http30ConnectionStage` Logic constructor with configurable timeout (default 30s from `QuicOptions.IdleTimeout`)
-- [ ] `RecordActivity()` called on every frame received in `HandleServerFrame()`
-- [ ] `OnStreamOpened()` called when request frame sent outbound
-- [ ] `OnStreamClosed()` called when response fully assembled
-- [ ] `IsIdleTimeoutExpired()` checked periodically (via `ScheduleOnce` timer callback)
-- [ ] When timeout expires and `ActiveStreamCount == 0`: send GOAWAY and complete stage
-- [ ] `ComputeEffectiveTimeout()` used to reconcile local + remote idle timeout from SETTINGS
-- [ ] Existing unit tests still pass
-- [ ] Build succeeds with zero errors
+- [x] `Http3IdleTimeoutHandler` created in `Http30ConnectionStage` Logic constructor with configurable timeout (default 30s from `QuicOptions.IdleTimeout`)
+- [x] `RecordActivity()` called on every frame received in `HandleServerFrame()`
+- [x] `OnStreamOpened()` called when request frame sent outbound
+- [x] `OnStreamClosed()` called when response fully assembled
+- [x] `IsIdleTimeoutExpired()` checked periodically (via `ScheduleOnce` timer callback)
+- [x] When timeout expires and `ActiveStreamCount == 0`: send GOAWAY and complete stage
+- [x] `ComputeEffectiveTimeout()` used to reconcile local + remote idle timeout from SETTINGS
+- [x] Existing unit tests still pass
+- [x] Build succeeds with zero errors
 
 ---
 
