@@ -432,6 +432,55 @@ public sealed class ConnectionStageTests : StreamTestBase
     }
 
     [Fact(Timeout = 15_000,
+        DisplayName = "CS-011: DataItem write to closed outbound channel fails stage cleanly")]
+    public async Task Should_FailStage_When_OutboundChannelIsClosedDuringWrite()
+    {
+        // Build channels manually so we can complete the outbound writer to simulate a dead connection.
+        var outbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+        var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+
+        // Complete the outbound channel before the stage tries to write — simulates closed connection.
+        outbound.Writer.Complete();
+
+        var handle = new ConnectionHandle(
+            outbound.Writer,
+            inbound.Reader,
+            TestKey,
+            ActorRefs.Nobody);
+
+        var routerProbe = CreateTestProbe();
+        var stubRouter = Sys.ActorOf(Props.Create(() =>
+            new StubRouter(handle, routerProbe.Ref)));
+
+        var stageFlow = Flow.FromGraph(new ConnectionStage(stubRouter));
+        var options = new TcpOptions { Host = "localhost", Port = 8080 };
+        var connectItem = new ConnectItem(options)
+        {
+            Key = new RequestEndpoint { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+        };
+
+        var (inputQueue, resultTask) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
+            .Via(stageFlow)
+            .ToMaterialized(Sink.Seq<IInputItem>(), Keep.Both)
+            .Run(Materializer);
+
+        // Connect — handle becomes available.
+        await inputQueue.OfferAsync(connectItem);
+        await Task.Delay(300);
+
+        // Push a DataItem — WriteAsync should fail because the outbound channel is already completed.
+        var data = MakeData(0xBB, 4);
+        await inputQueue.OfferAsync(data);
+
+        // The stage should fail (not hang) — resultTask completes with an exception.
+        var ex = await Assert.ThrowsAnyAsync<Exception>(
+            () => resultTask.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.NotNull(ex);
+
+        inbound.Writer.Complete();
+    }
+
+    [Fact(Timeout = 15_000,
         DisplayName = "CS-008: StreamAcquireItem forwarded as StreamAcquired to ConnectionActor")]
     public async Task Should_ForwardStreamAcquired_When_StreamAcquireItemReceived()
     {

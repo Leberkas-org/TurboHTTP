@@ -185,12 +185,12 @@ _ = handle.OutboundWriter
 - Handle `OnlyOnCanceled` case: treat as clean shutdown (don't pull, don't fail)
 
 **Acceptance Criteria:**
-- [ ] Successful writes still trigger pull of next element
-- [ ] Failed writes (channel closed) call `FailStage()` with the exception
-- [ ] Cancelled writes (stage shutdown) do not trigger pull or fail
-- [ ] No silent error swallowing remains in outbound write path
-- [ ] Unit test: ConnectionStage with closed channel fails cleanly
-- [ ] Existing stream tests pass (no regressions from changed write handling)
+- [x] Successful writes still trigger pull of next element
+- [x] Failed writes (channel closed) call `FailStage()` with the exception
+- [x] Cancelled writes (stage shutdown) do not trigger pull or fail
+- [x] No silent error swallowing remains in outbound write path
+- [x] Unit test: ConnectionStage with closed channel fails cleanly
+- [x] Existing stream tests pass (no regressions from changed write handling)
 
 ---
 

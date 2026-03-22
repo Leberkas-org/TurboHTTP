@@ -46,6 +46,9 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         /// <summary>Callback bridging async channel write completion into the stage event loop.</summary>
         private Action? _onOutboundWriteDone;
 
+        /// <summary>Callback invoked when an outbound channel write fails (e.g. channel closed).</summary>
+        private Action<Exception>? _onOutboundWriteFailed;
+
         /// <summary>Callback invoked when a <see cref="ConnectionHandle"/> is received from the actor hierarchy.</summary>
         private Action<ConnectionHandle>? _onHandleReceived;
 
@@ -105,6 +108,12 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 {
                     Pull(_stage._in);
                 }
+            });
+
+            _onOutboundWriteFailed = GetAsyncCallback<Exception>(ex =>
+            {
+                Log.Warning("ConnectionStage: Outbound write failed — {0}", ex.Message);
+                FailStage(ex);
             });
 
             _onHandleReceived = GetAsyncCallback<ConnectionHandle>(handle =>
@@ -207,10 +216,17 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 }
 
                 // Write directly to the connection's outbound channel.
-                _ = handle.OutboundWriter
+                var writeTask = handle.OutboundWriter
                     .WriteAsync(new ValueTuple<IMemoryOwner<byte>, int>(dataItem.Memory, dataItem.Length))
-                    .AsTask()
-                    .ContinueWith(_ => _onOutboundWriteDone!(), TaskContinuationOptions.ExecuteSynchronously);
+                    .AsTask();
+
+                writeTask.ContinueWith(
+                    _ => _onOutboundWriteDone!(),
+                    TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnRanToCompletion);
+
+                writeTask.ContinueWith(
+                    t => _onOutboundWriteFailed!(t.Exception!.GetBaseException()),
+                    TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
             }
         }
 
