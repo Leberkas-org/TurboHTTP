@@ -206,12 +206,12 @@ This feature wires all handlers into their respective stages, removes redundant 
 **Parallel:** no — final gate
 
 **Acceptance Criteria:**
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` — zero errors, zero warnings (except expected obsolete)
-- [ ] `dotnet test src/TurboHttp.sln` — all tests pass
-- [ ] Stage port naming validation passes (run `stage-port-validator` agent)
-- [ ] Grep confirms zero remaining references to `Http3SettingsExchange` in production code
-- [ ] Grep confirms all 10 handlers are referenced in production code (not just tests)
-- [ ] No new `[Obsolete]` markers introduced
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` — zero errors, zero warnings (except expected obsolete)
+- [x] `dotnet test src/TurboHttp.sln` — all tests pass
+- [x] Stage port naming validation passes (run `stage-port-validator` agent)
+- [x] Grep confirms zero remaining references to `Http3SettingsExchange` in production code
+- [x] Grep confirms all 10 handlers are referenced in production code (not just tests)
+- [x] No new `[Obsolete]` markers introduced
 
 ## Task Dependency Graph
 
