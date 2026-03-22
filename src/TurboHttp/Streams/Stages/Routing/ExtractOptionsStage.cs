@@ -46,6 +46,15 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequestMe
                         _initialSent = true;
                         Push(stage._outSignal, new ConnectItem(options) { Key = RequestEndpoint.FromRequest(request) });
                         Complete(stage._outSignal);
+
+                        // The Broadcast downstream may have already pulled _outRequest
+                        // before the first element arrived (pull propagation is synchronous
+                        // while Source.Queue delivery is async). Serve that demand now.
+                        if (IsAvailable(stage._outRequest))
+                        {
+                            Push(stage._outRequest, _pending);
+                            _pending = null;
+                        }
                     }
                     else
                     {
@@ -58,7 +67,7 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequestMe
             SetHandler(stage._outSignal,
                 onPull: () =>
                 {
-                    if (!_initialSent)
+                    if (!_initialSent && !HasBeenPulled(stage._in))
                     {
                         Pull(stage._in);
                     }
@@ -72,7 +81,7 @@ internal sealed class ExtractOptionsStage : GraphStage<FanOutShape<HttpRequestMe
                         Push(stage._outRequest, _pending);
                         _pending = null;
                     }
-                    else
+                    else if (!HasBeenPulled(stage._in))
                     {
                         Pull(stage._in);
                     }

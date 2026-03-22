@@ -337,55 +337,29 @@ public sealed class Http20EngineEndToEndTests : EngineTestBase
         Assert.True(hasPrefaceMagic, "Expected outbound bytes to contain the 24-byte HTTP/2 connection preface magic");
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-008: Preface not emitted on second ConnectItem for same host")]
-    public async Task Should_NotEmitPreface_When_SecondConnectItemForSameHostArrives()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-008: Preface emitted once on first pull, upstream items passed through")]
+    public async Task Should_EmitPrefaceOnFirstPull_When_UpstreamItemsFollow()
     {
-        var tcpOptions = new TcpOptions { Host = "example.com", Port = 80 };
-        var endpoint = new RequestEndpoint
-        {
-            Scheme = "http",
-            Host = "example.com",
-            Port = 80,
-            Version = HttpVersion.Version20
-        };
-        var connectItem1 = new ConnectItem(tcpOptions) { Key = endpoint };
-        var connectItem2 = new ConnectItem(tcpOptions) { Key = endpoint };
+        var dummyData = new DataItem(System.Buffers.MemoryPool<byte>.Shared.Rent(4), 4);
+        var dummyData2 = new DataItem(System.Buffers.MemoryPool<byte>.Shared.Rent(4), 4);
 
-        var items = new List<IOutputItem>();
-        var twoItemsReceived = new TaskCompletionSource();
-
-        // Feed two ConnectItems (same host) through PrependPrefaceStage.
-        // The first produces ConnectItem + DataItem(preface). The second is swallowed
-        // (host already seen), so the stream stalls after exactly 2 items.
-        _ = Source.From(new IOutputItem[] { connectItem1, connectItem2 })
+        // Feed two DataItems through PrependPrefaceStage.
+        // The stage emits the preface on first pull, then passes upstream items through.
+        var items = await Source.From(new IOutputItem[] { dummyData, dummyData2 })
             .Via(new PrependPrefaceStage())
-            .RunWith(Sink.ForEach<IOutputItem>(item =>
-            {
-                items.Add(item);
-                if (items.Count >= 2)
-                {
-                    twoItemsReceived.TrySetResult();
-                }
-            }), Materializer);
+            .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-        await twoItemsReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        // Expect: DataItem(preface) + dummyData + dummyData2
+        Assert.Equal(3, items.Count);
 
-        // Allow time for any unexpected items from the second ConnectItem
-        await Task.Delay(300);
-
-        // Only the first ConnectItem should produce output: ConnectItem + DataItem(preface)
-        Assert.Equal(2, items.Count);
-
+        // First item should be the preface
+        var prefaceItem = Assert.IsType<DataItem>(items[0]);
         var magic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
-        var prefaceCount = 0;
-        foreach (var item in items.OfType<DataItem>())
-        {
-            if (item.Length >= 24 && item.Memory.Memory.Span[..24].SequenceEqual(magic))
-            {
-                prefaceCount++;
-            }
-        }
+        Assert.True(prefaceItem.Length >= 24);
+        Assert.True(prefaceItem.Memory.Memory.Span[..24].SequenceEqual(magic));
 
-        Assert.Equal(1, prefaceCount);
+        // Remaining items are the upstream data passed through
+        Assert.Same(dummyData, items[1]);
+        Assert.Same(dummyData2, items[2]);
     }
 }

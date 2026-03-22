@@ -216,11 +216,10 @@ public sealed class ConnectionStateTests : TestKit
         Assert.False(state.Active);
     }
 
-    [Theory(DisplayName = "TASK-9-003-017: SupportsMultipleStreams false for HTTP/1.x and HTTP/2")]
+    [Theory(DisplayName = "TASK-9-003-017: SupportsMultipleStreams false for HTTP/1.x")]
     [InlineData(1, 0)]
     [InlineData(1, 1)]
-    [InlineData(2, 0)]
-    public void Should_ReturnFalse_WhenNotHttp3(int major, int minor)
+    public void Should_ReturnFalse_WhenHttp1x(int major, int minor)
     {
         var state = new ConnectionState(ActorRefs.Nobody);
         state.SetHandle(CreateHandle(new Version(major, minor)));
@@ -228,11 +227,13 @@ public sealed class ConnectionStateTests : TestKit
         Assert.False(state.SupportsMultipleStreams);
     }
 
-    [Fact(DisplayName = "TASK-9-003-018: SupportsMultipleStreams true for HTTP/3")]
-    public void Should_ReturnTrue_WhenHttp3()
+    [Theory(DisplayName = "TASK-9-003-018: SupportsMultipleStreams true for HTTP/2+")]
+    [InlineData(2, 0)]
+    [InlineData(3, 0)]
+    public void Should_ReturnTrue_WhenHttp2OrHigher(int major, int minor)
     {
         var state = new ConnectionState(ActorRefs.Nobody);
-        state.SetHandle(CreateHandle(new Version(3, 0)));
+        state.SetHandle(CreateHandle(new Version(major, minor)));
 
         Assert.True(state.SupportsMultipleStreams);
     }

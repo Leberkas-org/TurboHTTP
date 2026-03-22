@@ -178,6 +178,15 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
             }
         });
 
+        // ── Edge Cases ──────────────────────────────────────────────────────
+
+        // GET /empty-cl → returns 200 with Content-Length: 0 and no body
+        app.MapGet("/empty-cl", (HttpContext ctx) =>
+        {
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
         // ── HTTP/2 specific ───────────────────────────────────────────────────
 
         // GET /h2/settings → echoes some server settings info

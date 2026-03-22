@@ -51,8 +51,11 @@ public sealed class HostPool : ReceiveActor
     /// <summary>Host identifier used for the per-host connection limiter.</summary>
     private string HostIdentifier => string.IsNullOrEmpty(_key.Host) ? "default" : $"{_key.Host}:{_key.Port}";
 
-    /// <summary>Whether this pool manages QUIC/HTTP3 connections that support multiple streams.</summary>
+    /// <summary>Whether this pool manages QUIC/HTTP3 connections that require OS-level stream management.</summary>
     private bool IsQuic => _key.Version is { Major: 3 };
+
+    /// <summary>Whether this pool manages connections that multiplex multiple streams (HTTP/2+, QUIC/HTTP3).</summary>
+    private bool IsMultiStream => _key.Version.Major >= 2;
 
     public HostPool(HostPoolConfig config)
     {
@@ -104,14 +107,14 @@ public sealed class HostPool : ReceiveActor
 
         conn.SetHandle(msg.Handle);
 
-        if (IsQuic)
+        if (IsMultiStream)
         {
-            // QUIC: serve via version-aware path (one stream per requester)
+            // HTTP/2+, QUIC: serve via version-aware path (respects MaxConcurrentStreams)
             ServeQueuedRequesters();
         }
         else
         {
-            // Non-QUIC: flush all pending requesters with the shared handle
+            // HTTP/1.x: flush all pending requesters with the shared handle
             foreach (var requester in _pendingHandleRequesters)
             {
                 requester.Tell(msg.Handle);
@@ -137,7 +140,14 @@ public sealed class HostPool : ReceiveActor
                 return;
             }
 
-            conn.MarkBusy();
+            // HTTP/2: don't MarkBusy here — Http20ConnectionStage emits StreamAcquireItem
+            // which triggers HandleStreamAcquired → MarkBusy. Double-counting would inflate
+            // PendingRequests and break HasAvailableSlot.
+            if (!IsMultiStream)
+            {
+                conn.MarkBusy();
+            }
+
             Sender.Tell(conn.Handle);
             return;
         }
@@ -146,9 +156,11 @@ public sealed class HostPool : ReceiveActor
         // where ConnectionReady arrives before the requester is enqueued.
         _pendingHandleRequesters.Add(Sender);
 
-        // For QUIC, don't spawn extra connections while one is still connecting.
-        // Only spawn when all existing connections are at capacity (have handles but no free slots).
-        if (IsQuic && _connections.Exists(c => c.Handle is null && c.Active))
+        // Don't spawn extra connections while one is still connecting and no ready connection exists.
+        // For QUIC this avoids duplicate QUIC connections; for HTTP/1.x it prevents the race
+        // where PreStart's eager connection hasn't received its handle yet and EnsureHost spawns a
+        // second one whose ByteMover tasks can interfere with the pipeline.
+        if (_connections.Exists(c => c.Handle is null && c.Active))
         {
             return;
         }
@@ -159,8 +171,8 @@ public sealed class HostPool : ReceiveActor
 
     private ConnectionState? SpawnConnection()
     {
-        // QUIC/HTTP3: one connection per host is optimal — skip the per-host limiter.
-        if (!IsQuic && !_limiter.TryAcquire(HostIdentifier))
+        // HTTP/2+, QUIC: one connection per host is optimal — skip the per-host limiter.
+        if (!IsMultiStream && !_limiter.TryAcquire(HostIdentifier))
         {
             _log.Debug("Per-host connection limit ({0}) reached for {1}, request queued", 6, HostIdentifier);
             return null;
@@ -208,7 +220,7 @@ public sealed class HostPool : ReceiveActor
         // Remove stale connection state immediately.
         _connections.Remove(conn);
 
-        if (!IsQuic)
+        if (!IsMultiStream)
         {
             _limiter.Release(HostIdentifier);
         }
@@ -247,7 +259,7 @@ public sealed class HostPool : ReceiveActor
             conn.Actor.Tell(PoisonPill.Instance);
             _connections.Remove(conn);
 
-            if (!IsQuic)
+            if (!IsMultiStream)
             {
                 _limiter.Release(HostIdentifier);
             }
@@ -305,15 +317,23 @@ public sealed class HostPool : ReceiveActor
 
             var requester = _pendingHandleRequesters[0];
             _pendingHandleRequesters.RemoveAt(0);
-            conn.MarkBusy();
 
             if (IsQuic)
             {
-                // QUIC: each requester needs its own stream (own channel pair)
+                // QUIC: each requester needs its own stream (own channel pair).
+                // MarkBusy here — no StreamAcquired from Http20ConnectionStage for QUIC.
+                conn.MarkBusy();
                 conn.Actor.Tell(new ConnectionActor.OpenNewStream(requester));
+            }
+            else if (IsMultiStream)
+            {
+                // HTTP/2: don't MarkBusy — Http20ConnectionStage emits StreamAcquireItem.
+                requester.Tell(conn.Handle);
             }
             else
             {
+                // HTTP/1.x: MarkBusy here — no stage-level stream accounting.
+                conn.MarkBusy();
                 requester.Tell(conn.Handle);
             }
         }

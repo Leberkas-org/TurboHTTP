@@ -1,134 +1,238 @@
-# Feature 004: Integration Tests — Body Handling & Transfer Encoding
+# Feature 004: Version-aware ConnectionActor Architecture + SmokeTests
 
 ## Introduction
 
-Aufbauend auf der Infrastruktur aus Feature 002 testet dieses Feature das Request/Response-Body-Handling über alle HTTP-Versionen: Text, JSON, Binärdaten, Chunked Transfer Encoding (HTTP/1.1), Frame-basierte Übertragung (HTTP/2), QUIC-Streams (HTTP/3) und Streaming-Responses.
+The current `ConnectionActor` (334 lines) is monolithic and uses `_isMultiStream = options is QuicOptions` to distinguish between HTTP/1.x, HTTP/2, and HTTP/3. Every handler method contains version branches (`if (_isMultiStream) { ... } else { ... }`), hurting maintainability and inviting bugs.
+
+**Concrete problem:** The HTTP/2 h2c SmokeTest hangs because `HostPool.MarkBusy()` is called before stream allocation — a timing bug that only exists because version-specific logic is scattered across multiple classes instead of being encapsulated in a dedicated actor.
+
+This feature refactors `ConnectionActor` into a class hierarchy with `ConnectionActorBase` and three version-specific subclasses. Afterwards, SmokeTests for all HTTP versions (1.0, 1.1, 2.0, 3.0, TLS) are implemented as a validation gate.
 
 ### Architecture Context
 
 - **Components involved:**
-  - `Http10Encoder/Decoder` — Content-Length-basierte Bodies
-  - `Http11Encoder/Decoder` — Chunked Transfer-Encoding, Trailers
-  - `Http20EncoderStage/Http20StreamStage` — Frame-basierte DATA-Frames
-  - `Http30EncoderStage/Http30StreamStage` — QUIC-Stream-basierte Bodies
-  - Pipeline: `DecompressionBidiStage` (hier noch ohne Decompression — das ist Feature 005)
-- **Existing routes used:** `/echo`, `/echo/chunked`, `/chunked/{kb}`, `/chunked/exact/{count}/{bytes}`, `/chunked/trailer`, `/chunked/md5`, `/large/{kb}`, `/slow/{count}`, `/h2/echo-binary`, `/h2/large-headers/{kb}`, `/h2/priority/{kb}`, `/h3/echo-binary`, `/h3/stream/{count}`
-- **Depends on:** Feature 002 (ClientHelper, Collections)
+  - `src/TurboHttp/Pooling/ConnectionActor.cs` — monolithic actor, to be split
+  - `src/TurboHttp/Pooling/HostPool.cs` — `SpawnConnection()` switches to version-based Props
+  - `src/TurboHttp/Pooling/ConnectionState.cs` — unchanged
+  - `src/TurboHttp/Transport/ConnectionStage.cs` — unchanged (communicates only via `ConnectionHandle`)
+  - `src/TurboHttp/Transport/ClientManager.cs` — unchanged
+  - `src/TurboHttp.IntegrationTests/SmokeTests.cs` — extended for all versions
+  - `src/TurboHttp.IntegrationTests/Shared/` — fixtures already exist
+- **No new external frameworks required**
+- **ConnectionHandle remains unchanged** — the interface between actor and stage is not affected
 
 ## Goals
 
-- Request-Body-Echo für alle Content-Types (text, JSON, binary) verifizieren
-- Chunked Transfer-Encoding (HTTP/1.1) korrekt dekodiert
-- Chunked-Trailers empfangen und zugänglich
-- Große Payloads (bis 512 KB) über alle Versionen
-- Streaming-Responses (inkrementell empfangen)
-- Zero-Length-Bodies korrekt behandelt
-- Frame-basierte Body-Übertragung in HTTP/2 und HTTP/3
+- Split `ConnectionActor` into `ConnectionActorBase` + `Http1ConnectionActor` + `Http2ConnectionActor` + `Http3ConnectionActor`
+- Eliminate all `_isMultiStream` branches — each subclass knows only its own logic
+- HTTP/2 h2c SmokeTest passes (no hang due to MarkBusy/StreamAcquired timing)
+- HTTP/3 QUIC logic (SharedProvider, MultiRunner) isolated in `Http3ConnectionActor`
+- SmokeTests for all 5 variants (HTTP/1.0, 1.1, 2.0, 3.0, TLS) green
+- No regression in existing unit and stream tests
 
 ## Tasks
 
-### TASK-003-001: HTTP/1.x Body & Chunked Tests
-**Description:** Als Entwickler möchte ich Body-Handling und Chunked-Encoding Tests für HTTP/1.x, damit Text-, JSON-, Binär-Bodies und Chunked-Responses verifiziert sind.
+### TASK-004-001: Extract ConnectionActorBase
+
+**Description:** As a developer, I want to extract an abstract base class `ConnectionActorBase` so that shared logic (channel management, reconnect, message forwarding) lives centrally and subclasses only implement version-specific behaviour.
 
 **Token Estimate:** ~75k tokens
-**Predecessors:** Feature 002 (TASK-002-001)
-**Successors:** none
-**Parallel:** yes — kann parallel zu TASK-003-002 laufen
+**Predecessors:** none
+**Successors:** TASK-004-002, TASK-004-003, TASK-004-004
+**Parallel:** no — foundation for all subsequent tasks
+**Model:** opus
 
 **Acceptance Criteria:**
-- [ ] `Http1BodyTests.cs` mit `[Collection("Http1Integration")]` (~18 Tests):
-  - POST /echo mit "Hello World" (text/plain) → exakter Body-Echo
-  - POST /echo mit JSON `{"key":"value"}` (application/json) → Echo + Content-Type erhalten
-  - PUT /echo mit Binärdaten (256 Bytes random) → byte-für-byte identisch
-  - PATCH /echo mit Text → Echo
-  - POST /echo mit leerem Body → leere Response
-  - `[Theory]` POST /echo mit 1 KB, 100 KB, 512 KB Body → exakter Echo
-  - GET /chunked/10 → 10240 Bytes, chunked dekodiert
-  - `[Theory]` GET /chunked/exact/{count}/{bytes} für (3,1024), (10,256), (1,65536)
-  - POST /echo/chunked → Request-Body als Chunked-Response
-  - GET /chunked/trailer → Response enthält Trailer X-Checksum: abc123
-  - GET /chunked/md5 → Content-MD5 Header korrekt
-  - GET /large/100 → 102400 Bytes
-- [ ] `Http1StreamingTests.cs` mit `[Collection("Http1Integration")]` (~8 Tests):
-  - GET /slow/100 → 100 Bytes empfangen
-  - GET /slow/1000 → kompletter Stream
-  - `[Theory]` GET /large/{kb} für 1, 10, 50, 100, 500
-  - GET /delay/100 → erfolgreich nach ~100ms
-- [ ] Alle Tests grün: `dotnet test src/TurboHttp.IntegrationTests/ --filter "Http1BodyTests|Http1StreamingTests"`
+- [x] `ConnectionActorBase` created in `src/TurboHttp/Pooling/ConnectionActorBase.cs`
+- [x] Abstract class inheriting from `ReceiveActor`
+- [x] Shared fields: `_options`, `_clientManager`, `_requestEndpoint`, `_config`, `_out`, `_in`, `_runner`, `_reconnectAttempt`, `_log`
+- [x] Shared messages: `ConnectionReady`, `DoReconnect`, `DoClose` remain here
+- [x] Shared logic: `Reconnect()`, `AttemptReconnect()`, channel reset, exponential backoff
+- [x] Abstract/virtual methods: `Connect()`, `HandleConnected()`, `HandleDisconnected()`, `HandleTerminated()`, `OnPostStop()`
+- [x] Message forwarding to parent: `MarkConnectionNoReuse`, `StreamCompleted`, `StreamAcquired`, `UpdateMaxConcurrentStreams`
+- [x] Build green: `dotnet build --configuration Release src/TurboHttp.sln`
 
-### TASK-003-002: HTTP/2, HTTP/3 & TLS Body Tests
-**Description:** Als Entwickler möchte ich Body-Handling Tests für HTTP/2 (Frame-basiert), HTTP/3 (QUIC) und HTTPS, damit protokollspezifische Übertragung verifiziert ist.
+### TASK-004-002: Implement Http1ConnectionActor
 
-**Token Estimate:** ~75k tokens
-**Predecessors:** Feature 002 (TASK-002-001)
-**Successors:** none
-**Parallel:** yes — kann parallel zu TASK-003-001 laufen
+**Description:** As a developer, I want an `Http1ConnectionActor` that encapsulates the simple TCP connect/disconnect logic for HTTP/1.0 and HTTP/1.1, without any multi-stream branching.
+
+**Token Estimate:** ~40k tokens
+**Predecessors:** TASK-004-001
+**Successors:** TASK-004-005
+**Parallel:** yes — can run alongside TASK-004-003 and TASK-004-004
 
 **Acceptance Criteria:**
-- [ ] `Http2BodyTests.cs` mit `[Collection("Http2Integration")]` (~12 Tests):
-  - POST /h2/echo-binary mit 256 Bytes → exakt zurück
-  - `[Theory]` POST /h2/echo-binary mit 1 KB, 100 KB, 512 KB
-  - POST /echo mit JSON über HTTP/2 → Content-Type erhalten
-  - POST /echo mit leerem Body über HTTP/2
-  - GET /large/100 über HTTP/2 → 102400 Bytes
-  - GET /h2/large-headers/5 → Header + Body kombiniert
-  - GET /h2/priority/10 → 10 KB Body
-- [ ] `Http3BodyTests.cs` mit `[Collection("Http3Integration")]` + `[Trait("Category", "Http3")]` (~8 Tests):
-  - POST /h3/echo-binary mit 256 Bytes → exakt zurück
-  - `[Theory]` POST /h3/echo-binary mit 1 KB, 100 KB, 512 KB
-  - GET /h3/stream/500 → Streaming über QUIC
-  - GET /large/50 über HTTP/3
-  - POST /echo mit JSON über HTTP/3
-- [ ] `TlsBodyTests.cs` mit `[Collection("TlsIntegration")]` (~6 Tests):
-  - POST /echo mit Text über HTTPS → Echo
-  - POST /echo mit 100 KB über HTTPS
-  - GET /large/50 über HTTPS
-  - GET /chunked/10 über HTTPS
-- [ ] Alle Tests grün: `dotnet test src/TurboHttp.IntegrationTests/ --filter "Http2BodyTests|Http3BodyTests|TlsBodyTests"`
+- [ ] `Http1ConnectionActor` created in `src/TurboHttp/Pooling/Http1ConnectionActor.cs`
+- [ ] Inherits from `ConnectionActorBase`
+- [ ] `Connect()` — simple `ClientManager.CreateRunnerWithChannels` without SharedProvider
+- [ ] `HandleConnected()` — sets `_runner`, sends `ConnectionReady` to parent
+- [ ] `HandleDisconnected()` / `HandleTerminated()` — calls `Reconnect()` directly
+- [ ] `PostStop()` — stops single runner
+- [ ] No `_isMultiStream`, no `_sharedProvider`, no `_activeRunners`
+- [ ] Build green
+
+### TASK-004-003: Implement Http2ConnectionActor
+
+**Description:** As a developer, I want an `Http2ConnectionActor` that handles HTTP/2-specific stream accounting correctly, particularly the StreamAcquired/StreamCompleted signalling without premature MarkBusy.
+
+**Token Estimate:** ~50k tokens
+**Predecessors:** TASK-004-001
+**Successors:** TASK-004-005
+**Parallel:** yes — can run alongside TASK-004-002 and TASK-004-004
+
+**Acceptance Criteria:**
+- [ ] `Http2ConnectionActor` created in `src/TurboHttp/Pooling/Http2ConnectionActor.cs`
+- [ ] Inherits from `ConnectionActorBase`
+- [ ] `Connect()` — simple `ClientManager.CreateRunnerWithChannels` (like Http1, no SharedProvider)
+- [ ] `HandleConnected()` — sets `_runner`, sends `ConnectionReady` to parent
+- [ ] Stream lifecycle: `StreamAcquired`/`StreamCompleted` messages correctly forwarded to parent
+- [ ] No `MarkBusy()` in HostPool for HTTP/2 — stream accounting exclusively via stage signals
+- [ ] `HandleDisconnected()` / `HandleTerminated()` — calls `Reconnect()`
+- [ ] `PostStop()` — stops runner
+- [ ] Build green
+
+### TASK-004-004: Implement Http3ConnectionActor
+
+**Description:** As a developer, I want an `Http3ConnectionActor` that isolates the QUIC-specific SharedProvider and multi-runner logic so that QUIC streams are managed cleanly.
+
+**Token Estimate:** ~60k tokens
+**Predecessors:** TASK-004-001
+**Successors:** TASK-004-005
+**Parallel:** yes — can run alongside TASK-004-002 and TASK-004-003
+
+**Acceptance Criteria:**
+- [ ] `Http3ConnectionActor` created in `src/TurboHttp/Pooling/Http3ConnectionActor.cs`
+- [ ] Inherits from `ConnectionActorBase`
+- [ ] Own fields: `_sharedProvider`, `_activeRunners`, `_pendingStreamRequesters`
+- [ ] `OpenNewStream` message handler lives here (not in base)
+- [ ] `Connect()` — creates `QuicClientProvider`, uses SharedProvider with `CreateRunnerWithChannels`
+- [ ] `HandleConnected()` — tracks runner in `_activeRunners`, sends `ConnectionReady`, flushes pending queue
+- [ ] `SpawnStreamRunner()` — BecomeStacked pattern for new QUIC streams
+- [ ] `HandleDisconnected()` / `HandleTerminated()` — only reconnect when all runners are gone
+- [ ] `Reconnect()` override — disposes SharedProvider, clears runner list
+- [ ] `PostStop()` — stops all runners, disposes SharedProvider
+- [ ] Build green
+
+### TASK-004-005: Migrate HostPool + remove old ConnectionActor
+
+**Description:** As a developer, I want `HostPool.SpawnConnection()` to create the correct actor type based on HTTP version, and remove the old monolithic `ConnectionActor`.
+
+**Token Estimate:** ~50k tokens
+**Predecessors:** TASK-004-002, TASK-004-003, TASK-004-004
+**Successors:** TASK-004-006
+**Parallel:** no — requires all three subclasses
+
+**Acceptance Criteria:**
+- [ ] `HostPool.SpawnConnection()` contains version switch:
+  - HTTP/1.x -> `Http1ConnectionActor`
+  - HTTP/2 -> `Http2ConnectionActor`
+  - HTTP/3 -> `Http3ConnectionActor`
+- [ ] `ConnectionReady` message type remains compatible (either in base or re-exported)
+- [ ] `IsQuic` and `IsMultiStream` properties in HostPool remain as routing helpers, but branching in message handlers reduced where possible
+- [ ] Old monolithic `ConnectionActor.cs` deleted (logic distributed across base + 3 subclasses)
+- [ ] Build green: `dotnet build --configuration Release src/TurboHttp.sln`
+- [ ] All existing tests green: `dotnet test src/TurboHttp.sln`
+
+### TASK-004-006: Migrate StreamTests and IO tests
+
+**Description:** As a developer, I want to ensure all existing tests that reference `ConnectionActor` are migrated to the new hierarchy.
+
+**Token Estimate:** ~40k tokens
+**Predecessors:** TASK-004-005
+**Successors:** TASK-004-007
+**Parallel:** no — requires the new architecture
+
+**Acceptance Criteria:**
+- [ ] All references to `ConnectionActor` in tests reviewed and migrated to `Http1ConnectionActor` / `Http2ConnectionActor` / `Http3ConnectionActor` as appropriate
+- [ ] `ConnectionState` tests unchanged (ConnectionState is actor-agnostic)
+- [ ] `HostPoolActorStreamLifecycleTests` work with new version-switch logic
+- [ ] All tests green: `dotnet test src/TurboHttp.sln`
+- [ ] No `ConnectionActor` imports remaining in test files (only base or specific subclasses)
+
+### TASK-004-007: SmokeTests for all HTTP versions
+
+**Description:** As a developer, I want SmokeTests for HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3, and TLS that verify basic connectivity for all protocol versions after every build.
+
+**Token Estimate:** ~60k tokens
+**Predecessors:** TASK-004-006
+**Successors:** none
+**Parallel:** no — validation gate, requires stable architecture
+
+**Acceptance Criteria:**
+- [ ] `SmokeTests.cs` contains 5 test classes:
+  - `Http10SmokeTests` with `[Collection("Http1Integration")]`
+  - `Http11SmokeTests` with `[Collection("Http1Integration")]`
+  - `Http2SmokeTests` with `[Collection("Http2Integration")]`
+  - `Http3SmokeTests` with `[Collection("Http3Integration")]` + `[Trait("Category", "Http3")]`
+  - `TlsSmokeTests` with `[Collection("TlsIntegration")]`
+- [ ] Each class: `IAsyncLifetime`, `ClientHelper.CreateClient()`, `CancellationTokenSource` with 30s timeout
+- [ ] Each class: `[Fact]` GET /hello -> 200 "Hello World"
+- [ ] HTTP/1.0: `ClientHelper.CreateClient(fixture.Port, new Version(1, 0))`
+- [ ] HTTP/1.1: `ClientHelper.CreateClient(fixture.Port, new Version(1, 1))`
+- [ ] HTTP/2: `ClientHelper.CreateClient(fixture.Port, new Version(2, 0))`
+- [ ] HTTP/3: `ClientHelper.CreateClient(fixture.Port, new Version(3, 0), scheme: "https")`
+- [ ] TLS: `ClientHelper.CreateClient(fixture.Port, new Version(1, 1), scheme: "https")`
+- [ ] Existing `SmokeTests` class renamed to `Http11SmokeTests`
+- [ ] **All 5 tests green — no skips**
+- [ ] `dotnet test src/TurboHttp.IntegrationTests/ --filter "SmokeTests"` -> 5/5 passed
 
 ## Task Dependency Graph
 
 ```
-Feature 002 ──→ TASK-003-001
-            └──→ TASK-003-002
+TASK-004-001 (ConnectionActorBase)
+    |---> TASK-004-002 (Http1ConnectionActor) --|
+    |---> TASK-004-003 (Http2ConnectionActor) --|--> TASK-004-005 (HostPool Migration) --> TASK-004-006 (Test Migration) --> TASK-004-007 (SmokeTests)
+    |---> TASK-004-004 (Http3ConnectionActor) --|
 ```
 
 | Task | Estimate | Predecessors | Parallel | Model |
 |------|----------|--------------|----------|-------|
-| TASK-003-001 | ~75k | Feature 002 | yes (with 002) | — |
-| TASK-003-002 | ~75k | Feature 002 | yes (with 001) | — |
+| TASK-004-001 | ~75k | none | no | opus |
+| TASK-004-002 | ~40k | 001 | yes (with 003, 004) | — |
+| TASK-004-003 | ~50k | 001 | yes (with 002, 004) | — |
+| TASK-004-004 | ~60k | 001 | yes (with 002, 003) | — |
+| TASK-004-005 | ~50k | 002, 003, 004 | no | — |
+| TASK-004-006 | ~40k | 005 | no | — |
+| TASK-004-007 | ~60k | 006 | no | — |
 
-**Total estimated tokens:** ~150k
+**Total estimated tokens:** ~375k
 
 ## Functional Requirements
 
-- FR-1: Body-Echo muss byte-für-byte identisch sein (kein Encoding-Verlust)
-- FR-2: Content-Type Header muss bei Echo-Requests erhalten bleiben
-- FR-3: Chunked-Responses müssen transparent dekodiert werden (kein Raw-Chunk-Format sichtbar)
-- FR-4: Chunked-Trailers müssen über `HttpResponseMessage.TrailingHeaders` zugänglich sein
-- FR-5: Große Bodies (512 KB) dürfen keinen OutOfMemoryError verursachen
-- FR-6: Streaming-Responses müssen komplett empfangen werden (kein vorzeitiger Abbruch)
+- FR-1: `ConnectionActorBase` contains all shared fields, channel management, reconnect with exponential backoff, and message forwarding
+- FR-2: `Http1ConnectionActor` handles simple single-connection TCP lifecycle without multi-stream logic
+- FR-3: `Http2ConnectionActor` handles HTTP/2 connections with stream accounting via `StreamAcquired`/`StreamCompleted` signals from `Http20ConnectionStage`
+- FR-4: `Http3ConnectionActor` handles QUIC connections with SharedProvider, multi-runner tracking, and `OpenNewStream`
+- FR-5: `HostPool.SpawnConnection()` creates the correct actor type based on `_key.Version`
+- FR-6: `ConnectionHandle` interface remains fully compatible — no changes to `ConnectionStage` or layers above
+- FR-7: All 5 SmokeTests (HTTP/1.0, 1.1, 2.0, 3.0, TLS) pass with GET /hello -> 200 "Hello World"
+- FR-8: HTTP/3 tests carry `[Trait("Category", "Http3")]` for filtering
 
 ## Non-Goals
 
-- Keine Content-Encoding/Decompression (→ Feature 005)
-- Keine Multipart-Form-Data Tests (Route existiert, aber out of scope)
-- Keine Upload-Streaming (nur Download-Streaming getestet)
+- No changes to `ConnectionHandle`, `ConnectionStage`, `ClientManager`, `ClientRunner`, or `ClientByteMover`
+- No changes to the streams layer (Engine, Protocol Engines)
+- No new fixtures or test infrastructure
+- No performance optimisation — purely structural refactoring
+- No HTTP/3 feature expansion (only isolate existing QUIC logic)
 
 ## Technical Considerations
 
-- HTTP/1.0 hat kein Chunked-Encoding — nur Content-Length-Bodies
-- HTTP/2 nutzt DATA-Frames statt Chunked — Chunked-Tests nur für HTTP/1.1
-- `GET /slow/{count}` schreibt 1 Byte pro 1ms — Tests brauchen ausreichend Timeout
-- Binärdaten-Vergleich: `ReadOnlySpan<byte>.SequenceEqual()` für exakten Vergleich
-- `[Theory]` mit großen Bodies: Tests können 1-2 Sekunden dauern
+- `ConnectionReady` will be defined as a nested record in `ConnectionActorBase` (or as a standalone record) so that `HostPool` does not need to reference a subclass
+- `BecomeStacked` pattern in `Http3ConnectionActor.SpawnStreamRunner()` is preserved — it is QUIC-specific
+- `HostPool.IsQuic` and `IsMultiStream` remain as routing helpers in `ServeQueuedRequesters()` and `HandleEnsureHost()`
+- HTTP/2 h2c hang fix: `Http2ConnectionActor` must not trigger `MarkBusy()` before stream allocation — this is naturally solved by the clean separation in the subclass
+- `#pragma warning disable CA1416` for `QuicClientProvider` stays only in `Http3ConnectionActor`
+- `ConnectionFactory` in `HostPoolConfig` may need adjustment for test injection
 
 ## Success Metrics
 
-- Alle 52 Body-Tests grün
-- Keine Memory-Leaks bei großen Payloads (kein GC-Druck in Tests)
-- Streaming-Tests stabil (kein Timeout bei /slow/1000)
+- All existing 1800+ tests green after refactoring
+- All 5 SmokeTests green (HTTP/1.0, 1.1, 2.0, 3.0, TLS)
+- `ConnectionActor.cs` deleted — no monolithic class remaining
+- Zero `_isMultiStream` branches in the entire codebase
+- Total SmokeTest runtime < 30 seconds
 
 ## Open Questions
 
-_Keine — alle Fragen geklärt._
+_None — scope and architecture have been clarified in discussion._

@@ -32,9 +32,9 @@ internal sealed class ConnectionState
     public Version HttpVersion => Handle?.Key.Version ?? System.Net.HttpVersion.Version11;
 
     /// <summary>
-    /// Whether this connection supports opening multiple streams on a single connection (QUIC/HTTP3).
+    /// Whether this connection supports multiplexing multiple streams on a single connection (HTTP/2+, QUIC/HTTP3).
     /// </summary>
-    public bool SupportsMultipleStreams => HttpVersion is { Major: 3 };
+    public bool SupportsMultipleStreams => HttpVersion.Major >= 2;
 
     /// <summary>
     /// Maximum concurrent streams allowed on this connection.

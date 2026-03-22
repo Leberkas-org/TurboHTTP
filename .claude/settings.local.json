@@ -40,7 +40,8 @@
       "Bash(du -sh /d/GIT/Akka.Streams.Http/RFC1945_*.md)",
       "Bash(xargs cat:*)",
       "Bash(npx vitepress:*)",
-      "Bash(xargs -I {} basename {})"
+      "Bash(xargs -I {} basename {})",
+      "Bash(2)"
     ]
   },
   "enabledPlugins": {}

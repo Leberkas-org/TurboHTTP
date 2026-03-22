@@ -115,16 +115,15 @@ public sealed class HostPoolActorStreamLifecycleTests : IOActorTestBase
         // First, reduce max to 1 so we can fill it easily.
         pool.Tell(new HostPool.UpdateMaxConcurrentStreams(fakeConn, 1));
 
-        // Fill the single slot.
+        // Fill the single slot. For HTTP/2, HandleEnsureHost does NOT call MarkBusy
+        // (stages handle it via StreamAcquired), so simulate what the stage does.
         pool.Tell(new PoolRouter.EnsureHost(Key20, TestOptions), TestActor);
         ExpectMsg<ConnectionHandle>(TimeSpan.FromSeconds(5));
+        pool.Tell(new HostPool.StreamAcquired(fakeConn));
 
         // Queue a requester — slot is full (max=1, pending=1).
         var requesterProbe = CreateTestProbe("requester");
         pool.Tell(new PoolRouter.EnsureHost(Key20, TestOptions), requesterProbe.Ref);
-
-        // Consume spawned connection if any.
-        controlProbe.ExpectMsg<IActorRef>(TimeSpan.FromSeconds(5));
 
         // Requester should be queued.
         requesterProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(200));

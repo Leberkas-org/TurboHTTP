@@ -1,17 +1,17 @@
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Transport;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages.Encoding;
 
-// RFC 9113 §3.4 — prepend connection preface to the first outbound bytes
+// RFC 9113 §3.4 — prepend connection preface to the first outbound bytes.
+// Each GroupByHostKey substream has its own PrependPrefaceStage instance,
+// so a simple boolean suffices — no per-host tracking needed.
 public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOutputItem>>
 {
     private readonly Inlet<IOutputItem> _in = new("PrependPreface.In");
@@ -27,65 +27,35 @@ public sealed class PrependPrefaceStage : GraphStage<FlowShape<IOutputItem, IOut
     public override FlowShape<IOutputItem, IOutputItem> Shape
         => new(_in, _out);
 
-
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         => new Logic(this);
 
-    private readonly struct PrefaceKey : IEquatable<PrefaceKey>
-    {
-        private readonly bool _isTls;
-        private readonly string _host;
-        private readonly int _port;
-
-        public PrefaceKey(bool isTls, string host, int port)
-        {
-            _isTls = isTls;
-            _host = host;
-            _port = port;
-        }
-
-        public bool Equals(PrefaceKey other)
-            => _isTls == other._isTls && _port == other._port && string.Equals(_host, other._host, StringComparison.OrdinalIgnoreCase);
-
-        public override bool Equals(object? obj) => obj is PrefaceKey other && Equals(other);
-
-        public override int GetHashCode() => HashCode.Combine(_isTls, StringComparer.OrdinalIgnoreCase.GetHashCode(_host), _port);
-    }
-
     private sealed class Logic : GraphStageLogic
     {
-        private readonly HashSet<PrefaceKey> _prefaceSentHost = [];
         private readonly PrependPrefaceStage _stage;
+        private bool _prefaceSent;
 
         public Logic(PrependPrefaceStage stage) : base(stage.Shape)
         {
             _stage = stage;
 
-            SetHandler(stage._out, onPull: () => Pull(stage._in));
+            SetHandler(stage._out, onPull: () =>
+            {
+                if (!_prefaceSent)
+                {
+                    _prefaceSent = true;
+                    var preface = BuildHttp2ConnectionPreface();
+                    var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
+                    ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
+                    Push(stage._out, new DataItem(owner, preface.Length));
+                    return;
+                }
+
+                Pull(stage._in);
+            });
 
             SetHandler(stage._in,
-                onPush: () =>
-                {
-                    var item = Grab(stage._in);
-                    if (item is ConnectItem connectItem)
-                    {
-                        var key = new PrefaceKey(connectItem.Options is TlsOptions, connectItem.Options.Host, connectItem.Options.Port);
-                        if (_prefaceSentHost.Contains(key))
-                        {
-                            return;
-                        }
-
-                        var preface = BuildHttp2ConnectionPreface();
-                        var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
-                        ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
-                        EmitMultiple(stage._out, [item, new DataItem(owner, preface.Length)]);
-                        _prefaceSentHost.Add(key);
-                    }
-                    else
-                    {
-                        Push(stage._out, item);
-                    }
-                },
+                onPush: () => Push(stage._out, Grab(stage._in)),
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: ex => Log.Warning("PrependPrefaceStage: Upstream failure absorbed: {0}", ex.Message));
         }

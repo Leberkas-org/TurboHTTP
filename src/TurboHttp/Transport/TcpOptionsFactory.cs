@@ -15,9 +15,7 @@ internal static class TcpOptionsFactory
 
     private static bool IsHttp3(Version? requestVersion)
     {
-        return requestVersion is not null
-               && requestVersion.Major == 3
-               && requestVersion.Minor == 0;
+        return requestVersion is { Major: 3, Minor: 0 };
     }
 
     internal static TcpOptions Build(Uri requestUri, TurboClientOptions clientOptions, Version? requestVersion = null)

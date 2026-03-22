@@ -81,11 +81,13 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
         // ── Basic ──────────────────────────────────────────────────────────────
 
         // GET /hello → 200 "Hello World"
-        // HEAD /hello → 200, headers only (body suppressed by ASP.NET Core middleware)
+        // HEAD /hello → 200, headers only
         app.MapMethods("/hello", ["GET", "HEAD"], (HttpContext ctx) =>
         {
+            if (ctx.Request.Method == "HEAD") return Results.NoContent();
             ctx.Response.ContentType = "text/plain";
             ctx.Response.ContentLength = 11;
+
             return Results.Content("Hello World", "text/plain");
         });
 
