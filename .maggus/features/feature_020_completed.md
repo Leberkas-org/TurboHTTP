@@ -124,12 +124,12 @@ Additionally, `RequestCompressionBidiStage` and `DecompressionBidiStage` are com
 **Parallel:** no — final verification
 
 **Acceptance Criteria:**
-- [ ] Test `EBFC-012` in `16_EngineBidiFlowCompositionTests.cs` updated: with `AutomaticDecompression=false`, assert response contains raw compressed bytes + `Content-Encoding` header preserved
-- [ ] Test `EBFC-011` still passes: with `AutomaticDecompression=true`, gzip response is decompressed
-- [ ] Stream tests in `RFC9110/` that reference `DecompressionBidiStage` or `RequestCompressionBidiStage` updated to reference `ContentEncodingBidiStage`
-- [ ] `ContentEncodingDecoder.Decompress` only called in `ContentEncodingBidiStage.cs` and its direct unit tests — grep verification
-- [ ] `dotnet test ./src/TurboHttp.sln` — full solution: 0 failures
-- [ ] `dotnet build --configuration Release ./src/TurboHttp.sln` — 0 errors
+- [x] Test `EBFC-012` in `16_EngineBidiFlowCompositionTests.cs` updated: with `AutomaticDecompression=false`, assert response contains raw compressed bytes + `Content-Encoding` header preserved
+- [x] Test `EBFC-011` still passes: with `AutomaticDecompression=true`, gzip response is decompressed
+- [x] Stream tests in `RFC9110/` that reference `DecompressionBidiStage` or `RequestCompressionBidiStage` updated to reference `ContentEncodingBidiStage`
+- [x] `ContentEncodingDecoder.Decompress` only called in `ContentEncodingBidiStage.cs` and its direct unit tests — grep verification
+- [x] `dotnet test ./src/TurboHttp.sln` — full solution: 0 failures
+- [x] `dotnet build --configuration Release ./src/TurboHttp.sln` — 0 errors
 
 **Files to modify:**
 - `src/TurboHttp.StreamTests/Streams/16_EngineBidiFlowCompositionTests.cs`
