@@ -76,7 +76,7 @@ Add end-to-end integration tests for error handling, timeouts, and edge cases. V
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `dotnet test src/TurboHttp.IntegrationTests/` passes with 0 failures
+- [x] `dotnet test src/TurboHttp.IntegrationTests/` passes with 0 failures
 
 ## Task Dependency Graph
 
