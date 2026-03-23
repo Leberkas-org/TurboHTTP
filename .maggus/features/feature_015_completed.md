@@ -58,9 +58,9 @@ Extend the existing HTTP/2 fuzz harness with additional attack vectors and add c
 **Model:** opus
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/HpackFuzzTests.cs`
-- [ ] Tests with `[Theory]` + `[InlineData(seed)]` for fixed seeds
-- [ ] Fuzz categories:
+- [x] Test file `src/TurboHttp.Tests/Security/HpackFuzzTests.cs`
+- [x] Tests with `[Theory]` + `[InlineData(seed)]` for fixed seeds
+- [x] Fuzz categories:
   - Pure random bytes (1–4KB) → `HpackException`, never crash or hang
   - Huffman-encoded random data → decoded or `HpackException`, never crash
   - Dynamic table size update to MAX (16384) followed by flood of indexed headers → bounded memory
@@ -71,14 +71,14 @@ Extend the existing HTTP/2 fuzz harness with additional attack vectors and add c
   - Never-indexed sensitive header reconstruction → correct decode
   - Dynamic table with 1000+ entries → eviction works, no OOM
   - Truncated header block (cut mid-instruction) → `HpackException`
-- [ ] Boundary value tests (not randomized):
+- [x] Boundary value tests (not randomized):
   - Max header table size (SETTINGS_HEADER_TABLE_SIZE = 65536)
   - Max header list size (SETTINGS_MAX_HEADER_LIST_SIZE = 65536)
   - Header with 0-length name → `HpackException`
   - Header with 0-length value → valid (empty value is allowed)
   - Integer overflow in HPACK integer decoding (>2^31) → `HpackException`
-- [ ] Memory assertion: decoder + dynamic table stay below 256KB for any single header block ≤4KB input
-- [ ] All tests pass
+- [x] Memory assertion: decoder + dynamic table stay below 256KB for any single header block ≤4KB input
+- [x] All tests pass
 
 ## Task Dependency Graph
 
