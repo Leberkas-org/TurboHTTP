@@ -36,8 +36,8 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
 **Parallel:** yes — can run alongside all other 013 tasks
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/HeaderInjectionTests.cs`
-- [ ] Tests cover:
+- [x] Test file `src/TurboHttp.Tests/Security/HeaderInjectionTests.cs`
+- [x] Tests cover:
   - CRLF injection in request header names → rejected or sanitized
   - CRLF injection in request header values → rejected or sanitized
   - NUL byte injection in headers → rejected
@@ -46,8 +46,8 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
   - HTTP/1.1 request smuggling via conflicting Content-Length + Transfer-Encoding
   - HTTP/1.1 request smuggling via duplicate Content-Length values
   - HTTP/1.1 encoder does not emit smugglable headers
-- [ ] Each test documents the attack vector in its DisplayName
-- [ ] All tests pass
+- [x] Each test documents the attack vector in its DisplayName
+- [x] All tests pass
 
 ### TASK-013-002: TLS & Transport Security Tests
 **Description:** As a security auditor, I want to verify TLS certificate validation and downgrade protection.
