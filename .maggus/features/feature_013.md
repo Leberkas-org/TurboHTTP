@@ -76,8 +76,8 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
 **Parallel:** yes — can run alongside all other 013 tasks
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/CookieSecurityTests.cs`
-- [ ] Tests cover:
+- [x] Test file `src/TurboHttp.Tests/Security/CookieSecurityTests.cs`
+- [x] Tests cover:
   - Secure cookies NOT sent over HTTP
   - Secure cookies sent over HTTPS
   - HttpOnly flag stored correctly (informational — HttpOnly is server-enforced)
@@ -88,7 +88,7 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
   - Cookie path traversal: /foo/.. should not match /
   - Cookie Max-Age=0 immediately deletes
   - Overlong cookie values handled (not crash/OOM)
-- [ ] All tests pass
+- [x] All tests pass
 
 ### TASK-013-004: URI Sanitization & Path Traversal Tests
 **Description:** As a security auditor, I want to verify URI handling prevents path traversal and injection attacks.
