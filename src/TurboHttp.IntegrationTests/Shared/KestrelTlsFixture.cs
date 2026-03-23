@@ -513,5 +513,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
         Routes.RegisterCacheRoutes(app);
         Routes.RegisterContentEncodingRoutes(app);
         Routes.RegisterConnectionReuseRoutes(app);
+
+        // ── Expect Continue Routes ──────────────────────────────────────────
+        Routes.RegisterExpectContinueRoutes(app);
     }
 }

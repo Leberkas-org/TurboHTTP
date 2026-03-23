@@ -70,10 +70,10 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - Ensure all new routes are registered in `RegisterExpectContinueRoutes()` and called from all fixtures (KestrelFixture, KestrelH2Fixture, KestrelTlsFixture)
 
 **Acceptance Criteria:**
-- [ ] `Routes.RegisterExpectContinueRoutes(app)` added with 3 routes
-- [ ] All 3 Kestrel fixtures call `RegisterExpectContinueRoutes`
-- [ ] Routes manually verified via `dotnet run` or existing smoke test pattern
-- [ ] Build passes with zero warnings
+- [x] `Routes.RegisterExpectContinueRoutes(app)` added with 3 routes
+- [x] All 3 Kestrel fixtures call `RegisterExpectContinueRoutes`
+- [~] ⚠️ BLOCKED: Routes manually verified via `dotnet run` or existing smoke test pattern — No standalone `dotnet run` entry point exists for the integration test server; routes are verified structurally via build success and will be exercised by TASK-021-008 integration tests
+- [x] Build passes with zero warnings
 
 **Files:**
 - `src/TurboHttp.IntegrationTests/Shared/Routes.cs` — add `RegisterExpectContinueRoutes`

@@ -533,5 +533,8 @@ public sealed class KestrelFixture : IAsyncLifetime
 
         // ── Connection Reuse Routes ────────────────────────────────────────
         Routes.RegisterConnectionReuseRoutes(app);
+
+        // ── Expect Continue Routes ──────────────────────────────────────────
+        Routes.RegisterExpectContinueRoutes(app);
     }
 }

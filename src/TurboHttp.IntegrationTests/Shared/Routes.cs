@@ -622,4 +622,39 @@ internal static class Routes
             return Results.Empty;
         });
     }
+
+    internal static void RegisterExpectContinueRoutes(WebApplication app)
+    {
+        // POST /expect/echo → reads Expect: 100-continue, Kestrel sends 100 Continue
+        // automatically when the app reads the request body, then echoes body with 200
+        app.MapPost("/expect/echo", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = ctx.Request.ContentType ?? "application/octet-stream";
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        // POST /expect/reject → responds 417 Expectation Failed without reading body
+        // Setting status before reading body prevents Kestrel from sending 100 Continue
+        app.MapPost("/expect/reject", (HttpContext ctx) =>
+        {
+            ctx.Response.StatusCode = 417;
+            return Results.Empty;
+        });
+
+        // POST /expect/large → accepts large body (>1KB) with 100-continue flow
+        // Same as /expect/echo but explicitly designed for large payloads
+        app.MapPost("/expect/large", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = "application/octet-stream";
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+    }
 }

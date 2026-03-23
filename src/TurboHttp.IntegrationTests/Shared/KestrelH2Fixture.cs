@@ -281,5 +281,8 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
 
         // ── Error Handling Routes ─────────────────────────────────────────────
         Routes.RegisterErrorHandlingRoutes(app);
+
+        // ── Expect Continue Routes ──────────────────────────────────────────
+        Routes.RegisterExpectContinueRoutes(app);
     }
 }
