@@ -76,14 +76,14 @@ Fix HTTP/1.0 redirect and retry functionality by enabling the pipeline to emit n
 **Parallel:** no — depends on ExtractOptionsStage API changes
 
 **Acceptance Criteria:**
-- [ ] File: `src/TurboHttp/Streams/ProtocolCoreGraphBuilder.cs` method `BuildConnectionFlow<TEngine>`
-- [ ] Locate `connReuse` stage (line ~109) and `extract` stage (line ~103)
-- [ ] Connect signal outlet of `connReuse` to new feedback inlet `_inReuse` of `extract`:
+- [x] File: `src/TurboHttp/Streams/ProtocolCoreGraphBuilder.cs` method `BuildConnectionFlow<TEngine>`
+- [x] Locate `connReuse` stage (line ~109) and `extract` stage (line ~103)
+- [x] Connect signal outlet of `connReuse` to new feedback inlet `_inReuse` of `extract`:
   - `builder.From(connReuse.Out1).To(extract._inReuse)` or equivalent
-- [ ] Verify graph connectivity: no dangling inlets, all outlets routed
-- [ ] Document the feedback loop in a comment: "ConnectionReuseItem signals fed back to ExtractOptionsStage to trigger reconnect for HTTP/1.0"
-- [ ] Typecheck/lint passes
-- [ ] No changes to transport merge or downstream paths
+- [x] Verify graph connectivity: no dangling inlets, all outlets routed
+- [x] Document the feedback loop in a comment: "ConnectionReuseItem signals fed back to ExtractOptionsStage to trigger reconnect for HTTP/1.0"
+- [x] Typecheck/lint passes
+- [x] No changes to transport merge or downstream paths
 
 ### TASK-025-004: Write Unit Tests for ExtractOptionsStage Reconnection Logic
 **Description:** As a test engineer, I want to write focused unit tests for `ExtractOptionsStage` that verify the reconnection state machine works correctly for HTTP/1.0, HTTP/1.1, and HTTP/2 scenarios.
