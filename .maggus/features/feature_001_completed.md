@@ -72,8 +72,8 @@ Add end-to-end integration tests for cookie handling using the existing Kestrel 
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `dotnet test src/TurboHttp.IntegrationTests/` passes with 0 failures
-- [ ] All new cookie tests appear in test output
+- [x] `dotnet test src/TurboHttp.IntegrationTests/` passes with 0 failures
+- [x] All new cookie tests appear in test output
 
 ## Task Dependency Graph
 
