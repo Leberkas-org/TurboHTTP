@@ -282,6 +282,7 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 - Use `[Fact]` for single cases, `[Theory]` + `[InlineData]` for parameterised cases
 - Use `DisplayName` attribute for RFC-tagged tests: `"RFC-section-cat-nnn: description"`
 - Do NOT add `#nullable enable` at the top of test files
+- **Max 500 lines per test class** — if a test file exceeds 500 lines, split it into multiple focused files following the `NN_<ThemaTests>.cs` naming pattern
 
 ## Test Organisation
 

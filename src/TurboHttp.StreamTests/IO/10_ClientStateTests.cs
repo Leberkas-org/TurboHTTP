@@ -21,7 +21,7 @@ public sealed class ClientStateTests
     }
 
     [Fact(DisplayName = "TASK-019-001: DisposeAsync drains inbound channel and disposes IMemoryOwner<byte> items")]
-    public async Task Should_DisposeInboundItems_WhenDisposeAsyncCalled()
+    public void Should_DisposeInboundItems_WhenDisposeAsyncCalled()
     {
         // Arrange: pre-populate inbound channel with two tracking owners
         var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
@@ -44,7 +44,7 @@ public sealed class ClientStateTests
     }
 
     [Fact(DisplayName = "TASK-019-002: DisposeAsync drains outbound channel and disposes IMemoryOwner<byte> items")]
-    public async Task Should_DisposeOutboundItems_WhenDisposeAsyncCalled()
+    public void Should_DisposeOutboundItems_WhenDisposeAsyncCalled()
     {
         // Arrange: pre-populate outbound channel with one tracking owner
         var inbound = Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();

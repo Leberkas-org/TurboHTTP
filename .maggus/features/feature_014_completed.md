@@ -56,9 +56,9 @@ Add property-based fuzzing tests for the HTTP/1.0 and HTTP/1.1 response decoders
 **Model:** opus
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/Http11FuzzTests.cs`
-- [ ] Same seed strategy as TASK-014-001
-- [ ] Additional fuzz categories for HTTP/1.1:
+- [x] Test file `src/TurboHttp.Tests/Security/Http11FuzzTests.cs`
+- [x] Same seed strategy as TASK-014-001
+- [x] Additional fuzz categories for HTTP/1.1:
   - Pure random bytes → TryDecode must not crash
   - Random chunked encoding (valid chunk-size lines + random data) → graceful handling
   - Chunk extensions with random bytes → no crash
@@ -68,10 +68,10 @@ Add property-based fuzzing tests for the HTTP/1.0 and HTTP/1.1 response decoders
   - Extremely large Content-Length (>2GB) → bounded handling, no OOM
   - Valid HTTP/1.1 response with `Connection: close` + random trailing data
   - Fragmented delivery: valid response split at random byte offsets across multiple TryDecode calls
-- [ ] Each test iteration has a 5-second timeout
-- [ ] Memory assertion: allocations stay below 1MB per iteration
-- [ ] Minimum 100 iterations per seed per category
-- [ ] All tests pass
+- [x] Each test iteration has a 5-second timeout
+- [x] Memory assertion: allocations stay below 1MB per iteration
+- [x] Minimum 100 iterations per seed per category
+- [x] All tests pass
 
 ## Task Dependency Graph
 
