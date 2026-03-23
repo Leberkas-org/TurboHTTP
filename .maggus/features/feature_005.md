@@ -31,9 +31,9 @@ Add end-to-end integration tests for content encoding/decoding. Validates that T
 **Parallel:** yes — can run alongside TASK-005-002
 
 **Acceptance Criteria:**
-- [ ] Test file `CompressionIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http1Integration"`, uses `KestrelFixture`
-- [ ] Tests cover:
+- [x] Test file `CompressionIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http1Integration"`, uses `KestrelFixture`
+- [x] Tests cover:
   - `GET /compress/gzip/{kb}` — gzip decompression, verify body length = kb*1024
   - `GET /compress/deflate/{kb}` — deflate decompression
   - `GET /compress/br/{kb}` — brotli decompression
@@ -41,7 +41,7 @@ Add end-to-end integration tests for content encoding/decoding. Validates that T
   - `GET /compress/negotiate` with Accept-Encoding: gzip → gzip response
   - `GET /compress/negotiate` with Accept-Encoding: br → brotli response
   - `GET /compress/negotiate` with no Accept-Encoding → identity
-- [ ] All tests pass
+- [x] All tests pass
 
 ### TASK-005-002: Compression Integration Tests — HTTP/2
 **Description:** As a library consumer, I want compression to work identically over HTTP/2.
