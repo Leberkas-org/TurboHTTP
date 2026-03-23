@@ -1,8 +1,11 @@
 using System;
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.Event;
+using Akka.Logger.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace TurboHttp;
@@ -12,6 +15,9 @@ namespace TurboHttp;
 /// </summary>
 public static class TurboClientServiceCollectionExtensions
 {
+    private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
+        @"akka.loggers = [""Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging""]");
+
     /// <summary>
     /// Registers a named TurboHttp client and returns an <see cref="ITurboHttpClientBuilder"/>
     /// for further configuration. <see cref="ITurboHttpClientFactory"/> is registered as a
@@ -36,8 +42,19 @@ public static class TurboClientServiceCollectionExtensions
             var system = provider.GetService<ActorSystem>();
             if (system is null)
             {
-                // start our own local ActorSystem
-                system = ActorSystem.Create("turbohttp");
+                var loggerFactory = provider.GetService<ILoggerFactory>();
+                if (loggerFactory is not null)
+                {
+                    // Bridge Akka logging to Microsoft.Extensions.Logging
+                    LoggingLogger.LoggerFactory = loggerFactory;
+                    system = ActorSystem.Create("turbohttp", LoggingHocon);
+                }
+                else
+                {
+                    // Standalone usage — fallback to Akka's default logger
+                    system = ActorSystem.Create("turbohttp");
+                }
+
                 system.Log.Info("Created new Akka.NET ActorSystem {0} - none found in IServiceCollection", system.Name);
             }
 

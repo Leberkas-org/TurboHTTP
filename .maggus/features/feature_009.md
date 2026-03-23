@@ -47,12 +47,12 @@ Bridge Akka.NET's internal ILoggingAdapter to Microsoft.Extensions.Logging (ILog
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `TurboClientServiceCollectionExtensions.AddTurboHttpClient()` configures the Akka ActorSystem to use `LoggerFactory` from DI
-- [ ] Akka HOCON config includes `akka.loggers = ["Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging"]`
-- [ ] When `ILoggerFactory` is available in DI, Akka logs flow through it
-- [ ] When no `ILoggerFactory` is registered (standalone usage), fallback to Akka's default logger
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds
-- [ ] Existing unit tests and stream tests pass (no behavioral change)
+- [x] `TurboClientServiceCollectionExtensions.AddTurboHttpClient()` configures the Akka ActorSystem to use `LoggerFactory` from DI
+- [x] Akka HOCON config includes `akka.loggers = ["Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging"]`
+- [x] When `ILoggerFactory` is available in DI, Akka logs flow through it
+- [x] When no `ILoggerFactory` is registered (standalone usage), fallback to Akka's default logger
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds
+- [x] Existing unit tests and stream tests pass (no behavioral change)
 
 ### TASK-009-003: Integration Test for Logging Bridge
 **Description:** As a library author, I want to verify the logging bridge works end-to-end in integration tests.
