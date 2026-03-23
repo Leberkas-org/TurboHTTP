@@ -36,13 +36,13 @@ The result: every request gets traced **twice** for ActivitySource and Metrics, 
 **Parallel:** no — TASK-016-002 removes the same code from HandlerBidiStage
 
 **Acceptance Criteria:**
-- [ ] TracingBidiStage request onPush emits `TurboHttpEventSource.Log.RequestStart(method, uri)` and `TurboHttpDiagnosticListener.OnRequestStart(request)`
-- [ ] TracingBidiStage response onPush emits `TurboHttpEventSource.Log.RequestStop(statusCode, durationMs)` and `TurboHttpDiagnosticListener.OnRequestStop(response, duration)`
-- [ ] TracingBidiStage response onUpstreamFailure emits `TurboHttpEventSource.Log.RequestFailed(...)` and `TurboHttpDiagnosticListener.OnRequestFailed(ex)` (alongside existing Activity error handling)
-- [ ] TracingBidiStage request onUpstreamFailure added: emits RequestFailed events for request-path failures
-- [ ] `using TurboHttp.Diagnostics;` already present (verify EventSource/DiagnosticListener types are accessible)
-- [ ] Build succeeds with 0 errors
-- [ ] All existing tests pass
+- [x] TracingBidiStage request onPush emits `TurboHttpEventSource.Log.RequestStart(method, uri)` and `TurboHttpDiagnosticListener.OnRequestStart(request)`
+- [x] TracingBidiStage response onPush emits `TurboHttpEventSource.Log.RequestStop(statusCode, durationMs)` and `TurboHttpDiagnosticListener.OnRequestStop(response, duration)`
+- [x] TracingBidiStage response onUpstreamFailure emits `TurboHttpEventSource.Log.RequestFailed(...)` and `TurboHttpDiagnosticListener.OnRequestFailed(ex)` (alongside existing Activity error handling)
+- [x] TracingBidiStage request onUpstreamFailure added: emits RequestFailed events for request-path failures
+- [x] `using TurboHttp.Diagnostics;` already present (verify EventSource/DiagnosticListener types are accessible)
+- [x] Build succeeds with 0 errors
+- [x] All existing tests pass
 
 ### TASK-016-002: Simplify HandlerBidiStage — Remove Tracing and Entry/Non-Entry Split
 **Description:** As a developer, I want HandlerBidiStage to be a pure pass-through handler wrapper so that it has a single code path with no diagnostics coupling.

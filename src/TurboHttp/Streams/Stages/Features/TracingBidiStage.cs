@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
@@ -67,12 +68,32 @@ internal sealed class TracingBidiStage
                         _currentActivity = activity;
                     }
 
+                    // Emit EventSource + DiagnosticListener request start
+                    var method = request.Method.Method;
+                    var uri = request.RequestUri?.OriginalString ?? "";
+                    TurboHttpEventSource.Log.RequestStart(method, uri);
+                    TurboHttpDiagnosticListener.OnRequestStart(request);
+
                     // Record request start timestamp for duration calculation
                     request.Options.Set(RequestTimestampKey, Stopwatch.GetTimestamp());
 
                     Push(stage._outRequest, request);
                 },
-                onUpstreamFinish: () => Complete(stage._outRequest));
+                onUpstreamFinish: () => Complete(stage._outRequest),
+                onUpstreamFailure: ex =>
+                {
+                    TurboHttpEventSource.Log.RequestFailed(ex.GetType().Name, ex.Message);
+                    TurboHttpDiagnosticListener.OnRequestFailed(ex);
+
+                    if (_currentActivity is not null)
+                    {
+                        TurboHttpInstrumentation.SetError(_currentActivity, ex);
+                        _currentActivity.Stop();
+                        _currentActivity = null;
+                    }
+
+                    Fail(stage._outRequest, ex);
+                });
 
             SetHandler(stage._outRequest,
                 onPull: () => Pull(stage._inRequest),
@@ -83,8 +104,9 @@ internal sealed class TracingBidiStage
                 onPush: () =>
                 {
                     var response = Grab(stage._inResponse);
+                    var request = response.RequestMessage;
 
-                    if (response.RequestMessage?.Options
+                    if (request?.Options
                             .TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var activity) == true)
                     {
                         TurboHttpInstrumentation.SetResponse(activity, response);
@@ -92,14 +114,28 @@ internal sealed class TracingBidiStage
                         _currentActivity = null;
                     }
 
+                    // Calculate duration and emit EventSource + DiagnosticListener request stop
+                    var durationMs = 0.0;
+                    if (request is not null && request.Options.TryGetValue(RequestTimestampKey, out var timestamp))
+                    {
+                        durationMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+                    }
+
+                    var statusCode = (int)response.StatusCode;
+                    TurboHttpEventSource.Log.RequestStop(statusCode, durationMs);
+                    TurboHttpDiagnosticListener.OnRequestStop(response, TimeSpan.FromMilliseconds(durationMs));
+
                     // Record request metrics
-                    RecordRequestMetrics(response);
+                    RecordRequestMetrics(response, durationMs);
 
                     Push(stage._outResponse, response);
                 },
                 onUpstreamFinish: () => Complete(stage._outResponse),
                 onUpstreamFailure: ex =>
                 {
+                    TurboHttpEventSource.Log.RequestFailed(ex.GetType().Name, ex.Message);
+                    TurboHttpDiagnosticListener.OnRequestFailed(ex);
+
                     if (_currentActivity is not null)
                     {
                         TurboHttpInstrumentation.SetError(_currentActivity, ex);
@@ -115,7 +151,7 @@ internal sealed class TracingBidiStage
                 onDownstreamFinish: _ => Cancel(stage._inResponse));
         }
 
-        private static void RecordRequestMetrics(HttpResponseMessage response)
+        private static void RecordRequestMetrics(HttpResponseMessage response, double durationMs)
         {
             var request = response.RequestMessage;
             if (request is null)
@@ -132,13 +168,9 @@ internal sealed class TracingBidiStage
                 new KeyValuePair<string, object?>("http.response.status_code", statusCode),
                 new KeyValuePair<string, object?>("server.address", host));
 
-            if (request.Options.TryGetValue(RequestTimestampKey, out var startTimestamp))
-            {
-                var elapsed = Stopwatch.GetElapsedTime(startTimestamp);
-                TurboHttpMetrics.RequestDuration.Record(elapsed.TotalSeconds,
-                    new KeyValuePair<string, object?>("http.request.method", method),
-                    new KeyValuePair<string, object?>("http.response.status_code", statusCode));
-            }
+            TurboHttpMetrics.RequestDuration.Record(durationMs / 1000.0,
+                new KeyValuePair<string, object?>("http.request.method", method),
+                new KeyValuePair<string, object?>("http.response.status_code", statusCode));
         }
     }
 }
