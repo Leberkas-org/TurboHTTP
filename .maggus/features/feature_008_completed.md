@@ -32,10 +32,10 @@ Add end-to-end integration tests for TLS transport. Validates that TurboHttp cor
 **Parallel:** yes — independent feature
 
 **Acceptance Criteria:**
-- [ ] Test file `TlsIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"TlsIntegration"`, uses `KestrelTlsFixture`
-- [ ] ClientHelper configured with `scheme: "https"` and custom certificate validation (accept self-signed)
-- [ ] Tests cover:
+- [x] Test file `TlsIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"TlsIntegration"`, uses `KestrelTlsFixture`
+- [x] ClientHelper configured with `scheme: "https"` and custom certificate validation (accept self-signed)
+- [x] Tests cover:
   - `GET /hello` — basic HTTPS request/response
   - `POST /echo` — body echo over TLS
   - `GET /headers/echo` — header roundtrip over TLS
@@ -45,7 +45,7 @@ Add end-to-end integration tests for TLS transport. Validates that TurboHttp cor
   - `GET /redirect/302/hello` — redirect following over TLS
   - `GET /large/{kb}` — large body transfer over TLS (64KB, 256KB)
   - `GET /chunked/{kb}` — chunked transfer over TLS
-- [ ] All tests pass
+- [x] All tests pass
 
 ## Task Dependency Graph
 

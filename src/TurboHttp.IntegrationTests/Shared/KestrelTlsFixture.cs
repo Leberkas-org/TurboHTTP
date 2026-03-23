@@ -505,5 +505,13 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             ctx.Response.ContentLength = body.Length;
             return Results.Content("ok", "text/plain");
         });
+
+        // ── Shared routes (redirect, cookie, retry, cache, compression, connection) ─
+        Routes.RegisterRedirectRoutes(app);
+        Routes.RegisterCookieRoutes(app);
+        Routes.RegisterRetryRoutes(app);
+        Routes.RegisterCacheRoutes(app);
+        Routes.RegisterContentEncodingRoutes(app);
+        Routes.RegisterConnectionReuseRoutes(app);
     }
 }
