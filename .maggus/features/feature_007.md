@@ -56,16 +56,16 @@ Add end-to-end integration tests for error handling, timeouts, and edge cases. V
 **Parallel:** yes — can run alongside TASK-007-001
 
 **Acceptance Criteria:**
-- [ ] Test file `ErrorHandlingH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
-- [ ] Tests cover:
+- [x] Test file `ErrorHandlingH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
+- [x] Tests cover:
   - `GET /h2/abort` — RST_STREAM handling → exception
   - `GET /h2/delay/{ms}` — timeout cancellation over HTTP/2
   - `GET /status/{code}` — 4xx/5xx over HTTP/2
   - `GET /h2/many-headers` — 20 custom response headers decoded correctly
   - `POST /h2/echo-binary` — binary body roundtrip
   - `GET /h2/large-headers/{kb}` — large HPACK-compressed headers
-- [ ] All tests pass
+- [x] All tests pass
 
 ### TASK-007-003: Verify Full Error Handling Suite
 **Description:** Run the complete integration test suite to confirm no regressions.
