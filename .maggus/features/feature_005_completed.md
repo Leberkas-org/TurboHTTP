@@ -66,7 +66,7 @@ Add end-to-end integration tests for content encoding/decoding. Validates that T
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `dotnet test src/TurboHttp.IntegrationTests/` passes with 0 failures
+- [x] `dotnet test src/TurboHttp.IntegrationTests/` passes with 0 failures
 
 ## Task Dependency Graph
 
