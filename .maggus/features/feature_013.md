@@ -58,14 +58,14 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
 **Parallel:** yes — can run alongside all other 013 tasks
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/TlsSecurityTests.cs`
-- [ ] Tests cover:
+- [x] Test file `src/TurboHttp.Tests/Security/TlsSecurityTests.cs`
+- [x] Tests cover:
   - Default certificate validation rejects self-signed certs
   - Custom validation callback is invoked
   - HTTPS→HTTP redirect is blocked or flagged (cross-scheme protection)
   - Sensitive headers (Authorization, Cookie) stripped on scheme downgrade
   - TLS options (TargetHost, ClientCertificates) are passed to SslStream
-- [ ] All tests pass
+- [x] All tests pass
 
 ### TASK-013-003: Cookie Security Tests
 **Description:** As a security auditor, I want to verify cookie security attribute enforcement.
