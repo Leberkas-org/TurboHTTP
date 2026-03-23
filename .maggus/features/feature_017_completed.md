@@ -52,13 +52,13 @@ Both are correctness issues — the RedirectHandler tests are too strict, and th
 **Parallel:** yes — can run alongside TASK-017-001
 
 **Acceptance Criteria:**
-- [ ] New `_upstreamFinished` boolean field added to `ConnectionStage.Logic`
-- [ ] `onUpstreamFinish` handler (line 70-74) changed: sets `_upstreamFinished = true` instead of calling `StopInboundPump()` + `CompleteStage()`; only calls `CompleteStage()` immediately if `_handle is null` (no active connection)
-- [ ] `_onInboundComplete` callback (line 132-143) extended: after pushing/enqueuing `CloseSignalItem`, checks `_upstreamFinished` and calls `CompleteStage()` if true
-- [ ] `onDownstreamFinish` handler (line 84-88) unchanged — it should still force-stop the pump (downstream cancelled = nobody to receive data)
-- [ ] CS-004 round-trip test passes reliably
-- [ ] Full `TurboHttp.StreamTests` suite passes (0 failures)
-- [ ] Full solution test suite passes
+- [x] New `_upstreamFinished` boolean field added to `ConnectionStage.Logic`
+- [x] `onUpstreamFinish` handler (line 70-74) changed: sets `_upstreamFinished = true` instead of calling `StopInboundPump()` + `CompleteStage()`; only calls `CompleteStage()` immediately if `_handle is null` (no active connection)
+- [x] `_onInboundComplete` callback (line 132-143) extended: after pushing/enqueuing `CloseSignalItem`, checks `_upstreamFinished` and calls `CompleteStage()` if true
+- [x] `onDownstreamFinish` handler (line 84-88) unchanged — it should still force-stop the pump (downstream cancelled = nobody to receive data)
+- [x] CS-004 round-trip test passes reliably
+- [x] Full `TurboHttp.StreamTests` suite passes (0 failures)
+- [x] Full solution test suite passes
 
 **Files to modify:**
 - `src/TurboHttp/Transport/ConnectionStage.cs`

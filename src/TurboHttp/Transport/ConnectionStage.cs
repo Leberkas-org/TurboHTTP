@@ -58,6 +58,9 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         private StageActor? _stageActor;
         private CancellationTokenSource? _pumpCts;
 
+        /// <summary>Set when upstream finishes; defers stage completion until the inbound pump drains.</summary>
+        private bool _upstreamFinished;
+
         /// <summary>The RequestEndpoint from the most recent ConnectItem — used to tag inbound DataItems.</summary>
         private RequestEndpoint _currentKey;
 
@@ -69,8 +72,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 onPush: HandlePush,
                 onUpstreamFinish: () =>
                 {
-                    StopInboundPump();
-                    CompleteStage();
+                    _upstreamFinished = true;
+                    if (_handle is null)
+                    {
+                        CompleteStage();
+                    }
                 });
 
             SetHandler(stage._out,
@@ -144,6 +150,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
                 // Connection closed — clear the handle so next ConnectItem re-acquires.
                 _handle = null;
+
+                if (_upstreamFinished)
+                {
+                    CompleteStage();
+                }
             });
 
             _stageActor = GetStageActor(OnMessage);
