@@ -33,9 +33,9 @@ Add low-level diagnostic events to TurboHttp using `DiagnosticListener` and `Eve
 **Parallel:** yes — can run alongside TASK-012-002
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp/Diagnostics/TurboHttpEventSource.cs`
-- [ ] Singleton `EventSource` named `"TurboHttp"` (or `"System.Net.TurboHttp"` for consistency with .NET)
-- [ ] Events defined (with EventId, Level, Keywords):
+- [x] New file `src/TurboHttp/Diagnostics/TurboHttpEventSource.cs`
+- [x] Singleton `EventSource` named `"TurboHttp"` (or `"System.Net.TurboHttp"` for consistency with .NET)
+- [x] Events defined (with EventId, Level, Keywords):
   - `ConnectionOpened(string host, int port, string protocol)` — Informational
   - `ConnectionClosed(string host, int port, double durationMs)` — Informational
   - `RequestStart(string method, string uri)` — Informational
@@ -48,8 +48,8 @@ Add low-level diagnostic events to TurboHttp using `DiagnosticListener` and `Eve
   - `CacheMiss(string uri)` — Informational
   - `RetryAttempt(string method, string uri, int attempt)` — Warning
   - `RedirectFollowed(string uri, int statusCode, string location)` — Informational
-- [ ] Keywords enum for filtering: `Connection`, `Request`, `Protocol`, `Cache`
-- [ ] Build succeeds with 0 errors
+- [x] Keywords enum for filtering: `Connection`, `Request`, `Protocol`, `Cache`
+- [x] Build succeeds with 0 errors
 
 ### TASK-012-002: Create TurboHttpDiagnosticListener
 **Description:** As a library integrator, I want DiagnosticListener events so that I can subscribe to fine-grained events programmatically.
