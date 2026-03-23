@@ -6,7 +6,7 @@ using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Streams.Stages.Routing;
 
-namespace TurboHttp.StreamTests.Streams.Routing;
+namespace TurboHttp.StreamTests.Streams;
 
 /// <summary>
 /// Tests the reconnection state machine of <see cref="ExtractOptionsStage"/>.

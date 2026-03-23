@@ -104,7 +104,7 @@ internal static class ProtocolCoreGraphBuilder
             var extract = b.Add(new ExtractOptionsStage(clientOptions));
 
             // Concat: first the ConnectItem (In 0), then all BidiFlow transport output (In 1)
-            var concat = b.Add(Concat.Create<IOutputItem>(2));
+            var transportMerge0 = b.Add(new MergePreferred<IOutputItem>(1));
 
             // ConnectionReuseStage: evaluates keep-alive/close after each response
             var connReuse = b.Add(new ConnectionReuseStage());
@@ -117,11 +117,11 @@ internal static class ProtocolCoreGraphBuilder
 
             // Request path: extract splits first request into ConnectItem + request stream
             b.From(extract.OutRequest).To(bidi.Inlet1);
-            b.From(extract.OutSignal).To(concat.In(0));
+            b.From(extract.OutSignal).To(transportMerge0.Preferred);
 
             // Transport path: ConnectItem + BidiFlow encoded output → concat → merge → transport → BidiFlow decode
-            b.From(bidi.Outlet1).To(concat.In(1));
-            b.From(concat.Out).To(transportMerge.In(0));
+            b.From(bidi.Outlet1).To(transportMerge0.In(0));
+            b.From(transportMerge0.Out).To(transportMerge.In(0));
             b.From(transportMerge.Out).To(transportFlow.Inlet);
             b.From(transportFlow.Outlet).To(bidi.Inlet2);
 

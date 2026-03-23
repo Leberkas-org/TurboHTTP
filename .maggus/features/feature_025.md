@@ -119,8 +119,8 @@ Fix HTTP/1.0 redirect and retry functionality by enabling the pipeline to emit n
 **Parallel:** no — requires all prior changes
 
 **Acceptance Criteria:**
-- [ ] Run: `dotnet test src/TurboHttp.IntegrationTests.csproj --filter "FullyQualifiedName~RedirectH10IntegrationTests"`
-- [ ] Verify all tests pass (expected: 14 tests, all pass)
+- [x] Run: `dotnet test src/TurboHttp.IntegrationTests.csproj --filter "FullyQualifiedName~RedirectH10IntegrationTests"`
+- [x] Verify all tests pass (actual: 16 tests, all pass)
   - `Get_301_Redirect_Follows_To_Hello`, `Get_302_Redirect_Follows_To_Hello`, `Get_307_Redirect_Follows_To_Hello`, `Get_308_Redirect_Follows_To_Hello`
   - `Redirect_Chain_Follows_N_Hops_To_Hello` (N=1, 3, 5)
   - `Infinite_Redirect_Loop_Returns_Final_Redirect_Response`
@@ -129,11 +129,11 @@ Fix HTTP/1.0 redirect and retry functionality by enabling the pipeline to emit n
   - `Post_307_Preserves_Method_And_Body`, `Post_303_Rewrites_To_Get`, `Post_302_Rewrites_To_Get`, `Post_308_Preserves_Method_And_Body`
   - `Cross_Origin_Redirect_Follows_To_Headers_Echo`
   - `Cross_Origin_Redirect_Strips_Authorization`
-- [ ] Run: `dotnet test src/TurboHttp.IntegrationTests.csproj --filter "FullyQualifiedName~RetryH10IntegrationTests"` (if exists)
-- [ ] Verify all tests pass
-- [ ] No timeout failures (all tests complete within 60 seconds per test)
-- [ ] No connection acquisition errors in logs
-- [ ] Document any test failures or unexpected behavior
+- [x] Run: `dotnet test src/TurboHttp.IntegrationTests.csproj --filter "FullyQualifiedName~RetryH10IntegrationTests"` (if exists)
+- [x] Verify all tests pass (9 tests, all pass)
+- [x] No timeout failures (all tests complete within 60 seconds per test)
+- [x] No connection acquisition errors in logs
+- [x] Document any test failures or unexpected behavior
 
 ### TASK-025-006: Regression Testing — Verify HTTP/1.1 and HTTP/2 Unaffected
 **Description:** As a test engineer, I want to run the full test suite (stream tests and integration tests) to verify that the reconnection changes do not break HTTP/1.1 or HTTP/2 existing functionality.
