@@ -122,7 +122,32 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             _onOutboundWriteFailed = GetAsyncCallback<Exception>(ex =>
             {
                 Log.Warning("Http3ConnectionStage: Outbound write failed — {0}", ex.Message);
-                FailStage(ex);
+
+                // Notify the pool to tear down the QUIC connection.
+                if (_requestHandle is { } h)
+                {
+                    h.ConnectionActor.Tell(
+                        new HostPool.MarkConnectionNoReuse(h.ConnectionActor));
+                    h.ConnectionActor.Tell(
+                        new HostPool.StreamCompleted(h.ConnectionActor));
+                }
+
+                // Emit close signal downstream so decoder stages know the connection is dead.
+                var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _currentKey };
+                if (IsAvailable(_stage._out))
+                {
+                    Push(_stage._out, signal);
+                }
+                else
+                {
+                    _pendingReads.Enqueue(signal);
+                }
+
+                // Clear handles so the next ConnectItem re-acquires a fresh connection.
+                _requestHandle = null;
+                _controlHandle = null;
+                _encoderHandle = null;
+                _inboundHandles.Clear();
             });
 
             _onRequestHandleReceived = GetAsyncCallback<ConnectionHandle>(handle =>

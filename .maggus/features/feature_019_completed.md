@@ -143,11 +143,11 @@ This feature also blocks HTTP/3 from being routed at the version partition level
 **Parallel:** no — must run after all other tasks
 
 **Acceptance Criteria:**
-- [ ] `dotnet test --filter "FullyQualifiedName~StreamSurvivalTests"` — all 8 SURV tests pass
-- [ ] `dotnet test ./src/TurboHttp.sln` — full solution: 0 failures
-- [ ] `dotnet build --configuration Release ./src/TurboHttp.sln` — 0 errors
-- [ ] No `FailStage` or `Fail(` calls remain in any stage under `Streams/Stages/` (grep verification)
-- [ ] The only `FailStage` usage in the entire `Streams/` + `Transport/` directories is gone (or explicitly documented as intentional)
+- [x] `dotnet test --filter "FullyQualifiedName~StreamSurvivalTests"` — all 8 SURV tests pass
+- [x] `dotnet test ./src/TurboHttp.sln` — full solution: 0 failures
+- [x] `dotnet build --configuration Release ./src/TurboHttp.sln` — 0 errors
+- [x] No `FailStage` or `Fail(` calls remain in any stage under `Streams/Stages/` (grep verification)
+- [x] The only `FailStage` usage in the entire `Streams/` + `Transport/` directories is gone (or explicitly documented as intentional)
 
 **Files to modify:** none (verification only)
 
