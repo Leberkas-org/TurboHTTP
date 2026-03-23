@@ -59,10 +59,10 @@ Add end-to-end integration tests for redirect handling using the existing Kestre
 **Parallel:** yes — can run alongside TASK-002-001
 
 **Acceptance Criteria:**
-- [ ] Test file `RedirectH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
-- [ ] Covers same redirect routes over h2c
-- [ ] All tests pass
+- [x] Test file `RedirectH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
+- [x] Covers same redirect routes over h2c
+- [x] All tests pass
 
 ### TASK-002-003: Verify Full Redirect Suite
 **Description:** Run the complete integration test suite to confirm no regressions.
