@@ -57,10 +57,10 @@ Add end-to-end integration tests for HTTP caching. Validates that TurboHttp's Ca
 **Parallel:** yes — can run alongside TASK-004-001
 
 **Acceptance Criteria:**
-- [ ] Test file `CacheH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
-- [ ] Covers same cache routes over h2c
-- [ ] All tests pass
+- [x] Test file `CacheH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
+- [x] Covers same cache routes over h2c
+- [x] All tests pass
 
 ### TASK-004-003: Verify Full Cache Suite
 **Description:** Run the complete integration test suite to confirm no regressions.

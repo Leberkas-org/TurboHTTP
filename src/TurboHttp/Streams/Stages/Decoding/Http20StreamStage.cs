@@ -45,6 +45,9 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
             // Captured during DecodeHeaders for use in HandleData decompression.
             public string? ContentEncoding;
 
+            // Content headers captured during DecodeHeaders, applied when Content is created.
+            public List<(string Name, string Value)>? ContentHeaders;
+
             public void Dispose()
             {
                 _headerOwner?.Dispose();
@@ -217,6 +220,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
             }
 
             response.Content = new ByteArrayContent(bodyBytes);
+            ApplyContentHeaders(response, state);
 
             _responsePushed = true;
             Push(_stage._out, (response, frame.StreamId));
@@ -247,6 +251,12 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
                 {
                     response.Headers.TryAddWithoutValidation(h.Name, h.Value);
 
+                    if (IsContentHeader(h.Name))
+                    {
+                        state.ContentHeaders ??= new List<(string, string)>();
+                        state.ContentHeaders.Add((h.Name, h.Value));
+                    }
+
                     if (h.Name.Equals(WellKnownHeaders.Names.ContentEncoding, StringComparison.OrdinalIgnoreCase))
                     {
                         state.ContentEncoding = h.Value;
@@ -261,11 +271,33 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
                 return;
             }
 
+            // Headers-only response (no body) — create empty content and apply content headers
+            response.Content = new ByteArrayContent([]);
+            ApplyContentHeaders(response, state);
+
             _responsePushed = true;
             Push(_stage._out, (response, streamId));
 
             state.Dispose();
             _streams.Remove(streamId);
         }
+        private static void ApplyContentHeaders(HttpResponseMessage response, StreamState state)
+        {
+            if (state.ContentHeaders is null || response.Content is null)
+            {
+                return;
+            }
+
+            foreach (var (name, value) in state.ContentHeaders)
+            {
+                response.Content.Headers.TryAddWithoutValidation(name, value);
+            }
+        }
+
+        private static bool IsContentHeader(string name) =>
+            name.StartsWith("content-", StringComparison.OrdinalIgnoreCase) ||
+            name.Equals("allow", StringComparison.OrdinalIgnoreCase) ||
+            name.Equals("expires", StringComparison.OrdinalIgnoreCase) ||
+            name.Equals("last-modified", StringComparison.OrdinalIgnoreCase);
     }
 }
