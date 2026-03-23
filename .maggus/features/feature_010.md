@@ -32,18 +32,18 @@ Add distributed tracing to TurboHttp using `System.Diagnostics.ActivitySource` a
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp/Diagnostics/TurboHttpInstrumentation.cs`
-- [ ] Static `ActivitySource` named `"TurboHttp"` with assembly version
-- [ ] Helper methods for creating Activities:
+- [x] New file `src/TurboHttp/Diagnostics/TurboHttpInstrumentation.cs`
+- [x] Static `ActivitySource` named `"TurboHttp"` with assembly version
+- [x] Helper methods for creating Activities:
   - `StartRequest(HttpRequestMessage)` → Activity with `http.request.method`, `url.full`, `server.address`, `server.port`
   - `StartConnect(Uri)` → Activity "TurboHttp.Connect"
   - `StartRedirect(Uri, int statusCode)` → Activity "TurboHttp.Redirect"
   - `StartRetry(int attemptNumber)` → Activity "TurboHttp.Retry"
   - `StartCacheLookup(Uri)` → Activity "TurboHttp.CacheLookup"
-- [ ] `SetResponse(Activity, HttpResponseMessage)` enrichment: `http.response.status_code`
-- [ ] `SetError(Activity, Exception)` enrichment: `otel.status_code = ERROR`, `exception.type`, `exception.message`
-- [ ] All span/tag names follow [OTel HTTP semantic conventions](https://opentelemetry.io/docs/specs/semconv/http/)
-- [ ] Build succeeds with 0 errors
+- [x] `SetResponse(Activity, HttpResponseMessage)` enrichment: `http.response.status_code`
+- [x] `SetError(Activity, Exception)` enrichment: `otel.status_code = ERROR`, `exception.type`, `exception.message`
+- [x] All span/tag names follow [OTel HTTP semantic conventions](https://opentelemetry.io/docs/specs/semconv/http/)
+- [x] Build succeeds with 0 errors
 
 ### TASK-010-002: Instrument Request Lifecycle in Stages
 **Description:** As an operator, I want to see spans for each stage of a request so that I can diagnose latency.
