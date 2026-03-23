@@ -260,6 +260,13 @@ public sealed class Http2FrameDecoder
 
     private static GoAwayFrame ParseGoAway(ReadOnlyMemory<byte> payload)
     {
+        if (payload.Length < GoAwayMinPayloadSize)
+        {
+            throw new Http2Exception(
+                $"RFC 9113 §6.8: GOAWAY payload must be at least {GoAwayMinPayloadSize} bytes; got {payload.Length}.",
+                Http2ErrorCode.FrameSizeError);
+        }
+
         var span = payload.Span;
         var lastStream = (int)(BinaryPrimitives.ReadUInt32BigEndian(span) & StreamIdMask);
         var errorCode = (Http2ErrorCode)BinaryPrimitives.ReadUInt32BigEndian(span[GoAwayErrorCodeOffset..]);
@@ -270,6 +277,13 @@ public sealed class Http2FrameDecoder
     private static PushPromiseFrame ParsePushPromise(
         int streamId, byte flags, ReadOnlyMemory<byte> payload)
     {
+        if (payload.Length < PushPromiseHeaderBlockOffset)
+        {
+            throw new Http2Exception(
+                $"RFC 9113 §6.6: PUSH_PROMISE payload must be at least {PushPromiseHeaderBlockOffset} bytes; got {payload.Length}.",
+                Http2ErrorCode.FrameSizeError);
+        }
+
         var span = payload.Span;
         var promised = (int)(BinaryPrimitives.ReadUInt32BigEndian(span) & StreamIdMask);
         var endHeaders = (flags & (byte)Headers.EndHeaders) != 0;

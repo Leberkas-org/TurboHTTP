@@ -32,9 +32,9 @@ Extend the existing HTTP/2 fuzz harness with additional attack vectors and add c
 **Parallel:** yes — can run alongside TASK-015-002
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/Http2FrameFuzzTests.cs`
-- [ ] Tests with `[Theory]` + `[InlineData(seed)]` for fixed seeds
-- [ ] Fuzz categories:
+- [x] Test file `src/TurboHttp.Tests/Security/Http2FrameFuzzTests.cs`
+- [x] Tests with `[Theory]` + `[InlineData(seed)]` for fixed seeds
+- [x] Fuzz categories:
   - Pure random bytes (9–1024 bytes, mimicking frame header + payload) → no crash
   - Valid 9-byte frame header + random payload → graceful error or valid parse
   - Frame with length field > actual payload → partial frame handling
@@ -45,8 +45,8 @@ Extend the existing HTTP/2 fuzz harness with additional attack vectors and add c
   - Rapid alternation of valid/invalid frames → state machine consistency
   - SETTINGS frame with unknown parameters → ignored, not error
   - WINDOW_UPDATE with 0 increment → `PROTOCOL_ERROR`
-- [ ] Each iteration bounded by 5-second timeout
-- [ ] All tests pass
+- [x] Each iteration bounded by 5-second timeout
+- [x] All tests pass
 
 ### TASK-015-002: HPACK Decoder Fuzzing
 **Description:** As a security engineer, I want to fuzz the HPACK decoder with adversarial compressed header blocks.
