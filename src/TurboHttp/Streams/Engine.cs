@@ -75,13 +75,13 @@ internal sealed class Engine
     ///   <item><description>RetryBidiStage — RFC 9110 §9.2, internal feedback loop</description></item>
     ///   <item><description>ExpectContinueBidiStage — RFC 9110 §10.1.1, Expect: 100-continue</description></item>
     ///   <item><description>CacheBidiStage — RFC 9111, internal short-circuit</description></item>
-    ///   <item><description>DecompressionBidiStage — RFC 9110 §8.4</description></item>
+    ///   <item><description>ContentEncodingBidiStage — RFC 9110 §8.4 (request compression + response decompression)</description></item>
     /// </list>
-    /// <para>Request direction: Handler[0] → … → Handler[N] → Redirect → Cookie → Retry → Expect100 → Cache → Decomp → Engine</para>
-    /// <para>Response direction: Engine → Decomp → Cache → Expect100 → Retry → Cookie → Redirect → Handler[N] → … → Handler[0]</para>
+    /// <para>Request direction: Handler[0] → … → Handler[N] → Redirect → Cookie → Retry → Expect100 → Cache → ContentEncoding → Engine</para>
+    /// <para>Response direction: Engine → ContentEncoding → Cache → Expect100 → Retry → Cookie → Redirect → Handler[N] → … → Handler[0]</para>
     /// <para>Only BidiFlows for non-null policies are included. When all policies are null,
     /// no handlers exist, and <see cref="PipelineDescriptor.AutomaticDecompression"/> is true,
-    /// the graph is: Enricher → DecompressionBidi(Engine) → Output.</para>
+    /// the graph is: Enricher → ContentEncodingBidi(Engine) → Output.</para>
     /// </summary>
     private static Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> BuildExtendedPipeline(
         IActorRef poolRouter,
@@ -103,16 +103,11 @@ internal sealed class Engine
         BidiFlow<HttpRequestMessage, HttpRequestMessage,
             HttpResponseMessage, HttpResponseMessage, NotUsed>? features = null;
 
-        if (descriptor.RequestCompressionPolicy is not null)
+        if (descriptor.AutomaticDecompression || descriptor.RequestCompressionPolicy is not null)
         {
-            var compression = BidiFlow.FromGraph(new RequestCompressionBidiStage(descriptor.RequestCompressionPolicy));
-            features = features is not null ? compression.Atop(features) : compression;
-        }
-
-        if (descriptor.AutomaticDecompression)
-        {
-            var decomp = BidiFlow.FromGraph(new DecompressionBidiStage());
-            features = features is not null ? decomp.Atop(features) : decomp;
+            var contentEncoding = BidiFlow.FromGraph(
+                new ContentEncodingBidiStage(descriptor.AutomaticDecompression, descriptor.RequestCompressionPolicy));
+            features = features is not null ? contentEncoding.Atop(features) : contentEncoding;
         }
 
         if (descriptor.CacheStore is not null)

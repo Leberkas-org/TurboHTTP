@@ -56,10 +56,7 @@ public sealed class Http30DecoderStage : GraphStage<FlowShape<IInputItem, Http3F
                     var visible = new List<Http3Frame>(frames.Count);
                     for (var i = 0; i < frames.Count; i++)
                     {
-                        if (frames[i] is not null)
-                        {
-                            visible.Add(frames[i]);
-                        }
+                        visible.Add(frames[i]);
                     }
 
                     if (visible.Count > 0)

@@ -19,7 +19,7 @@ namespace TurboHttp.Streams.Stages.Decoding;
 /// HEADERS frames are always complete (no CONTINUATION frames in HTTP/3).
 ///
 /// Uses QPACK (RFC 9204) for header decompression. Content-Encoding is preserved
-/// on the response for the feature layer (DecompressionBidiStage) to handle.
+/// on the response for the feature layer (ContentEncodingBidiStage) to handle.
 /// </summary>
 public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpResponseMessage>>
 {

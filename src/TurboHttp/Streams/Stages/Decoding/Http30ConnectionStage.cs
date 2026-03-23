@@ -185,7 +185,7 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
 
         protected override void OnTimer(object timerKey)
         {
-            if (timerKey is not string key || key != IdleCheckTimerKey)
+            if (timerKey is not IdleCheckTimerKey)
             {
                 return;
             }

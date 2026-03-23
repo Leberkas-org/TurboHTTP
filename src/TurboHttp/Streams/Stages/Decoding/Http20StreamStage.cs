@@ -242,7 +242,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
 
                     if (IsContentHeader(h.Name))
                     {
-                        state.ContentHeaders ??= new List<(string, string)>();
+                        state.ContentHeaders ??= [];
                         state.ContentHeaders.Add((h.Name, h.Value));
                     }
 
@@ -268,7 +268,7 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
         }
         private static void ApplyContentHeaders(HttpResponseMessage response, StreamState state)
         {
-            if (state.ContentHeaders is null || response.Content is null)
+            if (state.ContentHeaders is null)
             {
                 return;
             }

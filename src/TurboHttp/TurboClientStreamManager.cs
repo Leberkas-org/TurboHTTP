@@ -80,14 +80,10 @@ internal sealed class TurboClientStreamManager
         {
             if (task.Exception is not null)
             {
-                File.AppendAllText(@"D:\GIT\Akka.Streams.Http\diag.log",
-                    $"[DIAG-MGR] SinkTask FAULTED: {task.Exception}\n");
                 responseWriter.Complete(task.Exception);
             }
             else
             {
-                File.AppendAllText(@"D:\GIT\Akka.Streams.Http\diag.log",
-                    "[DIAG-MGR] SinkTask completed normally\n");
                 responseWriter.Complete();
             }
         }, TaskContinuationOptions.ExecuteSynchronously);

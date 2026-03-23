@@ -118,4 +118,10 @@ public static class TurboClientServiceCollectionExtensions
         services.AddTransient<TImpl>(sp => (TImpl)sp.GetRequiredService<ITurboHttpClientFactory>().CreateClient(name));
         return services.AddTurboHttpClient(name, configure);
     }
+    
+    public static ITurboHttpClient CreateClient(this ITurboHttpClientFactory factory)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+        return factory.CreateClient(string.Empty);
+    }
 }

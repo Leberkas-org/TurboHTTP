@@ -273,7 +273,7 @@ internal sealed class CacheBidiStage
                 // RFC 9111 §4.4 — invalidate stored entries after unsafe method,
                 // but only when the response indicates success (non-error status).
                 var statusCode = (int)response.StatusCode;
-                if (statusCode >= 200 && statusCode < 400 && request.RequestUri is not null)
+                if (statusCode is >= 200 and < 400 && request.RequestUri is not null)
                 {
                     _stage._store!.Invalidate(request.RequestUri);
 

@@ -105,12 +105,9 @@ internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape
 
                     TryCorrelateAndEmit();
 
-                    if (_pipelineUnlocked || _pending.Count == 0)
+                    if ((_pipelineUnlocked || _pending.Count == 0) && !HasBeenPulled(stage._inRequest))
                     {
-                        if (!HasBeenPulled(stage._inRequest))
-                        {
-                            Pull(stage._inRequest);
-                        }
+                        Pull(stage._inRequest);
                     }
                 },
                 onUpstreamFinish: () =>
@@ -167,12 +164,9 @@ internal sealed class Http1XCorrelationStage : GraphStage<Http1XCorrelationShape
                         Pull(stage._inResponse);
                     }
 
-                    if (!IsClosed(stage._inRequest) && !HasBeenPulled(stage._inRequest))
+                    if (!IsClosed(stage._inRequest) && !HasBeenPulled(stage._inRequest) && (_pipelineUnlocked || _pending.Count == 0))
                     {
-                        if (_pipelineUnlocked || _pending.Count == 0)
-                        {
-                            Pull(stage._inRequest);
-                        }
+                        Pull(stage._inRequest);
                     }
                 });
 

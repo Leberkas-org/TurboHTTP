@@ -18,7 +18,7 @@ namespace TurboHttp.Streams;
 ///   <item><description>Partition → per-version BuildProtocolFlow → Merge — version-specific encode/decode.
 ///         ConnectionReuseStage runs inside each substream (INV-1).</description></item>
 /// </list>
-/// <para>Decompression is handled externally by <see cref="Stages.DecompressionBidiStage"/>
+/// <para>Decompression is handled externally by <see cref="Stages.Features.ContentEncodingBidiStage"/>
 /// in the feature BidiFlow chain (see <see cref="Engine"/>).</para>
 /// </summary>
 internal static class ProtocolCoreGraphBuilder
@@ -130,8 +130,7 @@ internal static class ProtocolCoreGraphBuilder
                     .Buffer(1, OverflowStrategy.Backpressure))
                 .To(transportMerge.Preferred);
 
-            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(
-                extract.In, connReuse.Out0);
+            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(extract.In, connReuse.Out0);
         });
     }
 
