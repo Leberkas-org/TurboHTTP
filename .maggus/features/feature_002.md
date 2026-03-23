@@ -33,9 +33,9 @@ Add end-to-end integration tests for redirect handling using the existing Kestre
 **Parallel:** yes — can run alongside TASK-002-002
 
 **Acceptance Criteria:**
-- [ ] Test file `RedirectIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http1Integration"`, uses `KestrelFixture`
-- [ ] Tests cover all redirect routes:
+- [x] Test file `RedirectIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http1Integration"`, uses `KestrelFixture`
+- [x] Tests cover all redirect routes:
   - `GET /redirect/{code}/{target}` — 301, 302, 307, 308 to /hello
   - `GET /redirect/chain/{n}` — chain of N redirects ending at /hello
   - `GET /redirect/loop` — infinite loop → expect exception or error status
@@ -47,8 +47,8 @@ Add end-to-end integration tests for redirect handling using the existing Kestre
   - `POST /redirect/308` — 308 preserves method + body → POST /echo
   - `GET /redirect/cross-origin` — 302 to different origin, verify header stripping
   - `GET /redirect/cross-origin-auth` — 302 stripping Authorization header
-- [ ] Each test asserts final status code AND response body
-- [ ] All tests pass
+- [x] Each test asserts final status code AND response body
+- [x] All tests pass
 
 ### TASK-002-002: Redirect Integration Tests — HTTP/2
 **Description:** As a library consumer, I want redirects to work correctly over HTTP/2.

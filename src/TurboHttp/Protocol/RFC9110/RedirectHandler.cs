@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using TurboHttp.Protocol.RFC6265;
 
 namespace TurboHttp.Protocol.RFC9110;
@@ -112,14 +114,27 @@ public sealed class RedirectHandler
             Version = original.Version
         };
 
+        // Copy request options (e.g. RequestId) so response correlation is preserved
+        CopyOptions(original, newRequest);
+
         // Copy non-sensitive headers from the original request
         var isCrossOrigin = IsCrossOrigin(original.RequestUri, locationUri);
         CopyHeaders(original, newRequest, isCrossOrigin);
 
-        // Preserve body if applicable
+        // Preserve body if applicable — buffer content bytes because the encoder
+        // disposes the stream on first use, breaking re-reads on redirect.
         if (preserveBody && original.Content != null)
         {
-            newRequest.Content = original.Content;
+            using var ms = new System.IO.MemoryStream();
+            original.Content.CopyTo(ms, null, CancellationToken.None);
+            var bytes = ms.ToArray();
+            var newContent = new ByteArrayContent(bytes);
+            foreach (var h in original.Content.Headers)
+            {
+                newContent.Headers.TryAddWithoutValidation(h.Key, h.Value);
+            }
+
+            newRequest.Content = newContent;
         }
 
         return newRequest;
@@ -242,6 +257,14 @@ public sealed class RedirectHandler
         }
 
         return newRequest;
+    }
+
+    private static void CopyOptions(HttpRequestMessage original, HttpRequestMessage newRequest)
+    {
+        foreach (var kvp in (IDictionary<string, object?>)original.Options)
+        {
+            ((IDictionary<string, object?>)newRequest.Options)[kvp.Key] = kvp.Value;
+        }
     }
 
     private static void CopyHeaders(

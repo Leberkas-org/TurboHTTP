@@ -137,7 +137,7 @@ internal static class Routes
         app.MapGet("/redirect/relative", (HttpContext ctx) =>
         {
             ctx.Response.StatusCode = 302;
-            ctx.Response.Headers.Location = "hello";
+            ctx.Response.Headers.Location = "../hello";
             return Results.Empty;
         });
 

@@ -5,7 +5,7 @@ using TurboHttp.Transport;
 namespace TurboHttp.StreamTests.IO;
 
 /// <summary>
-/// Tests <see cref="ClientState.DisposeAsync"/> — verifies that pending
+/// Tests <see cref="ClientState.Dispose"/> — verifies that pending
 /// <see cref="IMemoryOwner{T}"/> items in both channels are disposed during cleanup.
 /// </summary>
 public sealed class ClientStateTests
