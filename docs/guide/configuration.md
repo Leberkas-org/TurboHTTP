@@ -75,9 +75,9 @@ options = options with { BaseAddress = new Uri("https://api.example.com/v2/") };
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `ConnectTimeout` | `TimeSpan` | `00:00:10` | Timeout for establishing a new TCP connection |
-| `ReconnectInterval` | `TimeSpan` | `00:00:05` | Delay between reconnection attempts after failure |
+| `ReconnectInterval` | `TimeSpan` | `00:00:05` | How long to wait between reconnection attempts when a connection drops unexpectedly — useful for controlling how aggressively TurboHttp retries failed connections |
 | `IdleTimeout` | `TimeSpan` | `00:00:10` | Time a pooled connection may remain idle before eviction |
-| `MaxReconnectAttempts` | `int` | `10` | Maximum reconnection attempts before the connection is abandoned |
+| `MaxReconnectAttempts` | `int` | `10` | How many times TurboHttp tries to re-establish a dropped connection before giving up — increase this for unreliable networks, decrease it to fail fast |
 
 ```csharp
 options = options with

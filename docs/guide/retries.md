@@ -1,6 +1,6 @@
 # Automatic Retries
 
-TurboHttp automatically retries failed requests when it is safe to do so — specifically, when the HTTP method is **idempotent** and the failure is a transient network or server error.
+TurboHttp automatically retries failed requests when it is safe to do so — specifically, when the HTTP method is **idempotent** (safe to repeat without side effects) and the failure is a transient network or server error.
 
 Retries are disabled by default. Enable them by setting `RetryPolicy` in `TurboClientOptions`.
 
@@ -90,7 +90,7 @@ var client = factory.CreateClient(opts => opts with
 
 The following situations are **never retried**, regardless of the method or status code:
 
-- **Partially-consumed request body** — if the request body has been partially sent (e.g. a streaming upload), TurboHttp cannot rewind it to the beginning, so retrying would send an incomplete body.
+- **Request body is a stream that cannot be rewound** — if the request body has been partially sent (e.g. a streaming upload), TurboHttp cannot restart it from the beginning, so retrying would send an incomplete body.
 - **Non-idempotent methods** — `POST`, `PATCH`, and `CONNECT` are never retried because repeating the request could create duplicate records or have unintended side effects.
 - **Retry limit reached** — once `MaxRetries` attempts have been made, the last failure is returned to the caller.
 - **`RetryPolicy` is null** — retries are disabled entirely.

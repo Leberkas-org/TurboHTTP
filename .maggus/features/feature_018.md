@@ -50,16 +50,16 @@ The `docs/CLAUDE.md` guardrails are already in place. This feature applies those
 **Parallel:** yes — can run alongside TASK-018-001, TASK-018-003, TASK-018-004, TASK-018-005
 
 **Acceptance Criteria:**
-- [ ] **configuration.md**: `ReconnectInterval` and `MaxReconnectAttempts` have one-sentence context explaining when/why a user needs them
-- [ ] **retries.md**: "idempotent" defined inline at first use ("safe to repeat without side effects")
-- [ ] **retries.md**: "Partially-consumed request body" simplified to "stream that cannot be rewound"
-- [ ] **caching.md**: Status codes grouped by category instead of listed as numbers
-- [ ] **caching.md**: Heuristic freshness formula explained in plain language
-- [ ] **caching.md**: `no-cache` split into separate Request/Response rows in table
-- [ ] **connection-pooling.md**: Opening simplified to one clear sentence about automatic pool management
-- [ ] **connection-pooling.md**: Backoff table demoted to a callout/note, not prominent section
-- [ ] **connection-pooling.md**: Default per-host limit stated explicitly (6 for HTTP/1.1, 1 multiplexed for HTTP/2)
-- [ ] No RFC references on any of these pages
+- [x] **configuration.md**: `ReconnectInterval` and `MaxReconnectAttempts` have one-sentence context explaining when/why a user needs them
+- [x] **retries.md**: "idempotent" defined inline at first use ("safe to repeat without side effects")
+- [x] **retries.md**: "Partially-consumed request body" simplified to "stream that cannot be rewound"
+- [x] **caching.md**: Status codes grouped by category instead of listed as numbers
+- [x] **caching.md**: Heuristic freshness formula explained in plain language
+- [x] **caching.md**: `no-cache` split into separate Request/Response rows in table
+- [x] **connection-pooling.md**: Opening simplified to one clear sentence about automatic pool management
+- [x] **connection-pooling.md**: Backoff table demoted to a callout/note, not prominent section
+- [x] **connection-pooling.md**: Default per-host limit stated explicitly (6 for HTTP/1.1, 1 multiplexed for HTTP/2)
+- [x] No RFC references on any of these pages
 
 ### TASK-018-003: Split guide/advanced.md
 **Description:** As a library user, I want the Channel API explained in the Getting Started guide where I first learn about TurboHttp, and custom stages explained in Architecture where they belong.

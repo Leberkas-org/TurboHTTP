@@ -9,7 +9,10 @@ Caching is disabled by default. Enable it by setting `CachePolicy` in `TurboClie
 TurboHttp caches **GET responses** that the server declares as cacheable. A response is stored when:
 
 - The request method is `GET`
-- The response status is `200 OK`, `203 Non-Authoritative`, `204 No Content`, `206 Partial Content`, or `301 Moved Permanently`
+- The response status indicates success or a permanent redirect:
+  - **Successful responses:** `200 OK`, `204 No Content`, `206 Partial Content`
+  - **Modified by intermediary:** `203 Non-Authoritative Information`
+  - **Permanent redirect:** `301 Moved Permanently`
 - The response does **not** include `Cache-Control: no-store` or `Cache-Control: private`
 - At least one freshness indicator is present (`max-age`, `s-maxage`, `Expires`, or a heuristic lifetime can be calculated)
 
@@ -24,7 +27,7 @@ Freshness is evaluated in this priority order:
 | `s-maxage` directive | `Cache-Control: s-maxage=3600` | Shared-cache lifetime; takes priority over `max-age` |
 | `max-age` directive | `Cache-Control: max-age=300` | Seconds from the response date |
 | `Expires` header | `Expires: Fri, 21 Mar 2026 12:00:00 GMT` | Absolute expiry date; ignored when `max-age` is present |
-| Heuristic freshness | _(no directive)_ | 10% of the age since `Last-Modified`; applied only when no explicit directive is given |
+| Heuristic freshness | _(no directive)_ | When the server provides no explicit cache lifetime, TurboHttp estimates one: if a resource was last changed 100 days ago, it is assumed fresh for 10 days (10% of the time since the last modification). This only applies when no `max-age`, `s-maxage`, or `Expires` header is present. |
 
 Once a cached response becomes stale, TurboHttp issues a **conditional request** to revalidate it rather than fetching the full response again (see [Conditional Requests](#conditional-requests) below).
 
@@ -35,11 +38,11 @@ Once a cached response becomes stale, TurboHttp issues a **conditional request**
 | `max-age=N` | Response | Cache for N seconds from the response date |
 | `s-maxage=N` | Response | Shared-cache lifetime; overrides `max-age` |
 | `no-store` | Response | Never cache this response |
-| `no-cache` | Response / Request | Cache the response, but **always revalidate** before serving it |
+| `no-cache` | Response | Cache the response, but **always revalidate** with the server before serving it |
 | `must-revalidate` | Response | Once stale, do not serve the cached copy without revalidation |
 | `private` | Response | Do not cache — response is personalised to one user |
 | `public` | Response | Explicitly marks the response as cacheable, even on shared caches |
-| `no-cache` | Request | Bypass cache; fetch fresh from the server |
+| `no-cache` | Request | Bypass cache; fetch a fresh response from the server |
 | `no-store` | Request | Bypass cache and do not store the response |
 | `only-if-cached` | Request | Return cached copy or `504 Gateway Timeout` — never go to the network |
 

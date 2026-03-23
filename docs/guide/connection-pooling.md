@@ -1,6 +1,6 @@
 # Connection Pooling
 
-TurboHttp manages a pool of TCP connections for every host you talk to. Connections are created on demand, reused across requests, and automatically cleaned up when idle.
+TurboHttp automatically manages a pool of connections for each host, so you never need to open, close, or track connections yourself.
 
 ## How It Works
 
@@ -31,23 +31,20 @@ The idle timeout is measured from the moment a connection returns to the pool wi
 
 ## Automatic Reconnect
 
-If a connection is dropped unexpectedly (network interruption, server-side timeout, or RST), TurboHttp detects the failure and reconnects automatically. Reconnect attempts use exponential backoff — each failed attempt waits progressively longer before the next try:
+If a connection is dropped unexpectedly (network interruption, server-side timeout, or RST), TurboHttp detects the failure and reconnects automatically. While reconnecting, queued requests wait for the connection to recover. Once reconnected, TurboHttp replays the queue.
 
-| Attempt | Wait |
-|---------|------|
-| 1st | 1 s |
-| 2nd | 2 s |
-| 3rd | 4 s |
-| 4th | 8 s |
-| 5th+ | 16 s (capped) |
-
-While reconnecting, queued requests wait for the connection to recover. Once reconnected, TurboHttp replays the queue.
+::: tip Backoff timing
+Reconnect attempts use exponential backoff — each failed attempt waits progressively longer before the next try (1 s → 2 s → 4 s → 8 s → 16 s cap). You can control timing with `ReconnectInterval` and `MaxReconnectAttempts` in [Configuration](./configuration).
+:::
 
 ## Per-Host Concurrency Limits
 
-Each host has a configurable maximum number of simultaneous connections. The default limit is chosen conservatively to avoid overwhelming servers and saturating the local network stack.
+Each host has a configurable maximum number of simultaneous connections:
 
-For HTTP/2 hosts, the limit is effectively 1 (one multiplexed connection per host) unless you explicitly configure more. Multiple streams flow over that connection.
+- **HTTP/1.1** — default limit is **6 connections per host**
+- **HTTP/2** — default is **1 multiplexed connection per host** (multiple concurrent requests share that single connection as independent streams)
+
+These defaults are chosen conservatively to avoid overwhelming servers. Adjust them via `ConnectionPolicy` (see [Configuration](#configuration) below).
 
 ## Configuration
 
