@@ -74,13 +74,13 @@ Add metrics instrumentation to TurboHttp using `System.Diagnostics.Metrics.Meter
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] Test file in `src/TurboHttp.Tests/`
-- [ ] Uses `MeterListener` to capture emitted metrics
-- [ ] Verifies request.count incremented on each request
-- [ ] Verifies cache.hit/miss counters
-- [ ] Verifies retry.count with correct attempt tags
-- [ ] Verifies connection.active incremented/decremented
-- [ ] All tests pass
+- [x] Test file in `src/TurboHttp.Tests/`
+- [x] Uses `MeterListener` to capture emitted metrics
+- [x] Verifies request.count incremented on each request
+- [x] Verifies cache.hit/miss counters
+- [x] Verifies retry.count with correct attempt tags
+- [x] Verifies connection.active incremented/decremented
+- [x] All tests pass
 
 ## Task Dependency Graph
 
