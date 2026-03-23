@@ -127,7 +127,7 @@ await foreach (var response in client.Responses.ReadAllAsync(ct))
 }
 ```
 
-Requests are matched to responses in submission order (HTTP/1.x) or by stream ID (HTTP/2). See [Advanced Usage guide](/guide/advanced) for batch patterns and backpressure.
+Requests are matched to responses in submission order (HTTP/1.x) or by stream ID (HTTP/2). See [Getting Started guide](/guide/#high-throughput-usage) for batch patterns and backpressure.
 
 ### CancelPendingRequests
 
@@ -348,6 +348,6 @@ These types are part of the public API and can be customized via the builder ext
 | `HttpCacheStore` | In-memory LRU cache backend — provided via `.WithCache()` | [Caching](/guide/caching) |
 | `RedirectHandler` | Built-in HTTP redirect handling — controlled via `.WithRedirect()` | [Redirects](/guide/redirects) |
 | `RetryEvaluator` | Built-in idempotent method retry — controlled via `.WithRetry()` | [Retries](/guide/retries) |
-| `TurboHandler` | Custom request/response middleware — registered via `.AddHandler<T>()` | [Advanced Usage](/guide/advanced) |
+| `TurboHandler` | Custom request/response middleware — registered via `.AddHandler<T>()` | [Extending the Pipeline](/architecture/extending) |
 
-See the [Configuration guide](/guide/configuration) and [Advanced Usage guide](/guide/advanced) for integration patterns.
+See the [Configuration guide](/guide/configuration) and [Extending the Pipeline](/architecture/extending) for integration patterns.

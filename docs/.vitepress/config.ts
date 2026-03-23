@@ -46,9 +46,8 @@ export default defineConfig({
                     ],
                 },
                 {
-                    text: 'Advanced',
+                    text: 'Help',
                     items: [
-                        { text: 'Advanced Usage', link: '/guide/advanced' },
                         { text: 'Troubleshooting & FAQ', link: '/guide/troubleshooting' },
                     ],
                 },
@@ -63,6 +62,7 @@ export default defineConfig({
                         { text: 'Protocol Engines', link: '/architecture/engines' },
                         { text: 'Request Pipeline', link: '/architecture/pipeline' },
                         { text: 'End-to-End Scenarios', link: '/architecture/scenarios' },
+                        { text: 'Extending the Pipeline', link: '/architecture/extending' },
                     ],
                 },
             ],

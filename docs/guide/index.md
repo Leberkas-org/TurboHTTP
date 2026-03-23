@@ -29,30 +29,70 @@ Console.WriteLine($"Status: {response.StatusCode}");
 Console.WriteLine(await response.Content.ReadAsStringAsync());
 ```
 
-## Channel-Based API
+## High-Throughput Usage
 
-For high-throughput scenarios, use the channel API to decouple request production from response consumption:
+In addition to `SendAsync`, TurboHttp exposes a channel-based API for scenarios where you want to stream requests and responses without `await`-ing each one individually.
 
 ```csharp
-var actorSystem = ActorSystem.Create("turbo");
-await using var client = new TurboHttpClient(new TurboClientOptions
+var client = new TurboHttpClient(new TurboClientOptions
+{
+    BaseAddress = new Uri("https://api.example.com"),
+}, actorSystem);
+
+// Write requests to the input channel
+ChannelWriter<HttpRequestMessage> requestWriter = client.Requests;
+
+// Read responses from the output channel
+ChannelReader<HttpResponseMessage> responseReader = client.Responses;
+```
+
+Use the channel API when:
+- You have a producer loop generating requests faster than you can await responses
+- You want to decouple request creation from response processing
+- You are integrating TurboHttp into a pipeline that already uses `System.Threading.Channels`
+
+### Batch Pattern
+
+Write requests from one task and read responses from another, running concurrently:
+
+```csharp
+var client = new TurboHttpClient(new TurboClientOptions
 {
     BaseAddress = new Uri("https://api.example.com"),
     DefaultRequestVersion = HttpVersion.Version20,
 }, actorSystem);
 
-// Producer: write requests without waiting for responses
-await client.Requests.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/1"));
-await client.Requests.WriteAsync(new HttpRequestMessage(HttpMethod.Get, "/item/2"));
+var ids = Enumerable.Range(1, 1000).ToList();
 
-// Consumer: read responses as they arrive
-await foreach (var response in client.Responses.ReadAllAsync())
+// Producer: write all requests without waiting for responses
+var producer = Task.Run(async () =>
 {
-    Console.WriteLine($"{response.StatusCode}");
-}
+    foreach (var id in ids)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/items/{id}");
+        await client.Requests.WriteAsync(request);
+    }
+    client.Requests.Complete();
+});
+
+// Consumer: process responses as they arrive
+var consumer = Task.Run(async () =>
+{
+    await foreach (var response in client.Responses.ReadAllAsync())
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"{(int)response.StatusCode}: {body.Length} bytes");
+    }
+});
+
+await Task.WhenAll(producer, consumer);
 ```
 
-With HTTP/2, all requests flow over a single TCP connection as concurrent streams.
+With HTTP/2, all 1000 requests flow over a single TCP connection as concurrent streams. With HTTP/1.1, they are serialised per connection but the producer/consumer split still keeps throughput high.
+
+### Backpressure
+
+The channel has a bounded capacity. If the connection cannot keep up with your producer, `WriteAsync` will pause automatically until there is room. You never drop requests — the channel applies backpressure instead.
 
 ## What's Included
 
@@ -86,7 +126,7 @@ TurboHttp works out of the box — no middleware to wire up, no Polly policies t
 - [Content Encoding](./content-encoding) — gzip, deflate, Brotli, disabling decompression
 - [Connection Pooling](./connection-pooling) — pool lifecycle, idle eviction, concurrency limits
 - [HTTP/2 & Multiplexing](./http2) — when to use HTTP/2, header compression, flow control
-- [Advanced Usage](./advanced) — channel API, custom retry/redirect/cookie/cache implementations
+
 - [Troubleshooting](./troubleshooting) — FAQ, common issues, debugging tips
 
 **Deep dive:**

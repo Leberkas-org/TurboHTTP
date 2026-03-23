@@ -108,7 +108,7 @@ No Polly dependency needed. TurboHttp automatically:
 - Respects `Retry-After` headers
 - Applies exponential backoff
 
-Retry behavior is controlled via the built-in `.WithRetry()` builder extension — see [Advanced Usage](./advanced) for custom policies.
+Retry behavior is controlled via the built-in `.WithRetry()` builder extension — see [Automatic Retries](./retries) for custom policies.
 
 ## Cookie Management
 

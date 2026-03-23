@@ -70,12 +70,12 @@ The `docs/CLAUDE.md` guardrails are already in place. This feature applies those
 **Parallel:** yes — can run alongside TASK-018-001, TASK-018-002, TASK-018-004, TASK-018-005
 
 **Acceptance Criteria:**
-- [ ] Channel API section (high-throughput, backpressure, batch pattern) moved into `guide/index.md` as a "High-Throughput Usage" section
-- [ ] Custom Stage section moved into `architecture/pipeline.md` or a new `architecture/extending.md` with prerequisite callout ("Requires Akka.Streams knowledge")
-- [ ] `advanced.md` file removed
-- [ ] VitePress sidebar config updated — `advanced.md` removed, no broken links
-- [ ] All cross-references from other pages updated (migration.md, troubleshooting.md link to advanced)
-- [ ] Channel API explanation simplified: focus on "when and why" not Akka internals
+- [x] Channel API section (high-throughput, backpressure, batch pattern) moved into `guide/index.md` as a "High-Throughput Usage" section
+- [x] Custom Stage section moved into `architecture/pipeline.md` or a new `architecture/extending.md` with prerequisite callout ("Requires Akka.Streams knowledge")
+- [x] `advanced.md` file removed
+- [x] VitePress sidebar config updated — `advanced.md` removed, no broken links
+- [x] All cross-references from other pages updated (migration.md, troubleshooting.md link to advanced)
+- [x] Channel API explanation simplified: focus on "when and why" not Akka internals
 
 ### TASK-018-004: Revise architecture/pipeline.md and handlers.md
 **Description:** As an interested user looking under the hood, I want architecture pages that explain what pipeline stages do for me, without engineering justifications or unexplained jargon.
