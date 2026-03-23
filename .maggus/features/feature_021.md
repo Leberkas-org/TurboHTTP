@@ -116,12 +116,12 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 **Parallel:** yes — can run alongside TASK-021-001, TASK-021-002, TASK-021-004, TASK-021-005, TASK-021-006, TASK-021-007
 
 **Acceptance Criteria:**
-- [ ] `RedirectH10IntegrationTests.cs` created with 14 tests mirroring `RedirectIntegrationTests`
-- [ ] `RetryH10IntegrationTests.cs` created with 9 tests mirroring `RetryIntegrationTests`
-- [ ] All tests use `new Version(1, 0)` and `[Collection("Http1Integration")]`
-- [ ] DisplayNames follow `Redirect-H10-001` / `Retry-H10-001` pattern
-- [ ] All 23 tests pass
-- [ ] Build passes with zero warnings
+- [x] `RedirectH10IntegrationTests.cs` created with 14 tests mirroring `RedirectIntegrationTests`
+- [x] `RetryH10IntegrationTests.cs` created with 9 tests mirroring `RetryIntegrationTests`
+- [x] All tests use `new Version(1, 0)` and `[Collection("Http1Integration")]`
+- [x] DisplayNames follow `Redirect-H10-001` / `Retry-H10-001` pattern
+- [~] ⚠️ BLOCKED: All 23 tests pass — `ExtractOptionsStage` emits `ConnectItem` only once per client; HTTP/1.0 connection-close prevents redirect/retry follow-up requests from acquiring a new connection. Requires architectural change to support reconnection within the pipeline.
+- [x] Build passes with zero warnings
 
 **Files:**
 - `src/TurboHttp.IntegrationTests/RedirectH10IntegrationTests.cs` (NEW)
