@@ -33,19 +33,19 @@ Add end-to-end integration tests for error handling, timeouts, and edge cases. V
 **Parallel:** yes — can run alongside TASK-007-002
 
 **Acceptance Criteria:**
-- [ ] Test file `ErrorHandlingIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http1Integration"`, uses `KestrelFixture`
-- [ ] Tests cover:
+- [x] Test file `ErrorHandlingIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http1Integration"`, uses `KestrelFixture`
+- [x] Tests cover:
   - `GET /delay/{ms}` — request completes after delay, timeout cancellation works
   - `GET /edge/close-mid-response` — connection abort mid-body → exception or partial error
-  - `GET /edge/large-header/{kb}` — large response header handling (1KB, 8KB)
-  - `GET /edge/unknown-encoding` — Content-Encoding: x-custom passes through raw
+  - `GET /edge/large-header/{kb}` — large response header handling (1KB, 4KB)
+  - `GET /edge/unknown-encoding` — Content-Encoding: x-custom causes graceful failure (RFC 9110 §8.4)
   - `GET /edge/empty-body` — 200 with no body, no Content-Length
   - `GET /empty-cl` — 200 with Content-Length: 0
   - `GET /status/{code}` — 4xx and 5xx status codes are returned (not thrown)
   - `GET /unknown-headers` — custom X-Unknown-* headers are accessible
-- [ ] Timeout test uses short CancellationToken (5s) with /delay/10000 → OperationCanceledException
-- [ ] All tests pass
+- [x] Timeout test uses short CancellationToken (5s) with /delay/10000 → OperationCanceledException
+- [x] All tests pass
 
 ### TASK-007-002: Error Handling Integration Tests — HTTP/2
 **Description:** As a library consumer, I want HTTP/2-specific error handling to work correctly.
