@@ -1,8 +1,11 @@
 using Akka.Actor;
+using Akka.Configuration;
 using Akka.DependencyInjection;
 using Akka.Hosting;
+using Akka.Logger.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TurboHttp.Transport;
 
@@ -15,6 +18,9 @@ namespace TurboHttp.IntegrationTests.Shared;
 /// </summary>
 public sealed class ClientHelper : IAsyncDisposable
 {
+    private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
+        @"akka.loggers = [""Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging""]");
+
     private readonly Microsoft.Extensions.DependencyInjection.ServiceProvider _provider;
     private readonly ITurboHttpClient _client;
 
@@ -33,11 +39,14 @@ public sealed class ClientHelper : IAsyncDisposable
     /// <param name="port">The port the test server is listening on.</param>
     /// <param name="version">The HTTP version to use (e.g. <c>new Version(1, 1)</c>).</param>
     /// <param name="scheme">The URI scheme (<c>"http"</c> or <c>"https"</c>). Defaults to <c>"http"</c>.</param>
+    /// <param name="loggerFactory">Optional logger factory — when provided, registers it in DI
+    /// so the Akka logging bridge picks it up.</param>
     /// <param name="configure">Optional additional builder configuration.</param>
     public static ClientHelper CreateClient(
         int port,
         Version version,
         string scheme = "http",
+        ILoggerFactory? loggerFactory = null,
         Action<ITurboHttpClientBuilder>? configure = null)
     {
         var services = new ServiceCollection();
@@ -45,7 +54,16 @@ public sealed class ClientHelper : IAsyncDisposable
         // Create an ActorSystem with DependencyResolver so that Servus.Akka
         // ResolveActor<T> works inside TurboClientStreamManager.
         var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());
-        var system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", BootstrapSetup.Create().And(diSetup));
+        var bootstrap = BootstrapSetup.Create();
+
+        if (loggerFactory is not null)
+        {
+            // Bridge Akka logging to Microsoft.Extensions.Logging
+            LoggingLogger.LoggerFactory = loggerFactory;
+            bootstrap = bootstrap.WithConfig(LoggingHocon);
+        }
+
+        var system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", bootstrap.And(diSetup));
 
         // Register ClientManager so HostPoolActor.SpawnConnection() can resolve it.
         var clientManager = system.ActorOf(Props.Create(() => new ClientManager()), "client-manager");

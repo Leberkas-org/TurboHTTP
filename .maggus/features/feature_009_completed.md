@@ -63,9 +63,9 @@ Bridge Akka.NET's internal ILoggingAdapter to Microsoft.Extensions.Logging (ILog
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] Test in integration test project that configures a test ILogger and verifies Akka log messages appear
-- [ ] Or: verify that adding `ILoggerFactory` to the DI container in `ClientHelper` does not break existing smoke tests
-- [ ] All existing tests pass (`dotnet test src/TurboHttp.sln`)
+- [~] ⚠️ BLOCKED: Test in integration test project that configures a test ILogger and verifies Akka log messages appear — `Akka.Logger.Extensions.Logging` 1.4.22 has a runtime `MissingMethodException` on `LogMessage.get_Args()` with Akka.NET 1.5.62; no compatible version exists yet
+- [x] Or: verify that adding `ILoggerFactory` to the DI container in `ClientHelper` does not break existing smoke tests
+- [x] All existing tests pass (`dotnet test src/TurboHttp.sln`)
 
 ## Task Dependency Graph
 
