@@ -19,6 +19,8 @@ public sealed class Http2ConnectionActor : ConnectionActorBase
     {
     }
 
+    private protected override string ProtocolName => "HTTP/2";
+
     private protected override void Connect()
     {
         ClientManager.Tell(new ClientManager.CreateRunnerWithChannels(Options, Self, Out, In));

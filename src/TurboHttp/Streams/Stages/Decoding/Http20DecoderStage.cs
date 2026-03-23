@@ -2,6 +2,7 @@
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
 
@@ -85,6 +86,12 @@ public sealed class Http20DecoderStage : GraphStage<FlowShape<IInputItem, Http2F
 
                     if (visible.Count > 0)
                     {
+                        for (var i = 0; i < visible.Count; i++)
+                        {
+                            var f = visible[i];
+                            TurboHttpEventSource.Log.FrameReceived(f.Type.ToString(), f.StreamId, f.SerializedSize);
+                        }
+
                         EmitMultiple(stage._out, visible);
                     }
                     else

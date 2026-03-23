@@ -16,6 +16,8 @@ public sealed class Http1ConnectionActor : ConnectionActorBase
     {
     }
 
+    private protected override string ProtocolName => "HTTP/1.1";
+
     private protected override void Connect()
     {
         ClientManager.Tell(new ClientManager.CreateRunnerWithChannels(Options, Self, Out, In));

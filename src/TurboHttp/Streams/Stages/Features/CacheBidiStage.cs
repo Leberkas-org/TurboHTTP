@@ -180,14 +180,17 @@ internal sealed class CacheBidiStage
 
             Activity.Current = previous;
 
-            // Record cache hit/miss metrics
+            // Record cache hit/miss metrics + EventSource events
+            var uri = request.RequestUri?.OriginalString ?? "";
             if (isHit)
             {
                 TurboHttpMetrics.CacheHit.Add(1);
+                TurboHttpEventSource.Log.CacheHit(uri);
             }
             else
             {
                 TurboHttpMetrics.CacheMiss.Add(1);
+                TurboHttpEventSource.Log.CacheMiss(uri);
             }
 
             if (isHit)

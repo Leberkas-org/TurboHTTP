@@ -111,6 +111,8 @@ public sealed class Http3ConnectionActor : ConnectionActorBase
     /// </summary>
     private CancellationTokenSource? _inboundLoopCts;
 
+    private protected override string ProtocolName => "HTTP/3";
+
     public Http3ConnectionActor(QuicOptions options, IActorRef clientManager, RequestEndpoint requestEndpoint, TurboClientOptions config)
         : base(options, clientManager, requestEndpoint, config)
     {

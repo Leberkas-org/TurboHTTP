@@ -72,6 +72,11 @@ public abstract class ConnectionActorBase : ReceiveActor
     }
 
     /// <summary>
+    /// Protocol name for diagnostic events (e.g., "HTTP/1.1", "HTTP/2", "HTTP/3").
+    /// </summary>
+    private protected abstract string ProtocolName { get; }
+
+    /// <summary>
     /// Initiates the TCP/TLS/QUIC connection. Subclasses decide how to create the runner.
     /// </summary>
     private protected abstract void Connect();
@@ -101,13 +106,20 @@ public abstract class ConnectionActorBase : ReceiveActor
     /// </summary>
     private protected virtual void Reconnect()
     {
-        // Record connection duration metric
+        // Record connection duration metric and emit close events
         if (_connectTimestamp > 0)
         {
             var elapsed = Stopwatch.GetElapsedTime(_connectTimestamp);
             TurboHttpMetrics.ConnectionDuration.Record(elapsed.TotalSeconds,
                 new KeyValuePair<string, object?>("server.address", RequestEndpoint.Host ?? "unknown"),
                 new KeyValuePair<string, object?>("server.port", RequestEndpoint.Port));
+            TurboHttpMetrics.ConnectionActive.Add(-1);
+
+            var host = RequestEndpoint.Host ?? "unknown";
+            var port = RequestEndpoint.Port;
+            TurboHttpEventSource.Log.ConnectionClosed(host, port, elapsed.TotalMilliseconds);
+            TurboHttpDiagnosticListener.OnConnectionClosed(host, port, elapsed);
+
             _connectTimestamp = 0;
         }
 
@@ -166,6 +178,13 @@ public abstract class ConnectionActorBase : ReceiveActor
     private protected void NotifyParentReady(ConnectionHandle handle)
     {
         _connectTimestamp = Stopwatch.GetTimestamp();
+        TurboHttpMetrics.ConnectionActive.Add(1);
+
+        var host = RequestEndpoint.Host ?? "unknown";
+        var port = RequestEndpoint.Port;
+        TurboHttpEventSource.Log.ConnectionOpened(host, port, ProtocolName);
+        TurboHttpDiagnosticListener.OnConnectionOpened(host, port, ProtocolName);
+
         Context.Parent.Tell(new ConnectionReady(handle));
     }
 }

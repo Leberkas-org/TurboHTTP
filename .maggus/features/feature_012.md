@@ -81,13 +81,13 @@ Add low-level diagnostic events to TurboHttp using `DiagnosticListener` and `Eve
 **Model:** opus
 
 **Acceptance Criteria:**
-- [ ] `ConnectionActorBase` / `ClientByteMover` emits ConnectionOpened/Closed events
-- [ ] Pipeline entry (HandlerBidiStage or TurboHandler) emits RequestStart/Stop/Failed events
-- [ ] HTTP/2 encoding/decoding stages emit FrameSent/FrameReceived at Verbose level
-- [ ] Cache, Retry, Redirect stages emit their respective events
-- [ ] All events use `IsEnabled()` guards
-- [ ] All existing tests pass (no behavioral change)
-- [ ] Build succeeds with 0 errors
+- [x] `ConnectionActorBase` / `ClientByteMover` emits ConnectionOpened/Closed events
+- [x] Pipeline entry (HandlerBidiStage or TurboHandler) emits RequestStart/Stop/Failed events
+- [x] HTTP/2 encoding/decoding stages emit FrameSent/FrameReceived at Verbose level
+- [x] Cache, Retry, Redirect stages emit their respective events
+- [x] All events use `IsEnabled()` guards
+- [x] All existing tests pass (no behavioral change)
+- [x] Build succeeds with 0 errors
 
 ### TASK-012-004: Diagnostics Unit Tests
 **Description:** As a library author, I want tests verifying diagnostic events are emitted.

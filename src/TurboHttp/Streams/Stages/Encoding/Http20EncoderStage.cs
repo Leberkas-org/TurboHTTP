@@ -1,6 +1,7 @@
 using System.Buffers;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
 
@@ -36,6 +37,8 @@ public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, IOutpu
                 var span = owner.Memory.Span;
 
                 frame.WriteTo(ref span);
+
+                TurboHttpEventSource.Log.FrameSent(frame.Type.ToString(), frame.StreamId, frame.SerializedSize);
 
                 Push(stage._out, new DataItem(owner, frame.SerializedSize)
                 {
