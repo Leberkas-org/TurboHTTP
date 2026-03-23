@@ -32,15 +32,15 @@ Add end-to-end integration tests for HTTP/1.1 connection management. Validates k
 **Parallel:** yes — independent feature
 
 **Acceptance Criteria:**
-- [ ] Test file `ConnectionIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http1Integration"`, uses `KestrelFixture`
-- [ ] Tests cover:
+- [x] Test file `ConnectionIntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http1Integration"`, uses `KestrelFixture`
+- [x] Tests cover:
   - `GET /conn/keep-alive` — two sequential requests succeed on same client
   - `GET /conn/close` — Connection: close header present in response
   - `GET /conn/default` — HTTP/1.1 default keep-alive (no Connection header)
   - `GET /conn/upgrade-101` — 101 response, connection not reusable for further HTTP
   - Sequential requests test: send two requests, second succeeds (proves reuse)
-- [ ] All tests pass with `dotnet test --filter "FullyQualifiedName~ConnectionIntegrationTests"`
+- [x] All tests pass with `dotnet test --filter "FullyQualifiedName~ConnectionIntegrationTests"`
 
 ## Task Dependency Graph
 
