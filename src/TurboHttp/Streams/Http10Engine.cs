@@ -25,7 +25,7 @@ public class Http10Engine : IHttpProtocolEngine
             b.From(requestBCast.Out(1)).To(correlation.InRequest);
 
             var signalSink = b.Add(Sink.Ignore<IControlItem>().MapMaterializedValue(_ => NotUsed.Instance));
-            b.From(correlation.OutSignal).To(signalSink);
+            b.From(correlation.OutControl).To(signalSink);
 
             b.From(decoder.Outlet).To(correlation.InResponse);
 
@@ -40,7 +40,7 @@ public class Http10Engine : IHttpProtocolEngine
                 requestBCast.In,
                 encoder.Outlet,
                 decoder.Inlet,
-                correlation.Out);
+                correlation.OutResponse);
         }));
     }
 }

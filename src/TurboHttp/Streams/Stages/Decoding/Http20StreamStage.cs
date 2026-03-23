@@ -214,7 +214,8 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
             var bodyBytes = state.BodyBuffer[..state.BodyLength].ToArray();
 
             // RFC 9110 §8.4 — apply content-encoding decompression (gzip, deflate, br)
-            if (!string.IsNullOrEmpty(state.ContentEncoding))
+            if (!string.IsNullOrEmpty(state.ContentEncoding) &&
+                !state.ContentEncoding.Equals(WellKnownHeaders.Identity, StringComparison.OrdinalIgnoreCase))
             {
                 bodyBytes = ContentEncodingDecoder.Decompress(bodyBytes, state.ContentEncoding);
             }
@@ -288,8 +289,28 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
                 return;
             }
 
+            var wasDecompressed = !string.IsNullOrEmpty(state.ContentEncoding) &&
+                                  !state.ContentEncoding.Equals(
+                                      WellKnownHeaders.Identity,
+                                      StringComparison.OrdinalIgnoreCase);
+
             foreach (var (name, value) in state.ContentHeaders)
             {
+                // RFC 9110 §8.4 — after decompression, strip Content-Encoding and
+                // Content-Length so downstream stages don't attempt double decompression.
+                if (wasDecompressed)
+                {
+                    if (name.Equals(WellKnownHeaders.Names.ContentEncoding, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (name.Equals(WellKnownHeaders.Names.ContentLength, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                }
+
                 response.Content.Headers.TryAddWithoutValidation(name, value);
             }
         }

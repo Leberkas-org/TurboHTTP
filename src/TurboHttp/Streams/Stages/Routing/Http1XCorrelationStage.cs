@@ -13,28 +13,28 @@ public sealed class Http1XCorrelationShape : Shape
     public Inlet<HttpRequestMessage> InRequest { get; }
     public Inlet<HttpResponseMessage> InResponse { get; }
     public Inlet<NotUsed> InReset { get; }
-    public Outlet<HttpResponseMessage> Out { get; }
-    public Outlet<IControlItem> OutSignal { get; }
+    public Outlet<HttpResponseMessage> OutResponse { get; }
+    public Outlet<IControlItem> OutControl { get; }
 
     public Http1XCorrelationShape(
         Inlet<HttpRequestMessage> inRequest,
         Inlet<HttpResponseMessage> inResponse,
         Inlet<NotUsed> inReset,
-        Outlet<HttpResponseMessage> @out,
-        Outlet<IControlItem> outSignal)
+        Outlet<HttpResponseMessage> outResponse,
+        Outlet<IControlItem> outControl)
     {
         InRequest = inRequest;
         InResponse = inResponse;
         InReset = inReset;
-        Out = @out;
-        OutSignal = outSignal;
+        OutResponse = outResponse;
+        OutControl = outControl;
     }
 
     public override ImmutableArray<Inlet> Inlets =>
         [InRequest, InResponse, InReset];
 
     public override ImmutableArray<Outlet> Outlets =>
-        [Out, OutSignal];
+        [OutResponse, OutControl];
 
     public override Shape DeepCopy()
     {
@@ -42,8 +42,8 @@ public sealed class Http1XCorrelationShape : Shape
             (Inlet<HttpRequestMessage>)InRequest.CarbonCopy(),
             (Inlet<HttpResponseMessage>)InResponse.CarbonCopy(),
             (Inlet<NotUsed>)InReset.CarbonCopy(),
-            (Outlet<HttpResponseMessage>)Out.CarbonCopy(),
-            (Outlet<IControlItem>)OutSignal.CarbonCopy());
+            (Outlet<HttpResponseMessage>)OutResponse.CarbonCopy(),
+            (Outlet<IControlItem>)OutControl.CarbonCopy());
     }
 
     public override Shape CopyFromPorts(ImmutableArray<Inlet> inlets, ImmutableArray<Outlet> outlets)

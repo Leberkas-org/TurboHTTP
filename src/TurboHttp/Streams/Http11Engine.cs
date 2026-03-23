@@ -46,7 +46,7 @@ public class Http11Engine : IHttpProtocolEngine
                         BatchConsolidate));
 
             b.From(encoder.Outlet).Via(batchFlow).To(signalMerge.In(0));
-            b.From(correlation.OutSignal).Via(signalCast).To(signalMerge.Preferred);
+            b.From(correlation.OutControl).Via(signalCast).To(signalMerge.Preferred);
 
             return new BidiShape<
                 HttpRequestMessage,
@@ -56,7 +56,7 @@ public class Http11Engine : IHttpProtocolEngine
                 requestBCast.In,
                 signalMerge.Out,
                 decoder.Inlet,
-                correlation.Out);
+                correlation.OutResponse);
         }));
     }
 

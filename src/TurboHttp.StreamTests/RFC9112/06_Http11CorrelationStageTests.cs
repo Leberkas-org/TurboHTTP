@@ -39,8 +39,8 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
             b.From(resetSrc).To(corr.InReset);
-            b.From(corr.Out).To(s);
-            b.From(corr.OutSignal).To(signalSink);
+            b.From(corr.OutResponse).To(s);
+            b.From(corr.OutControl).To(signalSink);
 
             return ClosedShape.Instance;
         }));
@@ -168,8 +168,8 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
             b.From(resetSrc).To(corr.InReset);
-            b.From(corr.Out).To(s);
-            b.From(corr.OutSignal).To(signalSink);
+            b.From(corr.OutResponse).To(s);
+            b.From(corr.OutControl).To(signalSink);
 
             return ClosedShape.Instance;
         }));
@@ -207,8 +207,8 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
             b.From(resetSrc).To(corr.InReset);
-            b.From(corr.Out).To(s);
-            b.From(corr.OutSignal).To(signalSink);
+            b.From(corr.OutResponse).To(s);
+            b.From(corr.OutControl).To(signalSink);
 
             return ClosedShape.Instance;
         }));
@@ -241,8 +241,8 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
             b.From(resetSrc).To(corr.InReset);
-            b.From(corr.Out).To(responseSink);
-            b.From(corr.OutSignal).To(s);
+            b.From(corr.OutResponse).To(responseSink);
+            b.From(corr.OutControl).To(s);
 
             return ClosedShape.Instance;
         }));
@@ -282,8 +282,8 @@ public sealed class Http11CorrelationStageTests : StreamTestBase
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
             b.From(resetSrc).To(corr.InReset);
-            b.From(corr.Out).To(responseSink);
-            b.From(corr.OutSignal).To(s);
+            b.From(corr.OutResponse).To(responseSink);
+            b.From(corr.OutControl).To(s);
 
             return ClosedShape.Instance;
         }));

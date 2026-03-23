@@ -52,10 +52,10 @@ Add end-to-end integration tests for content encoding/decoding. Validates that T
 **Parallel:** yes — can run alongside TASK-005-001
 
 **Acceptance Criteria:**
-- [ ] Test file `CompressionH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
-- [ ] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
-- [ ] Covers same compression routes over h2c
-- [ ] All tests pass
+- [x] Test file `CompressionH2IntegrationTests.cs` in `src/TurboHttp.IntegrationTests/`
+- [x] Collection: `"Http2Integration"`, uses `KestrelH2Fixture`
+- [x] Covers same compression routes over h2c
+- [x] All tests pass
 
 ### TASK-005-003: Verify Full Compression Suite
 **Description:** Run the complete integration test suite to confirm no regressions.

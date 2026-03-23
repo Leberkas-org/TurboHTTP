@@ -46,8 +46,8 @@ public sealed class Http11PipelineReconnectTests : StreamTestBase
             b.From(reqSrc).To(corr.InRequest);
             b.From(resSrc).To(corr.InResponse);
             b.From(rstSrc).To(corr.InReset);
-            b.From(corr.OutSignal).To(sigSink);
-            b.From(corr.Out).To(resSink);
+            b.From(corr.OutControl).To(sigSink);
+            b.From(corr.OutResponse).To(resSink);
 
             return ClosedShape.Instance;
         }));
