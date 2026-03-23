@@ -99,8 +99,8 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
 **Parallel:** yes — can run alongside all other 013 tasks
 
 **Acceptance Criteria:**
-- [ ] Test file `src/TurboHttp.Tests/Security/UriSecurityTests.cs`
-- [ ] Tests cover:
+- [x] Test file `src/TurboHttp.Tests/Security/UriSecurityTests.cs`
+- [x] Tests cover:
   - Path traversal in redirect Location (/../../../etc/passwd)
   - Fragment injection in URIs (stripped before sending)
   - Userinfo stripping (user:pass@host → host)
@@ -109,7 +109,7 @@ Systematically audit and test all security-relevant code paths in TurboHttp. Whi
   - Null bytes in URI components → rejected
   - Backslash in path (\\ vs /) handling
   - Extremely long URIs (>8KB) → handled gracefully
-- [ ] All tests pass
+- [x] All tests pass
 
 ### TASK-013-005: HPACK Bomb & Protocol Abuse Tests
 **Description:** As a security auditor, I want to verify HPACK/QPACK implementations resist resource exhaustion attacks.
