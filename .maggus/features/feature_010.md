@@ -55,14 +55,14 @@ Add distributed tracing to TurboHttp using `System.Diagnostics.ActivitySource` a
 **Model:** opus
 
 **Acceptance Criteria:**
-- [ ] `RedirectBidiStage` starts a "TurboHttp.Redirect" child activity on each redirect hop
-- [ ] `RetryBidiStage` starts a "TurboHttp.Retry" child activity on each retry attempt
-- [ ] `CacheBidiStage` starts a "TurboHttp.CacheLookup" activity, tags `cache.hit` = true/false
-- [ ] Root activity "TurboHttp.Request" created at pipeline entry point (HandlerBidiStage or TurboHandler)
-- [ ] Response status code set on root activity completion
-- [ ] Error status set on exception
-- [ ] All existing tests pass — tracing is no-op when no listener attached
-- [ ] Build succeeds with 0 errors
+- [x] `RedirectBidiStage` starts a "TurboHttp.Redirect" child activity on each redirect hop
+- [x] `RetryBidiStage` starts a "TurboHttp.Retry" child activity on each retry attempt
+- [x] `CacheBidiStage` starts a "TurboHttp.CacheLookup" activity, tags `cache.hit` = true/false
+- [x] Root activity "TurboHttp.Request" created at pipeline entry point (HandlerBidiStage or TurboHandler)
+- [x] Response status code set on root activity completion
+- [x] Error status set on exception
+- [x] All existing tests pass — tracing is no-op when no listener attached
+- [x] Build succeeds with 0 errors
 
 ### TASK-010-003: Tracing Unit Tests
 **Description:** As a library author, I want tests that verify the tracing instrumentation emits correct spans.

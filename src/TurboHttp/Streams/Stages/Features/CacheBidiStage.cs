@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Diagnostics;
 using TurboHttp.Protocol.RFC9111;
 
 namespace TurboHttp.Streams.Stages.Features;
@@ -161,7 +163,24 @@ internal sealed class CacheBidiStage
             var entry = _stage._store.Get(request);
             var result = CacheFreshnessEvaluator.Evaluate(entry, request, DateTimeOffset.UtcNow, _stage._policy);
 
-            if (result.Status is CacheLookupStatus.Fresh or CacheLookupStatus.Stale)
+            // Emit a "TurboHttp.CacheLookup" span with cache.hit tag
+            var isHit = result.Status is CacheLookupStatus.Fresh or CacheLookupStatus.Stale;
+            var previous = Activity.Current;
+            if (request.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
+            {
+                Activity.Current = rootActivity;
+            }
+
+            if (request.RequestUri is not null)
+            {
+                var cacheActivity = TurboHttpInstrumentation.StartCacheLookup(request.RequestUri);
+                cacheActivity?.SetTag("cache.hit", isHit);
+                cacheActivity?.Stop();
+            }
+
+            Activity.Current = previous;
+
+            if (isHit)
             {
                 // RFC 9111 §5.1 — inject Age header on every cached response
                 var cachedResponse = result.Entry!.Response;

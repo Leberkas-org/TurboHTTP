@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Diagnostics;
 using TurboHttp.Protocol.RFC9110;
 
 namespace TurboHttp.Streams.Stages.Features;
@@ -168,8 +170,26 @@ internal sealed class RedirectBidiStage
 
                         var newRequest = handler.BuildRedirectRequest(original, response);
 
+                        // Emit a child "TurboHttp.Redirect" span for this hop
+                        var previous = Activity.Current;
+                        if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
+                        {
+                            Activity.Current = rootActivity;
+                        }
+
+                        var redirectActivity = TurboHttpInstrumentation.StartRedirect(
+                            newRequest.RequestUri!, (int)response.StatusCode);
+                        redirectActivity?.Stop();
+                        Activity.Current = previous;
+
                         // Carry the handler forward with the redirect request
                         newRequest.Options.Set(RedirectHandlerKey, handler);
+
+                        // Carry root activity forward so subsequent stages can parent under it
+                        if (rootActivity is not null)
+                        {
+                            newRequest.Options.Set(TurboHttpInstrumentation.RequestActivityKey, rootActivity);
+                        }
 
                         // Dispose the redirect response — it won't reach the caller
                         response.Dispose();

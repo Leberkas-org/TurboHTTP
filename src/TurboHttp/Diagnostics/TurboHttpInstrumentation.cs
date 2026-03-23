@@ -18,6 +18,13 @@ public static class TurboHttpInstrumentation
     /// </summary>
     public const string SourceName = "TurboHttp";
 
+    /// <summary>
+    /// Key for storing the root <see cref="Activity"/> in <see cref="HttpRequestMessage.Options"/>
+    /// so that downstream stages can parent child activities under the request root span.
+    /// </summary>
+    internal static readonly HttpRequestOptionsKey<Activity> RequestActivityKey
+        = new("TurboHttp.RequestActivity");
+
     private static readonly string _version =
         typeof(TurboHttpInstrumentation).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
@@ -30,7 +37,7 @@ public static class TurboHttpInstrumentation
     public static ActivitySource Source { get; } = new(SourceName, _version);
 
     /// <summary>
-    /// Starts a root "HTTP {method}" activity for an outgoing HTTP request.
+    /// Starts a root "TurboHttp.Request" activity for an outgoing HTTP request.
     /// Returns <c>null</c> when no listener is attached (zero overhead).
     /// </summary>
     /// <remarks>
@@ -48,7 +55,7 @@ public static class TurboHttpInstrumentation
         var method = request.Method.Method;
 
         var activity = Source.StartActivity(
-            $"HTTP {method}",
+            "TurboHttp.Request",
             ActivityKind.Client);
 
         if (activity is null)

@@ -64,6 +64,7 @@ internal sealed class Engine
     /// outside the BidiFlow chain.
     /// <para><b>Stacking order (outermost → innermost):</b></para>
     /// <list type="number">
+    ///   <item><description>TracingBidiStage — root "TurboHttp.Request" activity lifecycle</description></item>
     ///   <item><description>User Handlers — HandlerBidiStage per TurboHandler (FIFO: [0] outermost)</description></item>
     ///   <item><description>RedirectBidiStage — RFC 9110 §15.4, internal feedback loop</description></item>
     ///   <item><description>CookieBidiStage — RFC 6265 §5.3–§5.4</description></item>
@@ -148,6 +149,11 @@ internal sealed class Engine
             var mw = BidiFlow.FromGraph(new HandlerBidiStage(descriptor.Handlers[i], i));
             features = features is not null ? mw.Atop(features) : mw;
         }
+
+        // Tracing is the absolute outermost layer — wraps everything including handlers.
+        // Creates root "TurboHttp.Request" activity per request, completes it on response.
+        var tracing = BidiFlow.FromGraph(new TracingBidiStage());
+        features = features is not null ? tracing.Atop(features) : tracing;
 
         // Join features with engine, or use engine directly if no features.
         var pipelineFlow = features is not null

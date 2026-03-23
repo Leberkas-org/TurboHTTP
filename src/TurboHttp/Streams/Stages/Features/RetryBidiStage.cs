@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHttp.Diagnostics;
 using TurboHttp.Protocol.RFC9110;
 
 namespace TurboHttp.Streams.Stages.Features;
@@ -177,6 +179,17 @@ internal sealed class RetryBidiStage
                         TryPullResponse();
                         return;
                     }
+
+                    // Emit a child "TurboHttp.Retry" span for this attempt
+                    var previous = Activity.Current;
+                    if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
+                    {
+                        Activity.Current = rootActivity;
+                    }
+
+                    var retryActivity = TurboHttpInstrumentation.StartRetry(attemptCount);
+                    retryActivity?.Stop();
+                    Activity.Current = previous;
 
                     // Retryable — dispose the response and enqueue the original request for retry.
                     response.Dispose();
