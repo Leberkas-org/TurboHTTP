@@ -23,31 +23,18 @@ services.AddHttpClient("myapi", c => c.BaseAddress = new Uri("https://api.exampl
 
 ---
 
-## Why a Standalone ClientBuilder Does Not Fit
+## Configuring Clients with `ITurboHttpClientBuilder`
 
-`DelegatingHandler` is conceivable as synchronous per-request because `HttpClient` has no internal streaming pipeline — each request gets its own handler stack. TurboHttp is different:
-
-- The **Akka.Streams pipeline is materialized once** and then runs as a persistent graph. There is no "per-request handler stack" that can be assembled at runtime.
-- **N requests fly concurrently** through the same graph — no per-request slot.
-- **Feedback loops** for retry and redirect are edges in the graph, not runtime decisions.
-
-A `TurboHttpClientBuilder` called at `Build()` time would suggest otherwise — but that would be wrong. Configuration must be finalized at **registration time** (DI setup) so the graph can be materialized correctly.
-
----
-
-## The Right Model: `ITurboHttpClientBuilder` on `IServiceCollection` Level
-
-Identical to the `IHttpClientBuilder` pattern from `Microsoft.Extensions.Http`:
+TurboHttp follows the same builder pattern as `Microsoft.Extensions.Http` — you configure everything at DI registration time, and the pipeline is assembled for you when the client is first created:
 
 ```csharp
 public interface ITurboHttpClientBuilder
 {
     string Name { get; }
-    IServiceCollection Services { get; }
 }
 ```
 
-Extension methods on `IServiceCollection`:
+Register named or typed clients via extension methods on `IServiceCollection`:
 
 ```csharp
 // Named Client
@@ -143,7 +130,7 @@ services.AddTurboHttpClient("myapi", options => { ... })
     });
 ```
 
-`AddHandler<T>()` registers `T` as `Transient` in `IServiceCollection` and records the order. `UseRequest`/`UseResponse` wrap the delegate directly — no separate DI entry needed. During materialization, one stage per registered handler is inserted into the Akka pipeline.
+`AddHandler<T>()` registers `T` as `Transient` in DI and records the order. `UseRequest`/`UseResponse` wrap the delegate directly — no separate DI entry needed. Each registered handler becomes one stage in the processing pipeline.
 
 ---
 
@@ -159,12 +146,12 @@ services.AddTurboHttpClient("myapi", options => { ... })
       ↓                       (retry feedback enters AFTER this point)
 [CacheBidiStage]           ← .WithCache()
       ↓
-── ASYNC BOUNDARY ──
+── network round-trip ──
       ↓
 [Protocol Engine]          ← HTTP/1.0 / 1.1 / 2.0
 [Decompression]
       ↓
-── ASYNC BOUNDARY ──
+── response returns ──
       ↓
 [CookieBidiStage]          ← .WithCookies()
 [CacheBidiStage]           ← .WithCache()
@@ -177,8 +164,8 @@ services.AddTurboHttpClient("myapi", options => { ... })
 ```
 
 User handlers intentionally run **outside** the feedback loops:
-- `ProcessRequest` sees each enriched initial request. Redirect requests (sent back by `RedirectBidiStage`) go directly into the `redirectMerge` and bypass the handler.
-- `ProcessResponse` sees only **final** responses — after redirect and retry have been resolved. No intermediate results, no internal noise.
+- `ProcessRequest` sees each enriched initial request. Redirect and retry re-entries bypass the handler — they re-enter the pipeline further downstream.
+- `ProcessResponse` sees only **final** responses — after all redirects and retries have been resolved. No intermediate results, no internal noise.
 
 ---
 
@@ -232,11 +219,11 @@ public sealed class AuthHandler(ITokenProvider tokens) : TurboHandler
 
 ---
 
-## Internal Implementation: Engine Parameterization
+## How Configuration Becomes a Pipeline
 
 ### `TurboClientDescriptor`
 
-An internal, mutable object that collects all settings registered per `ITurboHttpClientBuilder`. It is mutated in-place by `IConfigureNamedOptions` and read at `CreateClient()` time:
+Collects all the settings you register via the builder extensions (`.WithRedirect()`, `.AddHandler<T>()`, etc.):
 
 ```csharp
 internal sealed class TurboClientDescriptor
@@ -259,7 +246,7 @@ internal sealed class TurboClientDescriptor
 
 ### `PipelineDescriptor`
 
-An immutable record passed from the factory to the engine. It contains all materialized objects — CookieJar instance, CacheStore instance, resolved middleware instances:
+A snapshot of the fully resolved configuration — cookie jar instance, cache store, handler instances — that the engine uses to build the pipeline:
 
 ```csharp
 internal sealed record PipelineDescriptor(
@@ -278,7 +265,7 @@ internal sealed record PipelineDescriptor(
 }
 ```
 
-`Engine.CreateFlow()` receives this descriptor and wires up only the stages that are actually configured — no hidden overhead for an empty pipeline. The engine itself remains internal — no Akka knowledge leaks out.
+The engine reads this descriptor and wires up only the stages you have actually enabled — if you don't call `.WithCache()`, the cache stage is never created.
 
 ---
 

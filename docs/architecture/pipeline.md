@@ -14,11 +14,11 @@ Each `HttpRequestMessage` passes through the following stages before reaching th
 
 | # | Stage | What it does |
 |---|-------|--------------|
-| 1 | `RequestEnricherStage` | Applies `BaseAddress`, `DefaultRequestVersion`, `DefaultRequestHeaders` to every request |
-| 2 | `CookieBidiStage` | Looks up matching cookies in `CookieJar` (domain + path + Secure/HttpOnly rules) and injects a `Cookie` header |
-| 3 | `CacheBidiStage` | Checks `HttpCacheStore`; on a **cache hit**, returns the cached response immediately — stages 4 onward are bypassed entirely |
-| 4 | `Engine` | Demultiplexes by `HttpRequestMessage.Version`; routes to `Http10Engine`, `Http11Engine`, or `Http20Engine` |
-| 5 | *(version engine)* | Encodes the request to bytes and sends it through `ConnectionStage` to TCP |
+| 1 | Request Enrichment (`RequestEnricherStage`) | Applies your `BaseAddress`, default HTTP version, and default headers to every request |
+| 2 | Cookie Injection (`CookieBidiStage`) | Looks up matching cookies for the target domain and path and adds a `Cookie` header |
+| 3 | Cache Lookup (`CacheBidiStage`) | Checks the in-memory cache; on a **cache hit**, returns the cached response immediately — stages 4–5 are skipped entirely |
+| 4 | Version Router (`Engine`) | Routes the request to the correct protocol handler based on the requested HTTP version |
+| 5 | Protocol Encoder *(per version)* | Serialises the request to bytes and sends it over the network connection |
 
 ---
 
@@ -28,12 +28,12 @@ After bytes return from TCP, the response passes through these stages:
 
 | # | Stage | What it does |
 |---|-------|--------------|
-| 1 | *(version decoder)* | Parses raw bytes into `HttpResponseMessage`; correlates response with the originating request |
-| 2 | `DecompressionBidiStage` | Decompresses `gzip`, `deflate`, or `br` content encodings transparently |
-| 3 | `CookieBidiStage` | Parses `Set-Cookie` response headers; stores cookies in `CookieJar` with full attribute evaluation |
-| 4 | `CacheBidiStage` | Stores cacheable responses in `HttpCacheStore`; respects `Cache-Control`, `Vary`, `Expires` directives |
-| 5 | `RetryBidiStage` | On transient errors or `503`/`429` responses, re-queues idempotent requests; parses `Retry-After` header for delay |
-| 6 | `RedirectBidiStage` | Follows `301`, `302`, `303`, `307`, `308` responses; rewrites method correctly; detects redirect loops; blocks HTTPS→HTTP downgrade |
+| 1 | Protocol Decoder *(per version)* | Parses raw bytes into an `HttpResponseMessage` and matches it to the original request |
+| 2 | Decompression (`DecompressionBidiStage`) | Transparently decompresses `gzip`, `deflate`, or Brotli response bodies |
+| 3 | Cookie Storage (`CookieBidiStage`) | Reads `Set-Cookie` headers and stores cookies for future requests |
+| 4 | Cache Storage (`CacheBidiStage`) | Saves cacheable responses so future matching requests can be served from memory |
+| 5 | Automatic Retry (`RetryBidiStage`) | Re-sends safe (idempotent) requests on transient errors or `503`/`429` responses; respects `Retry-After` delays |
+| 6 | Redirect Following (`RedirectBidiStage`) | Follows `301`–`308` redirects automatically; rewrites the HTTP method where needed; detects loops and blocks HTTPS→HTTP downgrades |
 
 ---
 
@@ -49,7 +49,7 @@ If the cache entry is stale but has an `ETag` or `Last-Modified` validator, `Cac
 
 ### 2. Keep-Alive Feedback (HTTP/1.1 only)
 
-After the HTTP/1.1 decoder processes a response, `Http1XCorrelationStage` emits a keep-alive or close signal (via `MergePreferred`) that feeds back into `ConnectionStage`. `ConnectionStage` uses this signal to decide whether to keep the TCP connection open for the next request or close it and request a new connection from `HostPool`.
+After each HTTP/1.1 response, a signal is sent back to the connection layer indicating whether the connection should stay open or be closed. The connection stage uses this signal to decide whether to reuse the TCP connection for the next request or close it and request a new one from the pool.
 
 This loop is invisible to the caller — the `Engine` and higher layers see only a continuous stream of `HttpResponseMessage` objects.
 

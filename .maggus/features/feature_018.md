@@ -86,12 +86,12 @@ The `docs/CLAUDE.md` guardrails are already in place. This feature applies those
 **Parallel:** yes — can run alongside TASK-018-001, TASK-018-002, TASK-018-003, TASK-018-005
 
 **Acceptance Criteria:**
-- [ ] **pipeline.md**: Request/Response chain table uses user-friendly names ("Request Enrichment", "Cookie Injection", "Cache Lookup") with stage class name in parentheses only
-- [ ] **pipeline.md**: "MergePreferred" pattern replaced with plain explanation ("signal sent back to decide connection reuse")
-- [ ] **handlers.md**: "Why a Standalone ClientBuilder Does Not Fit" section removed or reduced to one sentence
-- [ ] **handlers.md**: `ITurboHttpClientBuilder` interface definition trimmed (remove `IServiceCollection Services` property)
-- [ ] **handlers.md**: "ASYNC BOUNDARY" in diagram replaced with user-friendly note
-- [ ] No engineering justifications ("we chose X because of Y internal constraint")
+- [x] **pipeline.md**: Request/Response chain table uses user-friendly names ("Request Enrichment", "Cookie Injection", "Cache Lookup") with stage class name in parentheses only
+- [x] **pipeline.md**: "MergePreferred" pattern replaced with plain explanation ("signal sent back to decide connection reuse")
+- [x] **handlers.md**: "Why a Standalone ClientBuilder Does Not Fit" section removed or reduced to one sentence
+- [x] **handlers.md**: `ITurboHttpClientBuilder` interface definition trimmed (remove `IServiceCollection Services` property)
+- [x] **handlers.md**: "ASYNC BOUNDARY" in diagram replaced with user-friendly note
+- [x] No engineering justifications ("we chose X because of Y internal constraint")
 
 ### TASK-018-005: Update LikeC4 diagrams
 **Description:** As a documentation reader, I want the architecture diagrams to reflect the current codebase and stay at an appropriate conceptual level.
