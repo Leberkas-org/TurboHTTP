@@ -98,13 +98,13 @@ Add low-level diagnostic events to TurboHttp using `DiagnosticListener` and `Eve
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] Test file in `src/TurboHttp.Tests/`
-- [ ] Uses `DiagnosticListener.AllListeners.Subscribe()` to capture events
-- [ ] Uses `EventListener` to capture EventSource events
-- [ ] Verifies RequestStart/Stop events with correct payload
-- [ ] Verifies ConnectionOpened/Closed events
-- [ ] Verifies zero events when no listener is subscribed (IsEnabled guard)
-- [ ] All tests pass
+- [x] Test file in `src/TurboHttp.Tests/`
+- [x] Uses `DiagnosticListener.AllListeners.Subscribe()` to capture events
+- [x] Uses `EventListener` to capture EventSource events
+- [x] Verifies RequestStart/Stop events with correct payload
+- [x] Verifies ConnectionOpened/Closed events
+- [x] Verifies zero events when no listener is subscribed (IsEnabled guard)
+- [x] All tests pass
 
 ## Task Dependency Graph
 
