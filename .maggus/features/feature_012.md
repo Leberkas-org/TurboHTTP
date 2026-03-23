@@ -60,16 +60,16 @@ Add low-level diagnostic events to TurboHttp using `DiagnosticListener` and `Eve
 **Parallel:** yes — can run alongside TASK-012-001
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp/Diagnostics/TurboHttpDiagnosticListener.cs`
-- [ ] Static `DiagnosticListener` named `"TurboHttp"`
-- [ ] Events (fired via `Write()` when `IsEnabled()` returns true):
+- [x] New file `src/TurboHttp/Diagnostics/TurboHttpDiagnosticListener.cs`
+- [x] Static `DiagnosticListener` named `"TurboHttp"`
+- [x] Events (fired via `Write()` when `IsEnabled()` returns true):
   - `"TurboHttp.Request.Start"` — payload: HttpRequestMessage
   - `"TurboHttp.Request.Stop"` — payload: HttpResponseMessage, duration
   - `"TurboHttp.Request.Failed"` — payload: Exception
   - `"TurboHttp.Connection.Opened"` — payload: host, port, protocol
   - `"TurboHttp.Connection.Closed"` — payload: host, port, duration
-- [ ] `IsEnabled()` guard on every `Write()` call for zero-overhead when unsubscribed
-- [ ] Build succeeds with 0 errors
+- [x] `IsEnabled()` guard on every `Write()` call for zero-overhead when unsubscribed
+- [x] Build succeeds with 0 errors
 
 ### TASK-012-003: Wire Diagnostics into Stages and Transport
 **Description:** As a library author, I want diagnostic events emitted from the actual code paths.
