@@ -12,13 +12,13 @@ namespace TurboHttp.StreamTests.RFC9110;
 /// direction decompresses gzip/deflate/brotli bodies, removes Content-Encoding, and updates Content-Length.
 /// </summary>
 /// <remarks>
-/// Stage under test: <see cref="DecompressionBidiStage"/>.
+/// Stage under test: <see cref="ContentEncodingBidiStage"/>.
 /// RFC 9110 §8.4: Content-Encoding header and transparent decompression of response bodies.
 /// </remarks>
-public sealed class DecompressionBidiStageTests : StreamTestBase
+public sealed class ContentEncodingBidiStageTests : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
-        DecompressionBidiStage stage,
+        ContentEncodingBidiStage stage,
         params HttpRequestMessage[] requests)
     {
         var graph = GraphDsl.Create(
@@ -42,7 +42,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     }
 
     private Task<IImmutableList<HttpResponseMessage>> RunResponseAsync(
-        DecompressionBidiStage stage,
+        ContentEncodingBidiStage stage,
         params HttpResponseMessage[] responses)
     {
         var graph = GraphDsl.Create(
@@ -112,7 +112,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-001: request passes through unchanged")]
     public async Task RequestDirection_Should_PassThrough()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Custom", "test-value");
 
@@ -127,7 +127,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-002: multiple requests all pass through unchanged")]
     public async Task RequestDirection_Should_PassThroughAll_ForMultipleRequests()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var req1 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var req2 = new HttpRequestMessage(HttpMethod.Post, "http://example.com/b");
 
@@ -145,7 +145,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-003: no Content-Encoding → response passes through unchanged")]
     public async Task ResponseDirection_Should_PassThrough_When_NoContentEncoding()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var body = "hello world"u8.ToArray();
         var response = MakeResponse(body);
 
@@ -160,7 +160,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-004: Content-Encoding: identity → response passes through unchanged")]
     public async Task ResponseDirection_Should_PassThrough_When_Identity()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var body = "hello world"u8.ToArray();
         var response = MakeResponse(body, "identity");
 
@@ -174,7 +174,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-005: Content-Encoding: gzip → body decompressed")]
     public async Task ResponseDirection_Should_Decompress_Gzip()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "gzip compressed response body"u8.ToArray();
         var compressed = GzipCompress(original);
         var response = MakeResponse(compressed, "gzip");
@@ -189,7 +189,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-006: Content-Encoding: x-gzip → body decompressed")]
     public async Task ResponseDirection_Should_Decompress_XGzip()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "x-gzip content"u8.ToArray();
         var compressed = GzipCompress(original);
         var response = MakeResponse(compressed, "x-gzip");
@@ -204,7 +204,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-007: Content-Encoding: deflate → body decompressed")]
     public async Task ResponseDirection_Should_Decompress_Deflate()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "deflate compressed data"u8.ToArray();
         var compressed = DeflateCompress(original);
         var response = MakeResponse(compressed, "deflate");
@@ -219,7 +219,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-008: Content-Encoding: br → body decompressed")]
     public async Task ResponseDirection_Should_Decompress_Brotli()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "brotli compressed response"u8.ToArray();
         var compressed = BrotliCompress(original);
         var response = MakeResponse(compressed, "br");
@@ -234,7 +234,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-009: Content-Encoding header removed after decompression")]
     public async Task ResponseDirection_Should_RemoveContentEncodingHeader()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "test body"u8.ToArray();
         var compressed = GzipCompress(original);
         var response = MakeResponse(compressed, "gzip");
@@ -248,7 +248,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-010: Content-Length updated to decompressed size")]
     public async Task ResponseDirection_Should_UpdateContentLength()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "content length test body"u8.ToArray();
         var compressed = GzipCompress(original);
         var response = MakeResponse(compressed, "gzip");
@@ -262,7 +262,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-011: Content-Type preserved after decompression")]
     public async Task ResponseDirection_Should_PreserveContentType()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var original = "{\"key\":\"value\"}"u8.ToArray();
         var compressed = GzipCompress(original);
         var content = new ByteArrayContent(compressed);
@@ -281,7 +281,7 @@ public sealed class DecompressionBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-8.4-DBIDI-012: multiple responses with different encodings all decompressed")]
     public async Task ResponseDirection_Should_DecompressAll_DifferentEncodings()
     {
-        var stage = new DecompressionBidiStage();
+        var stage = new ContentEncodingBidiStage();
         var body1 = "first response"u8.ToArray();
         var body2 = "second response"u8.ToArray();
         var body3 = "plain response"u8.ToArray();

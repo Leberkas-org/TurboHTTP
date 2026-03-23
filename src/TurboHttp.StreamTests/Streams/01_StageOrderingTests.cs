@@ -423,7 +423,7 @@ public sealed class StageOrderingTests : EngineTestBase
         var plainBody = "Hello, decompressed world!"u8.ToArray();
 
         var bidi = BidiFlow.FromGraph(new CacheBidiStage(store, null))
-            .Atop(BidiFlow.FromGraph(new DecompressionBidiStage()));
+            .Atop(BidiFlow.FromGraph(new ContentEncodingBidiStage()));
 
         var engine = Flow.Create<HttpRequestMessage>()
             .Select(req =>
@@ -522,7 +522,7 @@ public sealed class StageOrderingTests : EngineTestBase
         DisplayName = "SORD-013: INTG-3 Full pipeline: gzip response decompressed before reaching client")]
     public async Task Should_DeliverDecompressedBodyToClient_When_FullPipelineWithGzipResponse()
     {
-        // Full engine pipeline with gzip response: DecompressionBidiStage decompresses
+        // Full engine pipeline with gzip response: ContentEncodingBidiStage decompresses
         // before the response enters the outer BidiFlow layers.
         const string originalText = "Decompressed by engine island!";
         var compressedBody = GzipCompress(System.Text.Encoding.UTF8.GetBytes(originalText));

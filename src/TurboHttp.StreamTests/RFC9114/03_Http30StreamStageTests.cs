@@ -166,7 +166,7 @@ public sealed class Http30StreamStageTests : StreamTestBase
 
         Assert.Single(responses);
         var responseBody = await responses[0].Content!.ReadAsByteArrayAsync();
-        // Stage preserves raw compressed bytes — decompression is handled by DecompressionBidiStage
+        // Stage preserves raw compressed bytes — decompression is handled by ContentEncodingBidiStage
         Assert.Equal(compressedBody, responseBody);
         // Content-Encoding header is preserved on the content headers
         Assert.True(responses[0].Content.Headers.Contains("Content-Encoding"));

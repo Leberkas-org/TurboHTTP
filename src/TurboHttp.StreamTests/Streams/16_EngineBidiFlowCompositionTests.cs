@@ -105,7 +105,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
     // ---- AutomaticDecompression = false ----
 
     [Fact(Timeout = 10_000,
-        DisplayName = "EBFC-004: AutomaticDecompression=false — no DecompressionBidiStage in chain")]
+        DisplayName = "EBFC-004: AutomaticDecompression=false — no ContentEncodingBidiStage in chain")]
     public async Task Should_StillDeliverResponse_When_AutomaticDecompressionDisabled()
     {
         // Note: decompression also happens in the protocol-level decoders (Http11Decoder,
@@ -330,12 +330,12 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
     }
 
     [Fact(Timeout = 10_000,
-        DisplayName = "EBFC-012: AutomaticDecompression=false — gzip still decompressed by protocol decoder")]
-    public async Task Should_StillDecompress_When_AutomaticDecompressionDisabledButProtocolDecoderHandlesIt()
+        DisplayName = "EBFC-012: AutomaticDecompression=false — raw compressed bytes returned")]
+    public async Task Should_ReturnRawCompressedBytes_When_AutomaticDecompressionDisabled()
     {
-        // AutomaticDecompression=false removes the DecompressionBidiStage from the feature chain,
-        // but the protocol-level decoders (Http11Decoder, Http20StreamStage) handle Content-Encoding
-        // decompression per RFC 9110 §8.4. So gzip responses are still decompressed.
+        // AutomaticDecompression=false prevents the ContentEncodingBidiStage from being added.
+        // Protocol-level decoders no longer decompress (TASK-020-001/002/003), so raw compressed
+        // bytes are returned with Content-Encoding header preserved.
         var plainBody = "Protocol decoder handles this!"u8.ToArray();
         var compressedBody = GzipCompress(plainBody);
         var header = $"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {compressedBody.Length}\r\n\r\n";
@@ -358,9 +358,11 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         var response = await RunSingleAsync(flow, request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // Protocol-level decoder (Http11Decoder) decompresses gzip regardless of AutomaticDecompression flag
+        // Raw compressed bytes returned — Content-Encoding header preserved
         var body = await response.Content.ReadAsByteArrayAsync();
-        Assert.Equal(plainBody, body);
+        Assert.Equal(compressedBody, body);
+        Assert.True(response.Content.Headers.Contains("Content-Encoding"));
+        Assert.Equal("gzip", string.Join("", response.Content.Headers.GetValues("Content-Encoding")));
     }
 
     private static byte[] GzipCompress(byte[] data)

@@ -96,18 +96,18 @@ Additionally, `RequestCompressionBidiStage` and `DecompressionBidiStage` are com
 **Model:** opus
 
 **Acceptance Criteria:**
-- [ ] New file `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs` created
-- [ ] Request path (In1→Out1): compresses request body per `RequestCompressionPolicy` (same logic as `RequestCompressionBidiStage.CompressIfNeeded`); pass-through when policy is null
-- [ ] Response path (In2→Out2): decompresses response body per `Content-Encoding` header (same logic as `DecompressionBidiStage.Decompress`); pass-through when `automaticDecompression=false`
-- [ ] Constructor: `ContentEncodingBidiStage(bool automaticDecompression = true, RequestCompressionPolicy? compressionPolicy = null)`
-- [ ] `ReadContentAsMemory` helper exists once (no duplication)
-- [ ] Port names follow convention: `ContentEncoding.In.Request`, `ContentEncoding.Out.Request`, `ContentEncoding.In.Response`, `ContentEncoding.Out.Response`
-- [ ] All `onUpstreamFailure` handlers absorb failures with `Log.Warning` (same pattern as existing stages)
-- [ ] `Engine.cs`: the two conditional blocks for `RequestCompressionPolicy` (line 103-107) and `AutomaticDecompression` (line 109-113) replaced with a single conditional block adding `ContentEncodingBidiStage`
-- [ ] `ContentEncodingBidiStage` is added when `AutomaticDecompression=true` OR `RequestCompressionPolicy is not null`
-- [ ] Old files `DecompressionBidiStage.cs` and `RequestCompressionBidiStage.cs` deleted
-- [ ] All references updated (`using` statements, test files, etc.)
-- [ ] Build succeeds with zero errors
+- [x] New file `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs` created
+- [x] Request path (In1→Out1): compresses request body per `RequestCompressionPolicy` (same logic as `RequestCompressionBidiStage.CompressIfNeeded`); pass-through when policy is null
+- [x] Response path (In2→Out2): decompresses response body per `Content-Encoding` header (same logic as `DecompressionBidiStage.Decompress`); pass-through when `automaticDecompression=false`
+- [x] Constructor: `ContentEncodingBidiStage(bool automaticDecompression = true, RequestCompressionPolicy? compressionPolicy = null)`
+- [x] `ReadContentAsMemory` helper exists once (no duplication)
+- [x] Port names follow convention: `ContentEncoding.In.Request`, `ContentEncoding.Out.Request`, `ContentEncoding.In.Response`, `ContentEncoding.Out.Response`
+- [x] All `onUpstreamFailure` handlers absorb failures with `Log.Warning` (same pattern as existing stages)
+- [x] `Engine.cs`: the two conditional blocks for `RequestCompressionPolicy` (line 103-107) and `AutomaticDecompression` (line 109-113) replaced with a single conditional block adding `ContentEncodingBidiStage`
+- [x] `ContentEncodingBidiStage` is added when `AutomaticDecompression=true` OR `RequestCompressionPolicy is not null`
+- [x] Old files `DecompressionBidiStage.cs` and `RequestCompressionBidiStage.cs` deleted
+- [x] All references updated (`using` statements, test files, etc.)
+- [x] Build succeeds with zero errors
 
 **Files to modify:**
 - `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs` (new)

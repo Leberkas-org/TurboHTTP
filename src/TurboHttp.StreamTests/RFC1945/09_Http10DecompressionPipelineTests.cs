@@ -11,10 +11,10 @@ namespace TurboHttp.StreamTests.RFC1945;
 
 /// <summary>
 /// Verifies that the HTTP/1.0 engine pipeline correctly decompresses
-/// Content-Encoding responses when the <see cref="DecompressionBidiStage"/> is composed with the engine.
+/// Content-Encoding responses when the <see cref="ContentEncodingBidiStage"/> is composed with the engine.
 /// </summary>
 /// <remarks>
-/// Pipeline under test: DecompressionBidiStage ∘ Http10Engine.
+/// Pipeline under test: ContentEncodingBidiStage ∘ Http10Engine.
 /// RFC 9110 §8.4: Content-Encoding and transparent decompression.
 /// RFC 1945 §10.3: Content-Encoding entity-header in HTTP/1.0.
 /// </remarks>
@@ -23,13 +23,13 @@ public sealed class Http10DecompressionPipelineTests : EngineTestBase
     private static readonly Http10Engine Engine = new();
 
     /// <summary>
-    /// Composes DecompressionBidiStage atop the Http10Engine so that responses
+    /// Composes ContentEncodingBidiStage atop the Http10Engine so that responses
     /// are automatically decompressed before reaching the caller.
     /// </summary>
     private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
         CreateDecompressingEngine()
     {
-        var decomp = BidiFlow.FromGraph(new DecompressionBidiStage());
+        var decomp = BidiFlow.FromGraph(new ContentEncodingBidiStage());
         return decomp.Atop(Engine.CreateFlow());
     }
 
