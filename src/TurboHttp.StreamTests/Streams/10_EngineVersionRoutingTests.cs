@@ -4,8 +4,6 @@ using Akka.Streams.Dsl;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
-using TurboHttp.Protocol.RFC9114;
-using TurboHttp.Protocol.RFC9204;
 using TurboHttp.Streams;
 
 namespace TurboHttp.StreamTests.Streams;
@@ -110,25 +108,22 @@ public sealed class EngineVersionRoutingTests : EngineTestBase
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "EROUTE-005: HTTP/3.0 request routed through Http30Engine")]
-    public async Task Should_RouteRequestThroughHttp30Engine_When_VersionIs30()
+    [Fact(Timeout = 10_000, DisplayName = "EROUTE-005: HTTP/3.0 request rejected — no response produced")]
+    public async Task Should_ProduceNoResponse_When_VersionIs30()
     {
+        // HTTP/3 is blocked at the version router with NotSupportedException.
+        // The immortal pipeline absorbs the exception (TracingBidiStage), so no
+        // response is produced and the stream does not die.
         var http10Response = "HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         var http11Response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
         var h2Frames = new[] { new SettingsFrame([]).Serialize() };
-
-        var qpack = new QpackEncoder(maxTableCapacity: 0);
-        var settingsFrame = new Http3SettingsFrame([]).Serialize();
-        var headersFrame = new Http3HeadersFrame(
-            qpack.Encode([(":status", "200")])).Serialize();
-        var h3Frames = new[] { settingsFrame, headersFrame };
 
         var engine = new Engine();
         var flow = engine.CreateFlow(
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http10Response)),
             () => Flow.FromGraph(new EngineFakeConnectionStage(() => http11Response)),
             () => Flow.FromGraph(new H2EngineFakeConnectionStage(h2Frames)),
-            () => Flow.FromGraph(new H3EngineFakeConnectionStage(h3Frames)),
+            NoOpTransportFlow,
             PipelineDescriptor.Empty);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -136,9 +131,21 @@ public sealed class EngineVersionRoutingTests : EngineTestBase
             Version = HttpVersion.Version30
         };
 
-        var response = await RunEngineAsync(flow, request);
+        var responses = new List<HttpResponseMessage>();
+        var tcs = new TaskCompletionSource();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _ = Source.Single(request)
+            .Via(flow)
+            .RunWith(Sink.ForEach<HttpResponseMessage>(res =>
+            {
+                responses.Add(res);
+                tcs.TrySetResult();
+            }), Materializer);
+
+        // The request is absorbed — expect no response within a short window.
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(2)));
+        Assert.NotEqual(tcs.Task, completed);
+        Assert.Empty(responses);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "EROUTE-004: Mixed HTTP versions each routed to correct engine")]

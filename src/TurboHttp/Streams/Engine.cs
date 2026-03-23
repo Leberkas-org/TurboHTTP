@@ -32,6 +32,10 @@ internal sealed class Engine
         Func<Flow<IOutputItem, IInputItem, NotUsed>> http30Factory,
         PipelineDescriptor descriptor)
     {
+        // http30Factory is accepted for API compatibility but not wired into the pipeline.
+        // HTTP/3 is blocked at the version router with NotSupportedException.
+        _ = http30Factory;
+
         var holder = new HttpRequestMessage();
         var defaultOptions = new TurboRequestOptions(
             BaseAddress: null,
@@ -43,7 +47,7 @@ internal sealed class Engine
 
         return BuildExtendedPipeline(ActorRefs.Nobody, new TurboClientOptions(), () => defaultOptions,
             descriptor,
-            http10Factory, http11Factory, http20Factory, http30Factory);
+            http10Factory, http11Factory, http20Factory);
     }
 
     private static TurboRequestOptions BuildRequestOptions(TurboClientOptions options)
@@ -86,13 +90,12 @@ internal sealed class Engine
         PipelineDescriptor descriptor,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http10Factory = null,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http11Factory = null,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory = null,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http30Factory = null)
+        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory = null)
     {
         // Protocol engine core (version demux + encode/decode) with async boundary.
         var engineFlow = Flow.FromGraph(
                 ProtocolCoreGraphBuilder.Build(poolRouter, options,
-                    http10Factory, http11Factory, http20Factory, http30Factory))
+                    http10Factory, http11Factory, http20Factory))
             .WithAttributes(Attributes.CreateAsyncBoundary());
 
         // Build feature BidiFlow chain via conditional Atop stacking.

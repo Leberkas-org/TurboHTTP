@@ -28,13 +28,12 @@ internal static class ProtocolCoreGraphBuilder
         TurboClientOptions clientOptions,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http10Factory = null,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http11Factory = null,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory = null,
-        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http30Factory = null)
+        Func<Flow<IOutputItem, IInputItem, NotUsed>>? http20Factory = null)
     {
         return GraphDsl.Create(builder =>
         {
             var partition = builder.Add(Router());
-            var hub = builder.Add(new Merge<HttpResponseMessage>(4));
+            var hub = builder.Add(new Merge<HttpResponseMessage>(3));
 
             // Encoder/decoder stage groups get larger input buffers for throughput.
             // Lightweight stages (cookie, cache, enricher) inherit the smaller global default (4/16).
@@ -49,14 +48,10 @@ internal static class ProtocolCoreGraphBuilder
             var http20 =
                 builder.Add(BuildProtocolFlow<Http20Engine>(64, poolRouter, http20Factory, clientOptions)
                     .WithAttributes(highThroughputBuffer));
-            var http30 =
-                builder.Add(BuildProtocolFlow<Http30Engine>(32, poolRouter, http30Factory, clientOptions)
-                    .WithAttributes(highThroughputBuffer));
 
             builder.From(partition.Out(0)).Via(http10).To(hub);
             builder.From(partition.Out(1)).Via(http11).To(hub);
             builder.From(partition.Out(2)).Via(http20).To(hub);
-            builder.From(partition.Out(3)).Via(http30).To(hub);
 
             return new FlowShape<HttpRequestMessage, HttpResponseMessage>(partition.In, hub.Out);
         });
@@ -142,10 +137,10 @@ internal static class ProtocolCoreGraphBuilder
 
     private static Partition<HttpRequestMessage> Router()
     {
-        return new Partition<HttpRequestMessage>(4, msg
+        return new Partition<HttpRequestMessage>(3, msg
             => msg.Version switch
             {
-                { Major: 3, Minor: 0 } => 3,
+                { Major: 3, Minor: 0 } => throw new NotSupportedException("HTTP/3 is not yet supported."),
                 { Major: 2, Minor: 0 } => 2,
                 { Major: 1, Minor: 1 } => 1,
                 { Major: 1, Minor: 0 } => 0,

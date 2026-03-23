@@ -98,15 +98,15 @@ This feature also blocks HTTP/3 from being routed at the version partition level
 **Parallel:** yes — can run alongside TASK-019-001, TASK-019-002, TASK-019-003, TASK-019-005
 
 **Acceptance Criteria:**
-- [ ] `ProtocolCoreGraphBuilder.Router()` partition function: the `{ Major: 3, Minor: 0 } => 3` case is replaced with a `throw new NotSupportedException("HTTP/3 is not yet supported.")`
-- [ ] The `Merge<HttpResponseMessage>(4)` is reduced to `Merge<HttpResponseMessage>(3)` (3 outputs: HTTP/1.0, HTTP/1.1, HTTP/2)
-- [ ] The `http30` flow builder and its wiring to the merge are removed from `Build()`
-- [ ] The test-mode `CreateFlow` overload in `Engine.cs` that accepts `http30Factory` still compiles (parameter kept but unused, or removed if no callers need it)
-- [ ] `ProtocolCoreGraphBuilder.BuildProtocolFlow<Http30Engine>` call is removed
-- [ ] Tests in `TurboHttp.StreamTests/RFC9114/` that test `Http30ConnectionStage` in isolation (not through the router) still pass — they don't go through the partition
-- [ ] Tests in `TurboHttp.StreamTests/Streams/` that route HTTP/3 through the engine are updated or removed (e.g., version routing tests that expect HTTP/3 to work)
-- [ ] Full solution builds with zero errors
-- [ ] Full test suite passes
+- [x] `ProtocolCoreGraphBuilder.Router()` partition function: the `{ Major: 3, Minor: 0 } => 3` case is replaced with a `throw new NotSupportedException("HTTP/3 is not yet supported.")`
+- [x] The `Merge<HttpResponseMessage>(4)` is reduced to `Merge<HttpResponseMessage>(3)` (3 outputs: HTTP/1.0, HTTP/1.1, HTTP/2)
+- [x] The `http30` flow builder and its wiring to the merge are removed from `Build()`
+- [x] The test-mode `CreateFlow` overload in `Engine.cs` that accepts `http30Factory` still compiles (parameter kept but unused, or removed if no callers need it)
+- [x] `ProtocolCoreGraphBuilder.BuildProtocolFlow<Http30Engine>` call is removed
+- [x] Tests in `TurboHttp.StreamTests/RFC9114/` that test `Http30ConnectionStage` in isolation (not through the router) still pass — they don't go through the partition
+- [x] Tests in `TurboHttp.StreamTests/Streams/` that route HTTP/3 through the engine are updated or removed (e.g., version routing tests that expect HTTP/3 to work)
+- [x] Full solution builds with zero errors
+- [x] Full test suite passes
 
 **Files to modify:**
 - `src/TurboHttp/Streams/ProtocolCoreGraphBuilder.cs`
