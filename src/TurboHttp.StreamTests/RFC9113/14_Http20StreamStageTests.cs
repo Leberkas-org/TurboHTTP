@@ -277,8 +277,8 @@ public sealed class Http20StreamStageTests : StreamTestBase
         Assert.Equal(expected, responses[0].StatusCode);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-006: Content-Encoding gzip triggers decompression")]
-    public async Task Should_DecompressBody_When_ContentEncodingIsGzip()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-006: Content-Encoding preserved without decompression")]
+    public async Task Should_PreserveRawBody_When_ContentEncodingIsGzip()
     {
         var headerBlock = EncodeHeaders(
             (":status", "200"),
@@ -306,8 +306,11 @@ public sealed class Http20StreamStageTests : StreamTestBase
         var responses = await RunAsync(frames);
 
         Assert.Single(responses);
+        // Stage must NOT decompress — raw compressed bytes are passed through
         var responseBody = await responses[0].Content!.ReadAsByteArrayAsync();
-        Assert.Equal(originalBody, responseBody);
+        Assert.Equal(compressedBody, responseBody);
+        // Content-Encoding header must be preserved for the feature layer
+        Assert.Equal("gzip", responses[0].Content!.Headers.GetValues("Content-Encoding").Single());
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-8.1-20S-006: No Content-Encoding leaves body unchanged")]

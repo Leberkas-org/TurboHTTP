@@ -84,8 +84,8 @@ public sealed class Http20EngineEndToEndTests : EngineTestBase
         Assert.Contains(outboundFrames, f => f is DataFrame);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-003: gzip-compressed response body is correctly decompressed")]
-    public async Task Should_DecompressGzipResponseBody_When_ContentEncodingIsGzip()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-003: gzip-compressed response preserves raw bytes and Content-Encoding")]
+    public async Task Should_PreserveRawGzipBody_When_ContentEncodingIsGzip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data")
         {
@@ -131,8 +131,10 @@ public sealed class Http20EngineEndToEndTests : EngineTestBase
             responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // Protocol engine must NOT decompress — raw compressed bytes preserved for feature layer
         var body = await response.Content!.ReadAsByteArrayAsync();
-        Assert.Equal(originalBody, body);
+        Assert.Equal(compressedBody, body);
+        Assert.Equal("gzip", response.Content!.Headers.GetValues("Content-Encoding").Single());
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9113-ENG-004: Server SETTINGS produces SETTINGS ACK in outbound frames")]

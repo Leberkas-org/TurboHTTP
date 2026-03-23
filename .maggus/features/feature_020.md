@@ -58,11 +58,11 @@ Additionally, `RequestCompressionBidiStage` and `DecompressionBidiStage` are com
 **Parallel:** yes — can run alongside TASK-020-001, TASK-020-003
 
 **Acceptance Criteria:**
-- [ ] `Http20StreamStage.cs`: `ContentEncodingDecoder.Decompress()` call removed (~line 220)
-- [ ] `ApplyContentHeaders()`: `wasDecompressed` flag removed; all content headers applied unconditionally (including `Content-Encoding` and `Content-Length`)
-- [ ] `state.ContentEncoding` field can be removed if only used for decompression decisions (verify no other usages first)
-- [ ] Stream tests in `RFC9113/` adjusted if any assert decompressed output from Http20StreamStage
-- [ ] `dotnet test ./src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj --filter "FullyQualifiedName~RFC9113"` — passes
+- [x] `Http20StreamStage.cs`: `ContentEncodingDecoder.Decompress()` call removed (~line 220)
+- [x] `ApplyContentHeaders()`: `wasDecompressed` flag removed; all content headers applied unconditionally (including `Content-Encoding` and `Content-Length`)
+- [x] `state.ContentEncoding` field can be removed if only used for decompression decisions (verify no other usages first)
+- [x] Stream tests in `RFC9113/` adjusted if any assert decompressed output from Http20StreamStage
+- [x] `dotnet test ./src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj --filter "FullyQualifiedName~RFC9113"` — passes
 
 **Files to modify:**
 - `src/TurboHttp/Streams/Stages/Decoding/Http20StreamStage.cs`

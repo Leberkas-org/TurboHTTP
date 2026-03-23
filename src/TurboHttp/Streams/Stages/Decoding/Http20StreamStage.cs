@@ -6,9 +6,7 @@ using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC7541;
-using TurboHttp.Protocol.RFC9110;
 using TurboHttp.Protocol.RFC9113;
 
 namespace TurboHttp.Streams.Stages.Decoding;
@@ -41,9 +39,6 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
             public int BodyLength;
 
             public HttpResponseMessage? Response;
-
-            // Captured during DecodeHeaders for use in HandleData decompression.
-            public string? ContentEncoding;
 
             // Content headers captured during DecodeHeaders, applied when Content is created.
             public List<(string Name, string Value)>? ContentHeaders;
@@ -213,13 +208,6 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
 
             var bodyBytes = state.BodyBuffer[..state.BodyLength].ToArray();
 
-            // RFC 9110 §8.4 — apply content-encoding decompression (gzip, deflate, br)
-            if (!string.IsNullOrEmpty(state.ContentEncoding) &&
-                !state.ContentEncoding.Equals(WellKnownHeaders.Identity, StringComparison.OrdinalIgnoreCase))
-            {
-                bodyBytes = ContentEncodingDecoder.Decompress(bodyBytes, state.ContentEncoding);
-            }
-
             response.Content = new ByteArrayContent(bodyBytes);
             ApplyContentHeaders(response, state);
 
@@ -258,10 +246,6 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
                         state.ContentHeaders.Add((h.Name, h.Value));
                     }
 
-                    if (h.Name.Equals(WellKnownHeaders.Names.ContentEncoding, StringComparison.OrdinalIgnoreCase))
-                    {
-                        state.ContentEncoding = h.Value;
-                    }
                 }
             }
 
@@ -289,28 +273,8 @@ public sealed class Http20StreamStage : GraphStage<FlowShape<Http2Frame, (HttpRe
                 return;
             }
 
-            var wasDecompressed = !string.IsNullOrEmpty(state.ContentEncoding) &&
-                                  !state.ContentEncoding.Equals(
-                                      WellKnownHeaders.Identity,
-                                      StringComparison.OrdinalIgnoreCase);
-
             foreach (var (name, value) in state.ContentHeaders)
             {
-                // RFC 9110 §8.4 — after decompression, strip Content-Encoding and
-                // Content-Length so downstream stages don't attempt double decompression.
-                if (wasDecompressed)
-                {
-                    if (name.Equals(WellKnownHeaders.Names.ContentEncoding, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    if (name.Equals(WellKnownHeaders.Names.ContentLength, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-                }
-
                 response.Content.Headers.TryAddWithoutValidation(name, value);
             }
         }
