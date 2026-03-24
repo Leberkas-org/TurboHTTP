@@ -65,13 +65,13 @@ Replace the 5-class actor hierarchy (`PoolRouter` → `HostPool` → `Http1/2/3C
 **Parallel:** yes — can run alongside TASK-026-002
 
 **Acceptance Criteria:**
-- [ ] `MoveStreamToPipe(ClientState, Action, ILoggingAdapter?, CancellationToken)` overload added
-- [ ] `MovePipeToChannel(ClientState, Action, ILoggingAdapter?, CancellationToken)` overload added
-- [ ] `MoveChannelToStream(ClientState, Action, ILoggingAdapter?, CancellationToken)` overload added
-- [ ] Each overload replaces `runner.Tell(DoClose.Instance)` with `onClose()` call
-- [ ] Existing `IActorRef` overloads unchanged (used during migration)
-- [ ] `dotnet build src/TurboHttp.sln` — 0 errors, 0 warnings
-- [ ] `dotnet test src/TurboHttp.StreamTests -v q` — all pass
+- [x] `MoveStreamToPipe(ClientState, Action, ILoggingAdapter?, CancellationToken)` overload added
+- [x] `MovePipeToChannel(ClientState, Action, ILoggingAdapter?, CancellationToken)` overload added
+- [x] `MoveChannelToStream(ClientState, Action, ILoggingAdapter?, CancellationToken)` overload added
+- [x] Each overload replaces `runner.Tell(DoClose.Instance)` with `onClose()` call
+- [x] Existing `IActorRef` overloads unchanged (used during migration)
+- [x] `dotnet build src/TurboHttp.sln` — 0 errors, 0 warnings
+- [x] `dotnet test src/TurboHttp.StreamTests -v q` — all pass
 
 ### TASK-026-002: Create ConnectionLease
 **Description:** As a developer, I want a `ConnectionLease` class that wraps `ConnectionHandle` + `ClientState` + lifecycle management so that connections have a single owner responsible for cleanup, metrics emission, and stream tracking.
