@@ -41,7 +41,8 @@
       "Bash(xargs cat:*)",
       "Bash(npx vitepress:*)",
       "Bash(xargs -I {} basename {})",
-      "Bash(2)"
+      "Bash(2)",
+      "Bash(npx likec4:*)"
     ]
   },
   "enabledPlugins": {}

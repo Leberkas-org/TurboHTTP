@@ -38,16 +38,4 @@ views {
     include turbohttp.streams.ConnectionStage
   }
 
-  view http3Engine of turbohttp.streams.Http30Engine {
-    title 'TurboHttp — HTTP/3 Engine Internals'
-    description 'Multiplexed HTTP/3 over QUIC: compress headers with QPACK → bidirectional connection management → serialise frames → reassemble responses.'
-    include turbohttp.streams.Http30Engine
-    include turbohttp.streams.Http30Request2FrameStage
-    include turbohttp.streams.Http30ConnectionStage
-    include turbohttp.streams.Http30EncoderStage
-    include turbohttp.streams.Http30DecoderStage
-    include turbohttp.streams.Http30StreamStage
-    include turbohttp.streams.Http30CorrelationStage
-    include turbohttp.streams.Http3ConnectionStage
-  }
 }

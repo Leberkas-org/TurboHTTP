@@ -64,12 +64,6 @@ model {
         description 'HTTP/2 pipeline: assign stream IDs, HPACK-encode frames, multiplex over a single TCP connection, decode and assemble responses'
       }
 
-      Http30Engine = component 'Http30Engine' {
-        #graphstage #http3
-        technology 'IHttpProtocolEngine'
-        description 'HTTP/3 pipeline: QPACK-encode frames, multiplex over QUIC streams, decode and assemble responses'
-      }
-
       // Shared infrastructure stages
       RequestEnricherStage = component 'RequestEnricherStage' {
         #graphstage
@@ -89,11 +83,6 @@ model {
         description 'TCP transport bridge: acquires a connection from the pool, writes outbound bytes, reads inbound bytes'
       }
 
-      Http3ConnectionStage = component 'Http3ConnectionStage' {
-        #graphstage #http3
-        technology 'GraphStage'
-        description 'QUIC transport bridge: acquires a QUIC connection from the pool, writes outbound bytes, reads inbound bytes'
-      }
 
       ConnectionReuseStage = component 'ConnectionReuseStage' {
         #graphstage
@@ -181,54 +170,17 @@ model {
         description 'Stream-ID-based request-response correlation for multiplexed HTTP/2 streams'
       }
 
-      // HTTP/3 stages
-      Http30EncoderStage = component 'Http30EncoderStage' {
-        #graphstage #http3
-        technology 'GraphStage'
-        description 'Serialises HTTP/3 frames to wire bytes using QUIC variable-length encoding'
-      }
-
-      Http30DecoderStage = component 'Http30DecoderStage' {
-        #graphstage #http3
-        technology 'GraphStage'
-        description 'Parses wire bytes into HTTP/3 frames'
-      }
-
-      Http30Request2FrameStage = component 'Http30Request2FrameStage' {
-        #graphstage #http3
-        technology 'GraphStage'
-        description 'Converts requests into HTTP/3 HEADERS + DATA frames using QPACK compression'
-      }
-
-      Http30ConnectionStage = component 'Http30ConnectionStage' {
-        #graphstage #http3
-        technology 'GraphStage (BidiFlow)'
-        description 'Bidirectional HTTP/3 connection manager: SETTINGS/GOAWAY handling, stream lifecycle'
-      }
-
-      Http30StreamStage = component 'Http30StreamStage' {
-        #graphstage #http3
-        technology 'GraphStage'
-        description 'Assembles per-stream HEADERS + DATA frames into HttpResponseMessage using QPACK decoding'
-      }
-
-      Http30CorrelationStage = component 'Http30CorrelationStage' {
-        #graphstage #http3
-        technology 'GraphStage'
-        description 'Request-response correlation for multiplexed HTTP/3 streams'
-      }
-
       // Feature BidiStages — each handles both request and response direction
-      DecompressionBidiStage = component 'DecompressionBidiStage' {
+      ContentEncodingBidiStage = component 'ContentEncodingBidiStage' {
         #graphstage
         technology 'BidiStage'
-        description 'Adds Accept-Encoding to requests; decompresses gzip/deflate/brotli response bodies automatically'
+        description 'Bidirectional compression/decompression: adds Accept-Encoding to requests, compresses request bodies, decompresses gzip/deflate/brotli response bodies automatically'
       }
 
-      RequestCompressionBidiStage = component 'RequestCompressionBidiStage' {
+      TracingBidiStage = component 'TracingBidiStage' {
         #graphstage
         technology 'BidiStage'
-        description 'Compresses outgoing request bodies when the server supports it'
+        description 'Observability stage: traces request/response events for logging and metrics collection'
       }
 
       CacheBidiStage = component 'CacheBidiStage' {
@@ -336,44 +288,6 @@ model {
         description 'Static Huffman encoding and decoding for HPACK string literals'
       }
 
-      // HTTP/3 codecs
-      Http3RequestEncoder = component 'Http3RequestEncoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'Encodes requests into HTTP/3 HEADERS frames (via QPACK) + optional DATA frames'
-      }
-
-      Http3ResponseDecoder = component 'Http3ResponseDecoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'Decodes HTTP/3 response frames into HttpResponseMessage'
-      }
-
-      Http3FrameEncoder = component 'Http3FrameEncoder' {
-        #protocol #http3
-        technology 'Static class'
-        description 'Serialises HTTP/3 frames with variable-length integer encoding'
-      }
-
-      Http3FrameDecoder = component 'Http3FrameDecoder' {
-        #protocol #http3
-        technology 'Static class'
-        description 'Parses HTTP/3 frames from QUIC stream bytes'
-      }
-
-      // QPACK (header compression for HTTP/3)
-      QpackEncoder = component 'QpackEncoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'Header compression encoder for HTTP/3; supports dynamic table updates via encoder instructions'
-      }
-
-      QpackDecoder = component 'QpackDecoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'Header compression decoder for HTTP/3; maintains synchronised dynamic table'
-      }
-
       // HTTP semantics (business rules)
       RedirectHandler = component 'RedirectHandler' {
         #protocol
@@ -433,41 +347,37 @@ model {
       }
     }
 
-    // ── I/O Layer ─────────────────────────────────────────────────────────
-    io = container 'I/O Layer' {
-      description 'Hybrid: actors for connection lifecycle, System.Threading.Channels for zero-copy data transfer'
-      technology 'Akka.NET Actors / System.Threading.Channels'
+    // ── Transport Layer ──────────────────────────────────────────────────
+    transport = container 'Transport Layer' {
+      description 'Actor-free connection pool with direct async API, zero-copy channels, and metrics'
+      technology 'System.Threading.Channels / System.IO.Pipelines / System.Net.Sockets'
 
-      // Actor hierarchy (lifecycle)
-      PoolRouter = actor 'PoolRouter' {
-        technology 'Akka Actor'
-        description 'Entry point for connection requests; creates per-host pools on first request; routes by host key'
+      // Connection pool (direct async API)
+      ConnectionPool = component 'ConnectionPool' {
+        technology 'Class'
+        description 'Thread-safe per-host connection pool: AcquireAsync / Release API, manages idle timeout, eviction, version-aware reuse'
       }
 
-      HostPool = actor 'HostPool' {
-        technology 'Akka Actor'
-        description 'Per-host connection pool: selects available connections, enforces concurrency limits, schedules reconnects, evicts idle connections'
+      HostConnections = component 'HostConnections' {
+        technology 'Inner class'
+        description 'Per-host connection manager: idle queue, concurrent limiter, connection establishment'
       }
 
-      ConnectionActor = actor 'ConnectionActor' {
-        technology 'Akka Actor'
-        description 'Owns a single TCP or QUIC connection lifecycle: connect, reconnect with exponential backoff, deliver ConnectionHandle on success'
+      DirectConnectionFactory = component 'DirectConnectionFactory' {
+        #staticClass
+        technology 'Static class'
+        description 'Establishes TCP/TLS connections, creates channels, spawns ByteMover pump tasks, returns ConnectionLease'
       }
 
-      ClientManager = actor 'ClientManager' {
-        technology 'Akka Actor'
-        description 'Factory actor: spawns and resolves per-connection ClientRunner actors'
-      }
-
-      ClientRunner = actor 'ClientRunner' {
-        technology 'Akka Actor'
-        description 'Per-connection actor: owns TCP/TLS or QUIC connection setup, spawns data pump tasks, signals lifecycle events'
+      ConnectionLease = component 'ConnectionLease' {
+        technology 'Class'
+        description 'Wraps ConnectionHandle + ClientState: lifecycle management, active stream tracking, metrics emission, reusability state'
       }
 
       // Data path (zero actor hops)
       ConnectionHandle = component 'ConnectionHandle' {
         technology 'Record'
-        description 'Bundles outbound writer, inbound reader, host key, and stream capacity; passed from actors to the connection stage'
+        description 'Bundles outbound writer, inbound reader, endpoint key; provides direct channel I/O without actor hops'
       }
 
       ClientByteMover = component 'ClientByteMover' {
@@ -481,28 +391,18 @@ model {
         description 'Per-connection primitives: network stream, System.IO.Pipelines.Pipe, inbound/outbound channels'
       }
 
-      ConnectionState = component 'ConnectionState' {
-        technology 'Class'
-        description 'Per-connection metadata tracked by HostPool: Active/Idle/Reusable state, HTTP version, concurrent stream capacity'
-      }
-
-      PerHostConnectionLimiter = component 'PerHostConnectionLimiter' {
-        technology 'Class'
-        description 'Enforces per-host maximum concurrent connection limits; queues excess requesters'
-      }
-
-      QuicClientProvider = component 'QuicClientProvider' {
-        #http3
-        technology 'Class'
-        description 'QUIC transport factory: creates and configures QUIC connections for HTTP/3'
+      // Transport abstractions
+      IClientProvider = component 'IClientProvider' {
+        technology 'Interface'
+        description 'Transport abstraction: GetStreamAsync for TCP/TLS providers'
       }
     }
   }
 
   // External system
   tcp = externalSystem 'Network' {
-    description 'Remote HTTP servers (TCP, TLS, or QUIC)'
-    technology 'TCP / TLS / QUIC'
+    description 'Remote HTTP servers (TCP or TLS)'
+    technology 'TCP / TLS'
   }
 
   // ── Structural relationships ───────────────────────────────────────────
@@ -520,14 +420,16 @@ model {
   turbohttp.streams.Engine -> turbohttp.streams.Http10Engine 'Routes HTTP/1.0 requests'
   turbohttp.streams.Engine -> turbohttp.streams.Http11Engine 'Routes HTTP/1.1 requests'
   turbohttp.streams.Engine -> turbohttp.streams.Http20Engine 'Routes HTTP/2 requests'
-  turbohttp.streams.Engine -> turbohttp.streams.Http30Engine 'Routes HTTP/3 requests'
+
+  // Client → Network (simplified view for index/system overview)
+  turbohttp.client -> tcp 'HTTP requests / responses'
 
   // Pipeline BidiStages (applied around engine core)
   turbohttp.streams.Engine -> turbohttp.streams.RequestEnricherStage 'Applies defaults before routing'
   turbohttp.streams.Engine -> turbohttp.streams.CookieBidiStage 'Injects/stores cookies'
   turbohttp.streams.Engine -> turbohttp.streams.CacheBidiStage 'Checks/stores cache'
-  turbohttp.streams.Engine -> turbohttp.streams.DecompressionBidiStage 'Decompresses response bodies'
-  turbohttp.streams.Engine -> turbohttp.streams.RequestCompressionBidiStage 'Compresses request bodies'
+  turbohttp.streams.Engine -> turbohttp.streams.ContentEncodingBidiStage 'Compresses requests, decompresses responses'
+  turbohttp.streams.Engine -> turbohttp.streams.TracingBidiStage 'Traces requests and responses'
   turbohttp.streams.Engine -> turbohttp.streams.RetryBidiStage 'Feeds retry loop'
   turbohttp.streams.Engine -> turbohttp.streams.RedirectBidiStage 'Feeds redirect loop'
   turbohttp.streams.Engine -> turbohttp.streams.ConnectionReuseStage 'Signals keep-alive / close'
@@ -555,38 +457,20 @@ model {
   turbohttp.streams.Http20Engine -> turbohttp.streams.Http20StreamStage 'Assembles response from frames'
   turbohttp.streams.Http20Engine -> turbohttp.streams.ConnectionStage 'Reads/writes bytes via transport'
 
-  // HTTP/3 engine internals
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30Request2FrameStage 'Converts requests to HTTP/3 frames'
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30ConnectionStage 'Manages connection-level frames'
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30EncoderStage 'Serialises frames to bytes'
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30DecoderStage 'Parses bytes to frames'
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30StreamStage 'Assembles response from frames'
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30CorrelationStage 'Matches requests to responses'
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http3ConnectionStage 'Reads/writes bytes via QUIC'
-
-  // ConnectionStage → I/O
-  turbohttp.streams.ConnectionStage -> turbohttp.io.PoolRouter 'Requests a connection (actor message)'
-  turbohttp.streams.ConnectionStage -> turbohttp.io.ConnectionHandle 'Reads/writes bytes via channels (zero actor hops)'
-  turbohttp.streams.Http3ConnectionStage -> turbohttp.io.PoolRouter 'Requests a QUIC connection (actor message)'
-  turbohttp.streams.Http3ConnectionStage -> turbohttp.io.ConnectionHandle 'Reads/writes bytes via channels (zero actor hops)'
+  // ConnectionStage → Transport Layer
+  turbohttp.streams.ConnectionStage -> turbohttp.transport.ConnectionPool 'AcquireAsync(options, endpoint) for TCP/TLS'
+  turbohttp.streams.ConnectionStage -> turbohttp.transport.ConnectionLease 'Leases connection, reads/writes via handle'
+  turbohttp.streams.ConnectionStage -> tcp 'Writes request bytes, reads response bytes via TCP/TLS'
 
   // Stages → Protocol codecs
   turbohttp.streams.Http10EncoderStage -> turbohttp.protocol.Http10Encoder 'Delegates encoding'
   turbohttp.streams.Http11EncoderStage -> turbohttp.protocol.Http11Encoder 'Delegates encoding'
   turbohttp.streams.Http10DecoderStage -> turbohttp.protocol.Http10Decoder 'Delegates decoding'
   turbohttp.streams.Http11DecoderStage -> turbohttp.protocol.Http11Decoder 'Delegates decoding'
-  turbohttp.streams.Http20EncoderStage -> turbohttp.protocol.Http2RequestEncoder 'Delegates frame encoding'
   turbohttp.streams.Http20DecoderStage -> turbohttp.protocol.Http2FrameDecoder 'Delegates frame decoding'
   turbohttp.streams.Http20StreamStage -> turbohttp.protocol.HpackDecoder 'Decompresses response headers'
+  turbohttp.streams.Http20Request2FrameStage -> turbohttp.protocol.Http2RequestEncoder 'Encodes requests to HEADERS + DATA frames'
   turbohttp.streams.Http20Request2FrameStage -> turbohttp.protocol.HpackEncoder 'Compresses request headers'
-
-  // HTTP/3 Stages → Protocol codecs
-  turbohttp.streams.Http30EncoderStage -> turbohttp.protocol.Http3FrameEncoder 'Delegates frame encoding'
-  turbohttp.streams.Http30DecoderStage -> turbohttp.protocol.Http3FrameDecoder 'Delegates frame decoding'
-  turbohttp.streams.Http30StreamStage -> turbohttp.protocol.QpackDecoder 'Decompresses response headers'
-  turbohttp.streams.Http30Request2FrameStage -> turbohttp.protocol.QpackEncoder 'Compresses request headers'
-  turbohttp.streams.Http30Request2FrameStage -> turbohttp.protocol.Http3RequestEncoder 'Encodes request frames'
-  turbohttp.streams.Http30StreamStage -> turbohttp.protocol.Http3ResponseDecoder 'Decodes response frames'
 
   // HPACK internals
   turbohttp.protocol.HpackEncoder -> turbohttp.protocol.HpackDynamicTable 'Maintains dynamic table'
@@ -599,7 +483,7 @@ model {
   turbohttp.streams.RetryBidiStage -> turbohttp.protocol.RetryEvaluator 'Evaluates retry eligibility'
   turbohttp.streams.CookieBidiStage -> turbohttp.protocol.CookieJar 'Reads/stores cookies'
   turbohttp.streams.ConnectionReuseStage -> turbohttp.protocol.ConnectionReuseEvaluator 'Evaluates keep-alive / close'
-  turbohttp.streams.DecompressionBidiStage -> turbohttp.protocol.ContentEncodingDecoder 'Decompresses content'
+  turbohttp.streams.ContentEncodingBidiStage -> turbohttp.protocol.ContentEncodingDecoder 'Decompresses and compresses content'
 
   // BidiStages → Caching subsystem
   turbohttp.streams.CacheBidiStage -> turbohttp.protocol.HttpCacheStore 'Looks up and stores cached responses'
@@ -607,18 +491,15 @@ model {
   turbohttp.streams.CacheBidiStage -> turbohttp.protocol.CacheControlParser 'Parses Cache-Control directives'
   turbohttp.streams.CacheBidiStage -> turbohttp.protocol.CacheValidationRequestBuilder 'Builds conditional revalidation requests'
 
-  // I/O Layer internals
-  turbohttp.io.PoolRouter -> turbohttp.io.HostPool 'Creates and routes to per-host pool'
-  turbohttp.io.HostPool -> turbohttp.io.ConnectionActor 'Creates and supervises connections'
-  turbohttp.io.HostPool -> turbohttp.io.ConnectionState 'Tracks per-connection metadata'
-  turbohttp.io.HostPool -> turbohttp.io.PerHostConnectionLimiter 'Enforces concurrent connection limits'
-  turbohttp.io.ConnectionActor -> turbohttp.io.ClientManager 'Requests ClientRunner spawn'
-  turbohttp.io.ClientManager -> turbohttp.io.ClientRunner 'Resolves and supervises per-connection runner'
-  turbohttp.io.ClientRunner -> turbohttp.io.ClientByteMover 'Spawns async pump tasks after connect'
-  turbohttp.io.ClientRunner -> turbohttp.io.QuicClientProvider 'Creates QUIC connections for HTTP/3'
-  turbohttp.io.ConnectionActor -> turbohttp.io.ConnectionHandle 'Delivers handle to HostPool on connect'
-  turbohttp.io.ClientByteMover -> turbohttp.io.ClientState 'Reads/writes network stream, pipe, and channels'
-
-  // I/O → Network
-  turbohttp.io.ClientByteMover -> tcp 'TCP / TLS / QUIC socket read + write'
+  // Transport Layer internals
+  turbohttp.transport.ConnectionPool -> turbohttp.transport.HostConnections 'Per-host manager: AcquireAsync delegates'
+  turbohttp.transport.HostConnections -> turbohttp.transport.DirectConnectionFactory 'Establishes new connections'
+  turbohttp.transport.DirectConnectionFactory -> turbohttp.transport.IClientProvider 'Gets TCP/TLS stream'
+  turbohttp.transport.DirectConnectionFactory -> turbohttp.transport.ClientByteMover 'Spawns async pump tasks'
+  turbohttp.transport.DirectConnectionFactory -> turbohttp.transport.ConnectionLease 'Wraps handle + state with lifecycle'
+  turbohttp.transport.ConnectionLease -> turbohttp.transport.ConnectionHandle 'Provides direct channel I/O'
+  turbohttp.transport.ConnectionLease -> turbohttp.transport.ClientState 'Owns connection state'
+  turbohttp.transport.ClientByteMover -> turbohttp.transport.ClientState 'Reads/writes network stream, pipe, and channels'
+  turbohttp.transport.IClientProvider -> tcp 'TCP / TLS socket operations'
+  turbohttp.transport.ClientByteMover -> tcp 'TCP / TLS socket read + write'
 }

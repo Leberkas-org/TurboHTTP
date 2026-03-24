@@ -1,6 +1,6 @@
 # End-to-End Scenarios
 
-These dynamic views trace a single HTTP request from application code through every TurboHttp layer to the remote server and back. Each scenario highlights the protocol-specific stages and interactions.
+Here's what happens when you send a request with different HTTP versions. The details differ, but the pipeline stages are the same — enrichment, cookies, cache, encoding, network, decoding, decompression, cookie storage, cache storage, retries, redirects.
 
 ---
 
@@ -18,7 +18,7 @@ These dynamic views trace a single HTTP request from application code through ev
 4. `CacheBidiStage` checks the cache — on a miss, the request continues.
 5. `Engine` routes the request to `Http10Engine`.
 6. `Http10EncoderStage` serialises the request to bytes with `Connection: close`.
-7. `ConnectionStage` acquires a fresh TCP connection from `HostPool` (via `EnsureHost` → `ConnectionReady`).
+7. `ConnectionStage` acquires a lease from `ConnectionPool.AcquireAsync()`, which provides a fresh TCP connection if available connections are exhausted.
 8. Bytes are written to the outbound channel; `ClientByteMover` forwards them to the TCP socket.
 
 ### Response Path
@@ -59,9 +59,9 @@ After `Http1XCorrelationStage` matches the response, it emits two signals simult
 - `Connection: keep-alive` (or HTTP/1.1 default) → sends a **reuse** signal to `ConnectionStage`
 - `Connection: close` → sends a **close** signal to `ConnectionStage`
 
-On **reuse**, `ConnectionStage` retains the TCP connection in its internal state and uses it for the next request from the pipeline — no actor round-trip, no new TCP handshake.
+On **reuse**, `ConnectionStage` returns the lease to `ConnectionPool`, which places it back in the idle queue for the next request to the same host.
 
-On **close**, `ConnectionStage` notifies `HostPool`, which schedules a reconnect. The actor handles exponential backoff for flaky connections.
+On **close**, `ConnectionStage` releases the lease without returning it to the idle queue. The next request will trigger `ConnectionPool.AcquireAsync()` to establish a new connection.
 
 ### Pipelining
 
@@ -105,7 +105,7 @@ While request/response streams are active, `Http20ConnectionStage` also handles:
 
 ### Stream ID Exhaustion
 
-Client-side stream IDs are 31-bit odd integers. When the maximum (`2^31 - 1`) is reached, the connection sends `GOAWAY` and a new connection is established. This is handled transparently by `HostPool`.
+Client-side stream IDs are 31-bit odd integers. When the maximum (`2^31 - 1`) is reached, the connection sends `GOAWAY` and a new connection is established. This is handled transparently by `HostConnections`.
 
 ---
 

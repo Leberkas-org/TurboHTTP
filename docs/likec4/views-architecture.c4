@@ -1,47 +1,83 @@
-// TurboHttp — Architecture Views
-// Top-level and layer-scoped static views.
+// TurboHttp — Architecture Views (User-focused)
+// Top-level and layer-scoped static views showing public features and behavior.
 
 views {
   view index {
     title 'TurboHttp — System Overview'
-    description 'Top-level view: the application, TurboHttp system, and the network'
-    include *
+    description 'Application, TurboHttp client library, and remote servers'
+    include user
+    include turbohttp.client
+    include tcp
     style turbohttp { color green }
     style tcp { color muted }
     style user { color primary }
   }
 
   view turbohttp {
-    title 'TurboHttp — Container View'
-    description 'Four architectural layers: Client, Streams, Protocol, I/O'
-    include user
-    include turbohttp
-    include turbohttp.*
-    include tcp
-  }
-
-  view clientLayer of turbohttp.client {
-    title 'TurboHttp — Client Layer'
-    description 'Public API, stream materialisation, and configuration'
+    title 'TurboHttp — Architecture'
+    description 'Client API and the request/response pipeline with all processing stages'
     include user
     include turbohttp.client.*
     include turbohttp.streams.Engine
     include turbohttp.streams.RequestEnricherStage
-  }
-
-  view streamsLayer of turbohttp.streams {
-    title 'TurboHttp — Streams Layer'
-    description 'All Akka.Streams GraphStages: request enrichment, protocol engines, response pipeline'
-    include turbohttp.client.ITurboHttpClient
-    include turbohttp.streams.*
-    include turbohttp.io.PoolRouter
-  }
-
-  view ioLayer of turbohttp.io {
-    title 'TurboHttp — IO Layer'
-    description 'Actor lifecycle hierarchy and zero-copy channel data path'
-    include turbohttp.streams.ConnectionStage
-    include turbohttp.io.*
+    include turbohttp.streams.CookieBidiStage
+    include turbohttp.streams.CacheBidiStage
+    include turbohttp.streams.ContentEncodingBidiStage
+    include turbohttp.streams.RetryBidiStage
+    include turbohttp.streams.RedirectBidiStage
     include tcp
+  }
+
+  view clientLayer of turbohttp.client {
+    title 'Client API'
+    description 'Public interface: SendAsync, channel-based API, configuration options'
+    include user
+    include turbohttp.client.*
+  }
+
+  view pipelineDetails of turbohttp.streams {
+    title 'Request/Response Pipeline'
+    description 'All processing stages from request entry to response delivery'
+    include turbohttp.client.ITurboHttpClient
+
+    // Request enrichment & infrastructure
+    include turbohttp.streams.RequestEnricherStage
+    include turbohttp.streams.ExtractOptionsStage
+
+    // Feature layers (applied around engine)
+    include turbohttp.streams.CookieBidiStage
+    include turbohttp.streams.CacheBidiStage
+    include turbohttp.streams.ContentEncodingBidiStage
+    include turbohttp.streams.RetryBidiStage
+    include turbohttp.streams.RedirectBidiStage
+    include turbohttp.streams.ExpectContinueBidiStage
+    include turbohttp.streams.HandlerBidiStage
+    include turbohttp.streams.ConnectionReuseStage
+
+    // Engine (version demultiplexer)
+    include turbohttp.streams.Engine
+    include turbohttp.streams.Http10Engine
+    include turbohttp.streams.Http11Engine
+    include turbohttp.streams.Http20Engine
+
+    // HTTP/1.x stages
+    include turbohttp.streams.Http10EncoderStage
+    include turbohttp.streams.Http11EncoderStage
+    include turbohttp.streams.Http10DecoderStage
+    include turbohttp.streams.Http11DecoderStage
+    include turbohttp.streams.Http1XCorrelationStage
+
+    // HTTP/2 stages
+    include turbohttp.streams.Http20StreamIdAllocatorStage
+    include turbohttp.streams.Http20Request2FrameStage
+    include turbohttp.streams.Http20EncoderStage
+    include turbohttp.streams.Http20DecoderStage
+    include turbohttp.streams.Http20ConnectionStage
+    include turbohttp.streams.Http20StreamStage
+    include turbohttp.streams.Http20PrependPrefaceStage
+    include turbohttp.streams.Http20CorrelationStage
+
+    // Transport
+    include turbohttp.streams.ConnectionStage
   }
 }

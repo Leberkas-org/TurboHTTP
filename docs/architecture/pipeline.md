@@ -61,13 +61,14 @@ A maximum retry count and redirect hop limit prevent infinite loops.
 
 ---
 
-## Connection Pool Integration
+## Connection Management
 
-`ConnectionStage` does not create TCP connections directly. It sends an `EnsureHost` message to `PoolRouter` and waits for a `ConnectionReady(ConnectionHandle)` reply. The I/O actor pool manages:
+The pipeline uses a connection pool to reuse TCP (or QUIC for HTTP/3) connections efficiently:
 
-- Creating new connections when all existing ones are busy
-- Enforcing per-host connection limits (`PerHostConnectionLimiter`)
-- Reconnecting with exponential backoff after failures
-- Evicting idle connections after a configurable timeout
+- **HTTP/1.0**: Each request gets a new connection; it's closed after the response
+- **HTTP/1.1**: Connections are kept alive and reused for multiple requests to the same host
+- **HTTP/2 & HTTP/3**: A single connection is shared by multiple concurrent requests as independent streams
 
-Once `ConnectionHandle` is delivered to `ConnectionStage`, all further data movement bypasses the actor mailbox entirely — bytes travel through `System.Threading.Channels` at full throughput.
+This all happens automatically. You don't manage connections — TurboHttp does.
+
+See [Connection Pooling Guide](../guide/connection-pooling) for tuning options.

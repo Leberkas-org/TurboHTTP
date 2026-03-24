@@ -1,7 +1,8 @@
 agent: claude
-model: opus
+model: sonnet
 include: []
 worktree: false
+auto_work: disabled
 notifications:
     sound: true
     on_task_complete: null

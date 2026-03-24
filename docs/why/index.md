@@ -16,7 +16,7 @@ TurboHttp is designed for situations where `HttpClient` alone isn't enough: high
 | Cookie Management | ⚠️ Manual / CookieContainer | ⚠️ Manual | ⚠️ Manual | ✅ Automatic |
 | Redirect Following | ✅ Basic | ✅ Basic | ✅ Basic | ✅ Full |
 | Content Decompression | ✅ | ✅ | ✅ | ✅ |
-| Connection Pooling | ✅ SocketsHttpHandler | ✅ via HttpClient | ✅ via HttpClient | ✅ Actor-based, per-host |
+| Connection Pooling | ✅ SocketsHttpHandler | ✅ via HttpClient | ✅ via HttpClient | ✅ Thread-safe, lock-free, per-host |
 | Channel-based API | ❌ | ❌ | ❌ | ✅ |
 | Backpressure | ❌ | ❌ | ❌ | ✅ Akka.Streams |
 | Zero-alloc internals | ⚠️ Partial | ❌ | ❌ | ✅ Span/Memory throughout |
@@ -43,7 +43,7 @@ TurboHttp is not the right tool for every job. Be honest about the trade-offs:
 - **You need a fluent request builder** — [Flurl](https://flurl.dev/) provides a clean API for building URLs and requests inline. TurboHttp's API is lower-level.
 - **You're already on Polly** — If your team is invested in Polly's retry and circuit-breaker policies, sticking with `HttpClient` + Polly is a reasonable choice. TurboHttp's built-in retry is simpler but not as composable.
 - **You're making simple one-off requests** — `HttpClient.GetAsync(url)` is two words. TurboHttp requires a bit more setup. Use the simpler tool for simple problems.
-- **You have no Akka.NET in your stack** — TurboHttp's I/O layer is built on Akka actors. It pulls in the Akka.NET dependency. If that's unwanted, a plain `HttpClient` is lighter.
+- **You have no Akka.NET in your stack** — TurboHttp uses Akka.Streams for the request/response pipeline. It pulls in the Akka.NET dependency. If that's unwanted, a plain `HttpClient` is lighter.
 
 ## HttpClient vs TurboHttp: A Closer Look
 

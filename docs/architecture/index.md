@@ -1,47 +1,54 @@
-# Architecture Overview
+# How It Works
 
-TurboHttp is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, and HTTP/2 across four composable layers.
+TurboHttp handles HTTP requests through a simple pipeline. You send a request, and the library automatically handles cookies, caching, retries, redirects, and connection reuse — all transparently.
 
 <ClientOnly>
-  <LikeC4Diagram viewId="index" :height="520" />
+  <LikeC4Diagram viewId="index" :height="300" />
 </ClientOnly>
 
-## System Boundaries
+## The Request Pipeline
 
-The diagram above shows the three actors in the system:
+When you call `SendAsync()`, your request passes through a series of processing stages:
 
-- **User** — any .NET application that creates and sends `HttpRequestMessage` objects
-- **TurboHttp** — the library itself: four layers (Client, Streams, Protocol, I/O) encapsulated behind `ITurboHttpClient`
-- **TCP Network** — the remote server; TurboHttp manages all TCP socket lifecycle internally
+```
+Your Request
+    ↓
+[Enricher] — applies default headers, base address
+    ↓
+[Cookies] — injects matching cookies from the cookie jar
+    ↓
+[Cache] — checks if response is cached; returns immediately if fresh
+    ↓
+[Protocol Encoder] — converts to HTTP/1.0, 1.1, 2, or 3 bytes
+    ↓
+[Network] — sends over TCP or QUIC
+    ↓
+[Protocol Decoder] — parses response bytes
+    ↓
+[Decompression] — decompresses gzip/deflate/brotli
+    ↓
+[Cookies] — stores Set-Cookie headers
+    ↓
+[Cache] — caches the response if cacheable
+    ↓
+[Retry] — re-sends on transient errors or 503/429
+    ↓
+[Redirects] — follows 301-308 automatically
+    ↓
+Your Response
+```
 
-## Four-Layer Architecture
+Each stage does one thing well. Most of the time you don't think about them — they just work.
 
-| Layer | Location | Responsibility |
-|-------|----------|----------------|
-| **Client** | `TurboHttp/Client/` | Public API — `ITurboHttpClient`, `SendAsync`, channel-based request/response |
-| **Streams** | `TurboHttp/Streams/` | Akka.Streams `GraphStage` pipeline — version routing, encode/decode, correlation |
-| **Protocol** | `TurboHttp/Protocol/` | Pure protocol logic — encoders, decoders, HPACK, cookies, caching, redirects, retries |
-| **I/O** | `TurboHttp/IO/` | Hybrid: actors for lifecycle management, `System.Threading.Channels` for data |
+## Key Characteristics
 
-Data flows **top-to-bottom** through the layers. Lifecycle management (connection pooling, reconnect, idle eviction) flows **bottom-up** via the actor hierarchy.
+- **Automatic**: Cookies, caching, retries, redirects all work out of the box
+- **Efficient**: HTTP/2 and HTTP/3 multiplexing, keep-alive connection reuse, lock-free data movement
+- **Correct**: Follows HTTP specifications for freshness, method rewriting, retry idempotency
+- **Observable**: See exactly what happens at each stage
 
-## Key Design Decisions
+## Learn More
 
-### Backpressure End-to-End
-
-Every stage in the pipeline is a backpressure-aware Akka.Streams `GraphStage`. Demand propagates from the response consumer all the way back to the TCP reader — no unbounded buffers, no silent drops.
-
-### Zero-Copy Data Path
-
-The I/O layer uses `System.Threading.Channels` and `System.IO.Pipelines` to move bytes from TCP to the stream pipeline without copying through actor mailboxes. `ClientByteMover` runs three static async tasks per connection (TCP→Pipe, Pipe→InboundChannel, OutboundChannel→TCP), keeping the hot path allocation-free.
-
-### Correctness by Design
-
-Every protocol decision in TurboHttp is driven by the relevant HTTP specification. Encoding, decoding, caching freshness, redirect method rewriting, retry idempotency, cookie attribute handling, and HPACK header compression are all implemented as pure, independently testable logic — separate from the I/O and streaming infrastructure.
-
-## Explore Further
-
-- [**Layers**](./layers) — Container view and per-layer details
-- [**Engines**](./engines) — Per-protocol engine internals
-- [**Pipeline Flow**](./pipeline) — Full pipeline with feedback loops
-- [**Scenarios**](./scenarios) — End-to-end request walkthroughs
+- [**Pipeline Details**](./pipeline) — All stages and how they interact
+- [**Scenarios**](./scenarios) — End-to-end walkthroughs for HTTP/1.0, 1.1, 2, and 3
+- [**Connection Pooling**](../guide/connection-pooling) — How connections are reused

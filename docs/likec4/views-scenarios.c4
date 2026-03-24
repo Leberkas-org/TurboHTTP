@@ -17,13 +17,12 @@ views {
     turbohttp.streams.Http10Engine -> turbohttp.streams.Http10EncoderStage 'serialize to bytes'
     turbohttp.streams.Http10EncoderStage -> turbohttp.streams.ConnectionStage 'request bytes'
 
-    // ── Connection setup ───────────────────────────────────────────────
-    turbohttp.streams.ConnectionStage -> turbohttp.io.PoolRouter 'EnsureHost'
-    turbohttp.io.PoolRouter -> turbohttp.io.HostPool 'EnsureHost (forward)'
-    turbohttp.io.HostPool -> turbohttp.io.ConnectionActor 'SpawnConnection'
-    turbohttp.io.ConnectionActor -> turbohttp.io.ClientManager 'CreateRunner'
-    turbohttp.io.ClientManager -> turbohttp.io.ClientRunner 'Spawn runner'
-    turbohttp.io.ConnectionActor -> turbohttp.streams.ConnectionStage 'ConnectionReady'
+    // ── Connection acquisition ─────────────────────────────────────────
+    turbohttp.streams.ConnectionStage -> turbohttp.transport.ConnectionPool 'AcquireAsync'
+    turbohttp.transport.ConnectionPool -> turbohttp.transport.HostConnections 'per-host manager'
+    turbohttp.transport.HostConnections -> turbohttp.transport.DirectConnectionFactory 'establish connection'
+    turbohttp.transport.DirectConnectionFactory -> turbohttp.transport.ConnectionLease 'connection lease'
+    turbohttp.transport.ConnectionLease -> turbohttp.streams.ConnectionStage 'ready'
 
     // ── TCP ────────────────────────────────────────────────────────────
     turbohttp.streams.ConnectionStage -> tcp 'send request'
@@ -32,8 +31,8 @@ views {
     // ── Response ───────────────────────────────────────────────────────
     turbohttp.streams.ConnectionStage -> turbohttp.streams.Http10DecoderStage 'raw bytes'
     turbohttp.streams.Http10DecoderStage -> turbohttp.streams.Http1XCorrelationStage 'HttpResponseMessage'
-    turbohttp.streams.Http1XCorrelationStage -> turbohttp.streams.DecompressionBidiStage 'correlated response'
-    turbohttp.streams.DecompressionBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
+    turbohttp.streams.Http1XCorrelationStage -> turbohttp.streams.ContentEncodingBidiStage 'correlated response'
+    turbohttp.streams.ContentEncodingBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
     turbohttp.streams.CookieBidiStage -> turbohttp.streams.CacheBidiStage 'store Set-Cookie'
     turbohttp.streams.CacheBidiStage -> turbohttp.streams.RetryBidiStage 'store cacheable response'
     turbohttp.streams.RetryBidiStage -> turbohttp.streams.RedirectBidiStage 'no retry needed'
@@ -56,13 +55,12 @@ views {
     turbohttp.streams.Http11Engine -> turbohttp.streams.Http11EncoderStage 'serialize + chunked TE + Host header'
     turbohttp.streams.Http11EncoderStage -> turbohttp.streams.ConnectionStage 'request bytes'
 
-    // ── Connection setup ───────────────────────────────────────────────
-    turbohttp.streams.ConnectionStage -> turbohttp.io.PoolRouter 'EnsureHost'
-    turbohttp.io.PoolRouter -> turbohttp.io.HostPool 'EnsureHost (forward)'
-    turbohttp.io.HostPool -> turbohttp.io.ConnectionActor 'SpawnConnection'
-    turbohttp.io.ConnectionActor -> turbohttp.io.ClientManager 'CreateRunner'
-    turbohttp.io.ClientManager -> turbohttp.io.ClientRunner 'Spawn runner'
-    turbohttp.io.ConnectionActor -> turbohttp.streams.ConnectionStage 'ConnectionReady'
+    // ── Connection acquisition ─────────────────────────────────────────
+    turbohttp.streams.ConnectionStage -> turbohttp.transport.ConnectionPool 'AcquireAsync'
+    turbohttp.transport.ConnectionPool -> turbohttp.transport.HostConnections 'per-host manager'
+    turbohttp.transport.HostConnections -> turbohttp.transport.DirectConnectionFactory 'establish connection'
+    turbohttp.transport.DirectConnectionFactory -> turbohttp.transport.ConnectionLease 'connection lease'
+    turbohttp.transport.ConnectionLease -> turbohttp.streams.ConnectionStage 'ready'
 
     // ── TCP ────────────────────────────────────────────────────────────
     turbohttp.streams.ConnectionStage -> tcp 'send request'
@@ -75,12 +73,12 @@ views {
     // Keep-alive signal and response in parallel
     parallel {
       turbohttp.streams.Http1XCorrelationStage -> turbohttp.streams.ConnectionReuseStage 'keep-alive / close signal'
-      turbohttp.streams.Http1XCorrelationStage -> turbohttp.streams.DecompressionBidiStage 'correlated response'
+      turbohttp.streams.Http1XCorrelationStage -> turbohttp.streams.ContentEncodingBidiStage 'correlated response'
     }
     turbohttp.streams.ConnectionReuseStage -> turbohttp.streams.ConnectionStage 'reuse or close decision'
 
     // ── Response ───────────────────────────────────────────────────────
-    turbohttp.streams.DecompressionBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
+    turbohttp.streams.ContentEncodingBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
     turbohttp.streams.CookieBidiStage -> turbohttp.streams.CacheBidiStage 'store Set-Cookie'
     turbohttp.streams.CacheBidiStage -> turbohttp.streams.RetryBidiStage 'store cacheable response'
     turbohttp.streams.RetryBidiStage -> turbohttp.streams.RedirectBidiStage 'no retry needed'
@@ -107,13 +105,12 @@ views {
     turbohttp.streams.Http20EncoderStage -> turbohttp.streams.Http20PrependPrefaceStage 'outbound bytes'
     turbohttp.streams.Http20PrependPrefaceStage -> turbohttp.streams.ConnectionStage 'bytes with connection preface'
 
-    // ── Connection setup ───────────────────────────────────────────────
-    turbohttp.streams.ConnectionStage -> turbohttp.io.PoolRouter 'EnsureHost'
-    turbohttp.io.PoolRouter -> turbohttp.io.HostPool 'EnsureHost (forward)'
-    turbohttp.io.HostPool -> turbohttp.io.ConnectionActor 'SpawnConnection'
-    turbohttp.io.ConnectionActor -> turbohttp.io.ClientManager 'CreateRunner'
-    turbohttp.io.ClientManager -> turbohttp.io.ClientRunner 'Spawn runner'
-    turbohttp.io.ConnectionActor -> turbohttp.streams.ConnectionStage 'ConnectionReady'
+    // ── Connection acquisition ─────────────────────────────────────────
+    turbohttp.streams.ConnectionStage -> turbohttp.transport.ConnectionPool 'AcquireAsync'
+    turbohttp.transport.ConnectionPool -> turbohttp.transport.HostConnections 'per-host manager'
+    turbohttp.transport.HostConnections -> turbohttp.transport.DirectConnectionFactory 'establish connection'
+    turbohttp.transport.DirectConnectionFactory -> turbohttp.transport.ConnectionLease 'connection lease'
+    turbohttp.transport.ConnectionLease -> turbohttp.streams.ConnectionStage 'ready'
 
     // ── TCP ────────────────────────────────────────────────────────────
     turbohttp.streams.ConnectionStage -> tcp 'send frames'
@@ -123,8 +120,8 @@ views {
     turbohttp.streams.ConnectionStage -> turbohttp.streams.Http20DecoderStage 'raw bytes'
     turbohttp.streams.Http20DecoderStage -> turbohttp.streams.Http20ConnectionStage 'inbound frames'
     turbohttp.streams.Http20ConnectionStage -> turbohttp.streams.Http20StreamStage 'response frames per stream'
-    turbohttp.streams.Http20StreamStage -> turbohttp.streams.DecompressionBidiStage 'assembled HttpResponseMessage'
-    turbohttp.streams.DecompressionBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
+    turbohttp.streams.Http20StreamStage -> turbohttp.streams.ContentEncodingBidiStage 'assembled HttpResponseMessage'
+    turbohttp.streams.ContentEncodingBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
     turbohttp.streams.CookieBidiStage -> turbohttp.streams.CacheBidiStage 'store Set-Cookie'
     turbohttp.streams.CacheBidiStage -> turbohttp.streams.RetryBidiStage 'store cacheable response'
     turbohttp.streams.RetryBidiStage -> turbohttp.streams.RedirectBidiStage 'no retry needed'
@@ -132,45 +129,4 @@ views {
     turbohttp.client.ITurboHttpClient -> user 'HttpResponseMessage'
   }
 
-  // ── Scenario: HTTP/3 End-to-End ────────────────────────────────────────
-  dynamic view scenarioHttp3 {
-    title 'Scenario: HTTP/3 Request End-to-End'
-    description 'Multiplexed HTTP/3 over QUIC. Each request uses an independent QUIC stream — no head-of-line blocking. QPACK compresses headers.'
-
-    // ── Request ────────────────────────────────────────────────────────
-    user -> turbohttp.client.ITurboHttpClient 'HttpRequestMessage'
-    turbohttp.client.ITurboHttpClient -> turbohttp.streams.RequestEnricherStage 'apply BaseAddress + default headers'
-    turbohttp.streams.RequestEnricherStage -> turbohttp.streams.CookieBidiStage 'inject Cookie header'
-    turbohttp.streams.CookieBidiStage -> turbohttp.streams.CacheBidiStage 'check cache'
-    turbohttp.streams.CacheBidiStage -> turbohttp.streams.Engine 'cache miss'
-    turbohttp.streams.Engine -> turbohttp.streams.Http30Engine 'route to HTTP/3'
-    turbohttp.streams.Http30Engine -> turbohttp.streams.Http30Request2FrameStage 'compress headers → HEADERS + DATA frames (QPACK)'
-    turbohttp.streams.Http30Request2FrameStage -> turbohttp.streams.Http30ConnectionStage 'frames'
-    turbohttp.streams.Http30ConnectionStage -> turbohttp.streams.Http30EncoderStage 'outbound frames'
-    turbohttp.streams.Http30EncoderStage -> turbohttp.streams.Http3ConnectionStage 'outbound bytes'
-
-    // ── Connection setup ───────────────────────────────────────────────
-    turbohttp.streams.Http3ConnectionStage -> turbohttp.io.PoolRouter 'EnsureHost (QUIC)'
-    turbohttp.io.PoolRouter -> turbohttp.io.HostPool 'EnsureHost (forward)'
-    turbohttp.io.HostPool -> turbohttp.io.ConnectionActor 'SpawnConnection'
-    turbohttp.io.ConnectionActor -> turbohttp.io.ClientManager 'CreateRunner'
-    turbohttp.io.ClientManager -> turbohttp.io.ClientRunner 'Spawn runner'
-    turbohttp.io.ConnectionActor -> turbohttp.streams.Http3ConnectionStage 'ConnectionReady'
-
-    // ── QUIC ──────────────────────────────────────────────────────────
-    turbohttp.streams.Http3ConnectionStage -> tcp 'send via QUIC stream'
-    tcp -> turbohttp.streams.Http3ConnectionStage 'receive via QUIC stream'
-
-    // ── Response ───────────────────────────────────────────────────────
-    turbohttp.streams.Http3ConnectionStage -> turbohttp.streams.Http30DecoderStage 'raw bytes'
-    turbohttp.streams.Http30DecoderStage -> turbohttp.streams.Http30ConnectionStage 'inbound frames'
-    turbohttp.streams.Http30ConnectionStage -> turbohttp.streams.Http30StreamStage 'response frames per stream'
-    turbohttp.streams.Http30StreamStage -> turbohttp.streams.DecompressionBidiStage 'assembled HttpResponseMessage'
-    turbohttp.streams.DecompressionBidiStage -> turbohttp.streams.CookieBidiStage 'decompress body'
-    turbohttp.streams.CookieBidiStage -> turbohttp.streams.CacheBidiStage 'store Set-Cookie'
-    turbohttp.streams.CacheBidiStage -> turbohttp.streams.RetryBidiStage 'store cacheable response'
-    turbohttp.streams.RetryBidiStage -> turbohttp.streams.RedirectBidiStage 'no retry needed'
-    turbohttp.streams.RedirectBidiStage -> turbohttp.client.ITurboHttpClient 'final response'
-    turbohttp.client.ITurboHttpClient -> user 'HttpResponseMessage'
-  }
 }
