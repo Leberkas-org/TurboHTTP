@@ -33,6 +33,18 @@ public sealed record ConnectionHandle(
 
     public void SetCloseKind(TlsCloseKind value) => _closeKind = value;
 
+    /// <summary>
+    /// Creates a <see cref="ConnectionHandle"/> for the direct (non-actor) connection path.
+    /// Uses <see cref="ActorRefs.Nobody"/> as the connection actor since no actor is involved.
+    /// </summary>
+    public static ConnectionHandle CreateDirect(
+        ChannelWriter<(IMemoryOwner<byte> Buffer, int ReadableBytes)> outboundWriter,
+        ChannelReader<(IMemoryOwner<byte> Buffer, int ReadableBytes)> inboundReader,
+        RequestEndpoint key)
+    {
+        return new ConnectionHandle(outboundWriter, inboundReader, key, ActorRefs.Nobody);
+    }
+
     public bool Equals(ConnectionHandle? other)
     {
         if (other is null) return false;

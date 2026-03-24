@@ -100,16 +100,16 @@ Replace the 5-class actor hierarchy (`PoolRouter` → `HostPool` → `Http1/2/3C
 **Model:** opus — core infrastructure, error handling critical
 
 **Acceptance Criteria:**
-- [ ] `DirectConnectionFactory` class created at `src/TurboHttp/Transport/DirectConnectionFactory.cs`
-- [ ] `EstablishAsync(TcpOptions, RequestEndpoint, CancellationToken)` → `Task<ConnectionLease>`
-- [ ] Selects IClientProvider based on TcpOptions type (TcpClientProvider / TlsClientProvider)
-- [ ] Creates ClientState with channels + Pipe
-- [ ] Spawns 3 ByteMover tasks using callback overloads from TASK-026-001
-- [ ] Emits `ConnectionActive` metric + `EventSource.ConnectionOpened` + `DiagnosticListener.OnConnectionOpened`
-- [ ] Returns `ConnectionLease` wrapping `ConnectionHandle.CreateDirect()` + state
-- [ ] `ConnectionHandle.CreateDirect()` factory method added to `ConnectionHandle.cs` (uses `ActorRefs.Nobody`)
-- [ ] Tests: establish happy path, cancellation, connection refused, dispose cleanup
-- [ ] All tests pass
+- [x] `DirectConnectionFactory` class created at `src/TurboHttp/Transport/DirectConnectionFactory.cs`
+- [x] `EstablishAsync(TcpOptions, RequestEndpoint, CancellationToken)` → `Task<ConnectionLease>`
+- [x] Selects IClientProvider based on TcpOptions type (TcpClientProvider / TlsClientProvider)
+- [x] Creates ClientState with channels + Pipe
+- [x] Spawns 3 ByteMover tasks using callback overloads from TASK-026-001
+- [x] Emits `ConnectionActive` metric + `EventSource.ConnectionOpened` + `DiagnosticListener.OnConnectionOpened`
+- [x] Returns `ConnectionLease` wrapping `ConnectionHandle.CreateDirect()` + state
+- [x] `ConnectionHandle.CreateDirect()` factory method added to `ConnectionHandle.cs` (uses `ActorRefs.Nobody`)
+- [x] Tests: establish happy path, cancellation, connection refused, dispose cleanup
+- [x] All tests pass
 
 ### TASK-026-004: Create ConnectionPool + HostConnections
 **Description:** As a developer, I want a thread-safe `ConnectionPool` with per-host `HostConnections` that handles connection acquisition (new or reused), release (back to pool or dispose), idle eviction, per-host limits, and MRU selection — replacing PoolRouter + HostPool + PerHostConnectionLimiter + ConnectionState.
