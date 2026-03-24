@@ -13,16 +13,12 @@ public sealed class QuicOptionsTests
             Host = "example.com",
             Port = 443,
             ConnectTimeout = TimeSpan.FromSeconds(5),
-            ReconnectInterval = TimeSpan.FromSeconds(2),
-            MaxReconnectAttempts = 3,
             MaxFrameSize = 64 * 1024,
         };
 
         Assert.Equal("example.com", options.Host);
         Assert.Equal(443, options.Port);
         Assert.Equal(TimeSpan.FromSeconds(5), options.ConnectTimeout);
-        Assert.Equal(TimeSpan.FromSeconds(2), options.ReconnectInterval);
-        Assert.Equal(3, options.MaxReconnectAttempts);
         Assert.Equal(64 * 1024, options.MaxFrameSize);
         Assert.IsAssignableFrom<TcpOptions>(options);
     }

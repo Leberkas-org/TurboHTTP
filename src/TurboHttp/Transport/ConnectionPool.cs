@@ -10,9 +10,8 @@ using TurboHttp.Internal;
 namespace TurboHttp.Transport;
 
 /// <summary>
-/// Thread-safe connection pool that manages per-host <see cref="HostConnections"/>.
-/// Replaces the actor-based PoolRouter + HostPool + PerHostConnectionLimiter + ConnectionState
-/// with a direct async API: <see cref="AcquireAsync"/> / <see cref="Release"/>.
+/// Thread-safe connection pool that manages per-host <see cref="HostConnections"/>
+/// via a direct async API: <see cref="AcquireAsync"/> / <see cref="Release"/>.
 /// </summary>
 internal class ConnectionPool : IAsyncDisposable
 {

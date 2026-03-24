@@ -230,6 +230,4 @@ public record TcpOptions
     public int MaxFrameSize { get; init; } = 128 * 1024;
     public AddressFamily AddressFamily { get; init; } = AddressFamily.Unspecified;
     public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(10);
-    public TimeSpan ReconnectInterval { get; init; } = TimeSpan.FromSeconds(5);
-    public int MaxReconnectAttempts { get; init; } = 10;
 }

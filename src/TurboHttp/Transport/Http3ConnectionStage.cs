@@ -1,10 +1,10 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -19,27 +19,32 @@ namespace TurboHttp.Transport;
 /// <see cref="ConnectionHandle"/> instances (one per QUIC stream type), unwraps
 /// <see cref="Http3TaggedItem"/> to route outbound data to the correct stream,
 /// and merges inbound data from all streams with <see cref="InputStreamType"/> tags.
+/// Uses <see cref="QuicConnectionManager"/> for actor-free QUIC stream management.
 /// </summary>
+[SupportedOSPlatform("linux")]
+[SupportedOSPlatform("macOS")]
+[SupportedOSPlatform("windows")]
 public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
-    private IActorRef PoolRouter { get; }
+    private QuicConnectionManager? QuicManager { get; set; }
 
     private readonly Inlet<IOutputItem> _in = new("Http3Connection.In");
     private readonly Outlet<IInputItem> _out = new("Http3Connection.Out");
 
     public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
-    public Http3ConnectionStage(IActorRef poolRouter)
+    public Http3ConnectionStage()
     {
-        PoolRouter = poolRouter;
         Shape = new FlowShape<IOutputItem, IInputItem>(_in, _out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
         => new Logic(this);
 
-    private sealed class Logic : GraphStageLogic
+    private sealed class Logic : TimerGraphStageLogic
     {
+        private const string ConnectTimerKey = "connect-timeout";
+
         private readonly Http3ConnectionStage _stage;
         private readonly Queue<IInputItem> _pendingReads = new();
 
@@ -47,9 +52,6 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private ConnectionHandle? _requestHandle;
         private ConnectionHandle? _controlHandle;
         private ConnectionHandle? _encoderHandle;
-
-        // --- Inbound handles for server-initiated streams ---
-        private readonly List<(ConnectionHandle Handle, InputStreamType StreamType)> _inboundHandles = [];
 
         // --- Outbound buffers for items arriving before handle is ready ---
         private readonly Queue<(IMemoryOwner<byte> Memory, int Length, RequestEndpoint Key)> _pendingControlItems = new();
@@ -59,16 +61,23 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private Action<IInputItem>? _onInboundData;
         private Action? _onOutboundWriteDone;
         private Action<Exception>? _onOutboundWriteFailed;
-        private Action<ConnectionHandle>? _onRequestHandleReceived;
-        private Action<Http3ConnectionActor.TypedConnectionHandle>? _onTypedHandleReceived;
-        private Action<Http3ConnectionActor.InboundStreamReady>? _onInboundStreamReady;
+        private Action<ConnectionLease>? _onRequestLeaseAcquired;
+        private Action<ConnectionLease>? _onTypedLeaseAcquired;
+        private Action<Exception>? _onAcquisitionFailed;
         private Action<TlsCloseKind>? _onInboundComplete;
+        private Action<QuicConnectionManager.InboundStream>? _onInboundStreamReady;
 
-        private StageActor? _stageActor;
         private readonly List<CancellationTokenSource> _pumpCancellations = [];
+        private readonly List<ConnectionLease> _activeLeases = [];
 
         /// <summary>The RequestEndpoint from the most recent ConnectItem.</summary>
         private RequestEndpoint _currentKey;
+
+        /// <summary>The ConnectItem currently awaiting a connection.</summary>
+        private ConnectItem? _pendingConnect;
+
+        /// <summary>Pending typed stream type being opened (Control or QpackEncoder).</summary>
+        private OutputStreamType? _pendingTypedStreamType;
 
         public Logic(Http3ConnectionStage stage) : base(stage.Shape)
         {
@@ -123,15 +132,6 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             {
                 Log.Warning("Http3ConnectionStage: Outbound write failed — {0}", ex.Message);
 
-                // Notify the pool to tear down the QUIC connection.
-                if (_requestHandle is { } h)
-                {
-                    h.ConnectionActor.Tell(
-                        new HostPool.MarkConnectionNoReuse(h.ConnectionActor));
-                    h.ConnectionActor.Tell(
-                        new HostPool.StreamCompleted(h.ConnectionActor));
-                }
-
                 // Emit close signal downstream so decoder stages know the connection is dead.
                 var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _currentKey };
                 if (IsAvailable(_stage._out))
@@ -147,24 +147,34 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                 _requestHandle = null;
                 _controlHandle = null;
                 _encoderHandle = null;
-                _inboundHandles.Clear();
             });
 
-            _onRequestHandleReceived = GetAsyncCallback<ConnectionHandle>(handle =>
+            _onRequestLeaseAcquired = GetAsyncCallback<ConnectionLease>(lease =>
             {
-                _requestHandle = handle;
-                _currentKey = handle.Key;
-                StartInboundPump(handle, InputStreamType.Request);
+                CancelTimer(ConnectTimerKey);
 
-                // Request control and QPACK encoder streams from the connection actor.
-                handle.ConnectionActor.Tell(
-                    new Http3ConnectionActor.OpenTypedStream(_stageActor!.Ref, OutputStreamType.Control));
-                handle.ConnectionActor.Tell(
-                    new Http3ConnectionActor.OpenTypedStream(_stageActor!.Ref, OutputStreamType.QpackEncoder));
+                if (_pendingConnect is null && _requestHandle is not null)
+                {
+                    return;
+                }
+
+                _pendingConnect = null;
+
+                _activeLeases.Add(lease);
+                _requestHandle = lease.Handle;
+                _currentKey = lease.Key;
+                StartInboundPump(lease.Handle, InputStreamType.Request);
+
+                // Open control and QPACK encoder streams via QuicConnectionManager.
+                OpenTypedStream(OutputStreamType.Control);
+                OpenTypedStream(OutputStreamType.QpackEncoder);
 
                 // Subscribe to server-initiated inbound streams.
-                handle.ConnectionActor.Tell(
-                    new Http3ConnectionActor.SubscribeInboundStreams(_stageActor!.Ref));
+                var manager = _stage.QuicManager;
+                if (manager is not null)
+                {
+                    manager.StartInboundAcceptLoop(inbound => _onInboundStreamReady!(inbound));
+                }
 
                 // Ready to process data items — pull next element.
                 if (!IsClosed(_stage._in) && !HasBeenPulled(_stage._in))
@@ -173,32 +183,54 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                 }
             });
 
-            _onTypedHandleReceived = GetAsyncCallback<Http3ConnectionActor.TypedConnectionHandle>(msg =>
+            _onTypedLeaseAcquired = GetAsyncCallback<ConnectionLease>(lease =>
             {
-                switch (msg.StreamType)
+                _activeLeases.Add(lease);
+                var streamType = _pendingTypedStreamType;
+                _pendingTypedStreamType = null;
+
+                switch (streamType)
                 {
                     case OutputStreamType.Control:
-                        _controlHandle = msg.Handle;
-                        FlushPendingItems(_pendingControlItems, msg.Handle);
+                        _controlHandle = lease.Handle;
+                        FlushPendingItems(_pendingControlItems, lease.Handle);
                         break;
 
                     case OutputStreamType.QpackEncoder:
-                        _encoderHandle = msg.Handle;
-                        FlushPendingItems(_pendingEncoderItems, msg.Handle);
-                        break;
-
-                    case OutputStreamType.Request:
-                        // QUIC: HostPool routes via OpenTypedStream for each request,
-                        // so the first request handle arrives here (not as raw ConnectionHandle).
-                        _onRequestHandleReceived!(msg.Handle);
+                        _encoderHandle = lease.Handle;
+                        FlushPendingItems(_pendingEncoderItems, lease.Handle);
                         break;
                 }
             });
 
-            _onInboundStreamReady = GetAsyncCallback<Http3ConnectionActor.InboundStreamReady>(msg =>
+            _onAcquisitionFailed = GetAsyncCallback<Exception>(ex =>
             {
-                _inboundHandles.Add((msg.Handle, msg.StreamType));
-                StartInboundPump(msg.Handle, msg.StreamType);
+                CancelTimer(ConnectTimerKey);
+
+                Log.Warning("Http3ConnectionStage: Stream acquisition failed — {0}", ex.Message);
+
+                if (_pendingConnect is not null)
+                {
+                    var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Key };
+                    _pendingConnect = null;
+
+                    if (IsAvailable(_stage._out))
+                    {
+                        Push(_stage._out, signal);
+                    }
+                    else
+                    {
+                        _pendingReads.Enqueue(signal);
+                    }
+                }
+
+                TryPull();
+            });
+
+            _onInboundStreamReady = GetAsyncCallback<QuicConnectionManager.InboundStream>(inbound =>
+            {
+                _activeLeases.Add(inbound.Lease);
+                StartInboundPump(inbound.Lease.Handle, inbound.StreamType);
             });
 
             _onInboundComplete = GetAsyncCallback<TlsCloseKind>(closeKind =>
@@ -213,35 +245,14 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                     _pendingReads.Enqueue(signal);
                 }
 
-                // Connection closed — clear the request handle so next ConnectItem re-acquires.
+                // Connection closed — clear handles so next ConnectItem re-acquires.
                 _requestHandle = null;
                 _controlHandle = null;
                 _encoderHandle = null;
-                _inboundHandles.Clear();
             });
-
-            _stageActor = GetStageActor(OnMessage);
 
             // Ready to accept ConnectItem immediately.
             Pull(_stage._in);
-        }
-
-        private void OnMessage((IActorRef sender, object msg) args)
-        {
-            switch (args.msg)
-            {
-                case ConnectionHandle handle:
-                    _onRequestHandleReceived!(handle);
-                    break;
-
-                case Http3ConnectionActor.TypedConnectionHandle typed:
-                    _onTypedHandleReceived!(typed);
-                    break;
-
-                case Http3ConnectionActor.InboundStreamReady inbound:
-                    _onInboundStreamReady!(inbound);
-                    break;
-            }
         }
 
         private void HandlePush()
@@ -255,47 +266,41 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                 return;
             }
 
-            // --- Non-tagged items: same behaviour as ConnectionStage ---
-            var handle = _requestHandle;
-
-            if (item is MaxConcurrentStreamsItem maxStreams)
+            // --- Non-tagged items ---
+            if (item is MaxConcurrentStreamsItem)
             {
-                handle?.ConnectionActor.Tell(
-                    new HostPool.UpdateMaxConcurrentStreams(handle.ConnectionActor, maxStreams.MaxStreams));
+                // HTTP/3 does not use MAX_CONCURRENT_STREAMS via frames — QUIC transport handles this.
                 TryPull();
                 return;
             }
 
             if (item is StreamAcquireItem)
             {
-                handle?.ConnectionActor.Tell(
-                    new HostPool.StreamAcquired(handle.ConnectionActor));
+                // Stream acquisition is handled by QuicConnectionManager — no action needed.
                 TryPull();
                 return;
             }
 
-            if (item is ConnectionReuseItem reuseItem)
+            if (item is ConnectionReuseItem)
             {
-                if (!reuseItem.Decision.CanReuse)
-                {
-                    handle?.ConnectionActor.Tell(
-                        new HostPool.MarkConnectionNoReuse(handle.ConnectionActor));
-                }
-
-                handle?.ConnectionActor.Tell(
-                    new HostPool.StreamCompleted(handle.ConnectionActor));
+                // HTTP/3 connections are managed by QuicConnectionManager lifecycle.
                 TryPull();
                 return;
             }
 
             if (item is ConnectItem connect)
             {
-                // Send EnsureHost — HostPool will reply with ConnectionHandle to our StageActor.
-                _stage.PoolRouter.Tell(
-                    new PoolRouter.EnsureHost(connect.Key, connect.Options),
-                    _stageActor!.Ref);
+                _pendingConnect = connect;
 
-                // Do NOT pull — wait for ConnectionHandle reply before accepting data.
+                // Create a new QuicConnectionManager and open the request stream.
+                if (connect.Options is QuicOptions quicOptions)
+                {
+                    _stage.QuicManager = new QuicConnectionManager(quicOptions, connect.Key);
+                }
+
+                AcquireRequestStream(connect);
+
+                // Do NOT pull — wait for lease before accepting data.
                 return;
             }
 
@@ -310,7 +315,7 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         {
             if (tagged.Inner is not DataItem dataItem)
             {
-                // Non-data tagged items (control signals) — forward to appropriate actor.
+                // Non-data tagged items (control signals) — no routing needed.
                 TryPull();
                 return;
             }
@@ -407,6 +412,99 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         }
 
         /// <summary>
+        /// Acquires a request stream from the <see cref="QuicConnectionManager"/>.
+        /// </summary>
+        private void AcquireRequestStream(ConnectItem connect)
+        {
+            var manager = _stage.QuicManager;
+            if (manager is null)
+            {
+                _onAcquisitionFailed!(new InvalidOperationException("QuicConnectionManager not initialized"));
+                return;
+            }
+
+            var acquireTask = manager.OpenStreamAsync(OutputStreamType.Request);
+
+            acquireTask.ContinueWith(
+                t => _onRequestLeaseAcquired!(t.Result),
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnRanToCompletion);
+
+            acquireTask.ContinueWith(
+                t => _onAcquisitionFailed!(t.Exception!.GetBaseException()),
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
+
+            var timeout = connect.Options.ConnectTimeout;
+            if (timeout <= TimeSpan.Zero)
+            {
+                timeout = TimeSpan.FromSeconds(10);
+            }
+
+            ScheduleOnce(ConnectTimerKey, timeout);
+        }
+
+        /// <summary>
+        /// Opens a typed QUIC stream (Control or QpackEncoder) via <see cref="QuicConnectionManager"/>.
+        /// </summary>
+        private void OpenTypedStream(OutputStreamType streamType)
+        {
+            var manager = _stage.QuicManager;
+            if (manager is null)
+            {
+                return;
+            }
+
+            _pendingTypedStreamType = streamType;
+            var openTask = manager.OpenStreamAsync(streamType);
+
+            openTask.ContinueWith(
+                t => _onTypedLeaseAcquired!(t.Result),
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnRanToCompletion);
+
+            openTask.ContinueWith(
+                t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        Log.Warning("Http3ConnectionStage: Failed to open {0} stream — {1}",
+                            streamType, t.Exception!.GetBaseException().Message);
+                    }
+                },
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        protected override void OnTimer(object timerKey)
+        {
+            if (timerKey is not string key || key != ConnectTimerKey)
+            {
+                return;
+            }
+
+            if (_pendingConnect is null)
+            {
+                return;
+            }
+
+            Log.Warning(
+                "Http3ConnectionStage: Connection acquisition timed out for {0}:{1}",
+                _pendingConnect.Key.Host,
+                _pendingConnect.Key.Port);
+
+            var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Key };
+            _pendingConnect = null;
+
+            if (IsAvailable(_stage._out))
+            {
+                Push(_stage._out, signal);
+            }
+            else
+            {
+                _pendingReads.Enqueue(signal);
+            }
+
+            TryPull();
+        }
+
+        /// <summary>
         /// Starts an async pump that reads from a <see cref="ConnectionHandle.InboundReader"/>
         /// and pushes each chunk into the stage, tagged with the appropriate <see cref="InputStreamType"/>.
         /// </summary>
@@ -471,7 +569,23 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
 
         public override void PostStop()
         {
+            CancelTimer(ConnectTimerKey);
             StopAllPumps();
+
+            // Dispose all active leases.
+            foreach (var lease in _activeLeases)
+            {
+                _ = lease.DisposeAsync();
+            }
+
+            _activeLeases.Clear();
+
+            // Dispose the QuicConnectionManager.
+            if (_stage.QuicManager is { } manager)
+            {
+                _ = manager.DisposeAsync();
+                _stage.QuicManager = null;
+            }
         }
     }
 }

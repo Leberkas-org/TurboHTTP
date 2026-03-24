@@ -41,8 +41,6 @@ internal static class TcpOptionsFactory
                 AddressFamily = af,
                 ServerCertificateValidationCallback = clientOptions.EffectiveServerCertificateValidationCallback,
                 ConnectTimeout = clientOptions.ConnectTimeout,
-                ReconnectInterval = clientOptions.ReconnectInterval,
-                MaxReconnectAttempts = clientOptions.MaxReconnectAttempts,
                 MaxFrameSize = clientOptions.MaxFrameSize,
             };
         }
@@ -59,8 +57,6 @@ internal static class TcpOptionsFactory
                 ClientCertificates = clientOptions.ClientCertificates,
                 EnabledSslProtocols = clientOptions.EnabledSslProtocols,
                 ConnectTimeout = clientOptions.ConnectTimeout,
-                ReconnectInterval = clientOptions.ReconnectInterval,
-                MaxReconnectAttempts = clientOptions.MaxReconnectAttempts,
                 MaxFrameSize = clientOptions.MaxFrameSize,
             };
         }
@@ -71,8 +67,6 @@ internal static class TcpOptionsFactory
             Port = port,
             AddressFamily = af,
             ConnectTimeout = clientOptions.ConnectTimeout,
-            ReconnectInterval = clientOptions.ReconnectInterval,
-            MaxReconnectAttempts = clientOptions.MaxReconnectAttempts,
             MaxFrameSize = clientOptions.MaxFrameSize,
         };
     }

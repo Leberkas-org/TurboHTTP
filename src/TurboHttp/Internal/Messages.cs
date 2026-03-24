@@ -46,7 +46,7 @@ public record DataItem(IMemoryOwner<byte> Memory, int Length) : IOutputItem, IIn
 
 /// <summary>
 /// Carries the <c>SETTINGS_MAX_CONCURRENT_STREAMS</c> value received from the server in an HTTP/2 SETTINGS frame.
-/// Used to update the per-connection stream capacity tracked by <see cref="TurboHttp.Pooling.HostPool"/>.
+/// Used to update the per-connection stream capacity tracked by the connection pool.
 /// </summary>
 public record MaxConcurrentStreamsItem(int MaxStreams) : IControlItem
 {

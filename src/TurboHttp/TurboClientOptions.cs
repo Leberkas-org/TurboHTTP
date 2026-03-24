@@ -19,14 +19,8 @@ public record TurboClientOptions
     /// <summary>Timeout for establishing a new TCP connection. Default is 10 seconds.</summary>
     public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(10);
 
-    /// <summary>Delay between reconnection attempts after a connection failure. Default is 5 seconds.</summary>
-    public TimeSpan ReconnectInterval { get; init; } = TimeSpan.FromSeconds(5);
-
     /// <summary>Time a connection may remain idle before it is evicted from the pool. Default is 10 seconds.</summary>
     public TimeSpan IdleTimeout { get; init; } = TimeSpan.FromSeconds(10);
-
-    /// <summary>Maximum number of reconnection attempts before the connection actor stops. Default is 10.</summary>
-    public int MaxReconnectAttempts { get; init; } = 10;
 
     /// <summary>Maximum HTTP/2 frame size in bytes. Default is 128 KiB.</summary>
     public int MaxFrameSize { get; init; } = 128 * 1024;

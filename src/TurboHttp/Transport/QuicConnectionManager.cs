@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka.Actor;
 using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
 using TurboHttp.Pooling;
@@ -14,8 +13,7 @@ using TurboHttp.Protocol.RFC9114;
 namespace TurboHttp.Transport;
 
 /// <summary>
-/// Manages a shared <see cref="QuicClientProvider"/> and multiple concurrent QUIC streams
-/// without actors. Replaces <see cref="Http3ConnectionActor"/> for the direct connection path.
+/// Manages a shared <see cref="QuicClientProvider"/> and multiple concurrent QUIC streams.
 /// Each QUIC stream gets its own <see cref="ConnectionLease"/> with independent channels,
 /// while all streams share the underlying QUIC connection via the shared provider.
 /// </summary>

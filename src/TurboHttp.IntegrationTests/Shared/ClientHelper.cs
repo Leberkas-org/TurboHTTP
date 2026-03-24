@@ -65,10 +65,6 @@ public sealed class ClientHelper : IAsyncDisposable
 
         var system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", bootstrap.And(diSetup));
 
-        // Register ClientManager so HostPoolActor.SpawnConnection() can resolve it.
-        var clientManager = system.ActorOf(Props.Create(() => new ClientManager()), "client-manager");
-        ActorRegistry.For(system).Register<ClientManager>(clientManager);
-
         // Register the pre-configured ActorSystem so the factory picks it up
         // instead of creating its own (which lacks DI setup).
         services.AddSingleton(system);

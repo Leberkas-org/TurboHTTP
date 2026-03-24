@@ -84,7 +84,7 @@ public sealed class TransportSelectionTests
         Assert.Equal(4433, quicOptions.Port);
     }
 
-    [Fact(DisplayName = "RFC9114-3.2-TS-007: ClientManager creates QuicClientProvider for QuicOptions")]
+    [Fact(DisplayName = "RFC9114-3.2-TS-007: QuicConnectionManager creates QuicClientProvider for QuicOptions")]
     public void Should_CreateQuicProvider_When_QuicOptions()
     {
         // Verify the pattern match works by checking that QuicOptions is matched

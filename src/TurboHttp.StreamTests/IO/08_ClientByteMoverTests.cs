@@ -1,7 +1,5 @@
 using System.Buffers;
 using System.Threading.Channels;
-using Akka.Actor;
-using Akka.TestKit.Xunit2;
 using TurboHttp.Transport;
 
 namespace TurboHttp.StreamTests.IO;
@@ -11,7 +9,7 @@ namespace TurboHttp.StreamTests.IO;
 /// rented <see cref="IMemoryOwner{T}"/> buffers are disposed when the inbound
 /// channel is closed before <see cref="ChannelWriter{T}.TryWrite"/> can succeed.
 /// </summary>
-public sealed class ClientByteMoverTests : TestKit
+public sealed class ClientByteMoverTests
 {
     [Fact(DisplayName = "TASK-013-001: Buffer disposed when TryWrite fails on closed inbound channel")]
     public async Task Should_DisposeBuffer_WhenInboundChannelIsClosed()
@@ -33,7 +31,7 @@ public sealed class ClientByteMoverTests : TestKit
 
         // Act: run MovePipeToChannel; it will rent a buffer, try to write to the
         // closed channel, get false from TryWrite, and must dispose the buffer.
-        await ClientByteMover.MovePipeToChannel(state, ActorRefs.Nobody, Sys.Log, cts.Token);
+        await ClientByteMover.MovePipeToChannel(state, () => { }, log: null, cts.Token);
 
         // Assert: verify the fix indirectly — the method must complete without
         // leaving an undisposed buffer.  We verify this by running it and asserting
@@ -60,7 +58,7 @@ public sealed class ClientByteMoverTests : TestKit
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
-        await ClientByteMover.MovePipeToChannel(state, ActorRefs.Nobody, Sys.Log, cts.Token);
+        await ClientByteMover.MovePipeToChannel(state, () => { }, log: null, cts.Token);
 
         // The item should be readable from the inbound channel
         var ok = inbound.Reader.TryRead(out var item);
