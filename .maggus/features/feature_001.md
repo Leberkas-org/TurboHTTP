@@ -82,13 +82,13 @@ Replace the 5-class actor hierarchy (`PoolRouter` → `HostPool` → `Http1/2/3C
 **Parallel:** yes — can run alongside TASK-026-001
 
 **Acceptance Criteria:**
-- [ ] `ConnectionLease` sealed class created at `src/TurboHttp/Transport/ConnectionLease.cs`
-- [ ] Properties: `Handle`, `Key`, `IsAlive`, `Reusable`, `LastActivity`, `ActiveStreams`, `MaxConcurrentStreams`, `HasAvailableSlot`
-- [ ] Methods: `MarkBusy()`, `MarkIdle()`, `MarkNoReuse()`, `UpdateMaxConcurrentStreams(int)`
-- [ ] `IAsyncDisposable`: cancels CTS, disposes ClientState, emits `ConnectionDuration` metric + `EventSource.ConnectionClosed` + `DiagnosticListener.OnConnectionClosed`
-- [ ] `MaxConcurrentStreams` defaults: 1 for HTTP/1.0, 6 for HTTP/1.1, 100 for HTTP/2+
-- [ ] Unit tests in `src/TurboHttp.StreamTests/Transport/ConnectionLeaseTests.cs`
-- [ ] Build passes
+- [x] `ConnectionLease` sealed class created at `src/TurboHttp/Transport/ConnectionLease.cs`
+- [x] Properties: `Handle`, `Key`, `IsAlive`, `Reusable`, `LastActivity`, `ActiveStreams`, `MaxConcurrentStreams`, `HasAvailableSlot`
+- [x] Methods: `MarkBusy()`, `MarkIdle()`, `MarkNoReuse()`, `UpdateMaxConcurrentStreams(int)`
+- [x] `IAsyncDisposable`: cancels CTS, disposes ClientState, emits `ConnectionDuration` metric + `EventSource.ConnectionClosed` + `DiagnosticListener.OnConnectionClosed`
+- [x] `MaxConcurrentStreams` defaults: 1 for HTTP/1.0, 6 for HTTP/1.1, 100 for HTTP/2+
+- [x] Unit tests in `src/TurboHttp.StreamTests/Transport/ConnectionLeaseTests.cs`
+- [x] Build passes
 
 ### TASK-026-003: Create DirectConnectionFactory
 **Description:** As a developer, I want a static factory that establishes a TCP/TLS connection, creates channels, spawns ByteMover tasks, and returns a `ConnectionLease` — all in a single async call with no actor involvement.
