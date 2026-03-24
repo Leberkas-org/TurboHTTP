@@ -6,7 +6,7 @@ using TurboHttp.Internal;
 using TurboHttp.Pooling;
 using TurboHttp.Transport;
 
-namespace TurboHttp.StreamTests.Transport;
+namespace TurboHttp.Tests.Transport;
 
 /// <summary>
 /// Tests <see cref="ConnectionLease"/> lifecycle management, state transitions,

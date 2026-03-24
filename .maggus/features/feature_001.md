@@ -121,28 +121,28 @@ Replace the 5-class actor hierarchy (`PoolRouter` → `HostPool` → `Http1/2/3C
 **Model:** opus — complex concurrent data structure
 
 **Acceptance Criteria:**
-- [ ] `ConnectionPool` class at `src/TurboHttp/Transport/ConnectionPool.cs`
-- [ ] `AcquireAsync(TcpOptions, RequestEndpoint, CancellationToken)` → `Task<ConnectionLease>`
-- [ ] `Release(ConnectionLease, bool canReuse)` — returns to idle pool or disposes
-- [ ] `IAsyncDisposable` — disposes all hosts
-- [ ] Nested `HostConnections` class with:
+- [x] `ConnectionPool` class at `src/TurboHttp/Transport/ConnectionPool.cs`
+- [x] `AcquireAsync(TcpOptions, RequestEndpoint, CancellationToken)` → `Task<ConnectionLease>`
+- [x] `Release(ConnectionLease, bool canReuse)` — returns to idle pool or disposes
+- [x] `IAsyncDisposable` — disposes all hosts
+- [x] Nested `HostConnections` class with:
   - `_leases: List<ConnectionLease>` (all active)
   - `_idle: ConcurrentQueue<ConnectionLease>` (keep-alive pool)
   - `_limiter: SemaphoreSlim` (per-host limit, 6 for HTTP/1.x, unlimited for HTTP/2+)
   - `_evictionTimer: Timer` (fires every `IdleTimeout`)
   - MRU selection: `SelectMru()` returns lease with `HasAvailableSlot` and most recent `LastActivity`
-- [ ] Version-aware acquire:
+- [x] Version-aware acquire:
   - HTTP/1.0: always `DirectConnectionFactory.EstablishAsync` (no reuse)
   - HTTP/1.1: try idle queue first, else establish new (respect limiter)
   - HTTP/2: find lease with available stream slot (MRU), else establish new
-- [ ] Version-aware release:
+- [x] Version-aware release:
   - HTTP/1.0: always dispose
   - HTTP/1.1: if `canReuse` → enqueue to idle; else dispose + release limiter
   - HTTP/2: decrement stream count; dispose only when last stream completes AND non-reusable
-- [ ] Idle eviction: remove leases older than `IdleTimeout`, keep at least 1 per host
-- [ ] Metrics: `ConnectionActive` +/-, `ConnectionIdle` +/- on state transitions
-- [ ] Tests: `AcquireAsync_Http10_AlwaysCreatesNew`, `AcquireAsync_Http11_ReusesIdle`, `AcquireAsync_Http2_MultiplexesOnSame`, `Release_CanReuse_ReturnsToIdle`, `Release_CannotReuse_Disposes`, `EvictIdle_RemovesExpired`, `EvictIdle_KeepsAtLeastOne`, `AcquireAsync_PerHostLimit_Blocks`, `SelectMru_ReturnsLatestActive`
-- [ ] All tests pass
+- [x] Idle eviction: remove leases older than `IdleTimeout`, keep at least 1 per host
+- [x] Metrics: `ConnectionActive` +/-, `ConnectionIdle` +/- on state transitions
+- [x] Tests: `AcquireAsync_Http10_AlwaysCreatesNew`, `AcquireAsync_Http11_ReusesIdle`, `AcquireAsync_Http2_MultiplexesOnSame`, `Release_CanReuse_ReturnsToIdle`, `Release_CannotReuse_Disposes`, `EvictIdle_RemovesExpired`, `EvictIdle_KeepsAtLeastOne`, `AcquireAsync_PerHostLimit_Blocks`, `SelectMru_ReturnsLatestActive`
+- [x] All tests pass
 
 ### TASK-026-005: Create QuicConnectionManager
 **Description:** As a developer, I want a `QuicConnectionManager` that replaces `Http3ConnectionActor` for QUIC multi-stream management — shared QuicClientProvider, typed stream opening, inbound stream acceptance loop, sequential spawn queue — without actors.

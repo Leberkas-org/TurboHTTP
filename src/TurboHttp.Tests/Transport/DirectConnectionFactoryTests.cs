@@ -5,7 +5,7 @@ using Akka.Actor;
 using TurboHttp.Internal;
 using TurboHttp.Transport;
 
-namespace TurboHttp.StreamTests.Transport;
+namespace TurboHttp.Tests.Transport;
 
 /// <summary>
 /// Tests <see cref="DirectConnectionFactory"/> establishing connections,
