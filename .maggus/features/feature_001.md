@@ -177,22 +177,22 @@ Replace the 5-class actor hierarchy (`PoolRouter` → `HostPool` → `Http1/2/3C
 **Model:** opus — critical integration, must handle all protocol paths
 
 **Acceptance Criteria:**
-- [ ] `ConnectionStage` constructor: `ConnectionPool pool` instead of `IActorRef poolRouter`
-- [ ] Removed: `_stageActor`, `GetStageActor()`, `OnMessage()` — no more actor bridge
-- [ ] Added: `_onLeaseAcquired = GetAsyncCallback<ConnectionLease>(...)` — bridges async pool result to stage event loop
-- [ ] Added: `_onAcquisitionFailed = GetAsyncCallback<Exception>(...)` — emits `CloseSignalItem` on failure
-- [ ] HandlePush(ConnectItem): `_pool.AcquireAsync()` via ContinueWith → `_onLeaseAcquired`
-- [ ] HandlePush(ConnectionReuseItem): `_pool.Release(lease, canReuse)` — no actor Tell
-- [ ] HandlePush(StreamAcquireItem): `_currentLease?.MarkBusy()` — direct call
-- [ ] HandlePush(MaxConcurrentStreamsItem): `_currentLease?.UpdateMaxConcurrentStreams(n)` — direct call
-- [ ] `_onInboundComplete`: disposes current lease (no actor Tell needed)
-- [ ] `_onOutboundWriteFailed`: disposes current lease
-- [ ] PostStop: disposes `_directFactory` / current lease
-- [ ] `ProtocolCoreGraphBuilder.Build()` accepts `ConnectionPool` instead of `IActorRef`
-- [ ] `Engine.BuildExtendedPipeline()` creates or receives `ConnectionPool`
-- [ ] `TurboClientStreamManager` owns `ConnectionPool` lifetime, disposes it on shutdown
-- [ ] `dotnet build src/TurboHttp.sln` — 0 errors, 0 warnings
-- [ ] `dotnet test src/TurboHttp.sln -v q` — ALL tests pass
+- [x] `ConnectionStage` constructor: `ConnectionPool pool` instead of `IActorRef poolRouter`
+- [x] Removed: `_stageActor`, `GetStageActor()`, `OnMessage()` — no more actor bridge
+- [x] Added: `_onLeaseAcquired = GetAsyncCallback<ConnectionLease>(...)` — bridges async pool result to stage event loop
+- [x] Added: `_onAcquisitionFailed = GetAsyncCallback<Exception>(...)` — emits `CloseSignalItem` on failure
+- [x] HandlePush(ConnectItem): `_pool.AcquireAsync()` via ContinueWith → `_onLeaseAcquired`
+- [x] HandlePush(ConnectionReuseItem): `_pool.Release(lease, canReuse)` — no actor Tell
+- [x] HandlePush(StreamAcquireItem): `_currentLease?.MarkBusy()` — direct call
+- [x] HandlePush(MaxConcurrentStreamsItem): `_currentLease?.UpdateMaxConcurrentStreams(n)` — direct call
+- [x] `_onInboundComplete`: disposes current lease (no actor Tell needed)
+- [x] `_onOutboundWriteFailed`: disposes current lease
+- [x] PostStop: disposes `_directFactory` / current lease
+- [x] `ProtocolCoreGraphBuilder.Build()` accepts `ConnectionPool` instead of `IActorRef`
+- [x] `Engine.BuildExtendedPipeline()` creates or receives `ConnectionPool`
+- [x] `TurboClientStreamManager` owns `ConnectionPool` lifetime, disposes it on shutdown
+- [x] `dotnet build src/TurboHttp.sln` — 0 errors, 0 warnings
+- [x] `dotnet test src/TurboHttp.sln -v q` — ALL tests pass
 
 ### TASK-026-007: Delete old classes + dead properties
 **Description:** As a developer, I want to remove all replaced actor classes, dead reconnection properties, and stale test code so the codebase is clean and has no unused code.

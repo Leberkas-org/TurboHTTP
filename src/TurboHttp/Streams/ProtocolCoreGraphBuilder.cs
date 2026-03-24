@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using Akka;
-using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
@@ -24,7 +23,7 @@ namespace TurboHttp.Streams;
 internal static class ProtocolCoreGraphBuilder
 {
     public static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> Build(
-        IActorRef poolRouter,
+        ConnectionPool pool,
         TurboClientOptions clientOptions,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http10Factory = null,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? http11Factory = null,
@@ -40,13 +39,13 @@ internal static class ProtocolCoreGraphBuilder
             var highThroughputBuffer = Attributes.CreateInputBuffer(16, 64);
 
             var http10 =
-                builder.Add(BuildProtocolFlow<Http10Engine>(256, poolRouter, http10Factory, clientOptions)
+                builder.Add(BuildProtocolFlow<Http10Engine>(256, pool, http10Factory, clientOptions)
                     .WithAttributes(highThroughputBuffer));
             var http11 =
-                builder.Add(BuildProtocolFlow<Http11Engine>(256, poolRouter, http11Factory, clientOptions)
+                builder.Add(BuildProtocolFlow<Http11Engine>(256, pool, http11Factory, clientOptions)
                     .WithAttributes(highThroughputBuffer));
             var http20 =
-                builder.Add(BuildProtocolFlow<Http20Engine>(64, poolRouter, http20Factory, clientOptions)
+                builder.Add(BuildProtocolFlow<Http20Engine>(64, pool, http20Factory, clientOptions)
                     .WithAttributes(highThroughputBuffer));
 
             builder.From(partition.Out(0)).Via(http10).To(hub);
@@ -59,7 +58,7 @@ internal static class ProtocolCoreGraphBuilder
 
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed> BuildProtocolFlow<TEngine>(
         int maxSubstreams,
-        IActorRef poolRouter,
+        ConnectionPool pool,
         Func<Flow<IOutputItem, IInputItem, NotUsed>>? transportFactory = null,
         TurboClientOptions? clientOptions = null)
         where TEngine : IHttpProtocolEngine, new()
@@ -75,9 +74,9 @@ internal static class ProtocolCoreGraphBuilder
         }
         else
         {
-            // Production mode: ConnectionStage contacts PoolRouterActor for TCP refs.
+            // Production mode: ConnectionStage acquires connections via ConnectionPool.
             connectionFlow = Flow.FromGraph(BuildConnectionFlow<TEngine>(
-                Flow.FromGraph(new ConnectionStage(poolRouter)),
+                Flow.FromGraph(new ConnectionStage(pool)),
                 clientOptions ?? new TurboClientOptions()));
         }
 

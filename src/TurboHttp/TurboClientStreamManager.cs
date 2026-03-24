@@ -7,9 +7,8 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka;
-using TurboHttp.Pooling;
 using TurboHttp.Streams;
+using TurboHttp.Transport;
 
 namespace TurboHttp;
 
@@ -53,13 +52,12 @@ internal sealed class TurboClientStreamManager
         ResponseWriter = responseWriter;
         var requestReader = requestsChannel.Reader;
 
-        // Create PoolRouter — supervises the actor-based connection pool hierarchy.
-        // PoolRouter → HostPool → ConnectionActor → TCP
-        var poolRouter = system.ResolveActor<PoolRouter>($"pool-router-{streamManagerId}", clientOptions);
+        // Create ConnectionPool — manages per-host connections with idle eviction.
+        var pool = new ConnectionPool(clientOptions.IdleTimeout);
 
         // Build the full pipeline flow from Engine using the provided descriptor.
         var engine = new Engine();
-        var engineFlow = engine.CreateFlow(poolRouter, clientOptions, requestOptionsFactory, descriptor);
+        var engineFlow = engine.CreateFlow(pool, clientOptions, requestOptionsFactory, descriptor);
 
 
         var sink = Sink.ForEachAsync<HttpResponseMessage>(1, async r => await responseWriter.WriteAsync(r));

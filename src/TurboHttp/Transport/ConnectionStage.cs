@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -13,19 +12,18 @@ using TurboHttp.Pooling;
 
 namespace TurboHttp.Transport;
 
-public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
+internal sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
-    private IActorRef PoolRouter { get; }
+    private ConnectionPool Pool { get; }
 
     private readonly Inlet<IOutputItem> _in = new("Connection.In");
     private readonly Outlet<IInputItem> _out = new("Connection.Out");
 
     public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
-
-    public ConnectionStage(IActorRef poolRouter)
+    public ConnectionStage(ConnectionPool pool)
     {
-        PoolRouter = poolRouter;
+        Pool = pool;
         Shape = new FlowShape<IOutputItem, IInputItem>(_in, _out);
     }
 
@@ -46,6 +44,9 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         /// <summary>Current connection handle providing direct channel I/O.</summary>
         private ConnectionHandle? _handle;
 
+        /// <summary>Current connection lease wrapping the handle with lifecycle management.</summary>
+        private ConnectionLease? _currentLease;
+
         /// <summary>Callback bridging async channel reads into the stage event loop.</summary>
         private Action<IInputItem>? _onInboundData;
 
@@ -55,8 +56,11 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         /// <summary>Callback invoked when an outbound channel write fails (e.g. channel closed).</summary>
         private Action<Exception>? _onOutboundWriteFailed;
 
-        /// <summary>Callback invoked when a <see cref="ConnectionHandle"/> is received from the actor hierarchy.</summary>
-        private Action<ConnectionHandle>? _onHandleReceived;
+        /// <summary>Callback invoked when a <see cref="ConnectionLease"/> is acquired from the pool.</summary>
+        private Action<ConnectionLease>? _onLeaseAcquired;
+
+        /// <summary>Callback invoked when connection acquisition fails.</summary>
+        private Action<Exception>? _onAcquisitionFailed;
 
         /// <summary>Callback invoked when the inbound channel completes (connection closed).</summary>
         private Action<TlsCloseKind>? _onInboundComplete;
@@ -64,7 +68,6 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         /// <summary>Callback bridging async flush-next completion into the stage event loop.</summary>
         private Action? _onFlushNext;
 
-        private StageActor? _stageActor;
         private CancellationTokenSource? _pumpCts;
 
         /// <summary>Set when upstream finishes; defers stage completion until the inbound pump drains.</summary>
@@ -73,15 +76,15 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         /// <summary>The RequestEndpoint from the most recent ConnectItem — used to tag inbound DataItems.</summary>
         private RequestEndpoint _currentKey;
 
-        /// <summary>The ConnectItem currently awaiting a ConnectionHandle reply.</summary>
+        /// <summary>The ConnectItem currently awaiting a ConnectionLease.</summary>
         private ConnectItem? _pendingConnect;
 
         /// <summary>
-        /// Whether StreamCompleted has been sent to the pool for the current handle.
-        /// Prevents double StreamCompleted when both HandlePush(ConnectionReuseItem) and
+        /// Whether the lease has been returned to the pool for the current connection lifecycle.
+        /// Prevents double-release when both HandlePush(ConnectionReuseItem) and
         /// _onInboundComplete fire for the same connection lifecycle.
         /// </summary>
-        private bool _handleReturned;
+        private bool _leaseReturned;
 
         public Logic(ConnectionStage stage) : base(stage.Shape)
         {
@@ -139,14 +142,13 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             {
                 Log.Warning("ConnectionStage: Outbound write failed — {0}", ex.Message);
 
-                // Notify the pool to tear down the connection (same as ConnectionReuseItem(Close) path).
-                if (_handle is { } h)
+                // Mark lease as non-reusable and release it back to the pool.
+                if (_currentLease is { } lease)
                 {
-                    h.ConnectionActor.Tell(
-                        new HostPool.MarkConnectionNoReuse(h.ConnectionActor));
+                    lease.MarkNoReuse();
                 }
 
-                ReturnHandleToPool();
+                ReturnLeaseToPool(canReuse: false);
 
                 // Emit close signal downstream so decoder stages know the connection is dead.
                 var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _currentKey };
@@ -162,18 +164,18 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                 // Connection is dead — clear handle so next ConnectItem re-acquires.
                 StopInboundPump();
                 _handle = null;
+                _currentLease = null;
 
                 // Accept next element (e.g. a new ConnectItem for reconnection).
                 TryPull();
             });
 
-            _onHandleReceived = GetAsyncCallback<ConnectionHandle>(handle =>
+            _onLeaseAcquired = GetAsyncCallback<ConnectionLease>(lease =>
             {
                 CancelTimer(ConnectTimerKey);
 
-                // Guard: if _pendingConnect is already null, the handle was already
-                // received (duplicate delivery from HostPool serving the same requester
-                // multiple times). Skip to avoid restarting the inbound pump concurrently.
+                // Guard: if _pendingConnect is already null, the lease was already
+                // received (e.g. duplicate). Skip to avoid restarting the inbound pump concurrently.
                 if (_pendingConnect is null && _handle is not null)
                 {
                     return;
@@ -181,15 +183,44 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
                 _pendingConnect = null;
 
-                _handleReturned = false;
+                _leaseReturned = false;
 
-                _handle = handle;
-                _currentKey = handle.Key;
+                _currentLease = lease;
+                _handle = lease.Handle;
+                _currentKey = lease.Key;
                 StartInboundPump();
 
                 // Flush items that arrived before the handle was available
                 // (e.g. HTTP/2 preface buffered during connection setup).
                 FlushPendingWrites();
+            });
+
+            _onAcquisitionFailed = GetAsyncCallback<Exception>(ex =>
+            {
+                CancelTimer(ConnectTimerKey);
+
+                Log.Warning("ConnectionStage: Connection acquisition failed — {0}", ex.Message);
+
+                if (_pendingConnect is null)
+                {
+                    return;
+                }
+
+                // Emit close signal so the decoder/correlation stage fails the pending request.
+                var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Key };
+                _pendingConnect = null;
+
+                if (IsAvailable(_stage._out))
+                {
+                    Push(_stage._out, signal);
+                }
+                else
+                {
+                    _pendingReads.Enqueue(signal);
+                }
+
+                // Accept next element from upstream.
+                TryPull();
             });
 
             _onInboundComplete = GetAsyncCallback<TlsCloseKind>(closeKind =>
@@ -205,20 +236,17 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
                     _pendingReads.Enqueue(signal);
                 }
 
-                // Notify the pool BEFORE clearing the handle. For HTTP/1.0 the TCP
-                // connection closes after every response. If ConnectionReuseItem's
-                // HandlePush already sent these messages (synchronous fused-graph path),
-                // ReturnHandleToPool is a no-op thanks to _handleReturned.
-                if (_handle is { } h)
+                // Mark lease as non-reusable and release back to pool.
+                if (_currentLease is { } lease)
                 {
-                    h.ConnectionActor.Tell(
-                        new HostPool.MarkConnectionNoReuse(h.ConnectionActor));
+                    lease.MarkNoReuse();
                 }
 
-                ReturnHandleToPool();
+                ReturnLeaseToPool(canReuse: false);
 
                 // Connection closed — clear the handle so next ConnectItem re-acquires.
                 _handle = null;
+                _currentLease = null;
 
                 if (_upstreamFinished)
                 {
@@ -238,37 +266,25 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
             _onFlushNext = GetAsyncCallback(FlushNext);
 
-            _stageActor = GetStageActor(OnMessage);
-
-            // Ready to accept ConnectItem immediately — no GlobalRefs needed.
+            // Ready to accept ConnectItem immediately.
             Pull(_stage._in);
-        }
-
-        private void OnMessage((IActorRef sender, object msg) args)
-        {
-            if (args.msg is ConnectionHandle handle)
-            {
-                _onHandleReceived!(handle);
-            }
         }
 
         private void HandlePush()
         {
             var item = Grab(_stage._in);
-            var handle = _handle;
+            var lease = _currentLease;
 
             if (item is MaxConcurrentStreamsItem maxStreams)
             {
-                handle?.ConnectionActor.Tell(
-                    new HostPool.UpdateMaxConcurrentStreams(handle.ConnectionActor, maxStreams.MaxStreams));
+                lease?.UpdateMaxConcurrentStreams(maxStreams.MaxStreams);
                 TryPull();
                 return;
             }
 
             if (item is StreamAcquireItem)
             {
-                handle?.ConnectionActor.Tell(
-                    new HostPool.StreamAcquired(handle.ConnectionActor));
+                lease?.MarkBusy();
                 TryPull();
                 return;
             }
@@ -277,11 +293,10 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             {
                 if (!reuseItem.Decision.CanReuse)
                 {
-                    handle?.ConnectionActor.Tell(
-                        new HostPool.MarkConnectionNoReuse(handle.ConnectionActor));
+                    lease?.MarkNoReuse();
                 }
 
-                ReturnHandleToPool();
+                ReturnLeaseToPool(reuseItem.Decision.CanReuse);
                 TryPull();
                 return;
             }
@@ -290,13 +305,14 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
             {
                 _pendingConnect = connect;
 
-                SendEnsureHost(connect);
+                AcquireConnection(connect);
 
-                // Do NOT pull — wait for ConnectionHandle reply before accepting data.
+                // Do NOT pull — wait for ConnectionLease before accepting data.
                 return;
             }
 
             if (item is not DataItem dataItem) return;
+            var handle = _handle;
             if (handle is null)
             {
                 // Buffer items that arrive before the connection is established
@@ -322,7 +338,7 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
 
         /// <summary>
         /// Writes all buffered outbound items to the connection and then pulls upstream.
-        /// Called after a <see cref="ConnectionHandle"/> is received.
+        /// Called after a <see cref="ConnectionLease"/> is acquired.
         /// </summary>
         private void FlushPendingWrites()
         {
@@ -374,34 +390,37 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         }
 
         /// <summary>
-        /// Sends <see cref="HostPool.StreamCompleted"/> to the pool exactly once per
+        /// Releases the current lease back to the <see cref="ConnectionPool"/> exactly once per
         /// connection lifecycle. Idempotent — safe to call from both HandlePush
         /// (ConnectionReuseItem) and <see cref="_onInboundComplete"/>.
         /// </summary>
-        private void ReturnHandleToPool()
+        private void ReturnLeaseToPool(bool canReuse)
         {
-            if (_handleReturned || _handle is null)
+            if (_leaseReturned || _currentLease is null)
             {
                 return;
             }
 
-            _handleReturned = true;
-            _handle.ConnectionActor.Tell(
-                new HostPool.StreamCompleted(_handle.ConnectionActor));
+            _leaseReturned = true;
+            _stage.Pool.Release(_currentLease, canReuse);
         }
 
         /// <summary>
-        /// Sends <see cref="PoolRouter.EnsureHost"/> and schedules a single timeout.
-        /// If no <see cref="ConnectionHandle"/> arrives before the timer fires,
-        /// the stage emits a <see cref="CloseSignalItem"/> and moves on.
-        /// Connection establishment and retry are handled by the pool layer
-        /// (HostPool + ConnectionActorBase); this stage just waits.
+        /// Acquires a connection from the <see cref="ConnectionPool"/> and schedules a timeout.
+        /// If the pool returns a <see cref="ConnectionLease"/> before the timer fires,
+        /// the stage starts I/O. Otherwise, a <see cref="CloseSignalItem"/> is emitted.
         /// </summary>
-        private void SendEnsureHost(ConnectItem connect)
+        private void AcquireConnection(ConnectItem connect)
         {
-            _stage.PoolRouter.Tell(
-                new PoolRouter.EnsureHost(connect.Key, connect.Options),
-                _stageActor!.Ref);
+            var acquireTask = _stage.Pool.AcquireAsync(connect.Options, connect.Key);
+
+            acquireTask.ContinueWith(
+                t => _onLeaseAcquired!(t.Result),
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnRanToCompletion);
+
+            acquireTask.ContinueWith(
+                t => _onAcquisitionFailed!(t.Exception!.GetBaseException()),
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
 
             var timeout = connect.Options.ConnectTimeout;
             if (timeout <= TimeSpan.Zero)
@@ -508,6 +527,14 @@ public sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInputIt
         {
             CancelTimer(ConnectTimerKey);
             StopInboundPump();
+
+            // Dispose the current lease if still held.
+            if (_currentLease is { } lease)
+            {
+                _ = lease.DisposeAsync();
+                _currentLease = null;
+                _handle = null;
+            }
         }
     }
 }

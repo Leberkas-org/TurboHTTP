@@ -14,7 +14,7 @@ namespace TurboHttp.Transport;
 /// Replaces the actor-based PoolRouter + HostPool + PerHostConnectionLimiter + ConnectionState
 /// with a direct async API: <see cref="AcquireAsync"/> / <see cref="Release"/>.
 /// </summary>
-internal sealed class ConnectionPool : IAsyncDisposable
+internal class ConnectionPool : IAsyncDisposable
 {
     private readonly ConcurrentDictionary<RequestEndpoint, HostConnections> _hosts = new();
     private readonly TimeSpan _idleTimeout;
@@ -29,7 +29,7 @@ internal sealed class ConnectionPool : IAsyncDisposable
     /// Acquires a connection lease for the given endpoint. Version-aware:
     /// HTTP/1.0 always creates new, HTTP/1.1 tries idle reuse, HTTP/2 multiplexes.
     /// </summary>
-    public Task<ConnectionLease> AcquireAsync(
+    public virtual Task<ConnectionLease> AcquireAsync(
         TcpOptions options,
         RequestEndpoint endpoint,
         CancellationToken ct = default)
@@ -42,7 +42,7 @@ internal sealed class ConnectionPool : IAsyncDisposable
     /// <summary>
     /// Releases a connection lease back to the pool or disposes it.
     /// </summary>
-    public void Release(ConnectionLease lease, bool canReuse)
+    public virtual void Release(ConnectionLease lease, bool canReuse)
     {
         ArgumentNullException.ThrowIfNull(lease);
 

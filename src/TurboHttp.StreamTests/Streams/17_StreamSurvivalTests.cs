@@ -3,7 +3,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Channels;
 using Akka;
-using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
@@ -145,8 +144,9 @@ public sealed class StreamSurvivalTests : EngineTestBase
         memory.Memory.Span[..4].Fill(0xAB);
         var dataItem = new DataItem(memory, 4) { Key = RequestEndpoint.Default };
 
-        // ActorRefs.Nobody: the router is never consulted — no ConnectItem is sent.
-        var stage = new ConnectionStage(ActorRefs.Nobody);
+        // Pool is never consulted — no ConnectItem is sent, so AcquireAsync is never called.
+        var pool = new ConnectionPool(TimeSpan.FromSeconds(10));
+        var stage = new ConnectionStage(pool);
 
         var results = await Source.From(new IOutputItem[] { dataItem })
             .Via(Flow.FromGraph(stage))

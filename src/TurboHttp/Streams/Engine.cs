@@ -2,18 +2,18 @@ using System;
 using System.Net;
 using System.Net.Http;
 using Akka;
-using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
 using TurboHttp.Streams.Stages.Features;
 using TurboHttp.Streams.Stages.Routing;
+using TurboHttp.Transport;
 
 namespace TurboHttp.Streams;
 
 internal sealed class Engine
 {
-    internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(IActorRef poolRouter,
+    internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(ConnectionPool pool,
         TurboClientOptions? options,
         Func<TurboRequestOptions>? requestOptionsFactory,
         PipelineDescriptor descriptor)
@@ -22,7 +22,7 @@ internal sealed class Engine
         var requestOptions = BuildRequestOptions(options);
         requestOptionsFactory ??= () => requestOptions;
 
-        return BuildExtendedPipeline(poolRouter, options, requestOptionsFactory, descriptor);
+        return BuildExtendedPipeline(pool, options, requestOptionsFactory, descriptor);
     }
 
     internal Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlow(
@@ -45,7 +45,7 @@ internal sealed class Engine
             Timeout: TimeSpan.FromSeconds(30),
             MaxResponseContentBufferSize: 1024 * 1024);
 
-        return BuildExtendedPipeline(ActorRefs.Nobody, new TurboClientOptions(), () => defaultOptions,
+        return BuildExtendedPipeline(null!, new TurboClientOptions(), () => defaultOptions,
             descriptor,
             http10Factory, http11Factory, http20Factory);
     }
@@ -84,7 +84,7 @@ internal sealed class Engine
     /// the graph is: Enricher → ContentEncodingBidi(Engine) → Output.</para>
     /// </summary>
     private static Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> BuildExtendedPipeline(
-        IActorRef poolRouter,
+        ConnectionPool pool,
         TurboClientOptions options,
         Func<TurboRequestOptions> requestOptionsFactory,
         PipelineDescriptor descriptor,
@@ -94,7 +94,7 @@ internal sealed class Engine
     {
         // Protocol engine core (version demux + encode/decode) with async boundary.
         var engineFlow = Flow.FromGraph(
-                ProtocolCoreGraphBuilder.Build(poolRouter, options,
+                ProtocolCoreGraphBuilder.Build(pool, options,
                     http10Factory, http11Factory, http20Factory))
             .WithAttributes(Attributes.CreateAsyncBoundary());
 
