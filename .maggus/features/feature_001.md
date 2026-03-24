@@ -154,18 +154,18 @@ Replace the 5-class actor hierarchy (`PoolRouter` → `HostPool` → `Http1/2/3C
 **Model:** opus — complex QUIC lifecycle management
 
 **Acceptance Criteria:**
-- [ ] `QuicConnectionManager` class at `src/TurboHttp/Transport/QuicConnectionManager.cs`
-- [ ] Shared `QuicClientProvider` per host (reused across all streams)
-- [ ] `OpenStreamAsync(OutputStreamType, CancellationToken)` → `ConnectionLease` (replaces `OpenTypedStream` message)
-- [ ] Stream type support: Request (bidirectional), Control (write-only), QpackEncoder (write-only)
-- [ ] `_activeStreams: List<ConnectionLease>` tracking all open streams
-- [ ] `_spawnLock: SemaphoreSlim(1)` for sequential spawn (replaces BecomeStacked)
-- [ ] `StartInboundAcceptLoop(Action<ConnectionLease> subscriber)` — accepts server-initiated streams
-- [ ] `_inboundLoopCts` for cancellation of inbound acceptance
-- [ ] Buffered inbound notifications (`_bufferedInboundStreams`) + subscriber pattern
-- [ ] `IAsyncDisposable`: cancel inbound loop, dispose all streams, dispose shared provider
-- [ ] Tests mirroring `12_ConnectionActorQuicTests.cs` behavior
-- [ ] All tests pass
+- [x] `QuicConnectionManager` class at `src/TurboHttp/Transport/QuicConnectionManager.cs`
+- [x] Shared `QuicClientProvider` per host (reused across all streams)
+- [x] `OpenStreamAsync(OutputStreamType, CancellationToken)` → `ConnectionLease` (replaces `OpenTypedStream` message)
+- [x] Stream type support: Request (bidirectional), Control (write-only), QpackEncoder (write-only)
+- [x] `_activeStreams: List<ConnectionLease>` tracking all open streams
+- [x] `_spawnLock: SemaphoreSlim(1)` for sequential spawn (replaces BecomeStacked)
+- [x] `StartInboundAcceptLoop(Action<InboundStream> subscriber)` — accepts server-initiated streams
+- [x] `_inboundLoopCts` for cancellation of inbound acceptance
+- [x] Buffered inbound notifications (`_bufferedInboundStreams`) + subscriber pattern
+- [x] `IAsyncDisposable`: cancel inbound loop, dispose all streams, dispose shared provider
+- [x] Tests mirroring `12_ConnectionActorQuicTests.cs` behavior (11 tests: QCM-001 through QCM-011)
+- [x] All tests pass (4628 total: 3514 unit + 871 stream + 243 integration)
 
 ### TASK-026-006: Rewire ConnectionStage + pipeline
 **Description:** As a developer, I want `ConnectionStage` to use `ConnectionPool` directly instead of `IActorRef poolRouter` so that connection acquisition is a single async call with no actor mailbox hops.
