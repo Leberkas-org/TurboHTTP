@@ -11,7 +11,7 @@ views {
     style user { color primary }
   }
 
-  view of turbohttp {
+  view turbohttp {
     title 'TurboHttp — Container View'
     description 'Four architectural layers: Client, Streams, Protocol, I/O'
     include user

@@ -42,7 +42,7 @@ npm run docs:build
 npm run docs:preview
 
 # Regenerate LikeC4 SVG exports
-npx likec4 export svg --output docs/public/diagrams docs/likec4
+cd docs/likec4 && npx likec4 export svg --output ../../docs/public/diagrams
 ```
 
 ## Architecture

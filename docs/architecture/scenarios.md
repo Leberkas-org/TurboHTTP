@@ -7,7 +7,7 @@ These dynamic views trace a single HTTP request from application code through ev
 ## HTTP/1.0 — Simple Request/Response
 
 <ClientOnly>
-  <LikeC4Diagram viewId="scenarioHttp10" :height="680" />
+  <LikeC4Diagram viewId="scenarioHttp10" />
 </ClientOnly>
 
 ### Request Path
@@ -42,7 +42,7 @@ After step 17, the TCP connection is closed. The next HTTP/1.0 request will go t
 ## HTTP/1.1 — Persistent Connection with Keep-Alive
 
 <ClientOnly>
-  <LikeC4Diagram viewId="scenarioHttp11" :height="720" />
+  <LikeC4Diagram viewId="scenarioHttp11" />
 </ClientOnly>
 
 HTTP/1.1 follows the same request/response path as HTTP/1.0 except for one critical difference: the connection can be **reused** after the response is delivered.
@@ -72,7 +72,7 @@ On **close**, `ConnectionStage` notifies `HostPool`, which schedules a reconnect
 ## HTTP/2 — Multiplexed Streams
 
 <ClientOnly>
-  <LikeC4Diagram viewId="scenarioHttp2" :height="740" />
+  <LikeC4Diagram viewId="scenarioHttp2" />
 </ClientOnly>
 
 HTTP/2 is fundamentally different from HTTP/1.x. A single TCP connection carries many concurrent logical **streams**, each identified by an odd integer stream ID assigned by the client.
@@ -112,7 +112,7 @@ Client-side stream IDs are 31-bit odd integers. When the maximum (`2^31 - 1`) is
 ## HTTP/3 — Multiplexed over QUIC
 
 <ClientOnly>
-  <LikeC4Diagram viewId="scenarioHttp3" :height="740" />
+  <LikeC4Diagram viewId="scenarioHttp3" />
 </ClientOnly>
 
 HTTP/3 replaces TCP with **QUIC**, a UDP-based transport that provides built-in encryption and independent stream delivery. Each request uses its own QUIC stream, so a lost packet on one stream does not block other in-flight requests.

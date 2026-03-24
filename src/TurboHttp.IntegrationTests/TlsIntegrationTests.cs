@@ -29,7 +29,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-001: GET /hello returns 200 over HTTPS")]
     public async Task Get_Hello_Returns_200_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
@@ -43,7 +43,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-002: POST /echo echoes body over HTTPS")]
     public async Task Post_Echo_Body_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient();
 
         var payload = "TLS echo payload";
@@ -63,7 +63,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-003: GET /headers/echo roundtrips custom headers over HTTPS")]
     public async Task Headers_Roundtrip_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/headers/echo");
@@ -80,7 +80,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-004: Cookie set and echo roundtrip over HTTPS")]
     public async Task Cookie_Set_And_Echo_Roundtrip_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient(builder => builder.WithCookies());
 
         var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set/tlssession/encrypted");
@@ -99,7 +99,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-005: Secure cookie IS sent over HTTPS")]
     public async Task Secure_Cookie_Sent_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient(builder => builder.WithCookies());
 
         var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-secure/secret/hidden");
@@ -121,7 +121,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-006: gzip response transparently decompressed over HTTPS")]
     public async Task Gzip_Decompression_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/gzip/4");
@@ -142,7 +142,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-007: 302 redirect followed over HTTPS")]
     public async Task Redirect_302_Followed_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient(builder => builder.WithRedirect());
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/302/hello");
@@ -160,7 +160,7 @@ public sealed class TlsIntegrationTests
     [InlineData(256)]
     public async Task Large_Body_Transfer_Over_Https(int kb)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/large/{kb}");
@@ -176,7 +176,7 @@ public sealed class TlsIntegrationTests
     [Fact(DisplayName = "TLS-009: Chunked transfer encoding over HTTPS")]
     public async Task Chunked_Transfer_Over_Https()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/chunked/4");

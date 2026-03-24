@@ -217,7 +217,7 @@ Pooling Layer      PoolRouter → HostPool → ConnectionActor (lifecycle only)
 Transport Layer    ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP
 ```
 
-For interactive architecture diagrams, see the [documentation site](https://st0o0.github.io/TurboHttp/).
+For interactive architecture diagrams, see the [documentation site](https://turbohttp.st0o0.net/).
 
 ---
 

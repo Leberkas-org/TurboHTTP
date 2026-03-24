@@ -11,7 +11,7 @@ internal sealed record PipelineDescriptor(
     Expect100Policy? Expect100Policy,
     RequestCompressionPolicy? RequestCompressionPolicy,
     CookieJar? CookieJar,
-    HttpCacheStore? CacheStore,
+    CacheStore? CacheStore,
     CachePolicy? CachePolicy,
     IReadOnlyList<TurboHandler> Handlers,
     bool AutomaticDecompression = true)

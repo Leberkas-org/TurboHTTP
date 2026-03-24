@@ -2,7 +2,7 @@ using TurboHttp.IntegrationTests.Shared;
 
 namespace TurboHttp.IntegrationTests;
 
-[Collection("Http1Integration")]
+[Collection("H10")]
 public sealed class Http10SmokeTests : IAsyncLifetime
 {
     private readonly KestrelFixture _fixture;
@@ -30,7 +30,7 @@ public sealed class Http10SmokeTests : IAsyncLifetime
     [Fact]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);
@@ -41,7 +41,7 @@ public sealed class Http10SmokeTests : IAsyncLifetime
     }
 }
 
-[Collection("Http1Integration")]
+[Collection("H11")]
 public sealed class Http11SmokeTests : IAsyncLifetime
 {
     private readonly KestrelFixture _fixture;
@@ -69,7 +69,7 @@ public sealed class Http11SmokeTests : IAsyncLifetime
     [Fact]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);
@@ -80,7 +80,7 @@ public sealed class Http11SmokeTests : IAsyncLifetime
     }
 }
 
-[Collection("Http2Integration")]
+[Collection("H2")]
 public sealed class Http2SmokeTests : IAsyncLifetime
 {
     private readonly KestrelH2Fixture _fixture;
@@ -108,7 +108,7 @@ public sealed class Http2SmokeTests : IAsyncLifetime
     [Fact]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);
@@ -119,7 +119,7 @@ public sealed class Http2SmokeTests : IAsyncLifetime
     }
 }
 
-[Collection("Http3Integration")]
+[Collection("H3")]
 [Trait("Category", "Http3")]
 public sealed class Http3SmokeTests : IAsyncLifetime
 {
@@ -148,7 +148,7 @@ public sealed class Http3SmokeTests : IAsyncLifetime
     [Fact(Skip = "QUIC is wild")]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);
@@ -187,7 +187,7 @@ public sealed class TlsSmokeTests : IAsyncLifetime
     [Fact]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);

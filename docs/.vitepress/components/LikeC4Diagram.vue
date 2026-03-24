@@ -14,8 +14,10 @@ const colorScheme = computed(() => isDark.value ? 'dark' : 'light')
 
 const containerRef = ref<HTMLElement | null>(null)
 const status = ref<'loading' | 'ready' | 'error'>('loading')
+const dynamicHeight = ref<number | null>(null)
 
 let unmountRoot: (() => void) | null = null
+let resizeObserver: ResizeObserver | null = null
 
 async function renderDiagram()
 {
@@ -44,9 +46,36 @@ async function renderDiagram()
             zoomable: props.interactive !== false,
             background: 'transparent',
             keepAspectRatio: true,
+            minZoom: 0.1,
+            maxZoom: 5,
         }))
         status.value = 'ready'
         unmountRoot = () => root.unmount()
+
+        // Measure diagram size and adjust container height dynamically
+        setTimeout(() => {
+            if (el.querySelector('svg') || el.querySelector('canvas')) {
+                resizeObserver?.disconnect()
+                resizeObserver = new ResizeObserver(() => {
+                    const svg = el.querySelector('svg')
+                    const canvas = el.querySelector('canvas')
+                    if (svg) {
+                        dynamicHeight.value = svg.clientHeight + 40
+                    } else if (canvas) {
+                        dynamicHeight.value = canvas.clientHeight + 40
+                    }
+                })
+                resizeObserver.observe(el)
+                // Trigger initial measurement
+                const svg = el.querySelector('svg')
+                const canvas = el.querySelector('canvas')
+                if (svg) {
+                    dynamicHeight.value = svg.clientHeight + 40
+                } else if (canvas) {
+                    dynamicHeight.value = canvas.clientHeight + 40
+                }
+            }
+        }, 100)
     }
     catch (err)
     {
@@ -64,11 +93,13 @@ onUnmounted(() =>
 {
     unmountRoot?.()
     unmountRoot = null
+    resizeObserver?.disconnect()
+    resizeObserver = null
 })
 </script>
 
 <template>
-    <div class="likec4-diagram" :style="height ? { height: `${height}px` } : {}">
+    <div class="likec4-diagram" :class="{ 'with-fixed-height': !!height }" :style="dynamicHeight ? { height: `${dynamicHeight}px` } : (height ? { height: `${height}px` } : {})">
         <!-- React mount target — always in the DOM so React can size itself correctly -->
         <div ref="containerRef" class="likec4-container" />
 
@@ -100,6 +131,10 @@ onUnmounted(() =>
     margin: 1.5rem 0;
     position: relative;
     background: transparent;
+}
+
+.likec4-diagram.with-fixed-height {
+    aspect-ratio: auto;
 }
 
 .likec4-container {

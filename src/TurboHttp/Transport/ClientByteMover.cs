@@ -30,8 +30,13 @@ internal static class ClientByteMover
                         // ReadAsync returning 0 means:
                         // - SslStream: close_notify was received (clean TLS closure)
                         // - NetworkStream: TCP FIN was received (clean TCP close)
+                        //
+                        // Do NOT send DoClose here. The pipe writer is completed in
+                        // the finally block, which signals MovePipeToChannel to drain
+                        // remaining data and then send DoClose itself. Sending DoClose
+                        // here cancels the CTS before MovePipeToChannel finishes reading,
+                        // causing response data still in the pipe to be lost.
                         state.CloseKind = TlsCloseKind.CleanClose;
-                        runner.Tell(DoClose.Instance);
                         return;
                     }
 

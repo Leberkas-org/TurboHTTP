@@ -1,18 +1,19 @@
 # Contributing to TurboHttp
 
-Thank you for your interest in contributing! This document covers branch conventions, PR requirements, local development setup, and the recommended branch protection configuration for maintainers.
+Thank you for your interest in contributing! This document covers branch conventions, PR requirements, local development
+setup, and the recommended branch protection configuration for maintainers.
 
 ---
 
 ## Branch Naming Convention
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| New feature | `feature/<short-description>` | `feature/http3-support` |
-| Bug fix | `bugfix/<short-description>` | `bugfix/hpack-eviction-overflow` |
-| Documentation | `docs/<short-description>` | `docs/vitepress-rfc-pages` |
-| Refactor | `refactor/<short-description>` | `refactor/decoder-buffer-reuse` |
-| Chore / CI | `chore/<short-description>` | `chore/update-akka-1.5.63` |
+| Type          | Pattern                        | Example                          |
+|---------------|--------------------------------|----------------------------------|
+| New feature   | `feature/<short-description>`  | `feature/http3-support`          |
+| Bug fix       | `bugfix/<short-description>`   | `bugfix/hpack-eviction-overflow` |
+| Documentation | `docs/<short-description>`     | `docs/vitepress-rfc-pages`       |
+| Refactor      | `refactor/<short-description>` | `refactor/decoder-buffer-reuse`  |
+| Chore / CI    | `chore/<short-description>`    | `chore/update-akka-1.5.63`       |
 
 Branch names must be lowercase with hyphens. No underscores, no slashes beyond the prefix.
 
@@ -36,8 +37,6 @@ The build must produce **zero errors and zero warnings** (`TreatWarningsAsErrors
 dotnet test ./src/TurboHttp.sln
 ```
 
-There are seven known pre-existing failures (RFC 9113 continuation/stream-0 edge cases and one RFC 9110 relative URI resolution issue). These are documented and expected. No additional failures are acceptable.
-
 Run a specific RFC section to speed up iteration:
 
 ```bash
@@ -50,7 +49,8 @@ dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifie
 
 ### 3. Slopwatch clean
 
-[Slopwatch](https://github.com/dotnet-skills/slopwatch) detects LLM reward-hacking patterns such as disabled tests, suppressed warnings, and empty catch blocks. Run it after any substantive change:
+[Slopwatch](https://github.com/dotnet-skills/slopwatch) detects LLM reward-hacking patterns such as disabled tests,
+suppressed warnings, and empty catch blocks. Run it after any substantive change:
 
 ```bash
 dotnet slopwatch ./src/TurboHttp.sln
@@ -60,7 +60,8 @@ The output must report **no issues**.
 
 ### 4. Tests for new or changed behaviour
 
-Every PR that changes production code must include corresponding unit tests (and stream tests where applicable). See [CLAUDE.md](CLAUDE.md) for test conventions and file naming.
+Every PR that changes production code must include corresponding unit tests (and stream tests where applicable).
+See [CLAUDE.md](CLAUDE.md) for test conventions and file naming.
 
 ### 5. Code style
 
@@ -69,33 +70,9 @@ Every PR that changes production code must include corresponding unit tests (and
 - **`_fieldName`** prefix for private fields
 - Use `var` when the type is apparent from the right-hand side
 - Default to `sealed` classes and records
-- No `async void`, `.Result`, or `.Wait()`
+- No `async void`, `.Result`,`.GetAwaiter()`,`.GetResult` , or `.Wait()`
 - Always pass `CancellationToken` through async chains
 - Always use braces for control structures (even single-line bodies)
-
----
-
-## Recommended Branch Protection for `main`
-
-Maintainers should enable the following settings in **GitHub → Settings → Branches → Add branch ruleset** (or classic branch protection) for the `main` branch:
-
-| Setting | Value |
-|---------|-------|
-| Require a pull request before merging | Enabled |
-| Required approvals | 1 |
-| Dismiss stale reviews on new push | Enabled |
-| Require status checks to pass | Enabled |
-| Required status checks | `build` (from `build-and-release.yml`), `build` (from `docs.yml`) |
-| Require branches to be up to date | Enabled |
-| Require linear history | Enabled (rebase merge only — no merge commits) |
-| Allow force pushes | Disabled |
-| Allow deletions | Disabled |
-
-To enforce linear history in repository merge settings (**Settings → General → Pull Requests**):
-
-- Uncheck **Allow merge commits**
-- Uncheck **Allow squash merging**
-- Check **Allow rebase merging**
 
 ---
 
@@ -130,7 +107,7 @@ npm install
 npm run docs:dev
 ```
 
-The dev server starts at `http://localhost:5173/TurboHttp/`.
+The dev server starts at `http://localhost:5173/`.
 
 To build the static site:
 
@@ -161,4 +138,5 @@ docs: add RFC 9111 caching page to VitePress
 
 ## Reporting Issues
 
-Open an issue on GitHub before starting work on a significant change. This avoids duplicate effort and lets maintainers give early feedback on the approach.
+Open an issue on GitHub before starting work on a significant change. This avoids duplicate effort and lets maintainers
+give early feedback on the approach.

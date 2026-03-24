@@ -429,56 +429,6 @@ internal static class Routes
 
     internal static void RegisterContentEncodingRoutes(WebApplication app)
     {
-        // Helper: generate a deterministic payload of the given size in KB
-        static byte[] GeneratePayload(int kb)
-        {
-            var size = kb * 1024;
-            var data = new byte[size];
-            // Fill with repeating ASCII pattern for good compressibility
-            for (var i = 0; i < size; i++)
-            {
-                data[i] = (byte)('A' + i % 26);
-            }
-
-            return data;
-        }
-
-        // Helper: compress with gzip
-        static byte[] CompressGzip(byte[] data)
-        {
-            using var ms = new MemoryStream();
-            using (var gz = new GZipStream(ms, CompressionLevel.Fastest))
-            {
-                gz.Write(data, 0, data.Length);
-            }
-
-            return ms.ToArray();
-        }
-
-        // Helper: compress with deflate
-        static byte[] CompressDeflate(byte[] data)
-        {
-            using var ms = new MemoryStream();
-            using (var ds = new DeflateStream(ms, CompressionLevel.Fastest))
-            {
-                ds.Write(data, 0, data.Length);
-            }
-
-            return ms.ToArray();
-        }
-
-        // Helper: compress with brotli
-        static byte[] CompressBrotli(byte[] data)
-        {
-            using var ms = new MemoryStream();
-            using (var bs = new BrotliStream(ms, CompressionLevel.Fastest))
-            {
-                bs.Write(data, 0, data.Length);
-            }
-
-            return ms.ToArray();
-        }
-
         // GET /compress/gzip/{kb} → gzip-compressed response
         app.MapGet("/compress/gzip/{kb:int}", async (HttpContext ctx, int kb) =>
         {
@@ -560,6 +510,57 @@ internal static class Routes
             ctx.Response.ContentLength = body.Length;
             await ctx.Response.Body.WriteAsync(body);
         });
+        return;
+
+        // Helper: generate a deterministic payload of the given size in KB
+        static byte[] GeneratePayload(int kb)
+        {
+            var size = kb * 1024;
+            var data = new byte[size];
+            // Fill with repeating ASCII pattern for good compressibility
+            for (var i = 0; i < size; i++)
+            {
+                data[i] = (byte)('A' + i % 26);
+            }
+
+            return data;
+        }
+
+        // Helper: compress with gzip
+        static byte[] CompressGzip(byte[] data)
+        {
+            using var ms = new MemoryStream();
+            using (var gz = new GZipStream(ms, CompressionLevel.Fastest))
+            {
+                gz.Write(data, 0, data.Length);
+            }
+
+            return ms.ToArray();
+        }
+
+        // Helper: compress with deflate
+        static byte[] CompressDeflate(byte[] data)
+        {
+            using var ms = new MemoryStream();
+            using (var ds = new DeflateStream(ms, CompressionLevel.Fastest))
+            {
+                ds.Write(data, 0, data.Length);
+            }
+
+            return ms.ToArray();
+        }
+
+        // Helper: compress with brotli
+        static byte[] CompressBrotli(byte[] data)
+        {
+            using var ms = new MemoryStream();
+            using (var bs = new BrotliStream(ms, CompressionLevel.Fastest))
+            {
+                bs.Write(data, 0, data.Length);
+            }
+
+            return ms.ToArray();
+        }
     }
 
     internal static void RegisterErrorHandlingRoutes(WebApplication app)

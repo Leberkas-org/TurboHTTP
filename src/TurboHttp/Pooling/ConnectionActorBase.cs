@@ -129,28 +129,16 @@ public abstract class ConnectionActorBase : ReceiveActor
         In.Writer.TryComplete();
         Out.Writer.TryComplete();
 
-        // Notify parent of connection failure
+        // Notify parent of connection failure.
+        // HostPool.RemoveFailedConnection handles reconnection by spawning a fresh
+        // actor immediately — no need for this actor to reconnect on its own.
         Context.Parent.Tell(new HostPool.ConnectionFailed(Self));
 
-        if (ReconnectAttempt >= Config.MaxReconnectAttempts)
-        {
-            Log.Warning("Max reconnect attempts ({0}) reached for {1}:{2} — giving up",
-                Config.MaxReconnectAttempts, Options.Host, Options.Port);
-            return;
-        }
-
-        // Exponential backoff: base * 2^attempt (capped at 30s)
-        var delay = TimeSpan.FromTicks(
-            Math.Min(
-                Config.ReconnectInterval.Ticks * (1L << ReconnectAttempt),
-                TimeSpan.FromSeconds(30).Ticks));
-
-        ReconnectAttempt++;
-
-        Log.Debug("Scheduling reconnect attempt {0}/{1} in {2}",
-            ReconnectAttempt, Config.MaxReconnectAttempts, delay);
-
-        Context.System.Scheduler.ScheduleTellOnceCancelable(delay, Self, new DoReconnect(), Self);
+        // Do NOT schedule DoReconnect and do NOT Context.Stop(Self) here.
+        // HostPool spawns a replacement actor. This actor will stop naturally
+        // when the mover tasks complete and the runner sends DoClose → PostStop.
+        // Context.Stop would trigger PostStop too early, cancelling the CTS
+        // while mover tasks still have data in the pipe.
     }
 
     /// <summary>

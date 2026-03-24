@@ -29,7 +29,7 @@ public sealed class HttpDecoderException : TurboProtocolException
     /// Returns the default human-readable message for <paramref name="error"/>,
     /// including the relevant RFC section reference.
     /// </summary>
-    internal static string GetDefaultMessage(HttpDecoderError error) => error switch
+    private static string GetDefaultMessage(HttpDecoderError error) => error switch
     {
         HttpDecoderError.NeedMoreData
             => "More data required to complete parsing.",

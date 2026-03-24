@@ -28,7 +28,7 @@ public sealed class QualifiedDirectiveTests
     [Fact(DisplayName = "RFC9111-5.2.2.3-QD-001: no-cache=\"Set-Cookie\" strips field on reuse")]
     public void Should_StripField_When_NoCacheQualified()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         var response = OkResponseWithCacheControl("max-age=3600, no-cache=\"Set-Cookie\"");
         response.Headers.TryAddWithoutValidation("Set-Cookie", "session=abc123");
@@ -52,7 +52,7 @@ public sealed class QualifiedDirectiveTests
     [Fact(DisplayName = "RFC9111-5.2.2.3-QD-002: no-cache=\"A, B\" strips both fields")]
     public void Should_StripMultipleFields_When_NoCacheQualified()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         var response = OkResponseWithCacheControl("max-age=3600, no-cache=\"X-Custom, X-Other\"");
         response.Headers.TryAddWithoutValidation("X-Custom", "val1");
@@ -118,7 +118,7 @@ public sealed class QualifiedDirectiveTests
     public void Should_ExcludeField_When_PrivateQualified()
     {
         var policy = new CachePolicy { SharedCache = true };
-        var store = new HttpCacheStore(policy);
+        var store = new CacheStore(policy);
         var request = GetRequest();
         var response = OkResponseWithCacheControl("max-age=3600, private=\"Set-Cookie\"");
         response.Headers.TryAddWithoutValidation("Set-Cookie", "session=abc123");
@@ -140,7 +140,7 @@ public sealed class QualifiedDirectiveTests
     public void Should_NotStore_When_UnqualifiedPrivateInSharedCache()
     {
         var policy = new CachePolicy { SharedCache = true };
-        var store = new HttpCacheStore(policy);
+        var store = new CacheStore(policy);
         var request = GetRequest();
         var response = OkResponseWithCacheControl("max-age=3600, private");
 
@@ -155,7 +155,7 @@ public sealed class QualifiedDirectiveTests
     public void Should_Store_When_UnqualifiedPrivateInPrivateCache()
     {
         var policy = new CachePolicy { SharedCache = false };
-        var store = new HttpCacheStore(policy);
+        var store = new CacheStore(policy);
         var request = GetRequest();
         var response = OkResponseWithCacheControl("max-age=3600, private");
 

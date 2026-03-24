@@ -16,7 +16,7 @@ public static class TurboHttpMetrics
     /// </summary>
     public const string MeterName = "TurboHttp";
 
-    private static readonly string _version =
+    private static readonly string Version =
         typeof(TurboHttpMetrics).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? typeof(TurboHttpMetrics).Assembly.GetName().Version?.ToString()
@@ -25,7 +25,7 @@ public static class TurboHttpMetrics
     /// <summary>
     /// The single <see cref="Meter"/> for all TurboHttp metrics.
     /// </summary>
-    public static Meter Meter { get; } = new(MeterName, _version);
+    public static Meter Meter { get; } = new(MeterName, Version);
 
     /// <summary>
     /// Total requests sent.

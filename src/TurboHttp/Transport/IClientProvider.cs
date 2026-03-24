@@ -68,7 +68,10 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
             throw new InvalidOperationException($"Could not resolve any IP addresses for host '{host}'.");
         }
 
-        await _socket.ConnectAsync(addresses, port, ct).ConfigureAwait(false);
+        await _socket.ConnectAsync(addresses, port, ct)
+            .AsTask()
+            .WaitAsync(options.ConnectTimeout, ct)
+            .ConfigureAwait(false);
         return new NetworkStream(_socket, ownsSocket: false);
     }
 
@@ -156,7 +159,9 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
             ClientCertificates = options.ClientCertificates,
         };
 
-        await _sslStream.AuthenticateAsClientAsync(authOptions, ct).ConfigureAwait(false);
+        await _sslStream.AuthenticateAsClientAsync(authOptions, ct)
+            .WaitAsync(options.ConnectTimeout, ct)
+            .ConfigureAwait(false);
         return _sslStream;
     }
 

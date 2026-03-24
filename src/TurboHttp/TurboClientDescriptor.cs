@@ -15,7 +15,7 @@ internal sealed class TurboClientDescriptor
     public bool EnableCookies { get; set; }
     public CookieJar? CustomCookieJar { get; set; }
     public CachePolicy? CachePolicy { get; set; }
-    public HttpCacheStore? CustomCacheStore { get; set; }
+    public CacheStore? CustomCacheStore { get; set; }
     public List<Type> HandlerTypes { get; } = [];
 
     /// <summary>

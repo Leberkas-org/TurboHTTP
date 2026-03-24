@@ -12,7 +12,7 @@
         <Authors>st0o0</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/st0o0/TurboHttp</RepositoryUrl>
-        <PackageProjectUrl>https://st0o0.github.io/TurboHttp/</PackageProjectUrl>
+        <PackageProjectUrl>https://turbohttp.st0o0.net</PackageProjectUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 

@@ -73,6 +73,7 @@ public sealed class HostPool : ReceiveActor
         Receive<StreamCompleted>(HandleStreamCompleted);
         Receive<StreamAcquired>(HandleStreamAcquired);
         Receive<UpdateMaxConcurrentStreams>(HandleUpdateMaxConcurrentStreams);
+        Receive<Terminated>(HandleTerminated);
         Receive<ConnectionActorBase.ConnectionReady>(HandleConnectionReady);
         Receive<PoolRouter.EnsureHost>(HandleEnsureHost);
     }
@@ -175,7 +176,13 @@ public sealed class HostPool : ReceiveActor
 
         // Queue the requester BEFORE attempting to spawn — eliminates the race
         // where ConnectionReady arrives before the requester is enqueued.
-        _pendingHandleRequesters.Add(Sender);
+        // Deduplicate: ConnectionStage retries EnsureHost on timeout, which would
+        // queue the same StageActor multiple times. Without deduplication, a single
+        // ConnectionReady delivers the handle N times → concurrent inbound pumps.
+        if (!_pendingHandleRequesters.Contains(Sender))
+        {
+            _pendingHandleRequesters.Add(Sender);
+        }
 
         // Don't spawn extra connections while one is still connecting and no ready connection exists.
         // For QUIC this avoids duplicate QUIC connections; for HTTP/1.x it prevents the race
@@ -239,6 +246,21 @@ public sealed class HostPool : ReceiveActor
         }
     }
 
+    private void HandleTerminated(Terminated msg)
+    {
+        var conn = Find(msg.ActorRef);
+
+        if (conn == null)
+        {
+            return;
+        }
+
+        _log.Debug("HostPool: Watched connection actor terminated: {0}", msg.ActorRef);
+
+        // Treat the same as ConnectionFailed — clean up and immediately spawn replacement.
+        RemoveFailedConnection(conn);
+    }
+
     private void HandleFailure(ConnectionFailed msg)
     {
         var conn = Find(msg.Connection);
@@ -248,6 +270,17 @@ public sealed class HostPool : ReceiveActor
             return;
         }
 
+        RemoveFailedConnection(conn);
+    }
+
+    /// <summary>
+    /// Removes a failed/terminated connection, immediately spawns a replacement,
+    /// and serves any queued requesters. This avoids the previous 5-second
+    /// <see cref="TcpOptions.ReconnectInterval"/> delay that caused HTTP/1.0
+    /// multi-request tests to time out.
+    /// </summary>
+    private void RemoveFailedConnection(ConnectionState conn)
+    {
         // Record metrics before state change
         TurboHttpMetrics.ConnectionActive.Add(-1, HostTags);
         if (conn.Idle)
@@ -258,6 +291,8 @@ public sealed class HostPool : ReceiveActor
         // Mark inactive before removal so any in-flight observers see a dead connection.
         conn.MarkDead();
 
+        Context.Unwatch(conn.Actor);
+
         // Remove stale connection state immediately.
         _connections.Remove(conn);
 
@@ -266,11 +301,12 @@ public sealed class HostPool : ReceiveActor
             _limiter.Release(HostIdentifier);
         }
 
-        Context.System.Scheduler.ScheduleTellOnceCancelable(
-            _config.ReconnectInterval,
-            Self,
-            new Reconnect(msg.Connection),
-            Self);
+        // Immediately spawn a replacement connection so that queued requesters
+        // are served as soon as the new connection is ready — no delay.
+        if (_pendingHandleRequesters.Count > 0 || _connections.Count == 0)
+        {
+            SpawnConnection();
+        }
     }
 
     private void HandleReconnect(Reconnect msg)
@@ -302,8 +338,9 @@ public sealed class HostPool : ReceiveActor
                 TurboHttpMetrics.ConnectionIdle.Add(-1, HostTags);
             }
 
+            // Do NOT send PoisonPill — the mover tasks may still be draining
+            // the pipe. The actor will stop itself via its disconnect/terminate path.
             Context.Unwatch(conn.Actor);
-            conn.Actor.Tell(PoisonPill.Instance);
             _connections.Remove(conn);
 
             if (!IsMultiStream)
@@ -331,6 +368,24 @@ public sealed class HostPool : ReceiveActor
             if (!wasIdle && conn.Idle)
             {
                 TurboHttpMetrics.ConnectionIdle.Add(1, HostTags);
+            }
+
+            // Eagerly remove non-reusable idle connections from the tracking list
+            // and release the per-host limiter slot. Do NOT send PoisonPill here —
+            // the connection actor's mover tasks may still be draining the pipe.
+            // The actor will stop itself via its own disconnect/terminate path.
+            if (!conn.Reusable && conn.Idle)
+            {
+                TurboHttpMetrics.ConnectionActive.Add(-1, HostTags);
+                TurboHttpMetrics.ConnectionIdle.Add(-1, HostTags);
+
+                Context.Unwatch(conn.Actor);
+                _connections.Remove(conn);
+
+                if (!IsMultiStream)
+                {
+                    _limiter.Release(HostIdentifier);
+                }
             }
         }
 

@@ -38,19 +38,19 @@ namespace TurboHttp.Streams.Stages.Features;
 ///     <b>304 Not Modified</b> — merges headers with the cached entry and pushes 200 OK.
 ///   </description></item>
 ///   <item><description>
-///     <b>2xx (cacheable)</b> — stores the response via <see cref="HttpCacheStore.Put"/>.
+///     <b>2xx (cacheable)</b> — stores the response via <see cref="CacheStore.Put"/>.
 ///   </description></item>
 ///   <item><description>
 ///     <b>Unsafe method</b> — invalidates the cache entry for the request URI.
 ///   </description></item>
 /// </list>
 /// </para>
-/// When no <see cref="HttpCacheStore"/> is provided the stage is a pass-through in both directions.
+/// When no <see cref="CacheStore"/> is provided the stage is a pass-through in both directions.
 /// </summary>
 internal sealed class CacheBidiStage
     : GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
-    private readonly HttpCacheStore? _store;
+    private readonly CacheStore? _store;
     private readonly CachePolicy _policy;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("Cache.In.Request");
@@ -60,7 +60,7 @@ internal sealed class CacheBidiStage
 
     public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
-    public CacheBidiStage(HttpCacheStore? store, CachePolicy? policy = null)
+    public CacheBidiStage(CacheStore? store, CachePolicy? policy = null)
     {
         _store = store;
         _policy = policy ?? CachePolicy.Default;

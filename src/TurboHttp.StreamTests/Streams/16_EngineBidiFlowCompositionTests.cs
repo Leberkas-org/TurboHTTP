@@ -202,7 +202,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         DisplayName = "EBFC-008: Only CacheStore — second request served from cache")]
     public async Task Should_ServeCachedResponse_When_OnlyCacheStoreIsSet()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var callCount = 0;
 
         byte[] Factory()
@@ -249,7 +249,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
             RetryPolicy: new RetryPolicy(),
             Expect100Policy: null, RequestCompressionPolicy: null,
             CookieJar: new CookieJar(),
-            CacheStore: new HttpCacheStore(),
+            CacheStore: new CacheStore(),
             CachePolicy: null,
             Handlers: [],
             AutomaticDecompression: true);
@@ -269,7 +269,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
     public async Task Should_RetryAndCacheWithCookies_When_AllFeaturesEnabled()
     {
         var jar = new CookieJar();
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var callCount = 0;
 
         byte[] Factory() => ++callCount == 1 ? Response503() :

@@ -4,30 +4,30 @@
     </PropertyGroup>
 
     <PropertyGroup Label="SharedVersions">
-        <AkkaVersion>1.5.62</AkkaVersion>
+        <AkkaVersion>1.5.63</AkkaVersion>
         <XunitVersion>2.9.3</XunitVersion>
         <XunitRunnerVersion>3.1.5</XunitRunnerVersion>
     </PropertyGroup>
 
     <ItemGroup Label="Akka.NET">
-        <PackageVersion Include="Akka.Logger.Extensions.Logging" Version="1.4.22" />
-        <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)" />
-        <PackageVersion Include="Akka.Streams.TestKit" Version="$(AkkaVersion)" />
-        <PackageVersion Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)" />
+        <PackageVersion Include="Akka.Logger.Extensions.Logging" Version="1.4.22"/>
+        <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)"/>
+        <PackageVersion Include="Akka.Streams.TestKit" Version="$(AkkaVersion)"/>
+        <PackageVersion Include="Akka.TestKit.Xunit2" Version="$(AkkaVersion)"/>
     </ItemGroup>
 
     <ItemGroup Label="Servus">
-        <PackageVersion Include="Servus.Akka" Version="0.3.10" />
+        <PackageVersion Include="Servus.Akka" Version="0.3.10"/>
     </ItemGroup>
 
     <ItemGroup Label="Testing">
-        <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-        <PackageVersion Include="xunit" Version="$(XunitVersion)" />
-        <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)" />
+        <PackageVersion Include="coverlet.collector" Version="8.0.1"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0"/>
+        <PackageVersion Include="xunit" Version="$(XunitVersion)"/>
+        <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVersion)"/>
     </ItemGroup>
 
     <ItemGroup Label="Benchmarks">
-        <PackageVersion Include="BenchmarkDotNet" Version="0.13.2" />
+        <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
     </ItemGroup>
 </Project>

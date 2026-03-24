@@ -105,13 +105,13 @@ public sealed class CacheBidiStageTests : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    private static HttpCacheStore StoreWithFreshEntry(
+    private static CacheStore StoreWithFreshEntry(
         string uri = "http://example.com/data",
         string body = "cached body",
         string? etag = null,
         DateTimeOffset? lastModified = null)
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -135,13 +135,13 @@ public sealed class CacheBidiStageTests : StreamTestBase
         return store;
     }
 
-    private static HttpCacheStore StoreWithStaleEntry(
+    private static CacheStore StoreWithStaleEntry(
         string uri = "http://example.com/data",
         string body = "stale body",
         string? etag = null,
         DateTimeOffset? lastModified = null)
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -214,7 +214,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CACHE-002: cache miss → request forwarded unchanged")]
     public async Task RequestDirection_Should_ForwardRequest_When_CacheMiss()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data");
 
@@ -256,7 +256,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CACHE-005: multiple requests → each evaluated independently")]
     public async Task RequestDirection_Should_EvaluateEachRequestIndependently()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
 
         // Two separate requests through separate stages (stage is one-at-a-time: request→response→next)
         var stage1 = new CacheBidiStage(store);
@@ -309,7 +309,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CACHE-008: null RequestMessage → response passes through unchanged")]
     public async Task ResponseDirection_Should_PassThrough_When_RequestMessageIsNull()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
         var response = MakeResponse(body: "hello");
 
@@ -322,7 +322,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CACHE-009: cacheable 200 OK → stored in cache")]
     public async Task ResponseDirection_Should_StoreResponse_When_Cacheable200()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
         var response = MakeResponse(
             requestUri: "http://example.com/data",
@@ -381,7 +381,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-4.3.4-CACHE-012: 304 without cached entry → passed through unchanged")]
     public async Task ResponseDirection_Should_PassThrough304_When_NoCachedEntry()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
 
         var notModified = new HttpResponseMessage(HttpStatusCode.NotModified);
@@ -396,7 +396,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CACHE-013: non-cacheable 500 → not stored")]
     public async Task ResponseDirection_Should_NotStore_NonCacheableStatus()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
         var response = MakeResponse(
             statusCode: HttpStatusCode.InternalServerError,
@@ -416,7 +416,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-4-CACHE-014: miss→engine→store→hit on second request")]
     public async Task Bidirectional_Should_CacheAndServeFromCache()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
 
         // First request: cache miss → engine echo → response stored
@@ -479,7 +479,7 @@ public sealed class CacheBidiStageTests : StreamTestBase
     [Fact(Timeout = 10_000, DisplayName = "RFC9111-3-CACHE-017: no-store directive → response not cached")]
     public async Task ResponseDirection_Should_NotStore_When_NoStoreDirective()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var stage = new CacheBidiStage(store);
         var response = MakeResponse(
             requestUri: "http://example.com/data",

@@ -25,7 +25,7 @@ public static class TurboHttpInstrumentation
     internal static readonly HttpRequestOptionsKey<Activity> RequestActivityKey
         = new("TurboHttp.RequestActivity");
 
-    private static readonly string _version =
+    private static readonly string Version =
         typeof(TurboHttpInstrumentation).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? typeof(TurboHttpInstrumentation).Assembly.GetName().Version?.ToString()
@@ -34,7 +34,7 @@ public static class TurboHttpInstrumentation
     /// <summary>
     /// The single <see cref="ActivitySource"/> for all TurboHttp spans.
     /// </summary>
-    public static ActivitySource Source { get; } = new(SourceName, _version);
+    public static ActivitySource Source { get; } = new(SourceName, Version);
 
     /// <summary>
     /// Starts a root "TurboHttp.Request" activity for an outgoing HTTP request.

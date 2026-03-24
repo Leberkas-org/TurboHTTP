@@ -144,20 +144,10 @@ Fix HTTP/1.0 redirect and retry functionality by enabling the pipeline to emit n
 **Parallel:** no — full test suite run
 
 **Acceptance Criteria:**
-- [ ] Run: `dotnet test src/TurboHttp.StreamTests.csproj --filter "*" -v normal`
-  - Verify: All RFC9112 stream tests pass (HTTP/1.1 encoder/decoder/chunked/correlation/pipeline)
-  - Verify: All RFC9113 stream tests pass (HTTP/2 encoder/decoder/connection/stream)
-  - Expected: Zero failures, zero regressions
-- [ ] Run: `dotnet test src/TurboHttp.Tests.csproj --filter "*" -v normal`
-  - Verify: All RFC9112 unit tests pass (HTTP/1.1 protocol)
-  - Verify: All RFC9113 unit tests pass (HTTP/2 protocol)
-  - Expected: Zero failures
-- [ ] Run: `dotnet test src/TurboHttp.IntegrationTests.csproj --filter "*" -v normal`
-  - Verify: All HTTP/1.1 integration tests pass (if any exist beyond redirects)
-  - Verify: All HTTP/2 integration tests pass (if any exist beyond redirects)
-  - Expected: Zero failures
+- [ ] Run: `dotnet test src/TurboHttp.StreamTests.csproj -v normal`
+- [ ] Run: `dotnet test src/TurboHttp.Tests.csproj -v normal`
+- [ ] Run: `dotnet test src/TurboHttp.IntegrationTests.csproj -v normal`
 - [ ] Build: `dotnet build --configuration Release src/TurboHttp.sln`
-  - Expected: Zero errors, zero warnings
 - [ ] Document test results in a summary table (passed/failed counts per RFC section)
 
 ### TASK-025-007: Verification Gate — Full Build and Test Suite

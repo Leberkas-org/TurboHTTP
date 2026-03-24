@@ -533,7 +533,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         DisplayName = "TASK008-VFY-001: StreamContent body stored via async path")]
     public async Task Should_StoreBodyViaAsyncPath_When_ContentIsStreamContent()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var bodyBytes = "async-content-test"u8.ToArray();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/async-test");
@@ -569,7 +569,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         DisplayName = "TASK008-VFY-002: Multiple responses cached — sync and async paths both work")]
     public async Task Should_CacheBothSyncAndAsyncResponses_When_MultipleResponsesProcessed()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
 
         // Sync path: ByteArrayContent
         var syncRequest = new HttpRequestMessage(HttpMethod.Get, "http://example.com/sync");
@@ -678,7 +678,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
     public async Task Should_StoreCookieAndCache_When_CookieBidiAndCacheBidiStacked()
     {
         var jar = new CookieJar();
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://cross.example.com/test");
         var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -860,7 +860,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
         TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
         Action<HttpResponseMessage> pushResponse,
         Action completeResponse) RunCacheBidi(
-            HttpCacheStore store,
+            CacheStore store,
             params HttpRequestMessage[] requests)
     {
         var stage = new CacheBidiStage(store);

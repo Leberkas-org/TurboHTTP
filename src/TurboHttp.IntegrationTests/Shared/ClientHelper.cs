@@ -102,7 +102,19 @@ public sealed class ClientHelper : IAsyncDisposable
         var system = _provider.GetService<ActorSystem>();
         if (system is not null)
         {
+            // Terminate() initiates shutdown; WhenTerminated completes when
+            // all actors are stopped and the system is fully torn down.
             await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
+            await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
+
+            // Reset the static LoggerFactory so the next ActorSystem doesn't
+            // reference a disposed ILoggerFactory from a previous test.
+            LoggingLogger.LoggerFactory = null!;
+
+            // Allow Akka dispatcher threads to fully wind down before the
+            // next ActorSystem is created. Without this, lingering threads
+            // from the terminated system can interfere with the new one.
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
         }
 
         await _provider.DisposeAsync();

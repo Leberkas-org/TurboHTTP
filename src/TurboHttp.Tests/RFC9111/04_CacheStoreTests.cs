@@ -9,7 +9,7 @@ namespace TurboHttp.Tests.RFC9111;
 /// Vary header matching, and thread-safety of the in-memory cache.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="HttpCacheStore"/>.
+/// Class under test: <see cref="CacheStore"/>.
 /// RFC 9111 §3: A cache must store and retrieve responses keyed by request URI and Vary headers.
 /// </remarks>
 public sealed class CacheStoreTests
@@ -33,7 +33,7 @@ public sealed class CacheStoreTests
     public void Should_BeCacheable_When_200OkWithMaxAge()
     {
         var response = OkResponse();
-        Assert.True(HttpCacheStore.IsCacheable(response));
+        Assert.True(CacheStore.IsCacheable(response));
     }
 
     [Theory(DisplayName = "RFC9111-3.1-CS-002: cacheable status codes")]
@@ -49,28 +49,28 @@ public sealed class CacheStoreTests
     public void Should_BeCacheable_When_StatusCodeIsCacheable(int statusCode)
     {
         var response = new HttpResponseMessage((HttpStatusCode)statusCode);
-        Assert.True(HttpCacheStore.IsCacheable(response));
+        Assert.True(CacheStore.IsCacheable(response));
     }
 
     [Fact(DisplayName = "RFC9111-3.1-CS-003: 500 status is not cacheable by default")]
     public void Should_NotBeCacheable_When_500InternalServerError()
     {
         var response = new HttpResponseMessage(HttpStatusCode.InternalServerError);
-        Assert.False(HttpCacheStore.IsCacheable(response));
+        Assert.False(CacheStore.IsCacheable(response));
     }
 
 
     [Fact(DisplayName = "RFC9111-3-CS-004: GET 200 with max-age should be stored")]
     public void Should_StoreEntry_When_Get200WithMaxAge()
     {
-        Assert.True(HttpCacheStore.ShouldStore(GetRequest(), OkResponse()));
+        Assert.True(CacheStore.ShouldStore(GetRequest(), OkResponse()));
     }
 
     [Fact(DisplayName = "RFC9111-3-CS-005: POST 200 should not be stored (unsafe method)")]
     public void Should_NotStoreEntry_When_Post200UnsafeMethod()
     {
         var post = new HttpRequestMessage(HttpMethod.Post, "http://example.com/resource");
-        Assert.False(HttpCacheStore.ShouldStore(post, OkResponse()));
+        Assert.False(CacheStore.ShouldStore(post, OkResponse()));
     }
 
     [Fact(DisplayName = "RFC9111-5.2.1.5-CS-006: no-store on request → should not store")]
@@ -78,7 +78,7 @@ public sealed class CacheStoreTests
     {
         var request = GetRequest();
         request.Headers.TryAddWithoutValidation("Cache-Control", "no-store");
-        Assert.False(HttpCacheStore.ShouldStore(request, OkResponse()));
+        Assert.False(CacheStore.ShouldStore(request, OkResponse()));
     }
 
     [Fact(DisplayName = "RFC9111-5.2.2.5-CS-007: no-store on response → should not store")]
@@ -86,14 +86,14 @@ public sealed class CacheStoreTests
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Cache-Control", "no-store");
-        Assert.False(HttpCacheStore.ShouldStore(GetRequest(), response));
+        Assert.False(CacheStore.ShouldStore(GetRequest(), response));
     }
 
 
     [Fact(DisplayName = "RFC9111-4-CS-008: Get on empty store returns null")]
     public void Should_ReturnNull_When_StoreIsEmpty()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var result = store.Get(GetRequest());
         Assert.Null(result);
     }
@@ -101,7 +101,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-3-CS-009: Put then Get same URI returns entry")]
     public void Should_ReturnCachedEntry_When_PutThenGetSameUri()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         var response = OkResponse();
         var body = new byte[] { 1, 2, 3 };
@@ -116,7 +116,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-4.4-CS-010: Invalidate removes entry for URI")]
     public void Should_RemoveEntry_When_Invalidated()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         store.Put(request, OkResponse(), [], _baseTime.AddSeconds(-1), _baseTime);
 
@@ -129,7 +129,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-4.1-CS-011: Vary header — different Accept is a cache miss")]
     public void Should_ReturnMiss_When_VaryHeaderAndDifferentAccept()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
 
         var request1 = GetRequest();
         request1.Headers.TryAddWithoutValidation("Accept", "application/json");
@@ -148,7 +148,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-4.1-CS-012: Vary header — matching Accept is a cache hit")]
     public void Should_ReturnHit_When_VaryHeaderAndMatchingAccept()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
 
         var request1 = GetRequest();
         request1.Headers.TryAddWithoutValidation("Accept", "application/json");
@@ -168,7 +168,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-4.1-CS-013: Vary: * never matches")]
     public void Should_NeverMatch_When_VaryIsStar()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
 
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation("Vary", "*");
@@ -187,7 +187,7 @@ public sealed class CacheStoreTests
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60, must-understand");
         response.Headers.Date = _baseTime;
 
-        Assert.True(HttpCacheStore.ShouldStore(request, response));
+        Assert.True(CacheStore.ShouldStore(request, response));
     }
 
     [Fact(DisplayName = "RFC9111-5.2.2.3-CS-031: must-understand + 299 prevents storage")]
@@ -198,7 +198,7 @@ public sealed class CacheStoreTests
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60, must-understand");
         response.Headers.Date = _baseTime;
 
-        Assert.False(HttpCacheStore.ShouldStore(request, response));
+        Assert.False(CacheStore.ShouldStore(request, response));
     }
 
     [Fact(DisplayName = "RFC9111-5.2.2.3-CS-032: must-understand absent allows any cacheable status")]
@@ -210,7 +210,7 @@ public sealed class CacheStoreTests
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
         response.Headers.Date = _baseTime;
 
-        Assert.True(HttpCacheStore.ShouldStore(request, response));
+        Assert.True(CacheStore.ShouldStore(request, response));
     }
 
     [Fact(DisplayName = "RFC9111-3.1-CS-033: 206 Partial Content not stored in cache")]
@@ -221,7 +221,7 @@ public sealed class CacheStoreTests
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
         response.Headers.Date = _baseTime;
 
-        Assert.False(HttpCacheStore.ShouldStore(request, response));
+        Assert.False(CacheStore.ShouldStore(request, response));
     }
 
     [Fact(DisplayName = "RFC9111-3.1-CS-034: response with Content-Range not stored in cache")]
@@ -235,7 +235,7 @@ public sealed class CacheStoreTests
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
         response.Headers.Date = _baseTime;
 
-        Assert.False(HttpCacheStore.ShouldStore(request, response));
+        Assert.False(CacheStore.ShouldStore(request, response));
     }
 
     [Fact(DisplayName = "RFC9111-3.1-CS-035: 200 without Content-Range stored normally")]
@@ -244,13 +244,13 @@ public sealed class CacheStoreTests
         var request = GetRequest();
         var response = OkResponse();
 
-        Assert.True(HttpCacheStore.ShouldStore(request, response));
+        Assert.True(CacheStore.ShouldStore(request, response));
     }
 
     [Fact(DisplayName = "RFC9111-3.1-CS-036: Trailers not merged into cached headers")]
     public void Should_NotMergeTrailers_When_CachedWithTrailers()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
 
         // Simulate a chunked response with trailing headers
@@ -279,7 +279,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-3.1-CS-037: Connection header not stored in cache")]
     public void Should_NotStore_When_ConnectionHeader()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation("Connection", "keep-alive");
@@ -305,7 +305,7 @@ public sealed class CacheStoreTests
     [InlineData("Upgrade")]
     public void Should_NotStore_When_ConnectionSpecificHeader(string headerName)
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation(headerName, "some-value");
@@ -321,7 +321,7 @@ public sealed class CacheStoreTests
     [Fact(DisplayName = "RFC9111-3.1-CS-039: Custom headers preserved in cache")]
     public void Should_Store_When_CustomHeaders()
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = GetRequest();
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation("X-Custom-Header", "my-value");
@@ -347,7 +347,7 @@ public sealed class CacheStoreTests
     public void Should_EvictEntries_When_MaxEntriesExceeded()
     {
         var policy = new CachePolicy { MaxEntries = 2 };
-        var store = new HttpCacheStore(policy);
+        var store = new CacheStore(policy);
 
         for (var i = 0; i < 3; i++)
         {

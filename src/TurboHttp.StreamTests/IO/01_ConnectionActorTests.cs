@@ -120,64 +120,46 @@ public sealed class  ConnectionActorTests : TestKit
         Assert.Equal(connectionActor, failed.Connection);
     }
 
-    [Fact(DisplayName = "CA-003: Backoff delay increases exponentially between reconnect attempts")]
-    public void Should_IncreaseBackoffDelay_WhenReconnectingExponentially()
+    [Fact(DisplayName = "CA-003: No reconnect attempts after disconnect — HostPool manages reconnection")]
+    public void Should_NotReconnect_AfterDisconnect()
     {
         var config = new TurboClientOptions
         {
-            ReconnectInterval = TimeSpan.FromMilliseconds(100),
+            ReconnectInterval = TimeSpan.FromMilliseconds(50),
             MaxReconnectAttempts = 5
         };
 
         var (_, connectionActor, clientManagerProbe, parentProbe) = CreateActor(config);
 
-        // First disconnect — _reconnectAttempt=0, delay = 100ms * 2^0 = 100ms
-        var t0 = DateTime.UtcNow;
         connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
         parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
-        clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
-        var delay1 = DateTime.UtcNow - t0;
 
-        // Second disconnect — _reconnectAttempt=1, delay = 100ms * 2^1 = 200ms
-        var t1 = DateTime.UtcNow;
-        connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
-        clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
-        var delay2 = DateTime.UtcNow - t1;
-
-        // Minimum expected delays: 100ms and 200ms respectively.
-        Assert.True(delay1 >= TimeSpan.FromMilliseconds(80),
-            $"Expected delay1 >= 80ms, got {delay1.TotalMilliseconds:F1}ms");
-        Assert.True(delay2 >= TimeSpan.FromMilliseconds(160),
-            $"Expected delay2 >= 160ms, got {delay2.TotalMilliseconds:F1}ms");
-        Assert.True(delay2 > delay1,
-            $"Expected delay2 ({delay2.TotalMilliseconds:F1}ms) > delay1 ({delay1.TotalMilliseconds:F1}ms)");
+        // HostPool manages reconnection by spawning a fresh replacement actor.
+        // This actor should NOT schedule its own reconnect attempt.
+        clientManagerProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
-    [Fact(DisplayName = "CA-004: Stops reconnecting after MaxReconnectAttempts reached")]
-    public void Should_StopReconnecting_WhenMaxReconnectAttemptsReached()
+    [Fact(DisplayName = "CA-004: No reconnect attempts after runner terminates")]
+    public void Should_NotReconnect_WhenRunnerTerminates()
     {
         var config = new TurboClientOptions
         {
-            ReconnectInterval = TimeSpan.FromMilliseconds(10),
+            ReconnectInterval = TimeSpan.FromMilliseconds(50),
             MaxReconnectAttempts = 2
         };
 
         var (_, connectionActor, clientManagerProbe, parentProbe) = CreateActor(config);
 
-        // Disconnect 1 — attempt=0, schedules reconnect in 10ms
-        connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
-        clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
+        // Simulate successful connect
+        var runnerProbe = CreateTestProbe("runner-ca004");
+        connectionActor.Tell(MakeConnected(), runnerProbe.Ref);
+        parentProbe.ExpectMsg<ConnectionActorBase.ConnectionReady>(TimeSpan.FromSeconds(5));
 
-        // Disconnect 2 — attempt=1, schedules reconnect in 20ms
-        connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
+        // Kill runner → Terminated → Reconnect → ConnectionFailed
+        Sys.Stop(runnerProbe.Ref);
         parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
-        clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
 
-        // Disconnect 3 — attempt=2 >= MaxReconnectAttempts=2 → gives up, no further reconnect
-        connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
+        // No reconnect from the actor itself.
         clientManagerProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
     }
 
@@ -267,8 +249,8 @@ public sealed class  ConnectionActorTests : TestKit
             "InboundChannel (_out) writer should be completed after Reconnect()");
     }
 
-    [Fact(DisplayName = "CA-005: ConnectionReady sent to parent after successful reconnect")]
-    public void Should_SendConnectionReadyToParent_WhenReconnectSucceeds()
+    [Fact(DisplayName = "CA-005: ConnectionReady sent to parent on initial connect")]
+    public void Should_SendConnectionReadyToParent_WhenInitialConnectSucceeds()
     {
         var config = new TurboClientOptions
         {
@@ -278,16 +260,8 @@ public sealed class  ConnectionActorTests : TestKit
 
         var (_, connectionActor, clientManagerProbe, parentProbe) = CreateActor(config);
 
-        // Disconnect triggers a reconnect attempt
-        connectionActor.Tell(new ClientRunner.ClientDisconnected(new IPEndPoint(IPAddress.Loopback, 8080)));
-        parentProbe.ExpectMsg<HostPool.ConnectionFailed>(TimeSpan.FromSeconds(5));
-
-        // Wait for the reconnect attempt (CreateRunnerWithChannels sent to clientManager again)
-        clientManagerProbe.ExpectMsg<ClientManager.CreateRunnerWithChannels>(TimeSpan.FromSeconds(5));
-        var connectionActorRef = clientManagerProbe.LastSender;
-
-        // Simulate the reconnect succeeding
-        connectionActorRef.Tell(MakeConnected(), TestActor);
+        // Simulate the initial connection succeeding
+        connectionActor.Tell(MakeConnected(), TestActor);
 
         // Parent should receive ConnectionReady with a fresh ConnectionHandle
         var ready = parentProbe.ExpectMsg<ConnectionActorBase.ConnectionReady>(TimeSpan.FromSeconds(5));

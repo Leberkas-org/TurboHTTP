@@ -15,7 +15,7 @@ namespace TurboHttp.IntegrationTests;
 /// client operation — Akka swallows the actor exception and the stream pipeline continues.
 /// Once a compatible bridge package is available, the message-capture test should be enabled.
 /// </remarks>
-[Collection("Http1Integration")]
+[Collection("H11")]
 public sealed class LoggingBridgeTests : IAsyncLifetime
 {
     private readonly KestrelFixture _fixture;
@@ -56,7 +56,7 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-009-003: HTTP request succeeds with ILoggerFactory configured in DI")]
     public async Task Http_Request_Succeeds_With_LoggerFactory_Configured()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);
@@ -69,7 +69,7 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-009-003: Multiple requests succeed with logging bridge active")]
     public async Task Multiple_Requests_Succeed_With_Logging_Bridge()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         for (var i = 0; i < 3; i++)
         {
@@ -83,7 +83,7 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-009-003: Client without ILoggerFactory still works (fallback path)")]
     public async Task Client_Without_LoggerFactory_Still_Works()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         // Create a client without any ILoggerFactory — exercises the fallback path
         await using var helper = ClientHelper.CreateClient(

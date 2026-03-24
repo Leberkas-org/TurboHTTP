@@ -25,7 +25,7 @@ public static class TurboHttpClientBuilderExtensions
         return builder;
     }
 
-    public static ITurboHttpClientBuilder WithCache(this ITurboHttpClientBuilder builder, HttpCacheStore store, CachePolicy? policy = null)
+    public static ITurboHttpClientBuilder WithCache(this ITurboHttpClientBuilder builder, CacheStore store, CachePolicy? policy = null)
     {
         builder.Services.Configure<TurboClientDescriptor>(builder.Name, d =>
         {

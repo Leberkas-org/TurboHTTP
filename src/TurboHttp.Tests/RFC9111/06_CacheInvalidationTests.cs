@@ -9,17 +9,17 @@ namespace TurboHttp.Tests.RFC9111;
 /// entries for the request URI, Location, and Content-Location headers.
 /// </summary>
 /// <remarks>
-/// These tests exercise <see cref="HttpCacheStore"/> directly. The stage-level
+/// These tests exercise <see cref="CacheStore"/> directly. The stage-level
 /// invalidation logic lives in CacheBidiStage.ProcessResponse and delegates
-/// to the same <see cref="HttpCacheStore.Invalidate"/> method tested here.
+/// to the same <see cref="CacheStore.Invalidate"/> method tested here.
 /// </remarks>
 public sealed class CacheInvalidationTests
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
-    private static HttpCacheStore CreateStoreWithEntry(string uri = "http://example.com/resource")
+    private static CacheStore CreateStoreWithEntry(string uri = "http://example.com/resource")
     {
-        var store = new HttpCacheStore();
+        var store = new CacheStore();
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
