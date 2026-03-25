@@ -1,16 +1,19 @@
+[assembly: AssemblyFixture(typeof(TurboHttp.IntegrationTests.Shared.ServerFixture))]
+[assembly: AssemblyFixture(typeof(TurboHttp.IntegrationTests.Shared.ActorSystemFixture))]
+
 namespace TurboHttp.IntegrationTests.Shared;
 
 [CollectionDefinition("H10")]
-public sealed class H10IntegrationCollection : ICollectionFixture<KestrelFixture>, ICollectionFixture<ActorSystemFixture>;
+public sealed class H10IntegrationCollection;
 
 [CollectionDefinition("H11")]
-public sealed class H11IntegrationCollection : ICollectionFixture<KestrelFixture>, ICollectionFixture<ActorSystemFixture>;
+public sealed class H11IntegrationCollection;
 
 [CollectionDefinition("H2")]
-public sealed class H2IntegrationCollection : ICollectionFixture<KestrelH2Fixture>, ICollectionFixture<ActorSystemFixture>;
+public sealed class H2IntegrationCollection;
 
 [CollectionDefinition("H3")]
-public sealed class H3IntegrationCollection : ICollectionFixture<KestrelH3Fixture>, ICollectionFixture<ActorSystemFixture>;
+public sealed class H3IntegrationCollection;
 
 [CollectionDefinition("TlsIntegration")]
-public sealed class TlsIntegrationCollection : ICollectionFixture<KestrelTlsFixture>, ICollectionFixture<ActorSystemFixture>;
+public sealed class TlsIntegrationCollection;

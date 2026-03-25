@@ -7,19 +7,19 @@ namespace TurboHttp.IntegrationTests.H10;
 [Collection("H10")]
 public sealed class RetryIntegrationTests
 {
-    private readonly KestrelFixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public RetryIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
+    public RetryIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateRetryClient(int maxRetries = 3)
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.HttpPort,
             new Version(1, 0),
             configure: builder => builder.WithRetry(new RetryPolicy { MaxRetries = maxRetries }),
             system: _systemFixture.System);

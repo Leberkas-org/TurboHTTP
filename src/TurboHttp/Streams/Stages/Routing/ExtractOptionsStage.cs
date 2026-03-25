@@ -4,7 +4,6 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Transport;
 
 namespace TurboHttp.Streams.Stages.Routing;

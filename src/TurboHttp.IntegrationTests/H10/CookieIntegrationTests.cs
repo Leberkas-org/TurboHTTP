@@ -8,24 +8,19 @@ namespace TurboHttp.IntegrationTests.H10;
 [Collection("H10")]
 public sealed class CookieIntegrationTests
 {
-    private readonly KestrelFixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public CookieIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
+    public CookieIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
-    /// <summary>
-    /// HTTP/1.0 closes the connection after each response, so we create a fresh
-    /// client per request but share the same <see cref="CookieJar"/> to verify
-    /// cookie persistence across HTTP/1.0 connections.
-    /// </summary>
     private ClientHelper CreateCookieClient(CookieJar jar)
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.HttpPort,
             new Version(1, 0),
             configure: builder => builder.WithCookies(jar),
             system: _systemFixture.System);
@@ -37,23 +32,19 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set/session/abc123");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        await using var helper = CreateCookieClient(jar);
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set/session/abc123");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("abc123", cookies["session"]);
-        }
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal("abc123", cookies["session"]);
     }
 
     [Fact(DisplayName = "Cookie-H10-002: Secure cookie not sent over plaintext HTTP")]
@@ -62,23 +53,19 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-secure/secret/hidden");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        await using var helper = CreateCookieClient(jar);
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-secure/secret/hidden");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.False(cookies.ContainsKey("secret"), "Secure cookie should not be sent over plaintext HTTP");
-        }
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.False(cookies.ContainsKey("secret"), "Secure cookie should not be sent over plaintext HTTP");
     }
 
     [Fact(DisplayName = "Cookie-H10-003: HttpOnly cookie is sent on subsequent requests")]
@@ -87,23 +74,19 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-httponly/token/xyz");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        await using var helper = CreateCookieClient(jar);
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-httponly/token/xyz");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("xyz", cookies["token"]);
-        }
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal("xyz", cookies["token"]);
     }
 
     [Theory(DisplayName = "Cookie-H10-004: SameSite cookie with policy is stored and sent")]
@@ -115,23 +98,19 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, $"/cookie/set-samesite/pref/{policy}/{policy}");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        await using var helper = CreateCookieClient(jar);
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, $"/cookie/set-samesite/pref/{policy}/{policy}");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal(policy, cookies["pref"]);
-        }
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal(policy, cookies["pref"]);
     }
 
     [Fact(DisplayName = "Cookie-H10-005: Expired cookie not sent after Max-Age elapses")]
@@ -140,36 +119,29 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
+        await using var helper = CreateCookieClient(jar);
+
         // Set cookie with Max-Age=1 (expires in 1 second)
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-expires/temp/value/1");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-expires/temp/value/1");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
         // Verify cookie is present immediately
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("value", cookies["temp"]);
-        }
+        var echoRequest1 = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse1 = await helper.Client.SendAsync(echoRequest1, cts.Token);
+        var json1 = await echoResponse1.Content.ReadAsStringAsync(cts.Token);
+        var cookies1 = JsonSerializer.Deserialize<Dictionary<string, string>>(json1)!;
+        Assert.Equal("value", cookies1["temp"]);
 
         // Wait for expiry
         await Task.Delay(TimeSpan.FromSeconds(2), cts.Token);
 
         // Verify cookie is gone
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.False(cookies.ContainsKey("temp"), "Expired cookie should not be sent");
-        }
+        var echoRequest2 = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse2 = await helper.Client.SendAsync(echoRequest2, cts.Token);
+        var json2 = await echoResponse2.Content.ReadAsStringAsync(cts.Token);
+        var cookies2 = JsonSerializer.Deserialize<Dictionary<string, string>>(json2)!;
+        Assert.False(cookies2.ContainsKey("temp"), "Expired cookie should not be sent");
     }
 
     [Fact(DisplayName = "Cookie-H10-006: Domain-scoped cookie is stored")]
@@ -178,23 +150,19 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-domain/site/val/127.0.0.1");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        await using var helper = CreateCookieClient(jar);
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-domain/site/val/127.0.0.1");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("val", cookies["site"]);
-        }
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal("val", cookies["site"]);
     }
 
     [Fact(DisplayName = "Cookie-H10-007: Path-scoped cookie sent only for matching path")]
@@ -203,25 +171,21 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
+        await using var helper = CreateCookieClient(jar);
+
         // Set cookie scoped to /cookie path
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-path/scoped/pathval/cookie");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-path/scoped/pathval/cookie");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
         // Echo is under /cookie — should include the cookie
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("pathval", cookies["scoped"]);
-        }
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal("pathval", cookies["scoped"]);
     }
 
     [Fact(DisplayName = "Cookie-H10-008: Echo returns empty when no cookies set")]
@@ -247,25 +211,21 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-multiple");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        await using var helper = CreateCookieClient(jar);
 
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-multiple");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("one", cookies["alpha"]);
-            Assert.Equal("two", cookies["beta"]);
-            Assert.Equal("three", cookies["gamma"]);
-        }
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal("one", cookies["alpha"]);
+        Assert.Equal("two", cookies["beta"]);
+        Assert.Equal("three", cookies["gamma"]);
     }
 
     [Fact(DisplayName = "Cookie-H10-010: Delete cookie via Max-Age=0")]
@@ -274,41 +234,31 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
+        await using var helper = CreateCookieClient(jar);
+
         // Set a cookie first
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set/victim/alive");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
-        }
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set/victim/alive");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, setResponse.StatusCode);
 
         // Verify it exists
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("alive", cookies["victim"]);
-        }
+        var echoRequest1 = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse1 = await helper.Client.SendAsync(echoRequest1, cts.Token);
+        var json1 = await echoResponse1.Content.ReadAsStringAsync(cts.Token);
+        var cookies1 = JsonSerializer.Deserialize<Dictionary<string, string>>(json1)!;
+        Assert.Equal("alive", cookies1["victim"]);
 
         // Delete it
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var deleteRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/delete/victim");
-            var deleteResponse = await helper.Client.SendAsync(deleteRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
-        }
+        var deleteRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/delete/victim");
+        var deleteResponse = await helper.Client.SendAsync(deleteRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
 
         // Verify it is gone
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.False(cookies.ContainsKey("victim"), "Deleted cookie should not be sent");
-        }
+        var echoRequest2 = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse2 = await helper.Client.SendAsync(echoRequest2, cts.Token);
+        var json2 = await echoResponse2.Content.ReadAsStringAsync(cts.Token);
+        var cookies2 = JsonSerializer.Deserialize<Dictionary<string, string>>(json2)!;
+        Assert.False(cookies2.ContainsKey("victim"), "Deleted cookie should not be sent");
     }
 
     [Fact(DisplayName = "Cookie-H10-011: Set cookie persists across redirect response")]
@@ -317,26 +267,22 @@ public sealed class CookieIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var jar = new CookieJar();
 
+        await using var helper = CreateCookieClient(jar);
+
         // This route sets a cookie and returns a 302 redirect to /cookie/echo.
         // Without automatic redirect following, we get the 302 back —
         // but the CookieJar should still store the Set-Cookie from the response.
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-and-redirect");
-            var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.Found, setResponse.StatusCode);
-        }
+        var setRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/set-and-redirect");
+        var setResponse = await helper.Client.SendAsync(setRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.Found, setResponse.StatusCode);
 
         // Manually follow the redirect — the cookie should be sent along
-        await using (var helper = CreateCookieClient(jar))
-        {
-            var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
-            var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
-            Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
+        var echoRequest = new HttpRequestMessage(HttpMethod.Get, "/cookie/echo");
+        var echoResponse = await helper.Client.SendAsync(echoRequest, cts.Token);
+        Assert.Equal(HttpStatusCode.OK, echoResponse.StatusCode);
 
-            var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
-            var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
-            Assert.Equal("from-redirect", cookies["redirect_cookie"]);
-        }
+        var json = await echoResponse.Content.ReadAsStringAsync(cts.Token);
+        var cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+        Assert.Equal("from-redirect", cookies["redirect_cookie"]);
     }
 }

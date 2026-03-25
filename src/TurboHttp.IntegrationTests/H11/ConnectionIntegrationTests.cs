@@ -6,18 +6,18 @@ namespace TurboHttp.IntegrationTests.H11;
 [Collection("H11")]
 public sealed class ConnectionIntegrationTests
 {
-    private readonly KestrelFixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public ConnectionIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
+    public ConnectionIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient()
     {
-        return ClientHelper.CreateClient(_fixture.Port, new Version(1, 1), system: _systemFixture.System);
+        return ClientHelper.CreateClient(_server.HttpPort, new Version(1, 1), system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Conn-001: keep-alive response allows sequential requests on same client")]

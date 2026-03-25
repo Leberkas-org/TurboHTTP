@@ -7,19 +7,19 @@ namespace TurboHttp.IntegrationTests.H11;
 [Collection("H11")]
 public sealed class RedirectIntegrationTests
 {
-    private readonly KestrelFixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public RedirectIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
+    public RedirectIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateRedirectClient()
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.HttpPort,
             new Version(1, 1),
             configure: builder => builder.WithRedirect(),
             system: _systemFixture.System);

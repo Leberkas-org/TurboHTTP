@@ -5,14 +5,13 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <IsPackable>false</IsPackable>
         <NoWarn>xUnit1051</NoWarn>
-        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Akka.Streams.TestKit" />
         <PackageReference Include="Akka.TestKit.Xunit" />
-        <PackageReference Include="coverlet.collector" />
-        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+        <PackageReference Include="xunit.v3.mtp-v2" />
     </ItemGroup>
 
     <ItemGroup>

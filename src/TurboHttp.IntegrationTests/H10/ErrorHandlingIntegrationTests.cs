@@ -6,18 +6,18 @@ namespace TurboHttp.IntegrationTests.H10;
 [Collection("H10")]
 public sealed class ErrorHandlingIntegrationTests
 {
-    private readonly KestrelFixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public ErrorHandlingIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
+    public ErrorHandlingIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient()
     {
-        return ClientHelper.CreateClient(_fixture.Port, new Version(1, 0), system: _systemFixture.System);
+        return ClientHelper.CreateClient(_server.HttpPort, new Version(1, 0), system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Error-H10-001: Delay route completes after server-side wait")]

@@ -1,34 +1,62 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Servus.Core.Network;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
-public sealed class KestrelTlsFixture : IAsyncLifetime
+/// <summary>
+/// Single shared Kestrel server for all integration tests.
+/// Exposes three endpoints — HTTP/1.x plaintext, HTTP/2 h2c, and HTTPS (HTTP/1+2+3).
+/// Registered as an assembly fixture so exactly one instance exists per test run.
+/// All endpoints use OS-assigned port 0 to eliminate port conflicts.
+/// </summary>
+public sealed class ServerFixture : IAsyncLifetime
 {
     private WebApplication? _app;
 
-    public int Port { get; private set; }
+    /// <summary>HTTP/1.x plaintext port (for H10 and H11 tests).</summary>
+    public int HttpPort { get; private set; }
+
+    /// <summary>HTTP/2 cleartext (h2c) port.</summary>
+    public int H2Port { get; private set; }
+
+    /// <summary>HTTPS port (HTTP/1+2+3, TLS + QUIC).</summary>
+    public int HttpsPort { get; private set; }
+
+    /// <summary>Self-signed certificate used for the HTTPS endpoint.</summary>
+    public X509Certificate2? Certificate { get; private set; }
 
     public async ValueTask InitializeAsync()
     {
-        var port = PortFinder.FindFreeLocalPort();
+        Certificate = CreateSelfSignedCertificate();
+
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
 
-        var cert = CreateSelfSignedCertificate();
-
         builder.WebHost.ConfigureKestrel(options =>
         {
-            options.ListenLocalhost(port, listenOptions =>
+            options.Limits.MaxRequestHeaderCount = 2000;
+            options.Limits.MaxRequestHeadersTotalSize = 512 * 1024;
+
+            // [0] HTTP/1.x plaintext
+            options.Listen(IPAddress.Loopback, 0, lo => lo.Protocols = HttpProtocols.Http1);
+
+            // [1] HTTP/2 h2c (prior knowledge, no TLS)
+            options.Listen(IPAddress.Loopback, 0, lo => lo.Protocols = HttpProtocols.Http2);
+
+            // [2] HTTPS — HTTP/1 + HTTP/2 + HTTP/3 (QUIC)
+            options.Listen(IPAddress.Loopback, 0, lo =>
             {
-                listenOptions.UseHttps(cert);
-                listenOptions.Protocols = HttpProtocols.Http1;
+                lo.UseHttps(Certificate);
+                lo.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
             });
         });
 
@@ -38,7 +66,20 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
 
         await app.StartAsync();
 
-        Port = port;
+        var addresses = app.Services.GetRequiredService<IServer>()
+            .Features.Get<IServerAddressesFeature>()!
+            .Addresses.ToArray();
+
+        // Addresses are emitted in registration order.
+        // The HTTPS endpoint is the only one with scheme "https".
+        // The two HTTP endpoints preserve ListenLocalhost() order.
+        var httpAddresses = addresses.Where(a => a.StartsWith("http://")).ToArray();
+        var httpsAddress = addresses.First(a => a.StartsWith("https://"));
+
+        HttpPort = new Uri(httpAddresses[0]).Port;
+        H2Port = new Uri(httpAddresses[1]).Port;
+        HttpsPort = new Uri(httpsAddress).Port;
+
         _app = app;
     }
 
@@ -65,10 +106,19 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             new X509BasicConstraintsExtension(false, false, 0, false));
 
         req.CertificateExtensions.Add(
-            new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, false));
+            new X509KeyUsageExtension(
+                X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
+                false));
 
         req.CertificateExtensions.Add(
             new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
+
+        // SAN is required for QUIC/TLS 1.3
+        var sanBuilder = new SubjectAlternativeNameBuilder();
+        sanBuilder.AddDnsName("localhost");
+        sanBuilder.AddIpAddress(IPAddress.Loopback);
+        sanBuilder.AddIpAddress(IPAddress.IPv6Loopback);
+        req.CertificateExtensions.Add(sanBuilder.Build());
 
         var cert = req.CreateSelfSigned(
             DateTimeOffset.UtcNow.AddDays(-1),
@@ -80,21 +130,16 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
     {
         // ── Basic ──────────────────────────────────────────────────────────────
 
-        // GET /hello → 200 "Hello World"
-        // HEAD /hello → 200, headers only
         app.MapMethods("/hello", ["GET", "HEAD"], (HttpContext ctx) =>
         {
             if (ctx.Request.Method == "HEAD") return Results.NoContent();
             ctx.Response.ContentType = "text/plain";
             ctx.Response.ContentLength = 11;
-
             return Results.Content("Hello World", "text/plain");
         });
 
-        // GET /ping → 200 "pong"
         app.MapGet("/ping", () => Results.Content("pong", "text/plain"));
 
-        // GET /large/{kb} → 200, kb*1024 bytes of 'A'
         app.MapGet("/large/{kb:int}", (int kb) =>
         {
             var body = new byte[kb * 1024];
@@ -102,7 +147,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Bytes(body, "application/octet-stream");
         });
 
-        // GET /status/{code} → returns the requested status code
         app.MapGet("/status/{code:int}", async (HttpContext ctx, int code) =>
         {
             ctx.Response.StatusCode = code;
@@ -114,9 +158,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             }
         });
 
-        // GET /content/{*ct} → 200, Content-Type from catch-all path segment(s)
-        // e.g. /content/text/html  → Content-Type: text/html
-        //      /content/application/json → Content-Type: application/json
         app.MapGet("/content/{*ct}", async (HttpContext ctx, string ct) =>
         {
             ctx.Response.ContentType = ct;
@@ -125,18 +166,14 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // GET /methods → 200, body = request method
         app.MapGet("/methods", (HttpContext ctx) => Results.Content(ctx.Request.Method, "text/plain"));
 
-        // GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD /any → 200, body = method name
-        // Used by HTTP/1.1 verb tests
         app.MapMethods("/any",
             ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
             (HttpContext ctx) => Results.Content(ctx.Request.Method, "text/plain"));
 
         // ── Body ──────────────────────────────────────────────────────────────
 
-        // POST /echo → 200, echoes request body verbatim with same Content-Type
         app.MapPost("/echo", async ctx =>
         {
             using var ms = new MemoryStream();
@@ -148,7 +185,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // PUT /echo → 200, echoes request body (same handler as POST)
         app.MapPut("/echo", async ctx =>
         {
             using var ms = new MemoryStream();
@@ -160,7 +196,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // PATCH /echo → 200, echoes request body
         app.MapMethods("/echo", ["PATCH"], async ctx =>
         {
             using var ms = new MemoryStream();
@@ -174,7 +209,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
 
         // ── Headers ───────────────────────────────────────────────────────────
 
-        // GET /headers/echo → echoes X-* request headers back as response headers
         app.MapGet("/headers/echo", (HttpContext ctx) =>
         {
             foreach (var header in ctx.Request.Headers)
@@ -189,7 +223,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Empty;
         });
 
-        // GET /headers/set?Foo=Bar → sets response headers from query parameters
         app.MapGet("/headers/set", (HttpContext ctx) =>
         {
             foreach (var param in ctx.Request.Query)
@@ -201,7 +234,14 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Empty;
         });
 
-        // GET /auth → 401 without Authorization, 200 with any Authorization value
+        app.MapGet("/headers/count", (HttpContext ctx) =>
+        {
+            var count = ctx.Request.Headers.Count;
+            ctx.Response.Headers["X-Header-Count"] = count.ToString();
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
         app.MapGet("/auth", (HttpContext ctx) =>
         {
             if (!ctx.Request.Headers.ContainsKey("Authorization"))
@@ -212,7 +252,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Ok();
         });
 
-        // GET /multiheader → response has two X-Value: a, b headers (same name)
         app.MapGet("/multiheader", (HttpContext ctx) =>
         {
             ctx.Response.Headers.Append("X-Value", "alpha");
@@ -221,14 +260,11 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Empty;
         });
 
-        // ── HTTP/1.1 Chunked ──────────────────────────────────────────────────
+        // ── Chunked (HTTP/1.x) ──────────────────────────────────────────────
 
-        // GET|HEAD /chunked/{kb} → chunked response, kb*1024 bytes of 'A'
-        // StartAsync() commits the response headers before body, forcing chunked for HTTP/1.1
         app.MapMethods("/chunked/{kb:int}", ["GET", "HEAD"], async (HttpContext ctx, int kb) =>
         {
             ctx.Response.ContentType = "application/octet-stream";
-            // Start headers without Content-Length → Kestrel uses Transfer-Encoding: chunked
             await ctx.Response.StartAsync();
             if (ctx.Request.Method == "HEAD")
             {
@@ -248,8 +284,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             }
         });
 
-        // GET /chunked/exact/{count}/{chunkBytes} → exactly `count` chunks of `chunkBytes` bytes
-        // StartAsync() forces chunked encoding before writing body
         app.MapGet("/chunked/exact/{count:int}/{chunkBytes:int}", async (HttpContext ctx, int count, int chunkBytes) =>
         {
             ctx.Response.ContentType = "application/octet-stream";
@@ -263,20 +297,16 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             }
         });
 
-        // POST /echo/chunked → echoes request body as chunked response (no Content-Length)
         app.MapPost("/echo/chunked", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
             var body = ms.ToArray();
             ctx.Response.ContentType = ctx.Request.ContentType ?? "application/octet-stream";
-            // StartAsync() commits headers before body, forcing chunked encoding
             await ctx.Response.StartAsync();
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // GET /chunked/trailer → chunked response; body includes "chunked-with-trailer"
-        // Trailers are sent as trailing headers after the last chunk
         app.MapGet("/chunked/trailer", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
@@ -284,7 +314,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             var body = "chunked-with-trailer"u8.ToArray();
             await ctx.Response.Body.WriteAsync(body);
             await ctx.Response.Body.FlushAsync();
-            // Append trailer after body (requires HTTP/1.1 chunked + trailer support)
             if (ctx.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseTrailersFeature>() is
                 { } trailersFeature)
             {
@@ -292,20 +321,18 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             }
         });
 
-        // GET /chunked/md5 → chunked response with Content-MD5 header in response headers
         app.MapGet("/chunked/md5", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             var body = "checksum-body"u8.ToArray();
-            var md5 = Convert.ToBase64String(MD5.HashData(body));
+            var md5 = Convert.ToBase64String(System.Security.Cryptography.MD5.HashData(body));
             ctx.Response.Headers.ContentMD5 = md5;
             await ctx.Response.StartAsync();
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // ── HTTP/1.1 Connection management ────────────────────────────────────
+        // ── Connection management ────────────────────────────────────────────
 
-        // GET /close → returns Connection: close header
         app.MapGet("/close", async ctx =>
         {
             ctx.Response.Headers.Connection = "close";
@@ -315,9 +342,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // ── HTTP/1.1 Caching / ETag ───────────────────────────────────────────
+        // ── Caching / ETag ───────────────────────────────────────────────────
 
-        // GET /etag → resource with ETag support for conditional requests
         app.MapGet("/etag", async ctx =>
         {
             const string etag = "\"v1\"";
@@ -335,7 +361,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // GET /cache → response with Cache-Control, Last-Modified, Expires headers
         app.MapGet("/cache", async ctx =>
         {
             ctx.Response.Headers.CacheControl = "max-age=3600, public";
@@ -348,7 +373,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // GET /if-modified-since → supports If-Modified-Since conditional logic
         var fixedLastModified = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
         app.MapGet("/if-modified-since", async ctx =>
         {
@@ -367,9 +391,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // ── Phase 14: Content Negotiation ─────────────────────────────────────
+        // ── Content Negotiation ─────────────────────────────────────────────
 
-        // GET /negotiate → returns content matching the Accept header
         app.MapGet("/negotiate", (HttpContext ctx) =>
         {
             var accept = ctx.Request.Headers.Accept.ToString();
@@ -386,14 +409,12 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Content("default", "text/plain");
         });
 
-        // GET /negotiate/vary → returns Vary: Accept header in response
         app.MapGet("/negotiate/vary", (HttpContext ctx) =>
         {
             ctx.Response.Headers.Vary = "Accept";
             return Results.Content("data", "text/plain");
         });
 
-        // GET /gzip-meta → returns Content-Encoding: identity header (metadata only — body is plain)
         app.MapGet("/gzip-meta", async ctx =>
         {
             ctx.Response.Headers.ContentEncoding = "identity";
@@ -403,7 +424,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        // POST /form/multipart → accepts multipart/form-data, echoes body length
+        // ── Form ────────────────────────────────────────────────────────────
+
         app.MapPost("/form/multipart", async ctx =>
         {
             using var ms = new MemoryStream();
@@ -415,7 +437,6 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(response);
         });
 
-        // POST /form/urlencoded → accepts application/x-www-form-urlencoded, echoes body
         app.MapPost("/form/urlencoded", async ctx =>
         {
             using var ms = new MemoryStream();
@@ -427,9 +448,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             await ctx.Response.Body.WriteAsync(response);
         });
 
-        // ── Phase 14: Range Requests ──────────────────────────────────────────
+        // ── Range Requests ──────────────────────────────────────────────────
 
-        // GET /range/{kb} → range-capable resource, kb*1024 sequential bytes
         app.MapGet("/range/{kb:int}", (int kb) =>
         {
             var body = new byte[kb * 1024];
@@ -441,9 +461,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             return Results.Bytes(body, "application/octet-stream", enableRangeProcessing: true);
         });
 
-        // GET /range/etag → range-capable resource with ETag for If-Range testing
         const string rangeEtag = "\"range-v1\"";
-        app.MapGet("/range/etag", (HttpContext ctx) =>
+        app.MapGet("/range/etag", (HttpContext _) =>
         {
             var body = new byte[512];
             for (var i = 0; i < body.Length; i++)
@@ -457,22 +476,8 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
                 enableRangeProcessing: true);
         });
 
-        // ── Phase 14: Additional Cache Routes ────────────────────────────────
+        // ── Slow / streaming ────────────────────────────────────────────────
 
-        // GET /cache/no-store → returns Cache-Control: no-store
-        app.MapGet("/cache/no-store", async ctx =>
-        {
-            ctx.Response.Headers.CacheControl = "no-store";
-            ctx.Response.ContentType = "text/plain";
-            var body = "no-store-resource"u8.ToArray();
-            ctx.Response.ContentLength = body.Length;
-            await ctx.Response.Body.WriteAsync(body);
-        });
-
-        // ── Phase 14: Slow Response ───────────────────────────────────────────
-
-        // GET /slow/{count} → sends count ASCII 'x' bytes, 1 per write with a flush,
-        // simulating a streaming server that delivers data incrementally.
         app.MapGet("/slow/{count:int}", async (HttpContext ctx, int count) =>
         {
             ctx.Response.ContentType = "text/plain";
@@ -486,35 +491,198 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
             }
         });
 
-        // ── Phase 14: Edge Case Routes ────────────────────────────────────────
+        app.MapGet("/delay/{ms:int}", async (HttpContext ctx, int ms) =>
+        {
+            await Task.Delay(ms);
+            ctx.Response.ContentType = "text/plain";
+            var body = "delayed"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
 
-        // GET /empty-cl → returns 200 with Content-Length: 0 and no body
+        // ── Edge Cases ──────────────────────────────────────────────────────
+
         app.MapGet("/empty-cl", (HttpContext ctx) =>
         {
             ctx.Response.ContentLength = 0;
             return Results.Empty;
         });
 
-        // GET /unknown-headers → response with non-standard X-Custom-* headers
         app.MapGet("/unknown-headers", (HttpContext ctx) =>
         {
             ctx.Response.Headers["X-Unknown-Foo"] = "bar";
             ctx.Response.Headers["X-Unknown-Bar"] = "baz";
             ctx.Response.ContentType = "text/plain";
-            var body = "ok"u8.ToArray();
-            ctx.Response.ContentLength = body.Length;
+            ctx.Response.ContentLength = 2;
             return Results.Content("ok", "text/plain");
         });
 
-        // ── Shared routes (redirect, cookie, retry, cache, compression, connection) ─
+        app.MapGet("/edge/close-mid-response", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 10000;
+            await ctx.Response.StartAsync();
+            await ctx.Response.Body.WriteAsync("partial"u8.ToArray());
+            await ctx.Response.Body.FlushAsync();
+            ctx.Abort();
+        });
+
+        app.MapGet("/edge/large-header/{kb:int}", async (HttpContext ctx, int kb) =>
+        {
+            var headerValue = new string('X', kb * 1024);
+            ctx.Response.Headers["X-Large-Header"] = headerValue;
+            ctx.Response.ContentType = "text/plain";
+            var body = "ok"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/edge/unknown-encoding", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.Headers.ContentEncoding = "x-custom";
+            var body = "raw-payload"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/edge/empty-body", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 0;
+            await ctx.Response.StartAsync();
+        });
+
+        // ── HTTP/2 specific ─────────────────────────────────────────────────
+
+        app.MapGet("/h2/settings", (HttpContext _) => Results.Content("h2-ok", "text/plain"));
+
+        app.MapGet("/h2/many-headers", (HttpContext ctx) =>
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                ctx.Response.Headers[$"X-Custom-{i:D3}"] = $"value-{i:D3}";
+            }
+
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 12;
+            return Results.Content("many-headers", "text/plain");
+        });
+
+        app.MapPost("/h2/echo-binary", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = "application/octet-stream";
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/h2/cookie", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers.Append("Set-Cookie", "session=abc123; Path=/; HttpOnly");
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 10;
+            return Results.Content("cookie-set", "text/plain");
+        });
+
+        app.MapGet("/h2/large-headers/{kb:int}", (HttpContext ctx, int kb) =>
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                ctx.Response.Headers[$"X-Large-{i:D2}"] = new string('v', 90);
+            }
+
+            var body = new byte[kb * 1024];
+            Array.Fill(body, (byte)'A');
+            return Results.Bytes(body, "application/octet-stream");
+        });
+
+        app.MapGet("/h2/priority/{kb:int}", (int kb) =>
+        {
+            var body = new byte[kb * 1024];
+            Array.Fill(body, (byte)'P');
+            return Results.Bytes(body, "application/octet-stream");
+        });
+
+        app.MapGet("/h2/echo-path", (HttpContext ctx) =>
+        {
+            var path = ctx.Request.Path + ctx.Request.QueryString;
+            return Results.Content(path, "text/plain");
+        });
+
+        app.MapGet("/h2/settings/max-concurrent", (HttpContext ctx) =>
+        {
+            var streamId = ctx.Request.Headers["X-Stream-Id"].ToString();
+            ctx.Response.Headers["X-Stream-Id"] = streamId;
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
+        // ── HTTP/3 specific ─────────────────────────────────────────────────
+
+        app.MapGet("/h3/settings", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["X-Protocol"] = ctx.Request.Protocol;
+            return Results.Content("h3-ok", "text/plain");
+        });
+
+        app.MapGet("/h3/protocol", (HttpContext ctx) =>
+            Results.Content(ctx.Request.Protocol, "text/plain"));
+
+        app.MapGet("/h3/many-headers", (HttpContext ctx) =>
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                ctx.Response.Headers[$"X-Custom-{i:D3}"] = $"value-{i:D3}";
+            }
+
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 12;
+            return Results.Content("many-headers", "text/plain");
+        });
+
+        app.MapPost("/h3/echo-binary", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = "application/octet-stream";
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/h3/delay/{ms:int}", async (HttpContext ctx, int ms) =>
+        {
+            await Task.Delay(ms);
+            ctx.Response.ContentType = "text/plain";
+            var body = "delayed"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/h3/stream/{count:int}", async (HttpContext ctx, int count) =>
+        {
+            ctx.Response.ContentType = "application/octet-stream";
+            await ctx.Response.StartAsync();
+            var single = new[] { (byte)'x' };
+            for (var i = 0; i < count; i++)
+            {
+                await ctx.Response.Body.WriteAsync(single);
+                await ctx.Response.Body.FlushAsync();
+            }
+        });
+
+        // ── Shared route groups ─────────────────────────────────────────────
+
         Routes.RegisterRedirectRoutes(app);
         Routes.RegisterCookieRoutes(app);
         Routes.RegisterRetryRoutes(app);
         Routes.RegisterCacheRoutes(app);
         Routes.RegisterContentEncodingRoutes(app);
+        Routes.RegisterErrorHandlingRoutes(app);
         Routes.RegisterConnectionReuseRoutes(app);
-
-        // ── Expect Continue Routes ──────────────────────────────────────────
         Routes.RegisterExpectContinueRoutes(app);
     }
 }

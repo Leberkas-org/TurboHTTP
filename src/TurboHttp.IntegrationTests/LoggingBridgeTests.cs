@@ -18,13 +18,13 @@ namespace TurboHttp.IntegrationTests;
 [Collection("H11")]
 public sealed class LoggingBridgeTests : IAsyncLifetime
 {
-    private readonly KestrelFixture _fixture;
+    private readonly ServerFixture _server;
     private ClientHelper? _helper;
     private CapturingLoggerProvider? _loggerProvider;
 
-    public LoggingBridgeTests(KestrelFixture fixture)
+    public LoggingBridgeTests(ServerFixture server)
     {
-        _fixture = fixture;
+        _server = server;
     }
 
     public ValueTask InitializeAsync()
@@ -38,7 +38,7 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
         });
 
         _helper = ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.HttpPort,
             new Version(1, 1),
             loggerFactory: loggerFactory);
 
@@ -87,7 +87,7 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
 
         // Create a client without any ILoggerFactory — exercises the fallback path
         await using var helper = ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.HttpPort,
             new Version(1, 1));
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");

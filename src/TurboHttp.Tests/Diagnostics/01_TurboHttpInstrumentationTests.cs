@@ -1,13 +1,12 @@
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
 using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
 public sealed class TurboHttpInstrumentationTests : IDisposable
 {
-    private readonly List<Activity> _activities = new();
+    private readonly List<Activity> _activities = [];
     private readonly ActivityListener _listener;
 
     public TurboHttpInstrumentationTests()
@@ -15,7 +14,7 @@ public sealed class TurboHttpInstrumentationTests : IDisposable
         _listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == TurboHttpInstrumentation.SourceName,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStarted = activity => _activities.Add(activity)
         };
         ActivitySource.AddActivityListener(_listener);
@@ -32,8 +31,6 @@ public sealed class TurboHttpInstrumentationTests : IDisposable
             }
         }
     }
-
-    // ── Root span: successful request ────────────────────────────────
 
     [Fact(DisplayName = "Diagnostics-Request-001: StartRequest creates TurboHttp.Request activity")]
     public void StartRequest_Creates_RequestActivity()

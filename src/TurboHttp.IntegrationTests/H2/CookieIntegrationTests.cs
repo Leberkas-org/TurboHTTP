@@ -7,19 +7,19 @@ namespace TurboHttp.IntegrationTests.H2;
 [Collection("H2")]
 public sealed class CookieIntegrationTests
 {
-    private readonly KestrelH2Fixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public CookieIntegrationTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
+    public CookieIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateCookieClient()
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.H2Port,
             new Version(2, 0),
             configure: builder => builder.WithCookies(),
             system: _systemFixture.System);

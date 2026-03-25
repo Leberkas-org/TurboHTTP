@@ -3,24 +3,24 @@ using System.Text;
 using System.Text.Json;
 using TurboHttp.IntegrationTests.Shared;
 
-namespace TurboHttp.IntegrationTests;
+namespace TurboHttp.IntegrationTests.TLS;
 
 [Collection("TlsIntegration")]
-public sealed class TlsIntegrationTests
+public sealed class IntegrationTests
 {
-    private readonly KestrelTlsFixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public TlsIntegrationTests(KestrelTlsFixture fixture, ActorSystemFixture systemFixture)
+    public IntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient(Action<ITurboHttpClientBuilder>? configure = null)
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.HttpsPort,
             new Version(1, 1),
             scheme: "https",
             configure: configure,

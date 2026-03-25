@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Net.Http;
 using System.Text;
 using TurboHttp.Protocol;
 using TurboHttp.Protocol.RFC9112;

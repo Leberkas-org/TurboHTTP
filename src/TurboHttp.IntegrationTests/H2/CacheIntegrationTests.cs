@@ -7,19 +7,19 @@ namespace TurboHttp.IntegrationTests.H2;
 [Collection("H2")]
 public sealed class CacheIntegrationTests
 {
-    private readonly KestrelH2Fixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public CacheIntegrationTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
+    public CacheIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateCacheClient()
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.H2Port,
             new Version(2, 0),
             configure: builder => builder.WithCache(CachePolicy.Default),
             system: _systemFixture.System);
@@ -195,7 +195,7 @@ public sealed class CacheIntegrationTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         // Use shared cache policy to honour s-maxage
         await using var helper = ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.H2Port,
             new Version(2, 0),
             configure: builder => builder.WithCache(new CachePolicy { SharedCache = true }));
 
@@ -256,7 +256,7 @@ public sealed class CacheIntegrationTests
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.H2Port,
             new Version(2, 0),
             configure: builder => builder.WithCache(new CachePolicy { SharedCache = true }));
 

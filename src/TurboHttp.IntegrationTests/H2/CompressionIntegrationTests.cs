@@ -6,19 +6,19 @@ namespace TurboHttp.IntegrationTests.H2;
 [Collection("H2")]
 public sealed class CompressionIntegrationTests
 {
-    private readonly KestrelH2Fixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public CompressionIntegrationTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
+    public CompressionIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient()
     {
         return ClientHelper.CreateClient(
-            _fixture.Port,
+            _server.H2Port,
             new Version(2, 0),
             system: _systemFixture.System);
     }

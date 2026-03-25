@@ -6,18 +6,18 @@ namespace TurboHttp.IntegrationTests.H2;
 [Collection("H2")]
 public sealed class ErrorHandlingIntegrationTests
 {
-    private readonly KestrelH2Fixture _fixture;
+    private readonly ServerFixture _server;
     private readonly ActorSystemFixture _systemFixture;
 
-    public ErrorHandlingIntegrationTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
+    public ErrorHandlingIntegrationTests(ServerFixture server, ActorSystemFixture systemFixture)
     {
-        _fixture = fixture;
+        _server = server;
         _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient()
     {
-        return ClientHelper.CreateClient(_fixture.Port, new Version(2, 0), system: _systemFixture.System);
+        return ClientHelper.CreateClient(_server.H2Port, new Version(2, 0), system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Error-H2-001: RST_STREAM abort raises exception")]

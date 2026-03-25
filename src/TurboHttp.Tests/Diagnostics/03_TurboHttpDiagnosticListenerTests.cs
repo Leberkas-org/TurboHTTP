@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
 using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
