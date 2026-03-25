@@ -14,9 +14,9 @@ public class TestKit : IAsyncLifetime
 
     protected ActorSystem Sys { get; }
 
-    public Task InitializeAsync() => Task.CompletedTask;
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await Sys.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
         await Task.Delay(TimeSpan.FromMilliseconds(250));

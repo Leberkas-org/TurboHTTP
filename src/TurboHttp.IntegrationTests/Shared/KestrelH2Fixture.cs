@@ -19,7 +19,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
     /// <summary>The TCP port Kestrel is listening on after <see cref="InitializeAsync"/>.</summary>
     public int Port { get; private set; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var port = PortFinder.FindFreeLocalPort();
         var builder = WebApplication.CreateBuilder();
@@ -43,7 +43,7 @@ public sealed class KestrelH2Fixture : IAsyncLifetime
         _app = app;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_app is not null)
         {

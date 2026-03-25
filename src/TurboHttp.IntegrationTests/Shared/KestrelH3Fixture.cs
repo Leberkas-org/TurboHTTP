@@ -26,7 +26,7 @@ public sealed class KestrelH3Fixture : IAsyncLifetime
     /// <summary>The self-signed certificate used for TLS. Exposed for client trust configuration.</summary>
     public X509Certificate2? Certificate { get; private set; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var port = PortFinder.FindFreeLocalPort();
         Certificate = CreateSelfSignedCertificate();
@@ -55,7 +55,7 @@ public sealed class KestrelH3Fixture : IAsyncLifetime
         _app = app;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_app is not null)
         {

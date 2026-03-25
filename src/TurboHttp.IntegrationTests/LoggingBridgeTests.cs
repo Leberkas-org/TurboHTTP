@@ -27,7 +27,7 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _loggerProvider = new CapturingLoggerProvider();
 
@@ -42,10 +42,10 @@ public sealed class LoggingBridgeTests : IAsyncLifetime
             new Version(1, 1),
             loggerFactory: loggerFactory);
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_helper is not null)
         {

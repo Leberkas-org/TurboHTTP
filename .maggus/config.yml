@@ -1,5 +1,5 @@
 agent: claude
-model: opus
+model: sonnet
 include: []
 worktree: false
 auto_work: disabled

@@ -15,7 +15,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
 
     public int Port { get; private set; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var port = PortFinder.FindFreeLocalPort();
         var builder = WebApplication.CreateBuilder();
@@ -42,7 +42,7 @@ public sealed class KestrelTlsFixture : IAsyncLifetime
         _app = app;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_app is not null)
         {

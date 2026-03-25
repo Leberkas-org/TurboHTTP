@@ -16,11 +16,11 @@ dotnet build --configuration Release ./src/TurboHttp.sln
 # Run all tests
 dotnet test ./src/TurboHttp.sln
 
-# Run specific test class
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~Http2DecoderBasicFrameTests"
+# Run specific test class (xUnit v3 MTP filter — note: args after --)
+dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-class "TurboHttp.Tests.RFC9113.Http2DecoderBasicFrameTests"
 
-# Run specific RFC section
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9113"
+# Run specific RFC section (by namespace)
+dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.RFC9113"
 
 # Run benchmarks
 dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
@@ -340,11 +340,11 @@ The documentation site lives in `docs/` and is built with [VitePress](https://vi
 
 ## Dependencies
 
-- **Akka.Streams** 1.5.62 — actor-based stream processing
+- **Akka.Streams** 1.5.63 — actor-based stream processing
 - **Servus.Akka** 0.3.10 — TCP abstraction layer
 - **.NET 10.0** — target framework
-- **xunit** 2.9.3 — test framework
-- **Akka.TestKit.Xunit2** 1.5.62 — stream test helpers
+- **xunit.v3** 3.2.2 — test framework (MTP runner)
+- **Akka.TestKit.Xunit** 1.5.63 — stream test helpers
 
 # Custom Agents (`.claude/agents/`)
 

@@ -13,16 +13,16 @@ public sealed class ActorSystemFixture : IAsyncLifetime
 {
     public ActorSystem System { get; private set; } = null!;
 
-    public async Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         var services = new ServiceCollection();
         var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());
         var bootstrap = BootstrapSetup.Create().And(diSetup);
         System = ActorSystem.Create($"turbohttp-shared-{Guid.NewGuid()}", bootstrap);
-        await Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await System.Terminate().WaitAsync(TimeSpan.FromSeconds(30));
         await System.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));

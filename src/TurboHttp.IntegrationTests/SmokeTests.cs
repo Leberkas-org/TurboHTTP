@@ -15,13 +15,13 @@ public sealed class Http10SmokeTests : IAsyncLifetime
         _systemFixture = systemFixture;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 0), system: _systemFixture.System);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_helper is not null)
         {
@@ -56,13 +56,13 @@ public sealed class Http11SmokeTests : IAsyncLifetime
         _systemFixture = systemFixture;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 1), system: _systemFixture.System);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_helper is not null)
         {
@@ -97,13 +97,13 @@ public sealed class Http2SmokeTests : IAsyncLifetime
         _systemFixture = systemFixture;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _helper = ClientHelper.CreateClient(_fixture.Port, new Version(2, 0), system: _systemFixture.System);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_helper is not null)
         {
@@ -139,13 +139,13 @@ public sealed class Http3SmokeTests : IAsyncLifetime
         _systemFixture = systemFixture;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _helper = ClientHelper.CreateClient(_fixture.Port, new Version(3, 0), scheme: "https", system: _systemFixture.System);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_helper is not null)
         {
@@ -178,13 +178,13 @@ public sealed class TlsSmokeTests : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 1), scheme: "https");
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_helper is not null)
         {

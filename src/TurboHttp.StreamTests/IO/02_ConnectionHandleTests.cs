@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.Xunit;
 using TurboHttp.Internal;
 using TurboHttp.Pooling;
 

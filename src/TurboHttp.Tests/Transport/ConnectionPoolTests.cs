@@ -18,18 +18,18 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     private TcpListener? _listener;
     private int _port;
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _listener = new TcpListener(IPAddress.Loopback, 0);
         _listener.Start();
         _port = ((IPEndPoint)_listener.LocalEndpoint).Port;
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _listener?.Stop();
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private TcpOptions CreateOptions() => new()

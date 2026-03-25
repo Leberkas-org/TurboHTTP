@@ -3,7 +3,7 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.TestKit.Xunit2;
+using Akka.TestKit.Xunit;
 using TurboHttp.Internal;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams;
