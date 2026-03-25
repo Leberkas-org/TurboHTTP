@@ -22,9 +22,6 @@ public interface IClientProvider : IAsyncDisposable
     /// <summary>Opens a connection to the configured host asynchronously and returns the network stream.</summary>
     Task<Stream> GetStreamAsync(CancellationToken ct = default);
 
-    /// <summary>Closes the connection and releases all transport resources.</summary>
-    void Close();
-
     /// <summary>
     /// Indicates whether this provider supports opening multiple streams on a single connection.
     /// Returns <see langword="true"/> for QUIC (HTTP/3), <see langword="false"/> for TCP/TLS.
@@ -75,11 +72,11 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         return new NetworkStream(_socket, ownsSocket: false);
     }
 
-    public void Close()
+    public ValueTask DisposeAsync()
     {
         if (_socket is null)
         {
-            return;
+            return ValueTask.CompletedTask;
         }
 
         try
@@ -95,11 +92,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         {
             _socket = null;
         }
-    }
 
-    public ValueTask DisposeAsync()
-    {
-        Close();
         return ValueTask.CompletedTask;
     }
 
@@ -163,28 +156,6 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
             .WaitAsync(options.ConnectTimeout, ct)
             .ConfigureAwait(false);
         return _sslStream;
-    }
-
-    public void Close()
-    {
-        if (_sslStream is not null)
-        {
-            try
-            {
-                _sslStream.Close();
-                _sslStream.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // noop
-            }
-            finally
-            {
-                _sslStream = null;
-            }
-        }
-
-        _tcpClientProvider.Close();
     }
 
     public async ValueTask DisposeAsync()

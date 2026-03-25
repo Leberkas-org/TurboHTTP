@@ -54,8 +54,7 @@ public sealed class QuicMultiStreamTests
 #pragma warning disable CA1416
         var provider = new QuicClientProvider(new QuicOptions { Host = "", Port = 443 });
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync());
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetStreamAsync());
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
     }
@@ -66,29 +65,9 @@ public sealed class QuicMultiStreamTests
 #pragma warning disable CA1416
         var provider = new QuicClientProvider(new QuicOptions { Host = null!, Port = 443 });
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync());
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetStreamAsync());
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
-    }
-
-    [Fact(DisplayName = "RFC9114-3-MS-007: QuicClientProvider.Close is safe to call when not connected")]
-    public void QuicClientProvider_Close_WhenNotConnected_DoesNotThrow()
-    {
-#pragma warning disable CA1416
-        var provider = new QuicClientProvider(new QuicOptions { Host = "example.com", Port = 443 });
-        provider.Close();
-#pragma warning restore CA1416
-    }
-
-    [Fact(DisplayName = "RFC9114-3-MS-008: QuicClientProvider.Close is safe to call twice")]
-    public void QuicClientProvider_Close_Twice_DoesNotThrow()
-    {
-#pragma warning disable CA1416
-        var provider = new QuicClientProvider(new QuicOptions { Host = "example.com", Port = 443 });
-        provider.Close();
-        provider.Close();
-#pragma warning restore CA1416
     }
 
     [Fact(DisplayName = "RFC9114-3-MS-009: QuicClientProvider.RemoteEndPoint is null when not connected")]
@@ -170,8 +149,7 @@ public sealed class QuicMultiStreamTests
     {
         var provider = new FakeReentrantProvider(streamCount: 10, failStreamOpen: true);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync());
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetStreamAsync());
         Assert.Contains("no longer usable", ex.Message);
     }
 
@@ -186,9 +164,19 @@ public sealed class QuicMultiStreamTests
     private sealed class MinimalClientProvider : IClientProvider
     {
         public EndPoint? RemoteEndPoint => null;
-        public Task<Stream> GetStreamAsync(CancellationToken ct = default) => Task.FromResult<Stream>(new MemoryStream());
-        public void Close() { }
-        public ValueTask DisposeAsync() { Close(); return ValueTask.CompletedTask; }
+
+        public Task<Stream> GetStreamAsync(CancellationToken ct = default) =>
+            Task.FromResult<Stream>(new MemoryStream());
+
+        public void Close()
+        {
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Close();
+            return ValueTask.CompletedTask;
+        }
     }
 
     /// <summary>
@@ -242,7 +230,11 @@ public sealed class QuicMultiStreamTests
             Interlocked.Exchange(ref _connection, null);
         }
 
-        public ValueTask DisposeAsync() { Close(); return ValueTask.CompletedTask; }
+        public ValueTask DisposeAsync()
+        {
+            Close();
+            return ValueTask.CompletedTask;
+        }
 
         private async Task EnsureConnectedAsync(CancellationToken ct)
         {

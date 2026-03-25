@@ -123,7 +123,7 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
                     TargetHost = options.Host,
                     ApplicationProtocols = options.ApplicationProtocols,
                     RemoteCertificateValidationCallback = options.ServerCertificateValidationCallback,
-                },
+                }
             };
 
             var connection = await QuicConnection.ConnectAsync(clientConnectionOptions, ct).ConfigureAwait(false);
@@ -147,17 +147,6 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
         {
             // noop
         }
-    }
-
-    public void Close()
-    {
-        var connection = Interlocked.Exchange(ref _connection, null);
-        if (connection is null)
-        {
-            return;
-        }
-
-        connection.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     public async ValueTask DisposeAsync()

@@ -23,7 +23,8 @@ public sealed class ClientHelper : IAsyncDisposable
     private readonly ITurboHttpClient _client;
     private readonly bool _ownsSystem;
 
-    private ClientHelper(Microsoft.Extensions.DependencyInjection.ServiceProvider provider, ITurboHttpClient client, bool ownsSystem)
+    private ClientHelper(Microsoft.Extensions.DependencyInjection.ServiceProvider provider, ITurboHttpClient client,
+        bool ownsSystem)
     {
         _provider = provider;
         _client = client;
@@ -42,6 +43,7 @@ public sealed class ClientHelper : IAsyncDisposable
     /// <param name="loggerFactory">Optional logger factory — when provided, registers it in DI
     /// so the Akka logging bridge picks it up.</param>
     /// <param name="configure">Optional additional builder configuration.</param>
+    /// <param name="system">TBD</param>
     public static ClientHelper CreateClient(
         int port,
         Version version,

@@ -6,7 +6,7 @@ using Akka.TestKit.Xunit;
 using TurboHttp.Internal;
 using TurboHttp.Pooling;
 
-namespace TurboHttp.StreamTests.IO;
+namespace TurboHttp.Tests.Transport;
 
 /// <summary>
 /// Tests the <see cref="ConnectionHandle"/> record that bundles channel reader/writer pairs with connection identity.

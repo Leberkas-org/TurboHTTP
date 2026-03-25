@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Threading.Channels;
 using TurboHttp.Transport;
 
-namespace TurboHttp.StreamTests.IO;
+namespace TurboHttp.Tests.Transport;
 
 /// <summary>
 /// Tests <see cref="ClientState.Dispose"/> — verifies that pending

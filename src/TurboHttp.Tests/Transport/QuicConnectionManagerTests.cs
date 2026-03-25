@@ -1,11 +1,9 @@
-using System.Buffers;
 using System.Net;
 using System.Runtime.Versioning;
-using System.Threading.Channels;
 using TurboHttp.Internal;
 using TurboHttp.Transport;
 
-namespace TurboHttp.StreamTests.IO;
+namespace TurboHttp.Tests.Transport;
 
 /// <summary>
 /// Tests <see cref="QuicConnectionManager"/> — QUIC multi-stream management without actors.
@@ -274,8 +272,6 @@ public sealed class QuicConnectionManagerTests
             return Task.Delay(Timeout.Infinite, ct).ContinueWith<Stream>(_ =>
                 throw new OperationCanceledException(ct), ct);
         }
-
-        public void Close() { }
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
