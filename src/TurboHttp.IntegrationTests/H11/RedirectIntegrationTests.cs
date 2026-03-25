@@ -8,10 +8,12 @@ namespace TurboHttp.IntegrationTests.H11;
 public sealed class RedirectIntegrationTests
 {
     private readonly KestrelFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public RedirectIntegrationTests(KestrelFixture fixture)
+    public RedirectIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateRedirectClient()
@@ -19,7 +21,8 @@ public sealed class RedirectIntegrationTests
         return ClientHelper.CreateClient(
             _fixture.Port,
             new Version(1, 1),
-            configure: builder => builder.WithRedirect());
+            configure: builder => builder.WithRedirect(),
+            system: _systemFixture.System);
     }
 
     // ── GET /redirect/{code}/{target} — status code redirects to /hello ──────

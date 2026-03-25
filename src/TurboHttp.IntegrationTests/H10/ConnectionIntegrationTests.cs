@@ -12,15 +12,17 @@ namespace TurboHttp.IntegrationTests.H10;
 public sealed class ConnectionIntegrationTests
 {
     private readonly KestrelFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public ConnectionIntegrationTests(KestrelFixture fixture)
+    public ConnectionIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient()
     {
-        return ClientHelper.CreateClient(_fixture.Port, new Version(1, 0));
+        return ClientHelper.CreateClient(_fixture.Port, new Version(1, 0), system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Conn-H10-001: Default HTTP/1.0 connection closes after single request")]

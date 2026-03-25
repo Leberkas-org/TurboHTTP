@@ -21,11 +21,13 @@ public sealed class ClientHelper : IAsyncDisposable
 
     private readonly Microsoft.Extensions.DependencyInjection.ServiceProvider _provider;
     private readonly ITurboHttpClient _client;
+    private readonly bool _ownsSystem;
 
-    private ClientHelper(Microsoft.Extensions.DependencyInjection.ServiceProvider provider, ITurboHttpClient client)
+    private ClientHelper(Microsoft.Extensions.DependencyInjection.ServiceProvider provider, ITurboHttpClient client, bool ownsSystem)
     {
         _provider = provider;
         _client = client;
+        _ownsSystem = ownsSystem;
     }
 
     /// <summary>The configured <see cref="ITurboHttpClient"/> instance.</summary>
@@ -45,23 +47,34 @@ public sealed class ClientHelper : IAsyncDisposable
         Version version,
         string scheme = "http",
         ILoggerFactory? loggerFactory = null,
-        Action<ITurboHttpClientBuilder>? configure = null)
+        Action<ITurboHttpClientBuilder>? configure = null,
+        ActorSystem? system = null)
     {
         var services = new ServiceCollection();
 
-        // Create an ActorSystem with DependencyResolver so that Servus.Akka
-        // ResolveActor<T> works inside TurboClientStreamManager.
-        var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());
-        var bootstrap = BootstrapSetup.Create();
-
-        if (loggerFactory is not null)
+        bool ownsSystem;
+        if (system is not null)
         {
-            // Bridge Akka logging to Microsoft.Extensions.Logging
-            LoggingLogger.LoggerFactory = loggerFactory;
-            bootstrap = bootstrap.WithConfig(LoggingHocon);
+            // Use the externally provided system — do not terminate it on dispose.
+            ownsSystem = false;
         }
+        else
+        {
+            // Create an ActorSystem with DependencyResolver so that Servus.Akka
+            // ResolveActor<T> works inside TurboClientStreamManager.
+            var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());
+            var bootstrap = BootstrapSetup.Create();
 
-        var system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", bootstrap.And(diSetup));
+            if (loggerFactory is not null)
+            {
+                // Bridge Akka logging to Microsoft.Extensions.Logging
+                LoggingLogger.LoggerFactory = loggerFactory;
+                bootstrap = bootstrap.WithConfig(LoggingHocon);
+            }
+
+            system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", bootstrap.And(diSetup));
+            ownsSystem = true;
+        }
 
         // Register the pre-configured ActorSystem so the factory picks it up
         // instead of creating its own (which lacks DI setup).
@@ -89,27 +102,30 @@ public sealed class ClientHelper : IAsyncDisposable
         client.DefaultRequestVersion = version;
         client.Timeout = TimeSpan.FromMinutes(5);
 
-        return new ClientHelper(provider, client);
+        return new ClientHelper(provider, client, ownsSystem);
     }
 
     public async ValueTask DisposeAsync()
     {
-        var system = _provider.GetService<ActorSystem>();
-        if (system is not null)
+        if (_ownsSystem)
         {
-            // Terminate() initiates shutdown; WhenTerminated completes when
-            // all actors are stopped and the system is fully torn down.
-            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
-            await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
+            var system = _provider.GetService<ActorSystem>();
+            if (system is not null)
+            {
+                // Terminate() initiates shutdown; WhenTerminated completes when
+                // all actors are stopped and the system is fully torn down.
+                await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
+                await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
 
-            // Reset the static LoggerFactory so the next ActorSystem doesn't
-            // reference a disposed ILoggerFactory from a previous test.
-            LoggingLogger.LoggerFactory = null!;
+                // Reset the static LoggerFactory so the next ActorSystem doesn't
+                // reference a disposed ILoggerFactory from a previous test.
+                LoggingLogger.LoggerFactory = null!;
 
-            // Allow Akka dispatcher threads to fully wind down before the
-            // next ActorSystem is created. Without this, lingering threads
-            // from the terminated system can interfere with the new one.
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
+                // Allow Akka dispatcher threads to fully wind down before the
+                // next ActorSystem is created. Without this, lingering threads
+                // from the terminated system can interfere with the new one.
+                await Task.Delay(TimeSpan.FromMilliseconds(250));
+            }
         }
 
         // Dispose the ConnectionPool (stops idle eviction timers and closes connections).

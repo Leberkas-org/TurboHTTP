@@ -6,16 +6,18 @@ namespace TurboHttp.IntegrationTests;
 public sealed class Http10SmokeTests : IAsyncLifetime
 {
     private readonly KestrelFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
     private ClientHelper? _helper;
 
-    public Http10SmokeTests(KestrelFixture fixture)
+    public Http10SmokeTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     public Task InitializeAsync()
     {
-        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 0));
+        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 0), system: _systemFixture.System);
         return Task.CompletedTask;
     }
 
@@ -45,16 +47,18 @@ public sealed class Http10SmokeTests : IAsyncLifetime
 public sealed class Http11SmokeTests : IAsyncLifetime
 {
     private readonly KestrelFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
     private ClientHelper? _helper;
 
-    public Http11SmokeTests(KestrelFixture fixture)
+    public Http11SmokeTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     public Task InitializeAsync()
     {
-        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 1));
+        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(1, 1), system: _systemFixture.System);
         return Task.CompletedTask;
     }
 
@@ -84,16 +88,18 @@ public sealed class Http11SmokeTests : IAsyncLifetime
 public sealed class Http2SmokeTests : IAsyncLifetime
 {
     private readonly KestrelH2Fixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
     private ClientHelper? _helper;
 
-    public Http2SmokeTests(KestrelH2Fixture fixture)
+    public Http2SmokeTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     public Task InitializeAsync()
     {
-        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(2, 0));
+        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(2, 0), system: _systemFixture.System);
         return Task.CompletedTask;
     }
 
@@ -124,16 +130,18 @@ public sealed class Http2SmokeTests : IAsyncLifetime
 public sealed class Http3SmokeTests : IAsyncLifetime
 {
     private readonly KestrelH3Fixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
     private ClientHelper? _helper;
 
-    public Http3SmokeTests(KestrelH3Fixture fixture)
+    public Http3SmokeTests(KestrelH3Fixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     public Task InitializeAsync()
     {
-        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(3, 0), scheme: "https");
+        _helper = ClientHelper.CreateClient(_fixture.Port, new Version(3, 0), scheme: "https", system: _systemFixture.System);
         return Task.CompletedTask;
     }
 

@@ -8,10 +8,12 @@ namespace TurboHttp.IntegrationTests.H10;
 public sealed class CacheIntegrationTests
 {
     private readonly KestrelFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public CacheIntegrationTests(KestrelFixture fixture)
+    public CacheIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     /// <summary>
@@ -24,7 +26,8 @@ public sealed class CacheIntegrationTests
         return ClientHelper.CreateClient(
             _fixture.Port,
             new Version(1, 0),
-            configure: builder => builder.WithCache(store, policy));
+            configure: builder => builder.WithCache(store, policy),
+            system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Cache-H10-001: max-age response served from cache on second request")]

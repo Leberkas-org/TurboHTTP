@@ -8,10 +8,12 @@ namespace TurboHttp.IntegrationTests.H10;
 public sealed class RetryIntegrationTests
 {
     private readonly KestrelFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public RetryIntegrationTests(KestrelFixture fixture)
+    public RetryIntegrationTests(KestrelFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateRetryClient(int maxRetries = 3)
@@ -19,7 +21,8 @@ public sealed class RetryIntegrationTests
         return ClientHelper.CreateClient(
             _fixture.Port,
             new Version(1, 0),
-            configure: builder => builder.WithRetry(new RetryPolicy { MaxRetries = maxRetries }));
+            configure: builder => builder.WithRetry(new RetryPolicy { MaxRetries = maxRetries }),
+            system: _systemFixture.System);
     }
 
     // ── GET /retry/408 — 408 Request Timeout triggers retry ───────────────

@@ -7,17 +7,20 @@ namespace TurboHttp.IntegrationTests.H2;
 public sealed class CompressionIntegrationTests
 {
     private readonly KestrelH2Fixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public CompressionIntegrationTests(KestrelH2Fixture fixture)
+    public CompressionIntegrationTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient()
     {
         return ClientHelper.CreateClient(
             _fixture.Port,
-            new Version(2, 0));
+            new Version(2, 0),
+            system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Compression-H2-001: gzip response transparently decompressed to original size")]

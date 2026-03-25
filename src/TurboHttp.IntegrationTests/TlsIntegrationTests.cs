@@ -9,10 +9,12 @@ namespace TurboHttp.IntegrationTests;
 public sealed class TlsIntegrationTests
 {
     private readonly KestrelTlsFixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public TlsIntegrationTests(KestrelTlsFixture fixture)
+    public TlsIntegrationTests(KestrelTlsFixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateClient(Action<ITurboHttpClientBuilder>? configure = null)
@@ -21,7 +23,8 @@ public sealed class TlsIntegrationTests
             _fixture.Port,
             new Version(1, 1),
             scheme: "https",
-            configure: configure);
+            configure: configure,
+            system: _systemFixture.System);
     }
 
     // ── Basic HTTPS ──────────────────────────────────────────────────────────

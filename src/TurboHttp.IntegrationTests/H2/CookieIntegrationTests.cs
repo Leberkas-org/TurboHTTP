@@ -8,10 +8,12 @@ namespace TurboHttp.IntegrationTests.H2;
 public sealed class CookieIntegrationTests
 {
     private readonly KestrelH2Fixture _fixture;
+    private readonly ActorSystemFixture _systemFixture;
 
-    public CookieIntegrationTests(KestrelH2Fixture fixture)
+    public CookieIntegrationTests(KestrelH2Fixture fixture, ActorSystemFixture systemFixture)
     {
         _fixture = fixture;
+        _systemFixture = systemFixture;
     }
 
     private ClientHelper CreateCookieClient()
@@ -19,7 +21,8 @@ public sealed class CookieIntegrationTests
         return ClientHelper.CreateClient(
             _fixture.Port,
             new Version(2, 0),
-            configure: builder => builder.WithCookies());
+            configure: builder => builder.WithCookies(),
+            system: _systemFixture.System);
     }
 
     [Fact(DisplayName = "Cookie-H2-001: Set cookie and echo roundtrip")]
