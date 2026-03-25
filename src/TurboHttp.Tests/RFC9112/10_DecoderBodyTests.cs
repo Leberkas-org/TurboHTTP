@@ -129,7 +129,7 @@ public sealed class Http11DecoderBodyTests
         // Create 10 MB body
         var bodySize = 10 * 1024 * 1024;
         var largeBody = new byte[bodySize];
-        for (int i = 0; i < bodySize; i++)
+        for (var i = 0; i < bodySize; i++)
         {
             largeBody[i] = (byte)(i % 256);
         }

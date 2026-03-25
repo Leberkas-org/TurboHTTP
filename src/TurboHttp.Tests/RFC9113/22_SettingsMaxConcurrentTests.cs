@@ -787,7 +787,7 @@ public sealed class Http2SettingsMaxConcurrentTests
     public void Should_ApplyLargeValueCorrectly_WhenMaxConcurrentStreamsSet()
     {
         var decoder = new Http2FrameDecoder();
-        var settings = new SettingsFrame([(SettingsParameter.MaxConcurrentStreams, (uint)int.MaxValue)]);
+        var settings = new SettingsFrame([(SettingsParameter.MaxConcurrentStreams, int.MaxValue)]);
 
         var frames = decoder.Decode(settings.Serialize());
         var frame = Assert.IsType<SettingsFrame>(frames[0]);

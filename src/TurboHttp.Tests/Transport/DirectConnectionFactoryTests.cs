@@ -53,7 +53,7 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(_port);
 
-        await using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
+        using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -67,7 +67,7 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(_port);
 
-        await using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
+        using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
 
         Assert.Equal(ActorRefs.Nobody, lease.Handle.ConnectionActor);
     }
@@ -81,7 +81,7 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
         // Accept the connection server-side
         var acceptTask = _listener!.AcceptTcpClientAsync();
 
-        await using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
+        using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
 
         using var serverClient = await acceptTask;
         var serverStream = serverClient.GetStream();
@@ -113,7 +113,7 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
 
         var acceptTask = _listener!.AcceptTcpClientAsync();
 
-        await using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
+        using var lease = await DirectConnectionFactory.EstablishAsync(options, endpoint);
 
         using var serverClient = await acceptTask;
         var serverStream = serverClient.GetStream();
@@ -138,17 +138,17 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
 
         // HTTP/1.0 → 1
         var endpoint10 = CreateEndpoint(_port, HttpVersion.Version10);
-        await using var lease10 = await DirectConnectionFactory.EstablishAsync(options, endpoint10);
+        using var lease10 = await DirectConnectionFactory.EstablishAsync(options, endpoint10);
         Assert.Equal(1, lease10.MaxConcurrentStreams);
 
         // HTTP/1.1 → 6
         var endpoint11 = CreateEndpoint(_port, HttpVersion.Version11);
-        await using var lease11 = await DirectConnectionFactory.EstablishAsync(options, endpoint11);
+        using var lease11 = await DirectConnectionFactory.EstablishAsync(options, endpoint11);
         Assert.Equal(6, lease11.MaxConcurrentStreams);
 
         // HTTP/2 → 100
         var endpoint20 = CreateEndpoint(_port, HttpVersion.Version20);
-        await using var lease20 = await DirectConnectionFactory.EstablishAsync(options, endpoint20);
+        using var lease20 = await DirectConnectionFactory.EstablishAsync(options, endpoint20);
         Assert.Equal(100, lease20.MaxConcurrentStreams);
     }
 
@@ -219,7 +219,7 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
 
         Assert.False(token.IsCancellationRequested);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
 
         Assert.True(token.IsCancellationRequested);
     }
@@ -234,7 +234,7 @@ public sealed class DirectConnectionFactoryTests : IAsyncLifetime
 
         Assert.True(lease.IsAlive);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
 
         Assert.False(lease.IsAlive);
     }

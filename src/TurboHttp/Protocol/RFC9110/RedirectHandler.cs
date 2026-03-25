@@ -261,7 +261,7 @@ public sealed class RedirectHandler
 
     private static void CopyOptions(HttpRequestMessage original, HttpRequestMessage newRequest)
     {
-        foreach (var kvp in (IDictionary<string, object?>)original.Options)
+        foreach (var kvp in original.Options)
         {
             ((IDictionary<string, object?>)newRequest.Options)[kvp.Key] = kvp.Value;
         }

@@ -143,7 +143,7 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
 
         foreach (var lease in snapshot)
         {
-            await lease.DisposeAsync().ConfigureAwait(false);
+            lease.Dispose();
         }
 
         // 3. Dispose the shared QUIC provider
@@ -258,18 +258,18 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
         if (!_skipPumps)
         {
             var closeOnce = 0;
-            Action onClose = () =>
+            var onClose = () =>
             {
                 if (Interlocked.CompareExchange(ref closeOnce, 1, 0) == 0)
                 {
                     RemoveStream(lease);
-                    _ = lease.DisposeAsync();
+                    lease.Dispose();
                 }
             };
 
-            _ = ClientByteMover.MoveStreamToPipe(state, onClose, log: null, lease.Token);
-            _ = ClientByteMover.MovePipeToChannel(state, onClose, log: null, lease.Token);
-            _ = ClientByteMover.MoveChannelToStream(state, onClose, log: null, lease.Token);
+            _ = ClientByteMover.MoveStreamToPipe(state, onClose, lease.Token);
+            _ = ClientByteMover.MovePipeToChannel(state, onClose, lease.Token);
+            _ = ClientByteMover.MoveChannelToStream(state, onClose, lease.Token);
         }
 
         return lease;

@@ -54,8 +54,11 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private ConnectionHandle? _encoderHandle;
 
         // --- Outbound buffers for items arriving before handle is ready ---
-        private readonly Queue<(IMemoryOwner<byte> Memory, int Length, RequestEndpoint Key)> _pendingControlItems = new();
-        private readonly Queue<(IMemoryOwner<byte> Memory, int Length, RequestEndpoint Key)> _pendingEncoderItems = new();
+        private readonly Queue<(IMemoryOwner<byte> Memory, int Length, RequestEndpoint Key)> _pendingControlItems =
+            new();
+
+        private readonly Queue<(IMemoryOwner<byte> Memory, int Length, RequestEndpoint Key)> _pendingEncoderItems =
+            new();
 
         // --- Async callbacks ---
         private Action<IInputItem>? _onInboundData;
@@ -335,6 +338,7 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                     {
                         _pendingControlItems.Enqueue((dataItem.Memory, dataItem.Length, dataItem.Key));
                     }
+
                     break;
 
                 case OutputStreamType.QpackEncoder:
@@ -346,6 +350,7 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                     {
                         _pendingEncoderItems.Enqueue((dataItem.Memory, dataItem.Length, dataItem.Key));
                     }
+
                     break;
             }
         }
@@ -354,7 +359,8 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         {
             if (handle is null)
             {
-                Log.Warning("Http3ConnectionStage: Data received but no ConnectionHandle is available — dropping element.");
+                Log.Warning(
+                    "Http3ConnectionStage: Data received but no ConnectionHandle is available — dropping element.");
                 TryPull();
                 return;
             }
@@ -575,7 +581,7 @@ public sealed class Http3ConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             // Dispose all active leases.
             foreach (var lease in _activeLeases)
             {
-                _ = lease.DisposeAsync();
+                lease.Dispose();
             }
 
             _activeLeases.Clear();

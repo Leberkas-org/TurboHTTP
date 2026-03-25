@@ -531,7 +531,7 @@ internal sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInput
             // Dispose the current lease if still held.
             if (_currentLease is { } lease)
             {
-                _ = lease.DisposeAsync();
+                lease.Dispose();
                 _currentLease = null;
                 _handle = null;
             }

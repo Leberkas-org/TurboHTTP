@@ -147,7 +147,7 @@ public sealed class Http10RoundTripMethodTests
         var methods = new[] { HttpMethod.Get, HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete };
         var methodNames = new[] { "GET", "POST", "PUT", "DELETE" };
 
-        for (int i = 0; i < methods.Length; i++)
+        for (var i = 0; i < methods.Length; i++)
         {
             var request = new HttpRequestMessage(methods[i], "http://example.com/api")
             {

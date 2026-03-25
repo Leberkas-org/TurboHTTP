@@ -1,13 +1,11 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.DependencyInjection;
-using Akka.Hosting;
 using Akka.Logger.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TurboHttp.Transport;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
@@ -89,6 +87,7 @@ public sealed class ClientHelper : IAsyncDisposable
         var client = factory.CreateClient(string.Empty);
         client.BaseAddress = options.BaseAddress;
         client.DefaultRequestVersion = version;
+        client.Timeout = TimeSpan.FromMinutes(5);
 
         return new ClientHelper(provider, client);
     }
@@ -112,6 +111,10 @@ public sealed class ClientHelper : IAsyncDisposable
             // from the terminated system can interfere with the new one.
             await Task.Delay(TimeSpan.FromMilliseconds(250));
         }
+
+        // Dispose the ConnectionPool (stops idle eviction timers and closes connections).
+        // Must happen after ActorSystem termination so stages have already stopped.
+        _client.Dispose();
 
         await _provider.DisposeAsync();
     }

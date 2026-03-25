@@ -9,7 +9,7 @@ namespace TurboHttp.Transport;
 
 internal static class ClientByteMover
 {
-    internal static async Task MoveStreamToPipe(ClientState state, Action onClose, ILoggingAdapter? log, CancellationToken ct)
+    internal static async Task MoveStreamToPipe(ClientState state, Action onClose, CancellationToken ct)
     {
         Exception? pipeError = null;
         try
@@ -33,7 +33,6 @@ internal static class ClientByteMover
                 }
                 catch (Exception ex)
                 {
-                    log?.Warning(ex, "ClientByteMover.MoveStreamToPipe: stream read faulted");
                     pipeError = ex;
                     state.CloseKind = TlsCloseKind.AbruptClose;
                     onClose();
@@ -53,7 +52,7 @@ internal static class ClientByteMover
         }
     }
 
-    internal static async Task MovePipeToChannel(ClientState state, Action onClose, ILoggingAdapter? log, CancellationToken ct)
+    internal static async Task MovePipeToChannel(ClientState state, Action onClose, CancellationToken ct)
     {
         try
         {
@@ -92,9 +91,8 @@ internal static class ClientByteMover
                     onClose();
                     return;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    log?.Warning(ex, "ClientByteMover.MovePipeToChannel: pipe read faulted");
                     state.CloseKind ??= TlsCloseKind.AbruptClose;
                     onClose();
                     return;
@@ -114,7 +112,7 @@ internal static class ClientByteMover
         }
     }
 
-    internal static async Task MoveChannelToStream(ClientState state, Action onClose, ILoggingAdapter? log, CancellationToken ct)
+    internal static async Task MoveChannelToStream(ClientState state, Action onClose, CancellationToken ct)
     {
         while (!state.OutboundReader.Completion.IsCompleted)
         {
@@ -147,9 +145,8 @@ internal static class ClientByteMover
                 onClose();
                 return;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                log?.Warning(ex, "ClientByteMover.MoveChannelToStream: stream write faulted");
                 onClose();
                 return;
             }

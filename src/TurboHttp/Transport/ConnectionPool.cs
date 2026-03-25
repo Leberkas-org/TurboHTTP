@@ -13,7 +13,7 @@ namespace TurboHttp.Transport;
 /// Thread-safe connection pool that manages per-host <see cref="HostConnections"/>
 /// via a direct async API: <see cref="AcquireAsync"/> / <see cref="Release"/>.
 /// </summary>
-internal class ConnectionPool : IAsyncDisposable
+internal class ConnectionPool : IDisposable
 {
     private readonly ConcurrentDictionary<RequestEndpoint, HostConnections> _hosts = new();
     private readonly TimeSpan _idleTimeout;
@@ -47,7 +47,7 @@ internal class ConnectionPool : IAsyncDisposable
 
         if (_disposed)
         {
-            _ = lease.DisposeAsync();
+            lease.Dispose();
             return;
         }
 
@@ -57,14 +57,14 @@ internal class ConnectionPool : IAsyncDisposable
         }
         else
         {
-            _ = lease.DisposeAsync();
+            lease.Dispose();
         }
     }
 
     /// <summary>
     /// Disposes all hosts and their connections.
     /// </summary>
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (_disposed)
         {
@@ -73,15 +73,9 @@ internal class ConnectionPool : IAsyncDisposable
 
         _disposed = true;
 
-        var tasks = new List<ValueTask>();
-        foreach (var kvp in _hosts)
+        foreach (var (_, value) in _hosts)
         {
-            tasks.Add(kvp.Value.DisposeAsync());
-        }
-
-        foreach (var task in tasks)
-        {
-            await task.ConfigureAwait(false);
+            value.Dispose();
         }
 
         _hosts.Clear();
@@ -90,7 +84,7 @@ internal class ConnectionPool : IAsyncDisposable
     /// <summary>
     /// Per-host connection manager. Handles idle reuse, multiplexing, limits, and eviction.
     /// </summary>
-    internal sealed class HostConnections : IAsyncDisposable
+    internal sealed class HostConnections : IDisposable
     {
         private readonly RequestEndpoint _endpoint;
         private readonly TimeSpan _idleTimeout;
@@ -98,7 +92,7 @@ internal class ConnectionPool : IAsyncDisposable
         private readonly ConcurrentQueue<ConnectionLease> _idle = new();
         private readonly SemaphoreSlim _limiter;
         private readonly Timer _evictionTimer;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private volatile bool _disposed;
 
         public HostConnections(RequestEndpoint endpoint, TimeSpan idleTimeout)
@@ -152,7 +146,7 @@ internal class ConnectionPool : IAsyncDisposable
             // HTTP/1.1: try idle queue first
             while (_idle.TryDequeue(out var idle))
             {
-                if (idle.IsAlive && idle.Reusable)
+                if (idle is { IsAlive: true, Reusable: true })
                 {
                     idle.MarkBusy();
                     TurboHttpMetrics.ConnectionIdle.Add(-1,
@@ -163,7 +157,7 @@ internal class ConnectionPool : IAsyncDisposable
 
                 // Stale — dispose and try next
                 RemoveLease(idle);
-                await idle.DisposeAsync().ConfigureAwait(false);
+                idle.Dispose();
                 _limiter.Release();
             }
 
@@ -191,7 +185,7 @@ internal class ConnectionPool : IAsyncDisposable
             if (version is { Major: 1, Minor: 0 })
             {
                 RemoveLease(lease);
-                _ = lease.DisposeAsync();
+                lease.Dispose();
                 TurboHttpMetrics.ConnectionActive.Add(-1,
                     new("server.address", _endpoint.Host),
                     new("server.port", _endpoint.Port));
@@ -208,10 +202,10 @@ internal class ConnectionPool : IAsyncDisposable
                     lease.MarkNoReuse();
                 }
 
-                if (lease.ActiveStreams <= 0 && !lease.Reusable)
+                if (lease is { ActiveStreams: <= 0, Reusable: false })
                 {
                     RemoveLease(lease);
-                    _ = lease.DisposeAsync();
+                    lease.Dispose();
                     TurboHttpMetrics.ConnectionActive.Add(-1,
                         new("server.address", _endpoint.Host),
                         new("server.port", _endpoint.Port));
@@ -223,7 +217,7 @@ internal class ConnectionPool : IAsyncDisposable
             // HTTP/1.1
             lease.MarkIdle();
 
-            if (canReuse && lease.IsAlive && lease.Reusable)
+            if (canReuse && lease is { IsAlive: true, Reusable: true })
             {
                 _idle.Enqueue(lease);
                 TurboHttpMetrics.ConnectionIdle.Add(1,
@@ -233,7 +227,7 @@ internal class ConnectionPool : IAsyncDisposable
             else
             {
                 RemoveLease(lease);
-                _ = lease.DisposeAsync();
+                lease.Dispose();
                 _limiter.Release();
                 TurboHttpMetrics.ConnectionActive.Add(-1,
                     new("server.address", _endpoint.Host),
@@ -281,11 +275,7 @@ internal class ConnectionPool : IAsyncDisposable
             var freshItems = new List<ConnectionLease>();
             while (_idle.TryDequeue(out var idle))
             {
-                if (!idle.IsAlive)
-                {
-                    toEvict.Add(idle);
-                }
-                else if (now - idle.LastActivity > _idleTimeout)
+                if (!idle.IsAlive || now - idle.LastActivity > _idleTimeout)
                 {
                     toEvict.Add(idle);
                 }
@@ -325,7 +315,7 @@ internal class ConnectionPool : IAsyncDisposable
             foreach (var lease in toEvict)
             {
                 RemoveLease(lease);
-                _ = lease.DisposeAsync();
+                lease.Dispose();
                 _limiter.Release();
                 TurboHttpMetrics.ConnectionIdle.Add(-1,
                     new("server.address", _endpoint.Host),
@@ -336,7 +326,7 @@ internal class ConnectionPool : IAsyncDisposable
             }
         }
 
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
             if (_disposed)
             {
@@ -345,7 +335,7 @@ internal class ConnectionPool : IAsyncDisposable
 
             _disposed = true;
 
-            await _evictionTimer.DisposeAsync().ConfigureAwait(false);
+            _evictionTimer.Dispose();
 
             List<ConnectionLease> snapshot;
             lock (_lock)
@@ -356,13 +346,13 @@ internal class ConnectionPool : IAsyncDisposable
 
             foreach (var lease in snapshot)
             {
-                await lease.DisposeAsync().ConfigureAwait(false);
+                lease.Dispose();
             }
 
             // Drain idle queue
             while (_idle.TryDequeue(out var idle))
             {
-                await idle.DisposeAsync().ConfigureAwait(false);
+                idle.Dispose();
             }
 
             _limiter.Dispose();

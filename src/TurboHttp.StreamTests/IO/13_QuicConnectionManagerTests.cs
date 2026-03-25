@@ -39,7 +39,7 @@ public sealed class QuicConnectionManagerTests
         Assert.True(lease.IsAlive);
         Assert.Equal(TestEndpoint, lease.Key);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
     }
 
     [Fact(DisplayName = "QCM-002: OpenStreamAsync returns lease for Control stream type", Timeout = 5000)]
@@ -53,7 +53,7 @@ public sealed class QuicConnectionManagerTests
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
     }
 
     [Fact(DisplayName = "QCM-003: OpenStreamAsync returns lease for QpackEncoder stream type", Timeout = 5000)]
@@ -67,7 +67,7 @@ public sealed class QuicConnectionManagerTests
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
     }
 
     [Fact(DisplayName = "QCM-004: Multiple streams share the same provider", Timeout = 5000)]
@@ -86,8 +86,8 @@ public sealed class QuicConnectionManagerTests
         // Provider should have been created only once
         Assert.Equal(1, manager.ProviderCreationCount);
 
-        await lease1.DisposeAsync();
-        await lease2.DisposeAsync();
+        lease1.Dispose();
+        lease2.Dispose();
     }
 
     [Fact(DisplayName = "QCM-005: DisposeAsync cancels inbound loop and disposes all streams", Timeout = 5000)]
@@ -153,7 +153,7 @@ public sealed class QuicConnectionManagerTests
 
         foreach (var lease in leases)
         {
-            await lease.DisposeAsync();
+            lease.Dispose();
         }
     }
 
@@ -176,7 +176,7 @@ public sealed class QuicConnectionManagerTests
         Assert.Single(received);
         Assert.Equal(InputStreamType.Control, received[0].StreamType);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
     }
 
     [Fact(DisplayName = "QCM-010: InboundStream record has correct properties", Timeout = 5000)]
@@ -191,7 +191,7 @@ public sealed class QuicConnectionManagerTests
         Assert.Same(lease, notification.Lease);
         Assert.Equal(InputStreamType.QpackDecoder, notification.StreamType);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
     }
 
     [Fact(DisplayName = "QCM-011: OpenStreamAsync cancellation support", Timeout = 5000)]

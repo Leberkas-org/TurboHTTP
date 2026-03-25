@@ -119,7 +119,7 @@ public sealed class Http20PrependPrefaceStage : GraphStage<FlowShape<IOutputItem
                 var winSpan = result.AsSpan(offset);
                 winSpan[0] = 0;
                 winSpan[1] = 0;
-                winSpan[2] = (byte)windowUpdatePayloadSize;
+                winSpan[2] = windowUpdatePayloadSize;
                 winSpan[3] = (byte)FrameType.WindowUpdate;
                 winSpan[4] = 0; // flags
                 BinaryPrimitives.WriteUInt32BigEndian(winSpan[5..], 0); // streamId=0

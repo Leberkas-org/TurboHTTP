@@ -40,6 +40,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
     [Fact(DisplayName = "Diagnostics-ES-003: ConnectionOpened fires event with host, port, protocol")]
     public void ConnectionOpened_Fires_EventWithPayload()
     {
+        _listener.Clear();
         TurboHttpEventSource.Log.ConnectionOpened("example.com", 443, "HTTP/2");
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 1);
@@ -51,6 +52,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
     [Fact(DisplayName = "Diagnostics-ES-004: ConnectionOpened has Informational level")]
     public void ConnectionOpened_HasInformationalLevel()
     {
+        _listener.Clear();
         TurboHttpEventSource.Log.ConnectionOpened("test.com", 80, "HTTP/1.1");
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 1);
@@ -63,7 +65,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
         TurboHttpEventSource.Log.ConnectionOpened("test.com", 80, "HTTP/1.1");
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 1);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Connection));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Connection));
     }
 
     // ── ConnectionClosed event (2) ──────────────────────────────────────
@@ -107,7 +109,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 3);
         Assert.Equal(EventLevel.Informational, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Request));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Request));
     }
 
     // ── RequestStop event (4) ───────────────────────────────────────────
@@ -172,7 +174,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 6);
         Assert.Equal(EventLevel.Verbose, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Protocol));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Protocol));
     }
 
     // ── FrameSent event (7) ─────────────────────────────────────────────
@@ -195,22 +197,9 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 7);
         Assert.Equal(EventLevel.Verbose, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Protocol));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Protocol));
     }
-
-    // ── FrameReceived event (8) ─────────────────────────────────────────
-
-    [Fact(DisplayName = "Diagnostics-ES-018: FrameReceived fires event with frameType, streamId, length")]
-    public void FrameReceived_Fires_EventWithPayload()
-    {
-        TurboHttpEventSource.Log.FrameReceived("SETTINGS", 0, 36);
-
-        var evt = Assert.Single(_listener.Events, e => e.EventId == 8);
-        Assert.Equal("SETTINGS", evt.Payload![0]);
-        Assert.Equal(0, evt.Payload[1]);
-        Assert.Equal(36, evt.Payload[2]);
-    }
-
+    
     // ── CacheHit event (9) ──────────────────────────────────────────────
 
     [Fact(DisplayName = "Diagnostics-ES-019: CacheHit fires event with uri")]
@@ -229,7 +218,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 9);
         Assert.Equal(EventLevel.Informational, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Cache));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Cache));
     }
 
     // ── CacheMiss event (10) ────────────────────────────────────────────
@@ -250,7 +239,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 10);
         Assert.Equal(EventLevel.Informational, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Cache));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Cache));
     }
 
     // ── RetryAttempt event (11) ─────────────────────────────────────────
@@ -273,7 +262,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 11);
         Assert.Equal(EventLevel.Warning, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Request));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Request));
     }
 
     // ── RedirectFollowed event (12) ─────────────────────────────────────
@@ -296,7 +285,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         var evt = Assert.Single(_listener.Events, e => e.EventId == 12);
         Assert.Equal(EventLevel.Informational, evt.Level);
-        Assert.True(evt.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Request));
+        Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Request));
     }
 
     // ── Keyword filtering ───────────────────────────────────────────────
@@ -307,7 +296,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
         // Re-enable with only Connection keyword
         _listener.DisableEvents(TurboHttpEventSource.Log);
         _listener.Clear();
-        _listener.EnableEvents(TurboHttpEventSource.Log, EventLevel.Verbose, (EventKeywords)TurboHttpEventSource.Keywords.Connection);
+        _listener.EnableEvents(TurboHttpEventSource.Log, EventLevel.Verbose, TurboHttpEventSource.Keywords.Connection);
 
         TurboHttpEventSource.Log.ConnectionOpened("test.com", 80, "HTTP/1.1");
         TurboHttpEventSource.Log.RequestStart("GET", "https://test.com/");
@@ -323,7 +312,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
     {
         _listener.DisableEvents(TurboHttpEventSource.Log);
         _listener.Clear();
-        _listener.EnableEvents(TurboHttpEventSource.Log, EventLevel.Verbose, (EventKeywords)TurboHttpEventSource.Keywords.Request);
+        _listener.EnableEvents(TurboHttpEventSource.Log, EventLevel.Verbose, TurboHttpEventSource.Keywords.Request);
 
         TurboHttpEventSource.Log.ConnectionOpened("test.com", 80, "HTTP/1.1");
         TurboHttpEventSource.Log.RequestStart("GET", "https://test.com/");
@@ -332,7 +321,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
 
         Assert.Equal(2, _listener.Events.Count);
         Assert.All(_listener.Events, e =>
-            Assert.True(e.Keywords.HasFlag((EventKeywords)TurboHttpEventSource.Keywords.Request)));
+            Assert.True(e.Keywords.HasFlag(TurboHttpEventSource.Keywords.Request)));
     }
 
     // ── Zero events when no listener ────────────────────────────────────

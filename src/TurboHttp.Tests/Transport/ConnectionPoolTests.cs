@@ -75,7 +75,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-001: AcquireAsync HTTP/1.0 always creates new connection", Timeout = 5000)]
     public async Task AcquireAsync_Http10_AlwaysCreatesNew()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version10);
 
@@ -87,7 +87,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
         // HTTP/1.0 never reuses — must be different leases
         Assert.NotSame(lease1, lease2);
 
-        await lease2.DisposeAsync();
+        lease2.Dispose();
     }
 
     #endregion
@@ -97,7 +97,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-002: AcquireAsync HTTP/1.1 reuses idle connection", Timeout = 5000)]
     public async Task AcquireAsync_Http11_ReusesIdle()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
@@ -109,7 +109,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
         // HTTP/1.1 should reuse the idle connection
         Assert.Same(lease1, lease2);
 
-        await lease2.DisposeAsync();
+        lease2.Dispose();
     }
 
     #endregion
@@ -119,7 +119,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-003: AcquireAsync HTTP/2 multiplexes on same connection", Timeout = 5000)]
     public async Task AcquireAsync_Http2_MultiplexesOnSame()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version20);
 
@@ -142,7 +142,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-004: Release canReuse returns to idle", Timeout = 5000)]
     public async Task Release_CanReuse_ReturnsToIdle()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
@@ -156,7 +156,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-005: Release cannotReuse disposes connection", Timeout = 5000)]
     public async Task Release_CannotReuse_Disposes()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
@@ -177,7 +177,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     public async Task EvictIdle_RemovesExpired()
     {
         // Use a very short idle timeout so connections expire quickly
-        await using var pool = new ConnectionPool(TimeSpan.FromMilliseconds(50));
+        using var pool = new ConnectionPool(TimeSpan.FromMilliseconds(50));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
@@ -203,7 +203,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     public async Task EvictIdle_KeepsAtLeastOne()
     {
         // Very short idle timeout
-        await using var pool = new ConnectionPool(TimeSpan.FromMilliseconds(50));
+        using var pool = new ConnectionPool(TimeSpan.FromMilliseconds(50));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
@@ -234,7 +234,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-008: AcquireAsync per-host limit blocks when full", Timeout = 5000)]
     public async Task AcquireAsync_PerHostLimit_Blocks()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
@@ -255,7 +255,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
         // Cleanup
         foreach (var lease in leases)
         {
-            await lease.DisposeAsync();
+            lease.Dispose();
         }
     }
 
@@ -266,7 +266,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-009: SelectMru returns latest active lease", Timeout = 5000)]
     public async Task SelectMru_ReturnsLatestActive()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version20);
 
@@ -288,12 +288,12 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
         Assert.True(lease2.LastActivity >= lease1.LastActivity);
 
         pool.Release(lease2, canReuse: true);
-        await lease1.DisposeAsync();
+        lease1.Dispose();
     }
 
     #endregion
 
-    #region IAsyncDisposable
+    #region IDisposable
 
     [Fact(DisplayName = "TASK-026-004-010: DisposeAsync disposes all hosts", Timeout = 5000)]
     public async Task DisposeAsync_DisposesAllHosts()
@@ -304,7 +304,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
 
         var lease = await pool.AcquireAsync(options, endpoint);
 
-        await pool.DisposeAsync();
+        pool.Dispose();
 
         Assert.False(lease.IsAlive);
     }
@@ -313,7 +313,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     public async Task AcquireAsync_ThrowsAfterDisposal()
     {
         var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
-        await pool.DisposeAsync();
+        pool.Dispose();
 
         await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
         {
@@ -328,7 +328,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-012: HTTP/2 Release disposes only when last stream and non-reusable", Timeout = 5000)]
     public async Task Http2_Release_DisposesOnLastStreamAndNonReusable()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+        using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version20);
 
@@ -357,7 +357,7 @@ public sealed class ConnectionPoolTests : IAsyncLifetime
     [Fact(DisplayName = "TASK-026-004-013: HTTP/1.0 Release always disposes", Timeout = 5000)]
     public async Task Http10_Release_AlwaysDisposes()
     {
-        await using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
+         using var pool = new ConnectionPool(TimeSpan.FromSeconds(30));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version10);
 

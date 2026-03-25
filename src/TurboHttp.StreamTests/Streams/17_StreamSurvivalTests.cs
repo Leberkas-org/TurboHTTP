@@ -267,7 +267,7 @@ public sealed class StreamSurvivalTests : EngineTestBase
         const int total = 100;
         var requestCount = 0;
 
-        Func<byte[]> factory = () =>
+        var factory = () =>
         {
             requestCount++;
             return requestCount % 10 == 0

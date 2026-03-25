@@ -148,7 +148,7 @@ public sealed class Http2SecurityTests
         // RST_STREAM payload: 4 bytes error code (NO_ERROR = 0x0).
         var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
 
-        int rstCount = 0;
+        var rstCount = 0;
         for (var i = 0; i < 100; i++) // 100 frames on stream IDs 1, 3, 5, ..., 199
         {
             var rst = BuildRawFrame(frameType: 0x3, flags: 0x0, streamId: 2 * i + 1, errorCode);

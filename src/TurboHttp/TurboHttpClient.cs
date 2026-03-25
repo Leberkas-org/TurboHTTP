@@ -28,10 +28,8 @@ public sealed class TurboHttpClient : ITurboHttpClient
 {
     private readonly HttpRequestOptionsKey<Guid> _key = new("RequestId");
     private readonly HttpRequestMessage _defaultHeadersHolder = new();
-    private readonly TurboClientStreamManager _manager;
 
-    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<HttpResponseMessage>> _pending =
-        new();
+    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<HttpResponseMessage>> _pending = new();
 
     private readonly CancellationTokenSource _cts = new();
 
@@ -41,10 +39,10 @@ public sealed class TurboHttpClient : ITurboHttpClient
     public HttpVersionPolicy DefaultVersionPolicy { get; set; }
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(60);
     public long MaxResponseContentBufferSize { get; set; }
-    public ChannelWriter<HttpRequestMessage> Requests => _manager.Requests;
-    public ChannelReader<HttpResponseMessage> Responses => _manager.Responses;
+    public ChannelWriter<HttpRequestMessage> Requests => Manager.Requests;
+    public ChannelReader<HttpResponseMessage> Responses => Manager.Responses;
 
-    internal TurboClientStreamManager Manager => _manager;
+    internal TurboClientStreamManager Manager { get; }
 
     public TurboHttpClient(TurboClientOptions clientOptions, ActorSystem system)
         : this(clientOptions, system, PipelineDescriptor.Empty)
@@ -53,8 +51,8 @@ public sealed class TurboHttpClient : ITurboHttpClient
 
     internal TurboHttpClient(TurboClientOptions clientOptions, ActorSystem system, PipelineDescriptor pipeline)
     {
-        _manager = new TurboClientStreamManager(clientOptions, OptionsFactory, system, pipeline);
-        _ = DrainResponsesAsync(_manager.Responses, _cts.Token);
+        Manager = new TurboClientStreamManager(clientOptions, OptionsFactory, system, pipeline);
+        _ = DrainResponsesAsync(Manager.Responses, _cts.Token);
         return;
 
         TurboRequestOptions OptionsFactory()
@@ -106,7 +104,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
         _pending.TryAdd(requestId, tcs);
         try
         {
-            await _manager.Requests.WriteAsync(request, cancellationToken);
+            await Manager.Requests.WriteAsync(request, cancellationToken);
             return await tcs.Task.WaitAsync(Timeout, cancellationToken);
         }
         finally
@@ -114,6 +112,8 @@ public sealed class TurboHttpClient : ITurboHttpClient
             _pending.TryRemove(requestId, out _);
         }
     }
+
+    public void Dispose() => Manager.Dispose();
 
     public void CancelPendingRequests()
     {

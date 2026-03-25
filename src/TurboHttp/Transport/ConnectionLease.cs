@@ -12,7 +12,7 @@ namespace TurboHttp.Transport;
 /// management, metrics emission, and stream tracking. Each lease represents a single
 /// owner responsible for cleanup when the connection is no longer needed.
 /// </summary>
-internal sealed class ConnectionLease : IAsyncDisposable
+internal sealed class ConnectionLease : IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
     private readonly long _createdTicks = Environment.TickCount64;
@@ -123,7 +123,7 @@ internal sealed class ConnectionLease : IAsyncDisposable
     /// Disposes this lease: cancels the CTS, disposes ClientState, and emits
     /// connection duration metrics and diagnostics events.
     /// </summary>
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (!_alive)
         {
@@ -133,14 +133,14 @@ internal sealed class ConnectionLease : IAsyncDisposable
         _alive = false;
 
         // 1. Cancel CTS first — stops ByteMover tasks
-        await _cts.CancelAsync();
+        _cts.Cancel();
         _cts.Dispose();
 
         // 2. Dispose ClientState — closes channels + TCP stream
         State.Dispose();
 
         // 3. Emit metrics and diagnostics
-        var durationMs = (Environment.TickCount64 - _createdTicks);
+        var durationMs = Environment.TickCount64 - _createdTicks;
         var host = Key.Host;
         var port = Key.Port;
 

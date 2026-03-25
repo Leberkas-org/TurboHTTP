@@ -498,7 +498,7 @@ public sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
 
                     // Unwrap tagged items (control preface, QPACK encoder, etc.)
                     OutputStreamType? streamType = null;
-                    IOutputItem inner = item;
+                    var inner = item;
                     if (item is Http3TaggedItem tagged)
                     {
                         streamType = tagged.StreamType;

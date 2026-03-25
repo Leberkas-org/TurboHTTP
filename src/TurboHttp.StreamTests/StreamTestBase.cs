@@ -10,6 +10,7 @@ namespace TurboHttp.StreamTests;
 /// </summary>
 /// <remarks>
 /// Inherits from TestKit; actor system name includes a Guid to avoid port conflicts between parallel tests.
+/// Ensures materializer is shut down cleanly before actor system terminates to prevent resource leaks.
 /// </remarks>
 public abstract class StreamTestBase : TestKit
 {

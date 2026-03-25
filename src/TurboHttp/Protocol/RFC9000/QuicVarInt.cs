@@ -22,7 +22,7 @@ public static class QuicVarInt
     /// </summary>
     public static int EncodedLength(long value)
     {
-        if ((ulong)value > (ulong)MaxValue)
+        if ((ulong)value > MaxValue)
         {
             throw new ArgumentOutOfRangeException(nameof(value), value, "Value exceeds QUIC variable-length integer maximum (2^62 - 1).");
         }
@@ -51,7 +51,7 @@ public static class QuicVarInt
     /// </summary>
     public static int Encode(long value, Span<byte> destination)
     {
-        if ((ulong)value > (ulong)MaxValue)
+        if ((ulong)value > MaxValue)
         {
             throw new ArgumentOutOfRangeException(nameof(value), value, "Value exceeds QUIC variable-length integer maximum (2^62 - 1).");
         }

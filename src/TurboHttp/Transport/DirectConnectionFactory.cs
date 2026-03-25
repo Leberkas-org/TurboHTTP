@@ -62,17 +62,17 @@ internal static class DirectConnectionFactory
             // 6. Spawn 3 ByteMover tasks using callback overloads
             //    onClose disposes the lease when any pump exits (error or clean close)
             var closeOnce = 0;
-            Action onClose = () =>
+            var onClose = () =>
             {
                 if (Interlocked.CompareExchange(ref closeOnce, 1, 0) == 0)
                 {
-                    _ = lease.DisposeAsync();
+                    lease.Dispose();
                 }
             };
 
-            _ = ClientByteMover.MoveStreamToPipe(state, onClose, log: null, lease.Token);
-            _ = ClientByteMover.MovePipeToChannel(state, onClose, log: null, lease.Token);
-            _ = ClientByteMover.MoveChannelToStream(state, onClose, log: null, lease.Token);
+            _ = ClientByteMover.MoveStreamToPipe(state, onClose, lease.Token);
+            _ = ClientByteMover.MovePipeToChannel(state, onClose, lease.Token);
+            _ = ClientByteMover.MoveChannelToStream(state, onClose, lease.Token);
 
             // 7. Emit connection opened metrics + diagnostics
             var protocol = VersionToProtocol(endpoint.Version);

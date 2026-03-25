@@ -47,7 +47,7 @@ public sealed class Http2CrossComponentValidationTests
 
     private static byte[] BuildDataFrame(int streamId, byte[] data, bool endStream = false)
     {
-        byte flags = endStream ? (byte)0x1 : (byte)0x0;
+        var flags = endStream ? (byte)0x1 : (byte)0x0;
         return BuildRawFrame(0x0, flags, streamId, data);
     }
 

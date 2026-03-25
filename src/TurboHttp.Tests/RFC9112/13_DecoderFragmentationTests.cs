@@ -108,7 +108,7 @@ public sealed class Http11DecoderFragmentationTests
         var full = BuildResponse(200, "OK", body, ("Content-Length", "2"));
 
         // Send one byte at a time
-        for (int i = 0; i < full.Length - 1; i++)
+        for (var i = 0; i < full.Length - 1; i++)
         {
             var chunk = full.Slice(i, 1);
             var decoded = _decoder.TryDecode(chunk, out _);

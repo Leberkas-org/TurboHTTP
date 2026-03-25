@@ -98,7 +98,7 @@ public sealed class Http2FrameFuzzTests
     /// </summary>
     private static byte[] BuildHeadersFrame(int streamId, byte[] headerBlock, bool endHeaders = true)
     {
-        byte flags = (byte)(endHeaders ? 0x04 : 0x00);
+        var flags = (byte)(endHeaders ? 0x04 : 0x00);
         return BuildRawFrame(0x01, flags, streamId, headerBlock);
     }
 

@@ -315,19 +315,19 @@ public sealed class ConnectionLeaseTests
 
     #region DisposeAsync
 
-    [Fact(Timeout = 5000, DisplayName = "TASK-026-002-023: DisposeAsync sets IsAlive to false")]
+    [Fact(Timeout = 5000, DisplayName = "TASK-026-002-023: Dispose sets IsAlive to false")]
     public async Task Should_SetIsAliveFalse_WhenDisposed()
     {
         var handle = CreateHandle(HttpVersion.Version11);
         var state = CreateState();
         var lease = new ConnectionLease(handle, state);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
 
         Assert.False(lease.IsAlive);
     }
 
-    [Fact(Timeout = 5000, DisplayName = "TASK-026-002-024: DisposeAsync cancels the CancellationToken")]
+    [Fact(Timeout = 5000, DisplayName = "TASK-026-002-024: Dispose cancels the CancellationToken")]
     public async Task Should_CancelToken_WhenDisposed()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -335,7 +335,7 @@ public sealed class ConnectionLeaseTests
         var lease = new ConnectionLease(handle, state);
         var token = lease.Token;
 
-        await lease.DisposeAsync();
+        lease.Dispose();
 
         Assert.True(token.IsCancellationRequested);
     }
@@ -347,7 +347,7 @@ public sealed class ConnectionLeaseTests
         var state = CreateState();
         var lease = new ConnectionLease(handle, state);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
 
         Assert.False(lease.HasAvailableSlot);
     }
@@ -359,11 +359,11 @@ public sealed class ConnectionLeaseTests
         var state = CreateState();
         var lease = new ConnectionLease(handle, state);
 
-        await lease.DisposeAsync();
-        await lease.DisposeAsync(); // Should not throw
+        lease.Dispose();
+        lease.Dispose();
     }
 
-    [Fact(Timeout = 5000, DisplayName = "TASK-026-002-027: State stream is disposed after DisposeAsync")]
+    [Fact(Timeout = 5000, DisplayName = "TASK-026-002-027: State stream is disposed after Dispose")]
     public async Task Should_DisposeStream_WhenDisposed()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -375,7 +375,7 @@ public sealed class ConnectionLeaseTests
             outboundChannel: null);
         var lease = new ConnectionLease(handle, state);
 
-        await lease.DisposeAsync();
+        lease.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() => memStream.ReadByte());
     }

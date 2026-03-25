@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Akka.Actor.Dsl;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -16,8 +17,9 @@ namespace TurboHttp;
 /// Owns the Akka.Streams pipeline for a <see cref="TurboHttpClient"/>.
 /// Materialises the graph once on construction and exposes raw channel endpoints.
 /// </summary>
-internal sealed class TurboClientStreamManager
+internal sealed class TurboClientStreamManager : IDisposable
 {
+    private readonly ConnectionPool _pool;
     internal ChannelWriter<HttpRequestMessage> Requests { get; }
     internal ChannelReader<HttpResponseMessage> Responses { get; }
 
@@ -54,6 +56,7 @@ internal sealed class TurboClientStreamManager
 
         // Create ConnectionPool — manages per-host connections with idle eviction.
         var pool = new ConnectionPool(clientOptions.IdleTimeout);
+        _pool = pool;
 
         // Build the full pipeline flow from Engine using the provided descriptor.
         var engine = new Engine();
@@ -95,6 +98,8 @@ internal sealed class TurboClientStreamManager
             t => log.Error(t.Exception, "TurboClientStreamManager: request pump faulted unexpectedly"),
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
     }
+
+    public void Dispose() => _pool.Dispose();
 
     private static async Task PumpRequestsAsync(ChannelReader<HttpRequestMessage> reader,
         ISourceQueueWithComplete<HttpRequestMessage> queue)

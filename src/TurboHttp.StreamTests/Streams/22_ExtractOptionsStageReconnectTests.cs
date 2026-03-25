@@ -53,7 +53,7 @@ public sealed class ExtractOptionsStageReconnectTests : StreamTestBase
         var signalProbe = this.CreateManualSubscriberProbe<IOutputItem>();
         var requestProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
 
-        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        var mat = RunnableGraph.FromGraph(GraphDsl.Create(b =>
         {
             var stage = b.Add(new ExtractOptionsStage());
             var reqSrc = b.Add(Source.FromPublisher(requestPub));

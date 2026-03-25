@@ -351,3 +351,5 @@ coverage-results/
 .maggus/usage*.csv
 .maggus/usage_*.jsonl
 .maggus/bugs
+
+.claude/settings.local.json

@@ -68,13 +68,9 @@ Protocol Layer (TurboHttp/Protocol/)
     Encoders/Decoders, HPACK/QPACK, RedirectHandler, RetryEvaluator, CookieJar
     RFC subfolders: RFC1945/, RFC6265/, RFC7541/, RFC9000/, RFC9110/, RFC9111/, RFC9112/, RFC9113/, RFC9114/, RFC9204/
          ↓
-Pooling Layer (TurboHttp/Pooling/) — actor-free connection pool
-    ConnectionPool → HostConnections (per host:port)
-    DirectConnectionFactory — establishes TCP/TLS/QUIC, returns ConnectionLease
-    QuicConnectionManager — QUIC multi-stream management (replaces Http3ConnectionActor)
-    ConnectionLease — wraps ConnectionHandle + lifecycle + metrics
-         ↓
-Transport Layer (TurboHttp/Transport/) — data path, zero actor hops
+Transport Layer (TurboHttp/Transport/) — actor-free connection pool + data path
+    ConnectionPool → HostConnections → DirectConnectionFactory → ConnectionLease
+    QuicConnectionManager — QUIC multi-stream management
     ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP/QUIC
     ClientState, QuicClientProvider, TcpOptionsFactory
          ↓
@@ -173,23 +169,23 @@ Network (TCP / QUIC)
 - `StreamIdAllocatorStage` — allocates client stream IDs (1, 3, 5, …)
 - `GroupByHostKeyStage` / `HostKeyMergeBack` / `MergeSubstreamsStage` — per-host sub-stream routing
 
-### Pooling Layer (`TurboHttp/Pooling/`)
+### Transport Layer (`TurboHttp/Transport/`)
 
 **Actor-free connection pool** — zero actor mailbox hops for connection acquisition:
 - `ConnectionPool` — thread-safe async pool; `AcquireAsync()` / `Release()` / `IAsyncDisposable`; owns nested `HostConnections` per host:port
 - `HostConnections` — nested class inside `ConnectionPool`; `_idle: ConcurrentQueue<ConnectionLease>` (keep-alive pool), `_limiter: SemaphoreSlim` (per-host limit), `_evictionTimer` (idle eviction); MRU selection via `SelectMru()`
 - `DirectConnectionFactory` — static factory: `EstablishAsync(TcpOptions, RequestEndpoint)` → `ConnectionLease`; creates `ClientState`, spawns `ClientByteMover` tasks, emits metrics/events
-- `QuicConnectionManager` — QUIC multi-stream manager; `OpenStreamAsync(OutputStreamType)`, inbound acceptance loop, `_spawnLock: SemaphoreSlim(1)` for sequential spawning; replaces `Http3ConnectionActor`
+- `QuicConnectionManager` — QUIC multi-stream manager; `OpenStreamAsync(OutputStreamType)`, inbound acceptance loop, `_spawnLock: SemaphoreSlim(1)` for sequential spawning
 - `ConnectionLease` — wraps `ConnectionHandle` + `ClientState` + lifecycle; `MarkBusy()`, `MarkIdle()`, `MarkNoReuse()`, `UpdateMaxConcurrentStreams(n)`; `IAsyncDisposable` emits `ConnectionDuration` metric
-- `ConnectionHandle` — record bundling `OutboundWriter`/`InboundReader` channels; `CreateDirect()` factory method for actor-free construction
 
-### Transport Layer (`TurboHttp/Transport/`)
-
-**Data path (zero actor hops)** — data flows through `System.Threading.Channels`:
+**Data path** — data flows through `System.Threading.Channels`:
 - `ConnectionStage` — Akka `GraphStage` that acquires `ConnectionLease` from `ConnectionPool` via `GetAsyncCallback<ConnectionLease>`; no `StageActor`, no actor messages
 - `ClientByteMover` — async tasks per connection: TCP→Pipe, Pipe→InboundChannel, OutboundChannel→TCP; supports both `IActorRef` and `Action onClose` callback overloads
 - `ClientState` — holds TCP stream, `System.IO.Pipelines.Pipe`, and channel reader/writers
 - `QuicClientProvider` / `QuicOptions` / `TcpOptionsFactory` — transport-specific configuration
+
+**Pooling types** (`TurboHttp/Pooling/`):
+- `ConnectionHandle` — record bundling `OutboundWriter`/`InboundReader` channels; `CreateDirect()` factory method for actor-free construction
 
 ### Client Layer (`TurboHttp/Client/`)
 
@@ -382,22 +378,6 @@ Quality gates (use when applicable)
 
 Specialist agents
 - dotnet-concurrency-specialist, dotnet-performance-analyst, dotnet-benchmark-designer, akka-net-specialist, docfx-specialist, roslyn-incremental-generator-specialist
-
-# C# Semantic Enforcement (csharp-lsp)
-
-This repository requires semantic analysis for all C# changes.
-
-Plugin:
-- csharp-lsp @ claude-plugins-official
-
-### When Mandatory
-
-Activate `csharp-lsp` when:
-- Modifying or creating *.cs files
-- Changing *.csproj or solution structure
-- Refactoring (rename, move, signature change)
-- Performing cross-file or cross-namespace changes
-- Modifying public APIs or protocol frame types
 
 ### Required Before Commit
 
