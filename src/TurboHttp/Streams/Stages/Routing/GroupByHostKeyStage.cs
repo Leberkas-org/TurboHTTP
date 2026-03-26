@@ -129,6 +129,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 if (_upstreamFinished)
                 {
                     TryFinish();
+                    TryCompleteStage();
                 }
                 else if (!HasBeenPulled(_stage._in) && !IsClosed(_stage._in))
                 {
@@ -258,6 +259,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 if (_upstreamFinished)
                 {
                     TryFinish();
+                    TryCompleteStage();
                 }
 
                 return;

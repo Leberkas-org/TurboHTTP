@@ -86,13 +86,13 @@ Fix two critical issues blocking 12 HTTP/1.0 integration tests (out of 515 total
 **Parallel:** yes — can run alongside TASK-002-001
 
 **Acceptance Criteria:**
-- [ ] Locate `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs` (file path from CLAUDE.md)
-- [ ] Find where Content-Encoding header is parsed (likely in response handler)
-- [ ] Identify the switch/if statement that dispatches based on encoding type (gzip, deflate, br, etc.)
-- [ ] Find where unknown encodings cause exception (`InvalidOperationException` or similar)
-- [ ] Check test route `/edge/unknown-encoding` at `src/TurboHttp.IntegrationTests/Shared/ServerFixture.cs` line 540
-- [ ] Document: current behavior (throws), expected behavior (pass-through), required change
-- [ ] Compile existing code (no changes yet) to establish baseline
+- [x] Locate `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs` (file path from CLAUDE.md)
+- [x] Find where Content-Encoding header is parsed (likely in response handler)
+- [x] Identify the switch/if statement that dispatches based on encoding type (gzip, deflate, br, etc.)
+- [x] Find where unknown encodings cause exception (`InvalidOperationException` or similar)
+- [x] Check test route `/edge/unknown-encoding` at `src/TurboHttp.IntegrationTests/Shared/ServerFixture.cs` line 540
+- [x] Document: current behavior (throws), expected behavior (pass-through), required change
+- [x] Compile existing code (no changes yet) to establish baseline
 
 ---
 
