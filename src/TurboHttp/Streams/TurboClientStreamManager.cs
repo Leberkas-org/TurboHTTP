@@ -2,13 +2,10 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using Akka.Actor;
-using TurboHttp.Client;
-using TurboHttp.Streams;
-using OwnerMsg = TurboHttp.Client.ClientStreamOwner;
+using OwnerMsg = TurboHttp.Streams.ClientStreamOwner;
 
-namespace TurboHttp;
+namespace TurboHttp.Streams;
 
 /// <summary>
 /// Internal wrapper around <see cref="ClientStreamOwnerActor"/> that maintains backward
@@ -29,7 +26,7 @@ namespace TurboHttp;
 /// </list>
 /// </para>
 /// </summary>
-internal sealed class TurboClientStreamManager : IDisposable, IAsyncDisposable
+internal sealed class TurboClientStreamManager : IDisposable
 {
     private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(10);
 
@@ -102,11 +99,5 @@ internal sealed class TurboClientStreamManager : IDisposable, IAsyncDisposable
 
         // Complete the response channel so downstream consumers (DrainResponsesAsync) terminate.
         ResponseWriter.TryComplete();
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        Dispose();
-        return ValueTask.CompletedTask;
     }
 }

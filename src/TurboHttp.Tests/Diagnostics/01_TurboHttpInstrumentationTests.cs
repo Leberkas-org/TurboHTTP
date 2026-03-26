@@ -4,6 +4,7 @@ using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
+[Collection("OTEL")]
 public sealed class TurboHttpInstrumentationTests : IDisposable
 {
     private readonly List<Activity> _activities = [];

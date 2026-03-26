@@ -1,17 +1,14 @@
 using System;
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using TurboHttp.Streams;
 using TurboHttp.Transport;
-using OwnerMsg = TurboHttp.Client.ClientStreamOwner;
+using OwnerMsg = TurboHttp.Streams.ClientStreamOwner;
 
-namespace TurboHttp.Client;
+namespace TurboHttp.Streams;
 
 /// <summary>
 /// Manages both the lifecycle and materialization of the Akka.Streams pipeline
@@ -50,8 +47,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
     private bool _shuttingDown;
 
     // === Stream materialization state ===
-    private ChannelReader<HttpRequestMessage>? _requestReader;
-    private ChannelWriter<HttpResponseMessage>? _responseWriter;
     private ConnectionPool? _pool;
     private ActorMaterializer? _materializer;
     private SharedKillSwitch? _killSwitch;
@@ -117,10 +112,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         try
         {
-            // Store references to externally-owned channels (not owned by this actor)
-            _requestReader = create.RequestReader;
-            _responseWriter = create.ResponseWriter;
-
             // Create connection pool
             _pool = new ConnectionPool(create.ClientOptions.IdleTimeout);
 

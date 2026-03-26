@@ -24,7 +24,7 @@ public record TurboRequestOptions(
     TimeSpan Timeout,
     long MaxResponseContentBufferSize);
 
-public sealed class TurboHttpClient : ITurboHttpClient, IAsyncDisposable
+public sealed class TurboHttpClient : ITurboHttpClient
 {
     private readonly HttpRequestOptionsKey<Guid> _key = new("RequestId");
     private readonly HttpRequestMessage _defaultHeadersHolder = new();
@@ -114,8 +114,6 @@ public sealed class TurboHttpClient : ITurboHttpClient, IAsyncDisposable
     }
 
     public void Dispose() => Manager.Dispose();
-
-    public ValueTask DisposeAsync() => Manager.DisposeAsync();
 
     public void CancelPendingRequests()
     {

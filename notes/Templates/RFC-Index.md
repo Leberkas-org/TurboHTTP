@@ -1,13 +1,16 @@
 ---
 title: "RFC XXXX — Protocol Name"
 rfc_number: XXXX
+source_url: https://www.rfc-editor.org/rfc/rfcXXXX
 description: "One-line description of the RFC scope and TurboHttp relevance"
 tags: [rfc, rfcXXXX, protocol-category]
 ---
 
 # RFC XXXX — Protocol Name
 
-**Official RFC**: [RFC XXXX](https://www.rfc-editor.org/rfc/rfcXXXX)
+> 📌 **External Source**: [RFC XXXX — Protocol Name](https://www.rfc-editor.org/rfc/rfcXXXX)
+>
+> The complete RFC text is available online. See the `sections/` subfolder for individual section references.
 
 ## Quick Reference
 
@@ -24,8 +27,8 @@ tags: [rfc, rfcXXXX, protocol-category]
 
 Key ideas from this RFC, with links to section files:
 
-- [[sections/NN_topic|Topic Name]] — brief description
-- [[sections/NN_topic|Topic Name]] — brief description
+- [[RFCXXXX/sections/NN_topic|Topic Name]] — brief description
+- [[RFCXXXX/sections/NN_topic|Topic Name]] — brief description
 
 ## Implementation Notes
 
@@ -59,8 +62,8 @@ Key ideas from this RFC, with links to section files:
 
 | # | Section | File | Status |
 |---|---------|------|--------|
-| 00 | Preamble | [[sections/00_preamble]] | ✅ |
-| 01 | Section Title | [[sections/NN_name]] | ✅ / 🔶 / 🟡 |
+| 00 | Preamble | [[RFCXXXX/sections/00_preamble\|00 Preamble]] | ✅ |
+| 01 | Section Title | [[RFCXXXX/sections/NN_name\|Section Title]] | ✅ / 🔶 / 🟡 |
 
 ## Dependencies
 

@@ -1,10 +1,8 @@
 using System;
 using System.Net.Http;
 using System.Threading.Channels;
-using Akka.Actor;
-using TurboHttp.Streams;
 
-namespace TurboHttp.Client;
+namespace TurboHttp.Streams;
 
 /// <summary>
 /// Protocol messages for <c>ClientStreamOwner</c>, the actor that manages

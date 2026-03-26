@@ -2,16 +2,6 @@
 
 This is the central hub for all TurboHttp project knowledge — connecting session logs, architecture decisions, RFC compliance notes, and feature planning.
 
-## Feature Plans
-
-Current and completed features:
-
-- [Feature 026: HTTP/3 DataItem Wrapping](../.maggus/features/feature_026.md) — Ensure HTTP/3 engine wraps all buffers in typed message items
-- [Feature 002: Error Handling Integration](../.maggus/features/feature_002.md)
-- [Feature 021: Diagnosis & Traces](../.maggus/features/feature_021.md)
-
-See [All Features](../Features/) for additional links and planning notes.
-
 ## Architecture & Design Decisions
 
 Key architectural patterns and decisions:
@@ -42,7 +32,7 @@ Quick reference:
 
 All RFC reference documents are in the [rfc/](./rfc/) folder — quick references and compliance analysis.
 
-See [RFC Notes](./RFC/) for detailed compliance notes.
+See [RFC Notes](./RFC/00-RFC_STATUS_MATRIX) for detailed compliance notes.
 
 ## Active Debugging
 

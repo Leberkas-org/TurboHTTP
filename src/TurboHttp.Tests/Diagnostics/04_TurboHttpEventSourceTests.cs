@@ -3,6 +3,7 @@ using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
+[Collection("OTEL")]
 public sealed class TurboHttpEventSourceTests : IDisposable
 {
     private readonly TestEventListener _listener;
@@ -197,7 +198,7 @@ public sealed class TurboHttpEventSourceTests : IDisposable
         Assert.Equal(EventLevel.Verbose, evt.Level);
         Assert.True(evt.Keywords.HasFlag(TurboHttpEventSource.Keywords.Protocol));
     }
-    
+
     // ── CacheHit event (9) ──────────────────────────────────────────────
 
     [Fact(DisplayName = "Diagnostics-ES-019: CacheHit fires event with uri")]

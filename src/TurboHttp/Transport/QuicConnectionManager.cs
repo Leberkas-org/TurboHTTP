@@ -32,7 +32,7 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
     private readonly List<ConnectionLease> _activeStreams = [];
     private readonly SemaphoreSlim _spawnLock = new(1, 1);
     private readonly List<InboundStream> _bufferedInboundStreams = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     private IClientProvider? _sharedProvider;
     private CancellationTokenSource? _inboundLoopCts;
@@ -330,19 +330,19 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
             }
             catch
             {
-                stream.Dispose();
+                await stream.DisposeAsync();
                 continue;
             }
 
             if (bytesRead == 0)
             {
-                stream.Dispose();
+                await stream.DisposeAsync();
                 continue;
             }
 
             if (!QuicVarInt.TryDecode(typeBuf.AsSpan(0, bytesRead), out var streamTypeValue, out _))
             {
-                stream.Dispose();
+                await stream.DisposeAsync();
                 continue;
             }
 
@@ -356,7 +356,7 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
 
             if (inputStreamType is null)
             {
-                stream.Dispose();
+                await stream.DisposeAsync();
                 continue;
             }
 

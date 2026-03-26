@@ -2,7 +2,6 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Channels;
-using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;

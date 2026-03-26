@@ -59,10 +59,10 @@ as a required field and the correct wikilink format so all future RFC notes are 
 **Parallel:** yes — can run alongside TASK-026-007
 
 **Acceptance Criteria:**
-- [ ] `notes/Templates/RFC-Index.md` frontmatter includes `source_url: https://www.rfc-editor.org/rfc/rfcXXXX`
-- [ ] `## Full RFC Document` section replaced with `> 📌 **External Source**: [RFC XXXX — Title](url)` callout pattern
-- [ ] Wikilink examples in template use `[[RFCXXXX/sections/NN_topic|Display]]` with `|` separator
-- [ ] File stays under 80 lines
+- [x] `notes/Templates/RFC-Index.md` frontmatter includes `source_url: https://www.rfc-editor.org/rfc/rfcXXXX`
+- [x] `## Full RFC Document` section replaced with `> 📌 **External Source**: [RFC XXXX — Title](url)` callout pattern
+- [x] Wikilink examples in template use `[[RFCXXXX/sections/NN_topic|Display]]` with `|` separator
+- [x] File stays under 80 lines
 
 ---
 
@@ -76,7 +76,7 @@ files so they load instantly in Obsidian without scrolling past thousands of lin
 **Parallel:** yes — can run alongside TASK-026-003
 
 **Acceptance Criteria:**
-- [ ] `RFC1945.md` — Keep lines 1–122 (frontmatter, Quick Reference, Core Concepts, Sections table, etc.); replace everything from line 123 onwards (the `## Full RFC Document` code block and trailing sections) with:
+- [x] `RFC1945.md` — Keep lines 1–122 (frontmatter, Quick Reference, Core Concepts, Sections table, etc.); replace everything from line 123 onwards (the `## Full RFC Document` code block and trailing sections) with:
   ```markdown
   ## Full RFC Document
 
@@ -84,12 +84,12 @@ files so they load instantly in Obsidian without scrolling past thousands of lin
   >
   > The complete RFC text is available online. See the `sections/` subfolder for individual section references.
   ```
-- [ ] `RFC6265.md` — Keep lines 1–96; replace lines 97+ with the same external link callout pattern
-- [ ] `RFC7541.md` — Keep lines 1–86; replace lines 87+ with the same external link callout pattern
-- [ ] `RFC9000.md` — Keep lines 1–165; replace lines 166+ with the same external link callout pattern
-- [ ] Each file is now under 150 lines
-- [ ] No raw RFC text remains in any of the four files
-- [ ] No `## How to Search This RFC` section (if present, it is part of the old embedded text and should be removed)
+- [x] `RFC6265.md` — Keep lines 1–96; replace lines 97+ with the same external link callout pattern
+- [x] `RFC7541.md` — Keep lines 1–86; replace lines 87+ with the same external link callout pattern
+- [x] `RFC9000.md` — Keep lines 1–165; replace lines 166+ with the same external link callout pattern
+- [x] Each file is now under 150 lines
+- [x] No raw RFC text remains in any of the four files
+- [x] No `## How to Search This RFC` section (if present, it is part of the old embedded text and should be removed)
 
 ---
 
@@ -103,9 +103,9 @@ files for the same navigability reason.
 **Parallel:** yes — can run alongside TASK-026-002
 
 **Acceptance Criteria:**
-- [ ] `RFC9110.md`, `RFC9111.md`, `RFC9112.md`, `RFC9113.md`, `RFC9114.md`, `RFC9204.md` — each raw text block replaced with external link callout
-- [ ] Each file is now under 200 lines
-- [ ] BOM character `﻿` (Unicode FEFF) no longer present in any file (it was only in the raw text blocks)
+- [x] `RFC9110.md`, `RFC9111.md`, `RFC9112.md`, `RFC9113.md`, `RFC9114.md`, `RFC9204.md` — each raw text block replaced with external link callout
+- [x] Each file is now under 200 lines
+- [x] BOM character `﻿` (Unicode FEFF) no longer present in any file (it was only in the raw text blocks)
 
 ---
 
@@ -119,11 +119,11 @@ frontmatter predates that field being required.
 **Parallel:** yes — can run alongside TASK-026-005
 
 **Acceptance Criteria:**
-- [ ] `RFC1945.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc1945` added
-- [ ] `RFC6265.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc6265` added
-- [ ] `RFC7541.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc7541` added
-- [ ] `RFC9000.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc9000` added
-- [ ] All four have an `aliases` field (empty array `[]` if unused)
+- [x] `RFC1945.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc1945` added
+- [x] `RFC6265.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc6265` added
+- [x] `RFC7541.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc7541` added
+- [x] `RFC9000.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc9000` added
+- [x] All four have an `aliases` field (empty array `[]` if unused)
 
 ---
 
@@ -137,11 +137,11 @@ format with `|` separator consistently, so that Obsidian resolves them correctly
 **Parallel:** no — all 10 files, must be done after raw text removal to avoid touching 2000-line blocks
 
 **Acceptance Criteria:**
-- [ ] Older RFCs (1945, 6265, 7541, 9000): all `[[sections/NN_topic|...]]` → `[[RFCXXXX/sections/NN_topic|...]]`
-- [ ] All RFCs: wikilinks outside tables: `\|` → `|` separator (wikilinks inside Markdown tables keep `\|` for escaping)
-- [ ] Cross-RFC links use vault-root-relative form: `[[RFC/RFCXXXX/RFCXXXX|RFC XXXX]]`
-- [ ] Core Concepts and Sections table use consistent wikilink format (no mixing of styles within a file)
-- [ ] No bare `[[sections/...]]` links remain in any file
+- [x] Older RFCs (1945, 6265, 7541, 9000): all `[[sections/NN_topic|...]]` → `[[RFCXXXX/sections/NN_topic|...]]`
+- [x] All RFCs: wikilinks outside tables: `\|` → `|` separator (wikilinks inside Markdown tables keep `\|` for escaping)
+- [x] Cross-RFC links use vault-root-relative form: `[[RFC/RFCXXXX/RFCXXXX|RFC XXXX]]`
+- [x] Core Concepts and Sections table use consistent wikilink format (no mixing of styles within a file)
+- [x] No bare `[[sections/...]]` links remain in any file
 
 ---
 
@@ -156,11 +156,11 @@ Obsidian opens a note rather than creating a phantom.
 **Parallel:** no — must run after wikilinks are standardized
 
 **Acceptance Criteria:**
-- [ ] For each of the 10 RFC index files, enumerate files in its `sections/` subdirectory
-- [ ] For each wikilink in the Sections table, confirm the linked `.md` file exists
-- [ ] Any broken link is either: fixed (if file exists under slightly different name), or marked with `⚠️` (if section note was never created)
-- [ ] A `## Link Verification` section added to each RFC index (can be a collapsed callout) documenting the check
-- [ ] No unresolved phantom wikilinks remain without a `⚠️` marker
+- [x] For each of the 10 RFC index files, enumerate files in its `sections/` subdirectory
+- [x] For each wikilink in the Sections table, confirm the linked `.md` file exists
+- [x] Any broken link is either: fixed (if file exists under slightly different name), or marked with `⚠️` (if section note was never created)
+- [x] A `## Link Verification` section added to each RFC index (can be a collapsed callout) documenting the check
+- [x] No unresolved phantom wikilinks remain without a `⚠️` marker
 
 ---
 
@@ -174,11 +174,11 @@ read is accurate.
 **Parallel:** yes — independent of all other index tasks
 
 **Acceptance Criteria:**
-- [ ] `RFC9204.md` H1 reads `# RFC 9204 — QPACK: Field Compression for HTTP/3` (was abbreviated)
-- [ ] `RFC9204.md` Core Concepts: static table entry count verified against RFC 9204 Appendix A and corrected
-- [ ] `RFC9111.md` Quick Reference compliance score updated to `78/100` (aligns with `00-RFC_STATUS_MATRIX.md`)
-- [ ] `RFC9000.md` Quick Reference test path clarified: `TurboHttp.Tests/RFC9114/ (shared with HTTP/3)`
-- [ ] `rfc_metadata.json` RFC9111 `compliance_score` updated to `78` to match STATUS_MATRIX
+- [x] `RFC9204.md` H1 reads `# RFC 9204 — QPACK: Field Compression for HTTP/3` (was abbreviated)
+- [x] `RFC9204.md` Core Concepts: static table entry count verified against RFC 9204 Appendix A and corrected
+- [x] `RFC9111.md` Quick Reference compliance score updated to `78/100` (aligns with `00-RFC_STATUS_MATRIX.md`)
+- [x] `RFC9000.md` Quick Reference test path clarified: `TurboHttp.Tests/RFC9114/ (shared with HTTP/3)`
+- [x] `rfc_metadata.json` RFC9111 `compliance_score` updated to `78` to match STATUS_MATRIX
 
 ---
 
@@ -192,11 +192,11 @@ so they render in Obsidian, and the duplicate RFC9114 summary deleted.
 **Parallel:** no — final index cleanup step
 
 **Acceptance Criteria:**
-- [ ] `RFC9111_ANALYSIS_SUMMARY.txt` renamed to `RFC9111_ANALYSIS_SUMMARY.md`; body converted: `===` banners removed, ALL CAPS headings → `##` Markdown headings, data formatted as Markdown tables
-- [ ] `RFC9114_ANALYSIS_SUMMARY.txt` renamed to `RFC9114_ANALYSIS_SUMMARY.md`; same conversion applied
-- [ ] `RFC9114_SUMMARY.txt` deleted (confirmed near-identical duplicate of `RFC9114_ANALYSIS_SUMMARY.txt`)
-- [ ] Both converted `.md` files retain their existing YAML frontmatter
-- [ ] No `.txt` files remain anywhere under `notes/RFC/`
+- [x] `RFC9111_ANALYSIS_SUMMARY.txt` renamed to `RFC9111_ANALYSIS_SUMMARY.md`; body converted: `===` banners removed, ALL CAPS headings → `##` Markdown headings, data formatted as Markdown tables
+- [x] `RFC9114_ANALYSIS_SUMMARY.txt` renamed to `RFC9114_ANALYSIS_SUMMARY.md`; same conversion applied
+- [x] `RFC9114_SUMMARY.txt` deleted (confirmed near-identical duplicate of `RFC9114_ANALYSIS_SUMMARY.txt`)
+- [x] Both converted `.md` files retain their existing YAML frontmatter
+- [x] No `.txt` files remain anywhere under `notes/RFC/`
 
 ---
 

@@ -359,7 +359,8 @@ internal class ConnectionPool : IDisposable
 
         private async Task<ConnectionLease> EstablishAndTrack(TcpOptions options, CancellationToken ct)
         {
-            var lease = await DirectConnectionFactory.EstablishAsync(options, _endpoint, ct)
+            var lease = await DirectConnectionFactory
+                .EstablishAsync(options, _endpoint, ct)
                 .ConfigureAwait(false);
             lease.MarkBusy();
 

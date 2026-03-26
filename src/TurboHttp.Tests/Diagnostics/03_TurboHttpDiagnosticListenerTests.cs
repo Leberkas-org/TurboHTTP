@@ -5,6 +5,7 @@ using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
+[Collection("OTEL")]
 public sealed class TurboHttpDiagnosticListenerTests : IDisposable
 {
     private readonly ConcurrentBag<(string Name, object? Value)> _events = new();

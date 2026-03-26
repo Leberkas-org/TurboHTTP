@@ -4,6 +4,10 @@ using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
+[CollectionDefinition("OTEL", DisableParallelization = true)]
+public sealed class OTelCollection;
+
+[Collection("OTEL")]
 public sealed class TurboHttpMetricsTests : IDisposable
 {
     private readonly MeterListener _listener;
