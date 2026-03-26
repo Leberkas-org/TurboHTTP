@@ -41,12 +41,12 @@ Fix two critical issues blocking 12 HTTP/1.0 integration tests (out of 515 total
 **Parallel:** yes — can run alongside TASK-002-003
 
 **Acceptance Criteria:**
-- [ ] Read `src/TurboHttp/Streams/Stages/Routing/GroupByHostKeyStage.cs` lines 141–160 (`TryFinish()` method)
-- [ ] Document current flow: `TryFinish()` → check all subflows drained → call `CompleteStage()` immediately
-- [ ] Identify race condition: stage actor scope killed while downstream BidiStages still pushing to outlet
-- [ ] Trace RetryBidiStage flow: `_readyRetries.Count > 0` → `TryEmitRetry()` → `Push(_outRequest)` races with stage death
-- [ ] Identify fix location: replace `CompleteStage()` with deferred `TryCompleteStage()` that checks all substreams dead
-- [ ] Document: create brief analysis doc `DEADLOCK_ANALYSIS.md` in project root (200 words max)
+- [x] Read `src/TurboHttp/Streams/Stages/Routing/GroupByHostKeyStage.cs` lines 141–160 (`TryFinish()` method)
+- [x] Document current flow: `TryFinish()` → check all subflows drained → call `CompleteStage()` immediately
+- [x] Identify race condition: stage actor scope killed while downstream BidiStages still pushing to outlet
+- [x] Trace RetryBidiStage flow: `_readyRetries.Count > 0` → `TryEmitRetry()` → `Push(_outRequest)` races with stage death
+- [x] Identify fix location: replace `CompleteStage()` with deferred `TryCompleteStage()` that checks all substreams dead
+- [x] Document: create brief analysis doc `DEADLOCK_ANALYSIS.md` in project root (200 words max)
 
 ---
 
