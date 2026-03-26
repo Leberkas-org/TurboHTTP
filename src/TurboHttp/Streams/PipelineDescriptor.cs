@@ -15,8 +15,7 @@ internal sealed record PipelineDescriptor(
     CacheStore? CacheStore,
     CachePolicy? CachePolicy,
     IReadOnlyList<TurboHandler> Handlers,
-    bool AutomaticDecompression = true,
-    IPendingWorkTracker? PendingWorkTracker = null)
+    bool AutomaticDecompression = true)
 {
     public static readonly PipelineDescriptor Empty = new(
         RedirectPolicy: null,
@@ -27,6 +26,5 @@ internal sealed record PipelineDescriptor(
         CacheStore: null,
         CachePolicy: null,
         Handlers: [],
-        AutomaticDecompression: true,
-        PendingWorkTracker: null);
+        AutomaticDecompression: true);
 }

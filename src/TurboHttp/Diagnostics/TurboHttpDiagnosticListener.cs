@@ -13,11 +13,11 @@ public static class TurboHttpDiagnosticListener
 {
     public const string ListenerName = "TurboHttp";
 
-    public const string RequestStartEvent = "TurboHttp.Request.Start";
-    public const string RequestStopEvent = "TurboHttp.Request.Stop";
-    public const string RequestFailedEvent = "TurboHttp.Request.Failed";
-    public const string ConnectionOpenedEvent = "TurboHttp.Connection.Opened";
-    public const string ConnectionClosedEvent = "TurboHttp.Connection.Closed";
+    public const string RequestStartEvent = $"{ListenerName}.Request.Start";
+    public const string RequestStopEvent = $"{ListenerName}.Request.Stop";
+    public const string RequestFailedEvent = $"{ListenerName}.Request.Failed";
+    public const string ConnectionOpenedEvent = $"{ListenerName}.Connection.Opened";
+    public const string ConnectionClosedEvent = $"{ListenerName}.Connection.Closed";
 
     /// <summary>
     /// Shared <see cref="DiagnosticListener"/> instance for all TurboHttp events.

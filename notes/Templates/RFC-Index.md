@@ -1,7 +1,7 @@
 ---
 title: "RFC XXXX — Protocol Name"
 rfc_number: XXXX
-description: "One-line description of the RFC scope"
+description: "One-line description of the RFC scope and TurboHttp relevance"
 tags: [rfc, rfcXXXX, protocol-category]
 ---
 
@@ -15,6 +15,7 @@ tags: [rfc, rfcXXXX, protocol-category]
 |--------|-------|
 | **Compliance Score** | XX/100 |
 | **Implementation Status** | ✅ Complete / 🔶 Partial / 🟡 Draft / ❌ Missing |
+| **Implementation Path** | `TurboHttp/Protocol/RFCXXXX/` |
 | **Unit Test Files** | `TurboHttp.Tests/RFCXXXX/` — N files, M tests |
 | **Stream Test Files** | `TurboHttp.StreamTests/RFCXXXX/` — N files |
 | **Key Gaps** | Brief summary of main gaps |
@@ -70,5 +71,5 @@ Key ideas from this RFC, with links to section files:
 
 ## See Also
 
-- [[../../RFC/00-RFC_STATUS_MATRIX|RFC Status Matrix]]
+- [[../00-RFC_STATUS_MATRIX|RFC Status Matrix]]
 - [[../../Architecture/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps]]

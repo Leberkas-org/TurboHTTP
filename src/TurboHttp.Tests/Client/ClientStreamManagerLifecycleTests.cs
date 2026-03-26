@@ -88,51 +88,10 @@ public sealed class ClientStreamManagerLifecycleTests : TestKit
         Assert.False(manager.Requests.TryWrite(new HttpRequestMessage()));
     }
 
-    // ── DisposeAsync ─────────────────────────────────────────────────────────
-
-    [Fact(DisplayName = "RFC-9110-csm-006: DisposeAsync completes request channel", Timeout = 10000)]
-    public async Task DisposeAsync_CompletesRequestChannel()
-    {
-        var manager = new TurboClientStreamManager(DefaultOptions, DefaultRequestOptions, Sys);
-
-        await manager.DisposeAsync();
-
-        var written = manager.Requests.TryWrite(new HttpRequestMessage(HttpMethod.Get, "http://localhost/test"));
-        Assert.False(written);
-    }
-
-    [Fact(DisplayName = "RFC-9110-csm-007: DisposeAsync waits for actor termination", Timeout = 10000)]
-    public async Task DisposeAsync_WaitsForActorTermination()
-    {
-        var manager = new TurboClientStreamManager(DefaultOptions, DefaultRequestOptions, Sys);
-
-        // DisposeAsync should complete without hanging (GracefulStop with timeout)
-        await manager.DisposeAsync();
-
-        // After async dispose, both channels should be completed
-        Assert.False(manager.Requests.TryWrite(new HttpRequestMessage()));
-
-        var count = 0;
-        await foreach (var _ in manager.Responses.ReadAllAsync())
-        {
-            count++;
-        }
-
-        Assert.Equal(0, count);
-    }
-
-    [Fact(DisplayName = "RFC-9110-csm-008: Double DisposeAsync is safe", Timeout = 10000)]
-    public async Task DoubleDisposeAsync_IsSafe()
-    {
-        var manager = new TurboClientStreamManager(DefaultOptions, DefaultRequestOptions, Sys);
-
-        await manager.DisposeAsync();
-        await manager.DisposeAsync(); // Should not throw
-    }
-
     // ── ResponseWriter ───────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "RFC-9110-csm-009: ResponseWriter allows test injection of synthetic responses", Timeout = 5000)]
+    [Fact(DisplayName = "RFC-9110-csm-009: ResponseWriter allows test injection of synthetic responses",
+        Timeout = 5000)]
     public async Task ResponseWriter_AllowsSyntheticResponseInjection()
     {
         var manager = new TurboClientStreamManager(DefaultOptions, DefaultRequestOptions, Sys);
@@ -164,7 +123,8 @@ public sealed class ClientStreamManagerLifecycleTests : TestKit
 
     // ── TurboHttpClient integration ─────────────────────────────────────────
 
-    [Fact(DisplayName = "RFC-9110-csm-011: TurboHttpClient creates actors on construction and exposes channels", Timeout = 5000)]
+    [Fact(DisplayName = "RFC-9110-csm-011: TurboHttpClient creates actors on construction and exposes channels",
+        Timeout = 5000)]
     public void TurboHttpClient_CreatesActors_OnConstruction()
     {
         var client = new TurboHttpClient(DefaultOptions, Sys);
@@ -176,7 +136,8 @@ public sealed class ClientStreamManagerLifecycleTests : TestKit
         client.Dispose();
     }
 
-    [Fact(DisplayName = "RFC-9110-csm-012: TurboHttpClient SendAsync writes request into actor channel", Timeout = 5000)]
+    [Fact(DisplayName = "RFC-9110-csm-012: TurboHttpClient SendAsync writes request into actor channel",
+        Timeout = 5000)]
     public async Task TurboHttpClient_SendAsync_WritesRequestIntoActorChannel()
     {
         var client = new TurboHttpClient(DefaultOptions, Sys);

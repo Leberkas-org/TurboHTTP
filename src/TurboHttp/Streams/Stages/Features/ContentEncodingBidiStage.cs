@@ -5,7 +5,6 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol;
-using TurboHttp.Client;
 using TurboHttp.Protocol.RFC9110;
 
 namespace TurboHttp.Streams.Stages.Features;
@@ -30,7 +29,6 @@ internal sealed class ContentEncodingBidiStage
 {
     private readonly bool _automaticDecompression;
     private readonly RequestCompressionPolicy? _compressionPolicy;
-    private readonly IPendingWorkTracker? _pendingWorkTracker;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("ContentEncoding.In.Request");
     private readonly Outlet<HttpRequestMessage> _outRequest = new("ContentEncoding.Out.Request");
@@ -41,12 +39,10 @@ internal sealed class ContentEncodingBidiStage
 
     public ContentEncodingBidiStage(
         bool automaticDecompression = true,
-        RequestCompressionPolicy? compressionPolicy = null,
-        IPendingWorkTracker? pendingWorkTracker = null)
+        RequestCompressionPolicy? compressionPolicy = null)
     {
         _automaticDecompression = automaticDecompression;
         _compressionPolicy = compressionPolicy;
-        _pendingWorkTracker = pendingWorkTracker;
         Shape = new BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>(
             _inRequest, _outRequest, _inResponse, _outResponse);
     }

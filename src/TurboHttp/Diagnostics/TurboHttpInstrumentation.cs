@@ -13,9 +13,6 @@ namespace TurboHttp.Diagnostics;
 /// </summary>
 public static class TurboHttpInstrumentation
 {
-    /// <summary>
-    /// The ActivitySource name. Use this value with <c>AddSource</c> to subscribe.
-    /// </summary>
     public const string SourceName = "TurboHttp";
 
     /// <summary>
@@ -55,7 +52,7 @@ public static class TurboHttpInstrumentation
         var method = request.Method.Method;
 
         var activity = Source.StartActivity(
-            "TurboHttp.Request",
+            $"{SourceName}.Request",
             ActivityKind.Client);
 
         if (activity is null)
@@ -86,7 +83,7 @@ public static class TurboHttpInstrumentation
         }
 
         var activity = Source.StartActivity(
-            "TurboHttp.Connect",
+            $"{SourceName}.Connect",
             ActivityKind.Client);
 
         if (activity is null)
@@ -111,7 +108,7 @@ public static class TurboHttpInstrumentation
         }
 
         var activity = Source.StartActivity(
-            "TurboHttp.Redirect",
+            $"{SourceName}.Redirect",
             ActivityKind.Client);
 
         if (activity is null)
@@ -136,7 +133,7 @@ public static class TurboHttpInstrumentation
         }
 
         var activity = Source.StartActivity(
-            "TurboHttp.Retry",
+            $"{SourceName}.Retry",
             ActivityKind.Client);
 
         if (activity is null)
@@ -160,7 +157,7 @@ public static class TurboHttpInstrumentation
         }
 
         var activity = Source.StartActivity(
-            "TurboHttp.CacheLookup",
+            $"{SourceName}.CacheLookup",
             ActivityKind.Client);
 
         if (activity is null)

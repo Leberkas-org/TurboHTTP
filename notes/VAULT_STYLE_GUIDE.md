@@ -380,7 +380,67 @@ Explanation of the pattern.
 
 ---
 
-## 8. CSS Custom Classes
+## 8. RFC Index Template
+
+Every RFC tracked in the vault **MUST** have an index file at `RFC/RFCXXXX/RFCXXXX.md` following the standard template (`Templates/RFC-Index.md`). This ensures consistent navigation, compliance tracking, and cross-referencing across all protocol specifications.
+
+### Required Frontmatter
+
+```yaml
+---
+title: "RFC XXXX — Protocol Name"
+rfc_number: XXXX
+description: "One-line description of RFC scope and TurboHttp relevance"
+tags: [rfc, rfcXXXX, protocol-category]
+---
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `title` | ✅ | Format: `"RFC XXXX — Protocol Name"` |
+| `rfc_number` | ✅ | Integer RFC number (e.g., `1945`, `9113`) |
+| `description` | ✅ | One-line summary of RFC scope |
+| `tags` | ✅ | Must include `rfc` and `rfcXXXX`; add protocol category tags |
+
+### Required Sections (in order)
+
+1. **Quick Reference** — Table with Compliance Score, Implementation Status, Implementation Path, Unit/Stream Test Files, Key Gaps
+2. **Core Concepts** — Bullet list linking to key section files with brief descriptions
+3. **Implementation Notes** — Sub-tables for Encoder, Decoder, Stages, and Tests with file paths
+4. **Sections** — Complete table of all section files with `#`, Section name, WikiLink, and Status badge
+5. **Dependencies** — Table showing RFC-to-RFC relationships (Depends on / Used by)
+6. **See Also** — Links to RFC Status Matrix and Known Gaps
+7. **Full RFC Document** (optional) — Embedded raw RFC text (preserved from original import)
+
+### Status Badges for Sections
+
+| Badge | Meaning |
+|-------|---------|
+| ✅ | Section complete with meaningful content |
+| 🔶 | Section exists but sparse or partially filled |
+| 🟡 | Section is a stub or placeholder |
+
+### Reference Implementation
+
+See `RFC/RFC1945/RFC1945.md` for a fully populated example of the RFC Index template applied to HTTP/1.0.
+
+### WikiLink Patterns in RFC Index Files
+
+```markdown
+# Section links (relative to the RFC index file)
+[[sections/NN_topic_name|Display Name]]
+
+# Cross-RFC links
+[[../RFCXXXX/RFCXXXX|RFC XXXX — Protocol Name]]
+
+# Vault-level links
+[[../00-RFC_STATUS_MATRIX|RFC Status Matrix]]
+[[../../Architecture/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps]]
+```
+
+---
+
+## 9. CSS Custom Classes
 
 Use Obsidian CSS snippets for visual consistency:
 
@@ -412,7 +472,7 @@ Status: ✅ Complete | 🔶 Partial | ❌ Missing
 
 ---
 
-## 9. File Organization
+## 10. File Organization
 
 ```
 notes/
@@ -445,7 +505,7 @@ notes/
 
 ---
 
-## 10. Quality Checklist Before Publishing
+## 11. Quality Checklist Before Publishing
 
 Before considering a note "complete":
 
@@ -464,7 +524,7 @@ Before considering a note "complete":
 
 ---
 
-## 11. Updates & Maintenance
+## 12. Updates & Maintenance
 
 ### When to Update Frontmatter
 
@@ -490,7 +550,7 @@ Run periodically:
 
 ---
 
-## 12. Examples
+## 13. Examples
 
 ### ✅ Good Note Structure
 

@@ -5,7 +5,6 @@ using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Client;
 using TurboHttp.Diagnostics;
 using TurboHttp.Protocol.RFC9110;
 
@@ -31,7 +30,6 @@ internal sealed class RetryBidiStage
     : GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly RetryPolicy? _policy;
-    private readonly IPendingWorkTracker? _pendingWorkTracker;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("Retry.In.Request");
     private readonly Outlet<HttpRequestMessage> _outRequest = new("Retry.Out.Request");
@@ -50,11 +48,9 @@ internal sealed class RetryBidiStage
     /// Creates a new <see cref="RetryBidiStage"/> with the given retry policy.
     /// </summary>
     /// <param name="policy">Retry policy. When null, the stage is a pass-through (no retries).</param>
-    /// <param name="pendingWorkTracker">Optional tracker to signal pending re-injections to the Owner actor.</param>
-    public RetryBidiStage(RetryPolicy? policy = null, IPendingWorkTracker? pendingWorkTracker = null)
+    public RetryBidiStage(RetryPolicy? policy = null)
     {
         _policy = policy;
-        _pendingWorkTracker = pendingWorkTracker;
         Shape = new BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>(
             _inRequest, _outRequest, _inResponse, _outResponse);
     }
@@ -189,12 +185,6 @@ internal sealed class RetryBidiStage
 
                     if (!decision.ShouldRetry)
                     {
-                        // If this was a retried request, signal that the pending work is done.
-                        if (attemptCount > 1)
-                        {
-                            _stage._pendingWorkTracker?.DecrementPending();
-                        }
-
                         _responseDemand = false;
                         Push(stage._outResponse, response);
                         TryCompleteIfDone();
@@ -223,15 +213,6 @@ internal sealed class RetryBidiStage
                         attemptCount + 1);
 
                     // Retryable — dispose the response and enqueue the original request for retry.
-                    // If this was already a retry (attemptCount > 1), the previous increment is
-                    // still outstanding — decrement it before re-incrementing for the new attempt.
-                    if (attemptCount > 1)
-                    {
-                        _stage._pendingWorkTracker?.DecrementPending();
-                    }
-
-                    _stage._pendingWorkTracker?.IncrementPending();
-
                     response.Dispose();
                     original.Options.Set(AttemptCountKey, attemptCount + 1);
 

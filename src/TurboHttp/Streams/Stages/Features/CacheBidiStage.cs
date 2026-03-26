@@ -7,7 +7,6 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Diagnostics;
-using TurboHttp.Client;
 using TurboHttp.Protocol.RFC9111;
 
 namespace TurboHttp.Streams.Stages.Features;
@@ -56,7 +55,6 @@ internal sealed class CacheBidiStage
 
     private readonly CacheStore? _store;
     private readonly CachePolicy _policy;
-    private readonly IPendingWorkTracker? _pendingWorkTracker;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("Cache.In.Request");
     private readonly Outlet<HttpRequestMessage> _outRequest = new("Cache.Out.Request");
@@ -65,11 +63,10 @@ internal sealed class CacheBidiStage
 
     public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
 
-    public CacheBidiStage(CacheStore? store, CachePolicy? policy = null, IPendingWorkTracker? pendingWorkTracker = null)
+    public CacheBidiStage(CacheStore? store, CachePolicy? policy = null)
     {
         _store = store;
         _policy = policy ?? CachePolicy.Default;
-        _pendingWorkTracker = pendingWorkTracker;
         Shape = new BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>(
             _inRequest, _outRequest, _inResponse, _outResponse);
     }
@@ -245,7 +242,6 @@ internal sealed class CacheBidiStage
                 if (isRevalidation)
                 {
                     outgoing.Options.Set(RevalidationKey, true);
-                    _stage._pendingWorkTracker?.IncrementPending();
                 }
 
                 Push(_stage._outRequest, outgoing);
@@ -265,11 +261,7 @@ internal sealed class CacheBidiStage
                 return;
             }
 
-            // Decrement pending work for revalidation responses
-            if (response.RequestMessage.Options.TryGetValue(RevalidationKey, out var isReval) && isReval)
-            {
-                _stage._pendingWorkTracker?.DecrementPending();
-            }
+            // Revalidation responses are processed without pending work tracking
 
             var (processed, needsAsyncRead) = ProcessResponse(response);
 

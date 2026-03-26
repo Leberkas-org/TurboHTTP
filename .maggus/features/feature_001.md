@@ -1,494 +1,416 @@
-<!-- maggus-id: 20260326-120000-feature-028 -->
-
-# Feature 028: Evergreen Pipeline with KillSwitch-Shutdown
+<!-- maggus-id: 20260326-160046-feature-026 -->
+# Feature 026: RFC Vault Cleanup — Obsidian Formatting & Filename Improvements (Extended)
 
 ## Introduction
 
-Replace the broken polling-based completion deferral in `GroupByHostKeyStage` with an evergreen pipeline architecture where the Akka.Streams graph stays alive for the entire client lifetime and terminates exclusively via a `SharedKillSwitch` on `Dispose()`.
+The 10 RFC index notes under `notes/RFC/` were created over multiple sessions with slightly
+different conventions. Problems include: missing frontmatter fields, inconsistent wikilink syntax
+(`[[sections/...]]` vs `[[RFCXXXX/sections/...]]`, `\|` vs `|` separators), embedded raw RFC
+text blocks (500–2000 lines per file) that make navigation painful, plain-text `.txt` analysis
+files that don't render as Markdown, a duplicate file, and RFC section links that have never been
+verified to actually resolve to existing files.
 
-This eliminates the HTTP/1.0 re-injection deadlock (Feature 027 root cause) by removing the timing window between `ChannelSource` completion and feature-stage re-injection entirely.
+Additionally, all 393 RFC section files across the 10 RFC folders use a hybrid format with
+structural issues: H2 headings instead of H1, plain-text RFC-style subsection headings that should
+be Markdown headings, and inconsistent normative keyword formatting (MUST/SHOULD/MAY/SHALL).
+
+This feature brings every RFC index note AND every section file up to the current `VAULT_STYLE_GUIDE.md`
+standard so the vault is clean, consistent, and fully navigable in Obsidian.
 
 ### Architecture Context
 
-- **Components involved**: `ClientStreamInstanceActor`, `ClientStreamOwnerActor`, `GroupByHostKeyStage`, `PendingWorkTracker`, `TurboClientStreamManager`, `Engine`, feature BidiStages
-- **Root cause**: `GroupByHostKeyStage.TryFinish()` uses polling with `Task.Delay` (5 retries x 10ms = 50ms max) to wait for pending work, then force-completes — too short for real HTTP round-trips
-- **Conceptual flaws fixed**:
-  1. Polling hack in `TryFinish()` replaced by KillSwitch-coordinated shutdown
-  2. Double bookkeeping (`Owner._pending` + `PendingWorkTracker._count`) eliminated — single source of truth
-  3. `ContentEncodingBidiStage` receives tracker but never uses it — removed
-- **Breaking changes**: None — internal refactor only
-- **Net result**: ~100 fewer lines of code, cleaner architecture, zero deadlock race window
+- **No code changes** — documentation/knowledge-vault only
+- **Affected directories:** `notes/RFC/` (both index files and all 393 section files), `notes/Templates/`
+- **Style authority:** `notes/VAULT_STYLE_GUIDE.md`
+- **No VISION.md / ARCHITECTURE.md** — plan based on vault conventions
+- **Scope expanded:** Originally index files only; now includes all 393 section files across 10 RFC folders
 
-### Analysis Summary (Sections 1-6)
-
-**What was implemented (Feature 001 / poc2):**
-- TASK-001-001 to 009: Actor protocol, Owner/Instance actors, PendingWork tracking, integration, tests, public API — all DONE
-- TASK-001-010/011: Stress tests and docs — OPEN
-
-**Feature 027 (Deadlock Diagnosis):**
-- Root cause confirmed: `GroupByHostKeyStage` completes substreams prematurely when `ChannelSource` signals completion while feature BidiStages still have re-injections in flight
-- Hypothesis H1 (Substream Death) CONFIRMED; H2-H4 rejected
-- 10x batch validation (TASK-027-004) never executed
-
-**Conceptual Weaknesses Identified:**
-1. **Polling instead of backpressure** (CRITICAL) — 50ms max wait, then force-complete destroys what PendingWork signals protect
-2. **Double bookkeeping** — `Owner._pending` and `PendingWorkTracker._count` can diverge
-3. **Actor overhead for a stream problem** — The actual fix site (`TryFinish`) is ~30 lines; the actor infrastructure is 400+ lines
-4. **PendingWorkTracker sends actor messages from stage callbacks** — couples stream layer to actor layer
-5. **Feature 002 irrelevant** — HTTP/2 priorities deprecated in RFC 9113 Section 5.3.2
-6. **ContentEncodingBidiStage bug** — receives tracker parameter but never calls Increment/Decrement
+---
 
 ## Goals
 
-- **Eliminate the deadlock race** — Pipeline only terminates via explicit `KillSwitch.Shutdown()`, never via `ChannelSource` completion propagation
-- **Single source of truth** — Remove `Owner._pending`, use only `PendingWorkTracker` as the authoritative counter
-- **Simplify GroupByHostKeyStage** — Remove polling/timer code, tracker dependency; TryFinish becomes trivial queue-drain
-- **Add OnDrained callback** — PendingWorkTracker fires a callback when count transitions to zero, enabling coordinated shutdown
-- **Clean up dead code** — Remove unused tracker from ContentEncodingBidiStage
-- **Validate** — 10x batch run integration tests with zero deadlocks
+- All 10 RFC index files have complete, consistent frontmatter (including `source_url`)
+- Embedded raw RFC text blocks removed; replaced with compact external link callouts
+- Wikilinks standardized to `[[RFCXXXX/sections/NN_topic|Display]]` format throughout (indices)
+- `\|` separator replaced with `|` everywhere (except inside Markdown tables where `\|` is required for escaping)
+- Every section link in every RFC index is verified to point to a file that actually exists in `sections/`
+- BOM characters eliminated
+- `.txt` analysis files converted to proper Markdown
+- Duplicate `RFC9114_SUMMARY.txt` deleted
+- Template updated so future RFC notes start correct
+- All index files under 200 lines after cleanup
+- **NEW:** All 393 RFC section files converted from hybrid format to proper Markdown:
+  - H2 headings converted to H1, duplicate title repeats removed
+  - Plain-text RFC-style subsection headings (e.g., `2.1.  Topic`) converted to Markdown headings
+  - MUST/SHOULD/MAY/SHALL/REQUIRED normative keywords wrapped in callouts for clarity
+- All section files comply with `VAULT_STYLE_GUIDE.md` formatting standards
 
-## Concept: How the Evergreen Pipeline Works
-
-### Core Principle
-
-**The stream lives as long as the client.** No premature completion, no polling, no race.
-
-```
-Current (broken):
-  ChannelSource completes -> Completion propagates -> GroupByHostKey TryFinish()
-  -> RACE with Feature-Stage Re-Injection -> Deadlock
-
-New (clean):
-  ChannelSource delivers Requests -> Pipeline processes -> waits for next Request
-  -> Dispose() -> KillSwitch.Shutdown() -> clean terminate
-```
-
-The pipeline terminates EXCLUSIVELY through a `SharedKillSwitch` controlled by the Owner actor. `ChannelSource` completion is NOT used as a shutdown signal. This eliminates the timing window between completion and re-injection — the race no longer exists.
-
-### Architecture Overview
-
-```
-                    +-------------------------------------------------------------+
-                    |              Evergreen Pipeline                              |
-                    |                                                              |
-  Channel ------>  ChannelSource --> [KillSwitch] --> RequestEnricher              |
-                    |                     ^              |                         |
-                    |                     |              v                         |
-                    |               Owner Actor    BidiStack (Feature-Stages)      |
-                    |               holds KillSwitch     |                         |
-                    |                     |              v                         |
-                    |                     |        ProtocolCore                    |
-                    |                     |         (GroupByHostKey                |
-                    |                     |          -> Connection                 |
-                    |                     |          -> MergeSubstreams)           |
-                    |                     |              |                         |
-                    |                     |              v                         |
-  Channel <------  ResponseWriter <---- Sink.ForEach                              |
-                    |                                                              |
-                    +-------------------------------------------------------------+
-
-  Dispose() --> Owner.Shutdown --> wait for PendingWork==0 --> KillSwitch.Shutdown()
-                                                                      |
-                                                        Pipeline terminates cleanly
-```
-
-### Lifecycle: Normal Operation
-
-```
-1. User writes Request to Channel
-2. ChannelSource reads Request, pushes into Pipeline
-3. Request flows through BidiStack -> ProtocolCore -> TCP -> Response
-4. Feature-Stage decides: Retry/Redirect needed?
-   YES -> IncrementPending(), push new Request -> Pipeline processes it
-        -> Response arrives -> DecrementPending(), push Response downstream
-   NO  -> push Response directly downstream
-5. Sink.ForEach writes Response to ResponseWriter Channel
-6. Pipeline waits for next Request (idle but ALIVE)
-```
-
-No completion signal. The pipeline is idle but active — just like a connection pool.
-
-### Lifecycle: Shutdown (Dispose)
-
-```
-1. TurboClientStreamManager.Dispose() / DisposeAsync()
-2. Requests.TryComplete()              -> prevents new Requests into Channel
-   (ChannelSource completion is ABSORBED by KillSwitch — does NOT propagate)
-3. Owner.Tell(Shutdown)
-4. Owner checks: tracker.IsPending?
-   YES -> register OnDrained callback, start 5s safety timeout
-   NO  -> proceed immediately to step 5
-5. Owner calls killSwitch.Shutdown()   -> clean pipeline termination
-   - KillSwitch cancels upstream (ChannelSource stops)
-   - KillSwitch completes downstream (Pipeline drains)
-   - GroupByHostKeyStage.onUpstreamFinish -> TryFinish() (trivial, no PendingWork check)
-   - All substreams complete -> MergeSubstreams completes -> Sink completes
-6. Instance actor receives StreamSinkCompleted -> PostStop -> Cleanup
-7. Owner receives Terminated -> Self-Stop
-8. ResponseWriter.TryComplete()        -> downstream consumers terminate
-```
-
-### Why This Works — Proof by Elimination
-
-The deadlock race was:
-
-```
-Current:
-  ChannelSource.Complete -> propagates -> GroupByHostKey.onUpstreamFinish -> TryFinish()
-  SIMULTANEOUSLY: Feature-Stage wants to re-inject -> IsPending not yet set -> DEADLOCK
-```
-
-With KillSwitch:
-
-```
-New:
-  ChannelSource.Complete -> KillSwitch absorbs completion -> NOTHING HAPPENS
-  Feature-Stage re-injects -> Pipeline is alive -> Request goes through -> Response arrives
-  Later: Dispose() -> Owner waits for IsPending==false -> KillSwitch.Shutdown()
-  -> Pipeline drains cleanly -> no race possible because PendingWork is already 0
-```
-
-**The race no longer exists** because completion only fires AFTER all re-injections are done.
-
-### Edge Cases
-
-| Case | Behaviour |
-|------|-----------|
-| Feature-Stage re-injects while shutdown waits | Owner waits — OnDrained fires only when counter==0 |
-| PendingWork counter has bug, never reaches 0 | Safety timeout after 5s -> Force KillSwitch.Shutdown() + Warning |
-| Instance crashes while pipeline is running | Owner detects Terminated -> tracker.Reset() -> spawns new Instance |
-| Dispose() with no in-flight requests | tracker.IsPending==false -> immediately KillSwitch -> immediately done |
-| Concurrent Feature-Stage Increment/Decrement | Interlocked operations are thread-safe (as before) |
-| KillSwitch.Shutdown() and ChannelSource.Complete simultaneously | KillSwitch absorbs both -> no problem |
+---
 
 ## Tasks
 
-### TASK-028-001: Remove Unused Tracker from ContentEncodingBidiStage
+### TASK-026-001: Update RFC-Index Template
+**Description:** As a developer, I want the canonical RFC-Index template updated with `source_url`
+as a required field and the correct wikilink format so all future RFC notes are created correctly.
 
-**Description:** Remove the `IPendingWorkTracker` parameter and field from `ContentEncodingBidiStage` — it receives the tracker but never calls `IncrementPending()`/`DecrementPending()`. Also update `Engine.cs` to stop passing the tracker.
-
-**Token Estimate:** ~5k tokens
+**Token Estimate:** ~10k tokens
 **Predecessors:** none
-**Successors:** none
-**Parallel:** yes — independent cleanup
+**Successors:** TASK-026-002, TASK-026-003
+**Parallel:** yes — can run alongside TASK-026-007
 
 **Acceptance Criteria:**
-- [ ] Remove `IPendingWorkTracker` constructor parameter from `ContentEncodingBidiStage`
-- [ ] Remove `_pendingWorkTracker` field from `ContentEncodingBidiStage`
-- [ ] Update `Engine.cs` to not pass tracker to `ContentEncodingBidiStage`
-- [ ] `dotnet build` succeeds with zero errors
-- [ ] All existing tests pass
-
-**Files:**
-- `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs`
-- `src/TurboHttp/Streams/Engine.cs`
+- [ ] `notes/Templates/RFC-Index.md` frontmatter includes `source_url: https://www.rfc-editor.org/rfc/rfcXXXX`
+- [ ] `## Full RFC Document` section replaced with `> 📌 **External Source**: [RFC XXXX — Title](url)` callout pattern
+- [ ] Wikilink examples in template use `[[RFCXXXX/sections/NN_topic|Display]]` with `|` separator
+- [ ] File stays under 80 lines
 
 ---
 
-### TASK-028-002: Add OnDrained Callback to IPendingWorkTracker
+### TASK-026-002: Remove Embedded Raw RFC Text — Older RFCs (RFC1945, RFC6265, RFC7541, RFC9000)
+**Description:** As a vault user, I want the raw RFC text blocks removed from the four older index
+files so they load instantly in Obsidian without scrolling past thousands of lines.
 
-**Description:** Extend `IPendingWorkTracker` with a `void OnDrained(Action callback)` method that fires when the pending count transitions from >0 to 0. This replaces the polling approach with an event-driven coordination mechanism for shutdown.
+**Token Estimate:** ~30k tokens
+**Predecessors:** TASK-026-001
+**Successors:** TASK-026-004, TASK-026-005
+**Parallel:** yes — can run alongside TASK-026-003
+
+**Acceptance Criteria:**
+- [ ] `RFC1945.md` — Keep lines 1–122 (frontmatter, Quick Reference, Core Concepts, Sections table, etc.); replace everything from line 123 onwards (the `## Full RFC Document` code block and trailing sections) with:
+  ```markdown
+  ## Full RFC Document
+
+  > 📌 **External Source**: [RFC 1945 — HTTP/1.0](https://www.rfc-editor.org/rfc/rfc1945)
+  >
+  > The complete RFC text is available online. See the `sections/` subfolder for individual section references.
+  ```
+- [ ] `RFC6265.md` — Keep lines 1–96; replace lines 97+ with the same external link callout pattern
+- [ ] `RFC7541.md` — Keep lines 1–86; replace lines 87+ with the same external link callout pattern
+- [ ] `RFC9000.md` — Keep lines 1–165; replace lines 166+ with the same external link callout pattern
+- [ ] Each file is now under 150 lines
+- [ ] No raw RFC text remains in any of the four files
+- [ ] No `## How to Search This RFC` section (if present, it is part of the old embedded text and should be removed)
+
+---
+
+### TASK-026-003: Remove Embedded Raw RFC Text — Newer RFCs (RFC9110–RFC9204)
+**Description:** As a vault user, I want the raw RFC text blocks removed from the six newer index
+files for the same navigability reason.
+
+**Token Estimate:** ~30k tokens
+**Predecessors:** TASK-026-001
+**Successors:** TASK-026-004, TASK-026-005
+**Parallel:** yes — can run alongside TASK-026-002
+
+**Acceptance Criteria:**
+- [ ] `RFC9110.md`, `RFC9111.md`, `RFC9112.md`, `RFC9113.md`, `RFC9114.md`, `RFC9204.md` — each raw text block replaced with external link callout
+- [ ] Each file is now under 200 lines
+- [ ] BOM character `﻿` (Unicode FEFF) no longer present in any file (it was only in the raw text blocks)
+
+---
+
+### TASK-026-004: Standardize Frontmatter — Older RFCs
+**Description:** As a vault user, I want `source_url` added to the four older RFC files whose
+frontmatter predates that field being required.
+
+**Token Estimate:** ~15k tokens
+**Predecessors:** TASK-026-002
+**Successors:** TASK-026-008
+**Parallel:** yes — can run alongside TASK-026-005
+
+**Acceptance Criteria:**
+- [ ] `RFC1945.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc1945` added
+- [ ] `RFC6265.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc6265` added
+- [ ] `RFC7541.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc7541` added
+- [ ] `RFC9000.md` frontmatter: `source_url: https://www.rfc-editor.org/rfc/rfc9000` added
+- [ ] All four have an `aliases` field (empty array `[]` if unused)
+
+---
+
+### TASK-026-005: Standardize Wikilinks — All 10 RFC Index Files
+**Description:** As a vault user, I want all section wikilinks to use the vault-root-relative
+format with `|` separator consistently, so that Obsidian resolves them correctly from any view.
+
+**Token Estimate:** ~40k tokens
+**Predecessors:** TASK-026-002, TASK-026-003
+**Successors:** TASK-026-006
+**Parallel:** no — all 10 files, must be done after raw text removal to avoid touching 2000-line blocks
+
+**Acceptance Criteria:**
+- [ ] Older RFCs (1945, 6265, 7541, 9000): all `[[sections/NN_topic|...]]` → `[[RFCXXXX/sections/NN_topic|...]]`
+- [ ] All RFCs: wikilinks outside tables: `\|` → `|` separator (wikilinks inside Markdown tables keep `\|` for escaping)
+- [ ] Cross-RFC links use vault-root-relative form: `[[RFC/RFCXXXX/RFCXXXX|RFC XXXX]]`
+- [ ] Core Concepts and Sections table use consistent wikilink format (no mixing of styles within a file)
+- [ ] No bare `[[sections/...]]` links remain in any file
+
+---
+
+### TASK-026-006: Verify Section Links Resolve to Existing Files
+**Description:** As a vault user, I want every section wikilink in every RFC index to point to a
+file that actually exists in the corresponding `sections/` folder, so that clicking a link in
+Obsidian opens a note rather than creating a phantom.
+
+**Token Estimate:** ~50k tokens
+**Predecessors:** TASK-026-005
+**Successors:** TASK-026-008
+**Parallel:** no — must run after wikilinks are standardized
+
+**Acceptance Criteria:**
+- [ ] For each of the 10 RFC index files, enumerate files in its `sections/` subdirectory
+- [ ] For each wikilink in the Sections table, confirm the linked `.md` file exists
+- [ ] Any broken link is either: fixed (if file exists under slightly different name), or marked with `⚠️` (if section note was never created)
+- [ ] A `## Link Verification` section added to each RFC index (can be a collapsed callout) documenting the check
+- [ ] No unresolved phantom wikilinks remain without a `⚠️` marker
+
+---
+
+### TASK-026-007: Fix Individual Data Errors
+**Description:** As a vault user, I want specific factual errors corrected so that the data I
+read is accurate.
 
 **Token Estimate:** ~15k tokens
 **Predecessors:** none
-**Successors:** TASK-028-004
-**Parallel:** yes — can run alongside TASK-028-001
+**Successors:** TASK-026-008
+**Parallel:** yes — independent of all other index tasks
 
 **Acceptance Criteria:**
-- [ ] Add `void OnDrained(Action callback)` to `IPendingWorkTracker` interface
-- [ ] Implement in `PendingWorkTracker`: store callback, fire on count transition to 0
-- [ ] Handle edge case: if counter is already 0 when OnDrained is called, fire immediately
-- [ ] Fire callback in `DecrementPending()` when `newValue == 0`
-- [ ] Fire callback in `Reset()` when `previous > 0`
-- [ ] Use `Interlocked.Exchange` for one-shot callback (fire once, then clear)
-- [ ] Unit tests: callback fires on >0 to 0 transition
-- [ ] Unit tests: callback fires immediately if already at 0
-- [ ] Unit tests: callback is one-shot (does not fire again on subsequent transitions)
-- [ ] `dotnet build` + `dotnet test` green
-
-**Files:**
-- `src/TurboHttp/Client/ActorProtocol.cs` (interface)
-- `src/TurboHttp/Client/PendingWorkTracker.cs` (implementation)
-- `src/TurboHttp.Tests/` (new test file for OnDrained)
-
-**Code Design:**
-
-```csharp
-// IPendingWorkTracker addition:
-void OnDrained(Action callback);
-
-// PendingWorkTracker implementation:
-private Action? _onDrained;
-
-public void OnDrained(Action callback)
-{
-    Volatile.Write(ref _onDrained, callback);
-    if (!IsPending)
-    {
-        var cb = Interlocked.Exchange(ref _onDrained, null);
-        cb?.Invoke();
-    }
-}
-
-public void DecrementPending()
-{
-    var newValue = Interlocked.Decrement(ref _count);
-    if (newValue < 0) { /* self-heal */ return; }
-    _logger?.Debug("PendingWorkTracker: decremented to {0}", newValue);
-
-    if (newValue == 0)
-    {
-        var cb = Interlocked.Exchange(ref _onDrained, null);
-        cb?.Invoke();
-    }
-}
-```
+- [ ] `RFC9204.md` H1 reads `# RFC 9204 — QPACK: Field Compression for HTTP/3` (was abbreviated)
+- [ ] `RFC9204.md` Core Concepts: static table entry count verified against RFC 9204 Appendix A and corrected
+- [ ] `RFC9111.md` Quick Reference compliance score updated to `78/100` (aligns with `00-RFC_STATUS_MATRIX.md`)
+- [ ] `RFC9000.md` Quick Reference test path clarified: `TurboHttp.Tests/RFC9114/ (shared with HTTP/3)`
+- [ ] `rfc_metadata.json` RFC9111 `compliance_score` updated to `78` to match STATUS_MATRIX
 
 ---
 
-### TASK-028-003: Add SharedKillSwitch to Pipeline Materialization
-
-**Description:** Insert an `Akka.Streams.KillSwitches.Shared` flow between `ChannelSource` and the engine flow in `ClientStreamInstanceActor`. The KillSwitch absorbs `ChannelSource` completion (preventing premature pipeline shutdown) and provides the explicit shutdown mechanism.
-
-**Token Estimate:** ~20k tokens
-**Predecessors:** none
-**Successors:** TASK-028-004
-**Parallel:** yes — can run alongside TASK-028-001 and TASK-028-002
-
-**Acceptance Criteria:**
-- [ ] Add `private SharedKillSwitch? _killSwitch` field to `ClientStreamInstanceActor`
-- [ ] Create `KillSwitches.Shared(...)` in `HandleInitializeStream` before materialization
-- [ ] Insert `.Via(_killSwitch.Flow<HttpRequestMessage>())` between `ChannelSource.FromReader()` and `.Via(engineFlow)`
-- [ ] Modify `HandleRequestShutdown()`: fire `_killSwitch?.Shutdown()` instead of `Context.Stop(Self)`
-- [ ] Modify `HandleStreamSinkCompleted()`: on success, call `Context.Stop(Self)` (after pipeline drain)
-- [ ] `PostStop` still disposes materializer and pool (cleanup for error cases)
-- [ ] `dotnet build` succeeds
-- [ ] Existing tests pass (pipeline now stays alive longer — tests may need timeout adjustments)
-
-**Files:**
-- `src/TurboHttp/Client/ClientStreamInstance.cs`
-
-**Code Design:**
-
-```csharp
-private SharedKillSwitch? _killSwitch;
-
-private void HandleInitializeStream(InstanceMsg.InitializeStream init)
-{
-    // ... pool, engine as before ...
-
-    _killSwitch = KillSwitches.Shared($"client-{Self.Path.Name}");
-
-    var completionTask = ChannelSource.FromReader(init.RequestReader)
-        .Via(_killSwitch.Flow<HttpRequestMessage>())   // NEW
-        .Via(engineFlow)
-        .RunWith(
-            Sink.ForEach<HttpResponseMessage>(msg => init.ResponseWriter.TryWrite(msg)),
-            _materializer);
-
-    MonitorSinkCompletion(completionTask);
-    // ...
-}
-
-private void HandleRequestShutdown()
-{
-    _log.Debug("Shutdown requested, firing KillSwitch");
-    _killSwitch?.Shutdown();
-    // Pipeline drains -> StreamSinkCompleted arrives -> then Context.Stop(Self)
-}
-
-private void HandleStreamSinkCompleted(StreamSinkCompleted completed)
-{
-    if (completed.Error is not null)
-    {
-        Context.Parent.Tell(new InstanceMsg.StreamFailed(completed.Error));
-    }
-    else
-    {
-        _log.Debug("Pipeline drained, stopping instance");
-        Context.Stop(Self);
-    }
-}
-```
-
----
-
-### TASK-028-004: Simplify Owner — Remove Double Bookkeeping, Add OnDrained Shutdown
-
-**Description:** Remove the redundant `_pending` counter from `ClientStreamOwnerActor`. Shutdown decisions use `tracker.IsPending` directly (single source of truth). Shutdown coordination uses the new `OnDrained` callback instead of relying on `PendingWorkSignal` messages.
+### TASK-026-008: Convert Analysis .txt Files to Markdown + Delete Duplicate
+**Description:** As a vault user, I want the plain-text analysis files converted to proper Markdown
+so they render in Obsidian, and the duplicate RFC9114 summary deleted.
 
 **Token Estimate:** ~25k tokens
-**Predecessors:** TASK-028-002, TASK-028-003
-**Successors:** TASK-028-005
-**Parallel:** no — depends on OnDrained and KillSwitch being in place
-
-**Acceptance Criteria:**
-- [ ] Remove `_pending` field from `ClientStreamOwnerActor`
-- [ ] `HandlePendingWorkSignal()` — logging only, no counter update
-- [ ] `HandleShutdown()` — use `tracker.IsPending` directly; if pending, register `OnDrained` callback via `GetAsyncCallback`
-- [ ] OnDrained callback triggers `RequestInstanceShutdown()` (which sends `RequestShutdown` to instance)
-- [ ] Safety timeout (5s) still fires `RequestInstanceShutdown()` as force-shutdown
-- [ ] Remove deferred idle request logic tied to `_pending` (replaced by KillSwitch)
-- [ ] `dotnet build` + `dotnet test` green
-- [ ] Existing Owner lifecycle tests updated/pass
-
-**Files:**
-- `src/TurboHttp/Client/ClientStreamOwner.cs`
-
-**Code Design:**
-
-```csharp
-private void HandleShutdown()
-{
-    if (_shuttingDown) return;
-    _shuttingDown = true;
-
-    var tracker = _createRequest?.Pipeline.PendingWorkTracker;
-
-    if (tracker is null || !tracker.IsPending)
-    {
-        RequestInstanceShutdown();
-    }
-    else
-    {
-        _log.Info("Waiting for pending work to drain before shutdown");
-        var drainedCallback = GetAsyncCallback<NotUsed>(_ => RequestInstanceShutdown());
-        tracker.OnDrained(() => drainedCallback(NotUsed.Instance));
-        Timers.StartSingleTimer(ShutdownTimerKey, ShutdownTimeoutExpired.Instance, ShutdownTimeout);
-    }
-}
-```
-
----
-
-### TASK-028-005: Simplify GroupByHostKeyStage — Remove Polling and Tracker Dependency
-
-**Description:** Remove all polling/timer code from `GroupByHostKeyStage.TryFinish()`. The stage no longer needs to check `IPendingWorkTracker` because the KillSwitch guarantees that completion only arrives after all re-injections are done. `TryFinish` becomes a trivial queue-drain check.
-
-**Token Estimate:** ~20k tokens
-**Predecessors:** TASK-028-004
-**Successors:** TASK-028-006
-**Parallel:** no — must be done after KillSwitch is in place
-
-**Acceptance Criteria:**
-- [ ] Remove `IPendingWorkTracker` constructor parameter from `GroupByHostKeyStage`
-- [ ] Remove `_pendingWorkRetryCount`, `_onPendingWorkRetry`, `MaxPendingWorkRetries`, `InitialRetryDelay` fields
-- [ ] Remove `Task.Delay().ContinueWith()` polling logic from `TryFinish()`
-- [ ] Simplify `TryFinish()` to only check subflow queue drain (pending items + offering state)
-- [ ] Update `ProtocolCoreGraphBuilder` / `Engine` to not pass tracker to `GroupByHostKeyStage`
-- [ ] `dotnet build` + `dotnet test` green
-- [ ] Stage is ~40 lines shorter
-
-**Files:**
-- `src/TurboHttp/Streams/Stages/Routing/GroupByHostKeyStage.cs`
-- `src/TurboHttp/Streams/ProtocolCoreGraphBuilder.cs` (or wherever tracker is passed to the stage)
-- `src/TurboHttp/Streams/Engine.cs`
-
-**Code Design:**
-
-```csharp
-private void TryFinish()
-{
-    if (_subflows.Values.Any(state => !state.IsDead && (state.Pending.Count > 0 || state.Offering)))
-    {
-        Log.Debug("GroupByHostKeyStage: TryFinish deferred - subflows still draining");
-        return;
-    }
-
-    foreach (var state in _subflows.Values)
-        if (!state.IsDead) state.Queue.Complete();
-
-    Log.Debug("GroupByHostKeyStage: completing stage, {0} substreams", _subflows.Count);
-    CompleteStage();
-}
-```
-
----
-
-### TASK-028-006: Validation — 10x Batch Run and New Tests
-
-**Description:** Run comprehensive validation: all existing tests green, 10x batch integration test runs with zero deadlocks, and new tests covering the evergreen pipeline behaviour.
-
-**Token Estimate:** ~30k tokens
-**Predecessors:** TASK-028-005
+**Predecessors:** TASK-026-003, TASK-026-004, TASK-026-006, TASK-026-007
 **Successors:** none
-**Parallel:** no — final validation gate
+**Parallel:** no — final index cleanup step
 
 **Acceptance Criteria:**
-- [ ] `dotnet test ./src/TurboHttp.sln` — all tests green
-- [ ] `dotnet test ./src/TurboHttp.IntegrationTests/` — H10 reinjection tests pass
-- [ ] 10x consecutive batch runs of integration tests — zero deadlocks
-- [ ] New test: "Pipeline stays alive after request completes" — send Request, get Response, send another Request
-- [ ] New test: "Dispose waits for pending re-injection" — trigger Retry, Dispose while Retry runs, Response still arrives
-- [ ] New test: "PendingWorkTracker.OnDrained fires on transition to zero"
-- [ ] New test: "KillSwitch shutdown drains pipeline cleanly" — in-flight Request is still processed
-- [ ] Log verification: no "force-completing after pending-work retries", no `Task.Delay` in GroupByHostKeyStage
+- [ ] `RFC9111_ANALYSIS_SUMMARY.txt` renamed to `RFC9111_ANALYSIS_SUMMARY.md`; body converted: `===` banners removed, ALL CAPS headings → `##` Markdown headings, data formatted as Markdown tables
+- [ ] `RFC9114_ANALYSIS_SUMMARY.txt` renamed to `RFC9114_ANALYSIS_SUMMARY.md`; same conversion applied
+- [ ] `RFC9114_SUMMARY.txt` deleted (confirmed near-identical duplicate of `RFC9114_ANALYSIS_SUMMARY.txt`)
+- [ ] Both converted `.md` files retain their existing YAML frontmatter
+- [ ] No `.txt` files remain anywhere under `notes/RFC/`
 
-**Files:**
-- `src/TurboHttp.Tests/` (new PendingWorkTracker tests)
-- `src/TurboHttp.StreamTests/` (new KillSwitch/evergreen pipeline tests)
-- `src/TurboHttp.IntegrationTests/` (new lifecycle tests)
+---
 
-## Affected Files (Complete)
+### TASK-026-009: Convert Section Files — RFC1945, RFC6265, RFC7541, RFC9000
+**Description:** As a vault user, I want all 163 RFC section files from the four older RFCs
+converted to proper Markdown so they are consistent with `VAULT_STYLE_GUIDE.md` and display
+cleanly in Obsidian.
 
-| File | Change | Scope |
-|------|--------|-------|
-| `Client/ActorProtocol.cs` | Add `IPendingWorkTracker.OnDrained()` | +3 lines |
-| `Client/PendingWorkTracker.cs` | `OnDrained()` impl, callback in `DecrementPending`/`Reset` | +20 lines |
-| `Client/ClientStreamInstance.cs` | KillSwitch field, pipeline with KillSwitch, shutdown via KillSwitch | ~30 lines changed |
-| `Client/ClientStreamOwner.cs` | Remove `_pending`, OnDrained callback for shutdown, simplify | ~80 lines removed |
-| `Streams/Stages/Routing/GroupByHostKeyStage.cs` | Simplify TryFinish(), remove tracker dependency | ~40 lines removed |
-| `Streams/Stages/Features/ContentEncodingBidiStage.cs` | Remove tracker field/parameter | ~5 lines removed |
-| `Streams/Engine.cs` | Don't pass tracker to ContentEncoding | 1 line |
-| `TurboClientStreamManager.cs` | Minimal change to Dispose comments | ~5 lines |
+**Token Estimate:** ~80k tokens
+**Predecessors:** none (can run independently of index tasks)
+**Successors:** none (standalone section conversion)
+**Parallel:** yes — can run alongside TASK-026-010, TASK-026-011, and all index tasks
+**Model:** haiku — repetitive structural conversion across 163 files
 
-**Net: ~100 fewer lines of code**, cleaner architecture, no deadlock.
+**Acceptance Criteria:**
+- [ ] RFC1945 section files (36): top heading changed H2 → H1; duplicate title repeat removed
+- [ ] RFC6265 section files (24): same conversion applied
+- [ ] RFC7541 section files (12): same conversion applied
+- [ ] RFC9000 section files (91): same conversion applied
+- [ ] Every section file in batch has exactly one `# H1` heading matching frontmatter `title` field
+- [ ] No plain-text subsection headings remain (all `N.N.  Title` patterns converted to `##` or `###` as appropriate)
+- [ ] No duplicate title-repeat line below the H1 (RFC source verbatim text removed)
+- [ ] Prose lines containing MUST/SHOULD/MAY/SHALL/REQUIRED/SHALL NOT wrapped as `> **KEYWORD**:` callouts
+- [ ] YAML frontmatter remains unchanged
+- [ ] ABNF code blocks remain unchanged
+- [ ] Lines already inside blockquotes or code blocks are NOT double-processed
+- [ ] Total: 163 files converted, all verified for proper structure
 
-## Implementation Order
+---
+
+### TASK-026-010: Convert Section Files — RFC9110, RFC9111, RFC9112
+**Description:** As a vault user, I want all 157 RFC section files from three newer RFCs
+converted to proper Markdown using the same rules as TASK-026-009.
+
+**Token Estimate:** ~80k tokens
+**Predecessors:** none (can run independently of index tasks)
+**Successors:** none (standalone section conversion)
+**Parallel:** yes — can run alongside TASK-026-009, TASK-026-011, and all index tasks
+**Model:** haiku — repetitive structural conversion across 157 files
+
+**Acceptance Criteria:**
+- [ ] RFC9110 section files (112): top heading H2 → H1; duplicate title removed
+- [ ] RFC9111 section files (20): same conversion applied
+- [ ] RFC9112 section files (25): same conversion applied
+- [ ] Every section file in batch has exactly one `# H1` heading matching frontmatter `title` field
+- [ ] No plain-text subsection headings remain
+- [ ] No duplicate title-repeat lines
+- [ ] Prose lines containing MUST/SHOULD/MAY/SHALL/REQUIRED/SHALL NOT wrapped as `> **KEYWORD**:` callouts
+- [ ] YAML frontmatter unchanged, ABNF/code blocks unchanged, no double-processing of blockquotes/code
+- [ ] Total: 157 files converted, all verified for proper structure
+
+---
+
+### TASK-026-011: Convert Section Files — RFC9113, RFC9114, RFC9204
+**Description:** As a vault user, I want all 73 RFC section files from the three remaining RFCs
+converted to proper Markdown using the same rules.
+
+**Token Estimate:** ~50k tokens
+**Predecessors:** none (can run independently of index tasks)
+**Successors:** none (standalone section conversion)
+**Parallel:** yes — can run alongside TASK-026-009, TASK-026-010, and all index tasks
+**Model:** haiku — repetitive structural conversion across 73 files
+
+**Acceptance Criteria:**
+- [ ] RFC9113 section files (35): top heading H2 → H1; duplicate title removed
+- [ ] RFC9114 section files (21): same conversion applied
+- [ ] RFC9204 section files (17): same conversion applied
+- [ ] Every section file in batch has exactly one `# H1` heading matching frontmatter `title` field
+- [ ] No plain-text subsection headings remain
+- [ ] No duplicate title-repeat lines
+- [ ] Prose lines containing MUST/SHOULD/MAY/SHALL/REQUIRED/SHALL NOT wrapped as `> **KEYWORD**:` callouts
+- [ ] YAML frontmatter unchanged, ABNF/code blocks unchanged, no double-processing of blockquotes/code
+- [ ] Total: 73 files converted, all verified for proper structure
+
+---
+
+## Task Dependency Graph
 
 ```
-Phase 1: Quick Fixes (TASK-028-001)
-  -> Remove ContentEncoding tracker
-  -> Verify build
+TASK-026-001 ──→ TASK-026-002 ──→ TASK-026-005 ──→ TASK-026-006 ──┐
+             └──→ TASK-026-003 ──┘                                  │
+TASK-026-001 ──→ TASK-026-002 ──→ TASK-026-004 ──────────────────→ TASK-026-008
+TASK-026-007 ────────────────────────────────────────────────────→ ┘
 
-Phase 2: PendingWorkTracker.OnDrained (TASK-028-002)
-  -> Extend interface
-  -> Implementation
-  -> Unit tests for OnDrained (counter transition >0 -> 0, edge case counter==0)
-
-Phase 3: KillSwitch Integration (TASK-028-003)
-  -> ClientStreamInstanceActor: SharedKillSwitch in pipeline
-  -> Shutdown flow: KillSwitch instead of Context.Stop
-  -> StreamSinkCompleted -> Context.Stop (after drain)
-
-Phase 4: Owner Simplification (TASK-028-004)
-  -> Remove _pending counter
-  -> Shutdown via OnDrained + KillSwitch coordination
-  -> PendingWorkSignal for logging only
-
-Phase 5: GroupByHostKeyStage Simplification (TASK-028-005)
-  -> Remove polling/timer code
-  -> TryFinish() trivial: only queue-drain, no tracker check
-  -> Remove tracker dependency from constructor
-
-Phase 6: Validation (TASK-028-006)
-  -> All existing tests green
-  -> 10x batch run integration tests — zero deadlocks
-  -> New tests: evergreen pipeline, OnDrained, KillSwitch drain
+TASK-026-009 ──┐
+TASK-026-010 ──┼─→ (independent parallel runs, no successors)
+TASK-026-011 ──┘
 ```
 
-## Verification
+| Task | Estimate | Predecessors | Parallel | Model |
+|------|----------|--------------|----------|-------|
+| TASK-026-001 | ~10k | none | yes (with 007, 009-011) | haiku |
+| TASK-026-002 | ~30k | 001 | yes (with 003) | haiku |
+| TASK-026-003 | ~30k | 001 | yes (with 002) | haiku |
+| TASK-026-004 | ~15k | 002 | yes (with 005) | haiku |
+| TASK-026-005 | ~40k | 002, 003 | no | haiku |
+| TASK-026-006 | ~50k | 005 | no | — |
+| TASK-026-007 | ~15k | none | yes (with 001, 009-011) | haiku |
+| TASK-026-008 | ~25k | 003, 004, 006, 007 | no | — |
+| TASK-026-009 | ~80k | none | yes (with 001-008, 010, 011) | haiku |
+| TASK-026-010 | ~80k | none | yes (with 001-008, 009, 011) | haiku |
+| TASK-026-011 | ~50k | none | yes (with 001-008, 009, 010) | haiku |
 
-### Automated Tests:
-1. `dotnet test ./src/TurboHttp.sln` — all tests green
-2. `dotnet test ./src/TurboHttp.IntegrationTests/` — H10 reinjection tests
-3. 10x batch run integration tests — zero deadlocks
-4. **New test:** "Pipeline stays alive after request completes" — send Request, get Response, send another Request
-5. **New test:** "Dispose waits for pending re-injection" — trigger Retry, Dispose while Retry runs, Response still arrives
-6. **New test:** "PendingWorkTracker.OnDrained fires on transition to zero" — increment, decrement, verify callback
-7. **New test:** "KillSwitch shutdown drains pipeline cleanly" — in-flight Request is still processed
+**Total estimated tokens:** ~425k (original ~215k + section conversion ~210k)
 
-### Log Verification:
-- NO "force-completing after pending-work retries" messages
-- NO `Task.Delay` in GroupByHostKeyStage
-- Instead: "Waiting for pending work to drain before shutdown" -> "Pipeline drained, stopping instance"
+---
+
+## Functional Requirements
+
+### Index File Requirements (FR-1 through FR-11)
+- FR-1: Every RFC index file has `title`, `description`, `tags`, `rfc_number`, `source_url` in frontmatter
+- FR-2: No RFC index file contains an embedded raw-text code block; each has a `> 📌` external link callout instead
+- FR-3: All wikilinks use `[[RFCXXXX/sections/NN_topic|Display Text]]` format (vault-root-relative)
+- FR-4: The `|` separator is used consistently in all wikilinks outside tables (table wikilinks use `\|` for proper Markdown escaping)
+- FR-5: Every section wikilink either resolves to an existing file or is marked `⚠️` as missing
+- FR-6: No `.txt` files exist under `notes/RFC/`
+- FR-7: `RFC9114_SUMMARY.txt` is deleted
+- FR-8: `RFC9111.md` shows compliance score `78/100`
+- FR-9: `RFC9204.md` H1 contains the full title
+- FR-10: `rfc_metadata.json` is consistent with `00-RFC_STATUS_MATRIX.md` for all scores
+- FR-11: All RFC index files are under 200 lines after cleanup
+
+### Section File Requirements (FR-12 through FR-15)
+- FR-12: Every RFC section file has exactly one `# H1` heading matching the frontmatter `title` field
+- FR-13: No plain-text RFC-style subsection headings remain; all are converted to Markdown heading levels (`##`, `###`, etc.)
+- FR-14: No duplicate title-repeat lines exist below the H1 (RFC source verbatim removed)
+- FR-15: Prose sentences containing normative keywords (MUST, SHOULD, MAY, SHALL, REQUIRED) are wrapped in `> **KEYWORD**:` callouts for clarity
+
+---
+
+## Non-Goals
+
+- No changes to compliance analysis content — formatting only
+- No renaming of RFC index files themselves (`RFC1945.md` stays `RFC1945.md`)
+- No renaming of RFC section files themselves (filenames remain as-is)
+- No changes to `00-RFC_STATUS_MATRIX.md`
+- No commits — the developer commits manually
+- No programmatic changes to YAML frontmatter in section files (keep as-is)
+- No modification of ABNF code blocks or technical specifications within section files
+
+---
+
+## Technical Considerations
+
+### Index-Related Considerations
+- **BOM characters** (`﻿`, Unicode FEFF) only appear in the embedded raw text blocks — they disappear automatically via TASK-026-002/003
+- **QPACK Static Table**: RFC 9204 Appendix A defines 99 static table entries (fields 0–98). Verify the exact count before correcting
+- **Wikilink `\|` vs `|`**: Inside Markdown tables, pipes must be escaped (`\|`). Outside tables, use bare `|`. TASK-026-005 must handle this distinction — do not blindly replace all `\|` with `|`
+- **Section link verification (TASK-026-006)**: Enumerate actual files in each `sections/` folder via glob, then cross-reference against the Sections table. Document any missing sections
+
+### Section File Conversion Rules (TASK-026-009 to 011)
+
+**Rule 1 — Top heading: H2 → H1 + remove duplicate repeat**
+```
+BEFORE:
+## 4.  HTTP Message
+4.  HTTP Message
+
+AFTER:
+# 4.  HTTP Message
+```
+The second line is the verbatim RFC plain-text repeat — delete it.
+
+**Rule 2 — Subsection headings: plain-text → Markdown headings**
+Detect lines matching `^\d+(\.\d+)*\.\s{2,}\S` on their own line (preceded and followed by blank line).
+Heading depth: 1 segment (e.g., `4.`) → `##`; 2 segments (`4.1.`) → `##`; 3+ segments → `###`.
+```
+BEFORE:                              AFTER:
+4.1.  General Structure          →   ## 4.1.  General Structure
+
+4.1.2.  Message Body             →   ## 4.1.2.  Message Body
+
+4.1.2.3.  Token Rules            →   ### 4.1.2.3.  Token Rules
+```
+
+**Rule 3 — Normative keyword callouts (conservative approach)**
+Wrap complete sentences containing standalone RFC normative keywords: MUST NOT, MUST, SHOULD NOT, SHOULD, MAY NOT, MAY, REQUIRED, SHALL NOT, SHALL.
+Only wrap prose (not blockquotes, code blocks, or headings). Never split sentences mid-way.
+```
+BEFORE:
+   The server MUST include a Date header in all responses.
+
+AFTER:
+> **MUST**: The server MUST include a Date header in all responses.
+```
+
+**Safety guardrails:**
+- Skip lines already starting with `>` (already in blockquotes)
+- Skip lines inside ` ``` ` code fences
+- Skip lines that are headings (start with `#`)
+- Wrap whole sentences only (period-terminated)
+- Do NOT double-process content already in callouts or code blocks
+
+---
+
+## Success Metrics
+
+### Index Files
+- All 10 RFC index files load in Obsidian with zero scroll needed to see the full structure
+- `Ctrl+Click` on every non-`⚠️` wikilink opens the correct section note
+- No `.txt` files in the vault
+- Frontmatter search in Obsidian finds all RFCs via `source_url`
+- Every index file is under 200 lines
+
+### Section Files
+- All 393 RFC section files display cleanly in Obsidian with proper Markdown formatting
+- Top heading of each section file matches frontmatter `title` exactly
+- All subsection headings are properly formatted as Markdown headings
+- Normative keywords stand out visually in callout boxes for RFC compliance clarity
+- Vault feels unified and consistent across all 403 files (10 index + 393 sections)
+
+---
+
+## Open Questions
+
+*(none — all questions resolved during planning)*
+

@@ -7,7 +7,6 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
-using TurboHttp.Client;
 using TurboHttp.Internal;
 
 namespace TurboHttp.Streams.Stages.Routing;
@@ -21,15 +20,12 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
     private readonly Func<T, RequestEndpoint> _keyFor;
     private readonly int _maxSubstreams;
     private readonly int _defaultQueueSize;
-    private readonly IPendingWorkTracker? _pendingWorkTracker;
 
-    public GroupByHostKeyStage(Func<T, RequestEndpoint> keyFor, int maxSubstreams = -1, int queueSize = 64,
-        IPendingWorkTracker? pendingWorkTracker = null)
+    public GroupByHostKeyStage(Func<T, RequestEndpoint> keyFor, int maxSubstreams = -1, int queueSize = 64)
     {
         _keyFor = keyFor ?? throw new ArgumentNullException(nameof(keyFor));
         _maxSubstreams = maxSubstreams;
         _defaultQueueSize = queueSize;
-        _pendingWorkTracker = pendingWorkTracker;
         Shape = new FlowShape<T, Source<T, NotUsed>>(_in, _out);
     }
 
@@ -54,17 +50,12 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
 
     private sealed class Logic : GraphStageLogic
     {
-        private const int MaxPendingWorkRetries = 5;
-        private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromMilliseconds(10);
-
         private readonly GroupByHostKeyStage<T> _stage;
         private readonly int _queueSize;
         private readonly Dictionary<RequestEndpoint, SubflowState> _subflows = new();
         private readonly Queue<Source<T, NotUsed>> _pendingSources = new();
         private Action<(RequestEndpoint Key, T Item, bool Success, SubflowState State)>? _onOfferComplete;
-        private Action<int>? _onPendingWorkRetry;
         private bool _upstreamFinished;
-        private int _pendingWorkRetryCount;
 
         public Logic(GroupByHostKeyStage<T> stage, Attributes inheritedAttributes) : base(stage.Shape)
         {
@@ -96,12 +87,6 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
 
         public override void PreStart()
         {
-            _onPendingWorkRetry = GetAsyncCallback<int>(retryCount =>
-            {
-                _pendingWorkRetryCount = retryCount;
-                TryFinish();
-            });
-
             _onOfferComplete = GetAsyncCallback<(RequestEndpoint Key, T Item, bool Success, SubflowState State)>(tuple =>
             {
                 var (key, item, success, originState) = tuple;
@@ -152,7 +137,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
             });
         }
 
-        // Defers completion until all live subflows are drained AND no pending work remains.
+        // Defers completion until all live subflows are drained.
         private void TryFinish()
         {
             if (_subflows.Values.Any(state => !state.IsDead && (state.Pending.Count > 0 || state.Offering)))
@@ -160,40 +145,6 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
                 Log.Debug("GroupByHostKeyStage: TryFinish deferred — subflows still draining");
                 return; // still draining
             }
-
-            // Check if feature BidiStages have pending re-injections (e.g., retry, cache revalidation).
-            var tracker = _stage._pendingWorkTracker;
-            if (tracker is not null && tracker.IsPending)
-            {
-                if (_pendingWorkRetryCount >= MaxPendingWorkRetries)
-                {
-                    Log.Warning(
-                        "GroupByHostKeyStage: force-completing after {0} pending-work retries (50ms total wait)",
-                        _pendingWorkRetryCount);
-                }
-                else
-                {
-                    // Schedule a re-check with exponential backoff: 10ms, 10ms, 10ms, 10ms, 10ms = 50ms total.
-                    var delay = InitialRetryDelay;
-                    var retryCount = _pendingWorkRetryCount + 1;
-                    Log.Debug(
-                        "GroupByHostKeyStage: substream completion delayed due to pending work (retry {0}/{1}, delay {2}ms)",
-                        retryCount, MaxPendingWorkRetries, delay.TotalMilliseconds);
-
-                    var callback = _onPendingWorkRetry!;
-                    Task.Delay(delay).ContinueWith(_ => callback(retryCount), TaskContinuationOptions.ExecuteSynchronously);
-                    return;
-                }
-            }
-            else if (tracker is not null && _pendingWorkRetryCount > 0)
-            {
-                Log.Debug(
-                    "GroupByHostKeyStage: substream completed after pending work cleared (took {0} retries)",
-                    _pendingWorkRetryCount);
-            }
-
-            // Reset retry counter for next potential finish cycle.
-            _pendingWorkRetryCount = 0;
 
             // Complete all live substream queues.
             foreach (var state in _subflows.Values)

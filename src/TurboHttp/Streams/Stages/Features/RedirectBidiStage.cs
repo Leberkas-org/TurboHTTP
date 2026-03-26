@@ -4,7 +4,6 @@ using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Client;
 using TurboHttp.Diagnostics;
 using TurboHttp.Protocol.RFC9110;
 
@@ -43,7 +42,6 @@ internal sealed class RedirectBidiStage
         = new("TurboHttp.RedirectHandler");
 
     private readonly RedirectPolicy? _policy;
-    private readonly IPendingWorkTracker? _pendingWorkTracker;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("Redirect.In.Request");
     private readonly Outlet<HttpRequestMessage> _outRequest = new("Redirect.Out.Request");
@@ -56,11 +54,9 @@ internal sealed class RedirectBidiStage
     /// Creates a new <see cref="RedirectBidiStage"/> with the given redirect policy.
     /// </summary>
     /// <param name="policy">Redirect policy. When null, the stage is a pass-through (no redirects).</param>
-    /// <param name="pendingWorkTracker">Optional tracker to signal pending re-injections to the Owner actor.</param>
-    public RedirectBidiStage(RedirectPolicy? policy = null, IPendingWorkTracker? pendingWorkTracker = null)
+    public RedirectBidiStage(RedirectPolicy? policy = null)
     {
         _policy = policy;
-        _pendingWorkTracker = pendingWorkTracker;
         Shape = new BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>(
             _inRequest, _outRequest, _inResponse, _outResponse);
     }
@@ -169,11 +165,11 @@ internal sealed class RedirectBidiStage
                     // Without the original request context, cannot evaluate redirect — pass through.
                     if (original is null || !RedirectHandler.IsRedirect(response))
                     {
-                        // If this was a redirected request, signal pending work complete.
+                        // If this was a redirected request, clean up the handler state.
                         if (original is not null
                             && original.Options.TryGetValue(RedirectHandlerKey, out _))
                         {
-                            _stage._pendingWorkTracker?.DecrementPending();
+                            // Handler state cleanup handled by garbage collection
                         }
 
                         _responseDemand = false;
@@ -225,8 +221,6 @@ internal sealed class RedirectBidiStage
                         // Dispose the redirect response — it won't reach the caller
                         response.Dispose();
 
-                        _stage._pendingWorkTracker?.IncrementPending();
-
                         _readyRedirects.Enqueue(newRequest);
                         TryEmitRedirect();
 
@@ -236,10 +230,10 @@ internal sealed class RedirectBidiStage
                     catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)
                     {
                         // HTTPS→HTTP downgrade blocked — forward as final response.
-                        // Decrement: the redirect that brought us here is no longer pending.
+                        // Handler state will be cleaned up by garbage collection.
                         if (original.Options.TryGetValue(RedirectHandlerKey, out _))
                         {
-                            _stage._pendingWorkTracker?.DecrementPending();
+                            // No pending work tracking needed
                         }
 
                         _responseDemand = false;
@@ -252,7 +246,7 @@ internal sealed class RedirectBidiStage
                         // Max redirects exceeded or loop detected — forward as final response.
                         if (original.Options.TryGetValue(RedirectHandlerKey, out _))
                         {
-                            _stage._pendingWorkTracker?.DecrementPending();
+                            // No pending work tracking needed
                         }
 
                         _responseDemand = false;

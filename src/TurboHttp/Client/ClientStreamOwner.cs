@@ -1,15 +1,29 @@
 using System;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
+using Akka.Streams;
+using Akka.Streams.Dsl;
+using TurboHttp.Streams;
+using TurboHttp.Transport;
 using OwnerMsg = TurboHttp.Client.ClientStreamOwner;
-using InstanceMsg = TurboHttp.Client.ClientStreamInstance;
 
 namespace TurboHttp.Client;
 
 /// <summary>
-/// Manages the lifecycle of a single <c>ClientStreamInstance</c> actor.
-/// Tracks pending work from feature BidiStages, supervises the instance with
-/// exponential-backoff retry, and coordinates graceful shutdown.
+/// Manages both the lifecycle and materialization of the Akka.Streams pipeline
+/// for a single client. Receives <see cref="ClientStreamOwner.CreateStreamInstance"/>,
+/// materializes the stream directly, tracks pending work from feature BidiStages,
+/// coordinates graceful shutdown, and handles retry with exponential backoff.
+/// <para>
+/// Merged design (was: Owner + Instance actors): This single actor handles all
+/// concerns — initialization, materialization, retry cleanup, and shutdown.
+/// Resources are cleaned up explicitly on retry (via <see cref="CleanupForRetry"/>)
+/// and on actor termination (via <see cref="PostStop"/>).
+/// </para>
 /// </summary>
 internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 {
@@ -28,37 +42,22 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
 
-    // State
-    private int _pending;
-    private IActorRef _streamInstance = Nobody.Instance;
+    // === Lifecycle state ===
     private int _retryAttempts;
     private Exception? _lastError;
-
-    // Tracks the original CreateStreamInstance message for retry recreation
     private OwnerMsg.CreateStreamInstance? _createRequest;
-
-    // Tracks who requested creation so we can reply on success/failure
     private IActorRef _createRequester = Nobody.Instance;
-
-    // Tracks whether a RequestStreamIdle is waiting for pending work to drain
-    private OwnerMsg.RequestStreamIdle? _pendingIdleRequest;
-
-    // Shutdown state
     private bool _shuttingDown;
 
-    public ITimerScheduler Timers { get; set; } = null!;
+    // === Stream materialization state ===
+    private ChannelReader<HttpRequestMessage>? _requestReader;
+    private ChannelWriter<HttpResponseMessage>? _responseWriter;
+    private ConnectionPool? _pool;
+    private ActorMaterializer? _materializer;
+    private SharedKillSwitch? _killSwitch;
+    private bool _streamRunning;
 
-    protected override SupervisorStrategy SupervisorStrategy()
-    {
-        return new AllForOneStrategy(
-            maxNrOfRetries: MaxRetryAttempts,
-            withinTimeRange: TimeSpan.FromMinutes(1),
-            localOnlyDecider: ex =>
-            {
-                _log.Warning("Stream instance supervised failure: {0}", ex.Message);
-                return Directive.Stop;
-            });
-    }
+    public ITimerScheduler Timers { get; set; } = null!;
 
     protected override void OnReceive(object message)
     {
@@ -68,32 +67,16 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
                 HandleCreateStreamInstance(create);
                 break;
 
-            case OwnerMsg.PendingWorkSignal pending:
-                HandlePendingWorkSignal(pending);
-                break;
-
             case OwnerMsg.StreamInstanceFailed failed:
                 HandleStreamInstanceFailed(failed);
-                break;
-
-            case OwnerMsg.RequestStreamIdle idle:
-                HandleRequestStreamIdle(idle);
                 break;
 
             case OwnerMsg.Shutdown:
                 HandleShutdown();
                 break;
 
-            case InstanceMsg.StreamInitialized:
-                HandleStreamInitialized();
-                break;
-
-            case InstanceMsg.StreamFailed streamFailed:
-                HandleChildStreamFailed(streamFailed);
-                break;
-
-            case Terminated terminated:
-                HandleTerminated(terminated);
+            case StreamSinkCompleted completed:
+                HandleStreamSinkCompleted(completed);
                 break;
 
             case RetryCreateInstance:
@@ -122,56 +105,82 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         _retryAttempts = 0;
         _lastError = null;
 
-        SpawnStreamInstance(create);
+        MaterializeStream(create);
     }
 
-    private void SpawnStreamInstance(OwnerMsg.CreateStreamInstance create)
+    // ── Stream Materialization ─────────────────────────────────────────────
+
+    private void MaterializeStream(OwnerMsg.CreateStreamInstance create)
     {
-        var instanceProps = Props.Create(() => new ClientStreamInstanceActor())
-            .WithSupervisorStrategy(SupervisorStrategy());
+        _log.Debug("Materializing stream pipeline (BaseAddress={0})",
+            create.ClientOptions.BaseAddress);
 
-        _streamInstance = Context.ActorOf(instanceProps, $"stream-instance-{Guid.NewGuid():N}");
-        Context.Watch(_streamInstance);
-
-        _streamInstance.Tell(new InstanceMsg.InitializeStream(
-            create.ClientOptions,
-            create.RequestOptionsFactory,
-            create.Pipeline,
-            create.RequestReader,
-            create.ResponseWriter));
-    }
-
-    // ── StreamInitialized (from child) ───────────────────────────────────
-
-    private void HandleStreamInitialized()
-    {
-        _log.Info("Stream instance initialized successfully");
-        _retryAttempts = 0;
-        _lastError = null;
-
-        if (!_createRequester.IsNobody())
+        try
         {
-            _createRequester.Tell(new OwnerMsg.StreamInstanceCreated(_streamInstance));
+            // Store references to externally-owned channels (not owned by this actor)
+            _requestReader = create.RequestReader;
+            _responseWriter = create.ResponseWriter;
+
+            // Create connection pool
+            _pool = new ConnectionPool(create.ClientOptions.IdleTimeout);
+
+            // Build the engine flow
+            var engine = new Engine();
+            var engineFlow = engine.CreateFlow(
+                _pool,
+                create.ClientOptions,
+                create.RequestOptionsFactory,
+                create.Pipeline);
+
+            // Materialize the graph
+            var materializerSettings = ActorMaterializerSettings.Create(Context.System)
+                .WithInputBuffer(initialSize: 4, maxSize: 16);
+            _materializer = Context.System.Materializer(
+                settings: materializerSettings,
+                namePrefix: $"stream-owner-{Self.Path.Name}");
+
+            // KillSwitch absorbs ChannelSource completion so the pipeline stays alive
+            // until explicitly shut down. This prevents premature completion when the
+            // channel writer completes while feature BidiStages still have re-injections.
+            _killSwitch = KillSwitches.Shared($"client-{Self.Path.Name}");
+
+            // Use Sink.ForEach to write responses to the externally-owned writer.
+            // The sink does NOT own the writer — the manager completes it on shutdown.
+            // Sink.ForEach materializes a Task that completes when the stream terminates,
+            // which we use for completion monitoring.
+            var completionTask = ChannelSource.FromReader(create.RequestReader)
+                .Via(_killSwitch.Flow<HttpRequestMessage>())
+                .Via(engineFlow)
+                .RunWith(
+                    Sink.ForEach<HttpResponseMessage>(msg => create.ResponseWriter.TryWrite(msg)),
+                    _materializer);
+
+            MonitorSinkCompletion(completionTask);
+
+            _streamRunning = true;
+            _log.Debug("Stream pipeline materialized successfully");
+
+            // Notify requester of successful materialization
+            if (!_createRequester.IsNobody())
+            {
+                _createRequester.Tell(new OwnerMsg.StreamInstanceCreated());
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "Failed to materialize stream pipeline");
+            CleanupResources();
+            HandleMaterializationFailed(ex);
         }
     }
 
-    // ── StreamFailed (from child) ────────────────────────────────────────
-
-    private void HandleChildStreamFailed(InstanceMsg.StreamFailed streamFailed)
+    private void HandleMaterializationFailed(Exception ex)
     {
-        _lastError = streamFailed.Reason;
+        _lastError = ex;
         _retryAttempts++;
 
-        _log.Warning("Stream instance failed (attempt {0}/{1}): {2}",
-            _retryAttempts, MaxRetryAttempts, streamFailed.Reason.Message);
-
-        // Stop the failed child before retry
-        if (!_streamInstance.IsNobody())
-        {
-            Context.Unwatch(_streamInstance);
-            Context.Stop(_streamInstance);
-            _streamInstance = Nobody.Instance;
-        }
+        _log.Warning("Stream materialization failed (attempt {0}/{1}): {2}",
+            _retryAttempts, MaxRetryAttempts, ex.Message);
 
         if (_retryAttempts <= MaxRetryAttempts && _createRequest is not null && !_shuttingDown)
         {
@@ -183,7 +192,7 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         }
         else
         {
-            _log.Error("Stream instance creation failed after {0} attempts. Last error: {1}",
+            _log.Error("Stream materialization failed after {0} attempts. Last error: {1}",
                 _retryAttempts, _lastError?.Message);
 
             if (!_createRequester.IsNobody())
@@ -194,7 +203,7 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         }
     }
 
-    // ── StreamInstanceFailed (explicit message, e.g. from external) ──────
+    // ── StreamInstanceFailed (from external caller) ────────────────────────
 
     private void HandleStreamInstanceFailed(OwnerMsg.StreamInstanceFailed failed)
     {
@@ -204,12 +213,7 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         _log.Warning("Stream instance failure reported (attempt {0}): {1}",
             failed.AttemptNumber, failed.Reason.Message);
 
-        if (!_streamInstance.IsNobody())
-        {
-            Context.Unwatch(_streamInstance);
-            Context.Stop(_streamInstance);
-            _streamInstance = Nobody.Instance;
-        }
+        CleanupResources();
 
         if (_retryAttempts < MaxRetryAttempts && _createRequest is not null && !_shuttingDown)
         {
@@ -243,61 +247,8 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         }
 
         _log.Info("Executing retry attempt {0}/{1}", _retryAttempts, MaxRetryAttempts);
-        SpawnStreamInstance(_createRequest);
-    }
-
-    // ── PendingWorkSignal ────────────────────────────────────────────────
-
-    private void HandlePendingWorkSignal(OwnerMsg.PendingWorkSignal signal)
-    {
-        var previous = _pending;
-        _pending = Math.Max(0, _pending + signal.Delta);
-
-        _log.Info("Pending work changed: {0} -> {1} (delta: {2})",
-            previous, _pending, signal.Delta);
-
-        // If pending work just reached zero and we have a deferred idle request, process it
-        if (_pending == 0 && _pendingIdleRequest is not null)
-        {
-            _log.Info("Pending work drained, processing deferred idle request");
-            ProcessIdleRequest(_pendingIdleRequest);
-            _pendingIdleRequest = null;
-        }
-
-        // If pending work just reached zero and we're shutting down, proceed with shutdown
-        if (_pending == 0 && _shuttingDown)
-        {
-            _log.Info("Pending work drained during shutdown, requesting instance shutdown");
-            RequestInstanceShutdown();
-        }
-    }
-
-    // ── RequestStreamIdle ────────────────────────────────────────────────
-
-    private void HandleRequestStreamIdle(OwnerMsg.RequestStreamIdle idle)
-    {
-        if (_pending == 0)
-        {
-            _log.Info("Stream idle request granted (no pending work)");
-            ProcessIdleRequest(idle);
-        }
-        else
-        {
-            _log.Info("Stream idle request deferred (pending work: {0})", _pending);
-            _pendingIdleRequest = idle;
-        }
-    }
-
-    private void ProcessIdleRequest(OwnerMsg.RequestStreamIdle idle)
-    {
-        if (!idle.RequestedBy.IsNobody())
-        {
-            idle.RequestedBy.Tell(new InstanceMsg.RequestShutdown());
-        }
-        else if (!_streamInstance.IsNobody())
-        {
-            _streamInstance.Tell(new InstanceMsg.RequestShutdown());
-        }
+        CleanupForRetry();
+        MaterializeStream(_createRequest);
     }
 
     // ── Shutdown ─────────────────────────────────────────────────────────
@@ -311,60 +262,135 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         _shuttingDown = true;
 
-        _log.Info("Shutdown requested. Pending work: {0}", _pending);
-
-        if (_pending == 0)
+        if (_killSwitch is not null)
         {
-            RequestInstanceShutdown();
-        }
-        else
-        {
-            _log.Info("Waiting up to {0}s for pending work to drain before shutdown",
-                ShutdownTimeout.TotalSeconds);
+            _log.Info("Shutdown requested — firing KillSwitch, pipeline will drain");
+            _killSwitch.Shutdown();
 
             Timers.StartSingleTimer(ShutdownTimerKey, ShutdownTimeoutExpired.Instance, ShutdownTimeout);
         }
-    }
-
-    private void RequestInstanceShutdown()
-    {
-        Timers.Cancel(ShutdownTimerKey);
-
-        if (!_streamInstance.IsNobody())
-        {
-            _log.Info("Requesting stream instance shutdown");
-            _streamInstance.Tell(new InstanceMsg.RequestShutdown());
-        }
         else
         {
-            _log.Info("No stream instance to shut down, self-terminating");
+            _log.Info("Shutdown requested — no stream materialized, self-terminating");
             Context.Stop(Self);
         }
     }
 
     private void HandleShutdownTimeout()
     {
-        _log.Warning("Shutdown timeout expired with {0} pending work items. Force-shutting down.",
-            _pending);
-
-        RequestInstanceShutdown();
+        _log.Warning("Shutdown safety timeout expired — pipeline did not drain within {0}s. Force-stopping.",
+            ShutdownTimeout.TotalSeconds);
+        CleanupResources();
+        Context.Stop(Self);
     }
 
-    // ── Terminated (child death watch) ───────────────────────────────────
+    // ── Sink Completion Monitoring ────────────────────────────────────────
 
-    private void HandleTerminated(Terminated terminated)
+    private void MonitorSinkCompletion(Task completionTask)
     {
-        if (terminated.ActorRef.Equals(_streamInstance))
-        {
-            _log.Info("Stream instance terminated");
-            _streamInstance = Nobody.Instance;
+        // Route the completion notification from the Sink.ForEach task into this
+        // actor's mailbox via Self.Tell. This is safe because the actor processes
+        // the message through OnReceive on its dispatcher thread.
+        var self = Self;
 
-            if (_shuttingDown)
+        completionTask.ContinueWith(t =>
+        {
+            if (t.IsFaulted)
             {
-                _log.Info("Stream instance terminated during shutdown, self-terminating");
-                Context.Stop(Self);
+                self.Tell(new StreamSinkCompleted(t.Exception?.GetBaseException()));
+            }
+            else
+            {
+                self.Tell(new StreamSinkCompleted(null));
+            }
+        }, TaskScheduler.Default);
+    }
+
+    private void HandleStreamSinkCompleted(StreamSinkCompleted completed)
+    {
+        _log.Debug("Stream sink completed (error: {0})",
+            completed.Error?.Message ?? "none");
+
+        if (completed.Error is not null)
+        {
+            HandleMaterializationFailed(completed.Error);
+        }
+        else
+        {
+            // Pipeline drained cleanly (after KillSwitch.Shutdown or error-free completion).
+            // Cancel the safety timeout — no force-stop needed.
+            Timers.Cancel(ShutdownTimerKey);
+            _log.Debug("Pipeline drained, stopping actor");
+            Context.Stop(Self);
+        }
+    }
+
+    // ── Resource Cleanup ───────────────────────────────────────────────────
+
+    private void CleanupForRetry()
+    {
+        _log.Debug("Cleaning up resources before retry");
+
+        if (_killSwitch is not null)
+        {
+            try
+            {
+                _killSwitch.Abort(new Exception("Retry cleanup"));
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Error aborting KillSwitch: {0}", ex.Message);
             }
         }
+
+        CleanupResources();
+    }
+
+    private void CleanupResources()
+    {
+        // NOTE: Do NOT complete _requestReader or _responseWriter here.
+        // They are externally-owned by TurboClientStreamManager and must remain
+        // open for potential retry (new materialization reconnecting to same channels).
+
+        // Dispose materializer (stops the Akka stream graph)
+        if (_materializer is not null)
+        {
+            try
+            {
+                _materializer.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Error disposing materializer: {0}", ex.Message);
+            }
+
+            _materializer = null;
+        }
+
+        // Dispose connection pool
+        if (_pool is not null)
+        {
+            try
+            {
+                _pool.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Error disposing connection pool: {0}", ex.Message);
+            }
+
+            _pool = null;
+        }
+
+        _killSwitch = null;
+        _streamRunning = false;
+    }
+
+    protected override void PostStop()
+    {
+        _log.Debug("PostStop: cleaning up resources (streamRunning: {0})", _streamRunning);
+        CleanupResources();
+        base.PostStop();
     }
 
     // ── Internal messages ────────────────────────────────────────────────
@@ -373,14 +399,25 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
     private sealed class RetryCreateInstance
     {
         public static readonly RetryCreateInstance Instance = new();
-        private RetryCreateInstance() { }
+
+        private RetryCreateInstance()
+        {
+        }
     }
 
     /// <summary>Internal signal that the shutdown timeout has expired.</summary>
     private sealed class ShutdownTimeoutExpired
     {
         public static readonly ShutdownTimeoutExpired Instance = new();
-        private ShutdownTimeoutExpired() { }
-    }
-}
 
+        private ShutdownTimeoutExpired()
+        {
+        }
+    }
+
+    /// <summary>
+    /// Internal signal that the stream sink has completed (success or failure).
+    /// Routed from the async completion callback into the actor's mailbox.
+    /// </summary>
+    private sealed record StreamSinkCompleted(Exception? Error);
+}

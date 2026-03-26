@@ -25,7 +25,7 @@ TurboHttp implements a **strict layered architecture** with data flowing from us
 ├─────────────────────────────────────────────────┤
 │ Streams Layer (Akka.Streams GraphStages)        │
 │ ┌─────────────────────────────────────────────┐ │
-│ │ Four Protocol Engines (1.0, 1.1, 2.0, 3.0) │ │
+│ │ Four Protocol Engines (1.0, 1.1, 2.0, 3.0)  │ │
 │ │ ┌─────────────────────────────────────────┐ │ │
 │ │ │ Encoding/ - Serialize requests          │ │ │
 │ │ │ Decoding/ - Parse wire format           │ │ │

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using TurboHttp.Client;
 using TurboHttp.Streams;
+using OwnerMsg = TurboHttp.Client.ClientStreamOwner;
 
 namespace TurboHttp;
 
@@ -14,25 +15,18 @@ namespace TurboHttp;
 /// compatibility with the existing <see cref="TurboHttpClient"/> API.
 /// <para>
 /// Owns the stable channel endpoints (<see cref="Requests"/> / <see cref="Responses"/>)
-/// and delegates stream lifecycle management to the actor hierarchy.
-/// The Owner actor supervises a <see cref="ClientStreamInstanceActor"/> that materializes
-/// the Akka.Streams pipeline using these externally-owned channels.
+/// and delegates stream lifecycle management to the Owner actor.
+/// The Owner actor materializes the Akka.Streams pipeline directly using these
+/// externally-owned channels.
 /// </para>
 /// <para>
 /// Lifecycle:
 /// <list type="bullet">
 /// <item>Constructor creates channels and spawns the Owner actor.</item>
-/// <item>Owner creates an Instance actor that materializes the graph using these channels.</item>
+/// <item>Owner materializes the stream directly using the channels.</item>
 /// <item>On failure, Owner retries with exponential backoff (100ms, 500ms, 2s), reconnecting to the same channels.</item>
 /// <item><see cref="Dispose"/> completes the request channel and sends <see cref="ClientStreamOwner.Shutdown"/> to the Owner.</item>
-/// <item><see cref="DisposeAsync"/> additionally waits for the Owner actor to terminate.</item>
 /// </list>
-/// </para>
-/// <para>
-/// <b>Advanced usage:</b> For direct control over the actor-based lifecycle — including custom
-/// <see cref="Akka.Actor.SupervisorStrategy"/> and actor-level monitoring — use
-/// <see cref="IClientStreamOwner"/> obtained via <see cref="ClientStreamOwnerWrapper.Create"/>.
-/// This class remains the recommended approach for standard usage through <see cref="ITurboHttpClientFactory"/>.
 /// </para>
 /// </summary>
 internal sealed class TurboClientStreamManager : IDisposable, IAsyncDisposable
@@ -44,12 +38,6 @@ internal sealed class TurboClientStreamManager : IDisposable, IAsyncDisposable
 
     internal ChannelWriter<HttpRequestMessage> Requests { get; }
     internal ChannelReader<HttpResponseMessage> Responses { get; }
-
-    /// <summary>
-    /// Exposes the actor-based owner interface for advanced scenarios such as
-    /// monitoring actor lifecycle events or sending custom messages.
-    /// </summary>
-    internal IClientStreamOwner Owner { get; }
 
     /// <summary>
     /// Exposes the response-channel writer so tests can inject synthetic responses
@@ -81,18 +69,15 @@ internal sealed class TurboClientStreamManager : IDisposable, IAsyncDisposable
         Responses = responsesChannel.Reader;
         ResponseWriter = responsesChannel.Writer;
 
-        // Spawn the Owner actor — it manages the Instance actor lifecycle,
+        // Create the Owner actor — it materializes the stream directly,
         // tracks pending work, and handles retry with exponential backoff.
-        _owner = system.ActorOf(
-            Props.Create(() => new ClientStreamOwnerActor()),
+        _owner = system.ActorOf(Props.Create(() => new ClientStreamOwnerActor()),
             $"stream-owner-{Guid.NewGuid():N}");
-
-        Owner = new ClientStreamOwnerWrapper(_owner);
 
         // Tell the Owner to create a stream instance. The instance will materialize
         // the Akka.Streams pipeline using our channels. Requests written to the channel
         // before materialization completes are buffered in the unbounded channel.
-        _owner.Tell(new ClientStreamOwner.CreateStreamInstance(
+        _owner.Tell(new OwnerMsg.CreateStreamInstance(
             clientOptions,
             requestOptionsFactory,
             descriptor,
@@ -113,32 +98,15 @@ internal sealed class TurboClientStreamManager : IDisposable, IAsyncDisposable
 
         // Signal the Owner to shut down gracefully. It waits for pending work
         // to drain (up to 5s), then stops the instance and itself.
-        _owner.Tell(new ClientStreamOwner.Shutdown());
+        _owner.Tell(new OwnerMsg.Shutdown());
 
         // Complete the response channel so downstream consumers (DrainResponsesAsync) terminate.
         ResponseWriter.TryComplete();
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        {
-            return;
-        }
-
-        Requests.TryComplete();
-
-        try
-        {
-            // GracefulStop sends the Shutdown message and waits for the actor
-            // to terminate within the timeout. Returns true on success.
-            await _owner.GracefulStop(ShutdownTimeout, new ClientStreamOwner.Shutdown());
-        }
-        catch (TaskCanceledException)
-        {
-            // Timeout expired — actor didn't terminate in time. Acceptable for shutdown.
-        }
-
-        ResponseWriter.TryComplete();
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }
