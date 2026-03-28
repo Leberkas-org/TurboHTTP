@@ -160,15 +160,15 @@ public static void Debug(object source, string message, object? arg0)
 ```
 
 **Acceptance Criteria:**
-- [ ] `TurboTrace.Configure(listener)` enables tracing; `TurboTrace.Disable()` disables it
-- [ ] `ShouldTrace()` returns false when no listener configured (zero-cost path)
-- [ ] `ShouldTrace()` respects category filter (bitwise AND)
-- [ ] `ShouldTrace()` respects minimum level (>= comparison)
-- [ ] All 10 category classes exist with correct category constants
-- [ ] Each category has 5 levels x 4 overloads = 20 methods
-- [ ] `ShouldTrace()` is marked `[MethodImpl(MethodImplOptions.AggressiveInlining)]`
-- [ ] Source type name and hash code are captured from the `source` parameter
-- [ ] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors/warnings
+- [x] `TurboTrace.Configure(listener)` enables tracing; `TurboTrace.Disable()` disables it
+- [x] `ShouldTrace()` returns false when no listener configured (zero-cost path)
+- [x] `ShouldTrace()` respects category filter (bitwise AND)
+- [x] `ShouldTrace()` respects minimum level (>= comparison)
+- [x] All 10 category classes exist with correct category constants
+- [x] Each category has 5 levels x 4 overloads = 20 methods
+- [x] `ShouldTrace()` is marked `[MethodImpl(MethodImplOptions.AggressiveInlining)]`
+- [x] Source type name and hash code are captured from the `source` parameter
+- [x] `dotnet build --configuration Release src/TurboHttp.sln` succeeds with zero errors/warnings
 
 ---
 
