@@ -2,14 +2,10 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <IsPackable>false</IsPackable>
-        <NoWarn>xUnit1051</NoWarn>
+        <IsTestProject>true</IsTestProject>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka.Streams.TestKit" />
-        <PackageReference Include="Akka.TestKit.Xunit" />
         <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
         <PackageReference Include="xunit.v3.mtp-v2" />
     </ItemGroup>

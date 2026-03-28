@@ -2,7 +2,6 @@ using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.TestKit.Xunit;
 using TurboHttp.Internal;
 using TurboHttp.Transport;
 
@@ -16,7 +15,7 @@ namespace TurboHttp.Tests.Transport;
 /// Actor under test: <see cref="ConnectionHandle"/>.
 /// Validates that the handle correctly exposes the underlying channel pair and host key.
 /// </remarks>
-public sealed class ConnectionHandleTests : TestKit
+public sealed class ConnectionHandleTests
 {
     private ConnectionHandle CreateHandle()
     {

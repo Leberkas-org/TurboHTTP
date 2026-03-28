@@ -1,14 +1,38 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <ImplicitUsings>disable</ImplicitUsings>
+        <Authors>st0o0</Authors>
+        <Title>TurboHttp</Title>
+        <PackageTags>HttpClient;Akka</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageProjectUrl>https://github.com/st0o0/TurboHttp</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/st0o0/TurboHttp.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Copyright>Copyright (c) 2025-$([System.DateTime]::Now.Year) st0o0</Copyright>
+    </PropertyGroup>
+    <PropertyGroup>
         <IsPackable>true</IsPackable>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    </PropertyGroup>
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <DebugType>embedded</DebugType>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka.Logger.Extensions.Logging" />
-        <PackageReference Include="Akka.Streams" />
-        <PackageReference Include="Servus.Akka" />
+        <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\"/>
+        <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\"/>
+        <None Include="../../docs/public/logo/icon.png" Visible="false" Pack="true" PackagePath="\"/>
+        <None Remove="packages.lock.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Akka.Logger.Extensions.Logging"/>
+        <PackageReference Include="Akka.Streams"/>
+        <PackageReference Include="Servus.Akka"/>
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHttp.Tests"/>

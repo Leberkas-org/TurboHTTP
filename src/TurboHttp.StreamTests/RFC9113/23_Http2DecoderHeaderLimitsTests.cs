@@ -1,5 +1,3 @@
-using System.Buffers;
-using System.Net.Http;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -8,7 +6,7 @@ using TurboHttp.Protocol.RFC7541;
 using TurboHttp.Protocol.RFC9113;
 using TurboHttp.Streams.Stages.Decoding;
 
-namespace TurboHttp.Tests.RFC9113;
+namespace TurboHttp.StreamTests.RFC9113;
 
 /// <summary>
 /// Tests HTTP/2 header size limits enforced by the stream stage (security: DoS protection).
