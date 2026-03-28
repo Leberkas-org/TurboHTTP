@@ -1,3 +1,4 @@
+<!-- maggus-id: 343c4047-e723-46f7-90d7-f443758e9e21 -->
 <!-- maggus-id: 20260326-163636-feature-026 -->
 
 # Feature 026: Phase 1 — Stability & Security (RFC Compliance Gaps)
@@ -43,13 +44,13 @@ These fixes are prerequisites for production use. They address OWASP-relevant at
 **Parallel:** yes — can run alongside TASK-026-002, TASK-026-003, TASK-026-006, TASK-026-009
 
 **Acceptance Criteria:**
-- [ ] Http10Decoder accepts a `HttpDecoderOptions` (or similar config) with `MaxHeaderSize` (default 16KB) and `MaxTotalHeaderSize` (default 64KB)
-- [ ] When parsing headers, track current header name+value size
-- [ ] Reject with `HttpDecoderException` if single header exceeds `MaxHeaderSize`
-- [ ] Reject with `HttpDecoderException` if total headers exceed `MaxTotalHeaderSize`
-- [ ] Error message clearly indicates which limit was violated
-- [ ] Existing tests still pass (no breaking changes to public API)
-- [ ] Compile with zero warnings
+- [x] Http10Decoder accepts a `HttpDecoderOptions` (or similar config) with `MaxHeaderSize` (default 16KB) and `MaxTotalHeaderSize` (default 64KB)
+- [x] When parsing headers, track current header name+value size
+- [x] Reject with `HttpDecoderException` if single header exceeds `MaxHeaderSize`
+- [x] Reject with `HttpDecoderException` if total headers exceed `MaxTotalHeaderSize`
+- [x] Error message clearly indicates which limit was violated
+- [x] Existing tests still pass (no breaking changes to public API)
+- [x] Compile with zero warnings
 
 ---
 

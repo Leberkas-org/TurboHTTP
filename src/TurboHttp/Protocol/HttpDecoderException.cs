@@ -100,6 +100,12 @@ public sealed class HttpDecoderException : TurboProtocolException
         HttpDecoderError.TooManyHeaders
             => "Security (RFC 9112 §5): Header count exceeds the configured maximum; possible header-flood attack.",
 
+        HttpDecoderError.HeaderTooLarge
+            => "Security: A single header field exceeds the configured maximum size.",
+
+        HttpDecoderError.TotalHeadersTooLarge
+            => "Security: Total header size exceeds the configured maximum.",
+
         _ => $"HTTP decode error: {error}."
     };
 }

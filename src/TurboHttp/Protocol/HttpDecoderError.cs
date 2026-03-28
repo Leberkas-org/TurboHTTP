@@ -77,4 +77,10 @@ public enum HttpDecoderError
 
     /// <summary>Security: Too many header fields in a single message (configurable limit exceeded).</summary>
     TooManyHeaders,
+
+    /// <summary>Security: A single header field (name + value) exceeds the configured maximum size.</summary>
+    HeaderTooLarge,
+
+    /// <summary>Security: The total size of all header fields exceeds the configured maximum.</summary>
+    TotalHeadersTooLarge,
 }

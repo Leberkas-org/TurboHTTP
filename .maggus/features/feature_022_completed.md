@@ -369,13 +369,13 @@ Edge case tests (~5):
 - `"Diagnostics-LoggerListener-015: DI extension registers singleton and configures TurboTrace"`
 
 **Acceptance Criteria:**
-- [ ] All ~55 tests pass
-- [ ] DisplayName format follows `"Diagnostics-Trace-NNN: ..."` and `"Diagnostics-LoggerListener-NNN: ..."`
-- [ ] Test classes are `sealed` and implement `IDisposable`
-- [ ] `TurboTrace.Disable()` called in `Dispose()` for static state isolation
-- [ ] No `#nullable enable` directives
-- [ ] `dotnet test src/TurboHttp.sln` passes with zero failures
-- [ ] Existing diagnostics tests (01-04) still pass unchanged
+- [x] All ~55 tests pass
+- [x] DisplayName format follows `"Diagnostics-Trace-NNN: ..."` and `"Diagnostics-LoggerListener-NNN: ..."`
+- [x] Test classes are `sealed` and implement `IDisposable`
+- [x] `TurboTrace.Disable()` called in `Dispose()` for static state isolation
+- [x] No `#nullable enable` directives
+- [x] `dotnet test src/TurboHttp.sln` passes with zero failures
+- [x] Existing diagnostics tests (01-04) still pass unchanged
 
 ## Task Dependency Graph
 

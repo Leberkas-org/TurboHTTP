@@ -8,10 +8,22 @@ namespace TurboHttp.Protocol.RFC1945;
 
 public sealed class Http10Decoder
 {
+    private const int DefaultMaxHeaderSize = 16 * 1024;       // 16 KB
+    private const int DefaultMaxTotalHeaderSize = 64 * 1024;  // 64 KB
+
     private static readonly byte[] HttpSlashPrefix = "HTTP/"u8.ToArray();
+
+    private readonly int _maxHeaderSize;
+    private readonly int _maxTotalHeaderSize;
 
     private ReadOnlyMemory<byte> _remainder = ReadOnlyMemory<byte>.Empty;
     private bool _isHttp09;
+
+    public Http10Decoder(int maxHeaderSize = DefaultMaxHeaderSize, int maxTotalHeaderSize = DefaultMaxTotalHeaderSize)
+    {
+        _maxHeaderSize = maxHeaderSize;
+        _maxTotalHeaderSize = maxTotalHeaderSize;
+    }
 
     public bool TryDecode(ReadOnlyMemory<byte> incomingData, out HttpResponseMessage? response)
     {
@@ -67,7 +79,7 @@ public sealed class Http10Decoder
         }
 
         ValidateStatusLine(lines[0]);
-        var headers = ParseHeaders(lines[1..]);
+        var headers = ParseHeaders(lines[1..], _maxHeaderSize, _maxTotalHeaderSize);
         var bodyStart = headerEnd + GetHeaderDelimiterLength(working.Span, headerEnd);
         var bodyData = working[bodyStart..];
 
@@ -137,7 +149,7 @@ public sealed class Http10Decoder
         }
 
         ValidateStatusLine(lines[0]);
-        var headers = ParseHeaders(lines[1..]);
+        var headers = ParseHeaders(lines[1..], _maxHeaderSize, _maxTotalHeaderSize);
         var index = headerEnd + GetHeaderDelimiterLength(span, headerEnd);
         var body = _remainder[index..].ToArray();
 
@@ -177,7 +189,7 @@ public sealed class Http10Decoder
         }
 
         ValidateStatusLine(lines[0]);
-        var headers = ParseHeaders(lines[1..]);
+        var headers = ParseHeaders(lines[1..], _maxHeaderSize, _maxTotalHeaderSize);
         var bodyStart = headerEnd + GetHeaderDelimiterLength(working.Span, headerEnd);
         var bodyData = working[bodyStart..];
 
@@ -282,10 +294,11 @@ public sealed class Http10Decoder
         return len;
     }
 
-    private static Dictionary<string, List<string>> ParseHeaders(string[] lines)
+    private static Dictionary<string, List<string>> ParseHeaders(string[] lines, int maxHeaderSize, int maxTotalHeaderSize)
     {
         var headers = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         string? lastHeader = null;
+        var totalSize = 0;
 
         foreach (var rawLine in lines)
         {
@@ -299,7 +312,28 @@ public sealed class Http10Decoder
             {
                 var lastValues = headers[lastHeader];
                 var lastValue = lastValues[^1];
-                lastValues[^1] = lastValue + " " + rawLine.Trim();
+                var foldedValue = lastValue + " " + rawLine.Trim();
+                lastValues[^1] = foldedValue;
+
+                // Re-check single header size after fold: name + ": " + updated value
+                var foldedHeaderSize = Encoding.GetEncoding("ISO-8859-1").GetByteCount(lastHeader)
+                    + 2 // ": "
+                    + Encoding.GetEncoding("ISO-8859-1").GetByteCount(foldedValue);
+                if (foldedHeaderSize > maxHeaderSize)
+                {
+                    throw new HttpDecoderException(HttpDecoderError.HeaderTooLarge,
+                        $"Header '{lastHeader}' is {foldedHeaderSize} bytes; limit is {maxHeaderSize}.");
+                }
+
+                // Add fold contribution to total
+                var foldContribution = Encoding.GetEncoding("ISO-8859-1").GetByteCount(rawLine.Trim()) + 1; // " " + trimmed
+                totalSize += foldContribution;
+                if (totalSize > maxTotalHeaderSize)
+                {
+                    throw new HttpDecoderException(HttpDecoderError.TotalHeadersTooLarge,
+                        $"Total header size is {totalSize} bytes; limit is {maxTotalHeaderSize}.");
+                }
+
                 continue;
             }
 
@@ -319,6 +353,23 @@ public sealed class Http10Decoder
 
             name = name.Trim();
             var value = rawLine[(colon + 1)..].Trim();
+
+            // Check single header size: name + ": " + value
+            var headerSize = Encoding.GetEncoding("ISO-8859-1").GetByteCount(name)
+                + 2 // ": "
+                + Encoding.GetEncoding("ISO-8859-1").GetByteCount(value);
+            if (headerSize > maxHeaderSize)
+            {
+                throw new HttpDecoderException(HttpDecoderError.HeaderTooLarge,
+                    $"Header '{name}' is {headerSize} bytes; limit is {maxHeaderSize}.");
+            }
+
+            totalSize += headerSize;
+            if (totalSize > maxTotalHeaderSize)
+            {
+                throw new HttpDecoderException(HttpDecoderError.TotalHeadersTooLarge,
+                    $"Total header size is {totalSize} bytes; limit is {maxTotalHeaderSize}.");
+            }
 
             if (!headers.TryGetValue(name, out var value1))
             {
