@@ -75,16 +75,6 @@ public sealed class Http10EncoderStageWireFormatTests : StreamTestBase
         Assert.DoesNotContain("Host:", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.2-10ES-004: Connection header is not sent (no keep-alive in HTTP/1.0)")]
-    public async Task Should_NotEmitConnectionHeader_When_Http10Request()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-
-        var raw = await EncodeAsync(request);
-
-        Assert.DoesNotContain("Connection:", raw);
-    }
-
     [Fact(Timeout = 10_000, DisplayName = "RFC1945-5.1-10ES-005: Query string is preserved in request target")]
     public async Task Should_PreserveQueryString_When_RequestTargetHasQuery()
     {

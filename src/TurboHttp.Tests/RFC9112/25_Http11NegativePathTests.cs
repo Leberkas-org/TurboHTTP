@@ -85,17 +85,17 @@ public sealed class Http11NegativePathTests
         Assert.Empty(responses);
     }
 
-    [Fact(DisplayName = "RFC9112-4-SL-007: Overlong reason phrase hits header section size limit")]
+    [Fact(DisplayName = "RFC9112-4-SL-007: Overlong reason phrase hits total header size limit")]
     public void Should_CatchByHeaderLimit_When_OverlongReasonPhrase()
     {
-        // The 8 KB header section size guard also protects against overlong status lines.
-        // A reason phrase that makes the entire header block exceed 8 KB is rejected.
-        var decoder = new Http11Decoder(); // default 8192-byte header limit
-        var longReason = new string('X', 9000);
+        // The 64 KB total header section size guard also protects against overlong status lines.
+        // A reason phrase that makes the entire header block exceed 64 KB is rejected.
+        var decoder = new Http11Decoder(); // default 64 KB total header limit
+        var longReason = new string('X', 66000);
         var raw = Encoding.ASCII.GetBytes($"HTTP/1.1 200 {longReason}\r\nContent-Length: 0\r\n\r\n");
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-5-HDR-001: Chunked trailer without colon rejected")]

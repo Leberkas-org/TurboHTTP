@@ -63,13 +63,13 @@ These fixes are prerequisites for production use. They address OWASP-relevant at
 **Parallel:** yes — can run alongside TASK-026-001, TASK-026-003, TASK-026-006, TASK-026-009
 
 **Acceptance Criteria:**
-- [ ] Http11Decoder accepts `HttpDecoderOptions` with same limits as Http10Decoder
-- [ ] Header validation happens in `Http11DecoderPipeline` before headers are accumulated
-- [ ] Chunked Transfer-Encoding bodies are NOT subject to header limits (only headers counted)
-- [ ] Trailer headers (if supported) are also subject to `MaxHeaderSize` limit per trailer
-- [ ] Reject with `HttpDecoderException` when limits exceeded
-- [ ] Edge case: folded headers (multi-line via obs-fold) are counted as single header correctly
-- [ ] Compile with zero warnings
+- [x] Http11Decoder accepts `HttpDecoderOptions` with same limits as Http10Decoder
+- [x] Header validation happens in `Http11DecoderPipeline` before headers are accumulated
+- [x] Chunked Transfer-Encoding bodies are NOT subject to header limits (only headers counted)
+- [x] Trailer headers (if supported) are also subject to `MaxHeaderSize` limit per trailer
+- [x] Reject with `HttpDecoderException` when limits exceeded
+- [x] Edge case: folded headers (multi-line via obs-fold) are counted as single header correctly
+- [x] Compile with zero warnings
 
 ---
 

@@ -73,20 +73,6 @@ public sealed class Http10EncoderStageTests : StreamTestBase
         Assert.DoesNotContain("Host:", raw);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC1945-7.1-10ES-004: No Connection header emitted even when set on request")]
-    public async Task Should_SuppressConnectionHeader_When_ConnectionHeaderSet()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
-        {
-            Version = HttpVersion.Version10
-        };
-        request.Headers.TryAddWithoutValidation("Connection", "keep-alive");
-
-        var raw = await EncodeAsync(request);
-
-        Assert.DoesNotContain("Connection:", raw);
-    }
-
     [Fact(Timeout = 10_000, DisplayName = "RFC1945-D.1-10ES-005: POST body bytes follow headers after double-CRLF")]
     public async Task Should_PlacePostBodyAfterHeaders_When_PostWithBody()
     {

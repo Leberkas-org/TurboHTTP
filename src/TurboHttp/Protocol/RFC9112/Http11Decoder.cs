@@ -25,19 +25,31 @@ public sealed class Http11Decoder : IDisposable
 
     // ── Configuration ───────────────────────────────────────────────────────────
 
+    private const int DefaultMaxHeaderSize = 16 * 1024;       // 16 KB per header field
+    private const int DefaultMaxTotalHeaderSize = 64 * 1024;  // 64 KB total headers
+    private const int DefaultMaxBodySize = 10_485_760;        // 10 MB
+    private const int DefaultMaxHeaderCount = 100;
+
     private readonly int _maxHeaderSize;
+    private readonly int _maxTotalHeaderSize;
     private readonly int _maxBodySize;
     private readonly int _maxHeaderCount;
 
     /// <summary>
     /// Creates a new HTTP/1.1 decoder with configurable limits.
     /// </summary>
-    /// <param name="maxHeaderSize">Maximum header section size in bytes (default: 8KB)</param>
+    /// <param name="maxHeaderSize">Maximum single header field size in bytes (default: 16KB)</param>
+    /// <param name="maxTotalHeaderSize">Maximum total header size in bytes (default: 64KB)</param>
     /// <param name="maxBodySize">Maximum body size in bytes (default: 10MB)</param>
     /// <param name="maxHeaderCount">Maximum number of header fields allowed (default: 100)</param>
-    public Http11Decoder(int maxHeaderSize = 8192, int maxBodySize = 10_485_760, int maxHeaderCount = 100)
+    public Http11Decoder(
+        int maxHeaderSize = DefaultMaxHeaderSize,
+        int maxTotalHeaderSize = DefaultMaxTotalHeaderSize,
+        int maxBodySize = DefaultMaxBodySize,
+        int maxHeaderCount = DefaultMaxHeaderCount)
     {
         _maxHeaderSize = maxHeaderSize;
+        _maxTotalHeaderSize = maxTotalHeaderSize;
         _maxBodySize = maxBodySize;
         _maxHeaderCount = maxHeaderCount;
     }
@@ -528,9 +540,10 @@ public sealed class Http11Decoder : IDisposable
             return HttpDecodeResult.Incomplete();
         }
 
-        if (headerEnd > _maxHeaderSize)
+        // Early reject: total header section (including status line) exceeds total limit.
+        if (headerEnd > _maxTotalHeaderSize)
         {
-            return HttpDecodeResult.Fail(HttpDecoderError.LineTooLong);
+            return HttpDecodeResult.Fail(HttpDecoderError.TotalHeadersTooLarge);
         }
 
         var headerSection = buffer[..(headerEnd + 2)];
@@ -597,10 +610,10 @@ public sealed class Http11Decoder : IDisposable
             return HttpDecodeResult.Incomplete();
         }
 
-        // Check header size limit
-        if (headerEnd > _maxHeaderSize)
+        // Early reject: total header section (including status line) exceeds total limit.
+        if (headerEnd > _maxTotalHeaderSize)
         {
-            return HttpDecodeResult.Fail(HttpDecoderError.LineTooLong);
+            return HttpDecodeResult.Fail(HttpDecoderError.TotalHeadersTooLarge);
         }
 
         // Include the CRLF that terminates the last header so FindCrlf/ParseHeaders work correctly.
@@ -765,6 +778,7 @@ public sealed class Http11Decoder : IDisposable
         var headers = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var pos = 0;
         var fieldCount = 0;
+        var totalSize = 0;
 
         while (pos < data.Length)
         {
@@ -783,6 +797,15 @@ public sealed class Http11Decoder : IDisposable
             }
 
             var line = data[pos..lineEnd];
+
+            // RFC 9112 §5.2: obs-fold (continuation line starting with SP/HT) is obsolete.
+            // Reject it as InvalidHeader — the line has no colon so colonIdx check below handles it.
+            // However, explicitly detect it here for clarity and correct size accounting.
+            if (line.Length > 0 && (line[0] == (byte)' ' || line[0] == (byte)'\t'))
+            {
+                throw new HttpDecoderException(HttpDecoderError.ObsoleteFoldingDetected);
+            }
+
             var colonIdx = line.IndexOf((byte)':');
 
             // RFC 9112 §5.1: every header field MUST contain a colon.
@@ -803,6 +826,22 @@ public sealed class Http11Decoder : IDisposable
             {
                 throw new HttpDecoderException(HttpDecoderError.InvalidFieldValue,
                     $"Header '{nameStr}' contains a CR, LF, or NUL character in its value.");
+            }
+
+            // Security: check single header field size (name + ": " + value).
+            var headerSize = name.Length + 2 + value.Length;
+            if (headerSize > _maxHeaderSize)
+            {
+                throw new HttpDecoderException(HttpDecoderError.HeaderTooLarge,
+                    $"Header '{nameStr}' is {headerSize} bytes; limit is {_maxHeaderSize}.");
+            }
+
+            // Security: check cumulative total header size.
+            totalSize += headerSize;
+            if (totalSize > _maxTotalHeaderSize)
+            {
+                throw new HttpDecoderException(HttpDecoderError.TotalHeadersTooLarge,
+                    $"Total header size is {totalSize} bytes; limit is {_maxTotalHeaderSize}.");
             }
 
             if (!headers.TryGetValue(nameStr, out var values))

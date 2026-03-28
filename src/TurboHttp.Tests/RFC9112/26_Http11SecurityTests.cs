@@ -45,11 +45,11 @@ public sealed class Http11SecurityTests
         Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC9112-9-SC-004: Header block below 8KB limit accepted")]
-    public void Should_AcceptHeaderBlock_When_Below8KBLimit()
+    [Fact(DisplayName = "RFC9112-9-SC-004: Header block below total header limit accepted")]
+    public void Should_AcceptHeaderBlock_When_BelowTotalHeaderLimit()
     {
         var decoder = new Http11Decoder();
-        // 8191 bytes before the CRLFCRLF terminator
+        // Well below the 64 KB total header limit
         var raw = BuildResponseWithHeaderBlockPosition(8191);
         var decoded = decoder.TryDecode(raw, out var responses);
 
@@ -57,25 +57,26 @@ public sealed class Http11SecurityTests
         Assert.Single(responses);
     }
 
-    [Fact(DisplayName = "RFC9112-9-SC-005: Header block above 8KB limit rejected")]
-    public void Should_RejectHeaderBlock_When_Above8KBLimit()
+    [Fact(DisplayName = "RFC9112-9-SC-005: Header block above 64KB total limit rejected")]
+    public void Should_RejectHeaderBlock_When_AboveTotalHeaderLimit()
     {
         var decoder = new Http11Decoder();
-        // 8193 bytes before the CRLFCRLF terminator
-        var raw = BuildResponseWithHeaderBlockPosition(8193);
+        // 65537 bytes (64 KB + 1) before the CRLFCRLF terminator — exceeds 64 KB total header limit
+        var raw = BuildResponseWithHeaderBlockPosition(65537);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
-    [Fact(DisplayName = "RFC9112-9-SC-006: Single header value exceeding limit rejected")]
+    [Fact(DisplayName = "RFC9112-9-SC-006: Single header value exceeding 16KB limit rejected")]
     public void Should_RejectSingleHeader_When_ValueExceedsLimit()
     {
         var decoder = new Http11Decoder();
-        var raw = BuildResponseWithLargeHeaderValue(9000);
+        // 17000 bytes exceeds the 16 KB (16384) single header limit
+        var raw = BuildResponseWithLargeHeaderValue(17000);
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(raw, out _));
-        Assert.Equal(HttpDecoderError.LineTooLong, ex.DecodeError);
+        Assert.Equal(HttpDecoderError.HeaderTooLarge, ex.DecodeError);
     }
 
     [Fact(DisplayName = "RFC9112-9-SC-007: Body at configurable limit accepted")]
@@ -214,8 +215,7 @@ public sealed class Http11SecurityTests
     }
 
     /// <summary>
-    /// Build a response with a single header value of <paramref name="valueLength"/> bytes,
-    /// which causes the header block to exceed the 8 KB limit.
+    /// Build a response with a single header value of <paramref name="valueLength"/> bytes.
     /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithLargeHeaderValue(int valueLength)
     {
