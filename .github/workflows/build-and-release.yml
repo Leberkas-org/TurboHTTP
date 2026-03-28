@@ -2,27 +2,37 @@ name: Build and Release NuGet Package
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'src/**'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'src/**'
 
 env:
   GLOBAL_JSON_PATH: './src/global.json'
   PROJECT_PATH: './src/TurboHttp.sln'
   PACKAGE_OUTPUT_DIRECTORY: './packages'
-  TEST_OUTPUT_DIRECTORY: './testresults'
+  TEST_OUTPUT_DIRECTORY: '${{ github.workspace }}/testresults'
+  COVERAGE_REPORT_DIRECTORY: './coveragereport'
 
 permissions:
   contents: write
+  deployments: write
+  checks: write
+  pull-requests: write
 
 jobs:
   build:
     permissions:
       contents: read
+      checks: write
+      pull-requests: write
     # For a list of available runner types, refer to
     # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
     runs-on: ubuntu-latest
     outputs:
-      semVer: ${{ steps.gitversion.outputs.semVer }}
+      releaseVersion: ${{ steps.gitversion.outputs.majorMinorPatch }}
     
     steps:
       - name: Checkout
@@ -35,12 +45,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
-
-      - name: Restore tools
-        run: dotnet tool restore
-        
-      - name: Run Slopwatch
-        run: dotnet tool run slopwatch analyze --fail-on error
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v1.1.1
@@ -50,14 +56,37 @@ jobs:
       - name: Determine Version
         uses: gittools/actions/gitversion/execute@v1.1.1
         id: gitversion
-      
+
+      - name: Generate Release Notes for nuget
+        id: plain-notes
+        env:
+          VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          cat > notes.md << EOF
+          🎯 TurboHttp v$VERSION
+          
+          📦 NuGet: https://nuget.org/packages/TurboHttp
+          🔗 Release: https://github.com/st0o0/TurboHttp/releases/v$VERSION
+          
+          See release page for full changelog and details!
+          
+          Built with ❤️
+          EOF
+          sed -i "s|v\$VERSION|v$VERSION|g" notes.md
+          echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+          cat notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Display GitVersion outputs
         run: |
           echo "Release Version: ${{ steps.gitversion.outputs.majorMinorPatch }}"
           echo "Nuget Version: ${{ steps.gitversion.outputs.fullSemVer }}"
 
       - name: Restore dependencies
-        run: dotnet restore ${{ env.PROJECT_PATH }}
+        run: >
+          dotnet
+          restore
+          ${{ env.PROJECT_PATH }}
 
       - name: Build
         run: >
@@ -65,18 +94,20 @@ jobs:
           --configuration Release
           --no-restore
           ${{ env.PROJECT_PATH }} 
-          /p:Version=${{ steps.gitversion.outputs.semVer }}
+          /p:Version=${{ steps.gitversion.outputs.fullSemVer }}
+          /p:ContinuousIntegrationBuild=true
 
       - name: Run tests
+        working-directory: './src'
         run: >
           dotnet test 
-          --configuration Release 
-          --no-build 
-          --collect:"XPlat Code Coverage;Format=opencover" 
-          --logger trx 
-          --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }} 
-          --verbosity normal 
-          ${{ env.PROJECT_PATH }} 
+          --configuration Release
+          --no-ansi
+          --no-build
+          --coverage
+          --coverage-output-format cobertura
+          --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }}
+          --solution *.sln
 
       - name: Create NuGet package
         run: >
@@ -85,7 +116,20 @@ jobs:
           --no-build 
           --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
           ${{ env.PROJECT_PATH }} 
-          /p:PackageVersion=${{ steps.gitversion.outputs.semVer }}
+          /p:PackageVersion=${{ steps.gitversion.outputs.fullSemVer }}
+          /p:PackageReleaseNotes="${{ steps.plain-notes.outputs.release-notes }}"
+
+      - name: Report Code Coverage
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: '${{ env.TEST_OUTPUT_DIRECTORY }}/*cobertura.xml'
+          targetdir: '${{ env.COVERAGE_REPORT_DIRECTORY }}'
+          reporttypes: 'MarkdownSummaryGithub'
+          tag: '${{ steps.gitversion.outputs.fullSemVer }}'
+
+      - name: Add Coverage Summary to Job Summary
+        if: always()
+        run: cat ${{ env.COVERAGE_REPORT_DIRECTORY }}/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v6
@@ -96,8 +140,12 @@ jobs:
   publish:
     permissions:
       contents: write
+      deployments: write
     runs-on: ubuntu-latest
     needs: build
+    environment:
+      name: nuget
+      url: https://www.nuget.org/packages/TurboHttp
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
@@ -116,18 +164,44 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
       - name: Publish to NuGet
         run: |
           dotnet nuget push --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate ${{ env.PACKAGE_OUTPUT_DIRECTORY }}/*.nupkg
 
+      - name: Generate Release Notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.releaseVersion }}
+        run: |
+          cat > notes.md << EOF
+          🎯 TurboHttp v$VERSION
+          
+          [![NuGet](https://img.shields.io/nuget/v/TurboHttp?logo=nuget)](https://nuget.org/packages/TurboHttp)
+          [![GitHub](https://img.shields.io/github/last-commit/st0o0/TurboHttp/main?logo=github)](https://github.com/st0o0/TurboHttp)
+          
+          EOF
+          
+          gh api repos/${{ github.repository }}/releases/generate-notes \
+          -f tag_name="v\$VERSION" \
+          --jq .body >> notes.md || echo "## 📋 Changes\nNo changelog available" >> notes.md
+
+          sed -i "s|v\$VERSION|v$VERSION|g" notes.md
+          echo "Built with ❤️" >> notes.md
+          echo "release-notes<<EOF" >> $GITHUB_OUTPUT
+          cat notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create & Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v${{ needs.build.outputs.semVer }}"
+          tag_name: "v${{ needs.build.outputs.releaseVersion }}"
           target_commitish: ${{ github.sha }}
-          name: "v${{ needs.build.outputs.semVer }}"
-          generate_release_notes: true
+          name: "TurboHttp v${{ needs.build.outputs.releaseVersion }}"
+          body: ${{ steps.notes.outputs.release-notes }}
           draft: false
           prerelease: false
           make_latest: true
