@@ -27,7 +27,7 @@ public readonly struct TraceEvent
     /// <summary>Format template (compatible with <see cref="string.Format(string,object?)"/>).</summary>
     public string Template { get; }
 
-    private readonly object? _args;
+    private readonly object?[] _args;
 
     internal TraceEvent(
         long timestampTicks,
@@ -53,6 +53,6 @@ public readonly struct TraceEvent
     /// </summary>
     public string FormatMessage()
     {
-        return string.Format(Template, _args);
+        return string.Format(Template, args: _args);
     }
 }

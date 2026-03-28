@@ -6,21 +6,18 @@
 
 Add operational capabilities required for production deployment:
 1. **Request/Response Logging** — Structured logging for diagnostics and auditing
-2. **OpenTelemetry Metrics/Tracing** — Distributed tracing and performance metrics
-3. **Timeout Policies** — Per-operation and per-connection timeout control
+2. **Timeout Policies** — Per-operation and per-connection timeout control
 
 These features enable production monitoring, debugging, and operational visibility.
 
 ### Architecture Context
 - Integrates with Microsoft.Extensions.Logging
-- OpenTelemetry SDK for tracing/metrics
 - Hooks into `TurboHttpClient`, `ConnectionPool`, `Akka.Streams` stages
 
 ## Goals
 1. Implement structured logging (request start, response received, errors)
-2. Add OpenTelemetry Activity/Meter for distributed tracing
-3. Implement timeout policies (request, connection, idle)
-4. Zero impact when logging/tracing disabled
+2. Implement timeout policies (request, connection, idle)
+3. Zero impact when logging/tracing disabled
 
 ## Tasks
 
@@ -40,22 +37,6 @@ These features enable production monitoring, debugging, and operational visibili
 - [ ] Ensure sensitive data (passwords, tokens) are NOT logged
 - [ ] All log messages are structured (use log scopes, properties)
 - [ ] Performance: <100µs logging overhead per request
-
----
-
-### TASK-029-002: OpenTelemetry Tracing Integration
-**Token Estimate:** ~45k | **Predecessors:** none | **Successors:** TASK-029-004 | **Parallel:** yes (with 001, 003)
-
-**Acceptance Criteria:**
-- [ ] Create `TurboHttpActivitySource` with standard HTTP span attributes (RFC 3986)
-- [ ] Instrument request/response lifecycle:
-  - [ ] Activity.Start: "http.client_request" (method, url, headers)
-  - [ ] Activity.SetTag: response status, body size, duration
-  - [ ] Activity.Stop on success or exception
-- [ ] Support distributed tracing headers (W3C Trace Context)
-- [ ] Baggage propagation (correlate related spans)
-- [ ] Zero overhead when tracing disabled
-- [ ] Unit tests verify Activity creation and tags
 
 ---
 

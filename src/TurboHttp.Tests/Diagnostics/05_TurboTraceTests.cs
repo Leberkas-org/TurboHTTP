@@ -29,7 +29,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         var evt = new TraceEvent(
             Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "Test", 0, "Hello world", 0, null, null, null);
+            "Test", 0, "Hello world");
 
         Assert.Equal("Hello world", evt.FormatMessage());
     }
@@ -39,7 +39,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         var evt = new TraceEvent(
             Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "Test", 0, "Value: {0}", 1, 42, null, null);
+            "Test", 0, "Value: {0}", 42, null, null);
 
         Assert.Equal("Value: 42", evt.FormatMessage());
     }
@@ -49,7 +49,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         var evt = new TraceEvent(
             Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "Test", 0, "{0} = {1}", 2, "key", "value", null);
+            "Test", 0, "{0} = {1}", "key", "value", null);
 
         Assert.Equal("key = value", evt.FormatMessage());
     }
@@ -59,7 +59,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         var evt = new TraceEvent(
             Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "Test", 0, "{0}/{1}/{2}", 3, "a", "b", "c");
+            "Test", 0, "{0}/{1}/{2}", "a", "b", "c");
 
         Assert.Equal("a/b/c", evt.FormatMessage());
     }
@@ -70,7 +70,7 @@ public sealed class TurboTraceTests : IDisposable
         var before = Stopwatch.GetTimestamp();
         var evt = new TraceEvent(
             Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "Test", 0, "msg", 0, null, null, null);
+            "Test", 0, "msg");
         var after = Stopwatch.GetTimestamp();
 
         Assert.InRange(evt.TimestampTicks, before, after);
@@ -81,7 +81,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         var evt = new TraceEvent(
             0, TurboTraceLevel.Warning, TurboTraceCategory.Transport,
-            "Test", 0, "msg", 0, null, null, null);
+            "Test", 0, "msg");
 
         Assert.Equal(TurboTraceLevel.Warning, evt.Level);
         Assert.Equal(TurboTraceCategory.Transport, evt.Category);
@@ -92,7 +92,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         var evt = new TraceEvent(
             0, TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "TurboTraceTests", 0, "msg", 0, null, null, null);
+            "TurboTraceTests", 0, "msg");
 
         Assert.Equal("TurboTraceTests", evt.SourceType);
     }
@@ -103,7 +103,7 @@ public sealed class TurboTraceTests : IDisposable
         var hash = GetHashCode();
         var evt = new TraceEvent(
             0, TurboTraceLevel.Debug, TurboTraceCategory.Protocol,
-            "TurboTraceTests", hash, "msg", 0, null, null, null);
+            "TurboTraceTests", hash, "msg");
 
         Assert.Equal(hash, evt.SourceHash);
     }

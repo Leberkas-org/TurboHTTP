@@ -43,16 +43,12 @@ public sealed class LoggerTraceListener : ITurboTraceListener
     /// <inheritdoc />
     public void Write(in TraceEvent evt)
     {
-        if (_loggers.TryGetValue(evt.Category, out var logger))
-        {
-            var logLevel = (LogLevel)evt.Level;
-            if (logger.IsEnabled(logLevel))
-            {
-                var message = evt.FormatMessage();
-                logger.Log(logLevel, "[{SourceType}#{SourceHash:X8}] {Message}",
-                    evt.SourceType, evt.SourceHash, message);
-            }
-        }
+        if (!_loggers.TryGetValue(evt.Category, out var logger)) return;
+        var logLevel = (LogLevel)evt.Level;
+        if (!logger.IsEnabled(logLevel)) return;
+        var message = evt.FormatMessage();
+        logger.Log(logLevel, "[{SourceType}#{SourceHash:X8}] {Message}",
+            evt.SourceType, evt.SourceHash, message);
     }
 
     private static Dictionary<TurboTraceCategory, ILogger> CreateLoggers(ILoggerFactory loggerFactory)

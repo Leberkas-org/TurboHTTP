@@ -133,16 +133,16 @@ These fixes are prerequisites for production use. They address OWASP-relevant at
 **Parallel:** yes — can run alongside TASK-026-001, TASK-026-002, TASK-026-003, TASK-026-009
 
 **Acceptance Criteria:**
-- [ ] Modify `RedirectHandler` to check redirect URI scheme
-- [ ] If current request is HTTPS and redirect target is HTTP:
-  - [ ] By default, throw `RedirectException` with message: "Redirect from HTTPS to HTTP blocked"
-  - [ ] Add configuration option to allow downgrade (for testing/special cases): `AllowHttpDowngrade` flag
-- [ ] Preserve HTTPS→HTTPS and HTTP→HTTP redirects (no change)
-- [ ] Preserve HTTP→HTTPS upgrades (encouraged)
-- [ ] Log redirect decisions (if logging available)
-- [ ] Unit tests document the behavior
-- [ ] Existing tests still pass
-- [ ] Compile with zero warnings
+- [x] Modify `RedirectHandler` to check redirect URI scheme
+- [x] If current request is HTTPS and redirect target is HTTP:
+  - [x] By default, throw `RedirectException` with message: "Redirect from HTTPS to HTTP blocked"
+  - [x] Add configuration option to allow downgrade (for testing/special cases): `AllowHttpDowngrade` flag
+- [x] Preserve HTTPS→HTTPS and HTTP→HTTP redirects (no change)
+- [x] Preserve HTTP→HTTPS upgrades (encouraged)
+- [x] Log redirect decisions (if logging available)
+- [x] Unit tests document the behavior
+- [x] Existing tests still pass
+- [x] Compile with zero warnings
 
 ---
 
