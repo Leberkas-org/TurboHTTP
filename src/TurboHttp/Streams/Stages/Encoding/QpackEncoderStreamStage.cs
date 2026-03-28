@@ -89,7 +89,11 @@ public sealed class QpackEncoderStreamStage : GraphStage<FlowShape<EncoderInstru
                 },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: ex =>
-                    Log.Warning("QpackEncoderStreamStage: Upstream failure absorbed: {0}", ex.Message));
+                {
+                    Log.Warning("QpackEncoderStreamStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("QpackEncoderStreamStage: Failing stage due to upstream failure");
+                    FailStage(ex);
+                });
 
             SetHandler(stage._out,
                 onPull: () => Pull(stage._in),

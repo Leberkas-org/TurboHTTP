@@ -32,7 +32,7 @@ public class Http11Engine : IHttpProtocolEngine
 
             b.From(decoder.Outlet).To(correlation.InResponse);
 
-            var resetSrc = b.Add(Source.Never<NotUsed>());
+            var resetSrc = b.Add(Source.Empty<NotUsed>());
             b.From(resetSrc).To(correlation.InReset);
 
             var signalCast = b.Add(Flow.Create<IControlItem>().Select(IOutputItem (x) => x));

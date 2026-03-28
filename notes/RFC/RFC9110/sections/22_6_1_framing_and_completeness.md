@@ -1,10 +1,19 @@
 ---
-title: "6.1.  Framing and Completeness"
+title: 6.1.  Framing and Completeness
 rfc_number: 9110
-rfc_section: "6.1"
-source_url: "https://www.rfc-editor.org/rfc/rfc9110"
-description: "Section 6.1: Framing and Completeness — RFC 9110 — HTTP Semantics"
-tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, content-negotiation, conditional-requests, framing_and_completeness]
+rfc_section: '6.1'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9110'
+description: 'Section 6.1: Framing and Completeness — RFC 9110 — HTTP Semantics'
+tags:
+  - RFC9110
+  - HTTP-semantics
+  - methods
+  - status-codes
+  - redirects
+  - retries
+  - content-negotiation
+  - conditional-requests
+  - framing_and_completeness
 ---
 
 ## 6.1.  Framing and Completeness
@@ -87,3 +96,22 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    close is considered complete even though it might be
    indistinguishable from an incomplete response, unless a transport-
    level error indicates that it is not complete.
+
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`Http11ResponseDecoder.cs`** — Detects message completeness via Content-Length or chunked transfer coding; handles connection-close framing for HTTP/1.0
+- **`Http2FrameDecoder.cs`** — Uses END_STREAM flag for message completeness in HTTP/2
+- **`Http3FrameDecoder.cs`** — Uses FIN bit on QUIC streams for HTTP/3 message completeness
+- **`MessageCompleteness.cs`** — Shared abstraction tracking whether headers, content, and trailers are complete
+
+### Test References
+- `TurboHttp.Tests/RFC9110/22_FramingCompletenessTests.cs` — Message completeness detection across protocol versions
+
+### Known Gaps
+- None

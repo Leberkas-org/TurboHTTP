@@ -38,6 +38,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
         public readonly Task WatchTask;
         public readonly Queue<T> Pending = new();
         public bool Offering;
+        public bool WatchRegistered;
 
         public SubflowState(ISourceQueueWithComplete<T> queue)
         {
@@ -55,6 +56,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
         private readonly Dictionary<RequestEndpoint, SubflowState> _subflows = new();
         private readonly Queue<Source<T, NotUsed>> _pendingSources = new();
         private Action<(RequestEndpoint Key, T Item, bool Success, SubflowState State)>? _onOfferComplete;
+        private Action<NotUsed>? _onSubstreamDied;
         private bool _upstreamFinished;
 
         public Logic(GroupByHostKeyStage<T> stage, Attributes inheritedAttributes) : base(stage.Shape)
@@ -87,6 +89,8 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
 
         public override void PreStart()
         {
+            _onSubstreamDied = GetAsyncCallback<NotUsed>(_ => TryCompleteStage());
+
             _onOfferComplete = GetAsyncCallback<(RequestEndpoint Key, T Item, bool Success, SubflowState State)>(tuple =>
             {
                 var (key, item, success, originState) = tuple;
@@ -163,13 +167,42 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
         // Two-phase completion: only kill stage actor scope when every substream
         // has actually died. This gives downstream feature BidiStages (Retry,
         // Cache) time to emit re-injections after upstream finishes.
+        //
+        // Liveness guard (DL-009 + DL-010): a substream that is idle (!Offering,
+        // Pending.Count == 0) but not yet dead (!IsDead) may still have async
+        // work running in downstream stages (RetryBidi retries, CacheBidi body
+        // reads).  We must not complete until WatchTask fires for every substream.
         private void TryCompleteStage()
         {
-            var aliveCount = _subflows.Values.Count(state => !state.IsDead);
-
-            if (aliveCount > 0)
+            if (!_upstreamFinished)
             {
-                Log.Debug("GroupByHostKeyStage: deferring completion, {0} substreams still alive", aliveCount);
+                return;
+            }
+
+            var aliveSubstreams = _subflows.Values.Where(state => !state.IsDead).ToList();
+
+            if (aliveSubstreams.Count > 0)
+            {
+                var idleAlive = aliveSubstreams.Count(s => !s.Offering && s.Pending.Count == 0);
+                Log.Debug(
+                    "GroupByHostKeyStage: deferring completion, {0} substreams still alive ({1} idle but not yet dead)",
+                    aliveSubstreams.Count, idleAlive);
+
+                // Register a callback on each alive substream's WatchTask so we
+                // re-check once it dies.  Without this, nobody would re-invoke
+                // TryCompleteStage after TryFinish has already completed the queues.
+                var callback = _onSubstreamDied!;
+                foreach (var state in aliveSubstreams)
+                {
+                    if (!state.WatchRegistered)
+                    {
+                        state.WatchRegistered = true;
+                        state.WatchTask.ContinueWith(
+                            _ => callback(NotUsed.Instance),
+                            TaskContinuationOptions.ExecuteSynchronously);
+                    }
+                }
+
                 return;
             }
 

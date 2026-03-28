@@ -86,7 +86,9 @@ internal sealed class CacheBidiStage
         private readonly CacheBidiStage _stage;
         private CacheState _state = CacheState.Idle;
         private HttpResponseMessage? _bufferedHitResponse;
+        private bool _pendingAsyncRead;
         private Action<(HttpResponseMessage response, byte[] body)>? _onBodyRead;
+        private Action<Exception>? _onBodyReadFailure;
 
         public Logic(CacheBidiStage stage) : base(stage.Shape)
         {
@@ -105,6 +107,13 @@ internal sealed class CacheBidiStage
             SetHandler(stage._outRequest,
                 onPull: () =>
                 {
+                    // DL-010: Do not pull the request inlet while an async body read
+                    // is in flight — the substream must appear busy to GroupByHostKeyStage.
+                    if (_pendingAsyncRead)
+                    {
+                        return;
+                    }
+
                     if (_state == CacheState.Idle && !HasBeenPulled(stage._inRequest))
                     {
                         Pull(stage._inRequest);
@@ -115,11 +124,22 @@ internal sealed class CacheBidiStage
             // Response direction: cache storage
             SetHandler(stage._inResponse,
                 onPush: OnResponsePush,
-                onUpstreamFinish: () => Complete(stage._outResponse),
+                onUpstreamFinish: () =>
+                {
+                    // DL-010: Do not complete while an async body read is in flight.
+                    // The async callback will push the response and then complete.
+                    if (!_pendingAsyncRead)
+                    {
+                        Complete(stage._outResponse);
+                    }
+                },
                 onUpstreamFailure: ex =>
                 {
-                    Log.Warning("CacheBidiStage: Response upstream failure absorbed: {0}", ex.Message);
-                    Complete(stage._outResponse);
+                    if (!_pendingAsyncRead)
+                    {
+                        Log.Warning("CacheBidiStage: Response upstream failure absorbed: {0}", ex.Message);
+                        Complete(stage._outResponse);
+                    }
                 });
 
             SetHandler(stage._outResponse,
@@ -134,6 +154,14 @@ internal sealed class CacheBidiStage
                     }
                     else
                     {
+                        // DL-010: Do not pull the response inlet while an async body
+                        // read is in flight — we haven't finished processing the current
+                        // response yet, and pulling another would corrupt the pipeline.
+                        if (_pendingAsyncRead)
+                        {
+                            return;
+                        }
+
                         // In both Idle and Forwarded states, pull In2 to allow responses
                         // to flow. In the real pipeline In2 only delivers data after a
                         // request has been forwarded on Out1; pulling early is harmless.
@@ -150,13 +178,31 @@ internal sealed class CacheBidiStage
         {
             _onBodyRead = GetAsyncCallback<(HttpResponseMessage response, byte[] body)>(tuple =>
             {
+                _pendingAsyncRead = false;
                 var (response, body) = tuple;
                 var request = response.RequestMessage!;
                 var now = DateTimeOffset.UtcNow;
                 _stage._store!.Put(request, response, body, now, now);
                 Push(_stage._outResponse, response);
                 _state = CacheState.Idle;
-                MaybePullNextRequest();
+
+                // DL-010: If upstream finished while the async read was in flight,
+                // complete the outlet now that we've pushed the final response.
+                if (IsClosed(_stage._inResponse))
+                {
+                    Complete(_stage._outResponse);
+                }
+                else
+                {
+                    MaybePullNextRequest();
+                }
+            });
+
+            _onBodyReadFailure = GetAsyncCallback<Exception>(ex =>
+            {
+                _pendingAsyncRead = false;
+                Log.Warning("CacheBidiStage: Async body read failed: {0}", ex.Message);
+                FailStage(ex);
             });
         }
 
@@ -341,13 +387,25 @@ internal sealed class CacheBidiStage
                     return (response, false);
                 }
 
-                // Async fallback: content not yet available — schedule callback.
+                // Async fallback: content not yet available — schedule via GetAsyncCallback
+                // to keep the stage scope alive (prevents GroupByHostKeyStage from
+                // completing the substream while the body read is in progress — DL-010).
+                _pendingAsyncRead = true;
                 var callback = _onBodyRead!;
+                var failureCallback = _onBodyReadFailure!;
                 var capturedResponse = response;
                 task.ContinueWith(t =>
                 {
-                    callback((capturedResponse, t.Result));
-                }, TaskContinuationOptions.ExecuteSynchronously);
+                    if (t.IsCompletedSuccessfully)
+                    {
+                        callback((capturedResponse, t.Result));
+                    }
+                    else
+                    {
+                        failureCallback(t.Exception?.GetBaseException()
+                            ?? new InvalidOperationException("Async body read failed"));
+                    }
+                }, TaskScheduler.Default);
 
                 return (response, true);
             }
@@ -402,6 +460,13 @@ internal sealed class CacheBidiStage
 
         private void MaybePullNextRequest()
         {
+            // DL-010: Do not pull the request inlet while an async body read
+            // is in flight — the substream must appear busy to GroupByHostKeyStage.
+            if (_pendingAsyncRead)
+            {
+                return;
+            }
+
             if (IsAvailable(_stage._outRequest) && !HasBeenPulled(_stage._inRequest))
             {
                 Pull(_stage._inRequest);

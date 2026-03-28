@@ -26,9 +26,6 @@ public sealed class QpackDynamicTable
     public const int EntryOverhead = 32;
 
     private readonly LinkedList<(int AbsoluteIndex, QpackEntry Entry, int Size)> _entries = [];
-    private int _capacity;
-    private int _currentSize;
-    private int _insertCount;
 
     /// <summary>
     /// Creates a new QPACK dynamic table with the specified maximum capacity in bytes.
@@ -41,14 +38,14 @@ public sealed class QpackDynamicTable
             throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity must be non-negative.");
         }
 
-        _capacity = capacity;
+        Capacity = capacity;
     }
 
     /// <summary>Maximum table capacity in bytes.</summary>
-    public int Capacity => _capacity;
+    public int Capacity { get; private set; }
 
     /// <summary>Currently occupied table size in bytes.</summary>
-    public int CurrentSize => _currentSize;
+    public int CurrentSize { get; private set; }
 
     /// <summary>Number of entries currently in the table.</summary>
     public int Count => _entries.Count;
@@ -58,7 +55,7 @@ public sealed class QpackDynamicTable
     /// This value only increases and is never reset, even when entries are evicted.
     /// Used by the encoder and decoder to synchronise state.
     /// </summary>
-    public int InsertCount => _insertCount;
+    public int InsertCount { get; private set; }
 
     /// <summary>
     /// RFC 9204 §3.2.3 — Sets the dynamic table capacity.
@@ -72,7 +69,7 @@ public sealed class QpackDynamicTable
             throw new QpackException("RFC 9204 §3.2.3 violation: Dynamic table capacity must be non-negative.");
         }
 
-        _capacity = newCapacity;
+        Capacity = newCapacity;
         Evict();
     }
 
@@ -87,22 +84,22 @@ public sealed class QpackDynamicTable
         var entrySize = CalculateEntrySize(name, value);
 
         // RFC 9204 §3.2.2: Entry larger than capacity → evict everything, do not insert
-        if (entrySize > _capacity)
+        if (entrySize > Capacity)
         {
             Clear();
             return -1;
         }
 
         // Evict oldest entries until there is room
-        while (_currentSize + entrySize > _capacity && _entries.Count > 0)
+        while (CurrentSize + entrySize > Capacity && _entries.Count > 0)
         {
             RemoveOldest();
         }
 
-        var absoluteIndex = _insertCount;
+        var absoluteIndex = InsertCount;
         _entries.AddLast((absoluteIndex, new QpackEntry(name, value), entrySize));
-        _currentSize += entrySize;
-        _insertCount++;
+        CurrentSize += entrySize;
+        InsertCount++;
 
         return absoluteIndex;
     }
@@ -114,7 +111,7 @@ public sealed class QpackDynamicTable
     /// <param name="absoluteIndex">The absolute index (0-based, monotonically assigned).</param>
     public QpackEntry? GetEntry(int absoluteIndex)
     {
-        if (absoluteIndex < 0 || absoluteIndex >= _insertCount)
+        if (absoluteIndex < 0 || absoluteIndex >= InsertCount)
         {
             return null;
         }
@@ -160,7 +157,7 @@ public sealed class QpackDynamicTable
     /// Returns the lowest absolute index still present in the table,
     /// or -1 if the table is empty.
     /// </summary>
-    public int DroppedCount => _entries.Count > 0 ? _entries.First!.Value.AbsoluteIndex : _insertCount;
+    public int DroppedCount => _entries.Count > 0 ? _entries.First!.Value.AbsoluteIndex : InsertCount;
 
     /// <summary>
     /// RFC 9204 §3.2.1 — Calculates the size of a header entry including the 32-byte overhead.
@@ -170,7 +167,7 @@ public sealed class QpackDynamicTable
 
     private void Evict()
     {
-        while (_currentSize > _capacity && _entries.Count > 0)
+        while (CurrentSize > Capacity && _entries.Count > 0)
         {
             RemoveOldest();
         }
@@ -179,13 +176,13 @@ public sealed class QpackDynamicTable
     private void RemoveOldest()
     {
         var oldest = _entries.First!.Value;
-        _currentSize -= oldest.Size;
+        CurrentSize -= oldest.Size;
         _entries.RemoveFirst();
     }
 
     private void Clear()
     {
         _entries.Clear();
-        _currentSize = 0;
+        CurrentSize = 0;
     }
 }

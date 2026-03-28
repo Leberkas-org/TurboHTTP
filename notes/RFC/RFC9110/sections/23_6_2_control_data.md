@@ -1,10 +1,19 @@
 ---
-title: "6.2.  Control Data"
+title: 6.2.  Control Data
 rfc_number: 9110
-rfc_section: "6.2"
-source_url: "https://www.rfc-editor.org/rfc/rfc9110"
-description: "Section 6.2: Control Data — RFC 9110 — HTTP Semantics"
-tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, content-negotiation, conditional-requests, control_data]
+rfc_section: '6.2'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9110'
+description: 'Section 6.2: Control Data — RFC 9110 — HTTP Semantics'
+tags:
+  - RFC9110
+  - HTTP-semantics
+  - methods
+  - status-codes
+  - redirects
+  - retries
+  - content-negotiation
+  - conditional-requests
+  - control_data
 ---
 
 ## 6.2.  Control Data
@@ -61,3 +70,22 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    support for that higher version, is sufficiently backwards-compatible
    to be safely processed by any implementation of the same major
    version.
+
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`HttpRequestEncoder.cs`** — Sets protocol version in request control data; sends highest conformant version per §6.2
+- **`Http11RequestEncoder.cs`** — Encodes request-line with method, request-target, and HTTP/1.1 version
+- **`Http2RequestEncoder.cs`** — Maps control data to pseudo-header fields (`:method`, `:path`, `:scheme`, `:authority`)
+- **`HttpResponseDecoder.cs`** — Parses status code and reason phrase from response control data
+
+### Test References
+- `TurboHttp.Tests/RFC9110/23_ControlDataTests.cs` — Version negotiation, pseudo-header mapping
+
+### Known Gaps
+- ⚠️ Version downgrade — Client does not automatically retry with lower HTTP version if server indicates incompatibility

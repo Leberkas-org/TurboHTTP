@@ -108,3 +108,21 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    Check (CRC) that is commonly produced by the gzip file compression
 > **SHOULD**: program [RFC1952].  A recipient SHOULD consider "x-gzip" to be
    equivalent to "gzip".
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`DecompressionStage.cs`** — Decodes gzip, deflate, and br (Brotli) content encodings; processes Content-Encoding header to determine decoding chain order
+- **`ContentEncodingHandler.cs`** — Parses Content-Encoding header; applies decodings in reverse order per §8.4
+- **`AcceptEncodingBuilder.cs`** — Generates Accept-Encoding request header advertising supported codings (gzip, deflate, br)
+
+### Test References
+- `TurboHttp.Tests/RFC9110/39_ContentEncodingTests.cs` — gzip/deflate/br decoding, multi-layer encoding, x-gzip equivalence
+
+### Known Gaps
+- ❌ Compress (LZW) — Not supported; x-compress/compress coding not implemented
+- ⚠️ Identity coding — Correctly excluded from Content-Encoding but not explicitly validated on receipt

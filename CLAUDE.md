@@ -38,12 +38,10 @@ npm run docs:preview      # Preview production build
 ## Architecture (High-Level)
 
 ```
-Client Layer (TurboHttp/Client/)         — ITurboHttpClient, factory, DI
-Handlers Layer (TurboHttp/Handlers/)     — TurboHandler delegating bridge
-Hosting Layer (TurboHttp/Hosting/)       — DI registration
-Streams Layer (TurboHttp/Streams/)       — GraphStages: Encoding/, Decoding/, Features/, Routing/
+Client Surface (TurboHttp/)              — ITurboHttpClient, factory, builder, DI extensions
+Streams Layer (TurboHttp/Streams/)       — Engines, GraphStages: Encoding/, Decoding/, Features/, Routing/
 Protocol Layer (TurboHttp/Protocol/)     — Encoders/Decoders, HPACK/QPACK, business logic (RFC subfolders)
-Transport Layer (TurboHttp/Transport/)   — Actor-free connection pool, Channels, TCP/QUIC
+Transport Layer (TurboHttp/Transport/)   — Connection pool, leases, TCP/QUIC handlers
 ```
 
 > **Details**: Architecture, protocol internals, transport design, decoder pipeline, known limitations, and project status are documented in the **Obsidian vault** at `notes/Architecture/`. Use the Obsidian MCP to search and read.
@@ -150,11 +148,9 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 - **Max 500 lines per test class** — split into multiple files if exceeded
 - **Timeout is REQUIRED** — all async tests must have `[Fact(Timeout = 5000)]` / `[Theory(Timeout = 5000)]` or `CancellationToken` with timeout in test body
 
-> See [`RFC_COVERAGE.md`](RFC_COVERAGE.md) for the full RFC compliance matrix and per-file mapping.
-
 ## Dependencies
 
-- **Akka.Streams** 1.5.63, **Servus.Akka** 0.3.10, **.NET 10.0**, **xunit.v3** 3.2.2, **Akka.TestKit.Xunit** 1.5.63
+- **Akka.Streams** 1.5.63, **Servus.Akka** 0.3.10, **.NET 10.0**, **xunit.v3** 3.2.2, **Akka.TestKit.Xunit** 1.5.63, **BenchmarkDotNet** 0.15.8
 
 ## Custom Agents (`.claude/agents/`)
 
@@ -166,6 +162,7 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 | `namespace-refactorer` | Execute one TASK from `.maggus/plan_010.md` |
 | `stream-test-writer` | Generate `TurboHttp.StreamTests` files following `StreamTestBase` conventions |
 | `stage-port-validator` | Scan all stages for port naming convention violations |
+| `displayname-validator` | Validate `[Fact]`/`[Theory]` DisplayName attributes follow project naming convention |
 
 ## Agent Guidance: dotnet-skills
 

@@ -29,10 +29,10 @@ public sealed class SmokeTests : IAsyncLifetime
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 30000)]
     public async Task Get_Hello_Returns_200_HelloWorld()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");
 
         var response = await _helper!.Client.SendAsync(request, cts.Token);

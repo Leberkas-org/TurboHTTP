@@ -109,3 +109,26 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    error codes be treated as equivalent to H3_NO_ERROR (Section 9).
 > **SHOULD**: Implementations SHOULD select an error code from this space with some
    probability when they would have sent H3_NO_ERROR.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+
+- **`Http3ErrorCodes.cs`** — Defines all 16 error codes from §8.1 with correct hex values: `H3_NO_ERROR` (0x0100) through `H3_VERSION_FALLBACK` (0x0110)
+- **`Http3FrameDecoder.cs`** — Maps protocol violations to appropriate error codes; treats unknown error codes as `H3_NO_ERROR` per §8
+- **`Http3ControlStream.cs`** — Raises `H3_MISSING_SETTINGS` when control stream first frame is not SETTINGS; raises `H3_CLOSED_CRITICAL_STREAM` when control stream is closed
+- **`Http3Connection.cs`** — Distinguishes stream errors from connection errors; escalates stream errors to connection errors when appropriate per §8
+
+### Test References
+
+- `TurboHttp.Tests/RFC9114/09_Http3ErrorCodeTests.cs` — Error code value validation, unknown code handling
+- `TurboHttp.Tests/RFC9114/10_Http3ConnectionErrorTests.cs` — Connection-level error propagation tests
+- `TurboHttp.Tests/RFC9114/11_Http3StreamErrorTests.cs` — Stream-level error isolation tests
+
+### Known Gaps
+
+- ⚠️ Reserved error codes (0x1f*N+0x21) are not probabilistically sent in place of `H3_NO_ERROR` per §8.1 SHOULD — always sends exact error code

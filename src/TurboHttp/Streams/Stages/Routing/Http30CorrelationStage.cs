@@ -57,7 +57,12 @@ internal sealed class
                     _requestUpstreamFinished = true;
                     TryComplete();
                 },
-                onUpstreamFailure: ex => Log.Warning("Http30CorrelationStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("Http30CorrelationStage: Request inlet upstream failure: {0}", ex.Message);
+                    Log.Debug("Http30CorrelationStage: Failing stage due to request inlet upstream failure.");
+                    FailStage(ex);
+                });
 
             SetHandler(stage._inResponse,
                 onPush: () =>
@@ -77,7 +82,12 @@ internal sealed class
                     _responseUpstreamFinished = true;
                     TryComplete();
                 },
-                onUpstreamFailure: ex => Log.Warning("Http30CorrelationStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("Http30CorrelationStage: Response inlet upstream failure: {0}", ex.Message);
+                    Log.Debug("Http30CorrelationStage: Failing stage due to response inlet upstream failure.");
+                    FailStage(ex);
+                });
 
             SetHandler(stage._out,
                 onPull: () =>

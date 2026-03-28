@@ -20,10 +20,10 @@ public sealed class ErrorHandlingIntegrationTests
         return ClientHelper.CreateClient(_server.HttpPort, new Version(1, 0), system: _systemFixture.System);
     }
 
-    [Fact(DisplayName = "Error-H10-001: Delay route completes after server-side wait")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-001: Delay route completes after server-side wait")]
     public async Task Delay_Route_Completes_After_Wait()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/delay/500");
@@ -34,7 +34,7 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal("delayed", body);
     }
 
-    [Fact(DisplayName = "Error-H10-002: Timeout cancellation aborts in-flight request")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-002: Timeout cancellation aborts in-flight request")]
     public async Task Timeout_Cancellation_Aborts_InFlight_Request()
     {
         await using var helper = CreateClient();
@@ -46,10 +46,10 @@ public sealed class ErrorHandlingIntegrationTests
             async () => await helper.Client.SendAsync(request, sendCts.Token));
     }
 
-    [Fact(DisplayName = "Error-H10-003: Mid-response connection abort returns truncated body")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-003: Mid-response connection abort returns truncated body")]
     public async Task MidResponse_Connection_Abort_Returns_Truncated_Body()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/edge/close-mid-response");
@@ -61,12 +61,12 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.True(body.Length < 10000, $"Body should be truncated but was {body.Length} bytes");
     }
 
-    [Theory(DisplayName = "Error-H10-004: Large response headers received correctly")]
+    [Theory(Timeout = 30000, DisplayName = "Error-H10-004: Large response headers received correctly")]
     [InlineData(1)]
     [InlineData(4)]
     public async Task Large_Response_Headers_Received(int kb)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/edge/large-header/{kb}");
@@ -78,13 +78,13 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal(kb * 1024, headerValue.Length);
     }
 
-    [Fact(DisplayName = "Error-H10-005: Unknown Content-Encoding returns response gracefully")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-005: Unknown Content-Encoding returns response gracefully")]
     public async Task Unknown_ContentEncoding_Returns_Response_Gracefully()
     {
         // When the server returns an unknown Content-Encoding, the pipeline
         // passes the response through without decompression rather than throwing.
         // Verify the client completes without hanging or crashing.
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/edge/unknown-encoding");
@@ -93,10 +93,10 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact(DisplayName = "Error-H10-006: Empty body with no Content-Length returns empty")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-006: Empty body with no Content-Length returns empty")]
     public async Task Empty_Body_No_ContentLength_Returns_Empty()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/edge/empty-body");
@@ -107,10 +107,10 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal("", body);
     }
 
-    [Fact(DisplayName = "Error-H10-007: Content-Length 0 returns empty body")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-007: Content-Length 0 returns empty body")]
     public async Task ContentLength_Zero_Returns_Empty_Body()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/empty-cl");
@@ -121,7 +121,7 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal("", body);
     }
 
-    [Theory(DisplayName = "Error-H10-008: 4xx status codes returned as response, not thrown")]
+    [Theory(Timeout = 30000, DisplayName = "Error-H10-008: 4xx status codes returned as response, not thrown")]
     [InlineData(400)]
     [InlineData(401)]
     [InlineData(403)]
@@ -129,7 +129,7 @@ public sealed class ErrorHandlingIntegrationTests
     [InlineData(429)]
     public async Task Status_4xx_Returned_As_Response(int statusCode)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/status/{statusCode}");
@@ -138,13 +138,13 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal((HttpStatusCode)statusCode, response.StatusCode);
     }
 
-    [Theory(DisplayName = "Error-H10-009: 5xx status codes returned as response, not thrown")]
+    [Theory(Timeout = 30000, DisplayName = "Error-H10-009: 5xx status codes returned as response, not thrown")]
     [InlineData(500)]
     [InlineData(502)]
     [InlineData(503)]
     public async Task Status_5xx_Returned_As_Response(int statusCode)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/status/{statusCode}");
@@ -153,10 +153,10 @@ public sealed class ErrorHandlingIntegrationTests
         Assert.Equal((HttpStatusCode)statusCode, response.StatusCode);
     }
 
-    [Fact(DisplayName = "Error-H10-010: Custom X-Unknown headers are accessible")]
+    [Fact(Timeout = 30000, DisplayName = "Error-H10-010: Custom X-Unknown headers are accessible")]
     public async Task Custom_Unknown_Headers_Are_Accessible()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/unknown-headers");

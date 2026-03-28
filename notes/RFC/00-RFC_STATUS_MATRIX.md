@@ -20,7 +20,7 @@ aliases:
 ---
 # RFC Compliance Status Matrix
 
-**Last Updated**: 2026-03-26  
+**Last Updated**: 2026-03-28  
 **Overall Client-Side Compliance**: 86/100 — Production-Ready  
 **Test Coverage**: 260+ unit tests, 515+ integration tests
 
@@ -254,6 +254,20 @@ aliases:
 **Test Files**:
 - `TurboHttp.Tests/RFC9111/` — 4 test classes, 75 unit tests
 - `TurboHttp.StreamTests/RFC9111/` — Cache lookup/storage stages
+
+## Section-Level Compliance Documentation
+
+Each core RFC now has ≥8 section files with detailed `TurboHttp Compliance` blocks documenting implementation status, key components, compliance details, gaps, and test references.
+
+| RFC | Total Section Files | Files with Compliance Docs | Key Sections Covered |
+|-----|--------------------|-----------------------------|----------------------|
+| **RFC 9110** | 8 | 8 | §6.1 Framing, §6.2 Control Data, §6.4 Content, §8.4 Content-Encoding, §9.3 Methods, §15.1 Status Codes, §15.3 Successful 2xx, §15.4 Redirects |
+| **RFC 9111** | 8 | 8 | §2 Cache Overview, §3 Storing, §4.1 Vary/Keys, §4.2 Freshness, §4.3 Validation, §4.4 Invalidation, §5.1 Age, §5.2 Cache-Control |
+| **RFC 9112** | 25 | 8 | §2 Message, §3 Request Line, §4 Status Line, §5 Field Syntax, §6 Message Body, §7 Transfer Codings, §8 Incomplete Messages, §9.3 Persistence |
+| **RFC 9113** | 9 | 8 | §3.4 Preface, §4 Frames, §5 Streams, §6 Settings, §7 Error Codes, §8.1 Framing, §8.2 Fields, §9 Connections |
+| **RFC 9114** | 10 | 8 | §4.1 Frames, §4.4 Streams, §6.2 Control Streams, §7.2.4 Settings, §8 Error Handling, §8.1 Framing, §10 Security, §A.2 Settings |
+
+**Last compliance doc update**: 2026-03-28
 
 ## Known Limitations & Gaps
 

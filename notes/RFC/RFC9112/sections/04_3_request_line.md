@@ -1,10 +1,19 @@
 ---
-title: "3.  Request Line"
+title: 3.  Request Line
 rfc_number: 9112
-rfc_section: "3"
-source_url: "https://www.rfc-editor.org/rfc/rfc9112"
-description: "Section 3: Request Line — RFC 9112 — HTTP/1.1"
-tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-management, keep-alive, Host-header, pipelining, request_line]
+rfc_section: '3'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9112'
+description: 'Section 3: Request Line — RFC 9112 — HTTP/1.1'
+tags:
+  - RFC9112
+  - HTTP/1.1
+  - message-framing
+  - chunked-encoding
+  - connection-management
+  - keep-alive
+  - Host-header
+  - pipelining
+  - request_line
 ---
 
 ## 3.  Request Line
@@ -310,3 +319,33 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
    determining whether that target URI identifies a resource for which
    the server is willing and able to send a response, as defined in
    Section 7.4 of [HTTP].
+
+
+---
+
+## TurboHttp Compliance
+
+**Status:** ✅ Compliant
+
+**Implementation Notes:**
+TurboHttp's `Http11RequestEncoder` generates compliant request-lines with method, request-target (origin-form), and HTTP-version. The Host header is always included in HTTP/1.1 requests. Request-target is derived from the target URI using origin-form (absolute-path + query).
+
+**Key Components:**
+- `Http11RequestEncoder` — generates `method SP request-target SP HTTP-version CRLF`
+- `HttpRequestEncoder` — prepares request metadata including Host header
+
+**Compliance Details:**
+- ✅ Request-line format: `method SP request-target SP HTTP-version`
+- ✅ Host header always sent in HTTP/1.1 requests
+- ✅ Origin-form used for direct requests (absolute-path + query)
+- ✅ Empty path normalized to "/"
+- ⚠️ Absolute-form (proxy requests) not currently used (TurboHttp is not a proxy client)
+- ⚠️ Authority-form (CONNECT) not supported
+- ⚠️ Asterisk-form (OPTIONS *) not supported
+
+**Gaps:**
+- No proxy-style absolute-form request-target
+- No CONNECT method support
+- No OPTIONS * (server-wide) support
+
+**Test References:** `TurboHttp.Tests.RFC9112`

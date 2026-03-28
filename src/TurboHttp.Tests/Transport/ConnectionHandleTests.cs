@@ -4,7 +4,7 @@ using System.Threading.Channels;
 using Akka.Actor;
 using Akka.TestKit.Xunit;
 using TurboHttp.Internal;
-using TurboHttp.Pooling;
+using TurboHttp.Transport;
 
 namespace TurboHttp.Tests.Transport;
 

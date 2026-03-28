@@ -328,3 +328,36 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    response containing "multipart/byteranges" content, or multiple 206
    (Partial Content) responses, each with one continuous range that is
    indicated by a Content-Range header field.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ⚠️ Partial
+
+### Implementation Notes
+- **`Http11Decoder.cs`** / **`Http10Decoder.cs`** — Parse status-line and extract three-digit status code; 2xx codes flow through standard response path
+- **`Http3ResponseDecoder.cs`** — Decodes `:status` pseudo-header for HTTP/3 2xx responses
+- **`PartialContentValidator.cs`** — Validates 206 Partial Content responses: Content-Range parsing, single-part vs multipart detection per §15.3.7
+- **`ConnectionReuseEvaluator.cs`** — Treats 2xx as successful for connection reuse decisions
+- **`CacheStore.cs`** — Stores heuristically cacheable 2xx responses (200, 203, 204, 206) per §15.3 cacheability rules
+
+### Compliance Details
+| Sub-section | Status | Notes |
+|-------------|--------|-------|
+| §15.3.1 200 OK | ✅ Compliant | Fully parsed and handled across all protocol versions |
+| §15.3.2 201 Created | ✅ Compliant | Location header extraction supported |
+| §15.3.3 202 Accepted | ✅ Compliant | Passed through as standard response |
+| §15.3.4 203 Non-Authoritative | ✅ Compliant | Heuristically cacheable per cache rules |
+| §15.3.5 204 No Content | ✅ Compliant | Zero-length body enforced; cacheable |
+| §15.3.6 205 Reset Content | ✅ Compliant | No content generated per MUST NOT |
+| §15.3.7 206 Partial Content | ⚠️ Partial | Single-part Content-Range parsed; multipart/byteranges not fully supported |
+
+### Test References
+- `TurboHttp.Tests/RFC1945/12_RoundTripStatusCodeTests.cs` — HTTP/1.0 status code round-trips including 2xx
+- `TurboHttp.Tests/RFC9112/17_RoundTripStatusCodeTests.cs` — HTTP/1.1 status code round-trips including 2xx
+- `TurboHttp.StreamTests/RFC9112/09_Http11StatusCodeParsingTests.cs` — Status line parsing stage tests
+
+### Known Gaps
+- 206 multipart/byteranges response assembly not implemented (§15.3.7.2)
+- 206 range combining across multiple responses not implemented (§15.3.7.3)

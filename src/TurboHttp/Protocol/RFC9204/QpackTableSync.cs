@@ -59,7 +59,6 @@ public sealed class QpackTableSync
     private readonly int _maxBlockedStreams;
 
     // Encoder-side state: tracks what the encoder knows the decoder has received
-    private int _knownReceivedCount;
 
     // Tracks the highest Required Insert Count seen in Section Acknowledgments per stream
     private readonly Dictionary<int, int> _streamMaxInsertCounts = [];
@@ -93,7 +92,7 @@ public sealed class QpackTableSync
     /// RFC 9204 §2.1.1 — The Known Received Count: the largest value of Insert Count
     /// that the encoder knows the decoder has received.
     /// </summary>
-    public int KnownReceivedCount => _knownReceivedCount;
+    public int KnownReceivedCount { get; private set; }
 
     /// <summary>Current number of blocked streams.</summary>
     public int BlockedStreamCount => _blockedStreams.Count;
@@ -234,12 +233,12 @@ public sealed class QpackTableSync
     public int WriteInsertCountIncrement(IBufferWriter<byte> output)
     {
         var currentInsertCount = _decoder.DynamicTable.InsertCount;
-        var increment = currentInsertCount - _knownReceivedCount;
+        var increment = currentInsertCount - KnownReceivedCount;
 
         if (increment > 0)
         {
             QpackDecoderInstructionWriter.WriteInsertCountIncrement(increment, output);
-            _knownReceivedCount = currentInsertCount;
+            KnownReceivedCount = currentInsertCount;
             return increment;
         }
 
@@ -287,9 +286,9 @@ public sealed class QpackTableSync
     {
         if (_streamMaxInsertCounts.TryGetValue(streamId, out var maxInsertCount))
         {
-            if (maxInsertCount > _knownReceivedCount)
+            if (maxInsertCount > KnownReceivedCount)
             {
-                _knownReceivedCount = maxInsertCount;
+                KnownReceivedCount = maxInsertCount;
             }
 
             _streamMaxInsertCounts.Remove(streamId);
@@ -307,7 +306,7 @@ public sealed class QpackTableSync
             throw new QpackException("RFC 9204 §4.4.3 violation: Insert Count Increment must be positive.");
         }
 
-        _knownReceivedCount += increment;
+        KnownReceivedCount += increment;
     }
 
     /// <summary>

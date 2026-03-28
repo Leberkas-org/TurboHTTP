@@ -61,6 +61,53 @@ public sealed class Http11ConnectionReuseStageTests : StreamTestBase
         return (resultResponses, resultDecisions);
     }
 
+    /// <summary>
+    /// Runs the stage with HTTP/1.0 responses where the signal outlet is bypassed.
+    /// Returns responses only — the signal outlet should complete with zero elements.
+    /// </summary>
+    private async Task<IReadOnlyList<HttpResponseMessage>> RunH10BypassAsync(
+        bool bodyFullyConsumed = true, params HttpResponseMessage[] responses)
+    {
+        foreach (var r in responses)
+        {
+            r.Version = HttpVersion.Version10;
+        }
+
+        var probe0 = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+        var probe1 = this.CreateManualSubscriberProbe<IOutputItem>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var stage = b.Add(new ConnectionReuseStage(bodyFullyConsumed));
+            var src = b.Add(Source.From(responses));
+
+            b.From(src).To(stage.In);
+            b.From(stage.Out0).To(Sink.FromSubscriber(probe0));
+            b.From(stage.Out1).To(Sink.FromSubscriber(probe1));
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var sub0 = await probe0.ExpectSubscriptionAsync(CancellationToken.None);
+        var sub1 = await probe1.ExpectSubscriptionAsync(CancellationToken.None);
+
+        // Signal outlet needs initial demand so TryPullIfReady can proceed
+        sub1.Request(responses.Length + 1);
+
+        var resultResponses = new List<HttpResponseMessage>();
+
+        for (var i = 0; i < responses.Length; i++)
+        {
+            sub0.Request(1);
+            resultResponses.Add(await probe0.ExpectNextAsync(CancellationToken.None));
+        }
+
+        // Signal outlet should complete with zero elements (H10 bypass)
+        await probe1.ExpectCompleteAsync(CancellationToken.None);
+
+        return resultResponses;
+    }
+
     private static HttpResponseMessage MakeResponse(
         HttpStatusCode status = HttpStatusCode.OK,
         string? connectionHeader = null,
@@ -128,28 +175,26 @@ public sealed class Http11ConnectionReuseStageTests : StreamTestBase
         Assert.False(decision.Decision.CanReuse);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-004: HTTP/1.0 Connection: Keep-Alive → CanReuse = true")]
-    public async Task Should_AllowReuse_WhenHttp10WithKeepAlive()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-004: HTTP/1.0 Connection: Keep-Alive → bypass, no signal emitted")]
+    public async Task Should_BypassSignal_WhenHttp10WithKeepAlive()
     {
         var response = MakeResponse(connectionHeader: "Keep-Alive");
 
-        var (results, decisions) = await RunAsync(HttpVersion.Version10, true, response);
+        var results = await RunH10BypassAsync(true, response);
 
-        Assert.Single(results);
-        var decision = Assert.Single(decisions);
-        Assert.True(decision.Decision.CanReuse);
+        var result = Assert.Single(results);
+        Assert.Same(response, result);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-005: HTTP/1.0 no Connection header → CanReuse = false (not persistent by default)")]
-    public async Task Should_DisallowReuse_WhenHttp10WithNoKeepAlive()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-005: HTTP/1.0 no Connection header → bypass, no signal emitted")]
+    public async Task Should_BypassSignal_WhenHttp10WithNoKeepAlive()
     {
         var response = MakeResponse();
 
-        var (results, decisions) = await RunAsync(HttpVersion.Version10, true, response);
+        var results = await RunH10BypassAsync(true, response);
 
-        Assert.Single(results);
-        var decision = Assert.Single(decisions);
-        Assert.False(decision.Decision.CanReuse);
+        var result = Assert.Single(results);
+        Assert.Same(response, result);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-006: bodyFullyConsumed = false → CanReuse = false")]
@@ -232,19 +277,16 @@ public sealed class Http11ConnectionReuseStageTests : StreamTestBase
         Assert.Equal(HttpVersion.Version11, decision.Key.Version);
     }
 
-    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-012: HTTP/1.0 response with RequestMessage → Key has correct endpoint")]
-    public async Task Should_SetCorrectEndpointKey_WhenHttp10ResponseWithRequestMessage()
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-012: HTTP/1.0 response with RequestMessage → bypass, response passes through")]
+    public async Task Should_BypassSignalAndPassResponse_WhenHttp10ResponseWithRequestMessage()
     {
         var response = MakeResponseWithRequest(HttpVersion.Version10, "http://legacy.example.com:80/old",
             connectionHeader: "Keep-Alive");
 
-        var (_, decisions) = await RunAsync(HttpVersion.Version10, true, response);
+        var results = await RunH10BypassAsync(true, response);
 
-        var decision = Assert.Single(decisions);
-        Assert.Equal("legacy.example.com", decision.Key.Host);
-        Assert.Equal(80, decision.Key.Port);
-        Assert.Equal("http", decision.Key.Scheme);
-        Assert.Equal(HttpVersion.Version10, decision.Key.Version);
+        var result = Assert.Single(results);
+        Assert.Same(response, result);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-013: HTTP/2 response with RequestMessage → Key has correct endpoint")]
@@ -297,10 +339,39 @@ public sealed class Http11ConnectionReuseStageTests : StreamTestBase
         probe0.ExpectSubscription().Request(10);
         probe1.ExpectSubscription().Request(10);
 
-        // Fail upstream — stage must absorb, neither outlet must see error
+        // Fail upstream — stage absorbs error (no OnError) but completes gracefully
         pubSub.SendError(new Exception("upstream boom"));
 
-        probe0.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
-        probe1.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        probe0.ExpectComplete();
+        probe1.ExpectComplete();
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-016: H10 bypass — multiple responses pass through, signal outlet emits nothing")]
+    public async Task Should_BypassAllSignals_WhenHttp10MultipleResponses()
+    {
+        var resp1 = MakeResponse();
+        var resp2 = MakeResponse(connectionHeader: "Keep-Alive");
+        var resp3 = MakeResponse(connectionHeader: "close");
+
+        var results = await RunH10BypassAsync(true, resp1, resp2, resp3);
+
+        Assert.Equal(3, results.Count);
+        Assert.Same(resp1, results[0]);
+        Assert.Same(resp2, results[1]);
+        Assert.Same(resp3, results[2]);
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-017: H11 still emits ConnectionReuseItem on signal outlet (no bypass)")]
+    public async Task Should_EmitSignal_WhenHttp11NotBypassed()
+    {
+        var resp1 = MakeResponse();
+        var resp2 = MakeResponse(connectionHeader: "close");
+
+        var (results, decisions) = await RunAsync(HttpVersion.Version11, true, resp1, resp2);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(2, decisions.Count);
+        Assert.True(decisions[0].Decision.CanReuse);
+        Assert.False(decisions[1].Decision.CanReuse);
     }
 }

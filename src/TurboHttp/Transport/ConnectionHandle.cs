@@ -5,7 +5,7 @@ using System.Threading.Channels;
 using Akka.Actor;
 using TurboHttp.Internal;
 
-namespace TurboHttp.Pooling;
+namespace TurboHttp.Transport;
 
 /// <summary>
 /// Bundles the Channel read/write handles for a single TCP connection,

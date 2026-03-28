@@ -127,3 +127,22 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    These requirements are intended to protect against several types of
    common attacks against HTTP; they are deliberately strict because
    being permissive can expose implementations to these vulnerabilities.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`Http2FrameDecoder.cs`** — Validates message framing: HEADERS→CONTINUATION sequences, END_STREAM/END_HEADERS flag handling, content-length vs DATA payload length checks
+- **`Http2FrameEncoder.cs`** — Produces correct HEADERS/DATA/CONTINUATION sequences with proper flag management
+- **`Http2StreamState.cs`** — Tracks stream lifecycle (open → half-closed → closed) per §8.1 framing rules
+- **`Http2ConnectionStage.cs`** — Detects and rejects malformed messages per §8.1.1; sends PROTOCOL_ERROR stream errors for violations
+
+### Test References
+- `TurboHttp.Tests/RFC9113/22_Http2MessageFramingTests.cs` — Message structure, END_STREAM handling, malformed message detection
+
+### Known Gaps
+- ⚠️ Trailer field pseudo-header rejection — Trailers with pseudo-headers detected but error response generation is basic
+- ❌ Intermediary forwarding rules — TurboHttp is a client library, not an intermediary; forwarding checks not applicable

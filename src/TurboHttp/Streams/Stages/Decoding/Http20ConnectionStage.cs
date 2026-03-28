@@ -157,6 +157,15 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 }
 
                 Push(stage._outStream, frame);
+            }, onUpstreamFinish: () =>
+            {
+                Log.Debug("Http20ConnectionStage: Completing stage due to server inlet upstream finish.");
+                CompleteStage();
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http20ConnectionStage: Server inlet upstream failure: {0}", ex.Message);
+                Log.Debug("Http20ConnectionStage: Failing stage due to server inlet upstream failure.");
+                FailStage(ex);
             });
 
             SetHandler(stage._outStream, onPull: () =>
@@ -207,6 +216,11 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             }, onUpstreamFinish: () =>
             {
                 // Request stream finished — keep stage alive to receive server responses.
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http20ConnectionStage: App inlet upstream failure: {0}", ex.Message);
+                Log.Debug("Http20ConnectionStage: Failing stage due to app inlet upstream failure.");
+                FailStage(ex);
             });
 
             SetHandler(stage._outServer, onPull: () =>

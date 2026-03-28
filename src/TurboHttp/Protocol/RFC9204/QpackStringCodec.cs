@@ -99,7 +99,7 @@ public static class QpackStringCodec
 
         if (length == 0)
         {
-            return Array.Empty<byte>();
+            return [];
         }
 
         if (pos + length > data.Length)

@@ -191,3 +191,28 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    intended to protect against several types of common attacks against
    HTTP; they are deliberately strict because being permissive can
    expose implementations to these vulnerabilities.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+
+- **`Http3FrameDecoder.cs`** — Decodes HTTP/3 frame sequences (HEADERS → DATA* → HEADERS?) enforcing the valid message sequence per §4.1; raises `H3_FRAME_UNEXPECTED` for invalid frame ordering
+- **`Http3FrameEncoder.cs`** — Encodes request messages as HEADERS + DATA frames with proper stream closure
+- **`Http3RequestStream.cs`** — Manages bidirectional request stream lifecycle: sends request, closes send side, reads response per §4.1 requirements
+- **`Http3ResponseDecoder.cs`** — Validates response frame sequences including interim (1xx) responses followed by final response; rejects `Transfer-Encoding` header per §4.1
+
+### Test References
+
+- `TurboHttp.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame sequence validation tests
+- `TurboHttp.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Frame encoding tests
+- `TurboHttp.Tests/RFC9114/03_Http3MessageFramingTests.cs` — Malformed message detection, Content-Length mismatch tests
+- `TurboHttp.StreamTests/` — Stream-level integration tests for full request/response exchanges
+
+### Known Gaps
+
+- ❌ PUSH_PROMISE interleaving (§4.1) — server push not implemented, PUSH_PROMISE frames rejected but not fully parsed
+- ⚠️ Partial: `H3_REQUEST_INCOMPLETE` error sent when client stream terminates early, but edge cases around partial Content-Length remain under test

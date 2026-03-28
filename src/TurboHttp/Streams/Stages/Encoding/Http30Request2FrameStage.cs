@@ -112,7 +112,12 @@ public sealed class Http30Request2FrameStage : GraphStage<Http30Request2FrameSha
                 {
                     CompleteStage();
                 }
-            }, onUpstreamFailure: ex => Log.Warning("Http30Request2FrameStage: Upstream failure absorbed: {0}", ex.Message));
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http30Request2FrameStage: Upstream failure absorbed: {0}", ex.Message);
+                Log.Debug("Http30Request2FrameStage: Failing stage due to upstream error: {0}", ex.Message);
+                FailStage(ex);
+            });
 
             SetHandler(stage._outFrame, onPull: () => DrainAll(stage));
             SetHandler(stage._outEncoder, onPull: () => DrainAll(stage));

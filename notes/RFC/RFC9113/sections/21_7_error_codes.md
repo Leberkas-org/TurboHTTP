@@ -69,3 +69,22 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 > **MUST NOT**: Unknown or unsupported error codes MUST NOT trigger any special
    behavior.  These MAY be treated by an implementation as being
    equivalent to INTERNAL_ERROR.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`Http2ErrorCode.cs`** — Enum defining all 14 error codes (0x00–0x0d) matching RFC definitions exactly
+- **`Http2FrameDecoder.cs`** — Maps received error codes in RST_STREAM/GOAWAY frames to typed error handling
+- **`Http2FrameEncoder.cs`** — Sends correct error codes in RST_STREAM and GOAWAY frames
+- **`Http2ConnectionStage.cs`** — Generates appropriate error codes for protocol violations (PROTOCOL_ERROR, FLOW_CONTROL_ERROR, FRAME_SIZE_ERROR, COMPRESSION_ERROR)
+
+### Test References
+- `TurboHttp.Tests/RFC9113/21_Http2ErrorCodeTests.cs` — Error code propagation and handling tests
+
+### Known Gaps
+- ⚠️ ENHANCE_YOUR_CALM (0x0b) — Not actively sent; no rate-limiting detection implemented
+- ⚠️ HTTP_1_1_REQUIRED (0x0d) — Not sent; no protocol downgrade mechanism implemented

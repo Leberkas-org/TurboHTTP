@@ -1,10 +1,20 @@
 ---
-title: "2.  Overview of Cache Operation"
+title: 2.  Overview of Cache Operation
 rfc_number: 9111
-rfc_section: "2"
-source_url: "https://www.rfc-editor.org/rfc/rfc9111"
-description: "Section 2: Overview of Cache Operation — RFC 9111 — HTTP Caching"
-tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Expires, conditional-requests, Vary, overview_of_cache_operation]
+rfc_section: '2'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9111'
+description: 'Section 2: Overview of Cache Operation — RFC 9111 — HTTP Caching'
+tags:
+  - RFC9111
+  - HTTP-caching
+  - freshness
+  - validation
+  - Cache-Control
+  - max-age
+  - Expires
+  - conditional-requests
+  - Vary
+  - overview_of_cache_operation
 ---
 
 ## 2.  Overview of Cache Operation
@@ -54,3 +64,24 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    A cache is "disconnected" when it cannot contact the origin server or
    otherwise find a forward path for a request.  A disconnected cache
    can serve stale responses in some circumstances (Section 4.2.4).
+
+
+---
+
+## TurboHttp Compliance
+
+**Status:** ❌ Missing
+
+**Implementation Notes:**
+TurboHttp does not implement an HTTP cache. The client library forwards all requests directly to the origin server without any cache lookup, storage, or revalidation logic. CacheLookupStage is planned as a future pipeline stage but not yet implemented.
+
+**Key Gaps:**
+- No cache storage or retrieval mechanism
+- No freshness evaluation or expiration logic
+- No private vs shared cache distinction
+- No understanding of cacheable methods or status codes
+- No response reuse logic
+
+**Affected Components:** None (no caching components exist)
+
+**Test References:** None

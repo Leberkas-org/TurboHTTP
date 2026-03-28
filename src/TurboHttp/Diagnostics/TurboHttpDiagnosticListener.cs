@@ -18,6 +18,7 @@ public static class TurboHttpDiagnosticListener
     public const string RequestFailedEvent = $"{ListenerName}.Request.Failed";
     public const string ConnectionOpenedEvent = $"{ListenerName}.Connection.Opened";
     public const string ConnectionClosedEvent = $"{ListenerName}.Connection.Closed";
+    public const string DeadlockStallDetectedEvent = $"{ListenerName}.DeadlockStall";
 
     /// <summary>
     /// Shared <see cref="DiagnosticListener"/> instance for all TurboHttp events.
@@ -81,6 +82,19 @@ public static class TurboHttpDiagnosticListener
         if (Source.IsEnabled(ConnectionClosedEvent))
         {
             Source.Write(ConnectionClosedEvent, new { Host = host, Port = port, Duration = duration });
+        }
+    }
+
+    /// <summary>
+    /// Fires <c>TurboHttp.DeadlockStall</c> when the <see cref="Streams.Stages.Features.DeadlockWatchdogStage{T}"/>
+    /// detects that no element has flowed for longer than the configured threshold.
+    /// No-op when no subscriber is attached.
+    /// </summary>
+    internal static void OnDeadlockStall(Streams.Stages.Features.DeadlockStallEvent evt)
+    {
+        if (Source.IsEnabled(DeadlockStallDetectedEvent))
+        {
+            Source.Write(DeadlockStallDetectedEvent, evt);
         }
     }
 }

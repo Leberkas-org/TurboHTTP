@@ -62,7 +62,12 @@ public sealed class Http20Request2FrameStage : GraphStage<FlowShape<(HttpRequest
                 {
                     CompleteStage();
                 }
-            }, onUpstreamFailure: ex => Log.Warning("Request2FrameStage: Upstream failure absorbed: {0}", ex.Message));
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Request2FrameStage: Upstream failure absorbed: {0}", ex.Message);
+                Log.Debug("Request2FrameStage: Failing stage due to upstream error: {0}", ex.Message);
+                FailStage(ex);
+            });
 
             SetHandler(stage._out, onPull: () => Drain(stage));
         }

@@ -386,6 +386,34 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    implementation chooses.
 
    Frame types that were used in HTTP/2 where there is no corresponding
-   HTTP/3 frame have also been reserved (Section 11.2.1).  These frame
+   HTTP/3 frame have also been reserved (Section 11.2.1)
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ⚠️ Partial
+
+### Implementation Notes
+
+- **`Http3FrameDecoder.cs`** — Decodes all 7 defined frame types: DATA (0x00), HEADERS (0x01), CANCEL_PUSH (0x03), SETTINGS (0x04), PUSH_PROMISE (0x05), GOAWAY (0x07), MAX_PUSH_ID (0x0d)
+- **`Http3FrameEncoder.cs`** — Encodes DATA, HEADERS, SETTINGS, and GOAWAY frames; validates stream-type restrictions
+- **`Http3Settings.cs`** — Full SETTINGS frame: `SETTINGS_MAX_FIELD_SECTION_SIZE`, reserved ID handling, duplicate detection, HTTP/2 setting rejection per §7.2.4
+- **`Http3GoAwayHandler.cs`** — GOAWAY processing with decreasing stream/push ID validation per §7.2.6
+- **`Http3ErrorCodes.cs`** — All 16 HTTP/3 error codes (0x0100–0x0110)
+
+### Test References
+
+- `TurboHttp.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame type dispatch and payload parsing
+- `TurboHttp.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Encoding round-trips
+- `TurboHttp.Tests/RFC9114/07_Http3SettingsTests.cs` — SETTINGS validation
+- `TurboHttp.Tests/RFC9114/08_Http3GoAwayTests.cs` — GOAWAY frame processing
+
+### Known Gaps
+
+- ❌ CANCEL_PUSH (§7.2.3) — decoded but not acted upon (server push not implemented)
+- ❌ PUSH_PROMISE (§7.2.5) — rejected with `H3_FRAME_UNEXPECTED` but push ID validation minimal
+- ❌ MAX_PUSH_ID (§7.2.7) — not sent by client; server receipt correctly rejected
+- ⚠️ Reserved frame types (§7.2.8) — ignored on receipt but not sent for padding.  These frame
 > **MUST NOT**: types MUST NOT be sent, and their receipt MUST be treated as a
    connection error of type H3_FRAME_UNEXPECTED.

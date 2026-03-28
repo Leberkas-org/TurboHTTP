@@ -197,7 +197,32 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    receipt.
 
    The payload and length of the stream are selected in any manner the
-   sending implementation chooses.  When sending a reserved stream type,
+   sending implementation chooses.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ⚠️ Partial
+
+### Implementation Notes
+
+- **`Http3RequestStream.cs`** — Uses client-initiated bidirectional QUIC streams for request/response per §6.1; stream IDs follow QUIC numbering (0, 4, 8, …)
+- **`Http3ControlStream.cs`** — Creates a single unidirectional control stream (type 0x00) at connection start per §6.2.1; sends SETTINGS as first frame; rejects duplicate control streams with `H3_STREAM_CREATION_ERROR`
+- **`Http3StreamTypeDecoder.cs`** — Reads stream type from unidirectional stream headers; routes to appropriate handler or aborts unknown types with `H3_STREAM_CREATION_ERROR` per §6.2
+- **`QpackEncoderStream.cs` / `QpackDecoderStream.cs`** — QPACK encoder and decoder unidirectional streams per §6.2 requirements
+
+### Test References
+
+- `TurboHttp.Tests/RFC9114/04_Http3StreamTypeTests.cs` — Stream type identification and routing
+- `TurboHttp.Tests/RFC9114/05_Http3ControlStreamTests.cs` — Control stream lifecycle, SETTINGS-first validation
+- `TurboHttp.StreamTests/` — Stream multiplexing and bidirectional stream tests
+
+### Known Gaps
+
+- ❌ Push streams (§6.2.2) — not implemented; server-initiated push stream type (0x01) is rejected but push ID parsing is not validated
+- ❌ Reserved stream types (§6.2.3) — not sent for connection padding; received reserved streams are correctly ignored
+- ⚠️ Server-initiated bidirectional streams (§6.1) rejected with `H3_STREAM_CREATION_ERROR` as required, but error message could be more descriptive  When sending a reserved stream type,
 > **MAY**: the implementation MAY either terminate the stream cleanly or reset
    it.  When resetting the stream, either the H3_NO_ERROR error code or
 > **SHOULD**: a reserved error code (Section 8.1) SHOULD be used.

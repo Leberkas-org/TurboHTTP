@@ -124,3 +124,21 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    cookie: a=b
    cookie: c=d
    cookie: e=f
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`HpackEncoder.cs`** — Converts field names to lowercase per §8.2; applies Cookie splitting for compression efficiency per §8.2.3
+- **`HpackDecoder.cs`** — Validates field name/value character ranges per §8.2.1; rejects prohibited characters (NUL, CR, LF in values; uppercase/non-visible in names)
+- **`Http2FrameDecoder.cs`** — Strips connection-specific headers per §8.2.2 (Connection, Keep-Alive, Transfer-Encoding, Upgrade, Proxy-Connection)
+- **`Http2RequestEncoder.cs`** — Ensures TE header only contains "trailers" value when present
+
+### Test References
+- `TurboHttp.Tests/RFC9113/23_Http2FieldTests.cs` — Field validation, connection-specific header rejection, Cookie compression
+
+### Known Gaps
+- ⚠️ Cookie reconstitution — Split Cookie headers are concatenated on decode but edge cases with malformed cookie-pairs may not be fully covered

@@ -4,6 +4,7 @@ using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
 using TurboHttp.Streams.Stages.Features;
 using TurboHttp.Streams.Stages.Routing;
@@ -154,6 +155,16 @@ internal sealed class Engine
         var pipelineFlow = features is not null
             ? features.Join(engineFlow)
             : engineFlow;
+
+#if DEBUG
+        pipelineFlow = pipelineFlow.Via(new DeadlockWatchdogStage<HttpResponseMessage>(
+            new DeadlockWatchdogOptions
+            {
+                StageName = "AfterFeatureStack",
+                WarningThreshold = TimeSpan.FromSeconds(10),
+                OnStall = TurboHttpDiagnosticListener.OnDeadlockStall
+            }));
+#endif
 
         // Prepend enricher (initial requests only — redirects/retries are handled
         // internally by their BidiStages and bypass the enricher).

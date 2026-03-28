@@ -76,6 +76,11 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpRes
                 }
 
                 CompleteStage();
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http30StreamStage: Upstream failure absorbed: {0}", ex.Message);
+                Log.Debug("Http30StreamStage: Failing stage due to upstream error: {0}", ex.Message);
+                FailStage(ex);
             });
 
             SetHandler(stage._out, () =>

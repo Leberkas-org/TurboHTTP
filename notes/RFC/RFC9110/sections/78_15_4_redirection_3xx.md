@@ -310,3 +310,20 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       |  *Note:* This status code is much younger (June 2014) than its
       |  sibling codes and thus might not be recognized everywhere.  See
       |  Section 4 of [RFC7538] for deployment considerations.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`RedirectStage.cs`** — Handles 301, 302, 303, 307, 308 redirects; resolves Location URI relative to original request; strips sensitive headers (Authorization, Cookie) on cross-origin redirects per §15.4 item 5
+- **`RedirectPolicy.cs`** — Configurable max redirect count (default 10) with cycle detection per §15.4 SHOULD requirement
+- **`MethodTransformation.cs`** — POST→GET conversion for 301/302/303; method preservation for 307/308; strips content headers when method changes to GET/HEAD
+
+### Test References
+- `TurboHttp.Tests/RFC9110/78_RedirectTests.cs` — All redirect status codes, cross-origin header stripping, cycle detection, method transformation
+
+### Known Gaps
+- ⚠️ 300 Multiple Choices — Not automatically handled; returned as-is to caller (no content parsing for alternatives)

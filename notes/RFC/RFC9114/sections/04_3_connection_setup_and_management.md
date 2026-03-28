@@ -155,3 +155,28 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    particular origin can indicate that it is not authoritative for a
    request by sending a 421 (Misdirected Request) status code in
    response to the request; see Section 7.4 of [HTTP].
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ⚠️ Partial
+
+### Implementation Notes
+
+- **`Http3ControlStream.cs`** — Manages the HTTP/3 control stream lifecycle with state machine (`AwaitingSettings` → `Active` → `GoAway` → `Closed`); sends SETTINGS as first frame per §3.2
+- **`Http3Settings.cs`** — Encodes/decodes SETTINGS parameters using QUIC variable-length integers; supports `SETTINGS_MAX_FIELD_SECTION_SIZE` and reserved identifiers per §7.2.4.1
+- **`Http3Connection.cs`** — Connection lifecycle management including GOAWAY frame exchange for graceful shutdown per §3.3
+- **`QuicTransportAdapter.cs`** — QUIC transport abstraction bridging System.Net.Quic to TurboHttp's connection model
+
+### Test References
+
+- `TurboHttp.StreamTests/` — ~134 stream-level tests covering control stream state transitions and connection setup
+- `TurboHttp.Tests/RFC9114/` — 32 unit test files covering frame encoding, settings validation, error codes
+
+### Known Gaps
+
+- ❌ Alt-Svc discovery (§3.1.1) not implemented — connections use direct QUIC endpoints only
+- ❌ Connection reuse certificate validation (§3.3) not implemented — each origin gets a dedicated connection
+- ❌ 0-RTT QUIC resumption with stored SETTINGS (§7.2.4.2) not supported
+- ⚠️ Server push streams (§6.2.2) not implemented — client-only library does not need to send push, but should reject server-initiated push gracefully

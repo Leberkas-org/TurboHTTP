@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Net;
 using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
@@ -90,9 +91,13 @@ internal sealed class ExtractOptionsStage : GraphStage<ExtractOptionsShape>
                     Log.Debug("ExtractOptionsStage: onPush request={0} {1}, connectItemSent={2}, needsReconnect={3}",
                         request.Method, request.RequestUri, _connectItemSent, _needsReconnect);
 
-                    if (!_connectItemSent || _needsReconnect)
+                    // HTTP/1.0 always closes after each response (RFC 1945 §6.1),
+                    // so every request needs a fresh connection — no feedback wait.
+                    var isHttp10 = request.Version == HttpVersion.Version10;
+
+                    if (!_connectItemSent || _needsReconnect || isHttp10)
                     {
-                        // First request or reconnect needed: emit ConnectItem
+                        // First request, reconnect needed, or HTTP/1.0: emit ConnectItem
                         var options = TcpOptionsFactory.Build(request.RequestUri!, stage._clientOptions, request.Version);
                         _pending = request;
                         _connectItemSent = true;

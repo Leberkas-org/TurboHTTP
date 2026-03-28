@@ -1,10 +1,20 @@
 ---
-title: "3.  Storing Responses in Caches"
+title: 3.  Storing Responses in Caches
 rfc_number: 9111
-rfc_section: "3"
-source_url: "https://www.rfc-editor.org/rfc/rfc9111"
-description: "Section 3: Storing Responses in Caches — RFC 9111 — HTTP Caching"
-tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Expires, conditional-requests, Vary, storing_responses_in_caches]
+rfc_section: '3'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9111'
+description: 'Section 3: Storing Responses in Caches — RFC 9111 — HTTP Caching'
+tags:
+  - RFC9111
+  - HTTP-caching
+  - freshness
+  - validation
+  - Cache-Control
+  - max-age
+  - Expires
+  - conditional-requests
+  - Vary
+  - storing_responses_in_caches
 ---
 
 ## 3.  Storing Responses in Caches
@@ -192,3 +202,23 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    In this specification, the following response directives have such an
    effect: must-revalidate (Section 5.2.2.2), public (Section 5.2.2.9),
    and s-maxage (Section 5.2.2.10).
+
+
+---
+
+## TurboHttp Compliance
+
+**Status:** ❌ Missing
+
+**Implementation Notes:**
+TurboHttp does not store responses in any cache. No logic exists to evaluate whether a response is cacheable based on request method, status code, or Cache-Control directives. All responses are passed directly to the caller without storage consideration.
+
+**Key Gaps:**
+- No response storage mechanism
+- No evaluation of `no-store`, `private`, or `Authorization` constraints
+- No incomplete response handling for caching purposes
+- No `s-maxage` or shared cache directive processing
+
+**Affected Components:** None
+
+**Test References:** None

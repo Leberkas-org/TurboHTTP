@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
-using TurboHttp.Pooling;
 using TurboHttp.Protocol.RFC9000;
 using TurboHttp.Protocol.RFC9114;
 

@@ -167,8 +167,8 @@ public sealed class ExtractOptionsStageReconnectTests : StreamTestBase
         Assert.Same(req2, msg2);
     }
 
-    [Fact(Timeout = 5000, DisplayName = "EXT-RC-003: HTTP/1.0 third request after Reuse skips ConnectItem")]
-    public async Task HTTP10_ThirdRequest_AfterReuseTrue_SkipsConnectItem()
+    [Fact(Timeout = 5000, DisplayName = "EXT-RC-003: HTTP/1.0 third request after Reuse still emits ConnectItem (unconditional)")]
+    public async Task HTTP10_ThirdRequest_AfterReuseTrue_StillEmitsConnectItem()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
         var h = SetupHarness();
@@ -187,13 +187,12 @@ public sealed class ExtractOptionsStageReconnectTests : StreamTestBase
         // Reuse feedback: Reuse (e.g., HTTP/1.0 server sent Connection: Keep-Alive)
         h.SendReuse(MakeReuseItem(canReuse: true));
 
-        // Third request → no reconnect (reuse decision was KeepAlive)
+        // Third request → HTTP/1.0 unconditionally emits ConnectItem regardless of feedback
         var req3 = MakeRequest("http://example.com/3", HttpVersion.Version10);
-        var msg3 = await PushPassthroughRequestAsync(h, req3, cts.Token);
+        var (signal3, msg3) = await PushReconnectRequestAsync(h, req3, cts.Token);
 
+        Assert.IsType<ConnectItem>(signal3);
         Assert.Same(req3, msg3);
-        // Verify no signal was emitted
-        h.SignalProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
     // ──── HTTP/1.1 Tests ────
@@ -278,6 +277,48 @@ public sealed class ExtractOptionsStageReconnectTests : StreamTestBase
 
         Assert.IsType<ConnectItem>(signal2);
         Assert.Same(req2, msg2);
+    }
+
+    // ──── Unconditional ConnectItem for HTTP/1.0 (no feedback needed) ────
+
+    [Fact(Timeout = 5000, DisplayName = "EXT-RC-009: HTTP/1.0 second request emits ConnectItem without feedback signal")]
+    public async Task HTTP10_SecondRequest_WithoutFeedback_EmitsConnectItem()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+        var h = SetupHarness();
+
+        // First request
+        var req1 = MakeRequest("http://example.com/1", HttpVersion.Version10);
+        await PushFirstRequestAsync(h, req1, cts.Token);
+
+        // NO reuse feedback sent — HTTP/1.0 does not need it
+
+        // Second request → ConnectItem emitted unconditionally for HTTP/1.0
+        var req2 = MakeRequest("http://example.com/2", HttpVersion.Version10);
+        var (signal2, msg2) = await PushReconnectRequestAsync(h, req2, cts.Token);
+
+        Assert.IsType<ConnectItem>(signal2);
+        Assert.Same(req2, msg2);
+    }
+
+    [Fact(Timeout = 5000, DisplayName = "EXT-RC-010: HTTP/1.1 second request does NOT emit ConnectItem without feedback signal")]
+    public async Task HTTP11_SecondRequest_WithoutFeedback_DoesNotEmitConnectItem()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+        var h = SetupHarness();
+
+        // First request
+        var req1 = MakeRequest("http://example.com/1", HttpVersion.Version11);
+        await PushFirstRequestAsync(h, req1, cts.Token);
+
+        // NO reuse feedback sent — HTTP/1.1 relies on feedback loop
+
+        // Second request → no ConnectItem (feedback-loop based for H11+)
+        var req2 = MakeRequest("http://example.com/2", HttpVersion.Version11);
+        var msg2 = await PushPassthroughRequestAsync(h, req2, cts.Token);
+
+        Assert.Same(req2, msg2);
+        h.SignalProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
     // ──── Multi-hop Redirect Chain ────

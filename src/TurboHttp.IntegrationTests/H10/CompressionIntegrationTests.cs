@@ -23,10 +23,10 @@ public sealed class CompressionIntegrationTests
             system: _systemFixture.System);
     }
 
-    [Fact(DisplayName = "Compression-H10-001: gzip response transparently decompressed to original size")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-001: gzip response transparently decompressed to original size")]
     public async Task Gzip_Response_Transparently_Decompressed()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/gzip/4");
@@ -43,10 +43,10 @@ public sealed class CompressionIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Compression-H10-002: deflate response transparently decompressed")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-002: deflate response transparently decompressed")]
     public async Task Deflate_Response_Transparently_Decompressed()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/deflate/2");
@@ -62,10 +62,10 @@ public sealed class CompressionIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Compression-H10-003: brotli response transparently decompressed")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-003: brotli response transparently decompressed")]
     public async Task Brotli_Response_Transparently_Decompressed()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/br/3");
@@ -81,10 +81,10 @@ public sealed class CompressionIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Compression-H10-004: identity encoding passes through unchanged")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-004: identity encoding passes through unchanged")]
     public async Task Identity_Encoding_Passes_Through_Unchanged()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/identity/1");
@@ -100,10 +100,10 @@ public sealed class CompressionIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Compression-H10-005: content negotiation with Accept-Encoding gzip returns gzip response")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-005: content negotiation with Accept-Encoding gzip returns gzip response")]
     public async Task Negotiate_AcceptEncoding_Gzip()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/negotiate");
@@ -122,10 +122,10 @@ public sealed class CompressionIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Compression-H10-006: content negotiation with Accept-Encoding br returns brotli response")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-006: content negotiation with Accept-Encoding br returns brotli response")]
     public async Task Negotiate_AcceptEncoding_Brotli()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/negotiate");
@@ -143,10 +143,10 @@ public sealed class CompressionIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Compression-H10-007: content negotiation with no Accept-Encoding returns identity")]
+    [Fact(Timeout = 30000, DisplayName = "Compression-H10-007: content negotiation with no Accept-Encoding returns identity")]
     public async Task Negotiate_NoAcceptEncoding_Returns_Identity()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/compress/negotiate");

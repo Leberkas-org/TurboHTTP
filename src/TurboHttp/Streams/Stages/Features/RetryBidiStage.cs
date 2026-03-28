@@ -42,7 +42,10 @@ internal sealed class RetryBidiStage
     /// </summary>
     internal const int MaxPendingRetries = 16;
 
-    public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
+    public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape
+    {
+        get;
+    }
 
     /// <summary>
     /// Creates a new <see cref="RetryBidiStage"/> with the given retry policy.
@@ -83,6 +86,13 @@ internal sealed class RetryBidiStage
         /// Prevents premature completion of Out1 when upstream finishes before in-flight responses arrive.
         /// </summary>
         private int _inFlightCount;
+
+        /// <summary>
+        /// Guards the retry transaction (evaluate → enqueue → emit → decrement) so that
+        /// <see cref="TryCompleteIfDone"/> cannot fire mid-decision and close the outlet
+        /// prematurely. (DL-009 atomic transaction guard)
+        /// </summary>
+        private bool _retryTransactionActive;
 
         public Logic(RetryBidiStage stage) : base(stage.Shape)
         {
@@ -137,10 +147,10 @@ internal sealed class RetryBidiStage
                     TryCompleteIfDone();
                 },
                 onUpstreamFailure: ex =>
-                    {
-                        Log.Warning("RetryBidiStage: Request upstream failure absorbed: {0}", ex.Message);
-                        Complete(stage._outRequest);
-                    });
+                {
+                    Log.Warning("RetryBidiStage: Request upstream failure absorbed: {0}", ex.Message);
+                    Complete(stage._outRequest);
+                });
 
             SetHandler(stage._outRequest,
                 onPull: () =>
@@ -161,11 +171,11 @@ internal sealed class RetryBidiStage
                 {
                     var response = Grab(stage._inResponse);
                     var original = response.RequestMessage;
-                    _inFlightCount--;
 
                     // Without the original request, cannot determine idempotency — pass through.
                     if (original is null)
                     {
+                        _inFlightCount--;
                         _responseDemand = false;
                         Push(stage._outResponse, response);
                         TryCompleteIfDone();
@@ -185,6 +195,7 @@ internal sealed class RetryBidiStage
 
                     if (!decision.ShouldRetry)
                     {
+                        _inFlightCount--;
                         _responseDemand = false;
                         Push(stage._outResponse, response);
                         TryCompleteIfDone();
@@ -213,6 +224,11 @@ internal sealed class RetryBidiStage
                         attemptCount + 1);
 
                     // Retryable — dispose the response and enqueue the original request for retry.
+                    // The entire retry decision (evaluate → enqueue → emit → decrement) is treated
+                    // as an atomic transaction so that TryCompleteIfDone() cannot fire mid-decision
+                    // and close the outlet prematurely. (DL-009 atomic transaction guard)
+                    _retryTransactionActive = true;
+
                     response.Dispose();
                     original.Options.Set(AttemptCountKey, attemptCount + 1);
 
@@ -228,7 +244,11 @@ internal sealed class RetryBidiStage
                         TryEmitRetry();
                     }
 
+                    _inFlightCount--;
                     TryPullResponse();
+
+                    _retryTransactionActive = false;
+                    TryCompleteIfDone();
                 },
                 onUpstreamFinish: () =>
                 {
@@ -236,10 +256,10 @@ internal sealed class RetryBidiStage
                     TryCompleteIfDone();
                 },
                 onUpstreamFailure: ex =>
-                    {
-                        Log.Warning("RetryBidiStage: Response upstream failure absorbed: {0}", ex.Message);
-                        Complete(stage._outResponse);
-                    });
+                {
+                    Log.Warning("RetryBidiStage: Response upstream failure absorbed: {0}", ex.Message);
+                    Complete(stage._outResponse);
+                });
 
             SetHandler(stage._outResponse,
                 onPull: () =>
@@ -255,8 +275,12 @@ internal sealed class RetryBidiStage
             var key = (string)timerKey;
             if (_waitingRetries.Remove(key, out var request))
             {
+                _retryTransactionActive = true;
+
                 _readyRetries.Enqueue(request);
                 TryEmitRetry();
+
+                _retryTransactionActive = false;
                 TryCompleteIfDone();
             }
         }
@@ -321,10 +345,31 @@ internal sealed class RetryBidiStage
         /// </summary>
         private void TryCompleteIfDone()
         {
-            if (IsClosed(_stage._inRequest) && _readyRetries.Count == 0
+            if (_retryTransactionActive)
+            {
+                return;
+            }
+
+            if (IsClosed(_stage._outRequest))
+            {
+                return;
+            }
+
+            // Case 1: Response upstream closed — no more responses will arrive,
+            // so in-flight requests are orphaned and pending retries cannot complete.
+            if (IsClosed(_stage._inResponse)
+                && _readyRetries.Count == 0
+                && _waitingRetries.Count == 0)
+            {
+                Complete(_stage._outRequest);
+                return;
+            }
+
+            // Case 2: Request upstream closed, no pending retries, and all in-flight resolved.
+            if (IsClosed(_stage._inRequest)
+                && _readyRetries.Count == 0
                 && _waitingRetries.Count == 0
-                && (_inFlightCount == 0 || IsClosed(_stage._inResponse))
-                && !IsClosed(_stage._outRequest))
+                && _inFlightCount == 0)
             {
                 Complete(_stage._outRequest);
             }

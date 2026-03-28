@@ -50,8 +50,12 @@ public sealed class Http30ControlStreamPrefaceStage : GraphStage<FlowShape<IOutp
             SetHandler(stage._in,
                 onPush: () => Push(stage._out, Grab(stage._in)),
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: ex => Log.Warning(
-                    "Http30ControlStreamPrefaceStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("Http30ControlStreamPrefaceStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("Http30ControlStreamPrefaceStage: Failing stage due to upstream error: {0}", ex.Message);
+                    FailStage(ex);
+                });
         }
 
         public override void PreStart()

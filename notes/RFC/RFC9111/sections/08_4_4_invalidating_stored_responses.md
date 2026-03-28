@@ -1,10 +1,20 @@
 ---
-title: "4.4.  Invalidating Stored Responses"
+title: 4.4.  Invalidating Stored Responses
 rfc_number: 9111
-rfc_section: "4.4"
-source_url: "https://www.rfc-editor.org/rfc/rfc9111"
-description: "Section 4.4: Invalidating Stored Responses — RFC 9111 — HTTP Caching"
-tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Expires, conditional-requests, Vary, invalidating_stored_responses]
+rfc_section: '4.4'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9111'
+description: 'Section 4.4: Invalidating Stored Responses — RFC 9111 — HTTP Caching'
+tags:
+  - RFC9111
+  - HTTP-caching
+  - freshness
+  - validation
+  - Cache-Control
+  - max-age
+  - Expires
+  - conditional-requests
+  - Vary
+  - invalidating_stored_responses
 ---
 
 ## 4.4.  Invalidating Stored Responses
@@ -42,3 +52,22 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    Note that this does not guarantee that all appropriate responses are
    invalidated globally; a state-changing request would only invalidate
    responses in the caches it travels through.
+
+
+---
+
+## TurboHttp Compliance
+
+**Status:** ❌ Missing
+
+**Implementation Notes:**
+TurboHttp does not implement cache invalidation. No logic exists to invalidate stored responses after successful unsafe method requests (POST, PUT, DELETE). Since no cache storage exists, there is nothing to invalidate.
+
+**Key Gaps:**
+- No invalidation triggered by unsafe methods
+- No invalidation based on Location/Content-Location headers
+- No protection against invalidation from non-trustworthy sources
+
+**Affected Components:** None
+
+**Test References:** None

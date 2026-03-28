@@ -144,7 +144,8 @@ internal sealed class TracingBidiStage
                         _currentActivity = null;
                     }
 
-                    Log.Warning("TracingBidiStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("TracingBidiStage: Propagating response upstream failure to outResponse: {0}", ex.Message);
+                    Fail(stage._outResponse, ex);
                 });
 
             SetHandler(stage._outResponse,

@@ -66,8 +66,12 @@ public sealed class Http30QpackEncoderPrefaceStage : GraphStage<FlowShape<ReadOn
                 Push(stage._out, new Http3TaggedItem(dataItem, OutputStreamType.QpackEncoder));
             },
             onUpstreamFinish: CompleteStage,
-            onUpstreamFailure: ex => Log.Warning(
-                "Http30QpackEncoderPrefaceStage: Upstream failure absorbed: {0}", ex.Message));
+            onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http30QpackEncoderPrefaceStage: Upstream failure absorbed: {0}", ex.Message);
+                Log.Debug("Http30QpackEncoderPrefaceStage: Failing stage due to upstream error: {0}", ex.Message);
+                FailStage(ex);
+            });
 
             SetHandler(stage._out, onPull: () => Pull(stage._in));
         }

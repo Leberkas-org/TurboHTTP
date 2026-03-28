@@ -139,6 +139,15 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
             {
                 var frame = Grab(stage._inServer);
                 HandleServerFrame(frame);
+            }, onUpstreamFinish: () =>
+            {
+                Log.Debug("Http30ConnectionStage: Completing stage due to server inlet upstream finish.");
+                CompleteStage();
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http30ConnectionStage: Server inlet upstream failure: {0}", ex.Message);
+                Log.Debug("Http30ConnectionStage: Failing stage due to server inlet upstream failure.");
+                FailStage(ex);
             });
 
             SetHandler(stage._outApp, onPull: () => Pull(stage._inServer));
@@ -164,6 +173,11 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
             }, onUpstreamFinish: () =>
             {
                 // App stream finished — keep stage alive to receive server responses.
+            }, onUpstreamFailure: ex =>
+            {
+                Log.Warning("Http30ConnectionStage: App inlet upstream failure: {0}", ex.Message);
+                Log.Debug("Http30ConnectionStage: Failing stage due to app inlet upstream failure.");
+                FailStage(ex);
             });
 
             SetHandler(stage._outServer, onPull: () =>

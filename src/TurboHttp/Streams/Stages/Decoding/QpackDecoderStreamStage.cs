@@ -69,7 +69,11 @@ public sealed class QpackDecoderStreamStage : GraphStage<FlowShape<ReadOnlyMemor
                 },
                 onUpstreamFinish: CompleteStage,
                 onUpstreamFailure: ex =>
-                    Log.Warning("QpackDecoderStreamStage: Upstream failure absorbed: {0}", ex.Message));
+                {
+                    Log.Warning("QpackDecoderStreamStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("QpackDecoderStreamStage: Failing stage due to upstream failure");
+                    FailStage(ex);
+                });
 
             SetHandler(stage._out,
                 onPull: () => Pull(stage._in),

@@ -5,7 +5,6 @@ using System.Threading.Channels;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.Pooling;
 using TurboHttp.Protocol.RFC9112;
 using TurboHttp.Transport;
 

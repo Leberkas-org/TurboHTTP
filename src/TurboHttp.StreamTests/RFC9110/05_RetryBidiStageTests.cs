@@ -35,12 +35,14 @@ public sealed class RetryBidiStageTests : StreamTestBase
             {
                 var bidi = builder.Add(stage);
                 var source = builder.Add(Source.From(requests));
-                var emptyResponseSource = builder.Add(Source.Empty<HttpResponseMessage>());
+                var neverResponseSource = builder.Add(Source.Maybe<HttpResponseMessage>());
                 var ignoredSink = builder.Add(Sink.Ignore<HttpResponseMessage>());
 
+                var take = builder.Add(Flow.Create<HttpRequestMessage>().Take(requests.Length));
+
                 builder.From(source).To(bidi.Inlet1);
-                builder.From(bidi.Outlet1).To(sink);
-                builder.From(emptyResponseSource).To(bidi.Inlet2);
+                builder.From(bidi.Outlet1).Via(take).To(sink);
+                builder.From(neverResponseSource).To(bidi.Inlet2);
                 builder.From(bidi.Outlet2).To(ignoredSink);
 
                 return ClosedShape.Instance;
@@ -558,7 +560,8 @@ public sealed class RetryBidiStageTests : StreamTestBase
 
         reqPubSub.SendError(new Exception("request boom"));
 
-        requestOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        // Stage absorbs the error (no OnError) but gracefully completes _outRequest
+        requestOutProbe.ExpectComplete();
         responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
@@ -589,7 +592,109 @@ public sealed class RetryBidiStageTests : StreamTestBase
 
         respPubSub.SendError(new Exception("response boom"));
 
+        // Stage absorbs the error (no OnError) but gracefully completes _outResponse
         requestOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
-        responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        responseOutProbe.ExpectComplete();
+    }
+
+    // ============================
+    // DL-009: Atomic re-injection (upstream finished + retry pending)
+    // ============================
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2-RBIDI-022: OutRequest stays open when upstream finished and retry is pending")]
+    public void Should_KeepOutRequestOpen_When_UpstreamFinishedAndRetryPending()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
+        var stage = new RetryBidiStage(new RetryPolicy());
+
+        var requestPublisher = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var bidi = b.Add(stage);
+            b.From(Source.FromPublisher(requestPublisher)).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(Source.FromPublisher(responsePublisher)).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var reqPubSub = requestPublisher.ExpectSubscription();
+        var respPubSub = responsePublisher.ExpectSubscription();
+        var reqOutSub = requestOutProbe.ExpectSubscription();
+        var respOutSub = responseOutProbe.ExpectSubscription();
+
+        reqOutSub.Request(10);
+        respOutSub.Request(10);
+
+        // Push a request then complete upstream (no more requests)
+        reqPubSub.SendNext(request);
+        Assert.Same(request, requestOutProbe.ExpectNext());
+        reqPubSub.SendComplete();
+
+        // Push a 503 response → triggers retry. Despite upstream being finished,
+        // OutRequest must stay open because the retry is pending.
+        var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { RequestMessage = request };
+        respPubSub.SendNext(response);
+
+        // The retry request must appear on OutRequest (stage did NOT close it prematurely)
+        var retryReq = requestOutProbe.ExpectNext(TimeSpan.FromSeconds(3));
+        Assert.Same(request, retryReq);
+
+        // Now push a 200 for the retry → should pass through on Out2
+        var finalResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
+        respPubSub.SendNext(finalResponse);
+        Assert.Same(finalResponse, responseOutProbe.ExpectNext());
+
+        // Now OutRequest should complete (upstream done, no more retries, in-flight resolved)
+        requestOutProbe.ExpectComplete();
+    }
+
+    [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2-RBIDI-023: OutRequest completes when upstream finished and no retry pending")]
+    public void Should_CompleteOutRequest_When_UpstreamFinishedAndNoRetryPending()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
+        var stage = new RetryBidiStage(new RetryPolicy());
+
+        var requestPublisher = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var responsePublisher = this.CreateManualPublisherProbe<HttpResponseMessage>();
+        var requestOutProbe = this.CreateManualSubscriberProbe<HttpRequestMessage>();
+        var responseOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var bidi = b.Add(stage);
+            b.From(Source.FromPublisher(requestPublisher)).To(bidi.Inlet1);
+            b.From(bidi.Outlet1).To(Sink.FromSubscriber(requestOutProbe));
+            b.From(Source.FromPublisher(responsePublisher)).To(bidi.Inlet2);
+            b.From(bidi.Outlet2).To(Sink.FromSubscriber(responseOutProbe));
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var reqPubSub = requestPublisher.ExpectSubscription();
+        var respPubSub = responsePublisher.ExpectSubscription();
+        var reqOutSub = requestOutProbe.ExpectSubscription();
+        var respOutSub = responseOutProbe.ExpectSubscription();
+
+        reqOutSub.Request(10);
+        respOutSub.Request(10);
+
+        // Push a request then complete upstream
+        reqPubSub.SendNext(request);
+        Assert.Same(request, requestOutProbe.ExpectNext());
+        reqPubSub.SendComplete();
+
+        // Push a 200 OK → no retry needed
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
+        respPubSub.SendNext(response);
+
+        // Final response passes through
+        Assert.Same(response, responseOutProbe.ExpectNext());
+
+        // OutRequest should complete (upstream done, no retries, in-flight resolved)
+        requestOutProbe.ExpectComplete();
     }
 }

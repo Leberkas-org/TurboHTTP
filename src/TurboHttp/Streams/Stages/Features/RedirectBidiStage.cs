@@ -48,7 +48,10 @@ internal sealed class RedirectBidiStage
     private readonly Inlet<HttpResponseMessage> _inResponse = new("Redirect.In.Response");
     private readonly Outlet<HttpResponseMessage> _outResponse = new("Redirect.Out.Response");
 
-    public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
+    public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape
+    {
+        get;
+    }
 
     /// <summary>
     /// Creates a new <see cref="RedirectBidiStage"/> with the given redirect policy.
@@ -136,10 +139,10 @@ internal sealed class RedirectBidiStage
                     TryCompleteIfDone();
                 },
                 onUpstreamFailure: ex =>
-                    {
-                        Log.Warning("RedirectBidiStage: Request upstream failure absorbed: {0}", ex.Message);
-                        Complete(stage._outRequest);
-                    });
+                {
+                    Log.Warning("RedirectBidiStage: Request upstream failure absorbed: {0}", ex.Message);
+                    Complete(stage._outRequest);
+                });
 
             SetHandler(stage._outRequest,
                 onPull: () =>
@@ -191,7 +194,8 @@ internal sealed class RedirectBidiStage
 
                         // Emit a child "TurboHttp.Redirect" span for this hop
                         var previous = Activity.Current;
-                        if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
+                        if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey,
+                                out var rootActivity))
                         {
                             Activity.Current = rootActivity;
                         }
@@ -261,10 +265,10 @@ internal sealed class RedirectBidiStage
                     TryCompleteIfDone();
                 },
                 onUpstreamFailure: ex =>
-                    {
-                        Log.Warning("RedirectBidiStage: Response upstream failure absorbed: {0}", ex.Message);
-                        Complete(stage._outResponse);
-                    });
+                {
+                    Log.Warning("RedirectBidiStage: Response upstream failure absorbed: {0}", ex.Message);
+                    Complete(stage._outResponse);
+                });
 
             SetHandler(stage._outResponse,
                 onPull: () =>
@@ -333,9 +337,23 @@ internal sealed class RedirectBidiStage
         /// </summary>
         private void TryCompleteIfDone()
         {
-            if (IsClosed(_stage._inRequest) && _readyRedirects.Count == 0
-                && (_inFlightCount == 0 || IsClosed(_stage._inResponse))
-                && !IsClosed(_stage._outRequest))
+            if (IsClosed(_stage._outRequest))
+            {
+                return;
+            }
+
+            // Case 1: Response upstream closed — no more responses will arrive,
+            // so in-flight requests are orphaned and pending redirects cannot complete.
+            if (IsClosed(_stage._inResponse) && _readyRedirects.Count == 0)
+            {
+                Complete(_stage._outRequest);
+                return;
+            }
+
+            // Case 2: Request upstream closed, no pending redirects, and all in-flight resolved.
+            if (IsClosed(_stage._inRequest)
+                && _readyRedirects.Count == 0
+                && _inFlightCount == 0)
             {
                 Complete(_stage._outRequest);
             }

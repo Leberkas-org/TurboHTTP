@@ -196,5 +196,25 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    be sent after the handshake completes.
 
 > **MAY**: TLS early data MAY be used to send requests, provided that the
-   guidance in [RFC8470] is observed.  Clients send requests in early
+   guidance in [RFC8470] is observed.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ⚠️ Partial
+
+### Implementation Notes
+- **`Http2ConnectionPool.cs`** — Manages persistent connections per §9.1; limits to single connection per host:port pair; supports connection replacement on stream ID exhaustion
+- **`Http2ConnectionStage.cs`** — Sends GOAWAY on graceful shutdown per §9.1; handles 421 Misdirected Request for connection reuse
+- **`TlsHelper.cs`** — TLS 1.2+ required per §9.2; SNI extension always sent; TLS compression disabled; renegotiation rejected with PROTOCOL_ERROR
+
+### Test References
+- `TurboHttp.Tests/RFC9113/30_Http2ConnectionTests.cs` — Connection lifecycle, reuse, TLS requirements
+
+### Known Gaps
+- ❌ TLS 1.2 cipher suite enforcement — Prohibited cipher suite list (Appendix A) not actively validated; relies on .NET runtime TLS defaults
+- ❌ Post-handshake authentication rejection — TLS 1.3 CertificateRequest detection per §9.2.3 not explicitly implemented
+- ⚠️ Ephemeral key size validation — DHE/ECDHE minimum key sizes not explicitly checked; delegated to .NET SslStream
+- ⚠️ Early data (0-RTT) — Not supported; requests always sent after full handshake  Clients send requests in early
    data assuming initial values for all server settings.

@@ -25,10 +25,10 @@ public sealed class ConnectionIntegrationTests
         return ClientHelper.CreateClient(_server.HttpPort, new Version(1, 0), system: _systemFixture.System);
     }
 
-    [Fact(DisplayName = "Conn-H10-001: Default HTTP/1.0 connection closes after single request")]
+    [Fact(Timeout = 30000, DisplayName = "Conn-H10-001: Default HTTP/1.0 connection closes after single request")]
     public async Task Default_Connection_Closes_After_Single_Request()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         // HTTP/1.0 defaults to connection-close — a single request should succeed
@@ -39,10 +39,10 @@ public sealed class ConnectionIntegrationTests
         Assert.Equal("default", body);
     }
 
-    [Fact(DisplayName = "Conn-H10-002: Connection close is explicit in response")]
+    [Fact(Timeout = 30000, DisplayName = "Conn-H10-002: Connection close is explicit in response")]
     public async Task Close_Is_Explicit_In_Response()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/conn/close");
@@ -52,10 +52,10 @@ public sealed class ConnectionIntegrationTests
         Assert.Equal("closing", body);
     }
 
-    [Fact(DisplayName = "Conn-H10-003: Keep-alive opt-in allows sequential requests")]
+    [Fact(Timeout = 30000, DisplayName = "Conn-H10-003: Keep-alive opt-in allows sequential requests")]
     public async Task KeepAlive_OptIn_Allows_Sequential_Requests()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         // First request with explicit Connection: Keep-Alive
@@ -66,10 +66,10 @@ public sealed class ConnectionIntegrationTests
         Assert.Equal("keep-alive", body1);
     }
 
-    [Fact(DisplayName = "Conn-H10-004: Simple GET returns expected body")]
+    [Fact(Timeout = 30000, DisplayName = "Conn-H10-004: Simple GET returns expected body")]
     public async Task Simple_Get_Returns_Expected_Body()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/hello");

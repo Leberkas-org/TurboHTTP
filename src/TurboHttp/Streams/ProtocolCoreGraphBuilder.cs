@@ -3,6 +3,7 @@ using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
 using TurboHttp.Transport;
 using TurboHttp.Streams.Stages.Features;
@@ -85,11 +86,34 @@ internal static class ProtocolCoreGraphBuilder
                 clientOptions ?? new TurboClientOptions()));
         }
 
+#if DEBUG
+        return Flow.Create<HttpRequestMessage>()
+            .Via(new GroupByHostKeyStage<HttpRequestMessage>(
+                RequestEndpoint.FromRequest, maxSubstreams, queueSize: 64))
+            .Via(new DeadlockWatchdogStage<Source<HttpRequestMessage, NotUsed>>(
+                new DeadlockWatchdogOptions
+                {
+                    StageName = "AfterGroupByHost",
+                    WarningThreshold = TimeSpan.FromSeconds(10),
+                    OnStall = TurboHttpDiagnosticListener.OnDeadlockStall
+                }))
+            .Via(Flow.Create<Source<HttpRequestMessage, NotUsed>>()
+                .Select(src => src.Via(connectionFlow)))
+            .Via(new DeadlockWatchdogStage<Source<HttpResponseMessage, NotUsed>>(
+                new DeadlockWatchdogOptions
+                {
+                    StageName = "BeforeMergeSubstreams",
+                    WarningThreshold = TimeSpan.FromSeconds(10),
+                    OnStall = TurboHttpDiagnosticListener.OnDeadlockStall
+                }))
+            .Via(new MergeSubstreamsStage<HttpResponseMessage>(maxSubstreams));
+#else
         return (Flow<HttpRequestMessage, HttpResponseMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
                 .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams)
                 .ViaSubFlow(connectionFlow)
                 .MergeSubstreams();
+#endif
     }
 
     private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUsed>

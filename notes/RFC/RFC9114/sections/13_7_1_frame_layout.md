@@ -89,3 +89,25 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 > **MUST**: truncated, this MUST be treated as a connection error of type
    H3_FRAME_ERROR.  Streams that terminate abruptly may be reset at any
    point in a frame.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+
+- **`Http3FrameDecoder.cs`** — Parses the `Type (i) + Length (i) + Payload (..)` format using QUIC variable-length integer decoding; validates payload length matches declared length; raises `H3_FRAME_ERROR` for truncated frames or length mismatches per §7.1
+- **`Http3FrameEncoder.cs`** — Encodes frames with variable-length integer Type and Length fields; all 7 defined frame types (DATA, HEADERS, CANCEL_PUSH, SETTINGS, PUSH_PROMISE, GOAWAY, MAX_PUSH_ID) use correct type codes
+- **`QuicVariableLengthInteger.cs`** — Implements RFC 9000 §16 variable-length integer encoding/decoding used for frame Type and Length fields; validates self-consistency of redundant length encodings per §10.8
+
+### Test References
+
+- `TurboHttp.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame layout parsing, truncated frame detection, variable-length integer edge cases
+- `TurboHttp.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Round-trip encoding/decoding for all frame types
+- `TurboHttp.Tests/RFC9114/06_Http3FrameErrorTests.cs` — `H3_FRAME_ERROR` connection error tests for malformed frames
+
+### Known Gaps
+
+- None — frame layout parsing and validation is fully compliant with §7.1

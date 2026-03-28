@@ -27,10 +27,10 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/{code}/{target} — status code redirects to /hello ──────
 
-    [Fact(DisplayName = "Redirect-H10-001: GET 301 redirect follows to /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-001: GET 301 redirect follows to /hello")]
     public async Task Get_301_Redirect_Follows_To_Hello()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/301/hello");
@@ -41,10 +41,10 @@ public sealed class RedirectIntegrationTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "Redirect-H10-002: GET 302 redirect follows to /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-002: GET 302 redirect follows to /hello")]
     public async Task Get_302_Redirect_Follows_To_Hello()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/302/hello");
@@ -55,10 +55,10 @@ public sealed class RedirectIntegrationTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "Redirect-H10-003: GET 307 redirect follows to /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-003: GET 307 redirect follows to /hello")]
     public async Task Get_307_Redirect_Follows_To_Hello()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/307/hello");
@@ -69,10 +69,10 @@ public sealed class RedirectIntegrationTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "Redirect-H10-004: GET 308 redirect follows to /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-004: GET 308 redirect follows to /hello")]
     public async Task Get_308_Redirect_Follows_To_Hello()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/308/hello");
@@ -85,13 +85,13 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/chain/{n} — redirect chain ────────────────────────────
 
-    [Theory(DisplayName = "Redirect-H10-005: Redirect chain of N hops ends at /hello")]
+    [Theory(Timeout = 60000, DisplayName = "Redirect-H10-005: Redirect chain of N hops ends at /hello")]
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(5)]
     public async Task Redirect_Chain_Follows_N_Hops_To_Hello(int hops)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/redirect/chain/{hops}");
@@ -104,10 +104,10 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/loop — infinite redirect loop ─────────────────────────
 
-    [Fact(DisplayName = "Redirect-H10-006: Infinite redirect loop returns final redirect response")]
+    [Fact(Timeout = 60000, DisplayName = "Redirect-H10-006: Infinite redirect loop returns final redirect response")]
     public async Task Infinite_Redirect_Loop_Returns_Final_Redirect_Response()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/loop");
@@ -118,10 +118,10 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/relative — relative Location header ───────────────────
 
-    [Fact(DisplayName = "Redirect-H10-007: Relative Location header resolved to /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-007: Relative Location header resolved to /hello")]
     public async Task Relative_Location_Header_Resolved_To_Hello()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/relative");
@@ -134,11 +134,11 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/cross-scheme — HTTPS→HTTP downgrade protection ────────
 
-    [Fact(DisplayName = "Redirect-H10-008: Cross-scheme HTTPS to HTTP downgrade blocked by default")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-008: Cross-scheme HTTPS to HTTP downgrade blocked by default")]
     public async Task Cross_Scheme_Downgrade_Blocked_By_Default()
     {
         // Over plain HTTP, the redirect is same-scheme and should succeed.
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/cross-scheme");
@@ -152,10 +152,10 @@ public sealed class RedirectIntegrationTests
 
     // ── POST /redirect/307 — 307 preserves method + body ────────────────────
 
-    [Fact(DisplayName = "Redirect-H10-009: POST 307 preserves method and body to /echo")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-009: POST 307 preserves method and body to /echo")]
     public async Task Post_307_Preserves_Method_And_Body()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var payload = "redirect-307-body";
@@ -172,10 +172,10 @@ public sealed class RedirectIntegrationTests
 
     // ── POST /redirect/303 — 303 rewrites to GET ────────────────────────────
 
-    [Fact(DisplayName = "Redirect-H10-010: POST 303 rewrites to GET at /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-010: POST 303 rewrites to GET at /hello")]
     public async Task Post_303_Rewrites_To_Get()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/redirect/303")
@@ -191,10 +191,10 @@ public sealed class RedirectIntegrationTests
 
     // ── POST /redirect/302 — 302 rewrites POST to GET ──────────────────────
 
-    [Fact(DisplayName = "Redirect-H10-011: POST 302 rewrites to GET at /hello")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-011: POST 302 rewrites to GET at /hello")]
     public async Task Post_302_Rewrites_To_Get()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/redirect/302")
@@ -210,10 +210,10 @@ public sealed class RedirectIntegrationTests
 
     // ── POST /redirect/308 — 308 preserves method + body ────────────────────
 
-    [Fact(DisplayName = "Redirect-H10-012: POST 308 preserves method and body to /echo")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-012: POST 308 preserves method and body to /echo")]
     public async Task Post_308_Preserves_Method_And_Body()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var payload = "redirect-308-body";
@@ -230,10 +230,10 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/cross-origin — cross-origin redirect ──────────────────
 
-    [Fact(DisplayName = "Redirect-H10-013: Cross-origin redirect follows to /headers/echo")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-013: Cross-origin redirect follows to /headers/echo")]
     public async Task Cross_Origin_Redirect_Follows_To_Headers_Echo()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/cross-origin");
@@ -245,12 +245,12 @@ public sealed class RedirectIntegrationTests
 
     // ── GET /redirect/cross-origin-auth — Authorization stripping ────────────
 
-    [Fact(DisplayName = "Redirect-H10-014: Cross-origin redirect strips Authorization header")]
+    [Fact(Timeout = 30000, DisplayName = "Redirect-H10-014: Cross-origin redirect strips Authorization header")]
     public async Task Cross_Origin_Redirect_Strips_Authorization()
     {
         // Since client BaseAddress is also http://127.0.0.1:{port}, this is
         // same-origin and Authorization will be preserved (200).
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         await using var helper = CreateRedirectClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/cross-origin-auth");

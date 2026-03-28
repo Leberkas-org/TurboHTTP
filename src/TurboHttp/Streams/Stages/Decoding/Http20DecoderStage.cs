@@ -100,7 +100,12 @@ public sealed class Http20DecoderStage : GraphStage<FlowShape<IInputItem, Http2F
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: ex => Log.Warning("Http20DecoderStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("Http20DecoderStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("Http20DecoderStage: Failing stage due to upstream error: {0}", ex.Message);
+                    FailStage(ex);
+                });
 
             SetHandler(stage._out,
                 onPull: () => Pull(stage._in),

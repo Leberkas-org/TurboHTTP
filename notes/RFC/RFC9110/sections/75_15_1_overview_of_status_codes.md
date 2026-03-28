@@ -77,3 +77,20 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    have been specified for use in HTTP.  All such status codes ought to
    be registered within the "Hypertext Transfer Protocol (HTTP) Status
    Code Registry", as described in Section 16.2.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`HttpStatusCode.cs`** — Enum covering all standard status codes (100–599); unrecognized codes treated as x00 equivalent per §15.1 MUST requirement
+- **`HttpResponseDecoder.cs`** — Parses three-digit status codes; rejects values outside 100–599 range
+- **`StatusCodeClassification.cs`** — Classifies by first digit: informational, successful, redirection, client error, server error; handles interim (1xx) vs final responses
+
+### Test References
+- `TurboHttp.Tests/RFC9110/75_StatusCodeTests.cs` — Status code parsing, class-based fallback, invalid code handling
+
+### Known Gaps
+- None

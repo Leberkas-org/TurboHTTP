@@ -33,12 +33,14 @@ public sealed class RedirectBidiStageTests : StreamTestBase
             {
                 var bidi = builder.Add(stage);
                 var source = builder.Add(Source.From(requests));
-                var emptyResponseSource = builder.Add(Source.Empty<HttpResponseMessage>());
+                var neverResponseSource = builder.Add(Source.Maybe<HttpResponseMessage>());
                 var ignoredSink = builder.Add(Sink.Ignore<HttpResponseMessage>());
 
+                var take = builder.Add(Flow.Create<HttpRequestMessage>().Take(requests.Length));
+
                 builder.From(source).To(bidi.Inlet1);
-                builder.From(bidi.Outlet1).To(sink);
-                builder.From(emptyResponseSource).To(bidi.Inlet2);
+                builder.From(bidi.Outlet1).Via(take).To(sink);
+                builder.From(neverResponseSource).To(bidi.Inlet2);
                 builder.From(bidi.Outlet2).To(ignoredSink);
 
                 return ClosedShape.Instance;
@@ -585,7 +587,8 @@ public sealed class RedirectBidiStageTests : StreamTestBase
 
         reqPubSub.SendError(new Exception("request boom"));
 
-        requestOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
+        // Stage absorbs the error (no OnError) but gracefully completes _outRequest
+        requestOutProbe.ExpectComplete();
         responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
     }
 
@@ -616,7 +619,8 @@ public sealed class RedirectBidiStageTests : StreamTestBase
 
         respPubSub.SendError(new Exception("response boom"));
 
+        // Stage absorbs the error (no OnError) but gracefully completes _outResponse
         requestOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300));
-        responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100));
+        responseOutProbe.ExpectComplete();
     }
 }

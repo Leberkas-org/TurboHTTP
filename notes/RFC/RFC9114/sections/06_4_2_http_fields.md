@@ -81,3 +81,27 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    [HTTP].  Because this limit is applied separately by each
    implementation that processes the message, messages below this limit
    are not guaranteed to be accepted.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+
+- **`QpackEncoder.cs`** — QPACK field compression with static and dynamic table support; lowercases field names per §4.2; splits Cookie headers per §4.2.1
+- **`QpackDecoder.cs`** — QPACK decompression with Cookie concatenation using `"; "` delimiter per §4.2.1; validates field name characters
+- **`Http3HeaderValidator.cs`** — Rejects connection-specific headers (Connection, Keep-Alive, Transfer-Encoding, Upgrade) per §4.2; allows `TE: trailers` as sole exception
+- **`Http3Settings.cs`** — Supports `SETTINGS_MAX_FIELD_SECTION_SIZE` (0x06) for header size constraint advertisement per §4.2.2
+
+### Test References
+
+- `TurboHttp.Tests/RFC9114/12_Http3QpackTests.cs` — QPACK encoding/decoding round-trips, static table lookups
+- `TurboHttp.Tests/RFC9114/13_Http3HeaderValidationTests.cs` — Connection-specific header rejection, uppercase field name detection, TE header validation
+- `TurboHttp.Tests/RFC9114/14_Http3CookieTests.cs` — Cookie splitting and concatenation per §4.2.1
+
+### Known Gaps
+
+- ⚠️ QPACK dynamic table size is limited — encoder uses conservative settings to minimize head-of-line blocking at cost of compression ratio
+- ⚠️ `SETTINGS_MAX_FIELD_SECTION_SIZE` is advertised but enforcement on received headers is approximate (checks uncompressed size estimate)

@@ -69,7 +69,12 @@ public sealed class Http30DecoderStage : GraphStage<FlowShape<IInputItem, Http3F
                     }
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: ex => Log.Warning("Http30DecoderStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("Http30DecoderStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("Http30DecoderStage: Failing stage due to upstream error: {0}", ex.Message);
+                    FailStage(ex);
+                });
 
             SetHandler(stage._out,
                 onPull: () => Pull(stage._in),

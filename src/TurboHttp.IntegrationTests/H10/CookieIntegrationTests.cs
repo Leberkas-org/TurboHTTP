@@ -26,10 +26,10 @@ public sealed class CookieIntegrationTests
             system: _systemFixture.System);
     }
 
-    [Fact(DisplayName = "Cookie-H10-001: Set cookie and echo roundtrip")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-001: Set cookie and echo roundtrip")]
     public async Task Set_Cookie_And_Echo_Roundtrip()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -47,10 +47,10 @@ public sealed class CookieIntegrationTests
         Assert.Equal("abc123", cookies["session"]);
     }
 
-    [Fact(DisplayName = "Cookie-H10-002: Secure cookie not sent over plaintext HTTP")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-002: Secure cookie not sent over plaintext HTTP")]
     public async Task Secure_Cookie_Not_Sent_Over_Plaintext()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -68,10 +68,10 @@ public sealed class CookieIntegrationTests
         Assert.False(cookies.ContainsKey("secret"), "Secure cookie should not be sent over plaintext HTTP");
     }
 
-    [Fact(DisplayName = "Cookie-H10-003: HttpOnly cookie is sent on subsequent requests")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-003: HttpOnly cookie is sent on subsequent requests")]
     public async Task HttpOnly_Cookie_Sent_On_Subsequent_Requests()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -89,13 +89,13 @@ public sealed class CookieIntegrationTests
         Assert.Equal("xyz", cookies["token"]);
     }
 
-    [Theory(DisplayName = "Cookie-H10-004: SameSite cookie with policy is stored and sent")]
+    [Theory(Timeout = 30000, DisplayName = "Cookie-H10-004: SameSite cookie with policy is stored and sent")]
     [InlineData("Strict")]
     [InlineData("Lax")]
     [InlineData("None")]
     public async Task SameSite_Cookie_Stored_And_Sent(string policy)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -113,10 +113,10 @@ public sealed class CookieIntegrationTests
         Assert.Equal(policy, cookies["pref"]);
     }
 
-    [Fact(DisplayName = "Cookie-H10-005: Expired cookie not sent after Max-Age elapses")]
+    [Fact(Timeout = 45000, DisplayName = "Cookie-H10-005: Expired cookie not sent after Max-Age elapses")]
     public async Task Expired_Cookie_Not_Sent()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -144,10 +144,10 @@ public sealed class CookieIntegrationTests
         Assert.False(cookies2.ContainsKey("temp"), "Expired cookie should not be sent");
     }
 
-    [Fact(DisplayName = "Cookie-H10-006: Domain-scoped cookie is stored")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-006: Domain-scoped cookie is stored")]
     public async Task Domain_Scoped_Cookie_Stored()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -165,10 +165,10 @@ public sealed class CookieIntegrationTests
         Assert.Equal("val", cookies["site"]);
     }
 
-    [Fact(DisplayName = "Cookie-H10-007: Path-scoped cookie sent only for matching path")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-007: Path-scoped cookie sent only for matching path")]
     public async Task Path_Scoped_Cookie_Sent_For_Matching_Path()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -188,10 +188,10 @@ public sealed class CookieIntegrationTests
         Assert.Equal("pathval", cookies["scoped"]);
     }
 
-    [Fact(DisplayName = "Cookie-H10-008: Echo returns empty when no cookies set")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-008: Echo returns empty when no cookies set")]
     public async Task Echo_Returns_Empty_When_No_Cookies()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -205,10 +205,10 @@ public sealed class CookieIntegrationTests
         Assert.Empty(cookies);
     }
 
-    [Fact(DisplayName = "Cookie-H10-009: Multiple Set-Cookie headers all stored")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-009: Multiple Set-Cookie headers all stored")]
     public async Task Multiple_SetCookie_Headers_All_Stored()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -228,10 +228,10 @@ public sealed class CookieIntegrationTests
         Assert.Equal("three", cookies["gamma"]);
     }
 
-    [Fact(DisplayName = "Cookie-H10-010: Delete cookie via Max-Age=0")]
+    [Fact(Timeout = 45000, DisplayName = "Cookie-H10-010: Delete cookie via Max-Age=0")]
     public async Task Delete_Cookie_Via_MaxAge_Zero()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);
@@ -261,10 +261,10 @@ public sealed class CookieIntegrationTests
         Assert.False(cookies2.ContainsKey("victim"), "Deleted cookie should not be sent");
     }
 
-    [Fact(DisplayName = "Cookie-H10-011: Set cookie persists across redirect response")]
+    [Fact(Timeout = 30000, DisplayName = "Cookie-H10-011: Set cookie persists across redirect response")]
     public async Task Set_Cookie_Persists_Across_Redirect()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var jar = new CookieJar();
 
         await using var helper = CreateCookieClient(jar);

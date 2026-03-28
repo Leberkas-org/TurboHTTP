@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
-using TurboHttp.Pooling;
 
 namespace TurboHttp.Transport;
 

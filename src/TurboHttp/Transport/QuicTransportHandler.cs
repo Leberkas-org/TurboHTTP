@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using TurboHttp.Internal;
-using TurboHttp.Pooling;
 
 // QuicConnectionManager and related QUIC APIs are platform-guarded; this file suppresses
 // those diagnostics because QUIC usage is gated at runtime via ConnectItem.Options being QuicOptions.

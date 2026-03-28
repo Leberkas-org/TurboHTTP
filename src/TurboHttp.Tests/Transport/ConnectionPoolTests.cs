@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using System.Threading.Channels;
 using Akka.Actor;
 using TurboHttp.Internal;
-using TurboHttp.Pooling;
 using TurboHttp.Transport;
 
 namespace TurboHttp.Tests.Transport;

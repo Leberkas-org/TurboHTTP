@@ -41,7 +41,12 @@ public sealed class Http20StreamIdAllocatorStage : GraphStage<FlowShape<HttpRequ
                     Push(stage._out, (request, streamId));
                 },
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: ex => Log.Warning("StreamIdAllocatorStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("StreamIdAllocatorStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("StreamIdAllocatorStage: Failing stage due to upstream error: {0}", ex.Message);
+                    FailStage(ex);
+                });
 
             SetHandler(stage._out,
                 onPull: () =>

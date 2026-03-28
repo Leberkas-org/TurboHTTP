@@ -1,10 +1,18 @@
 ---
-title: "6.4.  Content"
+title: 6.4.  Content
 rfc_number: 9110
-rfc_section: "6.4"
-source_url: "https://www.rfc-editor.org/rfc/rfc9110"
-description: "Section 6.4: Content — RFC 9110 — HTTP Semantics"
-tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, content-negotiation, conditional-requests]
+rfc_section: '6.4'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9110'
+description: 'Section 6.4: Content — RFC 9110 — HTTP Semantics'
+tags:
+  - RFC9110
+  - HTTP-semantics
+  - methods
+  - status-codes
+  - redirects
+  - retries
+  - content-negotiation
+  - conditional-requests
 ---
 
 ## 6.4.  Content
@@ -132,3 +140,22 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
    7.  Otherwise, the content is unidentified by HTTP, but a more
        specific identifier might be supplied within the content itself.
+
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+- **`HttpResponseDecoder.cs`** — Extracts content from message framing; handles zero-length content for 204/304 responses per §6.4.1
+- **`ContentDecodingStage.cs`** — Decodes content after extracting from framing layer; supports streaming content delivery
+- **`Http11ResponseDecoder.cs`** — Handles chunked transfer coding extraction to produce raw content stream
+- **`ContentIdentification.cs`** — Applies §6.4.2 rules for identifying content via Content-Location and request method
+
+### Test References
+- `TurboHttp.Tests/RFC9110/25_ContentTests.cs` — Content semantics, zero-length bodies, HEAD response handling
+
+### Known Gaps
+- None

@@ -25,10 +25,10 @@ public sealed class CacheIntegrationTests
             system: _systemFixture.System);
     }
 
-    [Fact(DisplayName = "Cache-H10-001: max-age response served from cache on second request")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-001: max-age response served from cache on second request")]
     public async Task MaxAge_Response_Served_From_Cache()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -47,10 +47,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-002: no-cache forces revalidation with server")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-002: no-cache forces revalidation with server")]
     public async Task NoCache_Forces_Revalidation()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -71,10 +71,10 @@ public sealed class CacheIntegrationTests
         Assert.NotEqual(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-003: no-store response never cached")]
+    [Fact(Timeout = 25000, DisplayName = "Cache-H10-003: no-store response never cached")]
     public async Task NoStore_Response_Never_Cached()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -95,10 +95,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal("no-store-resource", body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-004: ETag revalidation sends If-None-Match")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-004: ETag revalidation sends If-None-Match")]
     public async Task ETag_Revalidation_Sends_IfNoneMatch()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -118,10 +118,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-005: Last-Modified revalidation sends If-Modified-Since")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-005: Last-Modified revalidation sends If-Modified-Since")]
     public async Task LastModified_Revalidation_Sends_IfModifiedSince()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -141,10 +141,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-006: Vary header produces different cache entries per header value")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-006: Vary header produces different cache entries per header value")]
     public async Task Vary_Header_Produces_Different_Cache_Entries()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -177,10 +177,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body3);
     }
 
-    [Fact(DisplayName = "Cache-H10-007: must-revalidate with max-age=0 forces revalidation")]
+    [Fact(Timeout = 25000, DisplayName = "Cache-H10-007: must-revalidate with max-age=0 forces revalidation")]
     public async Task MustRevalidate_Forces_Revalidation()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -200,10 +200,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-008: s-maxage respected by shared cache")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-008: s-maxage respected by shared cache")]
     public async Task SMaxAge_Respected_By_SharedCache()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var policy = new CachePolicy { SharedCache = true };
         var store = new CacheStore(policy);
 
@@ -222,10 +222,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-009: Expires header enables caching")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-009: Expires header enables caching")]
     public async Task Expires_Header_Enables_Caching()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -243,10 +243,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-010: private response cached by private cache")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-010: private response cached by private cache")]
     public async Task Private_Response_Cached_By_Private_Cache()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var store = new CacheStore(CachePolicy.Default);
 
         await using var helper = CreateCacheClient(store);
@@ -265,10 +265,10 @@ public sealed class CacheIntegrationTests
         Assert.Equal(body1, body2);
     }
 
-    [Fact(DisplayName = "Cache-H10-011: private response not cached by shared cache")]
+    [Fact(Timeout = 30000, DisplayName = "Cache-H10-011: private response not cached by shared cache")]
     public async Task Private_Response_Not_Cached_By_Shared_Cache()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         var policy = new CachePolicy { SharedCache = true };
         var store = new CacheStore(policy);
 

@@ -53,10 +53,10 @@ public sealed class EncoderInstruction
     public bool IsStatic { get; init; }
 
     /// <summary>Insert With Name Reference / Literal Name: header name bytes (UTF-8).</summary>
-    public byte[] Name { get; init; } = Array.Empty<byte>();
+    public byte[] Name { get; init; } = [];
 
     /// <summary>Insert instructions: header value bytes (UTF-8).</summary>
-    public byte[] Value { get; init; } = Array.Empty<byte>();
+    public byte[] Value { get; init; } = [];
 
     /// <summary>Helper: Name as string.</summary>
     public string NameString => Encoding.UTF8.GetString(Name);
@@ -94,7 +94,7 @@ public sealed class DecoderInstruction
 /// </summary>
 public sealed class QpackInstructionDecoder
 {
-    private byte[] _remainder = Array.Empty<byte>();
+    private byte[] _remainder = [];
 
     /// <summary>True if there is unconsumed data from a previous call.</summary>
     public bool HasRemainder => _remainder.Length > 0;
@@ -102,7 +102,7 @@ public sealed class QpackInstructionDecoder
     /// <summary>Resets the decoder state, clearing any buffered remainder.</summary>
     public void Reset()
     {
-        _remainder = Array.Empty<byte>();
+        _remainder = [];
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public sealed class QpackInstructionDecoder
 
         if (buffer.Length == 0)
         {
-            _remainder = Array.Empty<byte>();
+            _remainder = [];
             return QpackDecodeStatus.NeedMoreData;
         }
 
@@ -180,7 +180,7 @@ public sealed class QpackInstructionDecoder
                 };
             }
 
-            _remainder = pos < buffer.Length ? buffer[pos..] : Array.Empty<byte>();
+            _remainder = pos < buffer.Length ? buffer[pos..] : [];
             return QpackDecodeStatus.Success;
         }
         catch (QpackException)
@@ -204,7 +204,7 @@ public sealed class QpackInstructionDecoder
 
         if (buffer.Length == 0)
         {
-            _remainder = Array.Empty<byte>();
+            _remainder = [];
             return QpackDecodeStatus.NeedMoreData;
         }
 
@@ -249,7 +249,7 @@ public sealed class QpackInstructionDecoder
                 };
             }
 
-            _remainder = pos < buffer.Length ? buffer[pos..] : Array.Empty<byte>();
+            _remainder = pos < buffer.Length ? buffer[pos..] : [];
             return QpackDecodeStatus.Success;
         }
         catch (QpackException)
@@ -317,7 +317,7 @@ public sealed class QpackInstructionDecoder
     {
         if (remainder.Length == 0 && data.Length == 0)
         {
-            return Array.Empty<byte>();
+            return [];
         }
 
         if (remainder.Length == 0)

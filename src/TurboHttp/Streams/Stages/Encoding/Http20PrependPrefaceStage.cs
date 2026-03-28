@@ -57,7 +57,12 @@ public sealed class Http20PrependPrefaceStage : GraphStage<FlowShape<IOutputItem
             SetHandler(stage._in,
                 onPush: () => Push(stage._out, Grab(stage._in)),
                 onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: ex => Log.Warning("PrependPrefaceStage: Upstream failure absorbed: {0}", ex.Message));
+                onUpstreamFailure: ex =>
+                {
+                    Log.Warning("PrependPrefaceStage: Upstream failure absorbed: {0}", ex.Message);
+                    Log.Debug("PrependPrefaceStage: Failing stage due to upstream error: {0}", ex.Message);
+                    FailStage(ex);
+                });
         }
 
         // RFC 9113 §3.4 — Build HTTP/2 connection preface with default SETTINGS

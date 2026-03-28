@@ -112,3 +112,25 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    with the need to manage resource exhaustion risks and should take
    careful note of Section 10.5 in defining their strategy to manage
    window sizes.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ✅ Compliant
+
+### Implementation Notes
+
+- **`Http2FlowController.cs`** — Implements credit-based flow control per §5.2.1; tracks both stream-level and connection-level windows; initial window size 65,535 octets per §5.2.1 principle 4; only DATA frames consume flow-control credit per principle 5
+- **`Http2WindowUpdateHandler.cs`** — Processes WINDOW_UPDATE frames to increase flow-control windows; raises `FLOW_CONTROL_ERROR` when window exceeds 2^31-1
+- **`Http2Connection.cs`** — Reads and processes frames from TCP buffer promptly per §5.2.2 to prevent deadlock on WINDOW_UPDATE frames
+
+### Test References
+
+- `TurboHttp.Tests/RFC9113/08_Http2FlowControlTests.cs` — Window tracking, credit consumption, overflow detection
+- `TurboHttp.Tests/RFC9113/09_Http2WindowUpdateTests.cs` — WINDOW_UPDATE processing, connection vs stream windows
+- `TurboHttp.StreamTests/` — End-to-end flow control under backpressure
+
+### Known Gaps
+
+- ⚠️ Adaptive window sizing — uses fixed window management rather than bandwidth*delay product-aware algorithm per §5.2.3; functional but may not achieve optimal throughput on high-latency connections

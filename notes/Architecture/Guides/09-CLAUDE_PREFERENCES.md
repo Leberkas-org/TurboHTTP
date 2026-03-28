@@ -17,7 +17,7 @@ aliases:
 
 ## Language
 
-- **Always respond in English** — regardless of input language (user may write in German)
+- **Always respond in English** — regardless of input language
 - Feature plans, documentation, code comments, and all outputs: English
 - Obsidian notes: English
 

@@ -1,3 +1,4 @@
+<!-- maggus-id: 20250325-140000-feature-021 -->
 # Feature 021: Uniform Integration Test Coverage Across HTTP Versions
 
 ## Introduction

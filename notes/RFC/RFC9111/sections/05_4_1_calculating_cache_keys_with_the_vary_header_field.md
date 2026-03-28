@@ -1,10 +1,22 @@
 ---
-title: "4.1.  Calculating Cache Keys with the Vary Header Field"
+title: 4.1.  Calculating Cache Keys with the Vary Header Field
 rfc_number: 9111
-rfc_section: "4.1"
-source_url: "https://www.rfc-editor.org/rfc/rfc9111"
-description: "Section 4.1: Calculating Cache Keys with the Vary Header Field — RFC 9111 — HTTP Caching"
-tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Expires, conditional-requests, Vary, calculating_cache_keys_with_the_vary_header_field]
+rfc_section: '4.1'
+source_url: 'https://www.rfc-editor.org/rfc/rfc9111'
+description: >-
+  Section 4.1: Calculating Cache Keys with the Vary Header Field — RFC 9111 —
+  HTTP Caching
+tags:
+  - RFC9111
+  - HTTP-caching
+  - freshness
+  - validation
+  - Cache-Control
+  - max-age
+  - Expires
+  - conditional-requests
+  - Vary
+  - calculating_cache_keys_with_the_vary_header_field
 ---
 
 ## 4.1.  Calculating Cache Keys with the Vary Header Field
@@ -123,3 +135,23 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    request.  Typically, the request is forwarded to the origin server,
    potentially with preconditions added to describe what responses the
    cache has already stored (Section 4.3).
+
+
+---
+
+## TurboHttp Compliance
+
+**Status:** ❌ Missing
+
+**Implementation Notes:**
+TurboHttp does not compute cache keys or process the Vary header field for cache selection purposes. The Vary header is passed through in responses but not used for any storage or retrieval logic.
+
+**Key Gaps:**
+- No cache key computation from effective request URI
+- No Vary-based secondary key selection
+- No `Vary: *` handling
+- No stored response matching against request header fields
+
+**Affected Components:** None
+
+**Test References:** None

@@ -37,6 +37,7 @@ internal sealed class
         private ConnectionReuseItem? _pendingSignal;
         private bool _responseOutletDemand;
         private bool _signalOutletDemand;
+        private bool _isHttp10;
 
         public Logic(ConnectionReuseStage stage) : base(stage.Shape)
         {
@@ -56,7 +57,28 @@ internal sealed class
                         (int)response.StatusCode, decision.CanReuse, endpoint.Host, endpoint.Port);
 
                     _pendingResponse = response;
-                    _pendingSignal = new ConnectionReuseItem(endpoint, decision);
+                    _isHttp10 = response.Version is { Major: 1, Minor: 0 };
+
+                    // HTTP/1.0: skip feedback signal — ExtractOptionsStage emits ConnectItem
+                    // unconditionally for H10 (Protocol-Flag, TASK-001-001) because HTTP/1.0
+                    // always closes the connection after each response (RFC 9110 §9.2.1).
+                    // Connection reuse does not apply; therefore, the feedback signal is not needed.
+                    //
+                    // WARNING: Skipping the signal does NOT satisfy the signal outlet demand.
+                    // In Akka.Streams, demand is only satisfied by a downstream Pull. Since no
+                    // signal is ever emitted, the signal outlet is never pulled, and
+                    // _signalOutletDemand remains false. This creates a permanent deadlock in
+                    // TryPullIfReady() unless the method is aware of HTTP/1.0's signal-skip
+                    // behavior (see TryPullIfReady() for details).
+                    if (!_isHttp10)
+                    {
+                        _pendingSignal = new ConnectionReuseItem(endpoint, decision);
+                    }
+                    else
+                    {
+                        Log.Debug("ConnectionReuseStage: H10 bypass — skipping feedback signal for {0}:{1}",
+                            endpoint.Host, endpoint.Port);
+                    }
 
                     // Signal MUST be pushed before response so that the feedback path
                     // (ExtractOptionsStage._needsReconnect) is set before a redirect/retry
@@ -200,25 +222,59 @@ internal sealed class
 
         private void TryPullIfReady()
         {
-            // Pull next element only once both outlets have been served
+            Log.Debug("ConnectionReuseStage.TryPullIfReady: entry — pendingResponse={0}, pendingSignal={1}, responseDemand={2}, signalDemand={3}, isHttp10={4}",
+                _pendingResponse is not null, _pendingSignal is not null, _responseOutletDemand, _signalOutletDemand, _isHttp10);
+
+            // Pull next element only once all pending items have been served
             if (_pendingResponse is not null || _pendingSignal is not null)
             {
+                Log.Debug("ConnectionReuseStage.TryPullIfReady: early exit — still have pending items");
                 return;
             }
 
-            // Both outlets need demand before we pull upstream
-            if (!_responseOutletDemand || !_signalOutletDemand)
+            // PROTOCOL-SPECIFIC DEMAND CHECK:
+            // For HTTP/1.0, the signal outlet is intentionally NOT fed because connection reuse
+            // does not apply to HTTP/1.0 (the protocol mandates connection-close semantics per
+            // RFC 9110 §9.2.1). ExtractOptionsStage handles reconnection directly via the
+            // protocol-flag detection (TASK-001-001).
+            //
+            // Since no signal is ever emitted for HTTP/1.0, the signal outlet is never pulled
+            // and _signalOutletDemand never becomes true. To avoid a permanent deadlock, we
+            // conditionally check _signalOutletDemand only for HTTP/1.1+ protocols.
+            //
+            // For HTTP/1.0: check only _responseOutletDemand
+            // For HTTP/1.1+: check both _responseOutletDemand AND _signalOutletDemand
+            // (the signal outlet is actively consumed by the feedback path)
+
+            // Check response demand (required for all protocols)
+            if (!_responseOutletDemand)
             {
+                Log.Debug("ConnectionReuseStage.TryPullIfReady: early exit — no response demand");
                 return;
             }
+
+            // Check signal demand only for HTTP/1.1+ (for HTTP/1.0, skip this check)
+            if (!_isHttp10 && !_signalOutletDemand)
+            {
+                Log.Debug("ConnectionReuseStage.TryPullIfReady: early exit — insufficient signal demand for HTTP/1.1+");
+                return;
+            }
+
+            Log.Debug("ConnectionReuseStage.TryPullIfReady: both demands satisfied, checking upstream state");
 
             if (IsClosed(_stage._in))
             {
+                Log.Debug("ConnectionReuseStage.TryPullIfReady: upstream is closed, completing stage");
                 CompleteStage();
             }
             else if (!HasBeenPulled(_stage._in))
             {
+                Log.Debug("ConnectionReuseStage.TryPullIfReady: pulling upstream for next response");
                 Pull(_stage._in);
+            }
+            else
+            {
+                Log.Debug("ConnectionReuseStage.TryPullIfReady: upstream already pulled");
             }
         }
     }

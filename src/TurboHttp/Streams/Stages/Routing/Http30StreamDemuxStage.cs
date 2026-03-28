@@ -108,7 +108,11 @@ public sealed class Http30StreamDemuxStage : GraphStage<Http30StreamDemuxShape>
                     CompleteStage();
                 }
             }, onUpstreamFailure: ex =>
-                Log.Warning("Http30StreamDemuxStage: Upstream failure absorbed: {0}", ex.Message));
+            {
+                Log.Warning("Http30StreamDemuxStage: Upstream failure: {0}", ex.Message);
+                Log.Debug("Http30StreamDemuxStage: Failing stage due to upstream failure.");
+                FailStage(ex);
+            });
 
             SetHandler(stage._outRequest, onPull: () => DrainAll(stage));
             SetHandler(stage._outControl, onPull: () => DrainAll(stage));

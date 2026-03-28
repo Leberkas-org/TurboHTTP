@@ -26,11 +26,9 @@ namespace TurboHttp.Protocol.RFC9204;
 /// </summary>
 public sealed class QpackDecoder
 {
-    private readonly QpackDynamicTable _table;
     private readonly int _maxTableCapacity;
     private readonly int _maxBlockedStreams;
     private readonly ArrayBufferWriter<byte> _instructionBuffer = new(64);
-    private int _blockedStreamCount;
 
     /// <summary>
     /// Creates a new QPACK decoder.
@@ -56,12 +54,12 @@ public sealed class QpackDecoder
         }
 
         _maxTableCapacity = maxTableCapacity;
-        _table = new QpackDynamicTable(maxTableCapacity);
+        DynamicTable = new QpackDynamicTable(maxTableCapacity);
         _maxBlockedStreams = maxBlockedStreams;
     }
 
     /// <summary>The decoder's dynamic table (for inspection and testing).</summary>
-    public QpackDynamicTable DynamicTable => _table;
+    public QpackDynamicTable DynamicTable { get; }
 
     /// <summary>
     /// Decoder instructions emitted during the most recent <see cref="Decode"/> call.
@@ -71,7 +69,7 @@ public sealed class QpackDecoder
     public ReadOnlyMemory<byte> DecoderInstructions => _instructionBuffer.WrittenMemory;
 
     /// <summary>Current number of blocked streams.</summary>
-    public int BlockedStreamCount => _blockedStreamCount;
+    public int BlockedStreamCount { get; private set; }
 
     /// <summary>
     /// Decodes a QPACK header block into a list of header fields.
@@ -128,16 +126,16 @@ public sealed class QpackDecoder
         var (requiredInsertCount, encodingBase) = DecodePrefix(data, ref pos);
 
         // Check if the stream would be blocked
-        if (requiredInsertCount > _table.InsertCount)
+        if (requiredInsertCount > DynamicTable.InsertCount)
         {
-            if (_blockedStreamCount >= _maxBlockedStreams)
+            if (BlockedStreamCount >= _maxBlockedStreams)
             {
                 throw new QpackException(
                     $"RFC 9204 §2.1.2 violation: Blocked stream limit reached ({_maxBlockedStreams}). " +
-                    $"Required Insert Count {requiredInsertCount} exceeds known {_table.InsertCount}.");
+                    $"Required Insert Count {requiredInsertCount} exceeds known {DynamicTable.InsertCount}.");
             }
 
-            _blockedStreamCount++;
+            BlockedStreamCount++;
             return QpackDecodeResult.Blocked(requiredInsertCount);
         }
 
@@ -164,7 +162,7 @@ public sealed class QpackDecoder
     /// </summary>
     public void UnblockStreams()
     {
-        _blockedStreamCount = 0;
+        BlockedStreamCount = 0;
     }
 
     // ── Prefix decoding ──────────────────────────────────────────────────
@@ -246,7 +244,7 @@ public sealed class QpackDecoder
         }
 
         // RFC 9204 §4.5.1.1 decoding algorithm
-        var totalNumberOfInserts = _table.InsertCount;
+        var totalNumberOfInserts = DynamicTable.InsertCount;
         var maxValue = totalNumberOfInserts + maxEntries;
         var maxWrapped = (maxValue / fullRange) * fullRange;
         var requiredInsertCount = maxWrapped + encodedInsertCount - 1;
@@ -277,11 +275,11 @@ public sealed class QpackDecoder
 
     private void ValidateRequiredInsertCount(int requiredInsertCount)
     {
-        if (requiredInsertCount > _table.InsertCount)
+        if (requiredInsertCount > DynamicTable.InsertCount)
         {
             throw new QpackException(
                 $"RFC 9204 §4.5.1.1 violation: Required Insert Count {requiredInsertCount} " +
-                $"exceeds known Insert Count {_table.InsertCount}. Stream should be blocked.");
+                $"exceeds known Insert Count {DynamicTable.InsertCount}. Stream should be blocked.");
         }
     }
 
@@ -407,7 +405,7 @@ public sealed class QpackDecoder
         else
         {
             var absoluteIndex = encodingBase - index - 1;
-            var entry = _table.GetEntry(absoluteIndex);
+            var entry = DynamicTable.GetEntry(absoluteIndex);
             if (entry is null)
             {
                 throw new QpackException(
@@ -443,7 +441,7 @@ public sealed class QpackDecoder
         var postBaseIndex = QpackIntegerCodec.Decode(data, ref pos, 3);
         var absoluteIndex = encodingBase + postBaseIndex;
 
-        var entry = _table.GetEntry(absoluteIndex);
+        var entry = DynamicTable.GetEntry(absoluteIndex);
         if (entry is null)
         {
             throw new QpackException(
@@ -498,12 +496,12 @@ public sealed class QpackDecoder
 
     private (string Name, string Value) LookupDynamicEntry(int absoluteIndex)
     {
-        var entry = _table.GetEntry(absoluteIndex);
+        var entry = DynamicTable.GetEntry(absoluteIndex);
         if (entry is null)
         {
             throw new QpackException(
                 $"RFC 9204 §3.2 violation: Dynamic table entry at absolute index {absoluteIndex} not found " +
-                $"(InsertCount={_table.InsertCount}, DroppedCount={_table.DroppedCount}).");
+                $"(InsertCount={DynamicTable.InsertCount}, DroppedCount={DynamicTable.DroppedCount}).");
         }
 
         return (entry.Value.Name, entry.Value.Value);

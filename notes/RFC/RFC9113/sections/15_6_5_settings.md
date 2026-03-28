@@ -197,3 +197,27 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    allowance needs to be made for processing delays at the peer; a
    timeout that is solely based on the round-trip time between endpoints
    might result in spurious errors.
+
+---
+
+## TurboHttp Compliance
+
+**Status**: ⚠️ Partial
+
+### Implementation Notes
+
+- **`Http2Settings.cs`** — Supports all 6 defined settings: `SETTINGS_HEADER_TABLE_SIZE` (0x01), `SETTINGS_ENABLE_PUSH` (0x02), `SETTINGS_MAX_CONCURRENT_STREAMS` (0x03), `SETTINGS_INITIAL_WINDOW_SIZE` (0x04), `SETTINGS_MAX_FRAME_SIZE` (0x05), `SETTINGS_MAX_HEADER_LIST_SIZE` (0x06)
+- **`Http2FrameDecoder.cs`** — Validates SETTINGS frame: stream ID must be 0, length must be multiple of 6, ACK frame must be empty per §6.5
+- **`Http2Connection.cs`** — Sends SETTINGS at connection start per §6.5; processes settings in order per §6.5.3; sends ACK after applying received settings
+- **`Http2SettingsValidator.cs`** — Validates setting values: `SETTINGS_ENABLE_PUSH` must be 0 or 1, `SETTINGS_INITIAL_WINDOW_SIZE` ≤ 2^31-1, `SETTINGS_MAX_FRAME_SIZE` between 2^14 and 2^24-1
+
+### Test References
+
+- `TurboHttp.Tests/RFC9113/10_Http2SettingsTests.cs` — Settings encoding/decoding, value validation
+- `TurboHttp.Tests/RFC9113/11_Http2SettingsAckTests.cs` — ACK synchronization, timeout handling
+- `TurboHttp.Tests/RFC9113/12_Http2SettingsErrorTests.cs` — Invalid settings detection (bad stream ID, wrong length, invalid values)
+
+### Known Gaps
+
+- ⚠️ SETTINGS ACK timeout (§6.5.3) — no `SETTINGS_TIMEOUT` error is raised if peer doesn't acknowledge within reasonable time; relies on connection-level timeout instead
+- ⚠️ `SETTINGS_ENABLE_PUSH` — always sent as 0 (push disabled) but server's push-related frames are not fully validated against this setting
