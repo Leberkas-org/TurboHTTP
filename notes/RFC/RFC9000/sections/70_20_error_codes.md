@@ -110,3 +110,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    RESET_STREAM frame (Section 19.4), the STOP_SENDING frame
    (Section 19.5), and the CONNECTION_CLOSE frame with a type of 0x1d
    (Section 19.19).
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

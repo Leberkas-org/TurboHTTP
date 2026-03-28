@@ -226,3 +226,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    A reference identity of type IP-ID matches if the address is
    identical to an iPAddress value of the subjectAltName extension of
    the certificate.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -185,3 +185,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       |  scheme definition for a URI scheme (see Section 4.3 of [URI]),
       |  thus does not appear in the ABNF definitions for the "http" and
       |  "https" URI schemes above.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

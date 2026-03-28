@@ -68,3 +68,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
 
    1.  Change the status of [RFC2109] to Historic (it has already been
        obsoleted by [RFC2965]).
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -227,3 +227,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
    integers, as well as for the encoded length (see Section 5.1).  In
    the same way, it has to set a limit to the length it accepts for
    string literals (see Section 5.2).
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -258,3 +258,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
       |  efficient than deploying network-based protections, as
       |  endpoints do not need to perform any additional processing when
       |  sending to an address that has been validated.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -361,3 +361,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 ### Known Gaps
 - 206 multipart/byteranges response assembly not implemented (§15.3.7.2)
 - 206 range combining across multiple responses not implemented (§15.3.7.3)
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

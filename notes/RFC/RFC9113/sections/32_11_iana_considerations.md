@@ -62,3 +62,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    Expected Version Tokens:  None
 
    Reference:  Section 3.1 of this document
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

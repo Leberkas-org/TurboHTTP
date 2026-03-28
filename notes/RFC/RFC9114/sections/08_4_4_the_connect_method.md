@@ -83,3 +83,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 > **SHOULD**: support CONNECT SHOULD restrict its use to a set of known ports or a
    list of safe request targets; see Section 9.3.6 of [HTTP] for more
    details.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

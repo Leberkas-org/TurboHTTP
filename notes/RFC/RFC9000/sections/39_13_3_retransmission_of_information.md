@@ -139,3 +139,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MUST**: Upon detecting losses, a sender MUST take appropriate congestion
    control action.  The details of loss detection and congestion control
    are described in [QUIC-RECOVERY].
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

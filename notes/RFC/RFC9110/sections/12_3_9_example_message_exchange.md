@@ -35,3 +35,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    Content-Type: text/plain
 
    Hello World! My content includes a trailing CRLF.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

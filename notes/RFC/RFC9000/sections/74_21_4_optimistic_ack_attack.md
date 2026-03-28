@@ -16,3 +16,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    packets to detect this behavior.  An endpoint can then immediately
    close the connection with a connection error of type
    PROTOCOL_VIOLATION; see Section 10.2.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

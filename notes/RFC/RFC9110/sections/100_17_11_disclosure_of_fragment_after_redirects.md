@@ -21,3 +21,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    uses personal information in fragments, it ought to ensure that
    redirects to other sites include a (possibly empty) fragment
    component in order to block that inheritance.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

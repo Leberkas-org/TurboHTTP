@@ -216,3 +216,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 - ❌ PUSH_PROMISE interleaving (§4.1) — server push not implemented, PUSH_PROMISE frames rejected but not fully parsed
 - ⚠️ Partial: `H3_REQUEST_INCOMPLETE` error sent when client stream terminates early, but edge cases around partial Content-Length remain under test
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

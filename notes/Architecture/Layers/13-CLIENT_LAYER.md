@@ -13,7 +13,7 @@ tags:
 
 The Client Layer is TurboHttp's public API surface — the entry point for consumers who want to send HTTP requests. It follows the `HttpClientFactory` pattern from `Microsoft.Extensions.Http`, providing named/typed client instances with DI-friendly configuration.
 
-> **Scope**: This note covers the client-facing types only. For the internal pipeline that executes requests, see [[Architecture/15-STREAMS_LAYER|Streams Layer]].
+> **Scope**: This note covers the client-facing types only. For the internal pipeline that executes requests, see [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]].
 
 ## Purpose
 
@@ -101,13 +101,13 @@ User-provided `TurboHandler` instances are wrapped in `HandlerBidiStage` and sta
 
 | Component | Interaction |
 |-----------|-------------|
-| [[Architecture/15-STREAMS_LAYER|Streams Layer]] | `Engine.CreateFlow()` builds the Akka.Streams pipeline from `PipelineDescriptor` |
-| [[Architecture/14-TRANSPORT_LAYER|Transport Layer]] | `ConnectionPool` is shared across clients created by the same factory |
-| [[Architecture/17-DIAGNOSTICS_INTEGRATION|Diagnostics]] | `TracingBidiStage` wraps outermost layer for `Activity`-based tracing |
+| [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] | `Engine.CreateFlow()` builds the Akka.Streams pipeline from `PipelineDescriptor` |
+| [[Architecture/Layers/14-TRANSPORT_LAYER|Transport Layer]] | `ConnectionPool` is shared across clients created by the same factory |
+| [[Architecture/Guides/17-DIAGNOSTICS_INTEGRATION|Diagnostics]] | `TracingBidiStage` wraps outermost layer for `Activity`-based tracing |
 | `Microsoft.Extensions.DependencyInjection` | `ITurboHttpClientBuilder.Services` enables DI registration |
 
 ## See Also
 
-- [[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Where the Client Layer fits in the overall stack
-- [[Architecture/15-STREAMS_LAYER|Streams Layer]] — Pipeline construction details
-- [[Architecture/09-CLAUDE_PREFERENCES|Claude Preferences]] — Workflow and response conventions
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Where the Client Layer fits in the overall stack
+- [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] — Pipeline construction details
+- [[Architecture/Guides/09-CLAUDE_PREFERENCES|Claude Preferences]] — Workflow and response conventions

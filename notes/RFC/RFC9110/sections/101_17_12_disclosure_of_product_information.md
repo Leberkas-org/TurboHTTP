@@ -23,3 +23,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    that might identify hosts behind the firewall.  The Via header field
    allows intermediaries to replace sensitive machine names with
    pseudonyms.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

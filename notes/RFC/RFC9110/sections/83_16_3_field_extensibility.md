@@ -208,3 +208,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    additionally advised to document how to treat messages where the
    multiple members are present (a sensible default would be to ignore
    the field, but this might not always be the right choice).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

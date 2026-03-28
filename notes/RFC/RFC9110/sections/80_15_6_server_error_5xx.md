@@ -73,3 +73,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 > **SHOULD**: with this error message.  The server SHOULD generate a representation
    for the 505 response that describes why that version is not supported
    and what other protocols are supported by that server.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

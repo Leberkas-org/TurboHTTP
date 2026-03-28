@@ -290,3 +290,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    values of N (that is, 0x21, 0x40, ..., through 0x3ffffffffffffffe)
 > **MUST NOT**: MUST NOT be assigned by IANA and MUST NOT appear in the listing of
    assigned values.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

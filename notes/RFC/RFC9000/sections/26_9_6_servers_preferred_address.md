@@ -109,3 +109,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    connection ID is provided to ensure that the client has a connection
 > **MAY**: ID available for migration, but the client MAY use this connection ID
    on any path.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

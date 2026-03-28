@@ -28,3 +28,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    excessive quantities of any non-productive packets as indicative of
 > **MAY**: an attack.  Endpoints MAY respond to this condition with a connection
    error or by dropping packets.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

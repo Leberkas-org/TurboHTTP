@@ -44,3 +44,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    specification does not define a mechanism for supporting automatic
    selection, though it does not prevent such a mechanism from being
    developed.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

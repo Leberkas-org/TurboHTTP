@@ -190,3 +190,7 @@ B.5.  Dynamic Table Insert, Eviction
                                   3   0  :authority  www.example.com
                                   4   0  custom-key  custom-value2
                                  Size=215
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

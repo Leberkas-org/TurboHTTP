@@ -25,3 +25,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
 
    When the user agent removes excess cookies from the cookie store, the
 > **MUST**: user agent MUST evict cookies in the following priority order:
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

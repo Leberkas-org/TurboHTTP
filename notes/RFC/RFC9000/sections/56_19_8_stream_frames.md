@@ -74,3 +74,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    credit for that data.  Receipt of a frame that exceeds this limit
 > **MUST**: MUST be treated as a connection error of type FRAME_ENCODING_ERROR or
    FLOW_CONTROL_ERROR.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -5,13 +5,13 @@ tags:
   - architecture
   - deadlock
   - catalog
-status: active
+status: all-fixed
 ---
 # Deadlock Analysis Catalog
 
 Complete catalog of all known deadlock patterns in TurboHttp, organized by layer. Each entry includes root cause, affected files, fix status, and test coverage.
 
-> **DL-009** and **DL-010** are **Active Bugs** — tracked in [[TASK-030-004]].
+> **DL-009** and **DL-010** are **Fixed** — resolved by Feature 030 (IConnectionScope + linear topology rewrite).
 
 ---
 
@@ -61,11 +61,11 @@ Response outlet
 | DL-003 | Unknown Encoding Pass-Through | Akka.Streams Internal | Fixed |
 | DL-004 | ConnectionStage Generation Guard | Akka.Streams Internal | Fixed |
 | DL-005 | ConnectionReuse Signal Ordering | Akka.Streams Internal | Fixed |
-| DL-006 | ExtractOptions Reconnection Window | HTTP/1.0 Pipeline | Known Limitation |
+| DL-006 | ExtractOptions Reconnection Window | HTTP/1.0 Pipeline | Fixed |
 | DL-007 | MergeSubstreams Zombie Prevention | Akka.Streams Internal | Fixed |
 | DL-008 | Feedback Buffer Backpressure | Akka.Streams Internal | Fixed |
-| DL-009 | RetryBidi _inFlightCount Race | HTTP/1.0 Reconnect | **Active Bug** |
-| DL-010 | CacheBidi ReadAsByteArrayAsync Blocking | HTTP/1.0 Reconnect | **Active Bug** |
+| DL-009 | RetryBidi _inFlightCount Race | HTTP/1.0 Reconnect | Fixed |
+| DL-010 | CacheBidi ReadAsByteArrayAsync Blocking | HTTP/1.0 Reconnect | Fixed |
 | DL-011 | Materializer Buffer Sizing | Akka.Streams Internal | Fixed |
 | DL-012 | ConnectionPool Semaphore Starvation | Transport Layer | Design Pattern |
 | DL-013 | ClientState Channel Direction | Transport Layer | Design Pattern |
@@ -75,7 +75,7 @@ Response outlet
 ### DL-001: GroupByHostKey Two-Phase Completion
 
 - **Category**: Akka.Streams Internal — Completion Race
-- **Status**: Fixed (TASK-002-002)
+- **Status**: Fixed
 - **Root Cause**: `CompleteStage()` called immediately after substream queue completion, but downstream BidiStages (RetryBidiStage, CacheBidiStage) still hold re-injection requests. Outlet becomes dead before retry/cache can push back, causing silent hang.
 - **Affected Files**: `Streams/Stages/Routing/GroupByHostKeyStage.cs`
 - **Fix**: Implemented two-phase completion with `TryCompleteStage()` that defers stage completion until all substream `WatchTask`s report `IsDead == true`. Callbacks on WatchTask completion trigger final `CompleteStage()`.
@@ -84,7 +84,7 @@ Response outlet
 ### DL-002: OfferAsync Timeout Race
 
 - **Category**: Akka.Streams Internal — Ask Pattern Timeout
-- **Status**: Fixed (TASK-002-001)
+- **Status**: Fixed
 - **Root Cause**: `Source.Queue.OfferAsync()` internally uses Ask pattern with 5-second timeout. Between `IsDead` check and `OfferAsync` call, queue actor dies — waits for full timeout instead of detecting immediately.
 - **Affected Files**: `Streams/Stages/Routing/GroupByHostKeyStage.cs` (line ~325-334)
 - **Fix**: Race `offerTask` against `state.WatchTask` using `Task.WhenAny()`. When queue dies, WatchTask completes first, giving sub-millisecond detection instead of 5-second timeout.
@@ -93,7 +93,7 @@ Response outlet
 ### DL-003: Unknown Encoding Pass-Through
 
 - **Category**: Akka.Streams Internal — Encoding Failure
-- **Status**: Fixed (TASK-002-003/004)
+- **Status**: Fixed
 - **Root Cause**: Pipeline would deadlock if server returned unknown compression encoding. `ContentEncodingBidiStage` threw unhandled `HttpDecoderException` which killed the stage without propagating completion signals downstream.
 - **Affected Files**: `Streams/Stages/Features/ContentEncodingBidiStage.cs`
 - **Fix**: Catch `HttpDecoderException` and pass response through unchanged when encoding is unrecognized. Unknown encodings no longer kill the pipeline.
@@ -102,7 +102,7 @@ Response outlet
 ### DL-004: ConnectionStage Stale Callback Race (Generation Guard)
 
 - **Category**: Akka.Streams Internal — Async Callback Race
-- **Status**: Fixed (TASK-026-001/002/003)
+- **Status**: Fixed
 - **Root Cause**: After HTTP/1.0 connection close, inbound pump drains asynchronously. Stale async callbacks from the old pump could inject `CloseSignalItem` into the new connection's decoder via `GetAsyncCallback`, corrupting state.
 - **Affected Files**: `Transport/ConnectionStage.cs`
 - **Fix**: Introduced `_connectionGen` (generation counter) that increments on reconnect. Stale callbacks check generation before posting — generation mismatch means callback is ignored.
@@ -111,7 +111,7 @@ Response outlet
 ### DL-005: ConnectionReuse Signal Ordering
 
 - **Category**: Akka.Streams Internal — Outlet Ordering
-- **Status**: Fixed (TASK-025-002)
+- **Status**: Fixed
 - **Root Cause**: If response outlet pushed before signal outlet, the redirect/retry feedback path was not yet set. Follow-up requests skip `ConnectItem` emission, causing connection setup to stall.
 - **Affected Files**: `Streams/Stages/Features/ConnectionReuseStage.cs` (line ~61-67)
 - **Fix**: Always `TryPushSignal()` before `TryPushResponse()`. Signal sets `_needsReconnect` flag in ExtractOptionsStage before response pushes through the fused graph.
@@ -119,18 +119,18 @@ Response outlet
 
 ### DL-006: ExtractOptions Reconnection Window
 
-- **Category**: HTTP/1.0 Pipeline — Known Limitation
-- **Status**: Known Limitation
+- **Category**: HTTP/1.0 Pipeline
+- **Status**: Fixed
 - **Root Cause**: `ExtractOptionsStage` emits `ConnectItem` only once via `_initialSent` flag. After HTTP/1.0 connection close, retry/redirect recirculated requests flow through encoder without a new `ConnectItem` — `ConnectionStage` has no handle to establish a new connection.
-- **Affected Files**: `Streams/Stages/Routing/ExtractOptionsStage.cs` (line ~93-101)
-- **Fix**: Partially addressed — `ExtractOptionsStage` now emits `ConnectItem` for reconnection scenarios when `_needsReconnect` is true. Requires three-way coordination: ConnectionReuseStage → ExtractOptionsStage → ConnectionStage.
+- **Affected Files**: `Streams/Stages/Routing/ExtractOptionsStage.cs`
+- **Fix**: Eliminated entirely by Feature 030 architecture rewrite. `ConnectionStage` now uses `IConnectionScope` for auto-reconnect — when a `DataItem` arrives with `_handle == null`, it acquires a new connection via `scope.AcquireAsync()` using stored options. No `ConnectItem` feedback loop needed. `ExtractOptionsStage.InReuse` inlet removed; `_needsReconnect` field removed.
 - **Test IDs**: DLH10-005, Reinjection-H10-001 through Reinjection-H10-003
 - **See also**: [[07-HTTP10_RECONNECTION_LIMITATION]]
 
 ### DL-007: MergeSubstreams Zombie Prevention
 
 - **Category**: Akka.Streams Internal — Substream Completion
-- **Status**: Fixed (TASK-002-005)
+- **Status**: Fixed
 - **Root Cause**: If upstream finishes before all active substreams complete, zombie substream actors linger after materializer shutdown. `onUpstreamFailure` did not set `_upstreamDone`, so substream callbacks waited indefinitely.
 - **Affected Files**: `Streams/Stages/Routing/MergeSubstreamsStage.cs` (line ~72-94)
 - **Fix**: On `onUpstreamFailure`, set `_upstreamDone = true` so substream callbacks recognize terminal state and trigger `CompleteStage()` without hanging.
@@ -139,36 +139,36 @@ Response outlet
 ### DL-008: Feedback Buffer Backpressure
 
 - **Category**: Akka.Streams Internal — Backpressure Stall
-- **Status**: Fixed (TASK-025-001)
+- **Status**: Fixed
 - **Root Cause**: Feedback path (redirect/retry re-injection) blocked when downstream backpressure prevented the response outlet from draining. Requests piled up in the feedback loop with no way to make progress.
 - **Affected Files**: `Streams/ProtocolCoreGraphBuilder.cs` (feedback path wiring)
 - **Fix**: Buffer feedback path with configurable capacity to decouple response consumption from re-injection request generation.
 - **Test IDs**: FBUF-001 through FBUF-006
 
-### DL-009: RetryBidi _inFlightCount Race ⚠️ ACTIVE BUG
+### DL-009: RetryBidi _inFlightCount Race
 
 - **Category**: HTTP/1.0 Reconnect — In-Flight Request Window
-- **Status**: **Active Bug** — fix tracked in **TASK-030-004**
+- **Status**: Fixed (Feature 030, TASK-030-001)
 - **Root Cause**: Window between `_inFlightCount` decrement (response received) and retry enqueue (decision to retry). If `TryCompleteIfDone()` fires in this window, it sees zero in-flight requests and closes the outlet prematurely. The retry request has nowhere to go.
-- **Affected Files**: `Streams/Stages/Features/RetryBidiStage.cs` (lines ~137, 171, 190, 236, 260, 281)
-- **Fix**: Not yet implemented. Requires locking `_inFlightCount` transitions and guarding `TryCompleteIfDone()` to defer completion until all pending retries are fully enqueued and acknowledged by downstream.
-- **Test IDs**: DLH10-001 (Skip — active bug DL-009)
-- **Symptom**: Pipeline hangs ~10-15 seconds after 503 response when retry is attempted on HTTP/1.0 connection.
+- **Affected Files**: `Streams/Stages/Features/RetryBidiStage.cs`
+- **Fix**: Added `_retryTransactionActive` boolean field as atomic transaction guard. Set `true` before retry evaluation, `false` after `_inFlightCount--` and `TryPullResponse()`. `TryCompleteIfDone()` returns early if transaction is active. Same pattern applied to `OnTimer()` delayed retry path.
+- **Test IDs**: DLH10-001
+- **Symptom** (before fix): Pipeline hangs ~10-15 seconds after 503 response when retry is attempted on HTTP/1.0 connection.
 
-### DL-010: CacheBidi ReadAsByteArrayAsync Blocking ⚠️ ACTIVE BUG
+### DL-010: CacheBidi ReadAsByteArrayAsync Blocking
 
 - **Category**: HTTP/1.0 Reconnect — Async Body Read
-- **Status**: **Active Bug** — fix tracked in **TASK-030-004**
+- **Status**: Fixed (Feature 030, TASK-030-003)
 - **Root Cause**: `ReadAsByteArrayAsync()` holds the stage actor scope while the async body read runs on the thread pool. While the stage is blocked, `GroupByHostKeyStage` sees the substream queue as idle and calls `CompleteStage()` prematurely. The cache stage then waits for demand that never comes (Out1 is already cancelled).
-- **Affected Files**: `Streams/Stages/Features/CacheBidiStage.cs` (line ~333-334)
-- **Fix**: Not yet implemented. Requires wrapping `ReadAsByteArrayAsync()` in a non-blocking callback using `GetAsyncCallback` or similar mechanism so the stage does not appear idle during the body read.
-- **Test IDs**: DLH10-002 (Skip — active bug DL-010)
-- **Symptom**: Pipeline hangs ~10-15 seconds when CacheBidiStage attempts to cache response body from HTTP/1.0 connection.
+- **Affected Files**: `Streams/Stages/Features/CacheBidiStage.cs`
+- **Fix**: Added `_pendingAsyncRead` flag as backpressure guard. All `TryPull*` methods check `if (_pendingAsyncRead) return;` to prevent inlet pulls during async body reads. After async callback fires and `_pendingAsyncRead = false`, pulling resumes. GroupByHostKeyStage liveness guard (TASK-030-002) also defers completion while substreams are alive but idle.
+- **Test IDs**: DLH10-002
+- **Symptom** (before fix): Pipeline hangs ~10-15 seconds when CacheBidiStage attempts to cache response body from HTTP/1.0 connection.
 
 ### DL-011: Materializer Buffer Sizing
 
 - **Category**: Akka.Streams Internal — Buffer Configuration
-- **Status**: Fixed (TASK-025-001)
+- **Status**: Fixed
 - **Root Cause**: Default materializer buffer (16/16) insufficient for pipelined feedback loops. Responses arrive faster than they are consumed when redirect/retry chains are active, causing the entire pipeline to stall under backpressure.
 - **Affected Files**: `Streams/TurboClientStreamManager.cs` (materializer configuration)
 - **Fix**: Applied custom `ActorMaterializerSettings` with tuned `InputBuffer` sizing to prevent tight-loop backpressure stalls in feedback paths.

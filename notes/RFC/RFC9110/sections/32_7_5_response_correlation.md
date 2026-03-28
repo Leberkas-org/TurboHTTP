@@ -28,3 +28,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 > **SHOULD**: associated request SHOULD continue sending that request unless it
    receives an explicit indication to the contrary (see, e.g.,
    Section 9.5 of [HTTP/1.1] and Section 6.4 of [HTTP/2]).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

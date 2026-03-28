@@ -34,3 +34,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 
    Maximum Stream Data:  A variable-length integer indicating the offset
       of the stream at which the blocking occurred.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

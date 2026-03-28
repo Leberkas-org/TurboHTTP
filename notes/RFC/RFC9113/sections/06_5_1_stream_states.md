@@ -361,3 +361,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 - ⚠️ `SETTINGS_MAX_CONCURRENT_STREAMS` enforcement — tracked but not actively enforced as a hard limit when the server hasn't advertised a value (initial value is unlimited per spec)
 - ❌ Reserved stream states (§5.1 reserved local/remote) — not fully implemented since server push (`PUSH_PROMISE`) is not supported
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

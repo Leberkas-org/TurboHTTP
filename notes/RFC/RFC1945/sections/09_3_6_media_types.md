@@ -109,3 +109,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    a protocol element and must therefore use only CRLF to represent line
    breaks between body-parts. Multipart body-parts may contain HTTP
    header fields which are significant to the meaning of that part.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

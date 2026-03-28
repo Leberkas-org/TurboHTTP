@@ -189,3 +189,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    WINDOW_UPDATE frames are needed to allow the sender to resume
 > **MAY**: sending.  The receiver MAY instead send a RST_STREAM with an error
    code of FLOW_CONTROL_ERROR for the affected streams.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

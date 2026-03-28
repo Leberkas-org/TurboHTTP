@@ -417,3 +417,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 - ⚠️ Reserved frame types (§7.2.8) — ignored on receipt but not sent for padding.  These frame
 > **MUST NOT**: types MUST NOT be sent, and their receipt MUST be treated as a
    connection error of type H3_FRAME_UNEXPECTED.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

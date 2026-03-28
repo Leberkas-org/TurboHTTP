@@ -25,3 +25,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    observable identifiers.  A cryptographic hash function that combines
    these inputs with a local secret is one way this might be
    implemented.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

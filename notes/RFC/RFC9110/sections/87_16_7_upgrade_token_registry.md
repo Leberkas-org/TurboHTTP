@@ -22,3 +22,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
    Registrations happen on a "First Come First Served" basis (see
    Section 4.4 of [RFC8126]) and are subject to the following rules:
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

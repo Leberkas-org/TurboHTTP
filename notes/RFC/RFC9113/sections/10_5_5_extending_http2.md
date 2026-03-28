@@ -59,3 +59,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 > **MUST**: a setting is used for extension negotiation, the initial value MUST
    be defined in such a fashion that the extension is initially
    disabled.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

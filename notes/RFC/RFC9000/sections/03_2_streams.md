@@ -157,3 +157,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    stream, when a peer aborts reading on a stream, when new data is
    available, and when data can or cannot be written to the stream due
    to flow control.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

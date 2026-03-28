@@ -41,3 +41,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    version, this token should only be used for a version identifier
    (i.e., successive versions of the same product should only differ in
    the product-version portion of the product value).
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

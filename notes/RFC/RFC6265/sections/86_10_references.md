@@ -97,3 +97,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
               "An Analysis of Private Browsing Modes in Modern
               Browsers", 2010, <http://www.usenix.org/events/sec10/tech/
               full_papers/Aggarwal.pdf>.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

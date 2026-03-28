@@ -71,3 +71,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    Each value of the form "31 * N + 27" for integer values of N (that
 > **MUST NOT**: is, 27, 58, 89, ...) are reserved; these values MUST NOT be assigned
    by IANA and MUST NOT appear in the listing of assigned values.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

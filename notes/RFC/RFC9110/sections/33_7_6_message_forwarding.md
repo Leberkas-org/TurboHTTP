@@ -223,3 +223,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    under the same organizational control and the hosts have already been
 > **MUST NOT**: replaced by pseudonyms.  A sender MUST NOT combine members that have
    different received-protocol values.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

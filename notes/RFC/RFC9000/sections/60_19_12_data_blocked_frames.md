@@ -28,3 +28,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 
    Maximum Data:  A variable-length integer indicating the connection-
       level limit at which blocking occurred.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

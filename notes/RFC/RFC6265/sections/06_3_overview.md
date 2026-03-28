@@ -125,3 +125,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    == User Agent -> Server ==
 
    Cookie: SID=31d4d96e407aad42
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

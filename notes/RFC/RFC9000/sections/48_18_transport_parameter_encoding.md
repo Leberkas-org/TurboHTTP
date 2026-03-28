@@ -249,3 +249,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MUST**: retry_source_connection_id, or stateless_reset_token.  A server MUST
    treat receipt of any of these transport parameters as a connection
    error of type TRANSPORT_PARAMETER_ERROR.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

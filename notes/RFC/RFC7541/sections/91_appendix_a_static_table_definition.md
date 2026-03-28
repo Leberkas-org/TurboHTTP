@@ -93,3 +93,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
           +-------+-----------------------------+---------------+
 
                        Table 1: Static Table Entries
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

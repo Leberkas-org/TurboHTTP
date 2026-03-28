@@ -31,3 +31,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
    Intermediaries are no more trustworthy than the people and policies
    under which they operate; HTTP cannot solve this problem.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

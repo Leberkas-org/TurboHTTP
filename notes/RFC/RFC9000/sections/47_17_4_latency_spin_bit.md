@@ -66,3 +66,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 
    An endpoint resets the spin value for a network path to 0 when
    changing the connection ID being used on that network path.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

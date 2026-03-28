@@ -155,3 +155,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MAY**: all current and future QUIC frame types.  An endpoint MAY treat the
    receipt of a frame type that uses a longer encoding than necessary as
    a connection error of type PROTOCOL_VIOLATION.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

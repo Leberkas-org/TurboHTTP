@@ -92,3 +92,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    recommends a 2-minute timeout interval, experience shows that sending
    packets every 30 seconds is necessary to prevent the majority of
    middleboxes from losing state for UDP flows [GATEWAY].
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

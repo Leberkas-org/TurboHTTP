@@ -12,3 +12,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
 
 
        number of other cookies.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

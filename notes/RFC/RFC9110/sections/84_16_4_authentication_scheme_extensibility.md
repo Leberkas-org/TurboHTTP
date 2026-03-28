@@ -93,3 +93,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       any other authentication related response header field need to
       consider and document the related security considerations (see
       Section 17.16.4).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

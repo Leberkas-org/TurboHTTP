@@ -87,3 +87,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MUST**: received NEW_CONNECTION_ID frame MUST send a corresponding
    RETIRE_CONNECTION_ID frame that retires the newly received connection
    ID, unless it has already done so for that sequence number.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

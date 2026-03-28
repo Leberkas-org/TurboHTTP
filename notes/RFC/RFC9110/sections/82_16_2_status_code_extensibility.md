@@ -77,3 +77,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    Finally, the definition of a new status code ought to indicate
    whether the content has any implied association with an identified
    resource (Section 6.4.2).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

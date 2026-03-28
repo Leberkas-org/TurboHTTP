@@ -95,3 +95,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    could be exposed by the contents of the authentication-scheme
    specific parameters; this will have to be considered in the
    definitions of these schemes.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

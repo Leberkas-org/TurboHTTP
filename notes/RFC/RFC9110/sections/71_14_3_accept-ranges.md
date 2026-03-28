@@ -54,3 +54,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    preferred to be sent as a header field because the information is
    particularly useful for restarting large information transfers that
    have failed in mid-content (before the trailer section is received).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

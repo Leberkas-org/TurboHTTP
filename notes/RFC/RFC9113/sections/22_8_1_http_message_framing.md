@@ -146,3 +146,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 ### Known Gaps
 - ⚠️ Trailer field pseudo-header rejection — Trailers with pseudo-headers detected but error response generation is basic
 - ❌ Intermediary forwarding rules — TurboHttp is a client library, not an intermediary; forwarding checks not applicable
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

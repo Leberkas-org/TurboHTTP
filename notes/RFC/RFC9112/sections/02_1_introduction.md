@@ -93,3 +93,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
      port          = <port, see [URI], Section 3.2.3>
      query         = <query, see [URI], Section 3.4>
 ```
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

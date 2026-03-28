@@ -84,3 +84,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
 
    |  The Warning header field (and the warn codes that it uses) has
    |  been obsoleted for HTTP per [RFC9111].
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -58,3 +58,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    the loss of privacy that might result if too much detail is provided.
    As an extreme privacy measure, proxies could filter the proactive
    negotiation header fields in relayed requests.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

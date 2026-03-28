@@ -17,3 +17,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    1.  If the entity-tag validator provided exactly matches the ETag
        field value for the selected representation using the strong
        comparison function (Section 8.8.3.2), the condition is true.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -13,3 +13,7 @@ Acknowledgements
 
    See Appendix "Acknowledgements" of [HTTP], which applies to this
    document as well.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

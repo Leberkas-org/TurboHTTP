@@ -107,3 +107,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    HTTP/3 does not define a way to carry the version or reason phrase
    that is included in an HTTP/1.1 status line.  HTTP/3 responses
    implicitly have a protocol version of "3.0".
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

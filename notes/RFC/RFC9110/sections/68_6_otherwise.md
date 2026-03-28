@@ -18,3 +18,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    header fields ought to define the order for evaluating such fields in
    relation to those defined in this document and other conditionals
    that might be found in practice.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -226,3 +226,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 > **MAY**: the implementation MAY either terminate the stream cleanly or reset
    it.  When resetting the stream, either the H3_NO_ERROR error code or
 > **SHOULD**: a reserved error code (Section 8.1) SHOULD be used.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

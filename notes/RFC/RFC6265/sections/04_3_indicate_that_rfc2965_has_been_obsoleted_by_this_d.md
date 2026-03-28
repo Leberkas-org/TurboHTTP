@@ -13,3 +13,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    In particular, in moving RFC 2965 to Historic and obsoleting it, this
    document deprecates the use of the Cookie2 and Set-Cookie2 header
    fields.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

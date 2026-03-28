@@ -144,3 +144,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    independent of the HTTP/1.1 messaging syntax and connection
    management; the remaining bits of RFC 7230 are obsoleted by
    "HTTP/1.1" [HTTP/1.1].
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

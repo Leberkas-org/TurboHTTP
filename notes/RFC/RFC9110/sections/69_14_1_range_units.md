@@ -209,3 +209,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 > **MUST**: limit to the length of content, recipients MUST anticipate
    potentially large decimal numerals and prevent parsing errors due to
    integer conversion overflows.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

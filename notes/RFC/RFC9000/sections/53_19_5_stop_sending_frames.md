@@ -39,3 +39,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    Application Protocol Error Code:  A variable-length integer
       containing the application-specified reason the sender is ignoring
       the stream; see Section 20.2.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

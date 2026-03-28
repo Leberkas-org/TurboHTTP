@@ -38,3 +38,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
       IDs larger than 2^62-1.  Receipt of a frame that encodes a larger
 > **MUST**: stream ID MUST be treated as a connection error of type
       STREAM_LIMIT_ERROR or FRAME_ENCODING_ERROR.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

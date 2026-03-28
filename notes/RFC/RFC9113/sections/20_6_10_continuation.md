@@ -59,3 +59,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    CONTINUATION frame without the END_HEADERS flag set.  A recipient
 > **MUST**: that observes violation of this rule MUST respond with a connection
    error (Section 5.4.1) of type PROTOCOL_ERROR.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

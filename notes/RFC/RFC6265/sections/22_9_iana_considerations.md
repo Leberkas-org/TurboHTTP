@@ -70,3 +70,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    Author/Change controller: IETF
 
    Specification document: [RFC2965]
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

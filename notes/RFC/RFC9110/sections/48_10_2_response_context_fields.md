@@ -182,3 +182,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    values increase response latency and potentially reveal internal
    implementation details that might make it (slightly) easier for
    attackers to find and exploit known security holes.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

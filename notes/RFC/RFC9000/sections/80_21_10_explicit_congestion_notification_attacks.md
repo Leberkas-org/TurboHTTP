@@ -21,3 +21,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    attack.  Therefore, QUIC endpoints ignore the ECN field in an IP
    packet unless at least one QUIC packet in that IP packet is
    successfully processed; see Section 13.4.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

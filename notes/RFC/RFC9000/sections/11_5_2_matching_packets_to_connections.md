@@ -129,3 +129,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 
 > **MUST**: Server deployments that use this simple form of load balancing MUST
    avoid the creation of a stateless reset oracle; see Section 21.11.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

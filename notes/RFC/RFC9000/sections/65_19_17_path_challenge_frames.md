@@ -33,3 +33,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 
 > **MUST**: The recipient of this frame MUST generate a PATH_RESPONSE frame
    (Section 19.18) containing the same Data value.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

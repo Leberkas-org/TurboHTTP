@@ -52,3 +52,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    used.  If a setting is used for extension negotiation, the default
 > **MUST**: value MUST be defined in such a fashion that the extension is
    disabled if the setting is omitted.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

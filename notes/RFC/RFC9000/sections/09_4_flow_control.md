@@ -237,3 +237,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    doing so will mean that the peer will be blocked for at least an
    entire round trip, and potentially indefinitely if the peer chooses
    not to send STREAMS_BLOCKED frames.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

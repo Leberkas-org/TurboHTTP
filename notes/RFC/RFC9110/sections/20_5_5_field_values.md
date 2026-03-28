@@ -94,3 +94,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       |  allowed grammar for that field's value (after said value has
       |  been extracted from the underlying messaging syntax and
       |  multiple instances combined into a list).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -93,3 +93,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    If the TCP connection is closed or reset while streams remain in the
    "open" or "half-closed" states, then the affected streams cannot be
    automatically retried (see Section 8.7 for details).
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

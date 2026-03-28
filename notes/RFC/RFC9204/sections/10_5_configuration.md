@@ -19,3 +19,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
 
    SETTINGS_QPACK_BLOCKED_STREAMS (0x07):  The default value is zero.
       See Section 2.1.2.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

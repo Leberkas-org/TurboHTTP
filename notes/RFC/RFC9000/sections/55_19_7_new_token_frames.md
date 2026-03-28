@@ -43,3 +43,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MUST NOT**: Clients MUST NOT send NEW_TOKEN frames.  A server MUST treat receipt
    of a NEW_TOKEN frame as a connection error of type
    PROTOCOL_VIOLATION.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

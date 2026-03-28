@@ -528,3 +528,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    The connection IDs used in Initial and Retry packets exchanged
    between client and server are copied to the transport parameters and
    validated as described in Section 7.3.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

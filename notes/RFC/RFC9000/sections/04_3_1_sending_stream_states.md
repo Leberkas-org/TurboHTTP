@@ -131,3 +131,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    Once a packet containing a RESET_STREAM has been acknowledged, the
    sending part of the stream enters the "Reset Recvd" state, which is a
    terminal state.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

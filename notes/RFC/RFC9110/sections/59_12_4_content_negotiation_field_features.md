@@ -73,3 +73,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       |  preferred format is not available, but they still need to be
       |  able to handle a different response since the server is allowed
       |  to ignore their preference.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

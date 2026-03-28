@@ -38,3 +38,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    secured and specific to that agent.  Some non-standard HTTP
    extensions (e.g., [RFC4559]) have been known to violate this
    requirement, resulting in security and interoperability problems.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

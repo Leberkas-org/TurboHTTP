@@ -218,3 +218,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 - ⚠️ Ephemeral key size validation — DHE/ECDHE minimum key sizes not explicitly checked; delegated to .NET SslStream
 - ⚠️ Early data (0-RTT) — Not supported; requests always sent after full handshake  Clients send requests in early
    data assuming initial values for all server settings.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

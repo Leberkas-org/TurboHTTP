@@ -96,3 +96,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
         Part 7: Latin/Greek alphabet, ISO 8859-7, 1987.
         Part 8: Latin/Hebrew alphabet, ISO 8859-8, 1988.
         Part 9: Latin alphabet No. 5, ISO 8859-9, 1990.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

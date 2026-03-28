@@ -79,3 +79,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    Section 5.1.1.  If a peer might have exhausted available connection
    IDs, a migrating endpoint could include a NEW_CONNECTION_ID frame in
    all packets sent on a new network path.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

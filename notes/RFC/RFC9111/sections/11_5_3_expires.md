@@ -56,3 +56,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    cause problems (e.g., clock overflows due to use of 32-bit integers
    for time values), and many caches will evict a response far sooner
    than that.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

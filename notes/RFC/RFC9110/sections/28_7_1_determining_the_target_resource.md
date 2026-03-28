@@ -58,3 +58,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
       |  *Note:* Previous specifications defined the recomposed target
       |  URI as a distinct concept, the "effective request URI".
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -328,3 +328,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    Content-Type: text/plain
 
    This service requires use of the HTTP/3.0 protocol.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

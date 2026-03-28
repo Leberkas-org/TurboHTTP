@@ -305,3 +305,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
    Ensuring that processing time is not dependent on the value of a
    secret is the best defense against any form of timing attack.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

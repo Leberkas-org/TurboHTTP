@@ -244,3 +244,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
 
    Single-character quoting using the backslash ("\") character is not
    permitted in HTTP/1.0.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

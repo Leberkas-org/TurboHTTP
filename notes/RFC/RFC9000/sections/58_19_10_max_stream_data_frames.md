@@ -52,3 +52,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    more data than the largest maximum stream data that it has sent for
    the affected stream.  This includes violations of remembered limits
    in Early Data; see Section 7.4.1.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

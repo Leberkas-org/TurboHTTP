@@ -99,3 +99,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    *  The last 500 bytes:
 
       Content-Range: bytes 734-1233/1234
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

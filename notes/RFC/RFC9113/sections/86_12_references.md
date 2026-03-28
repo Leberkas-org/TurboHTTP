@@ -174,3 +174,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
               Jackson, "Talking to Yourself for Fun and Profit", 2011,
               <https://www.adambarth.com/papers/2011/huang-chen-barth-
               rescorla-jackson.pdf>.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

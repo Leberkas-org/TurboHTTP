@@ -59,3 +59,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
    o  The header field is inserted at the beginning of the dynamic
       table.  This insertion could result in the eviction of previous
       entries in the dynamic table (see Section 4.4).
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

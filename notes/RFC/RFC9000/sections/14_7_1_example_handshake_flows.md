@@ -145,3 +145,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
             <- 1-RTT[1]: HANDSHAKE_DONE, STREAM[3, "..."], ACK[1]
 
                      Figure 6: Example 0-RTT Handshake
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

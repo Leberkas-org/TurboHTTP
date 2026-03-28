@@ -109,3 +109,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
               Compression", IEEE Computer 17(6),
               DOI 10.1109/MC.1984.1659158, June 1984,
               <https://ieeexplore.ieee.org/document/1659158/>.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -17,3 +17,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    encryption keys, etc.) and information about the user's browsing
    activity over time (e.g., history, bookmarks, etc.).  Implementations
    need to prevent unintentional disclosure of personal information.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

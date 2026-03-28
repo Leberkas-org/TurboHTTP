@@ -72,3 +72,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    The Destination Connection ID that an endpoint sends can change over
    the lifetime of a connection, especially in response to connection
    migration (Section 9); see Section 5.1.1 for details.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

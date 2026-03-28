@@ -48,3 +48,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    (Section 17.1), and the length of connection IDs in long header
    packets (Section 17.2) are described using integers but do not use
    this encoding.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

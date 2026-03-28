@@ -32,3 +32,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    "Hypertext Transfer Protocol (HTTP) Authentication Scheme Registry".
    For example, the "basic" and "digest" authentication schemes are
    defined by [RFC7617] and [RFC7616], respectively.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

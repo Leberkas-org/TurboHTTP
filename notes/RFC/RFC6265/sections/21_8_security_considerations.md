@@ -217,3 +217,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    Cookies rely upon the Domain Name System (DNS) for security.  If the
    DNS is partially or fully compromised, the cookie protocol might fail
    to provide the security properties required by applications.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

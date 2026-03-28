@@ -376,3 +376,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    server wants the cached response to be reused even if recipients move
    from one region to another, then there is no need for the origin
    server to indicate such variance in Vary.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

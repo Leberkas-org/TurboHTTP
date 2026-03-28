@@ -31,3 +31,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    }
 
                       Figure 23: PADDING Frame Format
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -380,3 +380,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       |  cache updates and range requests.  In contrast, transfer
       |  codings (Section 7 of [HTTP/1.1]) apply only during message
       |  transfer and do not result in distinct entity tags.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

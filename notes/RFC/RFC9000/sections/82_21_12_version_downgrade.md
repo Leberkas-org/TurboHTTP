@@ -18,3 +18,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    contain any mechanism to prevent version downgrade attacks.  Future
 > **MUST**: versions of QUIC that use Version Negotiation packets MUST define a
    mechanism that is robust against version downgrade attacks.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

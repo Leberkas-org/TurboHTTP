@@ -60,3 +60,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    packet.  The next expected packet is the highest received packet
    number plus one.  Pseudocode and an example for packet number
    decoding can be found in Appendix A.3.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

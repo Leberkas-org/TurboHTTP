@@ -89,3 +89,7 @@ tags:
 
 ### Known Gaps
 - ⚠️ Version downgrade — Client does not automatically retry with lower HTTP version if server indicates incompatibility
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

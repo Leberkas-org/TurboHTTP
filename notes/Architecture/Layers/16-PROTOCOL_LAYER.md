@@ -19,7 +19,7 @@ The Protocol layer (`src/TurboHttp/Protocol/`) implements wire-format encoding a
 
 This layer sits **below** the Streams layer (which orchestrates stage graphs) and **above** the Transport layer (which moves raw bytes). Protocol types convert between `HttpRequestMessage`/`HttpResponseMessage` and the `IOutputItem`/`IInputItem` message protocol used by the pipeline.
 
-> **Extends, does not repeat**: For how protocol flows are composed into the pipeline, see [[Architecture/15-STREAMS_LAYER|Streams Layer]]. For the three-layer decoder pattern, see [[Architecture/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]].
+> **Extends, does not repeat**: For how protocol flows are composed into the pipeline, see [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]]. For the three-layer decoder pattern, see [[Architecture/Design/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]].
 
 ---
 
@@ -119,7 +119,7 @@ All protocol versions follow a consistent pattern:
 
 ### Three-Layer Decoder Architecture
 
-HTTP/2 and HTTP/3 decoders use a three-layer pipeline (detailed in [[Architecture/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]]):
+HTTP/2 and HTTP/3 decoders use a three-layer pipeline (detailed in [[Architecture/Design/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]]):
 
 ```text
 ConnectionStage (connection-level frames: SETTINGS, GOAWAY, PING)
@@ -260,8 +260,8 @@ src/TurboHttp/Protocol/
 
 ## See Also
 
-- [[Architecture/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]] — Three-layer decoder pattern in detail
-- [[Architecture/15-STREAMS_LAYER|Streams Layer]] — GraphStage wrappers that host protocol encoders/decoders
-- [[Architecture/14-TRANSPORT_LAYER|Transport Layer]] — Raw byte transport below the protocol layer
-- [[Architecture/02-STAGE_PATTERNS|GraphStage Patterns]] — Port naming and stage lifecycle conventions
-- [[Architecture/11-STAGE_COMPLETION_AUDIT|Stage Completion Audit]] — Completion propagation bugs found in protocol stages
+- [[Architecture/Design/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]] — Three-layer decoder pattern in detail
+- [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] — GraphStage wrappers that host protocol encoders/decoders
+- [[Architecture/Layers/14-TRANSPORT_LAYER|Transport Layer]] — Raw byte transport below the protocol layer
+- [[Architecture/Design/02-STAGE_PATTERNS|GraphStage Patterns]] — Port naming and stage lifecycle conventions
+- [[Architecture/Analysis/11-STAGE_COMPLETION_AUDIT|Stage Completion Audit]] — Completion propagation bugs found in protocol stages

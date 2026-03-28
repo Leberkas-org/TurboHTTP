@@ -191,3 +191,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    state.  An endpoint that has no state for the connection does not
    enter a closing or draining period on sending a CONNECTION_CLOSE
    frame.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -151,3 +151,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    the path is ECN capable.  Network routing and path elements can
 > **MUST**: change mid-connection; an endpoint MUST disable ECN if validation
    later fails.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

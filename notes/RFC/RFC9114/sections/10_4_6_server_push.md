@@ -115,3 +115,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 > **MUST NOT**: Pushed responses that are not cacheable MUST NOT be stored by any
    HTTP cache.  They MAY be made available to the application
    separately.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -44,3 +44,7 @@ Appendix B.  Changes from RFC 7234
    the remaining information -- although potentially useful -- was
    entirely advisory.  In practice, Warning was not added by caches or
    intermediaries.  (Section 5.5)
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -26,3 +26,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MUST**: All codepoints that follow the pattern 0x?a?a?a?a are reserved, MUST
    NOT be assigned by IANA, and MUST NOT appear in the listing of
    assigned values.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

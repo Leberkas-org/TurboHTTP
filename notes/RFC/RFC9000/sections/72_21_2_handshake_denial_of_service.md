@@ -61,3 +61,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    recover from interference with the handshake.  Invalid packets can be
    identified and discarded using other methods, but no specific method
    is mandated in this document.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

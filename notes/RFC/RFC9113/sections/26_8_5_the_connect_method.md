@@ -64,3 +64,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 > **MUST**: type CONNECT_ERROR.  Correspondingly, a proxy MUST send a TCP segment
    with the RST bit set if it detects an error with the stream or the
    HTTP/2 connection.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

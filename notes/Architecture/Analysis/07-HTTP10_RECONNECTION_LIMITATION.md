@@ -1,42 +1,42 @@
 ---
 title: HTTP/1.0 Pipeline Reconnection Limitation
 description: >-
-  ExtractOptionsStage emits ConnectItem once per client — HTTP/1.0 redirect/retry
-  cannot reconnect after connection-close
+  ExtractOptionsStage emits ConnectItem once per client — HTTP/1.0
+  redirect/retry cannot reconnect after connection-close
 tags:
   - architecture
-  - limitation
   - http10
   - pipeline
-  - bug
+  - resolved
 aliases:
   - HTTP/1.0 Reconnection Bug
   - ExtractOptionsStage Limitation
+status: resolved
 ---
 # HTTP/1.0 Pipeline Reconnection Limitation
 
-**Discovered**: 2026-03-23 during TASK-021-003
-**Status**: 🔶 Known Limitation (not yet fixed)
+**Discovered**: 2026-03-23 during HTTP/1.0 redirect integration testing
+**Status**: ✅ Resolved (Feature 030, TASK-030-006 + TASK-030-007)
 
-## Problem
+## Problem (Historical)
 
-HTTP/1.0 redirect and retry integration tests are **BLOCKED** because the Akka.Streams pipeline cannot reconnect after HTTP/1.0 connection-close.
+HTTP/1.0 redirect and retry integration tests were **BLOCKED** because the Akka.Streams pipeline could not reconnect after HTTP/1.0 connection-close.
 
 ## Root Cause
 
-`ExtractOptionsStage` (in `Streams/Stages/Routing/`) emits a `ConnectItem` only once (via `_initialSent` flag) and then completes the signal outlet. When HTTP/1.0 closes the connection after each response, `RedirectBidiStage` and `RetryBidiStage` recirculate follow-up requests, but these flow through the encoder without a new `ConnectItem` — so `ConnectionStage` has no handle and drops the data.
+`ExtractOptionsStage` emitted a `ConnectItem` only once (via `_initialSent` flag). When HTTP/1.0 closed the connection after each response, follow-up requests had no `ConnectItem` — so `ConnectionStage` had no handle and dropped data.
 
-## Why This Matters
+## Resolution
 
-The pipeline architecture assumes one connection per client lifetime. HTTP/1.1 keep-alive and HTTP/2 multiplexing hide this assumption. HTTP/1.0's connection-close breaks it for multi-request features (redirect/retry).
+Resolved by the IConnectionScope architecture (Feature 030):
 
-## Possible Fixes
+1. **ConnectionStage** now takes `IConnectionScope` instead of `ConnectionPool` — auto-reconnects when `DataItem` arrives with `_handle == null` via `scope.AcquireAsync()`
+2. **ConnectionReuseFlowStage** replaced `ConnectionReuseStage` — calls `scope.ReturnAsync(canReuse)` which triggers transport callback for cleanup
+3. **ExtractOptionsStage simplified** — `InReuse` inlet removed, `_needsReconnect` field removed, feedback loop eliminated
+4. **Linear topology** — `BuildConnectionFlow()` is cycle-free, no `Broadcast(eagerCancel)` needed
 
-1. Make `ExtractOptionsStage` emit `ConnectItem` for reconnection scenarios
-2. Have `ConnectionStage` auto-reconnect when receiving data without a handle
-3. Add a reconnection signal path from `ConnectionReuseStage` back to `ExtractOptionsStage`
+The entire feedback loop (Broadcast + 2× MergePreferred + ExtractOptionsStage.InReuse) has been eliminated. Per-host `IConnectionScope` instances (`SingleRequestConnectionScope` for HTTP/1.0, `PersistentConnectionScope` for HTTP/1.1+) mediate connection lifecycle through method calls, not graph edges.
 
-## Workarounds
+## See Also
 
-- **Cookie tests work** because `CookieH10IntegrationTests` creates a fresh client per request with a shared `CookieJar`
-- **Compression tests work** because they're single-request (no follow-up needed)
+- [[Architecture/Analysis/10-DEADLOCK_ANALYSIS|Deadlock Analysis Catalog]] — DL-006, DL-009, DL-010 all marked Fixed

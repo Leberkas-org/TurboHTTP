@@ -40,3 +40,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
       field used within the "message/external-body" content-type. In
       HTTP, it should be used whenever the entity's length can be
       determined prior to being transferred.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

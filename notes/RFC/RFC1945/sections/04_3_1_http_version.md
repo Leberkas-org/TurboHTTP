@@ -81,3 +81,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    application's native format may be upgraded before being forwarded;
    the proxy/gateway's response to that request must follow the server
    requirements listed above.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

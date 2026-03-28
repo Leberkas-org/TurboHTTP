@@ -33,3 +33,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
        value, the month-value, the year-value, the hour-value, the
        minute-value, and the second-value, respectively.  If no such
        date exists, abort these steps and fail to parse the cookie-date.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

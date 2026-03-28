@@ -330,3 +330,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
       |  their usage within the protocol stream.  Implementations are
       |  not required to use these formats for user presentation,
       |  request logging, etc.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

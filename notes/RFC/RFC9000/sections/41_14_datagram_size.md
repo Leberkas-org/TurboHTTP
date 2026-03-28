@@ -241,3 +241,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
       |  contains a Source Connection ID field.  This packet does not
       |  need to be a valid packet, and it can be sent even if there is
       |  no current use for packets of that type.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -28,3 +28,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    one WWW-Authenticate header field is provided, since the contents of
    a challenge may itself contain a comma-separated list of
    authentication parameters.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

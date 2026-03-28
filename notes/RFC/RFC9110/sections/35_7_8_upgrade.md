@@ -118,3 +118,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    version rules of Section 2.5 and future updates to this
    specification.  Additional protocol names ought to be registered
    using the registration procedure defined in Section 16.7.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

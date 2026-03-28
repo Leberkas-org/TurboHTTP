@@ -35,3 +35,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **MUST**: discarded CRYPTO frames MUST be acknowledged because the packet has
    been received and processed by the transport even though the CRYPTO
    frame was discarded.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

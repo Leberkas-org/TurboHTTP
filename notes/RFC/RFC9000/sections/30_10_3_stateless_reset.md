@@ -258,3 +258,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    useful in detecting cases of broken connections where only very small
    packets are sent; such failures might only be detected by other
    means, such as timers.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

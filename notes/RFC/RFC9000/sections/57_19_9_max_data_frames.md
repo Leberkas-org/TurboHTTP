@@ -36,3 +36,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    FLOW_CONTROL_ERROR if it receives more data than the maximum data
    value that it has sent.  This includes violations of remembered
    limits in Early Data; see Section 7.4.1.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

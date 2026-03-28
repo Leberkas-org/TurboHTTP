@@ -147,3 +147,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
    The literal representation of a header field name or of a header
    field value can encode the sequence of octets either directly or
    using a static Huffman code (see Section 5.2).
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -54,3 +54,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    in the same UDP datagram.  Note also that there is no situation where
    a Retry or Version Negotiation packet is coalesced with another
    packet.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

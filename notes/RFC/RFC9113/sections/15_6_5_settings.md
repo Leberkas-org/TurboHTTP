@@ -221,3 +221,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 - ⚠️ SETTINGS ACK timeout (§6.5.3) — no `SETTINGS_TIMEOUT` error is raised if peer doesn't acknowledge within reasonable time; relies on connection-level timeout instead
 - ⚠️ `SETTINGS_ENABLE_PUSH` — always sent as 0 (push disabled) but server's push-related frames are not fully validated against this setting
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -66,3 +66,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
             match the creation-time of the old-cookie.
 
         4.  Remove the old-cookie from the cookie store.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

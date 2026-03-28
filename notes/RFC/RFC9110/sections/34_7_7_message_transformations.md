@@ -62,3 +62,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    or the selected representation (other than the content) unless the
    field's definition specifically allows such modification or the
    modification is deemed necessary for privacy or security.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

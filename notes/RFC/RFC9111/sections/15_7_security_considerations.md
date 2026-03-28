@@ -73,3 +73,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    can be (and often is) used to satisfy subsequent requests to caches.
    Servers that wish to control caching of these responses are
    encouraged to emit appropriate Cache-Control response header fields.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

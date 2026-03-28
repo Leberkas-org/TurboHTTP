@@ -53,3 +53,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    lines might include conditionals, authentication credentials, or
    deliberately misleading duplicate header fields that could impact
    request processing.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

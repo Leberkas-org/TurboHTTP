@@ -26,5 +26,5 @@ status: open | in-progress | resolved
 
 
 ## References
-- [Feature plan](../.maggus/features/)
-- [Deadlock trace](../.maggus/analysis/)
+- [Related feature] — Link to feature note if applicable
+- [Related debugging notes] — Link to other investigation notes

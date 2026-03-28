@@ -39,3 +39,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    Similar considerations apply to request data when it is stored and
    later processed, such as within log files, monitoring tools, or when
    included within a data format that allows embedded scripts.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

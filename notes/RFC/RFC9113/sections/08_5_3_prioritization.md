@@ -72,3 +72,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    the client has not implemented the feature.  The defaults described
    in Section 5.3.5 of [RFC7540] are known to have poor performance
    under most conditions, and their use is unlikely to be deliberate.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

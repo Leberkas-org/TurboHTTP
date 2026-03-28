@@ -76,3 +76,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
    that increases the Known Received Count beyond what the encoder has
 > **MUST**: sent, MUST treat this as a connection error of type
    QPACK_DECODER_STREAM_ERROR.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -62,3 +62,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
           Consume the remainder of the unparsed-attributes.
 
        Let the cookie-av string be the characters consumed in this step.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

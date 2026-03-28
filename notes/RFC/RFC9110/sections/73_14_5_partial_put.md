@@ -32,3 +32,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    the larger resource, or by using a different method that has been
    specifically defined for partial updates (for example, the PATCH
    method defined in [RFC5789]).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

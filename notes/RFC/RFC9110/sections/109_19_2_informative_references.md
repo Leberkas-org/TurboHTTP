@@ -300,3 +300,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
               Authoring and Versioning (WebDAV)", RFC 4918,
               DOI 10.17487/RFC4918, June 2007,
               <https://www.rfc-editor.org/info/rfc4918>.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

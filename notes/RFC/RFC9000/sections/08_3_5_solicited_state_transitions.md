@@ -54,3 +54,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    bidirectional stream can terminate one direction by sending a
    RESET_STREAM frame, and it can encourage prompt termination in the
    opposite direction by sending a STOP_SENDING frame.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -80,3 +80,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    reserved version in a Version Negotiation packet; see Section 17.2.1.
 > **MAY**: Endpoints MAY send packets with a reserved version to test that a
    peer correctly discards the packet.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

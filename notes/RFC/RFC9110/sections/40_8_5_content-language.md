@@ -82,3 +82,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
      fr, en-US, es-419, az-Arab, x-pig-latin, man-Nkoo-GN
 
    See [RFC5646] for further information.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

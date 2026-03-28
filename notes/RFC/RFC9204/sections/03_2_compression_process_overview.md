@@ -278,3 +278,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
    If the decoder encounters a reference in an encoder instruction to a
 > **MUST**: dynamic table entry that has already been evicted, it MUST treat this
    as a connection error of type QPACK_ENCODER_STREAM_ERROR.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

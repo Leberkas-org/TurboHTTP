@@ -75,4 +75,4 @@ Key ideas from this RFC, with links to section files:
 ## See Also
 
 - [[../00-RFC_STATUS_MATRIX|RFC Status Matrix]]
-- [[../../Architecture/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps]]
+- [[../../Architecture/Status/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps]]

@@ -53,7 +53,7 @@ src/
 └── TurboHttp.sln               # Solution file
 notes/                          # This vault — single source of truth for non-code knowledge
 docs/                           # VitePress documentation site
-.maggus/                        # Feature plans, release notes, memory
+planning/                       # Feature plans, release notes, memory
 ```
 
 ## Build Commands
@@ -94,16 +94,16 @@ This Obsidian vault is the single source of truth for all non-code knowledge. St
 | Note | Purpose |
 |------|---------|
 | [[00-Index\|00-Index]] | Central hub — all categories linked from here |
-| [[Architecture/01-LAYERED_ARCHITECTURE\|Layered Architecture]] | Full 7-layer architecture diagram and design decisions |
-| [[Architecture/04-CURRENT_STATE_SUMMARY\|Current State Summary]] | Implementation completeness and next milestones |
-| [[Architecture/09-CLAUDE_PREFERENCES\|Claude Preferences]] | AI session workflow, response style, knowledge capture |
+| [[Architecture/Design/01-LAYERED_ARCHITECTURE\|Layered Architecture]] | Full 7-layer architecture diagram and design decisions |
+| [[Architecture/Status/04-CURRENT_STATE_SUMMARY\|Current State Summary]] | Implementation completeness and next milestones |
+| [[Architecture/Guides/09-CLAUDE_PREFERENCES\|Claude Preferences]] | AI session workflow, response style, knowledge capture |
 | [[RFC/00-RFC_STATUS_MATRIX\|RFC Status Matrix]] | Per-RFC compliance scores and gaps (⭐ start here for RFC work) |
 | [[VAULT_STYLE_GUIDE\|Vault Style Guide]] | Formatting, frontmatter, and linking conventions |
 
 **Architecture notes (00–17):**
 
 - `00` — This onboarding guide (start here)
-- `01` — [[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]]
+- `01` — [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]]
 - `02` — GraphStage Patterns
 - `03` — Known Gaps & Limitations
 - `04` — Current State Summary
@@ -111,7 +111,7 @@ This Obsidian vault is the single source of truth for all non-code knowledge. St
 - `06` — Decoder Pipeline Architecture
 - `07` — HTTP/1.0 Reconnection Limitation
 - `08` — HTTP/2 Decoder Migration
-- `09` — [[Architecture/09-CLAUDE_PREFERENCES|Claude Preferences]] (AI workflow)
+- `09` — [[Architecture/Guides/09-CLAUDE_PREFERENCES|Claude Preferences]] (AI workflow)
 - `11` — Stage Completion Audit
 - `12` — Test Organization
 - `13` — Client Layer
@@ -126,7 +126,7 @@ This Obsidian vault is the single source of truth for all non-code knowledge. St
 
 Every AI agent session must follow this sequence:
 
-1. **Orient** — Read `Architecture/09-CLAUDE_PREFERENCES` and `Architecture/04-CURRENT_STATE_SUMMARY`
+1. **Orient** — Read `Architecture/Guides/09-CLAUDE_PREFERENCES` and `Architecture/Status/04-CURRENT_STATE_SUMMARY`
 2. **Search before acting** — Before any RFC work: `search_notes("RFC XXXX section Y")`. Before architecture decisions: `search_notes("component name")`
 3. **Work** — Implement the assigned task
 4. **Capture** — Before ending the session, check: did I discover something important? If yes, write to vault
@@ -154,7 +154,7 @@ Every AI agent session must follow this sequence:
 | Feature learnings | `notes/Features/` | — |
 | Session work logs | `notes/Sessions/` (git-ignored) | Session-Log |
 
-See [[Architecture/09-CLAUDE_PREFERENCES|Claude Preferences]] for the full knowledge capture workflow.
+See [[Architecture/Guides/09-CLAUDE_PREFERENCES|Claude Preferences]] for the full knowledge capture workflow.
 
 ### Workflow Rules (AI)
 
@@ -173,7 +173,7 @@ See [[Architecture/09-CLAUDE_PREFERENCES|Claude Preferences]] for the full knowl
 
 ### Feature Plans
 
-New feature work starts with a plan in `.maggus/features/feature_NNN.md`. Plans include:
+New feature work starts with a numbered feature plan. Plans include:
 
 - Goals and acceptance criteria with task breakdown
 - Token estimates, predecessor/successor dependencies
@@ -190,7 +190,7 @@ To create a feature plan, use the `maggus:maggus-plan` skill in Claude Code.
 5. Write commit message to `COMMIT.md` in repo root
 6. Create PR targeting `main`
 
-User-visible changes are appended to `.maggus/RELEASE_NOTES.md` in `## TASK-NNN: Title` format.
+User-visible changes are appended to the release notes after each completed task.
 
 ## Key Code Patterns
 
@@ -278,7 +278,7 @@ Key rules:
 ## See Also
 
 - [[VAULT_STYLE_GUIDE|Vault Style Guide]] — how to write notes, frontmatter standards, quality checklist
-- [[Architecture/09-CLAUDE_PREFERENCES|Claude Preferences]] — AI session workflow in detail
-- [[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]] — full architecture reference
-- [[Architecture/04-CURRENT_STATE_SUMMARY|Current State Summary]] — project status and roadmap
+- [[Architecture/Guides/09-CLAUDE_PREFERENCES|Claude Preferences]] — AI session workflow in detail
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — full architecture reference
+- [[Architecture/Status/04-CURRENT_STATE_SUMMARY|Current State Summary]] — project status and roadmap
 - [[RFC/00-RFC_STATUS_MATRIX|RFC Status Matrix]] — compliance tracking by RFC

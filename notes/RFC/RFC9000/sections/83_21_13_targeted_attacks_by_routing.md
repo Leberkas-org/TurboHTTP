@@ -15,3 +15,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    decisions are made independently of client-selected values, including
    addresses.  Once an instance is selected, a connection ID can be
    selected so that later packets are routed to the same instance.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

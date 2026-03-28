@@ -317,3 +317,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
        (254)  |11111111|11111111|11111110|000          7fffff0  [27]
        (255)  |11111111|11111111|11111011|10           3ffffee  [26]
    EOS (256)  |11111111|11111111|11111111|111111      3fffffff  [30]
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

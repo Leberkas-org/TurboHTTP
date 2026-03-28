@@ -56,3 +56,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 > **MUST**: A PRIORITY frame with a length other than 5 octets MUST be treated as
    a stream error (Section 5.4.2) of type FRAME_SIZE_ERROR.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

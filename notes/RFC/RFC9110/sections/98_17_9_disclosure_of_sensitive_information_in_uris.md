@@ -41,3 +41,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    personal information that might be found in the referring resource's
    URI.  Limitations on the Referer header field are described in
    Section 10.1.3 to address some of its security considerations.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

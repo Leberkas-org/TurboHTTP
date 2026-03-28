@@ -349,3 +349,7 @@ TurboHttp's `Http11RequestEncoder` generates compliant request-lines with method
 - No OPTIONS * (server-wide) support
 
 **Test References:** `TurboHttp.Tests.RFC9112`
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

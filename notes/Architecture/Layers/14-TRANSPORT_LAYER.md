@@ -15,7 +15,7 @@ tags:
 
 The Transport Layer manages physical network connections — TCP sockets, TLS streams, and QUIC endpoints. It is **actor-free by design**: connection lifecycle is managed through `System.Threading.Channels` and `System.IO.Pipelines` instead of Akka actors, reducing overhead and simplifying the concurrency model.
 
-> **Scope**: This note covers connection management and byte-level I/O. For protocol framing (HTTP/1.x, HTTP/2, HTTP/3), see [[Architecture/16-PROTOCOL_LAYER|Protocol Layer]].
+> **Scope**: This note covers connection management and byte-level I/O. For protocol framing (HTTP/1.x, HTTP/2, HTTP/3), see [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]].
 
 ## Purpose
 
@@ -144,13 +144,15 @@ On read completion, it sets `ClientState.CloseKind` to distinguish clean TLS `cl
 
 ## ConnectionStage: The Bridge
 
-`ConnectionStage` is a `GraphStage<FlowShape<IOutputItem, IInputItem>>` that sits between the protocol engine and the network. It:
+`ConnectionStage` is a `GraphStage<FlowShape<IOutputItem, IInputItem>>` that sits between the protocol engine and the network. It takes an `IConnectionScope` for connection lifecycle management:
 
 1. Receives the first `ConnectItem` and lazily creates an `ITransportHandler` (TCP or QUIC based on options type)
 2. Routes `DataItem` writes to the outbound channel
-3. Pumps inbound channel reads as `IInputItem` downstream
-4. Handles connection-reuse signals, max-concurrent-streams updates, and stream acquire requests
-5. Manages connect timeouts via `TimerGraphStageLogic`
+3. **Auto-reconnect**: when `DataItem` arrives with `_handle == null` (HTTP/1.0, or HTTP/1.1 after Connection: close), acquires a new connection via `scope.AcquireAsync()` using stored options
+4. Pumps inbound channel reads as `IInputItem` downstream
+5. Handles max-concurrent-streams updates and stream acquire requests
+6. Manages connect timeouts via `TimerGraphStageLogic`
+7. **Transport callback**: `TcpTransportHandler` registers `OnTransportReturned` via `scope.RegisterTransportCallback()` — called by `ConnectionReuseFlowStage` after response evaluation
 
 ### Handler Strategy Pattern
 
@@ -165,24 +167,52 @@ ConnectionStage delegates to:
               └── Request streams (per-request)
 ```
 
+## IConnectionScope: Protocol-Aware Connection Lifecycle
+
+`IConnectionScope` abstracts protocol-specific connection lifecycle (acquire, use, return) so the pipeline doesn't need protocol-aware branches:
+
+```text
+┌─ Per-host substream (GroupByHostKey) ──────────────────────────┐
+│                                                                │
+│   IConnectionScope (shared within fused substream actor)       │
+│     AcquireAsync() ←── ConnectionStage (first data / reconnect)│
+│     ReturnAsync()  ←── ConnectionReuseFlowStage (on response)  │
+│     RegisterTransportCallback(Action<bool>) ──→ TcpTransportHandler │
+│                                                                │
+│   SingleRequestConnectionScope (HTTP/1.0):                     │
+│     Always new connection, always close                        │
+│   PersistentConnectionScope (HTTP/1.1+):                       │
+│     Reuse if keep-alive, close on Connection: close            │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Key files:**
+| File | Purpose |
+|------|---------|
+| `src/TurboHttp/Transport/ConnectionScope/IConnectionScope.cs` | Interface: Acquire, Return, CanReuse, Cleanup, transport callback |
+| `src/TurboHttp/Transport/ConnectionScope/SingleRequestConnectionScope.cs` | HTTP/1.0: always new connection |
+| `src/TurboHttp/Transport/ConnectionScope/PersistentConnectionScope.cs` | HTTP/1.1+: reuse when keep-alive |
+| `src/TurboHttp/Transport/ConnectionScope/DeferredConnectionScope.cs` | Factory: defers scope creation until first request provides TcpOptions |
+
+**Signal flow:** `ConnectionReuseFlowStage` calls `scope.ReturnAsync(canReuse)` → scope invokes registered callback → `TcpTransportHandler.OnTransportReturned(canReuse)` does cleanup (stop pump, clear handle, increment gen). All synchronous within the fused actor — no graph edges needed.
+
 ## Known Limitations
 
 - **No connection prewarming** — connections are established on first request, not proactively
 - **No DNS refresh** — `RequestEndpoint` caches the resolved host; DNS TTL changes require new connections
-- **HTTP/1.0 reconnection** — `ExtractOptionsStage` emits `ConnectItem` only once; HTTP/1.0 reconnection after close relies on substream recreation (see [[Architecture/07-HTTP10_RECONNECTION_LIMITATION|HTTP/1.0 Reconnection Limitation]])
 - **QUIC multi-stream complexity** — `QuicConnectionManager` handles stream multiplexing but the `Http3TaggedItem`/`Http3InputTaggedItem` routing adds indirection
 
 ## Integration Points
 
 | Component | Interaction |
 |-----------|-------------|
-| [[Architecture/15-STREAMS_LAYER|Streams Layer]] | `ConnectionStage` is wired into `ProtocolCoreGraphBuilder` per-version substreams |
-| [[Architecture/13-CLIENT_LAYER|Client Layer]] | `ConnectionPool` is created by client factory, shared across named clients |
-| [[Architecture/16-PROTOCOL_LAYER|Protocol Layer]] | Encoders produce `DataItem` (outbound); decoders consume `DataItem` (inbound) |
-| [[Architecture/17-DIAGNOSTICS_INTEGRATION|Diagnostics]] | `TurboHttpMetrics.ConnectionActive/Idle/Duration` track pool state |
+| [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] | `ConnectionStage` is wired into `ProtocolCoreGraphBuilder` per-version substreams |
+| [[Architecture/Layers/13-CLIENT_LAYER|Client Layer]] | `ConnectionPool` is created by client factory, shared across named clients |
+| [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]] | Encoders produce `DataItem` (outbound); decoders consume `DataItem` (inbound) |
+| [[Architecture/Guides/17-DIAGNOSTICS_INTEGRATION|Diagnostics]] | `TurboHttpMetrics.ConnectionActive/Idle/Duration` track pool state |
 
 ## See Also
 
-- [[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Layer positioning
-- [[Architecture/07-HTTP10_RECONNECTION_LIMITATION|HTTP/1.0 Reconnection Limitation]] — ExtractOptionsStage single-emit constraint
-- [[Architecture/11-STAGE_COMPLETION_AUDIT|Stage Completion Audit]] — ConnectionStage completion handling
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Layer positioning
+- [[Architecture/Analysis/07-HTTP10_RECONNECTION_LIMITATION|HTTP/1.0 Reconnection Limitation]] — ExtractOptionsStage single-emit constraint
+- [[Architecture/Analysis/11-STAGE_COMPLETION_AUDIT|Stage Completion Audit]] — ConnectionStage completion handling

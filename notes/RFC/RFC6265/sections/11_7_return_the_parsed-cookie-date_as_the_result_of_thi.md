@@ -106,3 +106,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
 
 > **MUST**: A user agent MUST use an algorithm equivalent to the following
    algorithm to parse a "set-cookie-string":
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

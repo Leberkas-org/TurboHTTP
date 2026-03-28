@@ -66,3 +66,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    are "probing frames", and all other frames are "non-probing frames".
    A packet containing only probing frames is a "probing packet", and a
    packet containing any other frame is a "non-probing packet".
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

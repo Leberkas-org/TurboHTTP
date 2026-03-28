@@ -23,3 +23,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
 
    QPACK_DECODER_STREAM_ERROR (0x0202):  The encoder failed to interpret
       a decoder instruction received on the decoder stream.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

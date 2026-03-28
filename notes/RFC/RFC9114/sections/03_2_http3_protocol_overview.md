@@ -148,3 +148,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    Packet diagrams in this document use the format defined in
    Section 1.3 of [QUIC-TRANSPORT] to illustrate the order and size of
    fields.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

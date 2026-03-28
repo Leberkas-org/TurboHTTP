@@ -182,3 +182,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    When a major version of HTTP does not define any minor versions, the
    minor version "0" is implied.  The "0" is used when referring to that
    protocol within elements that require a minor version identifier.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

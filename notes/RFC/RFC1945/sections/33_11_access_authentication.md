@@ -144,3 +144,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    on an open network, the basic authentication scheme should be used
    accordingly. In spite of this, clients should implement the scheme in
    order to communicate with servers that use it.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

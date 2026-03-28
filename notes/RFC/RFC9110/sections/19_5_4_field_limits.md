@@ -27,3 +27,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    than the client wishes to process if the field semantics are such
    that the dropped value(s) can be safely ignored without changing the
    message framing or response semantics.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

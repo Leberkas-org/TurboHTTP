@@ -63,3 +63,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    application wishes to abandon a connection during the handshake, an
    endpoint can send a CONNECTION_CLOSE frame (type 0x1c) with an error
    code of APPLICATION_ERROR in an Initial or Handshake packet.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

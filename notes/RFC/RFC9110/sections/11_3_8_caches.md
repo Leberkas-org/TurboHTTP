@@ -45,3 +45,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    sites, collaborative systems that broadcast or multicast cache
    entries, archives of pre-fetched cache entries for use in off-line or
    high-latency environments, and so on.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

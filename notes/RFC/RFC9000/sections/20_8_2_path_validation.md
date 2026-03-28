@@ -179,3 +179,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    failure.  Primarily, this happens if a connection migration to a new
    path is initiated while a path validation on the old path is in
    progress.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

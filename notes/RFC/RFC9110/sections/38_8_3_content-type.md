@@ -131,3 +131,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    in a request, as described in [RFC7578], and the "multipart/
    byteranges" type is defined by this specification for use in some 206
    (Partial Content) responses (see Section 15.3.7).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

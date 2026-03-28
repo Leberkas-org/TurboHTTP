@@ -63,3 +63,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
       |  Note (*1): A stream is considered "idle" if it has not yet been
       |  created or if the receiving part of the stream is in the "Recv"
       |  state without yet having received any frames.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -57,3 +57,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 > **MUST**: A RST_STREAM frame with a length other than 4 octets MUST be treated
    as a connection error (Section 5.4.1) of type FRAME_SIZE_ERROR.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

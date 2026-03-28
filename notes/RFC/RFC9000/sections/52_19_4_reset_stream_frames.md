@@ -44,3 +44,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    Final Size:  A variable-length integer indicating the final size of
       the stream by the RESET_STREAM sender, in units of bytes; see
       Section 4.5.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -28,3 +28,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    6.  Process the attribute-name and attribute-value according to the
        requirements in the following subsections.  (Notice that
        attributes with unrecognized attribute-names are ignored.)
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

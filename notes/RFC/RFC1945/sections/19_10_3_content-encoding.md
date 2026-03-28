@@ -32,3 +32,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    The Content-Encoding is a characteristic of the resource identified
    by the Request-URI. Typically, the resource is stored with this
    encoding and is only decoded before rendering or analogous usage.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

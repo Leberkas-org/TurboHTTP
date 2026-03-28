@@ -14,7 +14,7 @@ tags:
 
 The Streams Layer is TurboHttp's core — it composes Akka.Streams `GraphStage` and `BidiFlow` components into a reactive pipeline that transforms `HttpRequestMessage` into `HttpResponseMessage`. Every HTTP feature (redirect, retry, caching, compression, cookies) is a composable BidiFlow stage.
 
-> **Scope**: This note covers pipeline composition and stage organization. For individual encoder/decoder internals, see [[Architecture/16-PROTOCOL_LAYER|Protocol Layer]]. For stage patterns and naming, see [[Architecture/02-STAGE_PATTERNS|GraphStage Patterns]].
+> **Scope**: This note covers pipeline composition and stage organization. For individual encoder/decoder internals, see [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]]. For stage patterns and naming, see [[Architecture/Design/02-STAGE_PATTERNS|GraphStage Patterns]].
 
 ## Purpose
 
@@ -150,7 +150,7 @@ Cross-cutting HTTP features implemented as BidiFlows.
 | `ExpectContinueBidiStage` | RFC 9110 §10.1.1 | BidiFlow | Manages `Expect: 100-continue` handshake |
 | `CacheBidiStage` | RFC 9111 | BidiFlow | Short-circuits on cache hit; stores responses |
 | `ContentEncodingBidiStage` | RFC 9110 §8.4 | BidiFlow | Request compression + response decompression |
-| `ConnectionReuseStage` | RFC 9112 §9 | Flow | Evaluates keep-alive/close per response |
+| `ConnectionReuseFlowStage` | RFC 9112 §9 | Flow | Evaluates keep-alive/close per response; calls `IConnectionScope.ReturnAsync()` |
 | `DeadlockWatchdogStage` | — | Flow | DEBUG-only: detects pipeline stalls |
 
 ### Routing Stages (`Streams/Stages/Routing/`)
@@ -160,7 +160,7 @@ Control request/response routing within the pipeline.
 | Stage | Purpose |
 |-------|---------|
 | `RequestEnricherStage` | Applies `TurboRequestOptions` defaults to outgoing requests |
-| `ExtractOptionsStage` | Splits first request into `ConnectItem` signal + request stream; handles reconnect feedback |
+| `ExtractOptionsStage` | Splits first request into `ConnectItem` signal + request stream (simplified: no reconnect feedback) |
 | `GroupByHostKeyStage` | Groups requests by `RequestEndpoint` into per-host substreams |
 | `MergeSubstreamsStage` | Merges per-host response substreams back into a single stream |
 | `HostKeyGroupByExtensions` | Extension methods for fluent `GroupByHostKey` syntax |
@@ -216,6 +216,27 @@ MergeSubstreams
 Merge(4 versions)
 ```
 
+## Per-Host Connection Flow (Linear Topology)
+
+`BuildConnectionFlow()` in `ProtocolCoreGraphBuilder` assembles a linear pipeline per host substream using `IConnectionScope` for connection lifecycle:
+
+```text
+Request → ExtractOptions → Engine.encode → MergePreferred → ConnectionStage → Engine.decode
+               (simplified)                  (ConnectItem      (scope-managed)
+                                              priority)              │
+                                                              ConnectionReuseFlow → Response
+                                                              (scope.ReturnAsync)
+```
+
+**Key properties:**
+- **Zero graph cycles** — no backward edges from response path to request path
+- **Zero junction stages** except one `MergePreferred` for first `ConnectItem` priority
+- **Scope-mediated reuse** — `ConnectionReuseFlowStage` calls `scope.ReturnAsync(canReuse)` which triggers a transport callback synchronously within the fused actor; no graph edges needed
+- **Auto-reconnect** — when `DataItem` arrives with `_handle == null` (HTTP/1.0 every request, HTTP/1.1 after Connection: close), `TcpTransportHandler` re-acquires via `scope.AcquireAsync()` using stored options
+- **Per-host scope** — `SingleRequestConnectionScope` (HTTP/1.0) or `PersistentConnectionScope` (HTTP/1.1+), created per substream by `GroupByHostKey`
+
+This replaced the previous feedback loop topology (Broadcast + 2× MergePreferred + ExtractOptionsStage.InReuse) which caused DL-006, DL-009, and DL-010 deadlocks.
+
 ## Design Decisions
 
 ### BidiFlow over DelegatingHandler
@@ -243,13 +264,13 @@ In debug builds, `DeadlockWatchdogStage<T>` is inserted at three pipeline points
 
 | Component | Interaction |
 |-----------|-------------|
-| [[Architecture/13-CLIENT_LAYER|Client Layer]] | `Engine.CreateFlow()` is the main entry point |
-| [[Architecture/14-TRANSPORT_LAYER|Transport Layer]] | `ConnectionStage` wired inside each per-host substream |
-| [[Architecture/16-PROTOCOL_LAYER|Protocol Layer]] | Encoder/decoder stages use `Protocol/` classes for wire format |
-| [[Architecture/17-DIAGNOSTICS_INTEGRATION|Diagnostics]] | `TracingBidiStage` + `DeadlockWatchdogStage` emit diagnostic events |
+| [[Architecture/Layers/13-CLIENT_LAYER|Client Layer]] | `Engine.CreateFlow()` is the main entry point |
+| [[Architecture/Layers/14-TRANSPORT_LAYER|Transport Layer]] | `ConnectionStage` wired inside each per-host substream |
+| [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]] | Encoder/decoder stages use `Protocol/` classes for wire format |
+| [[Architecture/Guides/17-DIAGNOSTICS_INTEGRATION|Diagnostics]] | `TracingBidiStage` + `DeadlockWatchdogStage` emit diagnostic events |
 
 ## See Also
 
-- [[Architecture/02-STAGE_PATTERNS|GraphStage Patterns]] — Port naming and stage lifecycle conventions
-- [[Architecture/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]] — Three-layer decoder pattern
-- [[Architecture/11-STAGE_COMPLETION_AUDIT|Stage Completion Audit]] — Completion propagation bug fixes
+- [[Architecture/Design/02-STAGE_PATTERNS|GraphStage Patterns]] — Port naming and stage lifecycle conventions
+- [[Architecture/Design/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]] — Three-layer decoder pattern
+- [[Architecture/Analysis/11-STAGE_COMPLETION_AUDIT|Stage Completion Audit]] — Completion propagation bug fixes

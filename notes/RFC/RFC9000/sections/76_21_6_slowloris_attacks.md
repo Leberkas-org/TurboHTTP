@@ -25,3 +25,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    allowed to make, imposing restrictions on the minimum transfer speed
    a connection is allowed to have, and restricting the length of time
    an endpoint is allowed to stay connected.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

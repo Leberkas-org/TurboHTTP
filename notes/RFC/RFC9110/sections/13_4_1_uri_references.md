@@ -58,3 +58,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    that this implies some structures and on-wire representations (for
    example, the request line in HTTP/1.1) will necessarily be larger in
    some cases.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

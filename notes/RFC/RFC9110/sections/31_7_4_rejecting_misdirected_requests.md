@@ -40,3 +40,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    The 421 (Misdirected Request) status code in a response indicates
    that the origin server has rejected the request because it appears to
    have been misdirected (Section 15.5.20).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

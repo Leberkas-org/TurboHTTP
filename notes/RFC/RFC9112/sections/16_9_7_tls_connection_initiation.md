@@ -21,3 +21,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
 > **MUST**: HTTP data MUST be sent as TLS "application data" but is otherwise
    treated like a normal connection for HTTP (including potential reuse
    as a persistent connection).
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

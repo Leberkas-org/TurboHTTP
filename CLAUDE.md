@@ -91,12 +91,12 @@ notes/
 
 ### Key Notes Reference
 
-- `Architecture/01-LAYERED_ARCHITECTURE` — Full layer-by-layer architecture
-- `Architecture/02-STAGE_PATTERNS` — GraphStage patterns and conventions
-- `Architecture/04-CURRENT_STATE_SUMMARY` — Project status, completeness scores
-- `Architecture/05-BENCHMARK_PATTERNS` — BDN conventions, port assignments, TCP workarounds
-- `Architecture/06-DECODER_PIPELINE_ARCHITECTURE` — Three-layer decoder pattern
-- `Architecture/09-CLAUDE_PREFERENCES` — Language, workflow, response style preferences
+- `Architecture/Design/01-LAYERED_ARCHITECTURE` — Full layer-by-layer architecture
+- `Architecture/Design/02-STAGE_PATTERNS` — GraphStage patterns and conventions
+- `Architecture/Status/04-CURRENT_STATE_SUMMARY` — Project status, completeness scores
+- `Architecture/Guides/05-BENCHMARK_PATTERNS` — BDN conventions, port assignments, TCP workarounds
+- `Architecture/Design/06-DECODER_PIPELINE_ARCHITECTURE` — Three-layer decoder pattern
+- `Architecture/Guides/09-CLAUDE_PREFERENCES` — Language, workflow, response style preferences
 
 ## Stage Inlet/Outlet Naming
 

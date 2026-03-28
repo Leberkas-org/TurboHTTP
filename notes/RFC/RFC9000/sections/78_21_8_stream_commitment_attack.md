@@ -31,3 +31,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    mitigate the effect of the stream commitment attack.  However,
    setting the limit too low could affect performance when applications
    expect to open a large number of streams.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

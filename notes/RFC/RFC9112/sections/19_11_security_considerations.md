@@ -114,3 +114,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
 
    The "https" scheme can be used to identify resources that require a
    confidential connection, as described in Section 4.2.2 of [HTTP].
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

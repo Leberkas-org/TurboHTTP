@@ -263,3 +263,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
 > **MUST**: decode, this MUST be treated as a stream error of type
    QPACK_DECOMPRESSION_FAILED if on a request stream or a connection
    error of the appropriate type if on the encoder or decoder stream.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -76,3 +76,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
    longer interested in a response.  In general, transport signals
    cannot be relied upon to signal edge cases, since HTTP/1.1 is
    independent of transport.
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -245,3 +245,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **SHOULD**: avoid a deadlock, a sender SHOULD ensure that other frames are sent
    periodically in addition to PADDING frames to elicit acknowledgments
    from the receiver.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

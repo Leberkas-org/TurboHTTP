@@ -50,3 +50,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
        encoding formats is not desirable and should be discouraged
        for future encodings. Their use here is representative of
        historical practice, not good design.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

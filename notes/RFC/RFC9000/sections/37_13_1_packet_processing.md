@@ -54,3 +54,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    did not send as a connection error of type PROTOCOL_VIOLATION, if it
    is able to detect the condition.  For further discussion of how this
    might be achieved, see Section 21.4.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

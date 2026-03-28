@@ -142,3 +142,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    All registrations in this document are assigned a permanent status
    and list a change controller of the IETF and a contact of the QUIC
    Working Group (quic@ietf.org).
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -43,3 +43,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
    receive the message body and is closing the connection, the client
 > **SHOULD**: SHOULD immediately cease transmitting the body and close its side of
    the connection.
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

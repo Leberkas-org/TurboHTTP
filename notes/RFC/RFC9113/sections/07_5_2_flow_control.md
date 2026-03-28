@@ -134,3 +134,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 ### Known Gaps
 
 - ⚠️ Adaptive window sizing — uses fixed window management rather than bandwidth*delay product-aware algorithm per §5.2.3; functional but may not achieve optimal throughput on high-latency connections
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -239,3 +239,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
               bandwidth, yet greedy and poisonous HTTP client!", June
               2009, <https://web.archive.org/web/20150315054838/
               http://ha.ckers.org/slowloris/>.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

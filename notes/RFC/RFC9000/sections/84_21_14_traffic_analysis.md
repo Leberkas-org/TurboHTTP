@@ -19,3 +19,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    research.  Length is not the only way that information might leak.
    Endpoints might also reveal sensitive information through other side
    channels, such as the timing of packets.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

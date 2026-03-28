@@ -201,3 +201,7 @@ B.9.  Changes from RFC 7694
 
    This specification includes the extension defined in [RFC7694] but
    leaves out examples and deployment considerations.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

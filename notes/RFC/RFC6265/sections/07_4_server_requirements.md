@@ -291,3 +291,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    that were set with different Path or Domain attributes), servers
 > **SHOULD NOT**: SHOULD NOT rely upon the order in which these cookies appear in the
    header.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

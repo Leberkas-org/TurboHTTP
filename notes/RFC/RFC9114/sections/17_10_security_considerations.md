@@ -261,3 +261,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
    Several features of QUIC solicit immediate responses and can be used
    by an endpoint to measure latency to their peer; this might have
    privacy implications in certain scenarios.
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

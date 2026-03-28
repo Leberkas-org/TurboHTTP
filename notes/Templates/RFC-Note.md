@@ -57,11 +57,11 @@ If a workaround exists, document it:
 ## Related Notes
 
 - [[../RFC/00-RFC_STATUS_MATRIX|RFC Status Matrix]] — Overall compliance tracking
-- [[../Architecture/03-KNOWN_GAPS_AND_LIMITATIONS|All Known Gaps]] — Cross-RFC gap summary
+- [[../Architecture/Status/03-KNOWN_GAPS_AND_LIMITATIONS|All Known Gaps]] — Cross-RFC gap summary
 - {{link to related RFC gap notes}}
 
 ## References
 
 - [RFC {{rfc_number}} Section X](https://www.rfc-editor.org/rfc/rfc{{rfc_number}}#section-x) — RFC text
-- [[../../.maggus/features/feature_XXX.md|Feature Plan]] — Related feature
+- [[../../Features/feature_name|Feature Plan]] — Related feature (if applicable)
 - `{{file_path}}:{{line_number}}` — Code location

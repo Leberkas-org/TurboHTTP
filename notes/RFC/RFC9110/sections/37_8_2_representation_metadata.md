@@ -17,3 +17,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    a HEAD request, the representation header fields describe the
    representation data that would have been enclosed in the content if
    the same request had been a GET.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -132,3 +132,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 ### Known Gaps
 
 - ⚠️ Reserved error codes (0x1f*N+0x21) are not probabilistically sent in place of `H3_NO_ERROR` per §8.1 SHOULD — always sends exact error code
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -317,3 +317,7 @@ TurboHttp implements the full message body length determination algorithm from �
 - CONNECT tunnel response handling (§6.3 rule 2) — CONNECT not supported
 
 **Test References:** `TurboHttp.Tests.RFC9112`
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

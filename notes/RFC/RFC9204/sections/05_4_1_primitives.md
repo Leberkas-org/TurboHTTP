@@ -48,3 +48,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
    A string literal without a prefix length noted is an 8-bit prefix
    string literal and follows the definitions in [RFC7541] without
    modification.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

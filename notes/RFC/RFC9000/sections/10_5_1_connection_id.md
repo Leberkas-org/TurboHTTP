@@ -217,3 +217,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 > **SHOULD NOT**: Endpoints SHOULD NOT issue updates of the Retire Prior To field
    before receiving RETIRE_CONNECTION_ID frames that retire all
    connection IDs indicated by the previous Retire Prior To value.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

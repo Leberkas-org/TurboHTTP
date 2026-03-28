@@ -86,3 +86,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    (but separate from) the header fields.  Additional processing
    expectations, if any, can be defined within the field specification
    for a field intended for use in trailers.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

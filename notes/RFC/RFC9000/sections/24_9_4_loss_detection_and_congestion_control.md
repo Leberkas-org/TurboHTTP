@@ -50,3 +50,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    PATH_CHALLENGE and restart the timer for a longer period of time.
 > **SHOULD**: This timer SHOULD be set as described in Section 6.2.1 of
    [QUIC-RECOVERY] and MUST NOT be more aggressive.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

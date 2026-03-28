@@ -44,5 +44,5 @@ aliases:
 ## References
 
 - [[../00-Index|Vault Index]]
-- [[../Architecture/04-CURRENT_STATE_SUMMARY|Project Status]]
+- [[../Architecture/Status/04-CURRENT_STATE_SUMMARY|Project Status]]
 - Related feature or RFC notes

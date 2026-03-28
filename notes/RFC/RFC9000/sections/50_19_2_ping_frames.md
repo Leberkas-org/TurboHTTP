@@ -28,3 +28,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    The PING frame can be used to keep a connection alive when an
    application or application protocol wishes to prevent the connection
    from timing out; see Section 10.1.2.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -327,3 +327,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    that the user intentionally desires to see responses tailored for
    that identified user agent, even if they might not work as well for
    the actual user agent being used.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

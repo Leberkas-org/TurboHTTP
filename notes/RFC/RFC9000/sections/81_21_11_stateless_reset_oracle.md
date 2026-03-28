@@ -39,3 +39,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    correct instance, it is better to send a stateless reset than wait
    for the connection to time out.  However, this is acceptable only if
    the routing cannot be influenced by an attacker.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

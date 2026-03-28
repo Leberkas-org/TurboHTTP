@@ -20,7 +20,7 @@ TurboHttp provides a three-pillar observability model that integrates with stand
 2. **`EventSource` (ETW)** — Lightweight keyword-filtered events for production logging and PerfView
 3. **`System.Diagnostics.Metrics`** — OpenTelemetry-compatible counters, histograms, and gauges
 
-> **Extends, does not repeat**: For how tracing integrates with the pipeline, see [[Architecture/15-STREAMS_LAYER|Streams Layer]] (TracingBidiStage is the outermost BidiFlow). For deadlock watchdog diagnostics in DEBUG builds, see [[Architecture/15-STREAMS_LAYER|Streams Layer]].
+> **Extends, does not repeat**: For how tracing integrates with the pipeline, see [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] (TracingBidiStage is the outermost BidiFlow). For deadlock watchdog diagnostics in DEBUG builds, see [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]].
 
 ---
 
@@ -248,8 +248,8 @@ builder.Services.AddOpenTelemetry()
 
 ## See Also
 
-- [[Architecture/15-STREAMS_LAYER|Streams Layer]] — TracingBidiStage placement and DeadlockWatchdogStage
-- [[Architecture/13-CLIENT_LAYER|Client Layer]] — Where diagnostic configuration is set up
-- [[Architecture/14-TRANSPORT_LAYER|Transport Layer]] — Connection events originate here
-- [[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Overall system context
-- [[Architecture/02-STAGE_PATTERNS|GraphStage Patterns]] — Stage lifecycle and port conventions
+- [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] — TracingBidiStage placement and DeadlockWatchdogStage
+- [[Architecture/Layers/13-CLIENT_LAYER|Client Layer]] — Where diagnostic configuration is set up
+- [[Architecture/Layers/14-TRANSPORT_LAYER|Transport Layer]] — Connection events originate here
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Overall system context
+- [[Architecture/Design/02-STAGE_PATTERNS|GraphStage Patterns]] — Stage lifecycle and port conventions

@@ -33,3 +33,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    data has been received.  A sender could receive either of these two
    types of frames in any state as a result of delayed delivery of
    packets.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

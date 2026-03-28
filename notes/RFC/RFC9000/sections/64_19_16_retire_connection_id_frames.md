@@ -48,3 +48,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    length connection ID by its peer.  An endpoint that provides a zero-
 > **MUST**: length connection ID MUST treat receipt of a RETIRE_CONNECTION_ID
    frame as a connection error of type PROTOCOL_VIOLATION.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

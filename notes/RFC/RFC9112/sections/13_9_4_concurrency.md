@@ -36,3 +36,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
    Note that a server might reject traffic that it deems abusive or
    characteristic of a denial-of-service attack, such as an excessive
    number of open connections from a single client.
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

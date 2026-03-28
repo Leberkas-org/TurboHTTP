@@ -37,3 +37,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    HTTP relies upon the Uniform Resource Identifier (URI) standard [URI]
    to indicate the target resource (Section 7.1) and relationships
    between resources.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

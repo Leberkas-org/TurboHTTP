@@ -168,3 +168,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
 > **MUST**: symbol MUST be treated as a decoding error.  A Huffman-encoded string
    literal containing the EOS symbol MUST be treated as a decoding
    error.
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

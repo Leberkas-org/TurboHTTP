@@ -297,3 +297,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    allow tokens to be used only once, if possible; tokens MAY include
    additional information about clients to further narrow applicability
    or reuse.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

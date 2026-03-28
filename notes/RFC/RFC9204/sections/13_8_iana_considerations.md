@@ -74,3 +74,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
    +----------------------------+--------+-------------+---------------+
 
            Table 3: Additions to the HTTP/3 Error Codes Registry
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

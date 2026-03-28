@@ -106,3 +106,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    2.  If the field value is a list of entity tags, the condition is
        true if any of the listed tags match the entity tag of the
        selected representation.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

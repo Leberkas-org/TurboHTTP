@@ -301,3 +301,7 @@ Appendix A.  Prohibited TLS 1.2 Cipher Suites
       |  defined; these would not be explicitly prohibited.
 
    For more details, see Section 9.2.2.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

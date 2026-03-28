@@ -114,3 +114,7 @@ Table of Contents
       6.2. Application Programming Interfaces ........................27
       6.3. IDNA Dependency and Migration .............................27
    7. Privacy Considerations .........................................28
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -40,3 +40,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    options, or simple avoidance of the unsafe action; confirmation does
    not imply any specific user interface or interruption of normal
    processing if the user has already made that choice.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

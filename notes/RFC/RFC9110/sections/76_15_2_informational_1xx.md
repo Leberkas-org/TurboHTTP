@@ -60,3 +60,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    version of HTTP might be advantageous over older versions, and
    switching to a real-time, synchronous protocol might be advantageous
    when delivering resources that use such features.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

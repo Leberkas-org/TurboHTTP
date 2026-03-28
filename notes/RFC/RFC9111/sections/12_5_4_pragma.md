@@ -21,3 +21,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
       |  *Note:* Because the meaning of "Pragma: no-cache" in responses
       |  was never specified, it does not provide a reliable replacement
       |  for "Cache-Control: no-cache" in them.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -30,3 +30,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
    valid response; the client SHOULD close the connection, since message
    delimitation is now ambiguous, unless the data consists only of one
    or more CRLF (which can be discarded per Section 2.2).
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

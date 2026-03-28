@@ -186,7 +186,7 @@ var example = new();
 
 **Rules**:
 - ✅ Use `[[relative-path|Display Text]]` format
-- ✅ Relative paths from vault root: `[[Architecture/01-LAYERED|Layer Design]]`
+- ✅ Relative paths from vault root: `[[Architecture/Design/01-LAYERED|Layer Design]]`
 - ✅ Section anchors: `[[RFC/00-RFC_STATUS_MATRIX#HTTP/2|HTTP/2 Compliance]]`
 
 ### External Links
@@ -202,7 +202,7 @@ Use when referencing same URLs multiple times:
 
 ```markdown
 See [[RFC/00-RFC_STATUS_MATRIX|RFC Status Matrix]] and 
-[[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]].
+[[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]].
 
 For external refs:
 - [RFC Editor](https://www.rfc-editor.org/) — All RFCs
@@ -345,7 +345,7 @@ Brief description of RFC scope and requirements.
 
 ## Related Sections
 - [[RFC/00-RFC_STATUS_MATRIX|Status Matrix]]
-- [[Architecture/03-KNOWN_GAPS_AND_LIMITATIONS|Limitations]]
+- [[Architecture/Status/03-KNOWN_GAPS_AND_LIMITATIONS|Limitations]]
 ```
 
 ### Pattern/Best Practice Note
@@ -435,7 +435,7 @@ See `RFC/RFC1945/RFC1945.md` for a fully populated example of the RFC Index temp
 
 # Vault-level links
 [[../00-RFC_STATUS_MATRIX|RFC Status Matrix]]
-[[../../Architecture/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps]]
+[[../../Architecture/Status/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps]]
 ```
 
 ---
@@ -479,10 +479,29 @@ notes/
 ├── 00-Index.md                           # Main hub (this frontmatter)
 ├── VAULT_STYLE_GUIDE.md                  # This file (meta)
 ├── Architecture/                         # Design decisions, patterns
-│   ├── 01-LAYERED_ARCHITECTURE.md
-│   ├── 02-STAGE_PATTERNS.md
-│   ├── 03-KNOWN_GAPS_AND_LIMITATIONS.md
-│   └── 04-CURRENT_STATE_SUMMARY.md
+│   ├── 00-ONBOARDING.md                 # Developer onboarding guide
+│   ├── Design/                          # Core architecture & patterns
+│   │   ├── 01-LAYERED_ARCHITECTURE.md
+│   │   ├── 02-STAGE_PATTERNS.md
+│   │   └── 06-DECODER_PIPELINE_ARCHITECTURE.md
+│   ├── Status/                          # Current state & known issues
+│   │   ├── 03-KNOWN_GAPS_AND_LIMITATIONS.md
+│   │   └── 04-CURRENT_STATE_SUMMARY.md
+│   ├── Guides/                          # Conventions & preferences
+│   │   ├── 05-BENCHMARK_PATTERNS.md
+│   │   ├── 09-CLAUDE_PREFERENCES.md
+│   │   ├── 12-TEST_ORGANIZATION.md
+│   │   └── 17-DIAGNOSTICS_INTEGRATION.md
+│   ├── Analysis/                        # Investigations & audits
+│   │   ├── 07-HTTP10_RECONNECTION_LIMITATION.md
+│   │   ├── 08-HTTP2_DECODER_MIGRATION.md
+│   │   ├── 10-DEADLOCK_ANALYSIS.md
+│   │   └── 11-STAGE_COMPLETION_AUDIT.md
+│   └── Layers/                          # Per-layer deep dives
+│       ├── 13-CLIENT_LAYER.md
+│       ├── 14-TRANSPORT_LAYER.md
+│       ├── 15-STREAMS_LAYER.md
+│       └── 16-PROTOCOL_LAYER.md
 ├── RFC/                                  # RFC compliance tracking
 │   ├── 00-RFC_STATUS_MATRIX.md          # Master summary
 │   ├── RFC1945_*.md                     # HTTP/1.0
@@ -491,7 +510,7 @@ notes/
 │   ├── RFC9114_*.md                     # HTTP/3
 │   └── ...
 ├── Features/                             # Feature planning
-│   └── [Linked from .maggus/features/]
+│   └── Feature notes and roadmap items
 ├── Sessions/                             # Session logs (optional)
 │   └── Session-YYYY-MM-DD.md
 ├── Debugging/                            # Bug investigations (git-ignored)
@@ -583,7 +602,7 @@ Explanation...
 ...
 
 ## See Also
-- [[Architecture/02-STAGE_PATTERNS|Stage Conventions]]
+- [[Architecture/Design/02-STAGE_PATTERNS|Stage Conventions]]
 - [[Patterns/Naming|Naming Patterns]]
 ```
 

@@ -129,8 +129,7 @@ public static class Http10Encoder
     {
         headers.Remove("Host");
 
-        headers.Remove("Connection");
-        headers.Remove("Keep-Alive");
+        headers.TryAdd("Connection", ["Keep-Alive"]);
 
         headers.Remove("Transfer-Encoding");
 

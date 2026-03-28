@@ -105,3 +105,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 - ⚠️ QPACK dynamic table size is limited — encoder uses conservative settings to minimize head-of-line blocking at cost of compression ratio
 - ⚠️ `SETTINGS_MAX_FIELD_SECTION_SIZE` is advertised but enforcement on received headers is approximate (checks uncompressed size estimate)
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

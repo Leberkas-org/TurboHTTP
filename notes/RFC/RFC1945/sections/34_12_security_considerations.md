@@ -113,3 +113,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    inappropriate retrieval, since they might contain sensitive
    information. Experience has shown that minor bugs in such HTTP server
    implementations have turned into security risks.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

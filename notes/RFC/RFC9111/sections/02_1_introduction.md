@@ -112,3 +112,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
       |  representing that number.  What matters here is that an
       |  overflow be detected and not treated as a negative value in
       |  later calculations.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

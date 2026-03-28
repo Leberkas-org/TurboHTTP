@@ -114,3 +114,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
    resending either the name or the value.  This is useful to avoid
    adding a reference to an older entry, which might block inserting new
    entries.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

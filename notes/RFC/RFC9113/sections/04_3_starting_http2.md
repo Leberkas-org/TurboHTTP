@@ -127,3 +127,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    connection error (Section 5.4.1) of type PROTOCOL_ERROR.  A GOAWAY
 > **MAY**: frame (Section 6.8) MAY be omitted in this case, since an invalid
    preface indicates that the peer is not using HTTP/2.
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

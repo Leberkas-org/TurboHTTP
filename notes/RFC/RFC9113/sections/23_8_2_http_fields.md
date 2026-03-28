@@ -142,3 +142,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ### Known Gaps
 - ⚠️ Cookie reconstitution — Split Cookie headers are concatenated on decode but edge cases with malformed cookie-pairs may not be fully covered
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

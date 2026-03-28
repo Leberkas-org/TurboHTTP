@@ -81,3 +81,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    (or rejecting) userinfo when present, and by not sending stored
    credentials and cookies when the referring document is from an
    unknown or untrusted source.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

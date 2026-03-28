@@ -103,3 +103,7 @@ TurboHttp's `Http11ResponseDecoder` parses status-lines per §4. The decoder ext
 **Gaps:** None identified
 
 **Test References:** `TurboHttp.Tests.RFC9112`
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

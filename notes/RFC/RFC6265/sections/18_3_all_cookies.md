@@ -108,3 +108,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    UTF-8 character encoding [RFC3629] to decode the octet sequence.
    This decoding might fail, however, because not every sequence of
    octets is valid UTF-8.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

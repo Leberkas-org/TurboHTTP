@@ -95,3 +95,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    Applications must not cache responses to a POST request because the
    application has no way of knowing that the server would return an
    equivalent response on some future request.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

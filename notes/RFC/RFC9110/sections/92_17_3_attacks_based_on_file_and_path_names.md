@@ -32,3 +32,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    of-service (e.g., telling the server to read from a COM port) or
    disclosure of configuration and source files that are not meant to be
    served.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

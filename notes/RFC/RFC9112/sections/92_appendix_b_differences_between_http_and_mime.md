@@ -104,3 +104,7 @@ B.6.  MHTML and Line Length Limitations
    modification and, aside from the "multipart/byteranges" type
    (Section 14.6 of [HTTP]), does not interpret the content or any MIME
    header lines that might be contained therein.
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

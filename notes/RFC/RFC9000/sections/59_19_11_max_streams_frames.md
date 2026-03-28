@@ -51,3 +51,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    do not describe the number of streams that can be opened
    concurrently.  The limit includes streams that have been closed as
    well as those that are open.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -80,3 +80,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    collation defined in [RFC4790].
 
    The term string means a sequence of non-NUL octets.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -98,3 +98,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    only one of the negotiated representations.  If the user agent had
    wanted the latter semantics, it would have applied the PUT directly
    to the Content-Location URI.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -172,3 +172,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    header fields if all parties in the communication recognize them to
     be response header fields. Unrecognized header fields are treated as
    Entity-Header fields.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

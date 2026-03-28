@@ -199,3 +199,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
 > **SHOULD**: changes over time.  If feasible, user agents SHOULD use an
            up-to-date public suffix list, such as the one maintained by
            the Mozilla project at <http://publicsuffix.org/>.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

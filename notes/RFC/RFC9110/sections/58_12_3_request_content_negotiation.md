@@ -22,3 +22,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    Similarly, Section 3.1 of [RFC5789] defines the "Accept-Patch"
    response header field, which allows discovery of which content types
    are accepted in PATCH requests.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

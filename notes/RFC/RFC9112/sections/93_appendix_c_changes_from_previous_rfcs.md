@@ -115,3 +115,7 @@ C.3.  Changes from RFC 7230
    Transfer coding parameters called "q" are disallowed in order to
    avoid conflicts with the use of ranks in the TE header field.
    (Section 7.3)
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -24,3 +24,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 > **MAY**: 8.  The IESG MAY reassign responsibility for a protocol token.  This
        will normally only be used in the case when a responsible party
        cannot be contacted.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

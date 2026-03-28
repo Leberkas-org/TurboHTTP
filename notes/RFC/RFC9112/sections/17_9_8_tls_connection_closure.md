@@ -57,3 +57,7 @@ tags: [RFC9112, HTTP/1.1, message-framing, chunked-encoding, connection-manageme
    the client before closing the connection.  Servers MAY close the
    connection after sending the closure alert, thus generating an
    incomplete close on the client side.
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -69,3 +69,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    common denominator of the character codes used within that body, with
    the exception that no label is preferred over the labels US-ASCII or
    ISO-8859-1.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

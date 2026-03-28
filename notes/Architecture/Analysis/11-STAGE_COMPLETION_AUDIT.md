@@ -15,7 +15,7 @@ tags:
 
 A systematic audit of all 48 GraphStage implementations in TurboHttp found **20 confirmed bugs** where stream termination signals (onUpstreamFinish, onUpstreamFailure, onDownstreamFinish) were not properly propagated. These omissions violated the Reactive Streams contract and could lead to **backpressure deadlocks**, where downstream stages wait indefinitely for termination signals that never arrive.
 
-**Status (2026-03-27): All 20 bugs fixed.** See Feature 030 (TASK-030-001 through TASK-030-006). Each fix adds `FailStage(ex)` (or `Fail(outlet, ex)` for BidiStages) after existing logging. 17 regression tests added in `TurboHttp.StreamTests/Streams/26–29_*StageCompletionRegressionTests.cs`. **0 open bugs remain.**
+**Status (2026-03-27): All 20 bugs fixed.** Each fix adds `FailStage(ex)` (or `Fail(outlet, ex)` for BidiStages) after existing logging. 17 regression tests added in `TurboHttp.StreamTests/Streams/26–29_*StageCompletionRegressionTests.cs`. **0 open bugs remain.**
 
 ---
 
@@ -83,23 +83,23 @@ SetHandler(inlet, () => Push(outlet, Grab(inlet)));
 
 | ID | Stage | File | Issue | Impact | Status |
 |----|-------|------|-------|--------|--------|
-| B-001 | TracingBidiStage | Features/TracingBidiStage.cs | `_inResponse.onUpstreamFailure` logs but **missing** `Complete(_outResponse)` | Response path stalls on network error | **Fixed** (TASK-030-001) |
-| B-002 | Http20DecoderStage | Decoding/Http20DecoderStage.cs | `_in.onUpstreamFailure` only logs → `_out` open | Downstream waiting for stream termination | **Fixed** (TASK-030-002) |
-| B-003 | Http20StreamIdAllocatorStage | Routing/Http20StreamIdAllocatorStage.cs | `_in.onUpstreamFailure` only logs | Stream ID allocation blocked | **Fixed** (TASK-030-002) |
-| B-004 | Http20CorrelationStage | Routing/Http20CorrelationStage.cs | **Both** `_inRequest.onUpstreamFailure` and `_inResponse.onUpstreamFailure` only log | Bidirectional stall | **Fixed** (TASK-030-003) |
-| B-005 | Http20ConnectionStage | Decoding/Http20ConnectionStage.cs | `_inApp.onUpstreamFailure` missing (unregistered) | Intentional? Design concern | **Fixed** (TASK-030-003) |
-| B-008 | Http20PrependPrefaceStage | Encoding/Http20PrependPrefaceStage.cs | `_in.onUpstreamFailure` only logs | Preface stream stalls | **Fixed** (TASK-030-002) |
-| B-009 | Http20Request2FrameStage | Encoding/Http20Request2FrameStage.cs | `_in.onUpstreamFailure` only logs | Frame encoding blocked | **Fixed** (TASK-030-002) |
-| B-010 | Http30ConnectionStage | Decoding/Http30ConnectionStage.cs | `_inApp.onUpstreamFailure` missing | Design concern | **Fixed** (TASK-030-005) |
-| B-011 | Http30DecoderStage | Decoding/Http30DecoderStage.cs | `_in.onUpstreamFailure` only logs | Downstream waiting | **Fixed** (TASK-030-004) |
-| B-012 | Http30StreamStage | Decoding/Http30StreamStage.cs | `_in` has `onUpstreamFinish` but **no** `onUpstreamFailure` | Failure case unhandled | **Fixed** (TASK-030-004) |
-| B-014 | Http30ControlStreamPrefaceStage | Encoding/Http30ControlStreamPrefaceStage.cs | `_in.onUpstreamFailure` only logs | QUIC control stream stalls | **Fixed** (TASK-030-004) |
-| B-015 | Http30QpackEncoderPrefaceStage | Encoding/Http30QpackEncoderPrefaceStage.cs | `_in.onUpstreamFailure` only logs | QPACK encoder stalls | **Fixed** (TASK-030-004) |
-| B-016 | Http30Request2FrameStage | Encoding/Http30Request2FrameStage.cs | `_in.onUpstreamFailure` only logs | QUIC frame encoding blocked | **Fixed** (TASK-030-004) |
-| B-017 | Http30CorrelationStage | Routing/Http30CorrelationStage.cs | **Both** `_inRequest.onUpstreamFailure` and `_inResponse.onUpstreamFailure` only log | Bidirectional stall | **Fixed** (TASK-030-005) |
-| B-018 | Http30StreamDemuxStage | Routing/Http30StreamDemuxStage.cs | `_in.onUpstreamFailure` only logs | Stream demux blocked | **Fixed** (TASK-030-005) |
-| B-019 | QpackDecoderStreamStage | Decoding/QpackDecoderStreamStage.cs | `_in.onUpstreamFailure` only logs | QPACK decoder stalls | **Fixed** (TASK-030-006) |
-| B-020 | QpackEncoderStreamStage | Encoding/QpackEncoderStreamStage.cs | `_in.onUpstreamFailure` only logs | QPACK encoder stalls | **Fixed** (TASK-030-006) |
+| B-001 | TracingBidiStage | Features/TracingBidiStage.cs | `_inResponse.onUpstreamFailure` logs but **missing** `Complete(_outResponse)` | Response path stalls on network error | **Fixed** |
+| B-002 | Http20DecoderStage | Decoding/Http20DecoderStage.cs | `_in.onUpstreamFailure` only logs → `_out` open | Downstream waiting for stream termination | **Fixed** |
+| B-003 | Http20StreamIdAllocatorStage | Routing/Http20StreamIdAllocatorStage.cs | `_in.onUpstreamFailure` only logs | Stream ID allocation blocked | **Fixed** |
+| B-004 | Http20CorrelationStage | Routing/Http20CorrelationStage.cs | **Both** `_inRequest.onUpstreamFailure` and `_inResponse.onUpstreamFailure` only log | Bidirectional stall | **Fixed** |
+| B-005 | Http20ConnectionStage | Decoding/Http20ConnectionStage.cs | `_inApp.onUpstreamFailure` missing (unregistered) | Intentional? Design concern | **Fixed** |
+| B-008 | Http20PrependPrefaceStage | Encoding/Http20PrependPrefaceStage.cs | `_in.onUpstreamFailure` only logs | Preface stream stalls | **Fixed** |
+| B-009 | Http20Request2FrameStage | Encoding/Http20Request2FrameStage.cs | `_in.onUpstreamFailure` only logs | Frame encoding blocked | **Fixed** |
+| B-010 | Http30ConnectionStage | Decoding/Http30ConnectionStage.cs | `_inApp.onUpstreamFailure` missing | Design concern | **Fixed** |
+| B-011 | Http30DecoderStage | Decoding/Http30DecoderStage.cs | `_in.onUpstreamFailure` only logs | Downstream waiting | **Fixed** |
+| B-012 | Http30StreamStage | Decoding/Http30StreamStage.cs | `_in` has `onUpstreamFinish` but **no** `onUpstreamFailure` | Failure case unhandled | **Fixed** |
+| B-014 | Http30ControlStreamPrefaceStage | Encoding/Http30ControlStreamPrefaceStage.cs | `_in.onUpstreamFailure` only logs | QUIC control stream stalls | **Fixed** |
+| B-015 | Http30QpackEncoderPrefaceStage | Encoding/Http30QpackEncoderPrefaceStage.cs | `_in.onUpstreamFailure` only logs | QPACK encoder stalls | **Fixed** |
+| B-016 | Http30Request2FrameStage | Encoding/Http30Request2FrameStage.cs | `_in.onUpstreamFailure` only logs | QUIC frame encoding blocked | **Fixed** |
+| B-017 | Http30CorrelationStage | Routing/Http30CorrelationStage.cs | **Both** `_inRequest.onUpstreamFailure` and `_inResponse.onUpstreamFailure` only log | Bidirectional stall | **Fixed** |
+| B-018 | Http30StreamDemuxStage | Routing/Http30StreamDemuxStage.cs | `_in.onUpstreamFailure` only logs | Stream demux blocked | **Fixed** |
+| B-019 | QpackDecoderStreamStage | Decoding/QpackDecoderStreamStage.cs | `_in.onUpstreamFailure` only logs | QPACK decoder stalls | **Fixed** |
+| B-020 | QpackEncoderStreamStage | Encoding/QpackEncoderStreamStage.cs | `_in.onUpstreamFailure` only logs | QPACK encoder stalls | **Fixed** |
 
 ### Design Concern — Single-Action Form, Default `FailStage` May Be Too Aggressive
 
@@ -201,6 +201,6 @@ Stages B-006, B-007, B-013 (single-action form with default `FailStage`):
 
 ## See Also
 
-- [[Architecture/02-STAGE_PATTERNS|GraphStage Patterns]] — Port naming and stage lifecycle conventions
-- [[Architecture/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Where stages fit in the overall design
-- [[Architecture/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]] — Three-layer decoder pattern
+- [[Architecture/Design/02-STAGE_PATTERNS|GraphStage Patterns]] — Port naming and stage lifecycle conventions
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Where stages fit in the overall design
+- [[Architecture/Design/06-DECODER_PIPELINE_ARCHITECTURE|Decoder Pipeline Architecture]] — Three-layer decoder pattern

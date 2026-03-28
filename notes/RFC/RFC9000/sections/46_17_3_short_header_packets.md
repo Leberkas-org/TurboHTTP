@@ -87,3 +87,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    are specific to the selected QUIC version.  See [QUIC-INVARIANTS] for
    details on how packets from different versions of QUIC are
    interpreted.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

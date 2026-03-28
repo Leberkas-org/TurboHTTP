@@ -60,3 +60,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    header protection; see Section 5.4 of [QUIC-TLS] for details.  The
    underlying packet number increases with each packet sent in a given
    packet number space; see Section 12.3 for details.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

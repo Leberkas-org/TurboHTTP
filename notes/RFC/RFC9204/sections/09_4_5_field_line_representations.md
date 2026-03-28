@@ -301,3 +301,7 @@ tags: [RFC9204, QPACK, header-compression, HTTP/3, dynamic-table, static-table, 
    bit is the 'N' bit as described in Section 4.5.4.  The name follows,
    represented as a 4-bit prefix string literal, then the value,
    represented as an 8-bit prefix string literal; see Section 4.1.2.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

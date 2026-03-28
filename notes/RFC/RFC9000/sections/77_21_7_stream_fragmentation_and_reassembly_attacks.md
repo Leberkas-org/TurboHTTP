@@ -32,3 +32,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    memory, limiting the size of tracking data structures, delaying
    reassembly of STREAM frames, implementing heuristics based on the age
    and duration of reassembly holes, or some combination of these.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

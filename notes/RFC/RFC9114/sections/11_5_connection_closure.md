@@ -187,3 +187,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 - ❌ Two-phase GOAWAY shutdown (§5.2) — does not send initial max-value GOAWAY followed by final GOAWAY; sends single GOAWAY with actual last stream ID
 - ⚠️ Client-to-server GOAWAY with push ID (§5.2) — not sent since server push is not implemented
 - ⚠️ Transport closure (§5.4) — assumes unfinished requests failed on transport termination, but retry logic does not always distinguish processed vs. unprocessed requests
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

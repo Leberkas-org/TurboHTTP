@@ -38,3 +38,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    the server will initiate version negotiation; a server MAY advertise
    support for one of these versions and can expect that clients ignore
    the value.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -42,3 +42,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    the same page load), it would likely be surprising and confusing to
    users and authors if it were allowed to be reused for requests
    unrelated in any way to the one from which it was obtained.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

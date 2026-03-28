@@ -282,3 +282,7 @@ TurboHttp fully supports chunked transfer coding for both decoding responses and
 - Chunk extension parameters not treated as error (SHOULD)
 
 **Test References:** `TurboHttp.Tests.RFC9112`
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

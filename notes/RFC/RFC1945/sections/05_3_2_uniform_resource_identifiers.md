@@ -111,3 +111,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
    UPALPHA characters in host to their LOALPHA equivalent (hostnames are
    case-insensitive), eliding the [ ":" port ] if the port is 80, and
    replacing an empty abs_path with "/".
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

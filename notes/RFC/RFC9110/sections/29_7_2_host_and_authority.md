@@ -46,3 +46,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    servers, or for use as a cache key in a shared cache, without first
    verifying that the intercepted connection is targeting a valid IP
    address for that host.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

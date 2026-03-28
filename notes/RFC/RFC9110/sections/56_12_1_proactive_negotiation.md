@@ -103,3 +103,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    representations of the target resource, representations of error or
    processing status, and potentially even the miscellaneous text
    strings that might appear within the protocol.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

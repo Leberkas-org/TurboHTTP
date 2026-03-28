@@ -43,3 +43,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    evaluating conditional requests (Section 13) and constructing the
    content for 200 (OK), 206 (Partial Content), and 304 (Not Modified)
    responses to GET (Section 9.3.1).
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

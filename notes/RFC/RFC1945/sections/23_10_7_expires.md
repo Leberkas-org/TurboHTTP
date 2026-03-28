@@ -56,3 +56,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
       (0) or an invalid date format should be considered equivalent to
       an "expires immediately." Although these values are not legitimate
       for HTTP/1.0, a robust implementation is always desirable.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

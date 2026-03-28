@@ -275,3 +275,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
        Note: The existence of the 503 status code does not imply
        that a server must use it when becoming overloaded. Some
        servers may wish to simply refuse the connection.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -58,3 +58,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
       and
 
    *  immediately close (Section 10.2) the connection.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -292,7 +292,7 @@ ConnectionLease
 | **Benchmarks** | `src/TurboHttp.Benchmarks/` (BenchmarkDotNet) |
 | **Documentation** | `docs/` (VitePress) |
 | **Obsidian Vault** | `notes/` (architecture, RFC notes, decisions) |
-| **Feature Plans** | `.maggus/features/` (feature_NNN.md) |
+| **Feature Plans** | Internal planning directory (feature_NNN.md) |
 | **Diagnostics** | `.ralph/runs/` (automation logs) |
 
 ---
@@ -326,7 +326,7 @@ dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmar
 ### Documentation
 - Architecture decisions → `notes/Architecture/` (ADR template)
 - RFC compliance notes → `notes/RFC/` (RFC-Note template)
-- Feature plans → `.maggus/features/feature_NNN.md`
+- Feature plans → internal planning directory (feature_NNN.md)
 - Session work → `notes/Sessions/` (Session-Log template)
 
 ---

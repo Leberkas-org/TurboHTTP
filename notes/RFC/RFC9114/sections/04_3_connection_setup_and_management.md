@@ -180,3 +180,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 - ❌ Connection reuse certificate validation (§3.3) not implemented — each origin gets a dedicated connection
 - ❌ 0-RTT QUIC resumption with stored SETTINGS (§7.2.4.2) not supported
 - ⚠️ Server push streams (§6.2.2) not implemented — client-only library does not need to send push, but should reject server-initiated push gracefully
+
+---
+
+**Navigation:** [[../RFC9114|RFC9114 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -20,3 +20,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
 
 > **SHOULD**: Servers SHOULD provide mitigations for this attack by limiting the
    usage and lifetime of address validation tokens; see Section 8.1.3.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

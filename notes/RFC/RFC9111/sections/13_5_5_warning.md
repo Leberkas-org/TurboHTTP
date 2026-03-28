@@ -17,3 +17,7 @@ tags: [RFC9111, HTTP-caching, freshness, validation, Cache-Control, max-age, Exp
    is not widely generated or surfaced to users.  The information it
    carried can be gleaned from examining other header fields, such as
    Age.
+
+---
+
+**Navigation:** [[../RFC9111|RFC9111 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

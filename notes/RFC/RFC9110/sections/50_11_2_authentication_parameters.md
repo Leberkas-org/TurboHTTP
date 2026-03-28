@@ -48,3 +48,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    restrict the format for senders to one of the two variants.  This can
    be important when it is known that deployed implementations will fail
    when encountering one of the two formats.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

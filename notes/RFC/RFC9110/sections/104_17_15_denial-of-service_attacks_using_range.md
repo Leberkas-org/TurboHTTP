@@ -21,3 +21,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    particularly when the ranges are requested out of order for no
    apparent reason.  Multipart range requests are not designed to
    support random access.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

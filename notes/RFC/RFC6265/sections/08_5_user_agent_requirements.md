@@ -41,3 +41,7 @@ tags:
    algorithm to parse a cookie-date.  Note that the various boolean
    flags defined as a part of the algorithm (i.e., found-time, found-
    day-of-month, found-month, found-year) are initially "not set".
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

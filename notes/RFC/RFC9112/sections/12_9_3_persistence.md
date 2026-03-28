@@ -145,3 +145,7 @@ TurboHttp fully supports HTTP/1.1 persistent connections. The connection pool ma
 - HTTP/1.1 pipelining not supported (sequential requests only)
 
 **Test References:** `TurboHttp.Tests.RFC9112`
+
+---
+
+**Navigation:** [[../RFC9112|RFC9112 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

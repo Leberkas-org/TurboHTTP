@@ -88,3 +88,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 ### Known Gaps
 - ⚠️ ENHANCE_YOUR_CALM (0x0b) — Not actively sent; no rate-limiting detection implemented
 - ⚠️ HTTP_1_1_REQUIRED (0x0d) — Not sent; no protocol downgrade mechanism implemented
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

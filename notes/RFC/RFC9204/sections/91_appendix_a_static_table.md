@@ -237,3 +237,7 @@ Appendix A.  Static Table
 
    Any line breaks that appear within field names or values are due to
    formatting.
+
+---
+
+**Navigation:** [[../RFC9204|RFC9204 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

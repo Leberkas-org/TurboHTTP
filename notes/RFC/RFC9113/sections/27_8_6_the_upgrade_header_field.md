@@ -19,3 +19,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
    the use of extended CONNECT [RFC8441], and other protocols are able
    to use the same mechanisms that HTTP/2 uses to negotiate their use
    (see Section 3).
+
+---
+
+**Navigation:** [[../RFC9113|RFC9113 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

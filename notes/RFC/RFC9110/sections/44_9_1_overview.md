@@ -97,3 +97,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
    been specified for use in HTTP.  All such methods ought to be
    registered within the "Hypertext Transfer Protocol (HTTP) Method
    Registry", as described in Section 16.1.
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -134,3 +134,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    is rare on IPv6 paths.  Endpoints can also look for duplicated
    packets.  Conversely, a change in connection ID is more likely to
    indicate an intentional migration rather than an attack.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

@@ -95,3 +95,7 @@ tags: [RFC7541, HPACK, header-compression, HTTP/2, dynamic-table, static-table, 
    table.  Implementations are cautioned to avoid deleting the
    referenced name if the referenced entry is evicted from the dynamic
    table prior to inserting the new entry.
+
+---
+
+**Navigation:** [[../RFC7541|RFC7541 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

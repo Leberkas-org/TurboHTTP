@@ -84,3 +84,7 @@ tags: [RFC6265, cookies, state-management, Set-Cookie, domain-matching, path-mat
    cookie expiration periods based on the purpose of the cookie.  For
    example, a typical session identifier might reasonably be set to
    expire in two weeks.
+
+---
+
+**Navigation:** [[../RFC6265|RFC6265 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

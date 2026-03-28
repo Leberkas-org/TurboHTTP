@@ -27,3 +27,7 @@ tags: [RFC1945, HTTP/1.0, message-syntax, request-response, entity-body, content
 
    Further discussion of methods for identifying the media type of an
    entity is provided in Section 7.2.1.
+
+---
+
+**Navigation:** [[../RFC1945|RFC1945 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

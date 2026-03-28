@@ -123,3 +123,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    Once the application receives the signal indicating that the stream
    was reset, the receiving part of the stream transitions to the "Reset
    Read" state, which is a terminal state.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

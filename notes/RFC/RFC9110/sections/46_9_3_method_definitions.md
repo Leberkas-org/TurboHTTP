@@ -517,3 +517,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 ### Known Gaps
 - ⚠️ TRACE — Not actively tested; client sends TRACE but response body parsing as message/http not implemented
 - ⚠️ OPTIONS * — Server-wide OPTIONS with asterisk request-target not explicitly supported
+
+---
+
+**Navigation:** [[../RFC9110|RFC9110 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]

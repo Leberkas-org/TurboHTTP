@@ -27,3 +27,7 @@ tags: [RFC9000, QUIC, transport, UDP, variable-length-integer, connection-migrat
    If the content of a PATH_RESPONSE frame does not match the content of
    a PATH_CHALLENGE frame previously sent by the endpoint, the endpoint
 > **MAY**: MAY generate a connection error of type PROTOCOL_VIOLATION.
+
+---
+
+**Navigation:** [[../RFC9000|RFC9000 Index]] | [[../../00-RFC_STATUS_MATRIX|Status Matrix]]
