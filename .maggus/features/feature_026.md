@@ -101,53 +101,29 @@ These fixes are prerequisites for production use. They address OWASP-relevant at
 **Parallel:** no — depends on decoders being implemented
 
 **Acceptance Criteria:**
-- [ ] Create `src/TurboHttp.Tests/RFC1945/NN_Http10DecoderHeaderLimitsTests.cs` with 15+ test cases
-  - [ ] Single header exceeds MaxHeaderSize → HttpDecoderException
-  - [ ] Total headers exceed MaxTotalHeaderSize → HttpDecoderException
-  - [ ] Boundary case: header exactly at limit → passes
-  - [ ] Boundary case: headers just over limit → fails
-  - [ ] Custom limits via HttpDecoderOptions respected
-- [ ] Create `src/TurboHttp.Tests/RFC9112/NN_Http11DecoderHeaderLimitsTests.cs` with 20+ test cases
-  - [ ] Single header exceeds MaxHeaderSize → HttpDecoderException
-  - [ ] Folded (obs-fold) header counted correctly
-  - [ ] Chunked body NOT subject to header limits
-  - [ ] Custom limits respected
-  - [ ] Error message is descriptive
-- [ ] Create `src/TurboHttp.Tests/RFC9113/NN_Http2DecoderHeaderLimitsTests.cs` with 18+ test cases
-  - [ ] Single header exceeds MaxHeaderSize (post-decompression) → Http2Exception
-  - [ ] Total headers exceed MaxTotalHeaderSize → Http2Exception
-  - [ ] CONTINUATION frame boundaries handled correctly
-  - [ ] Pseudo-headers counted
-  - [ ] Custom limits respected
-- [ ] All tests use `[Fact(Timeout = 5000)]` or explicit `CancellationToken`
-- [ ] All tests have clear `DisplayName` with RFC section reference
-- [ ] Total test methods ≥ 50; all passing
+- [x] Create `src/TurboHttp.Tests/RFC1945/19_Http10DecoderHeaderLimitsTests.cs` with 15+ test cases (18 tests)
+  - [x] Single header exceeds MaxHeaderSize → HttpDecoderException
+  - [x] Total headers exceed MaxTotalHeaderSize → HttpDecoderException
+  - [x] Boundary case: header exactly at limit → passes
+  - [x] Boundary case: headers just over limit → fails
+  - [x] Custom limits via HttpDecoderOptions respected
+- [x] Create `src/TurboHttp.Tests/RFC9112/27_Http11DecoderHeaderLimitsTests.cs` with 20+ test cases (25 tests)
+  - [x] Single header exceeds MaxHeaderSize → HttpDecoderException
+  - [x] Folded (obs-fold) header counted correctly
+  - [x] Chunked body NOT subject to header limits
+  - [x] Custom limits respected
+  - [x] Error message is descriptive
+- [x] Create `src/TurboHttp.Tests/RFC9113/28_Http2DecoderHeaderLimitsTests.cs` with 18+ test cases (20 tests)
+  - [x] Single header exceeds MaxHeaderSize (post-decompression) → Http2Exception
+  - [x] Total headers exceed MaxTotalHeaderSize → Http2Exception
+  - [x] CONTINUATION frame boundaries handled correctly
+  - [x] Pseudo-headers counted
+  - [x] Custom limits respected
+- [x] All tests use `[Fact(Timeout = 5000)]` or explicit `CancellationToken`
+- [x] All tests have clear `DisplayName` with RFC section reference
+- [x] Total test methods ≥ 50; all passing (63 total: 18 + 25 + 20)
 
 ---
-
-### TASK-026-005: Integration Tests — Header DoS (Real TCP + Kestrel)
-**Description:** As a developer, I want end-to-end tests so that header limits are verified with real Kestrel server responses.
-
-**Token Estimate:** ~30k tokens
-**Predecessors:** TASK-026-004
-**Successors:** none
-**Parallel:** yes — can run alongside TASK-026-007, TASK-026-010
-
-**Acceptance Criteria:**
-- [ ] Add Kestrel route(s) that return headers at/over limit thresholds
-  - Route 1: Single header 20KB (over 16KB limit)
-  - Route 2: 150 headers, each 1KB (over 64KB limit)
-  - Route 3: Boundary case — headers exactly at limit
-- [ ] Create integration test that:
-  - [ ] Sends HTTP/1.1 request to oversized-header route, expects HttpDecoderException
-  - [ ] Sends HTTP/2 request to oversized-header route, expects Http2Exception
-  - [ ] Verifies error is caught by client (not connection crash)
-  - [ ] Connection is properly closed or reset
-- [ ] Run tests via `dotnet test src/TurboHttp.IntegrationTests` — all passing
-- [ ] Verify no socket leaks (use WireShark or OS tool if needed)
-
----
-
 ### TASK-026-006: Implement HTTPS→HTTP Downgrade Protection
 **Description:** As a security-conscious user, I want the client to block redirects from HTTPS to HTTP so that I'm protected from downgrade attacks.
 

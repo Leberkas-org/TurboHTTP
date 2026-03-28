@@ -205,10 +205,10 @@ internal sealed class RedirectBidiStage
                         redirectActivity?.Stop();
                         Activity.Current = previous;
 
-                        // Record redirect metric + EventSource event
+                        // Record redirect metric + trace event
                         TurboHttpMetrics.RedirectCount.Add(1,
                             new KeyValuePair<string, object?>("http.response.status_code", (int)response.StatusCode));
-                        TurboHttpEventSource.Log.RedirectFollowed(
+                        TurboTrace.Redirect.Info(this, "Redirect followed: {0} → {2} (HTTP {1})",
                             original.RequestUri?.OriginalString ?? "",
                             (int)response.StatusCode,
                             newRequest.RequestUri?.OriginalString ?? "");

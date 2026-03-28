@@ -39,8 +39,8 @@ public static class TurboTrace
     internal static bool ShouldTrace(TurboTraceCategory category, TurboTraceLevel level)
     {
         return _listener != null
-            && (_enabledCategories & category) != 0
-            && level >= _minimumLevel;
+               && (_enabledCategories & category) != 0
+               && level >= _minimumLevel;
     }
 
     internal static void WriteEvent(in TraceEvent evt)
@@ -57,125 +57,75 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Trace(object source, string message, object? arg0)
+        public static void Trace(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Debug(object source, string message, object? arg0)
+        public static void Debug(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Info(object source, string message, object? arg0)
+        public static void Info(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message));
         }
 
-        public static void Warning(object source, string message, object? arg0)
+        public static void Warning(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
-        public static void Error(object source, string message, object? arg0)
+        public static void Error(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
     }
 
@@ -188,125 +138,75 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Trace(object source, string message, object? arg0)
+        public static void Trace(object source, string message, object? args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
-        public static void Debug(object source, string message, object? arg0)
+        public static void Debug(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Info(object source, string message, object? arg0)
+        public static void Info(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message));
         }
 
-        public static void Warning(object source, string message, object? arg0)
+        public static void Warning(object source, string message, object? args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Error(object source, string message, object? arg0)
+        public static void Error(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
     }
 
@@ -319,125 +219,75 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Trace(object source, string message, object? arg0)
+        public static void Trace(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Debug(object source, string message, object? arg0)
+        public static void Debug(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Info(object source, string message, object? arg0)
+        public static void Info(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message));
         }
 
-        public static void Warning(object source, string message, object? arg0)
+        public static void Warning(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Error(object source, string message, object? arg0)
+        public static void Error(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
     }
 
@@ -450,125 +300,75 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Trace(object source, string message, object? arg0)
+        public static void Trace(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Debug(object source, string message, object? arg0)
+        public static void Debug(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Info(object source, string message, object? arg0)
+        public static void Info(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message));
         }
 
-        public static void Warning(object source, string message, object? arg0)
+        public static void Warning(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Error(object source, string message, object? arg0)
+        public static void Error(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
     }
 
@@ -581,125 +381,75 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Trace(object source, string message, object? arg0)
+        public static void Trace(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Debug(object source, string message, object? arg0)
+        public static void Debug(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Info(object source, string message, object? arg0)
+        public static void Info(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message));
         }
 
-        public static void Warning(object source, string message, object? arg0)
+        public static void Warning(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Error(object source, string message, object? arg0)
+        public static void Error(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
     }
 
@@ -712,125 +462,145 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
-        public static void Trace(object source, string message, object? arg0)
+        public static void Trace(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Info(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Error(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
     }
 
@@ -843,125 +613,145 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Info(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Error(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
     }
 
@@ -974,125 +764,145 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Info(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Error(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
     }
 
@@ -1105,125 +915,145 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Info(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Error(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
     }
 
@@ -1236,125 +1066,103 @@ public static class TurboTrace
         public static void Trace(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Trace(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Trace)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Trace, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Debug(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 1, arg0, null, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 2, arg0, arg1, null));
         }
 
         public static void Debug(object source, string message, object? arg0, object? arg1, object? arg2)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Debug)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Debug, Category, source.GetType().Name,
+                source.GetHashCode(), message, 3, arg0, arg1, arg2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Info(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message, 0, null, null, null));
         }
 
-        public static void Info(object source, string message, object? arg0)
+        public static void Info(object source, string message,params  object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Info(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Info)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Info, Category, source.GetType().Name,
+                source.GetHashCode(), message,args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warning(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message));
         }
 
-        public static void Warning(object source, string message, object? arg0)
+        public static void Warning(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Warning(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Warning)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Warning, Category,
+                source.GetType().Name, source.GetHashCode(), message, args));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(object source, string message)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 0, null, null, null));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message));
         }
 
-        public static void Error(object source, string message, object? arg0)
+        public static void Error(object source, string message, params object?[] args)
         {
             if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 1, arg0, null, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 2, arg0, arg1, null));
-        }
-
-        public static void Error(object source, string message, object? arg0, object? arg1, object? arg2)
-        {
-            if (!ShouldTrace(Category, TurboTraceLevel.Error)) return;
-            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name, source.GetHashCode(), message, 3, arg0, arg1, arg2));
+            WriteEvent(new TraceEvent(Stopwatch.GetTimestamp(), TurboTraceLevel.Error, Category, source.GetType().Name,
+                source.GetHashCode(), message, args));
         }
     }
 }

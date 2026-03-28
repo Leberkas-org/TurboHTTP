@@ -214,11 +214,11 @@ internal sealed class RetryBidiStage
                     retryActivity?.Stop();
                     Activity.Current = previous;
 
-                    // Record retry metric + EventSource event
+                    // Record retry metric + trace event
                     TurboHttpMetrics.RetryCount.Add(1,
                         new KeyValuePair<string, object?>("http.request.method", original.Method.Method),
                         new KeyValuePair<string, object?>("server.address", original.RequestUri?.Host ?? "unknown"));
-                    TurboHttpEventSource.Log.RetryAttempt(
+                    TurboTrace.Retry.Warning(this, "Retry attempt: {0} {1} (attempt {2})",
                         original.Method.Method,
                         original.RequestUri?.OriginalString ?? "",
                         attemptCount + 1);

@@ -77,8 +77,7 @@ internal static class DirectConnectionFactory
             TurboHttpMetrics.ConnectionActive.Add(1,
                 new("server.address", endpoint.Host),
                 new("server.port", endpoint.Port));
-            TurboHttpEventSource.Log.ConnectionOpened(endpoint.Host, endpoint.Port, protocol);
-            TurboHttpDiagnosticListener.OnConnectionOpened(endpoint.Host, endpoint.Port, protocol);
+            TurboTrace.Connection.Info(typeof(DirectConnectionFactory), "Connection opened: {0}:{1} ({2})", endpoint.Host, endpoint.Port, protocol);
 
             return lease;
         }

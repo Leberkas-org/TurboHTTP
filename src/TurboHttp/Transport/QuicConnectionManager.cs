@@ -71,8 +71,7 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
             }
 
             // Emit metrics
-            TurboHttpEventSource.Log.ConnectionOpened(_endpoint.Host, _endpoint.Port, "HTTP/3");
-            TurboHttpDiagnosticListener.OnConnectionOpened(_endpoint.Host, _endpoint.Port, "HTTP/3");
+            TurboTrace.Connection.Info(this, "Connection opened: {0}:{1} ({2})", _endpoint.Host, _endpoint.Port, "HTTP/3");
 
             return lease;
         }

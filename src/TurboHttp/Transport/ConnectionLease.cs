@@ -146,8 +146,7 @@ internal sealed class ConnectionLease : IDisposable
             durationMs / 1000.0,
             new("server.address", host),
             new("server.port", port));
-        TurboHttpEventSource.Log.ConnectionClosed(host, port, durationMs);
-        TurboHttpDiagnosticListener.OnConnectionClosed(host, port, TimeSpan.FromMilliseconds(durationMs));
+        TurboTrace.Connection.Info(this, "Connection closed: {0}:{1} ({2}ms)", host, port, durationMs);
     }
 
     private static int ComputeDefaultMaxConcurrentStreams(Version version)

@@ -27,10 +27,7 @@ public readonly struct TraceEvent
     /// <summary>Format template (compatible with <see cref="string.Format(string,object?)"/>).</summary>
     public string Template { get; }
 
-    private readonly object? _arg0;
-    private readonly object? _arg1;
-    private readonly object? _arg2;
-    private readonly byte _argCount;
+    private readonly object? _args;
 
     internal TraceEvent(
         long timestampTicks,
@@ -39,10 +36,7 @@ public readonly struct TraceEvent
         string sourceType,
         int sourceHash,
         string template,
-        byte argCount,
-        object? arg0,
-        object? arg1,
-        object? arg2)
+        params object?[] args)
     {
         TimestampTicks = timestampTicks;
         Level = level;
@@ -50,10 +44,7 @@ public readonly struct TraceEvent
         SourceType = sourceType;
         SourceHash = sourceHash;
         Template = template;
-        _argCount = argCount;
-        _arg0 = arg0;
-        _arg1 = arg1;
-        _arg2 = arg2;
+        _args = args;
     }
 
     /// <summary>
@@ -62,13 +53,6 @@ public readonly struct TraceEvent
     /// </summary>
     public string FormatMessage()
     {
-        return _argCount switch
-        {
-            0 => Template,
-            1 => string.Format(Template, _arg0),
-            2 => string.Format(Template, _arg0, _arg1),
-            3 => string.Format(Template, _arg0, _arg1, _arg2),
-            _ => Template,
-        };
+        return string.Format(Template, _args);
     }
 }

@@ -38,7 +38,7 @@ public sealed class Http20EncoderStage : GraphStage<FlowShape<Http2Frame, IOutpu
 
                 frame.WriteTo(ref span);
 
-                TurboHttpEventSource.Log.FrameSent(frame.Type.ToString(), frame.StreamId, frame.SerializedSize);
+                TurboTrace.Protocol.Trace(this, $"Frame sent: {frame.Type} stream={frame.StreamId} length={frame.SerializedSize}");
 
                 Push(stage._out, new DataItem(owner, frame.SerializedSize)
                 {

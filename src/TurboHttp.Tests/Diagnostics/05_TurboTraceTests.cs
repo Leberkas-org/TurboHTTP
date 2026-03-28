@@ -361,7 +361,7 @@ public sealed class TurboTraceTests : IDisposable
     {
         TurboTrace.Configure(_mock);
 
-        TurboTrace.Protocol.Debug(this, "val={0}", null);
+        TurboTrace.Protocol.Debug(this, "val={0}", (object?)null);
 
         var evt = Assert.Single(_mock.Events);
         Assert.Equal("val=", evt.FormatMessage());

@@ -89,7 +89,7 @@ public sealed class Http20DecoderStage : GraphStage<FlowShape<IInputItem, Http2F
                         for (var i = 0; i < visible.Count; i++)
                         {
                             var f = visible[i];
-                            TurboHttpEventSource.Log.FrameReceived(f.Type.ToString(), f.StreamId, f.SerializedSize);
+                            TurboTrace.Protocol.Trace(this, $"Frame received: {f.Type} stream={f.StreamId} length={f.SerializedSize}");
                         }
 
                         EmitMultiple(stage._out, visible);

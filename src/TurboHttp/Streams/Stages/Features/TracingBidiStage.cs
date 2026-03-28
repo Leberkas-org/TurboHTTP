@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
@@ -69,11 +68,10 @@ internal sealed class TracingBidiStage
                         _currentActivity = activity;
                     }
 
-                    // Emit EventSource + DiagnosticListener request start
+                    // Emit request start trace event
                     var method = request.Method.Method;
                     var uri = request.RequestUri?.OriginalString ?? "";
-                    TurboHttpEventSource.Log.RequestStart(method, uri);
-                    TurboHttpDiagnosticListener.OnRequestStart(request);
+                    TurboTrace.Request.Info(this, "Request started: {0} {1}", method, uri);
 
                     // Record request start timestamp for duration calculation
                     request.Options.Set(RequestTimestampKey, Stopwatch.GetTimestamp());
@@ -83,8 +81,7 @@ internal sealed class TracingBidiStage
                 onUpstreamFinish: () => Complete(stage._outRequest),
                 onUpstreamFailure: ex =>
                 {
-                    TurboHttpEventSource.Log.RequestFailed(ex.GetType().Name, ex.Message);
-                    TurboHttpDiagnosticListener.OnRequestFailed(ex);
+                    TurboTrace.Request.Warning(this, $"Request failed: {ex.GetType().Name} — {ex.Message}");
 
                     if (_currentActivity is not null)
                     {
@@ -115,7 +112,7 @@ internal sealed class TracingBidiStage
                         _currentActivity = null;
                     }
 
-                    // Calculate duration and emit EventSource + DiagnosticListener request stop
+                    // Calculate duration and emit request stop trace event
                     var durationMs = 0.0;
                     if (request is not null && request.Options.TryGetValue(RequestTimestampKey, out var timestamp))
                     {
@@ -123,8 +120,7 @@ internal sealed class TracingBidiStage
                     }
 
                     var statusCode = (int)response.StatusCode;
-                    TurboHttpEventSource.Log.RequestStop(statusCode, durationMs);
-                    TurboHttpDiagnosticListener.OnRequestStop(response, TimeSpan.FromMilliseconds(durationMs));
+                    TurboTrace.Request.Info(this, "Request completed: {0} ({1:F1}ms)", statusCode, durationMs);
 
                     // Record request metrics
                     RecordRequestMetrics(response, durationMs);
@@ -134,8 +130,7 @@ internal sealed class TracingBidiStage
                 onUpstreamFinish: () => Complete(stage._outResponse),
                 onUpstreamFailure: ex =>
                 {
-                    TurboHttpEventSource.Log.RequestFailed(ex.GetType().Name, ex.Message);
-                    TurboHttpDiagnosticListener.OnRequestFailed(ex);
+                    TurboTrace.Request.Warning(this, $"Request failed: {ex.GetType().Name} — {ex.Message}");
 
                     if (_currentActivity is not null)
                     {
