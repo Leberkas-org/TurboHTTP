@@ -110,7 +110,7 @@ public sealed class RedirectSecurityTests
         var ex = Assert.Throws<RedirectException>(() =>
             handler.BuildRedirectRequest(original, response));
 
-        Assert.Contains("blocked", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RFC 9110 §15.4: Redirect from HTTPS to HTTP is not", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact(Timeout = 5000, DisplayName = "RFC9110-15.4-RS-008: HTTPS→HTTP downgrade to different host also blocked")]
@@ -211,12 +211,12 @@ public sealed class RedirectSecurityTests
         Assert.Equal(5, handler.RedirectCount);
     }
 
-    [Fact(Timeout = 5000, DisplayName = "RFC9110-15.4-RS-014: 6th redirect rejected with default policy (depth exceeded)")]
+    [Fact(Timeout = 5000, DisplayName = "RFC9110-15.4-RS-014: 11th redirect rejected with default policy (depth exceeded)")]
     public void Should_Reject6thRedirect_WithDefaultPolicy()
     {
         var handler = new RedirectHandler();
 
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 10; i++)
         {
             var req = new HttpRequestMessage(HttpMethod.Get, $"http://example.com/p{i}");
             var res = BuildRedirect(HttpStatusCode.Found, $"http://example.com/p{i + 1}");
@@ -493,10 +493,10 @@ public sealed class RedirectSecurityTests
         Assert.False(RedirectPolicy.Default.AllowHttpsToHttpDowngrade);
     }
 
-    [Fact(Timeout = 5000, DisplayName = "RFC9110-15.4-RS-030: Default policy has MaxRedirects = 5")]
+    [Fact(Timeout = 5000, DisplayName = "RFC9110-15.4-RS-030: Default policy has MaxRedirects = 10")]
     public void Should_DefaultPolicyMaxRedirects5()
     {
-        Assert.Equal(5, RedirectPolicy.Default.MaxRedirects);
+        Assert.Equal(10, RedirectPolicy.Default.MaxRedirects);
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────

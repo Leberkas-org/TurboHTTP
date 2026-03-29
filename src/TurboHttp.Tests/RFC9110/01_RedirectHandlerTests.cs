@@ -1068,7 +1068,7 @@ public sealed class RedirectHandlerTests
 
         var ex = Assert.Throws<RedirectException>(() =>
             handler.BuildRedirectRequest(original, response));
-        Assert.Contains("Max redirect depth exceeded (2)", ex.Message);
+        Assert.Contains("RFC 9110 §15.4: Maximum redirect limit of 2 exceeded.", ex.Message);
     }
 
     [Fact(DisplayName = "RFC9110-15.4-RH-067: Redirect loop message includes the offending URI")]
@@ -1080,7 +1080,7 @@ public sealed class RedirectHandlerTests
 
         var ex = Assert.Throws<RedirectException>(() =>
             handler.BuildRedirectRequest(original, response));
-        Assert.Contains("Redirect loop detected:", ex.Message);
+        Assert.Contains("RFC 9110 §15.4: Redirect loop detected. URI already visited:", ex.Message);
         Assert.Contains("example.com/loop", ex.Message);
     }
 

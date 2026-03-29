@@ -5,7 +5,7 @@ using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
-[Collection("TurboTrace")]
+[Collection("OTEL")]
 public sealed class LoggerTraceListenerTests : IDisposable
 {
     private readonly TestLoggerFactory _factory = new();
@@ -239,8 +239,13 @@ public sealed class LoggerTraceListenerTests : IDisposable
             return logger;
         }
 
-        public void AddProvider(ILoggerProvider provider) { }
-        public void Dispose() { }
+        public void AddProvider(ILoggerProvider provider)
+        {
+        }
+
+        public void Dispose()
+        {
+        }
     }
 
     private sealed class TestLogger : ILogger
@@ -256,7 +261,8 @@ public sealed class LoggerTraceListenerTests : IDisposable
 
         public bool IsEnabled(LogLevel logLevel) => logLevel >= _enabledLevel;
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
         {
             LogEntries.Add(new LogEntry(logLevel, formatter(state, exception)));
         }

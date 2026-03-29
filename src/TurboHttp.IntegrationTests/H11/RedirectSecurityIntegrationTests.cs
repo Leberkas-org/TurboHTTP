@@ -55,14 +55,14 @@ public sealed class RedirectSecurityIntegrationTests
         Assert.Equal("Hello World", body);
     }
 
-    [Fact(DisplayName = "RFC9110-15.4-RSI-005: Redirect chain of 6 hops rejected (exceeds max 5)")]
-    public async Task Redirect_Chain_6_Hops_Rejected()
+    [Fact(DisplayName = "RFC9110-15.4-RSI-005: Redirect chain of 11 hops rejected (exceeds max 10)")]
+    public async Task Redirect_Chain_11_Hops_Rejected()
     {
         // Default MaxRedirects = 5. A chain of 6 exceeds this.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = CreateRedirectClient();
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/chain/6");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/redirect/chain/11");
         var response = await helper.Client.SendAsync(request, cts.Token);
 
         // The stage forwards the last redirect response when max depth exceeded

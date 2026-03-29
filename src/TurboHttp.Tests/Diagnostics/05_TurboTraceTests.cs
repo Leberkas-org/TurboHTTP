@@ -5,7 +5,7 @@ using TurboHttp.Diagnostics;
 
 namespace TurboHttp.Tests.Diagnostics;
 
-[Collection("TurboTrace")]
+[Collection("OTEL")]
 public sealed class TurboTraceTests : IDisposable
 {
     private sealed class MockTraceListener : ITurboTraceListener
