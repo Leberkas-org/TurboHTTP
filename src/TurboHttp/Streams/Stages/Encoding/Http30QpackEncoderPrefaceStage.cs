@@ -8,7 +8,7 @@ namespace TurboHttp.Streams.Stages.Encoding;
 
 /// <summary>
 /// Prepends the QPACK encoder instruction stream type (VarInt 0x02) on first emission,
-/// wraps all instruction bytes as <see cref="Http3TaggedItem"/> with
+/// wraps all instruction bytes as <see cref="Http3OutputTaggedItem"/> with
 /// <see cref="OutputStreamType.QpackEncoder"/>, and filters empty instruction buffers.
 /// </summary>
 /// <remarks>
@@ -62,7 +62,7 @@ public sealed class Http30QpackEncoderPrefaceStage : GraphStage<FlowShape<ReadOn
                 bytes.AsSpan().CopyTo(owner.Memory.Span);
 
                 var dataItem = new DataItem(owner, bytes.Length);
-                Push(stage._out, new Http3TaggedItem(dataItem, OutputStreamType.QpackEncoder));
+                Push(stage._out, new Http3OutputTaggedItem(dataItem, OutputStreamType.QpackEncoder));
             },
             onUpstreamFinish: CompleteStage,
             onUpstreamFailure: ex =>

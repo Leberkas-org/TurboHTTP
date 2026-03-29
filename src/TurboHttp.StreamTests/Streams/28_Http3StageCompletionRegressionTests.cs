@@ -17,7 +17,7 @@ namespace TurboHttp.StreamTests.Streams;
 /// Stages under test: <see cref="Http30DecoderStage"/>, <see cref="Http30StreamStage"/>,
 /// <see cref="Http30ControlStreamPrefaceStage"/>, <see cref="Http30QpackEncoderPrefaceStage"/>,
 /// <see cref="Http30Request2FrameStage"/>, <see cref="Http30CorrelationStage"/>,
-/// <see cref="Http30ConnectionStage"/>, <see cref="Http30StreamDemuxStage"/>.
+/// <see cref="Http30ConnectionStage"/>.
 /// </remarks>
 public sealed class Http3StageCompletionRegressionTests : StreamTestBase
 {
@@ -35,10 +35,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
         return new DataItem(new SimpleMemoryOwner(bytes), bytes.Length) { Key = RequestEndpoint.Default };
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-008: Http30DecoderStage
-    // ──────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-008: Http30DecoderStage outlet terminates on upstream failure")]
     public async Task Http30DecoderStage_Outlet_Terminates_On_Upstream_Failure()
@@ -51,10 +47,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
                 .Via(Flow.FromGraph(new Http30DecoderStage()))
                 .RunWith(Sink.Seq<Http3Frame>(), Materializer));
     }
-
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-009: Http30StreamStage
-    // ──────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-009: Http30StreamStage outlet terminates on upstream failure")]
@@ -71,10 +63,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
                 .RunWith(Sink.Seq<HttpResponseMessage>(), Materializer));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-010: Http30ControlStreamPrefaceStage
-    // ──────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-010: Http30ControlStreamPrefaceStage outlet terminates on upstream failure")]
     public async Task Http30ControlStreamPrefaceStage_Outlet_Terminates_On_Upstream_Failure()
@@ -88,10 +76,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
                 .RunWith(Sink.Seq<IOutputItem>(), Materializer));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-011: Http30QpackEncoderPrefaceStage
-    // ──────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-011: Http30QpackEncoderPrefaceStage outlet terminates on upstream failure")]
     public async Task Http30QpackEncoderPrefaceStage_Outlet_Terminates_On_Upstream_Failure()
@@ -104,10 +88,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
                 .Via(Flow.FromGraph(new Http30QpackEncoderPrefaceStage()))
                 .RunWith(Sink.Seq<IOutputItem>(), Materializer));
     }
-
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-012: Http30Request2FrameStage
-    // ──────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-012: Http30Request2FrameStage outlet terminates on upstream failure")]
@@ -138,10 +118,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
             await RunnableGraph.FromGraph(graph).Run(Materializer));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-013: Http30CorrelationStage
-    // ──────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-013: Http30CorrelationStage outlet terminates on upstream failure")]
     public async Task Http30CorrelationStage_Outlet_Terminates_On_Upstream_Failure()
@@ -169,10 +145,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
             await RunnableGraph.FromGraph(graph).Run(Materializer));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-014: Http30ConnectionStage
-    // ──────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000,
         DisplayName = "SCREG-014: Http30ConnectionStage outlet terminates on upstream failure")]
     public async Task Http30ConnectionStage_Outlet_Terminates_On_Upstream_Failure()
@@ -195,38 +167,6 @@ public sealed class Http3StageCompletionRegressionTests : StreamTestBase
                 builder.From(stage.OutApp).To(appSink);
                 builder.From(appSrc).To(stage.InApp);
                 builder.From(stage.OutServer).To(serverOutSink);
-
-                return ClosedShape.Instance;
-            });
-
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await RunnableGraph.FromGraph(graph).Run(Materializer));
-    }
-
-    // ──────────────────────────────────────────────────────────────
-    // SCREG-015: Http30StreamDemuxStage
-    // ──────────────────────────────────────────────────────────────
-
-    [Fact(Timeout = 5000,
-        DisplayName = "SCREG-015: Http30StreamDemuxStage outlet terminates on upstream failure")]
-    public async Task Http30StreamDemuxStage_Outlet_Terminates_On_Upstream_Failure()
-    {
-        var source = Source.From(new[] { MinimalOutputItem() })
-            .Concat(Source.Failed<IOutputItem>(UpstreamError));
-
-        var graph = GraphDsl.Create(
-            Sink.Seq<IOutputItem>(),
-            (builder, requestSink) =>
-            {
-                var stage = builder.Add(new Http30StreamDemuxStage());
-                var src = builder.Add(source);
-                var controlSink = builder.Add(Sink.Ignore<IOutputItem>());
-                var encoderSink = builder.Add(Sink.Ignore<IOutputItem>());
-
-                builder.From(src).To(stage.In);
-                builder.From(stage.OutRequest).To(requestSink);
-                builder.From(stage.OutControl).To(controlSink);
-                builder.From(stage.OutEncoder).To(encoderSink);
 
                 return ClosedShape.Instance;
             });

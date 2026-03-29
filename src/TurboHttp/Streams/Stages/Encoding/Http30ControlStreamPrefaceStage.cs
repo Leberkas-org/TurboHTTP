@@ -10,7 +10,7 @@ namespace TurboHttp.Streams.Stages.Encoding;
 /// <summary>
 /// Emits the HTTP/3 control stream preface (stream type VarInt 0x00 + SETTINGS frame)
 /// eagerly on PreStart, then passes all subsequent upstream items through unchanged.
-/// The preface is wrapped in an <see cref="Http3TaggedItem"/> with
+/// The preface is wrapped in an <see cref="Http3OutputTaggedItem"/> with
 /// <see cref="OutputStreamType.Control"/> so the demux stage can route it
 /// to the correct QUIC unidirectional stream.
 /// </summary>
@@ -66,7 +66,7 @@ public sealed class Http30ControlStreamPrefaceStage : GraphStage<FlowShape<IOutp
             ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
 
             var dataItem = new DataItem(owner, preface.Length);
-            Emit(_stage._out, new Http3TaggedItem(dataItem, OutputStreamType.Control));
+            Emit(_stage._out, new Http3OutputTaggedItem(dataItem, OutputStreamType.Control));
         }
     }
 }

@@ -66,13 +66,8 @@ public sealed class Http30Engine : IHttpProtocolEngine
 
             // ── Control stream preface → demux → merge back ──
             var controlPreface = b.Add(new Http30ControlStreamPrefaceStage());
-            var demux = b.Add(new Http30StreamDemuxStage());
-            var demuxMerge = b.Add(new Merge<IOutputItem>(3));
 
-            b.From(preDemuxMerge.Out).Via(controlPreface).To(demux.In);
-            b.From(demux.OutRequest).To(demuxMerge.In(0));
-            b.From(demux.OutControl).To(demuxMerge.In(1));
-            b.From(demux.OutEncoder).To(demuxMerge.In(2));
+            b.From(preDemuxMerge.Out).To(controlPreface.Inlet);
 
             // ── Inbound: partition decoder stream bytes from regular frames ──
             var partition = b.Add(new Partition<IInputItem>(2, ClassifyInputItem));
@@ -98,7 +93,7 @@ public sealed class Http30Engine : IHttpProtocolEngine
                 IInputItem,
                 HttpResponseMessage>(
                 broadcast.In,
-                demuxMerge.Out,
+                controlPreface.Outlet,
                 partition.In,
                 correlation.Out);
         }));

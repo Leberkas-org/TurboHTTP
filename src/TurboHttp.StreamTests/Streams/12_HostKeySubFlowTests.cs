@@ -1,6 +1,7 @@
 using Akka;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
+using TurboHttp.Streams.Stages.Internal;
 using TurboHttp.Streams.Stages.Routing;
 
 namespace TurboHttp.StreamTests.Streams;
@@ -10,7 +11,7 @@ namespace TurboHttp.StreamTests.Streams;
 /// Verifies that requests are partitioned by host key and each subflow completes independently.
 /// </summary>
 /// <remarks>
-/// Stage under test: <see cref="GroupByHostKeyStage{T}"/>.
+/// Stage under test: <see cref="GroupByRequestKeyStage{T}"/>.
 /// Validates subflow isolation, completion propagation, and back-pressure per host partition.
 /// </remarks>
 public sealed class HostKeySubFlowTests : StreamTestBase
@@ -28,7 +29,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
             SubFlow<TOut, NotUsed, Sink<HttpRequestMessage, NotUsed>>> configure)
     {
         var subflow = Flow.Create<HttpRequestMessage>()
-            .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16);
+            .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16);
 
         return (Flow<HttpRequestMessage, TOut, NotUsed>)
             configure(subflow).MergeSubstreams();
@@ -58,7 +59,7 @@ public sealed class HostKeySubFlowTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         var results = await RunAsync(flow, requests);

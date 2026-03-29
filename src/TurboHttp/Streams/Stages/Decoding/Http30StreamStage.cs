@@ -80,10 +80,7 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpRes
                 FailStage(ex);
             });
 
-            SetHandler(stage._out, () =>
-            {
-                Pull(stage._in);
-            });
+            SetHandler(stage._out, () => { Pull(stage._in); });
         }
 
         private void HandleHeaders(Http3HeadersFrame frame)
@@ -114,7 +111,7 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpRes
 
                     if (IsContentHeader(h.Name))
                     {
-                        _contentHeaders ??= new List<(string, string)>();
+                        _contentHeaders ??= [];
                         _contentHeaders.Add((h.Name, h.Value));
                     }
                 }
@@ -162,7 +159,7 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpRes
 
         private void ApplyContentHeaders(HttpResponseMessage response)
         {
-            if (_contentHeaders is null || response.Content is null)
+            if (_contentHeaders is null)
             {
                 return;
             }
@@ -181,19 +178,17 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpRes
 
         private void EnsureBodyCapacity(int required)
         {
-            if (_bodyOwner == null || required > _bodyBuffer.Length)
+            if (_bodyOwner != null && required <= _bodyBuffer.Length) return;
+            var newOwner = _pool.Rent(required);
+
+            if (_bodyOwner != null)
             {
-                var newOwner = _pool.Rent(required);
-
-                if (_bodyOwner != null)
-                {
-                    _bodyBuffer.Span.CopyTo(newOwner.Memory.Span);
-                    _bodyOwner.Dispose();
-                }
-
-                _bodyOwner = newOwner;
-                _bodyBuffer = newOwner.Memory;
+                _bodyBuffer.Span.CopyTo(newOwner.Memory.Span);
+                _bodyOwner.Dispose();
             }
+
+            _bodyOwner = newOwner;
+            _bodyBuffer = newOwner.Memory;
         }
 
         public override void PostStop()

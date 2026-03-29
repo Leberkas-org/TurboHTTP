@@ -3,6 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
 using TurboHttp.Streams.Stages;
+using TurboHttp.Streams.Stages.Internal;
 using TurboHttp.Streams.Stages.Routing;
 
 namespace TurboHttp.StreamTests.Streams;
@@ -12,7 +13,7 @@ namespace TurboHttp.StreamTests.Streams;
 /// Verifies default and configurable buffer limits and back-pressure under burst load.
 /// </summary>
 /// <remarks>
-/// Stage under test: <see cref="GroupByHostKeyStage{T}"/>.
+/// Stage under test: <see cref="GroupByRequestKeyStage{T}"/>.
 /// Validates that per-host subflow queues respect capacity constraints.
 /// </remarks>
 public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
@@ -32,7 +33,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         var results = await Source.From(requests)
@@ -53,7 +54,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16, queueSize: 128)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16, queueSize: 128)
                 .MergeSubstreams();
 
         var results = await Source.From(requests)
@@ -78,7 +79,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         // Apply the attribute at composition level
@@ -107,7 +108,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         var results = await Source.From(requests)
@@ -125,7 +126,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
     [Fact(DisplayName = "GBHQ-005: GroupByHostKeyStage shape is FlowShape with same inlet/outlet types")]
     public void Should_HaveFlowShape_When_GroupByHostKeyStageCreated()
     {
-        var stage = new GroupByHostKeyStage<HttpRequestMessage>(RequestEndpoint.FromRequest);
+        var stage = new GroupByRequestKeyStage<HttpRequestMessage>(RequestEndpoint.FromRequest);
 
         Assert.IsType<FlowShape<HttpRequestMessage, Source<HttpRequestMessage, NotUsed>>>(stage.Shape);
         Assert.NotNull(stage.Shape.Inlet);
@@ -144,7 +145,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         var results = await Source.From(requests)

@@ -16,8 +16,7 @@ internal sealed class Engine
         PipelineDescriptor descriptor)
     {
         options ??= new TurboClientOptions();
-        var requestOptions = BuildRequestOptions(options);
-        requestOptionsFactory ??= () => requestOptions;
+        requestOptionsFactory ??= () => BuildRequestOptions(options);
 
         return BuildExtendedPipeline(pool, options, requestOptionsFactory, descriptor);
     }
@@ -40,7 +39,7 @@ internal sealed class Engine
 
         return BuildExtendedPipeline(null!, new TurboClientOptions(), () => defaultOptions,
             descriptor,
-            http10Factory, http11Factory, http20Factory, http30Factory);
+            http10Factory, http11Factory, http20Factory, http30Factory).Async();
     }
 
     private static TurboRequestOptions BuildRequestOptions(TurboClientOptions options)

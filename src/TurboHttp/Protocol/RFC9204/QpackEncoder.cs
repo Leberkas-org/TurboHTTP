@@ -35,12 +35,10 @@ public sealed class QpackEncoder
         "set-cookie",
     };
 
-    private readonly QpackDynamicTable _table;
     private readonly int _maxTableCapacity;
     private readonly bool _enableDynamicTable;
     private readonly ArrayBufferWriter<byte> _instructionBuffer = new(256);
     private readonly Dictionary<int, int> _pendingSections = new();
-    private int _knownReceivedCount;
 
     /// <summary>
     /// Creates a new QPACK encoder.
@@ -57,12 +55,12 @@ public sealed class QpackEncoder
         }
 
         _maxTableCapacity = maxTableCapacity;
-        _table = new QpackDynamicTable(maxTableCapacity);
+        DynamicTable = new QpackDynamicTable(maxTableCapacity);
         _enableDynamicTable = maxTableCapacity > 0;
     }
 
     /// <summary>The encoder's dynamic table (for inspection and testing).</summary>
-    public QpackDynamicTable DynamicTable => _table;
+    public QpackDynamicTable DynamicTable { get; }
 
     /// <summary>
     /// Encoder instructions emitted during the most recent <see cref="Encode"/> call.
@@ -76,7 +74,7 @@ public sealed class QpackEncoder
     /// that the decoder has confirmed it has received (via Section Acknowledgment and
     /// Insert Count Increment instructions on the decoder stream).
     /// </summary>
-    public int KnownReceivedCount => _knownReceivedCount;
+    public int KnownReceivedCount { get; private set; }
 
     /// <summary>
     /// Records that a header block with the given Required Insert Count was sent on
@@ -122,8 +120,9 @@ public sealed class QpackEncoder
             case DecoderInstructionType.SectionAcknowledgment:
                 if (_pendingSections.Remove(instruction.IntValue, out var ric))
                 {
-                    _knownReceivedCount = Math.Max(_knownReceivedCount, ric);
+                    KnownReceivedCount = Math.Max(KnownReceivedCount, ric);
                 }
+
                 break;
 
             case DecoderInstructionType.InsertCountIncrement:
@@ -132,7 +131,8 @@ public sealed class QpackEncoder
                     throw new QpackException(
                         "RFC 9204 §4.4.3 violation: Insert Count Increment must be positive.");
                 }
-                _knownReceivedCount += instruction.IntValue;
+
+                KnownReceivedCount += instruction.IntValue;
                 break;
 
             case DecoderInstructionType.StreamCancellation:
@@ -227,6 +227,7 @@ public sealed class QpackEncoder
                     {
                         maxAbsoluteIndexReferenced = dynExact;
                     }
+
                     continue;
                 }
             }
@@ -238,7 +239,7 @@ public sealed class QpackEncoder
             // 4. Insert into dynamic table if not sensitive and table is enabled
             if (_enableDynamicTable && !isSensitive)
             {
-                var insertedIdx = _table.Insert(name, value);
+                var insertedIdx = DynamicTable.Insert(name, value);
                 if (insertedIdx >= 0)
                 {
                     // Emit encoder instruction for the insert
@@ -250,7 +251,7 @@ public sealed class QpackEncoder
                     else if (dynamicName >= 0)
                     {
                         // Dynamic table name reference uses relative index in instructions
-                        var relIdx = _table.InsertCount - 1 - dynamicName;
+                        var relIdx = DynamicTable.InsertCount - 1 - dynamicName;
                         QpackEncoderInstructionWriter.WriteInsertWithNameReference(
                             relIdx, false, Encoding.UTF8.GetBytes(value).AsSpan(), _instructionBuffer);
                     }
@@ -266,6 +267,7 @@ public sealed class QpackEncoder
                     {
                         maxAbsoluteIndexReferenced = insertedIdx;
                     }
+
                     entries[i] = entry;
                     continue;
                 }
@@ -316,9 +318,8 @@ public sealed class QpackEncoder
 
         // Base = Required Insert Count (simplest: delta base = 0, sign = 0)
         // All dynamic references are pre-base.
-        var encodingBase = requiredInsertCount;
 
-        return new EncodingPlan(entries, requiredInsertCount, encodingBase);
+        return new EncodingPlan(entries, requiredInsertCount, requiredInsertCount);
     }
 
     // ── Wire format: prefix ──────────────────────────────────────────────
@@ -516,9 +517,9 @@ public sealed class QpackEncoder
     private int FindDynamicExact(string name, string value)
     {
         // Search from newest to oldest for best locality
-        for (var i = _table.InsertCount - 1; i >= _table.DroppedCount; i--)
+        for (var i = DynamicTable.InsertCount - 1; i >= DynamicTable.DroppedCount; i--)
         {
-            var entry = _table.GetEntry(i);
+            var entry = DynamicTable.GetEntry(i);
             if (entry is null)
             {
                 continue;
@@ -540,9 +541,9 @@ public sealed class QpackEncoder
     /// </summary>
     private int FindDynamicName(string name)
     {
-        for (var i = _table.InsertCount - 1; i >= _table.DroppedCount; i--)
+        for (var i = DynamicTable.InsertCount - 1; i >= DynamicTable.DroppedCount; i--)
         {
-            var entry = _table.GetEntry(i);
+            var entry = DynamicTable.GetEntry(i);
             if (entry is null)
             {
                 continue;

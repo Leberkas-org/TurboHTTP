@@ -4,7 +4,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Implementation;
 using TurboHttp.Internal;
 
-namespace TurboHttp.Streams.Stages.Routing;
+namespace TurboHttp.Streams.Stages.Internal;
 
 internal static class FlowHostKeyGroupByExtensions
 {
@@ -15,7 +15,7 @@ internal static class FlowHostKeyGroupByExtensions
     /// apply directly without any custom wrapper type.
     /// Close the subflow with <c>.MergeSubstreams()</c>.
     /// </summary>
-    public static SubFlow<T, TMat, Sink<T, TMat>> GroupByHostKey<T, TMat>(
+    public static SubFlow<T, TMat, Sink<T, TMat>> GroupByRequestKey<T, TMat>(
         this IFlow<T, TMat> flow,
         Func<T, RequestEndpoint> keyFunction,
         int maxSubstreams,

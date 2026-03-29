@@ -14,34 +14,34 @@ namespace TurboHttp.Streams.Stages.Routing;
 /// </summary>
 internal sealed class ExtractOptionsShape : Shape
 {
-    public Inlet<HttpRequestMessage> In { get; }
-    public Inlet<IControlItem> InReuse { get; }
-    public Outlet<HttpRequestMessage> OutRequest { get; }
-    public Outlet<IOutputItem> OutSignal { get; }
+    public Inlet<HttpRequestMessage> Inlet { get; }
+    public Inlet<IControlItem> InletReuse { get; }
+    public Outlet<HttpRequestMessage> OutletRequest { get; }
+    public Outlet<IOutputItem> OutletSignal { get; }
 
     public ExtractOptionsShape(
-        Inlet<HttpRequestMessage> @in,
-        Inlet<IControlItem> inReuse,
-        Outlet<HttpRequestMessage> outRequest,
-        Outlet<IOutputItem> outSignal)
+        Inlet<HttpRequestMessage> inlet,
+        Inlet<IControlItem> inletReuse,
+        Outlet<HttpRequestMessage> outletRequest,
+        Outlet<IOutputItem> outletSignal)
     {
-        In = @in;
-        InReuse = inReuse;
-        OutRequest = outRequest;
-        OutSignal = outSignal;
+        Inlet = inlet;
+        InletReuse = inletReuse;
+        OutletRequest = outletRequest;
+        OutletSignal = outletSignal;
     }
 
-    public override ImmutableArray<Inlet> Inlets => [In, InReuse];
+    public override ImmutableArray<Inlet> Inlets => [Inlet, InletReuse];
 
-    public override ImmutableArray<Outlet> Outlets => [OutRequest, OutSignal];
+    public override ImmutableArray<Outlet> Outlets => [OutletRequest, OutletSignal];
 
     public override Shape DeepCopy()
     {
         return new ExtractOptionsShape(
-            (Inlet<HttpRequestMessage>)In.CarbonCopy(),
-            (Inlet<IControlItem>)InReuse.CarbonCopy(),
-            (Outlet<HttpRequestMessage>)OutRequest.CarbonCopy(),
-            (Outlet<IOutputItem>)OutSignal.CarbonCopy());
+            (Inlet<HttpRequestMessage>)Inlet.CarbonCopy(),
+            (Inlet<IControlItem>)InletReuse.CarbonCopy(),
+            (Outlet<HttpRequestMessage>)OutletRequest.CarbonCopy(),
+            (Outlet<IOutputItem>)OutletSignal.CarbonCopy());
     }
 
     public override Shape CopyFromPorts(ImmutableArray<Inlet> inlets, ImmutableArray<Outlet> outlets)

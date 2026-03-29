@@ -11,7 +11,7 @@ namespace TurboHttp.Transport;
 /// <summary>
 /// Handles QUIC multi-stream transport (HTTP/3) for <see cref="ConnectionStage"/>.
 /// Encapsulates <see cref="QuicConnectionManager"/> lifecycle, request/control/encoder stream
-/// handle management, typed stream routing via <see cref="Http3TaggedItem"/>, and multiple
+/// handle management, typed stream routing via <see cref="Http3OutputTaggedItem"/>, and multiple
 /// inbound pump management.
 /// </summary>
 internal sealed class QuicTransportHandler : ITransportHandler
@@ -196,16 +196,16 @@ internal sealed class QuicTransportHandler : ITransportHandler
     }
 
     /// <inheritdoc/>
-    public void HandleTaggedItem(Http3TaggedItem tagged)
+    public void HandleTaggedItem(Http3OutputTaggedItem outputTagged)
     {
-        if (tagged.Inner is not DataItem dataItem)
+        if (outputTagged.Inner is not DataItem dataItem)
         {
             // Non-data tagged items (control signals) — no routing needed.
             _callbacks!.SignalPullInput();
             return;
         }
 
-        switch (tagged.StreamType)
+        switch (outputTagged.StreamType)
         {
             case OutputStreamType.Request:
                 WriteToHandle(_requestHandle, dataItem.Memory, dataItem.Length);

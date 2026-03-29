@@ -110,15 +110,6 @@ public enum OutputStreamType
 }
 
 /// <summary>
-/// Wraps an <see cref="IOutputItem"/> with an <see cref="OutputStreamType"/> tag
-/// so the demux stage can route it to the correct QUIC stream.
-/// </summary>
-public record Http3TaggedItem(IOutputItem Inner, OutputStreamType StreamType) : IOutputItem
-{
-    public RequestEndpoint Key => Inner.Key;
-}
-
-/// <summary>
 /// Identifies the QUIC unidirectional stream that an inbound HTTP/3 item arrived on.
 /// Used to route inbound items to the correct processing pipeline.
 /// </summary>
@@ -142,6 +133,15 @@ public enum InputStreamType
 /// so the engine can route it to the correct processing pipeline.
 /// </summary>
 public record Http3InputTaggedItem(IInputItem Inner, InputStreamType StreamType) : IInputItem
+{
+    public RequestEndpoint Key => Inner.Key;
+}
+
+/// <summary>
+/// Wraps an <see cref="IOutputItem"/> with an <see cref="OutputStreamType"/> tag
+/// so the demux stage can route it to the correct QUIC stream.
+/// </summary>
+public record Http3OutputTaggedItem(IOutputItem Inner, OutputStreamType StreamType) : IOutputItem
 {
     public RequestEndpoint Key => Inner.Key;
 }

@@ -25,8 +25,6 @@ namespace TurboHttp.Streams.Lifecycle;
 /// </summary>
 internal sealed class TurboClientStreamManager : IDisposable
 {
-    private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(10);
-
     private readonly IActorRef _owner;
     private int _disposed;
 
@@ -38,12 +36,6 @@ internal sealed class TurboClientStreamManager : IDisposable
     /// without requiring a live TCP connection.
     /// </summary>
     internal ChannelWriter<HttpResponseMessage> ResponseWriter { get; }
-
-    public TurboClientStreamManager(TurboClientOptions clientOptions, Func<TurboRequestOptions> requestOptionsFactory,
-        ActorSystem system)
-        : this(clientOptions, requestOptionsFactory, system, PipelineDescriptor.Empty)
-    {
-    }
 
     internal TurboClientStreamManager(TurboClientOptions clientOptions, Func<TurboRequestOptions> requestOptionsFactory,
         ActorSystem system, PipelineDescriptor descriptor)

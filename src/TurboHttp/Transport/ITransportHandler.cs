@@ -23,9 +23,9 @@ internal interface ITransportHandler
 
     /// <summary>
     /// Route a tagged QUIC output item to the correct stream.
-    /// TCP handlers may treat this as a no-op; QUIC handlers dispatch based on <see cref="Http3TaggedItem.StreamType"/>.
+    /// TCP handlers may treat this as a no-op; QUIC handlers dispatch based on <see cref="Http3OutputTaggedItem.StreamType"/>.
     /// </summary>
-    void HandleTaggedItem(Http3TaggedItem tagged);
+    void HandleTaggedItem(Http3OutputTaggedItem outputTagged);
 
     /// <summary>Apply the connection-reuse decision for the current request/response cycle.</summary>
     void HandleConnectionReuseItem(ConnectionReuseItem reuseItem);

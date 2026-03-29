@@ -85,8 +85,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         }
     }
 
-    // ── CreateStreamInstance ──────────────────────────────────────────────
-
     private void HandleCreateStreamInstance(OwnerMsg.CreateStreamInstance create)
     {
         _log.Info("Creating stream instance (options: BaseAddress={0})",
@@ -99,8 +97,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         MaterializeStream(create);
     }
-
-    // ── Stream Materialization ─────────────────────────────────────────────
 
     private void MaterializeStream(OwnerMsg.CreateStreamInstance create)
     {
@@ -191,8 +187,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         }
     }
 
-    // ── StreamInstanceFailed (from external caller) ────────────────────────
-
     private void HandleStreamInstanceFailed(OwnerMsg.StreamInstanceFailed failed)
     {
         _lastError = failed.Reason;
@@ -225,8 +219,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         }
     }
 
-    // ── Retry ────────────────────────────────────────────────────────────
-
     private void ExecuteRetryCreate()
     {
         if (_createRequest is null || _shuttingDown)
@@ -238,8 +230,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         CleanupForRetry();
         MaterializeStream(_createRequest);
     }
-
-    // ── Shutdown ─────────────────────────────────────────────────────────
 
     private void HandleShutdown()
     {
@@ -271,8 +261,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         CleanupResources();
         Context.Stop(Self);
     }
-
-    // ── Sink Completion Monitoring ────────────────────────────────────────
 
     private void MonitorSinkCompletion(Task completionTask)
     {
@@ -312,8 +300,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
             Context.Stop(Self);
         }
     }
-
-    // ── Resource Cleanup ───────────────────────────────────────────────────
 
     private void CleanupForRetry()
     {
@@ -380,8 +366,6 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
         CleanupResources();
         base.PostStop();
     }
-
-    // ── Internal messages ────────────────────────────────────────────────
 
     /// <summary>Internal signal to trigger a retry of stream instance creation.</summary>
     private sealed class RetryCreateInstance

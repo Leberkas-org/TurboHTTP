@@ -4,7 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 
-namespace TurboHttp.Streams.Stages.Routing;
+namespace TurboHttp.Streams.Stages.Internal;
 
 internal sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, NotUsed>, T>>
 {

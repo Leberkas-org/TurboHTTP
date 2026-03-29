@@ -229,7 +229,7 @@ internal sealed class TcpTransportHandler : ITransportHandler
 
     /// <inheritdoc/>
     /// <remarks>TCP does not use tagged items — this is a no-op.</remarks>
-    public void HandleTaggedItem(Http3TaggedItem tagged)
+    public void HandleTaggedItem(Http3OutputTaggedItem outputTagged)
     {
         _callbacks!.SignalPullInput();
     }

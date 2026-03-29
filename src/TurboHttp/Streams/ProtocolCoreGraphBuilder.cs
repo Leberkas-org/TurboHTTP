@@ -4,6 +4,7 @@ using Akka.Streams.Dsl;
 using TurboHttp.Internal;
 using TurboHttp.Transport;
 using TurboHttp.Streams.Stages.Features;
+using TurboHttp.Streams.Stages.Internal;
 using TurboHttp.Streams.Stages.Routing;
 
 namespace TurboHttp.Streams;
@@ -85,7 +86,7 @@ internal static class ProtocolCoreGraphBuilder
 
         return (Flow<HttpRequestMessage, HttpResponseMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByHostKey(RequestEndpoint.FromRequest, maxSubstreams)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams)
                 .ViaSubFlow(connectionFlow)
                 .MergeSubstreams();
     }
@@ -122,8 +123,8 @@ internal static class ProtocolCoreGraphBuilder
             var transportMerge = b.Add(new MergePreferred<IOutputItem>(1));
 
             // Request path: extract splits first request into ConnectItem + request stream
-            b.From(extract.OutRequest).To(bidi.Inlet1);
-            b.From(extract.OutSignal).To(transportMerge0.Preferred);
+            b.From(extract.OutletRequest).To(bidi.Inlet1);
+            b.From(extract.OutletSignal).To(transportMerge0.Preferred);
 
             // Transport path: ConnectItem + BidiFlow encoded output → concat → merge → transport → BidiFlow decode
             b.From(bidi.Outlet1).To(transportMerge0.In(0));
@@ -136,13 +137,13 @@ internal static class ProtocolCoreGraphBuilder
 
             // Signal feedback: ConnectionReuseItem → broadcast → ExtractOptionsStage + ConnectionStage
             b.From(connReuse.Out1).To(reuseBroadcast.In);
-            b.From(reuseBroadcast.Out(0)).To(extract.InReuse);
+            b.From(reuseBroadcast.Out(0)).To(extract.InletReuse);
             b.From(reuseBroadcast.Out(1))
                 .Via(Flow.Create<IControlItem>().Select(IOutputItem (x) => x)
                     .Buffer(1, OverflowStrategy.Backpressure))
                 .To(transportMerge.Preferred);
 
-            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(extract.In, connReuse.Out0);
+            return new FlowShape<HttpRequestMessage, HttpResponseMessage>(extract.Inlet, connReuse.Out0);
         });
     }
 

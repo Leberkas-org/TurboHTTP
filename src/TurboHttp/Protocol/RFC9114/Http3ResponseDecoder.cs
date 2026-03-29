@@ -104,7 +104,6 @@ public sealed class Http3ResponseDecoder
             // Content headers go to Content.Headers, others to response.Headers
             if (IsContentHeader(name))
             {
-                response.Content ??= new ByteArrayContent([]);
                 response.Content.Headers.TryAddWithoutValidation(name, value);
             }
             else

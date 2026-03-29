@@ -5,19 +5,19 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
 
-namespace TurboHttp.Streams.Stages.Routing;
+namespace TurboHttp.Streams.Stages.Internal;
 
-internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T, NotUsed>>>
+internal sealed class GroupByRequestKeyStage<T> : GraphStage<FlowShape<T, Source<T, NotUsed>>>
 {
-    private readonly Inlet<T> _in = new("GroupByHostKey.In");
-    private readonly Outlet<Source<T, NotUsed>> _out = new("GroupByHostKey.Out");
+    private readonly Inlet<T> _in = new("GroupByRequestKey.In");
+    private readonly Outlet<Source<T, NotUsed>> _out = new("GroupByRequestKey.Out");
     public override FlowShape<T, Source<T, NotUsed>> Shape { get; }
 
     private readonly Func<T, RequestEndpoint> _keyFor;
     private readonly int _maxSubstreams;
     private readonly int _defaultQueueSize;
 
-    public GroupByHostKeyStage(Func<T, RequestEndpoint> keyFor, int maxSubstreams = -1, int queueSize = 64)
+    public GroupByRequestKeyStage(Func<T, RequestEndpoint> keyFor, int maxSubstreams = -1, int queueSize = 64)
     {
         _keyFor = keyFor ?? throw new ArgumentNullException(nameof(keyFor));
         _maxSubstreams = maxSubstreams;
@@ -47,7 +47,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly GroupByHostKeyStage<T> _stage;
+        private readonly GroupByRequestKeyStage<T> _stage;
         private readonly int _queueSize;
         private readonly Dictionary<RequestEndpoint, SubflowState> _subflows = new();
         private readonly Queue<Source<T, NotUsed>> _pendingSources = new();
@@ -55,7 +55,7 @@ internal sealed class GroupByHostKeyStage<T> : GraphStage<FlowShape<T, Source<T,
         private Action<NotUsed>? _onSubstreamDied;
         private bool _upstreamFinished;
 
-        public Logic(GroupByHostKeyStage<T> stage, Attributes inheritedAttributes) : base(stage.Shape)
+        public Logic(GroupByRequestKeyStage<T> stage, Attributes inheritedAttributes) : base(stage.Shape)
         {
             _stage = stage;
             var queueAttr = inheritedAttributes.GetAttribute(

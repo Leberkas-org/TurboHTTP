@@ -36,8 +36,8 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
         Assert.Equal(2, results.Count);
-        Assert.IsType<Http3TaggedItem>(results[0]);
-        Assert.IsNotType<Http3TaggedItem>(results[1]);
+        Assert.IsType<Http3OutputTaggedItem>(results[0]);
+        Assert.IsNotType<Http3OutputTaggedItem>(results[1]);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-6.2.1-H3CP-002: Preface is tagged as OutputStreamType.Control")]
@@ -49,7 +49,7 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
             .Via(Flow.FromGraph(new Http30ControlStreamPrefaceStage()))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-        var tagged = Assert.IsType<Http3TaggedItem>(results[0]);
+        var tagged = Assert.IsType<Http3OutputTaggedItem>(results[0]);
         Assert.Equal(OutputStreamType.Control, tagged.StreamType);
         Assert.IsType<DataItem>(tagged.Inner);
     }
@@ -63,7 +63,7 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
             .Via(Flow.FromGraph(new Http30ControlStreamPrefaceStage()))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-        var tagged = (Http3TaggedItem)results[0];
+        var tagged = (Http3OutputTaggedItem)results[0];
         var data = (DataItem)tagged.Inner;
         var bytes = data.Memory.Memory[..data.Length].ToArray();
 
@@ -80,7 +80,7 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
             .Via(Flow.FromGraph(new Http30ControlStreamPrefaceStage()))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-        var tagged = (Http3TaggedItem)results[0];
+        var tagged = (Http3OutputTaggedItem)results[0];
         var data = (DataItem)tagged.Inner;
         var bytes = data.Memory.Memory[..data.Length].ToArray();
 
@@ -97,7 +97,7 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
             .Via(Flow.FromGraph(new Http30ControlStreamPrefaceStage()))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-        var tagged = (Http3TaggedItem)results[0];
+        var tagged = (Http3OutputTaggedItem)results[0];
         var data = (DataItem)tagged.Inner;
         var actual = data.Memory.Memory[..data.Length].ToArray();
 
@@ -122,9 +122,9 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
         // First item = preface (tagged), then 5 upstream items pass through
         Assert.Equal(6, results.Count);
 
-        var taggedCount = results.Count(r => r is Http3TaggedItem t && t.StreamType == OutputStreamType.Control);
+        var taggedCount = results.Count(r => r is Http3OutputTaggedItem t && t.StreamType == OutputStreamType.Control);
         Assert.Equal(1, taggedCount);
-        Assert.IsType<Http3TaggedItem>(results[0]);
+        Assert.IsType<Http3OutputTaggedItem>(results[0]);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-6.2.1-H3CP-007: Subsequent items pass through unchanged")]
@@ -153,7 +153,7 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
 
         // Preface + one passthrough item, then stage completes cleanly
         Assert.Equal(2, results.Count);
-        Assert.IsType<Http3TaggedItem>(results[0]);
+        Assert.IsType<Http3OutputTaggedItem>(results[0]);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9114-6.2.1-H3CP-009: Custom settings are reflected in preface bytes")]
@@ -168,7 +168,7 @@ public sealed class Http30ControlStreamPrefaceStageTests : StreamTestBase
             .Via(Flow.FromGraph(new Http30ControlStreamPrefaceStage(settings)))
             .RunWith(Sink.Seq<IOutputItem>(), Materializer);
 
-        var tagged = (Http3TaggedItem)results[0];
+        var tagged = (Http3OutputTaggedItem)results[0];
         var data = (DataItem)tagged.Inner;
         var actual = data.Memory.Memory[..data.Length].ToArray();
 

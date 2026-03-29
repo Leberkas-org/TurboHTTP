@@ -47,10 +47,10 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
             var src = b.Add(Source.From(requestList).Concat(Source.Never<HttpRequestMessage>()));
             var noReuse = b.Add(Source.Never<IControlItem>());
 
-            b.From(src).To(stage.In);
-            b.From(noReuse).To(stage.InReuse);
-            b.From(stage.OutSignal).To(Sink.FromSubscriber(probe0));
-            b.From(stage.OutRequest).To(Sink.FromSubscriber(probe1));
+            b.From(src).To(stage.Inlet);
+            b.From(noReuse).To(stage.InletReuse);
+            b.From(stage.OutletSignal).To(Sink.FromSubscriber(probe0));
+            b.From(stage.OutletRequest).To(Sink.FromSubscriber(probe1));
 
             return ClosedShape.Instance;
         })).Run(Materializer);
@@ -152,10 +152,10 @@ public sealed class ExtractOptionsStageTests : StreamTestBase
             var src = b.Add(Source.From(requests)); // completing source — intentional
             var noReuse = b.Add(Source.Never<IControlItem>());
 
-            b.From(src).To(stage.In);
-            b.From(noReuse).To(stage.InReuse);
-            b.From(stage.OutSignal).To(Sink.FromSubscriber(probe0));
-            b.From(stage.OutRequest).To(Sink.FromSubscriber(probe1));
+            b.From(src).To(stage.Inlet);
+            b.From(noReuse).To(stage.InletReuse);
+            b.From(stage.OutletSignal).To(Sink.FromSubscriber(probe0));
+            b.From(stage.OutletRequest).To(Sink.FromSubscriber(probe1));
 
             return ClosedShape.Instance;
         })).Run(Materializer);

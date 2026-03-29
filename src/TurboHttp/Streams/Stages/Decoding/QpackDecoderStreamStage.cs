@@ -77,6 +77,7 @@ public sealed class QpackDecoderStreamStage : GraphStage<FlowShape<ReadOnlyMemor
             SetHandler(stage._out,
                 onPull: () => Pull(stage._in),
                 onDownstreamFinish: _ => CompleteStage());
+            
         }
     }
 }

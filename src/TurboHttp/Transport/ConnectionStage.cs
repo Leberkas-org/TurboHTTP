@@ -110,9 +110,9 @@ internal sealed class ConnectionStage : GraphStage<FlowShape<IOutputItem, IInput
                     // Do NOT pull — wait for ConnectionLease before accepting data.
                     break;
 
-                case Http3TaggedItem tagged:
+                case Http3OutputTaggedItem tagged:
                     Log.Debug("ConnectionStage: HandlePush Http3TaggedItem");
-                    if (_transport is null) { Log.Warning("ConnectionStage: {0} received without prior ConnectItem — dropping.", nameof(Http3TaggedItem)); Pull(_stage._in); break; }
+                    if (_transport is null) { Log.Warning("ConnectionStage: {0} received without prior ConnectItem — dropping.", nameof(Http3OutputTaggedItem)); Pull(_stage._in); break; }
                     _transport.HandleTaggedItem(tagged);
                     break;
 

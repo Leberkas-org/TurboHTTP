@@ -111,7 +111,7 @@ public sealed class Http30QpackEncoderStreamTests : StreamTestBase
         var outputs = await outputTask;
 
         Assert.NotEmpty(outputs);
-        var tagged = Assert.IsType<Http3TaggedItem>(outputs.First());
+        var tagged = Assert.IsType<Http3OutputTaggedItem>(outputs.First());
         Assert.Equal(OutputStreamType.QpackEncoder, tagged.StreamType);
 
         var data = Assert.IsType<DataItem>(tagged.Inner);
@@ -153,7 +153,7 @@ public sealed class Http30QpackEncoderStreamTests : StreamTestBase
 
         Assert.All(outputs, item =>
         {
-            var tagged = Assert.IsType<Http3TaggedItem>(item);
+            var tagged = Assert.IsType<Http3OutputTaggedItem>(item);
             Assert.Equal(OutputStreamType.QpackEncoder, tagged.StreamType);
         });
     }
@@ -175,7 +175,7 @@ public sealed class Http30QpackEncoderStreamTests : StreamTestBase
 
         // Only the non-empty instruction should produce output.
         Assert.Single(results);
-        var tagged = Assert.IsType<Http3TaggedItem>(results.First());
+        var tagged = Assert.IsType<Http3OutputTaggedItem>(results.First());
         var data = Assert.IsType<DataItem>(tagged.Inner);
         var bytes = data.Memory.Memory[..data.Length].ToArray();
 

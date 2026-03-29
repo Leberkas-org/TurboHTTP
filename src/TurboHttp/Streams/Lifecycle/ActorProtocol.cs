@@ -8,21 +8,18 @@ namespace TurboHttp.Streams.Lifecycle;
 /// </summary>
 public static class ClientStreamOwner
 {
-    /// <summary>Base type for all messages handled by <c>ClientStreamOwner</c>.</summary>
-    public abstract record Message;
-
     internal sealed record CreateStreamInstance(
         TurboClientOptions ClientOptions,
         Func<TurboRequestOptions> RequestOptionsFactory,
         PipelineDescriptor Pipeline,
         ChannelReader<HttpRequestMessage> RequestReader,
-        ChannelWriter<HttpResponseMessage> ResponseWriter) : Message;
+        ChannelWriter<HttpResponseMessage> ResponseWriter);
 
-    public sealed record StreamInstanceCreated : Message;
+    public sealed record StreamInstanceCreated;
 
-    public sealed record StreamInstanceFailed(Exception Reason, int AttemptNumber) : Message;
+    public sealed record StreamInstanceFailed(Exception Reason, int AttemptNumber);
 
-    public sealed record Shutdown : Message;
+    public sealed record Shutdown;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Implementation;
 using TurboHttp.Internal;
 
-namespace TurboHttp.Streams.Stages.Routing;
+namespace TurboHttp.Streams.Stages.Internal;
 
 /// <summary>
 /// Implements Akka's public <see cref="IMergeBack{TIn,TMat}"/> interface so that
@@ -36,7 +36,7 @@ internal sealed class HostKeyMergeBack<TIn, TMat> : IMergeBack<TIn, TMat>
             : breadth;
 
         return _baseFlow
-            .Via(new GroupByHostKeyStage<TIn>(_keyFunction, _maxSubstreams, _queueSize))
+            .Via(new GroupByRequestKeyStage<TIn>(_keyFunction, _maxSubstreams, _queueSize))
             .Via(Flow.Create<Source<TIn, NotUsed>>()
                 .Select(src => src.Via(flow)))
             .Via(new MergeSubstreamsStage<TOut>(effectiveBreadth));
