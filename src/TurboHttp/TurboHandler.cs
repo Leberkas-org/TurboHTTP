@@ -1,5 +1,3 @@
-using System.Net.Http;
-
 namespace TurboHttp;
 
 public abstract class TurboHandler

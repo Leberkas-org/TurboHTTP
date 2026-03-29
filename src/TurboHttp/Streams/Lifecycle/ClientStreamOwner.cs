@@ -1,6 +1,3 @@
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;

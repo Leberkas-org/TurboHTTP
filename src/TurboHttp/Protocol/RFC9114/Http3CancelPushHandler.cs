@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 CANCEL_PUSH Management  —  RFC 9114 §7.2.3

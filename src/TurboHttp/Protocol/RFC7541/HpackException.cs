@@ -1,5 +1,3 @@
-using System;
-
 namespace TurboHttp.Protocol.RFC7541;
 
 /// <summary>

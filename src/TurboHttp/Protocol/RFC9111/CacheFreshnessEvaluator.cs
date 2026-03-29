@@ -1,6 +1,3 @@
-using System;
-using System.Net.Http;
-
 namespace TurboHttp.Protocol.RFC9111;
 
 /// <summary>

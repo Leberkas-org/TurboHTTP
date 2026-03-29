@@ -1,5 +1,3 @@
-using System;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 MAX_PUSH_ID Management  —  RFC 9114 §7.2.7
@@ -24,19 +22,17 @@ namespace TurboHttp.Protocol.RFC9114;
 /// </summary>
 public sealed class Http3MaxPushIdHandler
 {
-    private long _currentMaxPushId = -1;
-
     /// <summary>
     /// The current MAX_PUSH_ID value sent by the client, or -1 if none has been sent.
     /// The server MUST NOT use any push ID greater than this value.
     /// </summary>
-    public long CurrentMaxPushId => _currentMaxPushId;
+    public long CurrentMaxPushId { get; private set; } = -1;
 
     /// <summary>
     /// Whether a MAX_PUSH_ID frame has been sent by the client.
     /// Until this is true, the server MUST NOT use server push.
     /// </summary>
-    public bool HasSentMaxPushId => _currentMaxPushId >= 0;
+    public bool HasSentMaxPushId => CurrentMaxPushId >= 0;
 
     /// <summary>
     /// Creates a MAX_PUSH_ID frame to send on the client control stream.
@@ -59,14 +55,14 @@ public sealed class Http3MaxPushIdHandler
         }
 
         // RFC 9114 §7.2.7: The maximum push ID MUST NOT be reduced.
-        if (_currentMaxPushId >= 0 && pushId < _currentMaxPushId)
+        if (CurrentMaxPushId >= 0 && pushId < CurrentMaxPushId)
         {
             throw new Http3Exception(
                 Http3ErrorCode.IdError,
-                $"MAX_PUSH_ID {pushId} must not decrease below previous value {_currentMaxPushId} (RFC 9114 §7.2.7).");
+                $"MAX_PUSH_ID {pushId} must not decrease below previous value {CurrentMaxPushId} (RFC 9114 §7.2.7).");
         }
 
-        _currentMaxPushId = pushId;
+        CurrentMaxPushId = pushId;
         return new Http3MaxPushIdFrame(pushId);
     }
 
@@ -89,11 +85,11 @@ public sealed class Http3MaxPushIdHandler
                 $"Server used push ID {pushId} but no MAX_PUSH_ID has been sent; server push is not permitted (RFC 9114 §7.2.7).");
         }
 
-        if (pushId > _currentMaxPushId)
+        if (pushId > CurrentMaxPushId)
         {
             throw new Http3Exception(
                 Http3ErrorCode.IdError,
-                $"Server push ID {pushId} exceeds MAX_PUSH_ID {_currentMaxPushId} (RFC 9114 §7.2.7).");
+                $"Server push ID {pushId} exceeds MAX_PUSH_ID {CurrentMaxPushId} (RFC 9114 §7.2.7).");
         }
     }
 
@@ -110,6 +106,6 @@ public sealed class Http3MaxPushIdHandler
             return false;
         }
 
-        return pushId >= 0 && pushId <= _currentMaxPushId;
+        return pushId >= 0 && pushId <= CurrentMaxPushId;
     }
 }

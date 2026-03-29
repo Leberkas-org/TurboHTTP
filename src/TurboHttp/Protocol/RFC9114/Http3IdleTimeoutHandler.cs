@@ -1,5 +1,3 @@
-using System;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 Idle Timeout + Reconnection  —  RFC 9114 §5.1
@@ -29,10 +27,6 @@ namespace TurboHttp.Protocol.RFC9114;
 /// </summary>
 public sealed class Http3IdleTimeoutHandler
 {
-    private readonly TimeSpan _idleTimeout;
-    private DateTime _lastActivity;
-    private int _activeStreamCount;
-
     /// <summary>
     /// Creates a new idle timeout handler with the specified timeout.
     /// </summary>
@@ -54,30 +48,30 @@ public sealed class Http3IdleTimeoutHandler
                 "Idle timeout must be non-negative.");
         }
 
-        _idleTimeout = idleTimeout;
-        _lastActivity = utcNow ?? DateTime.UtcNow;
+        IdleTimeout = idleTimeout;
+        LastActivity = utcNow ?? DateTime.UtcNow;
     }
 
     /// <summary>
     /// The configured idle timeout duration.
     /// </summary>
-    public TimeSpan IdleTimeout => _idleTimeout;
+    public TimeSpan IdleTimeout { get; }
 
     /// <summary>
     /// The UTC time of the last recorded activity on this connection.
     /// </summary>
-    public DateTime LastActivity => _lastActivity;
+    public DateTime LastActivity { get; private set; }
 
     /// <summary>
     /// The number of currently active streams on this connection.
     /// </summary>
-    public int ActiveStreamCount => _activeStreamCount;
+    public int ActiveStreamCount { get; private set; }
 
     /// <summary>
     /// Whether idle timeout is disabled (timeout is <see cref="TimeSpan.Zero"/>).
     /// RFC 9114 §5.1: A value of 0 means idle timeout is disabled.
     /// </summary>
-    public bool IsTimeoutDisabled => _idleTimeout == TimeSpan.Zero;
+    public bool IsTimeoutDisabled => IdleTimeout == TimeSpan.Zero;
 
     /// <summary>
     /// Records activity on this connection, resetting the idle timer.
@@ -88,7 +82,7 @@ public sealed class Http3IdleTimeoutHandler
     /// </param>
     public void RecordActivity(DateTime? utcNow = null)
     {
-        _lastActivity = utcNow ?? DateTime.UtcNow;
+        LastActivity = utcNow ?? DateTime.UtcNow;
     }
 
     /// <summary>
@@ -100,7 +94,7 @@ public sealed class Http3IdleTimeoutHandler
     /// </param>
     public void OnStreamOpened(DateTime? utcNow = null)
     {
-        _activeStreamCount++;
+        ActiveStreamCount++;
         RecordActivity(utcNow);
     }
 
@@ -116,13 +110,13 @@ public sealed class Http3IdleTimeoutHandler
     /// </exception>
     public void OnStreamClosed(DateTime? utcNow = null)
     {
-        if (_activeStreamCount <= 0)
+        if (ActiveStreamCount <= 0)
         {
             throw new InvalidOperationException(
                 "Cannot close a stream when no streams are active.");
         }
 
-        _activeStreamCount--;
+        ActiveStreamCount--;
         RecordActivity(utcNow);
     }
 
@@ -145,7 +139,7 @@ public sealed class Http3IdleTimeoutHandler
         }
 
         var now = utcNow ?? DateTime.UtcNow;
-        return (now - _lastActivity) >= _idleTimeout;
+        return (now - LastActivity) >= IdleTimeout;
     }
 
     /// <summary>
@@ -200,8 +194,8 @@ public sealed class Http3IdleTimeoutHandler
         }
 
         var now = utcNow ?? DateTime.UtcNow;
-        var elapsed = now - _lastActivity;
-        var remaining = _idleTimeout - elapsed;
+        var elapsed = now - LastActivity;
+        var remaining = IdleTimeout - elapsed;
         return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
     }
 }
@@ -212,10 +206,8 @@ public sealed class Http3IdleTimeoutHandler
 /// </summary>
 public sealed class Http3ReconnectionPolicy
 {
-    private readonly int _maxAttempts;
     private readonly TimeSpan _baseDelay;
     private readonly TimeSpan _maxDelay;
-    private int _attempt;
 
     /// <summary>
     /// Creates a reconnection policy with configurable backoff parameters.
@@ -255,14 +247,14 @@ public sealed class Http3ReconnectionPolicy
                 "Max delay must be non-negative.");
         }
 
-        _maxAttempts = maxAttempts;
+        MaxAttempts = maxAttempts;
     }
 
     /// <summary>The maximum number of reconnection attempts.</summary>
-    public int MaxAttempts => _maxAttempts;
+    public int MaxAttempts { get; }
 
     /// <summary>The current reconnection attempt number (0-based).</summary>
-    public int CurrentAttempt => _attempt;
+    public int CurrentAttempt { get; private set; }
 
     /// <summary>The base delay between reconnection attempts.</summary>
     public TimeSpan BaseDelay => _baseDelay;
@@ -273,7 +265,7 @@ public sealed class Http3ReconnectionPolicy
     /// <summary>
     /// Whether the maximum number of reconnection attempts has been exhausted.
     /// </summary>
-    public bool IsExhausted => _attempt >= _maxAttempts;
+    public bool IsExhausted => CurrentAttempt >= MaxAttempts;
 
     /// <summary>
     /// Evaluates whether a reconnection should be attempted and returns
@@ -296,14 +288,14 @@ public sealed class Http3ReconnectionPolicy
         if (IsExhausted)
         {
             return Http3ReconnectionDecision.DoNotReconnect(
-                $"Maximum reconnection attempts ({_maxAttempts}) exhausted.");
+                $"Maximum reconnection attempts ({MaxAttempts}) exhausted.");
         }
 
-        var delay = ComputeDelay(_attempt);
-        _attempt++;
+        var delay = ComputeDelay(CurrentAttempt);
+        CurrentAttempt++;
 
         return Http3ReconnectionDecision.Reconnect(delay,
-            $"Reconnection attempt {_attempt}/{_maxAttempts} after {reason}, delay {delay.TotalMilliseconds:F0}ms.");
+            $"Reconnection attempt {CurrentAttempt}/{MaxAttempts} after {reason}, delay {delay.TotalMilliseconds:F0}ms.");
     }
 
     /// <summary>
@@ -312,7 +304,7 @@ public sealed class Http3ReconnectionPolicy
     /// </summary>
     public void Reset()
     {
-        _attempt = 0;
+        CurrentAttempt = 0;
     }
 
     /// <summary>

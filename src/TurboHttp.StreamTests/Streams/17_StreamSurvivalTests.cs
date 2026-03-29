@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 using System.Net;
 using System.Text;
 using System.Threading.Channels;
@@ -287,7 +287,7 @@ public sealed class StreamSurvivalTests : EngineTestBase
                 Version = HttpVersion.Version11
             });
 
-            var response = await responses.Reader.ReadAsync()
+            var response = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken)
                 .AsTask()
                 .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -324,7 +324,7 @@ public sealed class StreamSurvivalTests : EngineTestBase
         for (var i = 0; i < 3; i++)
         {
             await queue.OfferAsync(ValidHttp11Request($"/item-{i}"));
-            await responses.Reader.ReadAsync()
+            await responses.Reader.ReadAsync(TestContext.Current.CancellationToken)
                 .AsTask()
                 .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         }
@@ -352,7 +352,7 @@ public sealed class StreamSurvivalTests : EngineTestBase
         var (queue, responses, pipelineTask) = BuildPersistentPipeline(Http11Ok);
 
         await queue.OfferAsync(ValidHttp11Request("/shutdown-test"));
-        await responses.Reader.ReadAsync()
+        await responses.Reader.ReadAsync(TestContext.Current.CancellationToken)
             .AsTask()
             .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 

@@ -1,4 +1,3 @@
-using System;
 using TurboHttp.Protocol.RFC9000;
 
 namespace TurboHttp.Protocol.RFC9114;

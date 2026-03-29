@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 /// <summary>
@@ -98,7 +95,7 @@ public static class Http3FieldValidator
             var c = name[i];
 
             // Check uppercase first (§4.2 — specific error message)
-            if (c >= 'A' && c <= 'Z')
+            if (c is >= 'A' and <= 'Z')
             {
                 throw new Http3Exception(Http3ErrorCode.MessageError,
                     $"RFC 9114 §4.2: Field name '{name}' contains uppercase character '{c}' at position {i}");

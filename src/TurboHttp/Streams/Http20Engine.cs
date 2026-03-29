@@ -1,5 +1,4 @@
 ﻿using System.Buffers;
-using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -50,8 +49,7 @@ public class Http20Engine : IHttpProtocolEngine
 
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            var limiterHandle = new StreamLimiterHandle();
-            var streamLimiter = b.Add(new Http20StreamLimiterStage(limiterHandle, _maxConcurrentStreams));
+            ;
             var streamIdAllocator = b.Add(new Http20StreamIdAllocatorStage());
             var broadcast = b.Add(new Broadcast<(HttpRequestMessage, int)>(2));
             var requestToFrame = b.Add(new Http20Request2FrameStage(requestEncoder));
@@ -60,11 +58,10 @@ public class Http20Engine : IHttpProtocolEngine
             var streamDecoder = b.Add(new Http20StreamStage());
             var correlation = b.Add(new Http20CorrelationStage());
             var prependPreface = b.Add(new Http20PrependPrefaceStage());
-            var connection = b.Add(new Http20ConnectionStage(windowSize, _maxConcurrentStreams, limiterHandle));
+            var connection = b.Add(new Http20ConnectionStage(windowSize, _maxConcurrentStreams));
             var signalMerge = b.Add(new MergePreferred<IOutputItem>(1));
 
-            // Request path: limiter → allocate stream ID → broadcast to both frame encoder and correlation
-            b.From(streamLimiter.Outlet).To(streamIdAllocator.Inlet);
+            // Request path: allocate stream ID → broadcast to both frame encoder and correlation
             b.From(streamIdAllocator.Outlet).To(broadcast.In);
             b.From(broadcast.Out(0)).To(requestToFrame.Inlet);
             b.From(broadcast.Out(1)).To(correlation.In0);
@@ -96,7 +93,7 @@ public class Http20Engine : IHttpProtocolEngine
                 IOutputItem,
                 IInputItem,
                 HttpResponseMessage>(
-                streamLimiter.Inlet,
+                streamIdAllocator.Inlet,
                 prependPreface.Outlet,
                 frameDecoder.Inlet,
                 correlation.Out);

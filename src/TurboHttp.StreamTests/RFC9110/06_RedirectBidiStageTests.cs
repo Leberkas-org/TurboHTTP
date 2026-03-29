@@ -588,7 +588,7 @@ public sealed class RedirectBidiStageTests : StreamTestBase
         reqPubSub.SendError(new Exception("request boom"));
 
         // Stage absorbs the error (no OnError) but gracefully completes _outRequest
-        requestOutProbe.ExpectComplete();
+        requestOutProbe.ExpectComplete(TestContext.Current.CancellationToken);
         responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
     }
 
@@ -621,6 +621,6 @@ public sealed class RedirectBidiStageTests : StreamTestBase
 
         // Stage absorbs the error (no OnError) but gracefully completes _outResponse
         requestOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300), TestContext.Current.CancellationToken);
-        responseOutProbe.ExpectComplete();
+        responseOutProbe.ExpectComplete(TestContext.Current.CancellationToken);
     }
 }

@@ -1,4 +1,3 @@
-using System.Net.Http;
 using Akka;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;

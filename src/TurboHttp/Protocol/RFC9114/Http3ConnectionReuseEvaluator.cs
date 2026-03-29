@@ -1,4 +1,3 @@
-using System;
 using System.Security.Cryptography.X509Certificates;
 
 namespace TurboHttp.Protocol.RFC9114;

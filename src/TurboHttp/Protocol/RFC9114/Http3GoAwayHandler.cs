@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 GOAWAY Processing  —  RFC 9114 §5.2, §7.2.6
@@ -24,31 +21,28 @@ namespace TurboHttp.Protocol.RFC9114;
 /// Handles both receiving GOAWAY from the server and sending GOAWAY
 /// to the server for graceful client-initiated shutdown.
 /// </summary>
-public sealed class Http3GoAwayHandler
+public sealed class   Http3GoAwayHandler
 {
-    private long _lastServerGoAwayStreamId = -1;
-    private long _lastClientGoAwayPushId = -1;
-
     /// <summary>
     /// Whether the server has sent a GOAWAY frame on this connection.
     /// </summary>
-    public bool IsGoingAway => _lastServerGoAwayStreamId >= 0;
+    public bool IsGoingAway => LastStreamId >= 0;
 
     /// <summary>
     /// The last stream ID from the most recent server GOAWAY, or -1 if none received.
     /// Streams with ID &gt;= this value were NOT processed by the server.
     /// </summary>
-    public long LastStreamId => _lastServerGoAwayStreamId;
+    public long LastStreamId { get; private set; } = -1;
 
     /// <summary>
     /// Whether the client has sent a GOAWAY frame on this connection.
     /// </summary>
-    public bool ClientGoAwaySent => _lastClientGoAwayPushId >= 0;
+    public bool ClientGoAwaySent => ClientGoAwayPushId >= 0;
 
     /// <summary>
     /// The push ID from the most recent client GOAWAY, or -1 if none sent.
     /// </summary>
-    public long ClientGoAwayPushId => _lastClientGoAwayPushId;
+    public long ClientGoAwayPushId { get; private set; } = -1;
 
     /// <summary>
     /// Processes a GOAWAY frame received from the server on the control stream.
@@ -83,14 +77,14 @@ public sealed class Http3GoAwayHandler
 
         // RFC 9114 §5.2: An endpoint MAY send multiple GOAWAY frames,
         // but the identifier MUST NOT increase.
-        if (_lastServerGoAwayStreamId >= 0 && streamId > _lastServerGoAwayStreamId)
+        if (LastStreamId >= 0 && streamId > LastStreamId)
         {
             throw new Http3Exception(
                 Http3ErrorCode.IdError,
-                $"Server GOAWAY stream ID {streamId} must not increase beyond previous value {_lastServerGoAwayStreamId} (RFC 9114 §5.2).");
+                $"Server GOAWAY stream ID {streamId} must not increase beyond previous value {LastStreamId} (RFC 9114 §5.2).");
         }
 
-        _lastServerGoAwayStreamId = streamId;
+        LastStreamId = streamId;
     }
 
     /// <summary>
@@ -110,7 +104,7 @@ public sealed class Http3GoAwayHandler
             return false;
         }
 
-        return streamId >= _lastServerGoAwayStreamId;
+        return streamId >= LastStreamId;
     }
 
     /// <summary>
@@ -132,7 +126,7 @@ public sealed class Http3GoAwayHandler
         var retryable = new List<long>();
         foreach (var id in activeStreamIds)
         {
-            if (id >= _lastServerGoAwayStreamId)
+            if (id >= LastStreamId)
             {
                 retryable.Add(id);
             }
@@ -155,7 +149,7 @@ public sealed class Http3GoAwayHandler
             return true;
         }
 
-        return nextStreamId < _lastServerGoAwayStreamId;
+        return nextStreamId < LastStreamId;
     }
 
     /// <summary>
@@ -183,14 +177,14 @@ public sealed class Http3GoAwayHandler
         }
 
         // RFC 9114 §5.2: The identifier MUST NOT increase between GOAWAY frames.
-        if (_lastClientGoAwayPushId >= 0 && pushId > _lastClientGoAwayPushId)
+        if (ClientGoAwayPushId >= 0 && pushId > ClientGoAwayPushId)
         {
             throw new Http3Exception(
                 Http3ErrorCode.IdError,
-                $"Client GOAWAY push ID {pushId} must not increase beyond previous value {_lastClientGoAwayPushId} (RFC 9114 §5.2).");
+                $"Client GOAWAY push ID {pushId} must not increase beyond previous value {ClientGoAwayPushId} (RFC 9114 §5.2).");
         }
 
-        _lastClientGoAwayPushId = pushId;
+        ClientGoAwayPushId = pushId;
         return new Http3GoAwayFrame(pushId);
     }
 }

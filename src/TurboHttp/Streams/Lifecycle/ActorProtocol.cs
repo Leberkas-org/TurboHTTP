@@ -1,5 +1,3 @@
-using System;
-using System.Net.Http;
 using System.Threading.Channels;
 
 namespace TurboHttp.Streams.Lifecycle;

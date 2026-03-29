@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -237,7 +237,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     }
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         // Reader task: continuously read cookies
         var reader = Task.Run(async () =>
@@ -262,7 +262,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     }
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         // Let them run for a short time
         await Task.Delay(500, TestContext.Current.CancellationToken);
@@ -347,7 +347,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     }
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         var clearer = Task.Run(async () =>
         {
@@ -370,7 +370,7 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                     }
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         await Task.WhenAll(writer, clearer);
         Assert.Empty(exceptions);
@@ -917,7 +917,8 @@ public sealed class TaskFixVerificationTests : StreamTestBase
                 }));
 
         var (serverBoundTask, signalTask) = graph.Run(Materializer);
-        var serverBound = await serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        var serverBound =
+            await serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         var signals = await signalTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         return (serverBound, signals);

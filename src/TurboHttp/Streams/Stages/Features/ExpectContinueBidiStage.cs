@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;

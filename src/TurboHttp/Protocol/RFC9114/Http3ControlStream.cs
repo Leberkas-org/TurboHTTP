@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 Control Stream State Machine  —  RFC 9114 §6.2.1

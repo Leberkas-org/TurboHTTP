@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using TurboHttp.Protocol.RFC9204;
 
 namespace TurboHttp.Protocol.RFC9114;
@@ -20,8 +17,6 @@ namespace TurboHttp.Protocol.RFC9114;
 /// </summary>
 public sealed class Http3ResponseDecoder
 {
-    private readonly QpackDecoder _qpack;
-
     /// <summary>
     /// Creates a new HTTP/3 response decoder.
     /// </summary>
@@ -35,20 +30,20 @@ public sealed class Http3ResponseDecoder
     /// </param>
     public Http3ResponseDecoder(int maxTableCapacity = 4096, int maxBlockedStreams = 100)
     {
-        _qpack = new QpackDecoder(maxTableCapacity, maxBlockedStreams);
+        QpackDecoder = new QpackDecoder(maxTableCapacity, maxBlockedStreams);
     }
 
     /// <summary>
     /// The underlying QPACK decoder (for inspection and testing).
     /// </summary>
-    public QpackDecoder QpackDecoder => _qpack;
+    public QpackDecoder QpackDecoder { get; }
 
     /// <summary>
     /// Decoder instructions emitted during the most recent <see cref="Decode"/> call.
     /// These must be sent on the QPACK decoder instruction stream (unidirectional stream
     /// type 0x03) after processing the response.
     /// </summary>
-    public ReadOnlyMemory<byte> DecoderInstructions => _qpack.DecoderInstructions;
+    public ReadOnlyMemory<byte> DecoderInstructions => QpackDecoder.DecoderInstructions;
 
     /// <summary>
     /// Decodes a sequence of HTTP/3 frames into an <see cref="HttpResponseMessage"/>.
@@ -89,7 +84,7 @@ public sealed class Http3ResponseDecoder
         }
 
         // Decode headers via QPACK
-        var headers = _qpack.Decode(headersFrame.HeaderBlock.Span, streamId);
+        var headers = QpackDecoder.Decode(headersFrame.HeaderBlock.Span, streamId);
 
         // Validate pseudo-headers and field names/values
         ValidateResponsePseudoHeaders(headers);
@@ -170,7 +165,7 @@ public sealed class Http3ResponseDecoder
     public IReadOnlyList<(string Name, string Value)> DecodeHeaders(Http3HeadersFrame headersFrame, int streamId = 0)
     {
         ArgumentNullException.ThrowIfNull(headersFrame);
-        return _qpack.Decode(headersFrame.HeaderBlock.Span, streamId);
+        return QpackDecoder.Decode(headersFrame.HeaderBlock.Span, streamId);
     }
 
     /// <summary>

@@ -561,7 +561,7 @@ public sealed class RetryBidiStageTests : StreamTestBase
         reqPubSub.SendError(new Exception("request boom"));
 
         // Stage absorbs the error (no OnError) but gracefully completes _outRequest
-        requestOutProbe.ExpectComplete();
+        requestOutProbe.ExpectComplete(TestContext.Current.CancellationToken);
         responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
     }
 
@@ -594,7 +594,7 @@ public sealed class RetryBidiStageTests : StreamTestBase
 
         // Stage absorbs the error (no OnError) but gracefully completes _outResponse
         requestOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(300), TestContext.Current.CancellationToken);
-        responseOutProbe.ExpectComplete();
+        responseOutProbe.ExpectComplete(TestContext.Current.CancellationToken);
     }
 
     // ============================
@@ -650,7 +650,7 @@ public sealed class RetryBidiStageTests : StreamTestBase
         Assert.Same(finalResponse, responseOutProbe.ExpectNext(TestContext.Current.CancellationToken));
 
         // Now OutRequest should complete (upstream done, no more retries, in-flight resolved)
-        requestOutProbe.ExpectComplete();
+        requestOutProbe.ExpectComplete(TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9110-9.2-RBIDI-023: OutRequest completes when upstream finished and no retry pending")]
@@ -695,6 +695,6 @@ public sealed class RetryBidiStageTests : StreamTestBase
         Assert.Same(response, responseOutProbe.ExpectNext(TestContext.Current.CancellationToken));
 
         // OutRequest should complete (upstream done, no retries, in-flight resolved)
-        requestOutProbe.ExpectComplete();
+        requestOutProbe.ExpectComplete(TestContext.Current.CancellationToken);
     }
 }

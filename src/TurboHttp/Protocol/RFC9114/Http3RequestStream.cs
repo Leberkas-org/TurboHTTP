@@ -1,5 +1,3 @@
-using System;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 Bidirectional Request Stream Lifecycle  —  RFC 9114 §6.1

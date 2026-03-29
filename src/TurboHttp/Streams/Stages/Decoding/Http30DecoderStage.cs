@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;

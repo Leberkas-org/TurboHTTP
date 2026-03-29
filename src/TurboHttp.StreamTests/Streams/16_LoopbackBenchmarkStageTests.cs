@@ -51,7 +51,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
             Version = HttpVersion.Version11
         });
 
-        var response = await responses.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        var response = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         queue.Complete();
@@ -69,7 +69,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
             {
                 Version = HttpVersion.Version11
             });
-            var r = await responses.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            var r = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         }
 
@@ -85,7 +85,7 @@ public sealed class LoopbackBenchmarkStageTests : EngineTestBase
         {
             Version = HttpVersion.Version11
         });
-        await responses.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // Completing the queue must not throw
         queue.Complete();

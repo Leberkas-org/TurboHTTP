@@ -1,8 +1,5 @@
-using System;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;

@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading;
-
 namespace TurboHttp.Protocol.RFC6265;
 
 /// <summary>

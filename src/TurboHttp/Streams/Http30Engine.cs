@@ -1,6 +1,4 @@
-using System;
 using System.Buffers;
-using System.Net.Http;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;

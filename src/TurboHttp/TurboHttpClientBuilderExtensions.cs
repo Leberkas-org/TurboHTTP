@@ -1,5 +1,3 @@
-using System;
-using System.Net.Http;
 using Akka.Actor;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHttp.Protocol.RFC6265;

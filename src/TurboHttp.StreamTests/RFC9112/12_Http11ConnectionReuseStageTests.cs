@@ -342,8 +342,8 @@ public sealed class Http11ConnectionReuseStageTests : StreamTestBase
         // Fail upstream — stage absorbs error (no OnError) but completes gracefully
         pubSub.SendError(new Exception("upstream boom"));
 
-        probe0.ExpectComplete();
-        probe1.ExpectComplete();
+        probe0.ExpectComplete(TestContext.Current.CancellationToken);
+        probe1.ExpectComplete(TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000, DisplayName = "RFC9112-9.3-CRUS-016: H10 bypass — multiple responses pass through, signal outlet emits nothing")]

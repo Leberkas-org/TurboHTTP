@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 PUSH_PROMISE Validation  —  RFC 9114 §4.6, §7.2.5

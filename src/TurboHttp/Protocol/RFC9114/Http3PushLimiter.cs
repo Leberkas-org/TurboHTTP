@@ -1,5 +1,3 @@
-using System;
-
 namespace TurboHttp.Protocol.RFC9114;
 
 // HTTP/3 DoS Prevention — Push Limiting  —  RFC 9114 §10.5
@@ -30,9 +28,6 @@ public sealed class Http3PushLimiter
     /// </summary>
     public const int DefaultMaxPushCount = 100;
 
-    private readonly int _maxPushCount;
-    private int _pushCount;
-
     /// <summary>
     /// Creates a push limiter with the specified maximum push count.
     /// </summary>
@@ -51,28 +46,28 @@ public sealed class Http3PushLimiter
                 "Maximum push count must be non-negative.");
         }
 
-        _maxPushCount = maxPushCount;
+        MaxPushCount = maxPushCount;
     }
 
     /// <summary>
     /// The configured maximum number of push promises for this connection.
     /// </summary>
-    public int MaxPushCount => _maxPushCount;
+    public int MaxPushCount { get; }
 
     /// <summary>
     /// The number of push promises recorded so far.
     /// </summary>
-    public int PushCount => _pushCount;
+    public int PushCount { get; private set; }
 
     /// <summary>
     /// The number of remaining push promises before the limit is reached.
     /// </summary>
-    public int Remaining => _maxPushCount - _pushCount;
+    public int Remaining => MaxPushCount - PushCount;
 
     /// <summary>
     /// Whether the push limit has been reached (no more pushes will be accepted).
     /// </summary>
-    public bool IsExhausted => _pushCount >= _maxPushCount;
+    public bool IsExhausted => PushCount >= MaxPushCount;
 
     /// <summary>
     /// Records an incoming push promise and enforces the limit.
@@ -84,14 +79,14 @@ public sealed class Http3PushLimiter
     /// </exception>
     public void RecordPush()
     {
-        if (_pushCount >= _maxPushCount)
+        if (PushCount >= MaxPushCount)
         {
             throw new Http3Exception(
                 Http3ErrorCode.ExcessiveLoad,
-                $"Server exceeded push limit of {_maxPushCount} push promises (RFC 9114 §10.5).");
+                $"Server exceeded push limit of {MaxPushCount} push promises (RFC 9114 §10.5).");
         }
 
-        _pushCount++;
+        PushCount++;
     }
 
     /// <summary>
@@ -99,5 +94,5 @@ public sealed class Http3PushLimiter
     /// This is <c>MaxPushCount - 1</c> (since push IDs are zero-based),
     /// or -1 if MaxPushCount is 0 (no pushes allowed).
     /// </summary>
-    public long RecommendedMaxPushId => _maxPushCount > 0 ? _maxPushCount - 1 : -1;
+    public long RecommendedMaxPushId => MaxPushCount > 0 ? MaxPushCount - 1 : -1;
 }

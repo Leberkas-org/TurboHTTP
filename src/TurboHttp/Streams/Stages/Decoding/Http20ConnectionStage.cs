@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Akka.Event;
 using Akka.Streams;
@@ -68,18 +67,11 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
 
     private readonly int _initialRecvWindowSize;
     private readonly int _maxConcurrentStreams;
-    private readonly StreamLimiterHandle? _limiterHandle;
 
     public Http20ConnectionStage(int initialRecvWindowSize = 65535, int maxConcurrentStreams = 100)
     {
         _initialRecvWindowSize = initialRecvWindowSize;
         _maxConcurrentStreams = maxConcurrentStreams;
-    }
-
-    internal Http20ConnectionStage(int initialRecvWindowSize, int maxConcurrentStreams, StreamLimiterHandle limiterHandle)
-        : this(initialRecvWindowSize, maxConcurrentStreams)
-    {
-        _limiterHandle = limiterHandle;
     }
 
     public override Http20ConnectionShape Shape =>
@@ -92,7 +84,6 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
     private sealed class Logic : GraphStageLogic
     {
         private readonly Http20ConnectionStage _stage;
-        private readonly StreamLimiterHandle? _limiterHandle;
         private int _connectionWindow;
         private int _initialRecvStreamWindow;
         private int _initialSendStreamWindow = 65535;
@@ -108,7 +99,6 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
         public Logic(Http20ConnectionStage stage) : base(stage.Shape)
         {
             _stage = stage;
-            _limiterHandle = stage._limiterHandle;
             _connectionWindow = stage._initialRecvWindowSize;
             _initialRecvStreamWindow = stage._initialRecvWindowSize;
             _maxConcurrentStreams = stage._maxConcurrentStreams;
@@ -281,7 +271,6 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
                 if (key == SettingsParameter.MaxConcurrentStreams)
                 {
                     _maxConcurrentStreams = (int)value;
-                    _limiterHandle?.OnMaxConcurrentStreamsChanged?.Invoke(_maxConcurrentStreams);
                     Emit(_stage._outSignal, new MaxConcurrentStreamsItem(_maxConcurrentStreams)
                     {
                         Key = _endpoint
@@ -360,7 +349,6 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             if (_activeStreamIds.Remove(streamId))
             {
                 _activeStreams--;
-                _limiterHandle?.OnStreamClosed?.Invoke();
                 TryDrainOutbound();
             }
 

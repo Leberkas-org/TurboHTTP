@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Net.Http;
 using Akka;
 using Akka.Event;
 using Akka.Streams;

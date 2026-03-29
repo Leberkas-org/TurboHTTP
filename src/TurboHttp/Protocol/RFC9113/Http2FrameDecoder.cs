@@ -1,6 +1,4 @@
-using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 
 namespace TurboHttp.Protocol.RFC9113;
 
@@ -18,12 +16,12 @@ public sealed class Http2FrameDecoder
     private const uint StreamIdMask = 0x7FFFFFFFu;
 
     // RFC 9113 §6.3 / §6.4: PRIORITY and RST_STREAM payloads are exactly 4 bytes.
-    private const int PriorityFieldSize = 5;  // stream dependency (4) + weight (1)
+    private const int PriorityFieldSize = 5; // stream dependency (4) + weight (1)
     private const int RstStreamPayloadSize = 4;
 
     // RFC 9113 §6.5: each SETTINGS parameter is a 6-byte identifier+value pair.
     private const int SettingsEntrySize = 6;
-    private const int SettingsValueOffset = 2;  // value is at bytes [2..6) within the entry
+    private const int SettingsValueOffset = 2; // value is at bytes [2..6) within the entry
 
     // RFC 9113 §6.5.2: SETTINGS_MAX_FRAME_SIZE must be in [2^14, 2^24−1].
     private const uint MinMaxFrameSize = 16_384;
@@ -107,8 +105,7 @@ public sealed class Http2FrameDecoder
 
             FrameType.Continuation => streamId == 0
                 ? throw new Http2Exception(
-                    "RFC 9113 §6.10: CONTINUATION frame MUST be associated with a stream; stream 0 is invalid.",
-                    Http2ErrorCode.ProtocolError)
+                    "RFC 9113 §6.10: CONTINUATION frame MUST be associated with a stream; stream 0 is invalid.")
                 : new ContinuationFrame(
                     streamId,
                     payload,
@@ -147,8 +144,7 @@ public sealed class Http2FrameDecoder
         if (streamId == 0)
         {
             throw new Http2Exception(
-                "RFC 9113 §6.1: DATA frame MUST be associated with a stream; stream 0 is invalid.",
-                Http2ErrorCode.ProtocolError);
+                "RFC 9113 §6.1: DATA frame MUST be associated with a stream; stream 0 is invalid.");
         }
 
         var endStream = (flags & (byte)DataFlags.EndStream) != 0;
@@ -158,15 +154,13 @@ public sealed class Http2FrameDecoder
         {
             if (data.IsEmpty)
             {
-                throw new Http2Exception("DATA PADDED frame: payload is empty",
-                    Http2ErrorCode.ProtocolError);
+                throw new Http2Exception("DATA PADDED frame: payload is empty");
             }
 
             var padLen = data.Span[0];
             if (PadLengthFieldSize + padLen > data.Length)
             {
-                throw new Http2Exception("DATA PADDED frame: pad_length exceeds payload size",
-                    Http2ErrorCode.ProtocolError);
+                throw new Http2Exception("DATA PADDED frame: pad_length exceeds payload size");
             }
 
             data = data.Slice(PadLengthFieldSize, data.Length - PadLengthFieldSize - padLen);
@@ -185,15 +179,13 @@ public sealed class Http2FrameDecoder
         {
             if (data.IsEmpty)
             {
-                throw new Http2Exception("HEADERS PADDED frame: payload is empty",
-                    Http2ErrorCode.ProtocolError);
+                throw new Http2Exception("HEADERS PADDED frame: payload is empty");
             }
 
             var padLen = data.Span[0];
             if (PadLengthFieldSize + padLen > data.Length)
             {
-                throw new Http2Exception("HEADERS PADDED frame: pad_length exceeds payload size",
-                    Http2ErrorCode.ProtocolError);
+                throw new Http2Exception("HEADERS PADDED frame: pad_length exceeds payload size");
             }
 
             data = data.Slice(PadLengthFieldSize, data.Length - PadLengthFieldSize - padLen);
@@ -246,7 +238,7 @@ public sealed class Http2FrameDecoder
             var key = (SettingsParameter)BinaryPrimitives.ReadUInt16BigEndian(span[i..]);
             var value = BinaryPrimitives.ReadUInt32BigEndian(span[(i + SettingsValueOffset)..]);
 
-            if (key == SettingsParameter.MaxFrameSize && (value < MinMaxFrameSize || value > MaxMaxFrameSize))
+            if (key == SettingsParameter.MaxFrameSize && value is < MinMaxFrameSize or > MaxMaxFrameSize)
             {
                 throw new Http2Exception(
                     $"RFC 9113 §6.5.2: SETTINGS_MAX_FRAME_SIZE {value} is outside the valid range [{MinMaxFrameSize}, {MaxMaxFrameSize}].");
@@ -270,7 +262,9 @@ public sealed class Http2FrameDecoder
         var span = payload.Span;
         var lastStream = (int)(BinaryPrimitives.ReadUInt32BigEndian(span) & StreamIdMask);
         var errorCode = (Http2ErrorCode)BinaryPrimitives.ReadUInt32BigEndian(span[GoAwayErrorCodeOffset..]);
-        var debugData = span.Length > GoAwayMinPayloadSize ? payload[GoAwayMinPayloadSize..] : ReadOnlyMemory<byte>.Empty;
+        var debugData = span.Length > GoAwayMinPayloadSize
+            ? payload[GoAwayMinPayloadSize..]
+            : ReadOnlyMemory<byte>.Empty;
         return new GoAwayFrame(lastStream, errorCode, debugData);
     }
 
@@ -321,22 +315,19 @@ public sealed class Http2FrameDecoder
             if (type != FrameType.Continuation)
             {
                 throw new Http2Exception(
-                    $"RFC 9113 §6.10: Expected CONTINUATION frame on stream {_awaitingContinuationStreamId}, but received {type}.",
-                    Http2ErrorCode.ProtocolError);
+                    $"RFC 9113 §6.10: Expected CONTINUATION frame on stream {_awaitingContinuationStreamId}, but received {type}.");
             }
 
             if (streamId != _awaitingContinuationStreamId)
             {
                 throw new Http2Exception(
-                    $"RFC 9113 §6.10: Expected CONTINUATION on stream {_awaitingContinuationStreamId}, but received on stream {streamId}.",
-                    Http2ErrorCode.ProtocolError);
+                    $"RFC 9113 §6.10: Expected CONTINUATION on stream {_awaitingContinuationStreamId}, but received on stream {streamId}.");
             }
         }
         else if (type == FrameType.Continuation)
         {
             throw new Http2Exception(
-                "RFC 9113 §6.10: CONTINUATION frame received without preceding HEADERS or PUSH_PROMISE.",
-                Http2ErrorCode.ProtocolError);
+                "RFC 9113 §6.10: CONTINUATION frame received without preceding HEADERS or PUSH_PROMISE.");
         }
     }
 
@@ -347,24 +338,14 @@ public sealed class Http2FrameDecoder
     /// </summary>
     private void UpdateContinuationState(Http2Frame frame)
     {
-        switch (frame)
+        _awaitingContinuationStreamId = frame switch
         {
-            case HeadersFrame h when !h.EndHeaders:
-                _awaitingContinuationStreamId = h.StreamId;
-                break;
-            case HeadersFrame:
-                _awaitingContinuationStreamId = 0;
-                break;
-            case PushPromiseFrame pp when !pp.EndHeaders:
-                _awaitingContinuationStreamId = pp.StreamId;
-                break;
-            case PushPromiseFrame:
-                _awaitingContinuationStreamId = 0;
-                break;
-            case ContinuationFrame c when c.EndHeaders:
-                _awaitingContinuationStreamId = 0;
-                break;
-        }
+            HeadersFrame { EndHeaders: false } h => h.StreamId,
+            HeadersFrame => 0,
+            PushPromiseFrame { EndHeaders: false } pp => pp.StreamId,
+            PushPromiseFrame or ContinuationFrame { EndHeaders: true } => 0,
+            _ => _awaitingContinuationStreamId
+        };
     }
 
     private static ReadOnlyMemory<byte> Combine(ReadOnlyMemory<byte> a, ReadOnlyMemory<byte> b)

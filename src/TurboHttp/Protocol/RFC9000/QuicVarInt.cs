@@ -1,4 +1,3 @@
-using System;
 using System.Buffers.Binary;
 
 namespace TurboHttp.Protocol.RFC9000;

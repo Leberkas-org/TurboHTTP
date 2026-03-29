@@ -128,7 +128,8 @@ public sealed class RequestEnricherStageTests : StreamTestBase
         Assert.Null(result.RequestUri);
 
         // A Warning must have been published to the event bus with stage name in the message.
-        var warning = probe.ExpectMsg<Akka.Event.Warning>(TimeSpan.FromSeconds(5));
+        var warning = probe.ExpectMsg<Akka.Event.Warning>(TimeSpan.FromSeconds(5),
+            cancellationToken: TestContext.Current.CancellationToken);
         Assert.Contains("RequestEnricherStage", warning.ToString());
 
         Sys.EventStream.Unsubscribe(probe.Ref, typeof(Akka.Event.Warning));
@@ -161,7 +162,8 @@ public sealed class RequestEnricherStageTests : StreamTestBase
         var result = Assert.Single(results);
         Assert.Equal(relativeUri, result.RequestUri);
 
-        var warning = probe.ExpectMsg<Akka.Event.Warning>(TimeSpan.FromSeconds(5));
+        var warning = probe.ExpectMsg<Akka.Event.Warning>(TimeSpan.FromSeconds(5),
+            cancellationToken: TestContext.Current.CancellationToken);
         Assert.Contains("RequestEnricherStage", warning.ToString());
 
         Sys.EventStream.Unsubscribe(probe.Ref, typeof(Akka.Event.Warning));
