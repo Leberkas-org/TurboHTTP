@@ -52,7 +52,7 @@ public sealed class MaxConcurrentStreamsIntegrationTests : IAsyncLifetime
         var tasks = Enumerable.Range(0, 5)
             .Select(i =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"/delay/200");
+                var request = new HttpRequestMessage(HttpMethod.Get, "/delay/200");
                 return _helper!.Client.SendAsync(request, cts.Token);
             })
             .ToArray();

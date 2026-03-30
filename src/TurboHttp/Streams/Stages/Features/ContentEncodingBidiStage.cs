@@ -11,7 +11,7 @@ namespace TurboHttp.Streams.Stages.Features;
 /// Bidirectional stage that handles both request body compression and response body
 /// decompression for Content-Encoding (RFC 9110 §8.4).
 /// <para>
-/// <b>Request direction (In1→Out1):</b> When a <see cref="RequestCompressionPolicy"/> is
+/// <b>Request direction (In1→Out1):</b> When a <see cref="CompressionPolicy"/> is
 /// provided, requests with a body at or above the threshold are compressed. Otherwise
 /// requests pass through unchanged.
 /// </para>
@@ -26,18 +26,21 @@ internal sealed class ContentEncodingBidiStage
     : GraphStage<BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage>>
 {
     private readonly bool _automaticDecompression;
-    private readonly RequestCompressionPolicy? _compressionPolicy;
+    private readonly CompressionPolicy? _compressionPolicy;
 
     private readonly Inlet<HttpRequestMessage> _inRequest = new("ContentEncoding.In.Request");
     private readonly Outlet<HttpRequestMessage> _outRequest = new("ContentEncoding.Out.Request");
     private readonly Inlet<HttpResponseMessage> _inResponse = new("ContentEncoding.In.Response");
     private readonly Outlet<HttpResponseMessage> _outResponse = new("ContentEncoding.Out.Response");
 
-    public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape { get; }
+    public override BidiShape<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage> Shape
+    {
+        get;
+    }
 
     public ContentEncodingBidiStage(
         bool automaticDecompression = true,
-        RequestCompressionPolicy? compressionPolicy = null)
+        CompressionPolicy? compressionPolicy = null)
     {
         _automaticDecompression = automaticDecompression;
         _compressionPolicy = compressionPolicy;
@@ -118,7 +121,7 @@ internal sealed class ContentEncodingBidiStage
                 onDownstreamFinish: _ => Cancel(stage._inResponse));
         }
 
-        private static HttpRequestMessage CompressIfNeeded(HttpRequestMessage request, RequestCompressionPolicy policy)
+        private static HttpRequestMessage CompressIfNeeded(HttpRequestMessage request, CompressionPolicy policy)
         {
             if (request.Content is null)
             {

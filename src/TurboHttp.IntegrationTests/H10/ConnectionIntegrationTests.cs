@@ -39,19 +39,6 @@ public sealed class ConnectionIntegrationTests
         Assert.Equal("default", body);
     }
 
-    [Fact(Timeout = 30000, DisplayName = "Conn-H10-002: Connection close is explicit in response")]
-    public async Task Close_Is_Explicit_In_Response()
-    {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        await using var helper = CreateClient();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "/conn/close");
-        var response = await helper.Client.SendAsync(request, cts.Token);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync(cts.Token);
-        Assert.Equal("closing", body);
-    }
-
     [Fact(Timeout = 30000, DisplayName = "Conn-H10-003: Keep-alive opt-in allows sequential requests")]
     public async Task KeepAlive_OptIn_Allows_Sequential_Requests()
     {

@@ -41,13 +41,13 @@ Two architectural improvements to TurboHttp's stream pipeline:
 **Parallel:** yes — can run alongside TASK-032-004
 
 **Acceptance Criteria:**
-- [ ] `ConnectionPolicy` gains `MaxHttp2ConnectionsPerHost` (default `2`)
-- [ ] `ConnectionPolicy` gains `MaxHttp3ConnectionsPerHost` (default `2`)
-- [ ] `ConnectionPolicy` gains `SlotQueueSize` (default `1`) — per-slot Source.Queue buffer size; must not exceed `1` to ensure `Offering=true` propagates after at most one queued item
-- [ ] HTTP/1.0 and HTTP/1.1 are hard-coded to 1 connection per host (not configurable via these properties)
-- [ ] XML doc comments explain each property
-- [ ] Existing `ConnectionPolicy` tests still pass
-- [ ] Build succeeds with zero errors
+- [x] `ConnectionPolicy` gains `MaxHttp2ConnectionsPerHost` (default `2`)
+- [x] `ConnectionPolicy` gains `MaxHttp3ConnectionsPerHost` (default `2`)
+- [x] `ConnectionPolicy` gains `SlotQueueSize` (default `1`) — per-slot Source.Queue buffer size; must not exceed `1` to ensure `Offering=true` propagates after at most one queued item
+- [x] HTTP/1.0 and HTTP/1.1 are hard-coded to 1 connection per host (not configurable via these properties)
+- [x] XML doc comments explain each property
+- [x] Existing `ConnectionPolicy` tests still pass
+- [x] Build succeeds with zero errors
 
 ---
 
@@ -61,19 +61,19 @@ Two architectural improvements to TurboHttp's stream pipeline:
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] New nested class `SubflowGroup` holds `List<SubflowState>` slots for one key
-- [ ] `SubflowState` gains `HasCapacity` property: `!IsDead && !Offering`
-- [ ] `_subflows` changes from `Dictionary<RequestEndpoint, SubflowState>` to `Dictionary<RequestEndpoint, SubflowGroup>`
-- [ ] New stage constructor parameter `maxSubstreamsPerKey` (int, default `1`)
-- [ ] `HandlePush` routing logic:
+- [x] New nested class `SubflowGroup` holds `List<SubflowState>` slots for one key
+- [x] `SubflowState` gains `HasCapacity` property: `!IsDead && !Offering`
+- [x] `_subflows` changes from `Dictionary<RequestEndpoint, SubflowState>` to `Dictionary<RequestEndpoint, SubflowGroup>`
+- [x] New stage constructor parameter `maxSubstreamsPerKey` (int, default `1`)
+- [x] `HandlePush` routing logic:
   - Find first slot with `HasCapacity = true` → route there
   - If none found: clean dead slots, check per-key and total limits → create new slot OR route to least-loaded slot
-- [ ] Dead slot handling: pending items transferred to another alive slot in the same group, or new slot created (replaces `ReplaceSubstream`)
-- [ ] `TryFinish`, `TryCompleteStage` iterate `group.Slots` instead of single `SubflowState`
-- [ ] `_onOfferComplete` correctly identifies the state by slot reference within the group
-- [ ] `maxSubstreamsPerKey = 1` behaves identically to the previous implementation (backward compat)
-- [ ] All existing `GroupByRequestKeyStage` tests pass unchanged
-- [ ] Build succeeds with zero errors
+- [x] Dead slot handling: pending items transferred to another alive slot in the same group, or new slot created (replaces `ReplaceSubstream`)
+- [x] `TryFinish`, `TryCompleteStage` iterate `group.Slots` instead of single `SubflowState`
+- [x] `_onOfferComplete` correctly identifies the state by slot reference within the group
+- [x] `maxSubstreamsPerKey = 1` behaves identically to the previous implementation (backward compat)
+- [x] All existing `GroupByRequestKeyStage` tests pass unchanged
+- [x] Build succeeds with zero errors
 
 ---
 
@@ -87,11 +87,11 @@ Two architectural improvements to TurboHttp's stream pipeline:
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `GroupByRequestKey<T, TMat>` extension gains `maxSubstreamsPerKey = 1` parameter
-- [ ] `GroupByRequestKey<T, TMat>` extension gains `slotQueueSize = 64` parameter
-- [ ] `HostKeyMergeBack<T, TMat>` stores and passes both parameters to `GroupByRequestKeyStage`
-- [ ] Existing call sites compile without changes (defaults preserve old behavior)
-- [ ] Build succeeds with zero errors
+- [x] `GroupByRequestKey<T, TMat>` extension gains `maxSubstreamsPerKey = 1` parameter
+- [x] `GroupByRequestKey<T, TMat>` extension gains `slotQueueSize = 64` parameter
+- [x] `HostKeyMergeBack<T, TMat>` stores and passes both parameters to `GroupByRequestKeyStage`
+- [x] Existing call sites compile without changes (defaults preserve old behavior)
+- [x] Build succeeds with zero errors
 
 ---
 
@@ -105,17 +105,17 @@ Two architectural improvements to TurboHttp's stream pipeline:
 **Parallel:** no
 
 **Acceptance Criteria:**
-- [ ] `BuildProtocolFlow<TEngine>` gains `maxSubstreamsPerKey` parameter
-- [ ] `Build()` reads `ConnectionPolicy` from `clientOptions` and passes per-protocol values:
+- [x] `BuildProtocolFlow<TEngine>` gains `maxSubstreamsPerKey` parameter
+- [x] `Build()` reads `ConnectionPolicy` from `clientOptions` and passes per-protocol values:
   - HTTP/1.0: `maxSubstreamsPerKey = 1`
   - HTTP/1.1: `maxSubstreamsPerKey = policy.MaxConnectionsPerHost`
   - HTTP/2.0: `maxSubstreamsPerKey = policy.MaxHttp2ConnectionsPerHost`
   - HTTP/3.0: `maxSubstreamsPerKey = policy.MaxHttp3ConnectionsPerHost`
-- [ ] `slotQueueSize` forwarded from `policy.SlotQueueSize`
-- [ ] All 4 protocol branches wrapped in `Flow.LazyFlow(() => Task.FromResult(...)).MapMaterializedValue(_ => NotUsed.Instance)`
-- [ ] `highThroughputBuffer` attributes preserved on lazy-wrapped flows
-- [ ] Existing integration tests pass (engines still function when used)
-- [ ] Build succeeds with zero errors
+- [x] `slotQueueSize` forwarded from `policy.SlotQueueSize`
+- [x] All 4 protocol branches wrapped in `Flow.LazyFlow(() => Task.FromResult(...)).MapMaterializedValue(_ => NotUsed.Instance)`
+- [x] `highThroughputBuffer` attributes preserved on lazy-wrapped flows
+- [x] Existing integration tests pass (engines still function when used)
+- [x] Build succeeds with zero errors
 
 ---
 
@@ -130,18 +130,18 @@ Two architectural improvements to TurboHttp's stream pipeline:
 **Model:** sonnet
 
 **Acceptance Criteria:**
-- [ ] New test file `src/TurboHttp.StreamTests/Streams/NN_GroupByRequestKeyMultiSlotTests.cs`
-- [ ] Test: `maxSubstreamsPerKey=1` — single slot per key, same behavior as before
-- [ ] Test: `maxSubstreamsPerKey=2` — first slot backpressured (slow downstream) → second slot created for same key
-- [ ] Test: per-key limit reached + all slots backpressured → routes to least-loaded slot (Pending.Count)
-- [ ] Test: dead slot cleanup — slot terminates with pending items → items transferred to alive slot or new slot
-- [ ] Test: total `maxSubstreams` enforced across all keys (one key cannot consume all slots)
-- [ ] Test: independent fan-out — key A and key B each get separate `SubflowGroup` instances
-- [ ] Test: lazy materialization — only the used protocol branch materializes (at least verify for HTTP/2 path)
-- [ ] File follows project test conventions: `public sealed class`, namespace `TurboHttp.StreamTests.Streams`, `[Fact(Timeout = 5000)]`, file-prefix `NN_`
-- [ ] Max 500 lines per test file — split if needed
-- [ ] All new tests pass
-- [ ] All existing tests still pass (`dotnet test ./src/TurboHttp.sln`)
+- [x] New test file `src/TurboHttp.StreamTests/Streams/NN_GroupByRequestKeyMultiSlotTests.cs`
+- [x] Test: `maxSubstreamsPerKey=1` — single slot per key, same behavior as before
+- [x] Test: `maxSubstreamsPerKey=2` — first slot backpressured (slow downstream) → second slot created for same key
+- [x] Test: per-key limit reached + all slots backpressured → routes to least-loaded slot (Pending.Count)
+- [x] Test: dead slot cleanup — slot terminates with pending items → items transferred to alive slot or new slot
+- [x] Test: total `maxSubstreams` enforced across all keys (one key cannot consume all slots)
+- [x] Test: independent fan-out — key A and key B each get separate `SubflowGroup` instances
+- [x] Test: lazy materialization — only the used protocol branch materializes (at least verify for HTTP/2 path)
+- [x] File follows project test conventions: `public sealed class`, namespace `TurboHttp.StreamTests.Streams`, `[Fact(Timeout = 5000)]`, file-prefix `NN_`
+- [x] Max 500 lines per test file — split if needed
+- [x] All new tests pass
+- [x] All existing tests still pass (`dotnet test ./src/TurboHttp.sln`)
 
 ---
 

@@ -92,7 +92,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         return ValueTask.CompletedTask;
     }
 
-    private Socket CreateSocket()
+    private static Socket CreateSocket()
     {
         // On Linux, new Socket(AddressFamily.Unspecified, ...) throws SocketException
         // "Protocol not supported" because AF_UNSPEC + IPPROTO_TCP is invalid.

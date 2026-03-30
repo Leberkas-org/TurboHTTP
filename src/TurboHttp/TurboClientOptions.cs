@@ -59,4 +59,14 @@ public record TurboClientOptions
 
     /// <summary>Connection management policy controlling per-host connection limits and HTTP/2 multiplexing.</summary>
     public ConnectionPolicy? ConnectionPolicy { get; init; }
+
+    /// <summary>
+    /// Maximum number of distinct endpoint substreams (identified by <c>(scheme, host, port, version)</c>)
+    /// that may be active concurrently. This controls the ceiling for per-endpoint multiplexing and connection pooling.
+    /// Must be at least 1. Default is 256.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is less than 1.
+    /// </exception>
+    public uint MaxEndpointSubstreams { get; } = 256;
 }

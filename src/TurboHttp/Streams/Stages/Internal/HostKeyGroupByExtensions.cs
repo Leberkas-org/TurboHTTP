@@ -18,10 +18,10 @@ internal static class FlowHostKeyGroupByExtensions
     public static SubFlow<T, TMat, Sink<T, TMat>> GroupByRequestKey<T, TMat>(
         this IFlow<T, TMat> flow,
         Func<T, RequestEndpoint> keyFunction,
-        int maxSubstreams,
-        int queueSize = 64)
+        uint maxSubstreams,
+        int maxSubstreamsPerKey = 1)
     {
-        var mergeBack = new HostKeyMergeBack<T, TMat>(flow, keyFunction, maxSubstreams, queueSize);
+        var mergeBack = new HostKeyMergeBack<T, TMat>(flow, keyFunction, maxSubstreams, maxSubstreamsPerKey);
 
         // Flow.Create<T>() gives Flow<T,T,NotUsed>; cast is safe because callers always
         // start with a flow whose TMat is NotUsed (e.g. Flow.Create<HttpRequestMessage>()).

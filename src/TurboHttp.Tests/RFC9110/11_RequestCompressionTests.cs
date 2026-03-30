@@ -3,7 +3,7 @@ using TurboHttp.Protocol.RFC9110;
 namespace TurboHttp.Tests.RFC9110;
 
 /// <summary>
-/// Tests for <see cref="ContentEncodingEncoder"/> and <see cref="RequestCompressionPolicy"/>.
+/// Tests for <see cref="ContentEncodingEncoder"/> and <see cref="CompressionPolicy"/>.
 /// RFC 9110 §8.4 — A sender that applied content encoding MUST generate a Content-Encoding
 /// header field listing the applied encodings.
 /// </summary>
@@ -50,7 +50,7 @@ public sealed class RequestCompressionTests
     [Fact(DisplayName = "RFC9110-8.4-RC-003: Small body not compressed")]
     public void Should_NotCompress_When_BelowThreshold()
     {
-        var policy = new RequestCompressionPolicy { MinBodySizeBytes = 1024 };
+        var policy = new CompressionPolicy { MinBodySizeBytes = 1024 };
         using var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/upload");
         request.Content = new ByteArrayContent(new byte[512]);
         request.Content.Headers.ContentLength = 512;
@@ -98,7 +98,7 @@ public sealed class RequestCompressionTests
     [Fact(DisplayName = "RFC9110-8.4-RC-007: Default policy has 1024 threshold and gzip")]
     public void Should_HaveDefaults_When_DefaultPolicy()
     {
-        var policy = RequestCompressionPolicy.Default;
+        var policy = CompressionPolicy.Default;
 
         Assert.Equal(1024, policy.MinBodySizeBytes);
         Assert.Equal("gzip", policy.Encoding);
@@ -123,7 +123,7 @@ public sealed class RequestCompressionTests
     [Fact(DisplayName = "RFC9110-8.4-RC-009: No body passes through unchanged")]
     public void Should_PassThrough_When_NoBody()
     {
-        var policy = new RequestCompressionPolicy { MinBodySizeBytes = 1024 };
+        var policy = new CompressionPolicy { MinBodySizeBytes = 1024 };
         using var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         Assert.Null(request.Content);

@@ -121,6 +121,7 @@ jobs:
           /p:PackageReleaseNotes="${{ steps.plain-notes.outputs.release-notes }}"
 
       - name: Report Code Coverage
+        if: always()
         uses: danielpalme/ReportGenerator-GitHub-Action@5
         with:
           reports: '${{ env.TEST_OUTPUT_DIRECTORY }}/*cobertura.xml'

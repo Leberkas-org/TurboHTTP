@@ -39,7 +39,7 @@ internal sealed class TurboHttpClientFactory(
             RedirectPolicy: descriptor.RedirectPolicy,
             RetryPolicy: descriptor.RetryPolicy,
             Expect100Policy: descriptor.Expect100Policy,
-            RequestCompressionPolicy: descriptor.RequestCompressionPolicy,
+            CompressionPolicy: descriptor.CompressionPolicy,
             CookieJar: cookieJar,
             CacheStore: cacheStore,
             CachePolicy: descriptor.CachePolicy,

@@ -74,8 +74,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
         _maxConcurrentStreams = maxConcurrentStreams;
     }
 
-    public override Http20ConnectionShape Shape =>
-        new(_inServer, _outStream, _inApp, _outServer, _outSignal);
+    public override Http20ConnectionShape Shape => new(_inServer, _outStream, _inApp, _outServer, _outSignal);
 
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)

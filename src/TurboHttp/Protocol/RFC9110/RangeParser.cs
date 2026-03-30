@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace TurboHttp.Protocol.RFC9110;
 
 /// <summary>
@@ -69,7 +71,7 @@ internal static class RangeParser
         long? length = null;
         if (lengthPart is not "*")
         {
-            if (!long.TryParse(lengthPart, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var parsedLength) || parsedLength < 0)
+            if (!long.TryParse(lengthPart, NumberStyles.None, CultureInfo.InvariantCulture, out var parsedLength) || parsedLength < 0)
             {
                 return null;
             }
@@ -86,7 +88,7 @@ internal static class RangeParser
         // Suffix range: "-NNN"
         if (rangePart.Length > 1 && rangePart[0] == '-' && rangePart[1..].IndexOf('-') < 0)
         {
-            if (!long.TryParse(rangePart[1..], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var suffixLength) || suffixLength < 0)
+            if (!long.TryParse(rangePart[1..], NumberStyles.None, CultureInfo.InvariantCulture, out var suffixLength) || suffixLength < 0)
             {
                 return null;
             }
@@ -104,12 +106,12 @@ internal static class RangeParser
         var firstPart = rangePart[..dashIndex].Trim();
         var lastPart = rangePart[(dashIndex + 1)..].Trim();
 
-        if (!long.TryParse(firstPart, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var first) || first < 0)
+        if (!long.TryParse(firstPart, NumberStyles.None, CultureInfo.InvariantCulture, out var first) || first < 0)
         {
             return null;
         }
 
-        if (!long.TryParse(lastPart, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var last) || last < 0)
+        if (!long.TryParse(lastPart, NumberStyles.None, CultureInfo.InvariantCulture, out var last) || last < 0)
         {
             return null;
         }

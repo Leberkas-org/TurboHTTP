@@ -54,7 +54,7 @@ public sealed class GroupByHostKeyQueueSizeTests : StreamTestBase
 
         var flow = (Flow<HttpRequestMessage, HttpRequestMessage, NotUsed>)
             Flow.Create<HttpRequestMessage>()
-                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16, queueSize: 128)
+                .GroupByRequestKey(RequestEndpoint.FromRequest, maxSubstreams: 16)
                 .MergeSubstreams();
 
         var results = await Source.From(requests)

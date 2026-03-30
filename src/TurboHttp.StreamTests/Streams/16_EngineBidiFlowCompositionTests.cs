@@ -113,7 +113,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         // from the feature chain — it does not prevent protocol-level decompression.
         // This test verifies the pipeline still works correctly with the flag disabled.
         var descriptor = new PipelineDescriptor(
-            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, RequestCompressionPolicy: null, CookieJar: null,
+            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, CompressionPolicy: null, CookieJar: null,
             CacheStore: null, CachePolicy: null, Handlers: [],
             AutomaticDecompression: false);
 
@@ -137,7 +137,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         byte[] Factory() => ++callCount == 1 ? Response503() : Ok200();
 
         var descriptor = new PipelineDescriptor(
-            RedirectPolicy: null, RetryPolicy: new RetryPolicy(), Expect100Policy: null, RequestCompressionPolicy: null,
+            RedirectPolicy: null, RetryPolicy: new RetryPolicy(), Expect100Policy: null, CompressionPolicy: null,
             CookieJar: null, CacheStore: null, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Factory);
@@ -159,7 +159,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         byte[] Factory() => ++callCount == 1 ? Response301() : Ok200();
 
         var descriptor = new PipelineDescriptor(
-            RedirectPolicy: new RedirectPolicy(), RetryPolicy: null, Expect100Policy: null, RequestCompressionPolicy: null,
+            RedirectPolicy: new RedirectPolicy(), RetryPolicy: null, Expect100Policy: null, CompressionPolicy: null,
             CookieJar: null, CacheStore: null, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Factory);
@@ -179,7 +179,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
     {
         var jar = new CookieJar();
         var descriptor = new PipelineDescriptor(
-            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, RequestCompressionPolicy: null,
+            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, CompressionPolicy: null,
             CookieJar: jar, CacheStore: null, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Response200WithSetCookie);
@@ -212,7 +212,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         }
 
         var descriptor = new PipelineDescriptor(
-            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, RequestCompressionPolicy: null,
+            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, CompressionPolicy: null,
             CookieJar: null, CacheStore: store, CachePolicy: null, Handlers: []);
 
         var flow = BuildFlow(descriptor, Factory);
@@ -247,7 +247,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(),
             RetryPolicy: new RetryPolicy(),
-            Expect100Policy: null, RequestCompressionPolicy: null,
+            Expect100Policy: null, CompressionPolicy: null,
             CookieJar: new CookieJar(),
             CacheStore: new CacheStore(),
             CachePolicy: null,
@@ -278,7 +278,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(),
             RetryPolicy: new RetryPolicy(),
-            Expect100Policy: null, RequestCompressionPolicy: null,
+            Expect100Policy: null, CompressionPolicy: null,
             CookieJar: jar,
             CacheStore: store,
             CachePolicy: null,
@@ -345,7 +345,7 @@ public sealed class EngineBidiFlowCompositionTests : EngineTestBase
         compressedBody.CopyTo(responseBytes, headerBytes.Length);
 
         var descriptor = new PipelineDescriptor(
-            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, RequestCompressionPolicy: null, CookieJar: null,
+            RedirectPolicy: null, RetryPolicy: null, Expect100Policy: null, CompressionPolicy: null, CookieJar: null,
             CacheStore: null, CachePolicy: null, Handlers: [],
             AutomaticDecompression: false);
 

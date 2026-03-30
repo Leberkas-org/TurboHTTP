@@ -16,9 +16,9 @@ internal static class IfRangeValidator
     private static readonly string[] HttpDateFormats =
     [
         "r",                                        // RFC 1123
-        "dddd, dd-MMM-yy HH:mm:ss 'GMT'",         // RFC 850
-        "ddd MMM  d HH:mm:ss yyyy",                // asctime
-        "ddd MMM dd HH:mm:ss yyyy",                // asctime (two-digit day)
+        "dddd, dd-MMM-yy HH:mm:ss 'GMT'",           // RFC 850
+        "ddd MMM  d HH:mm:ss yyyy",                 // asctime
+        "ddd MMM dd HH:mm:ss yyyy",                 // asctime (two-digit day)
     ];
 
     /// <summary>
@@ -70,7 +70,7 @@ internal static class IfRangeValidator
         }
     }
 
-    private static string? GetSingleValue(System.Collections.Generic.IEnumerable<string> values)
+    private static string? GetSingleValue(IEnumerable<string> values)
     {
         using var enumerator = values.GetEnumerator();
         return enumerator.MoveNext() ? enumerator.Current : null;
