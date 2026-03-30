@@ -22,6 +22,18 @@ dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-class "Turb
 # Run specific RFC section (by namespace)
 dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.RFC9113"
 
+# Run integration tests (H10/H11/H2/H3/TLS — requires network)
+dotnet test ./src/TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj
+
+# Run integration tests for one HTTP version
+dotnet test ./src/TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj -- --filter-namespace "TurboHttp.IntegrationTests.H11"
+
+# Run Akka.Streams stage tests
+dotnet test ./src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj
+
+# Run stage tests for one RFC section
+dotnet test ./src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj -- --filter-namespace "TurboHttp.StreamTests.RFC9113"
+
 # Run benchmarks
 dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
 ```
@@ -131,7 +143,6 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 - Never use `async void`, `.Result`, or `.Wait()`
 - Always pass `CancellationToken` through async call chains
 - Always use braces for control structures (even single-line)
-- `TreatWarningsAsErrors` is enabled globally in `Directory.Build.props`
 
 ### API Design
 - `Task<T>` instead of Future, `TimeSpan` instead of Duration
@@ -150,7 +161,7 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 
 ## Dependencies
 
-- **Akka.Streams** 1.5.63, **Servus.Akka** 0.3.10, **.NET 10.0**, **xunit.v3** 3.2.2, **Akka.TestKit.Xunit** 1.5.63, **BenchmarkDotNet** 0.15.8
+- **Akka.Streams** 1.5.63, **Servus.Akka** 0.3.10, **.NET 10.0**, **xunit.v3.mtp-v2** 3.2.2, **Akka.TestKit.Xunit** 1.5.63, **BenchmarkDotNet** 0.15.8
 
 ## Custom Agents (`.claude/agents/`)
 
@@ -159,7 +170,7 @@ All `GraphStage` inlet/outlet string names follow `StageName.Direction` or `Stag
 | `rfc-test-writer` | Generate a new RFC test file following exact project conventions |
 | `akka-stage-builder` | Implement a new Akka.Streams `GraphStage` |
 | `build-guardian` | Run full build + tests; produce RFC-breakdown coverage report |
-| `namespace-refactorer` | Execute one TASK from `.maggus/plan_010.md` |
+| `namespace-refactorer` | Execute namespace reorganisation tasks |
 | `stream-test-writer` | Generate `TurboHttp.StreamTests` files following `StreamTestBase` conventions |
 | `stage-port-validator` | Scan all stages for port naming convention violations |
 | `displayname-validator` | Validate `[Fact]`/`[Theory]` DisplayName attributes follow project naming convention |

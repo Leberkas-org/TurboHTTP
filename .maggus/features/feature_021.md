@@ -1,3 +1,4 @@
+<!-- maggus-id: ae5fc118-1ca5-40db-9578-e2a32aa47cad -->
 <!-- maggus-id: 20250325-140000-feature-021 -->
 # Feature 021: Uniform Integration Test Coverage Across HTTP Versions
 
@@ -71,9 +72,9 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - Ensure all new routes are registered in `RegisterExpectContinueRoutes()` and called from all fixtures (KestrelFixture, KestrelH2Fixture, KestrelTlsFixture)
 
 **Acceptance Criteria:**
-- [ ] `Routes.RegisterExpectContinueRoutes(app)` added with 3 routes
-- [ ] All 3 Kestrel fixtures call `RegisterExpectContinueRoutes`
-- [ ] Build passes with zero warnings
+- [x] `Routes.RegisterExpectContinueRoutes(app)` added with 3 routes
+- [x] All 3 Kestrel fixtures call `RegisterExpectContinueRoutes`
+- [x] Build passes with zero warnings
 
 **Files:**
 - `src/TurboHttp.IntegrationTests/Shared/Routes.cs` — add `RegisterExpectContinueRoutes`
@@ -102,8 +103,8 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/CompressionH10IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/CookieH10IntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H10/CompressionIntegrationTests.cs`
+- `src/TurboHttp.IntegrationTests/H10/CookieIntegrationTests.cs`
 
 ---
 
@@ -116,11 +117,11 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 **Parallel:** yes — can run alongside TASK-021-001, TASK-021-002, TASK-021-004, TASK-021-005, TASK-021-006, TASK-021-007
 
 **Acceptance Criteria:**
-- [ ] `RedirectH10IntegrationTests.cs` created with 14 tests mirroring `RedirectIntegrationTests`
-- [ ] `RetryH10IntegrationTests.cs` created with 9 tests mirroring `RetryIntegrationTests`
-- [ ] All tests use `new Version(1, 0)` and `[Collection("Http1Integration")]`
-- [ ] DisplayNames follow `Redirect-H10-001` / `Retry-H10-001` pattern
-- [ ] Build passes with zero warnings
+- [x] `RedirectH10IntegrationTests.cs` created with 14 tests mirroring `RedirectIntegrationTests`
+- [x] `RetryH10IntegrationTests.cs` created with 9 tests mirroring `RetryIntegrationTests`
+- [x] All tests use `new Version(1, 0)` and `[Collection("Http1Integration")]`
+- [x] DisplayNames follow `Redirect-H10-001` / `Retry-H10-001` pattern
+- [x] Build passes with zero warnings
 
 **Files:**
 - `src/TurboHttp.IntegrationTests/RedirectH10IntegrationTests.cs` (NEW)
@@ -143,22 +144,17 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - No chunked encoding in HTTP/1.0
 
 **Acceptance Criteria:**
-- [ ] `CacheH10IntegrationTests.cs` created with 11 tests mirroring `CacheIntegrationTests`
-- [ ] `ErrorHandlingH10IntegrationTests.cs` created with ~8 tests (adapted from `ErrorHandlingIntegrationTests`, excluding HTTP/1.1-specific edge cases like chunked)
-- [ ] `ConnectionH10IntegrationTests.cs` created with ~4 tests:
+- [x] `CacheH10IntegrationTests.cs` created with 11 tests mirroring `CacheIntegrationTests`
+- [x] `ErrorHandlingH10IntegrationTests.cs` created with ~8 tests (adapted from `ErrorHandlingIntegrationTests`, excluding HTTP/1.1-specific edge cases like chunked)
+- [x] `ConnectionH10IntegrationTests.cs` created with ~4 tests:
   - Default no keep-alive (connection closes after single request)
   - Explicit `Connection: Keep-Alive` opt-in
   - Sequential requests on keep-alive connection
   - `Connection: close` explicitly
-- [ ] All tests use `new Version(1, 0)` and `[Collection("Http1Integration")]`
-- [ ] DisplayNames follow `Cache-H10-001` / `Error-H10-001` / `Conn-H10-001` pattern
-- [ ] All ~23 tests pass
-- [ ] Build passes with zero warnings
-
-**Files:**
-- `src/TurboHttp.IntegrationTests/CacheH10IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ErrorHandlingH10IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ConnectionH10IntegrationTests.cs` (NEW)
+- [x] All tests use `new Version(1, 0)` and `[Collection("Http1Integration")]`
+- [x] DisplayNames follow `Cache-H10-001` / `Error-H10-001` / `Conn-H10-001` pattern
+- [x] All ~23 tests pass
+- [x] Build passes with zero warnings
 
 ---
 
@@ -177,19 +173,19 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - RST_STREAM for individual stream errors (already in ErrorHandlingH2)
 
 **Acceptance Criteria:**
-- [ ] `ConnectionH2IntegrationTests.cs` created with ~5 tests:
+- [x] `/H2/ConnectionIntegrationTests.cs` created with ~5 tests:
   - Sequential requests reuse same HTTP/2 connection
   - Concurrent requests multiplexed (3-5 parallel `Task.WhenAll`)
   - Large body transfer over HTTP/2 (POST /echo with 64KB body)
   - Multiple endpoints on same connection
   - POST with body followed by GET on same connection
-- [ ] All tests use `[Collection("Http2Integration")]` and `new Version(2, 0)`
-- [ ] DisplayNames follow `Conn-H2-001` pattern
-- [ ] All tests pass
-- [ ] Build passes with zero warnings
+- [x] All tests use `[Collection("H2")]` and `new Version(2, 0)`
+- [x] DisplayNames follow `Conn-H2-001` pattern
+- [x] All tests pass
+- [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/ConnectionH2IntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H2/ConnectionIntegrationTests.cs` (NEW)
 
 ---
 
@@ -201,25 +197,25 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 **Successors:** TASK-021-011
 **Parallel:** yes — can run alongside TASK-021-001, TASK-021-002, TASK-021-003, TASK-021-004, TASK-021-005, TASK-021-007
 
-**Pattern:** Copy HTTP/1.1 test classes, change to `KestrelTlsFixture`, `[Collection("TlsIntegration")]`, `scheme: "https"`, `new Version(1, 1)`. Rename DisplayNames to `*-TLS-NNN`.
+**Pattern:** Copy HTTP/1.1 test classes, change to `KestrelTlsFixture`, `[Collection("TLS")]`, `scheme: "https"`, `new Version(1, 1)`. Rename DisplayNames to `*-TLS-NNN`.
 
-**Note:** The existing `TlsIntegrationTests.cs` (9 tests) covers a mix of basic features. The new files provide dedicated per-feature coverage. The old file can remain as a cross-cutting sanity check.
+**Note:** The existing `IntegrationTests.cs` (9 tests) covers a mix of basic features. The new files provide dedicated per-feature coverage. The old file can remain as a cross-cutting sanity check.
 
 **Acceptance Criteria:**
-- [ ] `CompressionTlsIntegrationTests.cs` created with 7 tests
-- [ ] `CookieTlsIntegrationTests.cs` created with 11 tests
-- [ ] `RedirectTlsIntegrationTests.cs` created with 14 tests
-- [ ] `RetryTlsIntegrationTests.cs` created with 9 tests
-- [ ] All tests use `KestrelTlsFixture`, `[Collection("TlsIntegration")]`, `scheme: "https"`
-- [ ] DisplayNames follow `Compression-TLS-001` / `Cookie-TLS-001` / `Redirect-TLS-001` / `Retry-TLS-001`
-- [ ] All 41 tests pass
-- [ ] Build passes with zero warnings
+- [x] `CompressionIntegrationTests.cs` created with 7 tests
+- [x] `CookieIntegrationTests.cs` created with 11 tests
+- [x] `RedirectIntegrationTests.cs` created with 14 tests
+- [x] `RetryIntegrationTests.cs` created with 9 tests
+- [x] All tests use `KestrelTlsFixture`, `[Collection("TLS")]`, `scheme: "https"`
+- [x] DisplayNames follow `Compression-TLS-001` / `Cookie-TLS-001` / `Redirect-TLS-001` / `Retry-TLS-001`
+- [x] All 41 tests pass
+- [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/CompressionTlsIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/CookieTlsIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/RedirectTlsIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/RetryTlsIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/TLS/CompressionIntegrationTests.cs`
+- `src/TurboHttp.IntegrationTests/TLS/CookieIntegrationTests.cs`
+- `src/TurboHttp.IntegrationTests/TLS/RedirectIntegrationTests.cs`
+- `src/TurboHttp.IntegrationTests/TLS/RetryIntegrationTests.cs`
 
 ---
 
@@ -232,18 +228,18 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 **Parallel:** yes — can run alongside TASK-021-001, TASK-021-002, TASK-021-003, TASK-021-004, TASK-021-005, TASK-021-006
 
 **Acceptance Criteria:**
-- [ ] `CacheTlsIntegrationTests.cs` created with 11 tests
-- [ ] `ErrorHandlingTlsIntegrationTests.cs` created with ~8 tests (adapted from HTTP/1.1 version)
-- [ ] `ConnectionTlsIntegrationTests.cs` created with 5 tests (keep-alive over TLS, Connection: close over TLS, sequential reuse)
-- [ ] All tests use `KestrelTlsFixture`, `[Collection("TlsIntegration")]`, `scheme: "https"`
-- [ ] DisplayNames follow `Cache-TLS-001` / `Error-TLS-001` / `Conn-TLS-001`
-- [ ] All ~24 tests pass
-- [ ] Build passes with zero warnings
+- [x] `CacheIntegrationTests.cs` created with 11 tests
+- [x] `ErrorHandlingIntegrationTests.cs` created with ~8 tests (adapted from HTTP/1.1 version)
+- [x] `ConnectionIntegrationTests.cs` created with 5 tests (keep-alive over TLS, Connection: close over TLS, sequential reuse)
+- [x] All tests use `KestrelTlsFixture`, `[Collection("TLS")]`, `scheme: "https"`
+- [x] DisplayNames follow `Cache-TLS-001` / `Error-TLS-001` / `Conn-TLS-001`
+- [x] All ~24 tests pass
+- [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/CacheTlsIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ErrorHandlingTlsIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ConnectionTlsIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/TLS/CacheIntegrationTests.cs`
+- `src/TurboHttp.IntegrationTests/TLS/ErrorHandlingIntegrationTests.cs`
+- `src/TurboHttp.IntegrationTests/TLS/ConnectionIntegrationTests.cs`
 
 ---
 
@@ -261,19 +257,19 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 3. Small body (<1KB) does NOT send Expect header
 
 **Acceptance Criteria:**
-- [ ] `ExpectContinueIntegrationTests.cs` created (HTTP/1.1, 3 tests)
-- [ ] `ExpectContinueH10IntegrationTests.cs` created (HTTP/1.0, 3 tests)
-- [ ] `ExpectContinueH2IntegrationTests.cs` created (HTTP/2, 3 tests)
-- [ ] `ExpectContinueTlsIntegrationTests.cs` created (TLS, 3 tests)
-- [ ] DisplayNames follow `Expect-001` / `Expect-H10-001` / `Expect-H2-001` / `Expect-TLS-001`
-- [ ] All 12 tests pass against the routes from TASK-021-001
-- [ ] Build passes with zero warnings
+- [x] `/H11/ExpectContinueIntegrationTests.cs` created (HTTP/1.1, 3 tests)
+- [x] `/H10/ExpectContinueHIntegrationTests.cs` created (HTTP/1.0, 3 tests)
+- [x] `/H2/ExpectContinueIntegrationTests.cs` created (HTTP/2, 3 tests)
+- [x] `/TLS/ExpectContinueIntegrationTests.cs` created (TLS, 3 tests)
+- [x] DisplayNames follow `Expect-001` / `Expect-H10-001` / `Expect-H2-001` / `Expect-TLS-001`
+- [x] All 12 tests pass against the routes from TASK-021-001
+- [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/ExpectContinueIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ExpectContinueH10IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ExpectContinueH2IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ExpectContinueTlsIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H11/ExpectContinueIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H10/ExpectContinueIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H2/ExpectContinueIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/TLS/ExpectContinueIntegrationTests.cs` (NEW)
 
 ---
 
@@ -310,18 +306,18 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - Echo path (`/h2/echo-path` — route exists, never tested!)
 
 **Acceptance Criteria:**
-- [ ] `EdgeCaseIntegrationTests.cs` created (HTTP/1.1, ~8 tests)
-- [ ] `EdgeCaseH10IntegrationTests.cs` created (HTTP/1.0, ~5 tests)
-- [ ] `EdgeCaseH2IntegrationTests.cs` created (HTTP/2, ~5 tests)
-- [ ] DisplayNames follow `Edge-001` / `Edge-H10-001` / `Edge-H2-001`
-- [ ] All tests use existing routes (no new routes needed)
-- [ ] All ~18 tests pass
-- [ ] Build passes with zero warnings
+- [x] `/H11/EdgeCaseIntegrationTests.cs` created (HTTP/1.1, ~8 tests)
+- [x] `/H10/EdgeCaseIntegrationTests.cs` created (HTTP/1.0, ~5 tests)
+- [x] `/H2/EdgeCaseIntegrationTests.cs` created (HTTP/2, ~5 tests)
+- [x] DisplayNames follow `Edge-001` / `Edge-H10-001` / `Edge-H2-001`
+- [x] All tests use existing routes (no new routes needed)
+- [x] All ~18 tests pass
+- [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/EdgeCaseIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/EdgeCaseH10IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/EdgeCaseH2IntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H11/EdgeCaseIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H10/EdgeCaseIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H2/EdgeCaseIntegrationTests.cs` (NEW)
 
 ---
 
@@ -351,19 +347,19 @@ TurboHttp has 139 integration tests but coverage is heavily skewed toward HTTP/1
 - Concurrent requests to different endpoints
 
 **Acceptance Criteria:**
-- [ ] `ConcurrencyIntegrationTests.cs` created (HTTP/1.1, ~4 tests)
-- [ ] `ConcurrencyH10IntegrationTests.cs` created (HTTP/1.0, ~3 tests)
-- [ ] `ConcurrencyH2IntegrationTests.cs` created (HTTP/2, ~4 tests)
-- [ ] All tests use `Task.WhenAll` for parallel execution
-- [ ] Timeout set to 60s for stress tests
-- [ ] DisplayNames follow `Concurrency-001` / `Concurrency-H10-001` / `Concurrency-H2-001`
-- [ ] All ~11 tests pass reliably (no flaky tests)
-- [ ] Build passes with zero warnings
+- [x] `/H11/ConcurrencyIntegrationTests.cs` created (HTTP/1.1, ~4 tests)
+- [x] `/H10/ConcurrencyIntegrationTests.cs` created (HTTP/1.0, ~3 tests)
+- [x] `/H2/ConcurrencyIntegrationTests.cs` created (HTTP/2, ~4 tests)
+- [x] All tests use `Task.WhenAll` for parallel execution
+- [x] Timeout set to 60s for stress tests
+- [x] DisplayNames follow `Concurrency-001` / `Concurrency-H10-001` / `Concurrency-H2-001`
+- [x] All ~11 tests pass reliably (no flaky tests)
+- [x] Build passes with zero warnings
 
 **Files:**
-- `src/TurboHttp.IntegrationTests/ConcurrencyIntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ConcurrencyH10IntegrationTests.cs` (NEW)
-- `src/TurboHttp.IntegrationTests/ConcurrencyH2IntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H11/ConcurrencyIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H10/ConcurrencyIntegrationTests.cs` (NEW)
+- `src/TurboHttp.IntegrationTests/H2/ConcurrencyIntegrationTests.cs` (NEW)
 
 ---
 

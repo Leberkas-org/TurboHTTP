@@ -35,8 +35,8 @@ views {
     include turbohttp.client.*
   }
 
-  view pipelineDetails of turbohttp.streams {
-    title 'Request/Response Pipeline'
+  view pipelineFlow of turbohttp.streams {
+    title 'Pipeline Flow'
     description 'All processing stages from request entry to response delivery'
     include turbohttp.client.ITurboHttpClient
 

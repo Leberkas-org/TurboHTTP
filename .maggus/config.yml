@@ -1,5 +1,5 @@
 agent: claude
-model: ""
+model: sonnet
 include: []
 approval_mode: opt-in
 auto_continue: null
