@@ -17,3 +17,4 @@ Infrastructure and cross-cutting features — refactoring, documentation, and re
 - [[Features/Infrastructure/Feature016_TracingBidi_Consolidation|TracingBidi Consolidation]] — Consolidated EventSource and DiagnosticListener into a single TracingBidiStage
 - [[Features/Infrastructure/Feature018_Docs_Site_Revision|Docs Site Revision]] — User-goal-oriented rewrite of VitePress documentation site with LikeC4 diagram updates
 - [[Features/Infrastructure/Feature019_Stream_Survival|Stream Survival]] — Hardened pipeline stages to absorb upstream failures rather than propagating full stream teardown
+- [[Features/Infrastructure/Feature025_Clean_Protocol_Core|Clean Protocol Core]] — Invert protocol-core topology: one GroupByRequestKey at top, HTTP version routing inside each substream
