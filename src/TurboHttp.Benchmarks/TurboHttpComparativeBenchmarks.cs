@@ -1,27 +1,37 @@
+using Akka.Actor;
+using Akka.Configuration;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using TurboHttp.Benchmarks.Internal;
+using TurboHttp.Internal;
 
 namespace TurboHttp.Benchmarks;
 
 /// <summary>
 /// Lightweight factory helper that creates <see cref="ITurboHttpClient"/> instances
 /// for benchmark use. Wraps the DI setup required by <see cref="TurboHttpClientFactory"/>.
+/// Each instance owns its own <see cref="ActorSystem"/> and terminates it on disposal,
+/// preventing stale PinnedDispatcher threads from accumulating across BDN parameter combinations.
 /// </summary>
 internal sealed class ClientHelper : IAsyncDisposable
 {
-    private readonly ServiceProvider _provider;
-    private readonly ITurboHttpClient _client;
+    private static readonly Config BenchHocon =
+        TurboHttpDispatchers.CreateConfig(TurboClientOptions.DefaultMaxEndpointSubstreams);
 
-    private ClientHelper(ServiceProvider provider, ITurboHttpClient client)
+    private readonly ServiceProvider _provider;
+    private readonly ActorSystem _system;
+
+    private ClientHelper(ServiceProvider provider, ITurboHttpClient client, ActorSystem system)
     {
         _provider = provider;
-        _client = client;
+        Client = client;
+        _system = system;
     }
 
     /// <summary>The configured <see cref="ITurboHttpClient"/> instance.</summary>
-    public ITurboHttpClient Client => _client;
+    public ITurboHttpClient Client { get; }
 
     /// <summary>
     /// Creates a new <see cref="ClientHelper"/> with a fully configured TurboHttp client.
@@ -35,8 +45,22 @@ internal sealed class ClientHelper : IAsyncDisposable
         var options = new TurboClientOptions
         {
             BaseAddress = new Uri($"http://127.0.0.1:{port}"),
-            DangerousAcceptAnyServerCertificate = true
+            DangerousAcceptAnyServerCertificate = true,
+            // H1.x: 512 connections × MaxPipelineDepth(2) = 1024 in-flight capacity.
+            MaxH1ConnectionsPerServer = 512,
+            MaxPipelineDepth = 2,
+            // H2: 2 connections × 200 streams = 400 in-flight capacity.
+            // Mirrors HttpClient's strategy: multiplex deeply over few connections
+            // rather than opening many connections each with shallow stream counts.
+            MaxH2ConnectionsPerServer = 2,
+            MaxH2ConcurrentStreams = 200,
         };
+
+        // Create and register the ActorSystem explicitly so it can be terminated on disposal.
+        // Without this, TurboHttpClientFactory creates an untracked ActorSystem that is never
+        // terminated, causing PinnedDispatcher threads to accumulate across BDN combinations.
+        var system = ActorSystem.Create($"turbohttp-bench-{Guid.NewGuid():N}", BenchHocon);
+        services.AddSingleton(system);
 
         services.AddTurboHttpClient();
         services.Replace(ServiceDescriptor.Singleton<IOptionsFactory<TurboClientOptions>>(
@@ -50,25 +74,35 @@ internal sealed class ClientHelper : IAsyncDisposable
         client.DefaultRequestVersion = version;
         client.Timeout = TimeSpan.FromMinutes(5);
 
-        return new ClientHelper(provider, client);
+        return new ClientHelper(provider, client, system);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         // Signal pipeline to drain
-        _client.Requests.TryComplete();
+        Client.Requests.TryComplete();
 
         try
         {
-            await _client.Responses.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+            await Client.Responses.Completion.WaitAsync(TimeSpan.FromSeconds(5));
         }
         catch
         {
             // Pipeline may complete with an error during shutdown — that is fine.
         }
 
-        _client.Dispose();
+        Client.Dispose();
+
+        // Terminate the ActorSystem to stop all PinnedDispatcher threads.
+        // Without this, each BDN parameter combination leaks ~50–100 OS threads, causing
+        // scheduling contention that inflates latency 13× by combination #13 (CL=64).
+        await _system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
+        await _system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Allow dispatcher threads to fully wind down before the next combination starts.
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+
         await _provider.DisposeAsync();
     }
 
@@ -87,7 +121,7 @@ internal sealed class ClientHelper : IAsyncDisposable
 [WarmupCount(3)]
 [IterationCount(5)]
 [InvocationCount(32)]
-public sealed class TurboHttpSingleRequestBenchmarks : BenchmarkBaseClass
+public class TurboHttpSingleRequestBenchmarks : BenchmarkBaseClass
 {
     private ClientHelper _clientHelper = null!;
     private static readonly byte[] HeavyPayload = GeneratePayload(10 * 1024);
@@ -157,20 +191,33 @@ public sealed class TurboHttpSingleRequestBenchmarks : BenchmarkBaseClass
 [WarmupCount(3)]
 [IterationCount(5)]
 [InvocationCount(32)]
-public sealed class TurboHttpConcurrentBenchmarks : BenchmarkBaseClass
+public class TurboHttpConcurrentBenchmarks : BenchmarkBaseClass
 {
     private ClientHelper _clientHelper = null!;
     private static readonly byte[] HeavyPayload = GeneratePayload(10 * 1024);
 
+    // Pre-allocated per parameter combination — avoids Task[] heap allocation inside the hot path.
+    // Safe to reuse: all 32 invocations within one iteration are sequential; the array is
+    // fully overwritten before Task.WhenAll reads it.
+    private Task[] _tasks = null!;
+
     /// <summary>
     /// Creates an <see cref="ITurboHttpClient"/> via <see cref="ClientHelper.CreateClient"/>
     /// configured for the current HTTP version, then warms it up with a single request.
+    /// The client is intentionally long-lived across all iterations: steady-state throughput
+    /// (warm connections, pre-established streams) is what these benchmarks measure.
     /// </summary>
     [GlobalSetup]
     public override void GlobalSetup()
     {
+        // BDN spawns benchmark processes with minimal ThreadPool. Set before base.GlobalSetup()
+        // so Akka's dispatchers start with sufficient threads from the first actor creation.
+        ThreadPool.GetMinThreads(out var w, out var io);
+        ThreadPool.SetMinThreads(Math.Max(w, 256), Math.Max(io, 256));
+
         base.GlobalSetup();
         _clientHelper = ClientHelper.CreateClient(KestrelPort, HttpVersionValue);
+        _tasks = new Task[ConcurrencyLevel];
         WarmupRequest().GetAwaiter().GetResult();
     }
 
@@ -197,13 +244,12 @@ public sealed class TurboHttpConcurrentBenchmarks : BenchmarkBaseClass
     [Benchmark]
     public Task ConcurrentRequests_Light()
     {
-        var tasks = new Task[ConcurrencyLevel];
         for (var i = 0; i < ConcurrencyLevel; i++)
         {
-            tasks[i] = SendLightRequest();
+            _tasks[i] = SendLightRequest();
         }
 
-        return Task.WhenAll(tasks);
+        return Task.WhenAll(_tasks);
     }
 
     /// <summary>
@@ -213,13 +259,12 @@ public sealed class TurboHttpConcurrentBenchmarks : BenchmarkBaseClass
     [Benchmark]
     public Task ConcurrentRequests_Heavy()
     {
-        var tasks = new Task[ConcurrencyLevel];
         for (var i = 0; i < ConcurrencyLevel; i++)
         {
-            tasks[i] = SendHeavyRequest();
+            _tasks[i] = SendHeavyRequest();
         }
 
-        return Task.WhenAll(tasks);
+        return Task.WhenAll(_tasks);
     }
 
     private async Task SendLightRequest()
@@ -231,10 +276,8 @@ public sealed class TurboHttpConcurrentBenchmarks : BenchmarkBaseClass
 
     private async Task SendHeavyRequest()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/benchmark/payload")
-        {
-            Content = new ByteArrayContent(HeavyPayload)
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/benchmark/payload");
+        request.Content = new ByteArrayContent(HeavyPayload);
         using var response = await _clientHelper.Client.SendAsync(request, CancellationToken.None);
         response.EnsureSuccessStatusCode();
     }

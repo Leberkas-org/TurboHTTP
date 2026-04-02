@@ -7,34 +7,28 @@ TurboHttp exposes a small, focused public API. The primary entry point is `ITurb
 ```csharp
 public interface ITurboHttpClientFactory
 {
-    ITurboHttpClient CreateClient(Action<TurboClientOptions>? configure = null);
+    ITurboHttpClient CreateClient(string name);
 }
 ```
 
-Registered via dependency injection. Create clients with default options or supply a configuration delegate to override specific values for that client:
+Registered via dependency injection. Resolve a named client by passing the name used at registration:
 
 ```csharp
-// Default options
-var client = factory.CreateClient();
+// Default (unnamed) client — registered with AddTurboHttpClient()
+var client = factory.CreateClient();          // extension method: CreateClient(string.Empty)
 
-// Override options per client
-var client = factory.CreateClient(opts => opts with
-{
-    BaseAddress = new Uri("https://api.example.com"),
-    ConnectTimeout = TimeSpan.FromSeconds(5),
-    RetryPolicy = RetryPolicy.Default,
-    CachePolicy = CachePolicy.Default,
-});
+// Named client — registered with AddTurboHttpClient("search", ...)
+var searchClient = factory.CreateClient("search");
 ```
 
-See [Configuration guide](/guide/configuration) for DI setup and all available options.
+See [Configuration guide](/guide/configuration) for DI setup and named client registration.
 
 ---
 
 ## ITurboHttpClient
 
 ```csharp
-public interface ITurboHttpClient
+public interface ITurboHttpClient : IDisposable
 {
     Uri? BaseAddress { get; set; }
     HttpRequestHeaders DefaultRequestHeaders { get; }
@@ -158,25 +152,26 @@ var order = await response.Content.ReadFromJsonAsync<Order>(cts.Token);
 ## TurboClientOptions
 
 ```csharp
-public record TurboClientOptions
+public sealed class TurboClientOptions
 {
-    public Uri? BaseAddress { get; init; }
-    public TimeSpan ConnectTimeout { get; init; }       // Default: 10 s
-    public TimeSpan ReconnectInterval { get; init; }    // Default: 5 s
-    public TimeSpan IdleTimeout { get; init; }          // Default: 10 s
-    public int MaxReconnectAttempts { get; init; }      // Default: 10
-    public int MaxFrameSize { get; init; }              // Default: 128 KiB
+    // Base address
+    public Uri? BaseAddress { get; set; }
+
+    // Connection pool
+    public TimeSpan ConnectTimeout { get; set; }            // Default: 15 s
+    public TimeSpan PooledConnectionIdleTimeout { get; set; } // Default: 90 s
+    public int MaxConnectionsPerServer { get; set; }        // Default: 6
+    public int MaxPipelineDepth { get; set; }               // Default: 16
+    public uint MaxEndpointSubstreams { get; set; }         // Default: 256
+
+    // HTTP/2
+    public int MaxFrameSize { get; set; }                   // Default: 128 KiB
 
     // TLS
-    public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; init; }
-    public X509CertificateCollection? ClientCertificates { get; init; }
-    public SslProtocols EnabledSslProtocols { get; init; }
-
-    // Policies (null disables the feature)
-    public RedirectPolicy? RedirectPolicy { get; init; }
-    public RetryPolicy? RetryPolicy { get; init; }
-    public CachePolicy? CachePolicy { get; init; }
-    public ConnectionPolicy? ConnectionPolicy { get; init; }
+    public bool DangerousAcceptAnyServerCertificate { get; set; }
+    public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; set; }
+    public X509CertificateCollection? ClientCertificates { get; set; }
+    public SslProtocols EnabledSslProtocols { get; set; }
 }
 ```
 
@@ -185,10 +180,11 @@ public record TurboClientOptions
 | Property | Default | Description |
 |---|---|---|
 | `BaseAddress` | `null` | Base URI for relative requests |
-| `ConnectTimeout` | `10 s` | TCP connection timeout |
-| `ReconnectInterval` | `5 s` | Delay between reconnect attempts |
-| `IdleTimeout` | `10 s` | How long idle connections are kept alive |
-| `MaxReconnectAttempts` | `10` | Max reconnect attempts before giving up |
+| `ConnectTimeout` | `15 s` | TCP connection timeout |
+| `PooledConnectionIdleTimeout` | `90 s` | How long idle connections are kept in the pool |
+| `MaxConnectionsPerServer` | `6` | Max concurrent HTTP/1.x connections per host |
+| `MaxPipelineDepth` | `16` | Max pipelined requests per HTTP/1.1 connection |
+| `MaxEndpointSubstreams` | `256` | Max concurrently active endpoint substreams |
 
 See [Connection Pooling guide](/guide/connection-pooling) for pool lifecycle details.
 
@@ -196,19 +192,16 @@ See [Connection Pooling guide](/guide/connection-pooling) for pool lifecycle det
 
 | Property | Default | Description |
 |---|---|---|
-| `ServerCertificateValidationCallback` | Accept only valid certs | Custom TLS certificate validation |
+| `DangerousAcceptAnyServerCertificate` | `false` | Skip all certificate validation — dev/test only |
+| `ServerCertificateValidationCallback` | Accept valid certs | Custom TLS certificate validation |
 | `ClientCertificates` | `null` | Client certificates for mutual TLS |
 | `EnabledSslProtocols` | `SslProtocols.None` (OS default) | TLS protocol versions to permit |
 
 ```csharp
 // Mutual TLS with a client certificate
-var options = new TurboClientOptions
+options.ClientCertificates = new X509CertificateCollection
 {
-    BaseAddress = new Uri("https://secure.example.com"),
-    ClientCertificates = new X509CertificateCollection
-    {
-        X509CertificateLoader.LoadPkcs12FromFile("client.pfx", password)
-    },
+    X509CertificateLoader.LoadPkcs12FromFile("client.pfx", password)
 };
 ```
 
@@ -216,10 +209,7 @@ var options = new TurboClientOptions
 
 ```csharp
 // Increase frame size for large binary payloads (max: 16 MiB)
-var options = new TurboClientOptions
-{
-    MaxFrameSize = 4 * 1024 * 1024, // 4 MiB
-};
+options.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB
 ```
 
 See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing configuration.
@@ -228,7 +218,7 @@ See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing configuration.
 
 ## Policy Types
 
-Policies are optional. Assign `null` to disable a feature entirely.
+Policies configure optional features and are applied via the builder API, not through `TurboClientOptions`. See [Configuration guide](/guide/configuration) for builder usage.
 
 ### RedirectPolicy
 
@@ -236,20 +226,16 @@ Policies are optional. Assign `null` to disable a feature entirely.
 public sealed record RedirectPolicy
 {
     public static readonly RedirectPolicy Default; // MaxRedirects = 10
-    public int MaxRedirects { get; init; }          // Default: 10
+    public int MaxRedirects { get; init; }         // Default: 10
     public bool AllowHttpsToHttpDowngrade { get; init; } // Default: false
 }
 ```
 
 ```csharp
-// Tighter redirect limit
-var opts = new TurboClientOptions
-{
-    RedirectPolicy = RedirectPolicy.Default with { MaxRedirects = 3 }
-};
+// Custom redirect limit
+builder.Services.AddTurboHttpClient("api", ...).WithRedirect(new RedirectPolicy { MaxRedirects = 3 });
 
-// Disable redirect following
-var opts = new TurboClientOptions { RedirectPolicy = null };
+// Disable redirect following (default — no .WithRedirect() call)
 ```
 
 See [Redirects guide](/guide/redirects) for method rewriting and security details.
@@ -267,13 +253,8 @@ public sealed record RetryPolicy
 
 ```csharp
 // Aggressive retry
-var opts = new TurboClientOptions
-{
-    RetryPolicy = RetryPolicy.Default with { MaxRetries = 5, RespectRetryAfter = false }
-};
-
-// Disable retries
-var opts = new TurboClientOptions { RetryPolicy = null };
+builder.Services.AddTurboHttpClient("api", ...)
+    .WithRetry(new RetryPolicy { MaxRetries = 5, RespectRetryAfter = false });
 ```
 
 See [Automatic Retries guide](/guide/retries) for which methods and status codes are retried.
@@ -283,58 +264,56 @@ See [Automatic Retries guide](/guide/retries) for which methods and status codes
 ```csharp
 public sealed record CachePolicy
 {
-    public static CachePolicy Default { get; }    // MaxEntries = 1000, MaxBodyBytes = 50 MiB
-    public int MaxEntries { get; init; }           // Default: 1000
-    public long MaxBodyBytes { get; init; }        // Default: 52_428_800 (50 MiB)
-    public bool SharedCache { get; init; }         // Default: false (private cache)
+    public static CachePolicy Default { get; }  // MaxEntries = 1000, MaxBodyBytes = 50 MiB
+    public int MaxEntries { get; init; }         // Default: 1000
+    public long MaxBodyBytes { get; init; }      // Default: 52_428_800 (50 MiB)
+    public bool SharedCache { get; init; }       // Default: false (private cache)
 }
 ```
 
 ```csharp
 // Enable caching with defaults
-var opts = new TurboClientOptions
-{
-    CachePolicy = CachePolicy.Default
-};
+builder.Services.AddTurboHttpClient("api", ...).WithCache(CachePolicy.Default);
 
 // Smaller cache for constrained environments
-var opts = new TurboClientOptions
-{
-    CachePolicy = CachePolicy.Default with { MaxEntries = 100, MaxBodyBytes = 5 * 1024 * 1024 }
-};
-
-// Disable caching
-var opts = new TurboClientOptions { CachePolicy = null };
+builder.Services.AddTurboHttpClient("api", ...)
+    .WithCache(new CachePolicy { MaxEntries = 100, MaxBodyBytes = 5 * 1024 * 1024 });
 ```
 
 See [HTTP Caching guide](/guide/caching) for freshness rules and conditional requests.
 
-### ConnectionPolicy
+### CompressionPolicy
 
 ```csharp
-public sealed record ConnectionPolicy
+public sealed record CompressionPolicy
 {
-    public static readonly ConnectionPolicy Default; // MaxConnectionsPerHost = 6
-    public int MaxConnectionsPerHost { get; init; }  // Default: 6
-    public bool AllowHttp2Multiplexing { get; init; } // Default: true
+    public static readonly CompressionPolicy Default; // Encoding = "gzip", MinBodySizeBytes = 1024
+    public string Encoding { get; init; }             // Default: "gzip"
+    public long MinBodySizeBytes { get; init; }       // Default: 1024
 }
 ```
 
 ```csharp
-// Increase parallel connections for high-throughput HTTP/1.1
-var opts = new TurboClientOptions
-{
-    ConnectionPolicy = ConnectionPolicy.Default with { MaxConnectionsPerHost = 16 }
-};
-
-// Disable HTTP/2 multiplexing (treat HTTP/2 like HTTP/1.1 for pool limits)
-var opts = new TurboClientOptions
-{
-    ConnectionPolicy = ConnectionPolicy.Default with { AllowHttp2Multiplexing = false }
-};
+builder.Services.AddTurboHttpClient("api", ...)
+    .WithRequestCompression(new CompressionPolicy { Encoding = "br", MinBodySizeBytes = 4096 });
 ```
 
-See [Connection Pooling guide](/guide/connection-pooling) for per-host pool details.
+### Expect100Policy
+
+```csharp
+public sealed record Expect100Policy
+{
+    public static readonly Expect100Policy Default; // MinBodySizeBytes = 1024
+    public long MinBodySizeBytes { get; init; }     // Default: 1024
+}
+```
+
+```csharp
+builder.Services.AddTurboHttpClient("api", ...)
+    .WithExpectContinue(new Expect100Policy { MinBodySizeBytes = 8192 });
+```
+
+See [Content Encoding guide](/guide/content-encoding) for request compression and Expect: 100-continue.
 
 ---
 
@@ -345,7 +324,7 @@ These types are part of the public API and can be customized via the builder ext
 | Type | Purpose | Guide |
 |---|---|---|
 | `CookieJar` | Cookie storage and injection — provided via `.WithCookies()` | [Cookies](/guide/cookies) |
-| `HttpCacheStore` | In-memory LRU cache backend — provided via `.WithCache()` | [Caching](/guide/caching) |
+| `CacheStore` | In-memory LRU cache backend — provided via `.WithCache(store)` | [Caching](/guide/caching) |
 | `RedirectHandler` | Built-in HTTP redirect handling — controlled via `.WithRedirect()` | [Redirects](/guide/redirects) |
 | `RetryEvaluator` | Built-in idempotent method retry — controlled via `.WithRetry()` | [Retries](/guide/retries) |
 | `TurboHandler` | Custom request/response middleware — registered via `.AddHandler<T>()` | [Extending the Pipeline](/architecture/extending) |

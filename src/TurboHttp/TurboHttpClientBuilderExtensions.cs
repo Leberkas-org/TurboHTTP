@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using TurboHttp.Protocol.RFC6265;
-using TurboHttp.Protocol.RFC9110;
-using TurboHttp.Protocol.RFC9111;
+using TurboHttp.Protocol.Cookies;
+using TurboHttp.Protocol.Semantics;
+using TurboHttp.Protocol.Caching;
 
 namespace TurboHttp;
 

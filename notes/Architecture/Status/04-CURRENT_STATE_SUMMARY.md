@@ -15,9 +15,9 @@ aliases:
 ---
 # TurboHttp Current State Summary
 
-**Last Updated**: 2026-03-26  
-**Version**: Pre-1.0 (Development)  
-**Branch**: `poc2` (main is `main`)
+**Last Updated**: 2026-04-07
+**Version**: Pre-1.0 (Development)
+**Branch**: `feature/better-graph` (main is `main`)
 
 ## Project Status
 
@@ -72,7 +72,7 @@ aliases:
 - ✅ **DI-friendly** — Microsoft.Extensions integration, TurboHttpClientFactory
 
 #### Testing
-- ✅ **Unit tests** organized by RFC (260 tests)
+- ✅ **Unit tests** organized by component (260 tests)
 - ✅ **Integration tests** with Kestrel (515 tests)
 - ✅ **Stream tests** with Akka.TestKit (GraphStage behavior)
 - ✅ **Benchmark suite** (25+ benchmarks)
@@ -161,26 +161,17 @@ Example:
 
 ```
 Protocol/
-├── Encoders/          (serialize → bytes)
-│   ├── Http10Encoder
-│   ├── Http11Encoder
-│   ├── Http20Encoder
-│   └── Http30Encoder
-├── Decoders/          (bytes → objects)
-│   ├── Http10Decoder
-│   ├── Http11Decoder
-│   ├── Http20Decoder
-│   └── Http30Decoder
-├── RFC1945/           (HTTP/1.0)
-├── RFC6265/           (Cookies)
-├── RFC7541/           (HPACK)
-├── RFC9000/           (QUIC)
-├── RFC9110/           (HTTP Semantics)
-├── RFC9111/           (Caching)
-├── RFC9112/           (HTTP/1.1)
-├── RFC9113/           (HTTP/2)
-├── RFC9114/           (HTTP/3)
-└── RFC9204/           (QPACK)
+├── HuffmanCodec.cs      (shared — HPACK + QPACK)
+├── WellKnownHeaders.cs  (shared header name constants)
+├── Http10/              (HTTP/1.0 — RFC 1945)
+├── Http11/              (HTTP/1.1 — RFC 9112)
+├── Http2/               (HTTP/2 — RFC 9113)
+│   └── Hpack/           (HPACK header compression — RFC 7541)
+├── Http3/               (HTTP/3 — RFC 9114)
+│   └── Qpack/           (QPACK header compression — RFC 9204)
+├── Semantics/           (HTTP Semantics — RFC 9110)
+├── Caching/             (HTTP Caching — RFC 9111)
+└── Cookies/             (Cookie management — RFC 6265)
 ```
 
 ### 5. Connection Pool Design
@@ -232,22 +223,21 @@ ConnectionLease
 ### Testing
 - ✅ All tests have explicit timeouts (no hanging tests)
 - ✅ Max 500 lines per test file (split if needed)
-- ✅ DisplayName attribute: "RFC-section-category-nnn: description"
+- ✅ `[Trait("RFC", "RFC<number>-<section>")]` for RFC traceability (post-Feature-040)
 - ✅ Use `[Theory]` + `[InlineData]` for parameterized tests
 
 ---
 
-## Recent Changes (Session 20260228)
+## Recent Changes (2026-04)
 
-### Phase 39 Complete ✅
-- Http2Decoder marked `[Obsolete]` with migration guidance
-- Build succeeds: 509 obsolete warnings (0 errors)
-- All tests still pass
+### Features 047–052: Protocol Namespace Reorganisation ✅
+- Protocol layer reorganised into component-based subfolders (Http10, Http11, Http2, Http3, Semantics, Caching, Cookies)
+- All namespaces updated: `TurboHttp.Protocol.<Component>`
+- Obsidian vault updated to reflect component folder structure
 
-### Phase 40+ Ready
-- Http2StageTestHelper framework next (Phases 40-43)
-- Migrate 151 HTTP/2 tests from decoder to stage-based testing
-- Full execution automation via IMPLEMENTATION_PLAN.md
+### Features 040–046: Test Organisation + Transport Split ✅
+- Test files migrated from RFC-numbered folders to component-based folders
+- Transport layer split into Connection/, Tcp/, Quic/ subfolders
 
 ---
 
@@ -286,7 +276,7 @@ ConnectionLease
 | Resource | Path |
 |----------|------|
 | **Source Code** | `src/TurboHttp/` |
-| **Unit Tests** | `src/TurboHttp.Tests/` (organized by RFC) |
+| **Unit Tests** | `src/TurboHttp.Tests/` (organized by component) |
 | **Stream Tests** | `src/TurboHttp.StreamTests/` (Akka.Streams behavior) |
 | **Integration Tests** | `src/TurboHttp.IntegrationTests/` (Kestrel fixtures) |
 | **Benchmarks** | `src/TurboHttp.Benchmarks/` (BenchmarkDotNet) |
@@ -307,9 +297,13 @@ dotnet build --configuration Release ./src/TurboHttp.sln
 # Run all tests
 dotnet test ./src/TurboHttp.sln
 
-# Run RFC-specific tests
+# Run tests for a component
 dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- \
-  --filter-namespace "TurboHttp.Tests.RFC9113"
+  --filter-namespace "TurboHttp.Tests.Http2"
+
+# Run tests with specific RFC trait
+dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- \
+  --filter "Trait~RFC9113"
 
 # Run benchmarks
 dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
@@ -318,7 +312,7 @@ dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmar
 ### Development Workflow
 1. Create feature branch from `main`
 2. Implement in `src/TurboHttp/` and tests in `src/TurboHttp.Tests/`
-3. Add DisplayName to tests: "RFC-section-cat-nnn: description"
+3. Add `[Trait("RFC", "RFC<number>-<section>")]` for RFC traceability (e.g., `[Trait("RFC", "RFC9113-4.1")]`)
 4. Ensure max 500 lines per test file
 5. Run full test suite (`dotnet test`)
 6. Create PR to `main` for review
@@ -339,7 +333,7 @@ Before committing code:
 - ✅ No new compiler warnings (TreatWarningsAsErrors enabled)
 - ✅ Test files ≤ 500 lines
 - ✅ All async tests have explicit timeouts
-- ✅ DisplayName attributes on all `[Fact]`/`[Theory]` tests
+- ✅ `[Trait("RFC", ...)]` attributes on tests for RFC traceability
 
 Before creating PR:
 - ✅ All quality gates passing

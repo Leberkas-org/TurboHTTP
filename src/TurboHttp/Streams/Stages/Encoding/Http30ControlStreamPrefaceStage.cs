@@ -1,9 +1,8 @@
-using System.Buffers;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http3;
 
 namespace TurboHttp.Streams.Stages.Encoding;
 
@@ -62,11 +61,11 @@ public sealed class Http30ControlStreamPrefaceStage : GraphStage<FlowShape<IOutp
             var controlStream = new Http3ControlStream();
             var preface = controlStream.OpenLocalStream(_stage._localSettings);
 
-            var owner = MemoryPool<byte>.Shared.Rent(preface.Length);
-            ((ReadOnlySpan<byte>)preface).CopyTo(owner.Memory.Span);
+            var buf = NetworkBuffer.Rent(preface.Length);
+            ((ReadOnlySpan<byte>)preface).CopyTo(buf.FullMemory.Span);
+            buf.Length = preface.Length;
 
-            var dataItem = new DataItem(owner, preface.Length);
-            Emit(_stage._out, new Http3OutputTaggedItem(dataItem, OutputStreamType.Control));
+            Emit(_stage._out, new Http3OutputTaggedItem(buf, OutputStreamType.Control));
         }
     }
 }

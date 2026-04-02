@@ -1,8 +1,8 @@
 ---
 title: Protocol Layer Architecture
 description: >-
-  Encoder/decoder patterns, HPACK/QPACK internals, RFC subfolder structure, and
-  wire-format handling for HTTP/1.x, HTTP/2, and HTTP/3
+  Encoder/decoder patterns, HPACK/QPACK internals, component folder structure,
+  and wire-format handling for HTTP/1.x, HTTP/2, and HTTP/3
 tags:
   - architecture
   - protocol
@@ -15,7 +15,7 @@ tags:
 
 ## Purpose
 
-The Protocol layer (`src/TurboHttp/Protocol/`) implements wire-format encoding and decoding for all supported HTTP versions. Each RFC gets its own subfolder containing encoders, decoders, and version-specific business logic. Shared compression codecs (HPACK, QPACK, Huffman) live in dedicated RFC subfolders and are consumed by multiple protocol versions.
+The Protocol layer (`src/TurboHttp/Protocol/`) implements wire-format encoding and decoding for all supported HTTP versions. Each HTTP version and cross-cutting concern gets its own component subfolder containing encoders, decoders, and version-specific business logic. Shared codecs (HPACK under `Http2/Hpack/`, QPACK under `Http3/Qpack/`, Huffman at the root) are consumed by multiple protocol versions.
 
 This layer sits **below** the Streams layer (which orchestrates stage graphs) and **above** the Transport layer (which moves raw bytes). Protocol types convert between `HttpRequestMessage`/`HttpResponseMessage` and the `IOutputItem`/`IInputItem` message protocol used by the pipeline.
 
@@ -27,24 +27,25 @@ This layer sits **below** the Streams layer (which orchestrates stage graphs) an
 
 | Component | Path | Role |
 |-----------|------|------|
-| HTTP/1.1 Encoder | `Protocol/RFC9112/Http11Encoder.cs` | Serialises requests to HTTP/1.1 wire format |
-| HTTP/1.1 Decoder | `Protocol/RFC9112/Http11Decoder.cs` | Parses HTTP/1.1 responses from byte stream |
-| HTTP/1.0 Encoder | `Protocol/RFC9112/Http10Encoder.cs` | HTTP/1.0 request serialisation (no chunked) |
-| HTTP/1.0 Decoder | `Protocol/RFC9112/Http10Decoder.cs` | HTTP/1.0 response parsing (Content-Length only) |
-| HTTP/2 Encoder | `Protocol/RFC9113/Http2Encoder.cs` | Frames requests into HTTP/2 binary format |
-| HTTP/2 Decoder | `Protocol/RFC9113/Http2Decoder.cs` | Parses HTTP/2 frames into response events |
-| HTTP/2 Settings | `Protocol/RFC9113/Http2Settings.cs` | SETTINGS frame parameter handling |
-| HTTP/2 Flow Control | `Protocol/RFC9113/Http2FlowControl.cs` | Window update tracking per stream/connection |
-| HTTP/3 Encoder | `Protocol/RFC9114/Http3Encoder.cs` | QUIC-based HTTP/3 frame encoding |
-| HTTP/3 Decoder | `Protocol/RFC9114/Http3Decoder.cs` | HTTP/3 frame parsing from QUIC streams |
-| HPACK Encoder | `Protocol/RFC7541/HpackEncoder.cs` | HTTP/2 header compression (RFC 7541) |
-| HPACK Decoder | `Protocol/RFC7541/HpackDecoder.cs` | HTTP/2 header decompression |
-| QPACK Encoder | `Protocol/RFC9204/QpackEncoder.cs` | HTTP/3 header compression (RFC 9204) |
-| QPACK Decoder | `Protocol/RFC9204/QpackDecoder.cs` | HTTP/3 header decompression |
-| Huffman Codec | `Protocol/RFC7541/HuffmanCodec.cs` | Shared Huffman encoding/decoding for HPACK/QPACK |
-| Dynamic Table | `Protocol/RFC7541/DynamicTable.cs` | HPACK dynamic header table |
-| Static Table | `Protocol/RFC7541/StaticTable.cs` | HPACK static header table (61 entries) |
-| Decode Result | `Protocol/Shared/HttpDecodeResult.cs` | Discriminated union for decoder output states |
+| HTTP/1.1 Encoder | `Protocol/Http11/Http11Encoder.cs` | Serialises requests to HTTP/1.1 wire format |
+| HTTP/1.1 Decoder | `Protocol/Http11/Http11Decoder.cs` | Parses HTTP/1.1 responses from byte stream |
+| HTTP/1.0 Encoder | `Protocol/Http10/Http10Encoder.cs` | HTTP/1.0 request serialisation (no chunked) |
+| HTTP/1.0 Decoder | `Protocol/Http10/Http10Decoder.cs` | HTTP/1.0 response parsing (Content-Length only) |
+| HTTP/2 Request Encoder | `Protocol/Http2/Http2RequestEncoder.cs` | Frames requests into HTTP/2 binary format |
+| HTTP/2 Frame Decoder | `Protocol/Http2/Http2FrameDecoder.cs` | Parses HTTP/2 frames into response events |
+| HTTP/3 Request Encoder | `Protocol/Http3/Http3RequestEncoder.cs` | QUIC-based HTTP/3 request encoding |
+| HTTP/3 Response Decoder | `Protocol/Http3/Http3ResponseDecoder.cs` | HTTP/3 response parsing from QUIC streams |
+| HTTP/3 Frame Encoder | `Protocol/Http3/Http3FrameEncoder.cs` | Low-level HTTP/3 frame serialisation |
+| HTTP/3 Frame Decoder | `Protocol/Http3/Http3FrameDecoder.cs` | Low-level HTTP/3 frame parsing |
+| QUIC Variable-Length Int | `Protocol/Http3/QuicVarInt.cs` | QUIC variable-length integer codec |
+| HPACK Encoder | `Protocol/Http2/Hpack/HpackEncoder.cs` | HTTP/2 header compression (RFC 7541) |
+| HPACK Decoder | `Protocol/Http2/Hpack/HpackDecoder.cs` | HTTP/2 header decompression |
+| QPACK Encoder | `Protocol/Http3/Qpack/QpackEncoder.cs` | HTTP/3 header compression (RFC 9204) |
+| QPACK Decoder | `Protocol/Http3/Qpack/QpackDecoder.cs` | HTTP/3 header decompression |
+| Huffman Codec | `Protocol/HuffmanCodec.cs` | Shared Huffman encoding/decoding for HPACK/QPACK |
+| Well-Known Headers | `Protocol/WellKnownHeaders.cs` | Shared header name constants across all versions |
+| Decode Result | `Protocol/HttpDecodeResult.cs` | Discriminated union for decoder output states |
+| Http Decoder Error | `Protocol/HttpDecoderException.cs` | Decoder exception carrying `HttpDecodeError` enum |
 
 ---
 
@@ -179,51 +180,95 @@ HPACK relies on TCP ordering — encoder and decoder see frames in the same orde
 
 ---
 
-## RFC Subfolder Structure
+## Component Folder Structure
 
 ```text
 src/TurboHttp/Protocol/
-├── RFC7541/          # HPACK (HTTP/2 header compression)
-│   ├── HpackEncoder.cs
-│   ├── HpackDecoder.cs
-│   ├── DynamicTable.cs
-│   ├── StaticTable.cs
-│   └── HuffmanCodec.cs
-├── RFC9110/          # HTTP Semantics (shared across versions)
-│   └── (status codes, method handling, content negotiation)
-├── RFC9112/          # HTTP/1.1 Message Syntax and Routing
-│   ├── Http11Encoder.cs
-│   ├── Http11Decoder.cs
+├── HuffmanCodec.cs          # Shared — HPACK + QPACK (RFC 7541 Appendix B)
+├── WellKnownHeaders.cs      # Shared header name constants across all versions
+├── HttpDecodeResult.cs      # Discriminated union: NeedMoreData/HeadersComplete/Complete/Error
+├── HttpDecoderException.cs  # Decoder exception carrying HttpDecodeError enum
+├── HttpDecoderError.cs      # Error code enum
+├── Http10/                  # HTTP/1.0 (RFC 1945)
 │   ├── Http10Encoder.cs
 │   └── Http10Decoder.cs
-├── RFC9113/          # HTTP/2
-│   ├── Http2Encoder.cs
-│   ├── Http2Decoder.cs
-│   ├── Http2Settings.cs
-│   └── Http2FlowControl.cs
-├── RFC9114/          # HTTP/3
-│   ├── Http3Encoder.cs
-│   ├── Http3Decoder.cs
-│   └── (QUIC stream management)
-├── RFC9204/          # QPACK (HTTP/3 header compression)
-│   ├── QpackEncoder.cs
-│   ├── QpackDecoder.cs
-│   └── (encoder/decoder stream handling)
-└── Shared/           # Cross-version types
-    └── HttpDecodeResult.cs
+├── Http11/                  # HTTP/1.1 (RFC 9112)
+│   ├── Http11Encoder.cs
+│   ├── Http11Decoder.cs
+│   ├── ConnectionReuseDecision.cs
+│   └── ConnectionReuseEvaluator.cs
+├── Http2/                   # HTTP/2 (RFC 9113)
+│   ├── Http2RequestEncoder.cs
+│   ├── Http2FrameDecoder.cs
+│   ├── Http2Frame.cs
+│   ├── Http2Exception.cs
+│   └── Hpack/               # HPACK header compression (RFC 7541)
+│       ├── HpackEncoder.cs
+│       ├── HpackDecoder.cs
+│       └── HpackException.cs
+├── Http3/                   # HTTP/3 (RFC 9114)
+│   ├── Http3RequestEncoder.cs
+│   ├── Http3ResponseDecoder.cs
+│   ├── Http3FrameEncoder.cs
+│   ├── Http3FrameDecoder.cs
+│   ├── Http3Frame.cs
+│   ├── Http3Settings.cs
+│   ├── Http3Exception.cs
+│   ├── Http3ErrorCode.cs
+│   ├── Http3StreamType.cs
+│   ├── Http3ControlStream.cs
+│   ├── Http3UniStream.cs
+│   ├── Http3RequestStream.cs
+│   ├── QuicVarInt.cs        # QUIC variable-length integer codec (RFC 9000 §16)
+│   └── Qpack/               # QPACK header compression (RFC 9204)
+│       ├── QpackEncoder.cs
+│       ├── QpackDecoder.cs
+│       ├── QpackDynamicTable.cs
+│       ├── QpackStaticTable.cs
+│       ├── QpackIntegerCodec.cs
+│       ├── QpackStringCodec.cs
+│       ├── QpackTableSync.cs
+│       └── …
+├── Semantics/               # HTTP Semantics (RFC 9110)
+│   ├── RedirectPolicy.cs
+│   ├── RetryPolicy.cs
+│   ├── ContentEncodingEncoder.cs
+│   ├── ContentEncodingDecoder.cs
+│   └── …
+├── Caching/                 # HTTP Caching (RFC 9111)
+│   ├── CacheStore.cs
+│   ├── CacheFreshnessEvaluator.cs
+│   └── …
+└── Cookies/                 # Cookie management (RFC 6265)
+    ├── CookieJar.cs
+    └── CookieParser.cs
 ```
+
+### Namespace Mapping
+
+| Component Folder | Namespace | RFC(s) |
+|-----------------|-----------|--------|
+| `Protocol/Http10/` | `TurboHttp.Protocol.Http10` | RFC 1945 |
+| `Protocol/Http11/` | `TurboHttp.Protocol.Http11` | RFC 9112 |
+| `Protocol/Http2/` | `TurboHttp.Protocol.Http2` | RFC 9113 |
+| `Protocol/Http2/Hpack/` | `TurboHttp.Protocol.Http2.Hpack` | RFC 7541 |
+| `Protocol/Http3/` | `TurboHttp.Protocol.Http3` | RFC 9114 |
+| `Protocol/Http3/Qpack/` | `TurboHttp.Protocol.Http3.Qpack` | RFC 9204 |
+| `Protocol/Semantics/` | `TurboHttp.Protocol.Semantics` | RFC 9110 |
+| `Protocol/Caching/` | `TurboHttp.Protocol.Caching` | RFC 9111 |
+| `Protocol/Cookies/` | `TurboHttp.Protocol.Cookies` | RFC 6265 |
 
 ### Naming Convention
 
 - Encoders: `Http{version}Encoder.cs` — one per wire-format version
 - Decoders: `Http{version}Decoder.cs` — paired with encoder
-- RFC subfolder name matches the RFC number (e.g., `RFC9113/` for HTTP/2)
+- Component subfolder name matches the protocol version (e.g., `Http2/` for HTTP/2, `Semantics/` for cross-cutting concerns)
 
 ---
 
 ## Design Decisions
 
-1. **RFC-per-folder organisation** — Each RFC gets its own namespace and folder, making compliance tracking straightforward. Cross-cutting concerns (Huffman, shared types) live in the lowest-numbered RFC that defines them.
+1. **Component-per-folder organisation** — Each HTTP version and cross-cutting concern gets its own component subfolder, making compliance tracking straightforward. Shared codecs (HPACK under `Http2/Hpack/`, QPACK under `Http3/Qpack/`, Huffman at the root) are nested under their primary consumer.
 
 2. **Stateless encoders, stateful decoders** — Encoders are largely stateless (HPACK/QPACK state is injected). Decoders maintain parsing state machines because responses can arrive incrementally across multiple `IInputItem` deliveries.
 

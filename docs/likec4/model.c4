@@ -128,52 +128,22 @@ model {
       }
 
       // HTTP/2 stages
-      Http20StreamIdAllocatorStage = component 'Http20StreamIdAllocatorStage' {
+      Http20ConnectionStage = component 'Http20ConnectionStage' {
         #graphstage #http2
-        technology 'GraphStage'
-        description 'Allocates client-initiated stream IDs: 1, 3, 5, ...'
-      }
-
-      Http20Request2FrameStage = component 'Http20Request2FrameStage' {
-        #graphstage #http2
-        technology 'GraphStage'
-        description 'Converts requests into HEADERS + DATA frames using HPACK compression'
+        technology 'GraphStage (BidiFlow)'
+        description 'Central HTTP/2 bidirectional stage: stream ID allocation (1, 3, 5, …), HPACK request encoding, HEADERS/DATA frame emission, SETTINGS/PING/WINDOW_UPDATE/GOAWAY handling, response assembly, and stream-ID-based correlation'
       }
 
       Http20EncoderStage = component 'Http20EncoderStage' {
         #graphstage #http2
         technology 'GraphStage'
-        description 'Serialises HTTP/2 frames to wire bytes (9-byte header + payload)'
+        description 'Serialises HTTP/2 frames to wire bytes (9-byte header + payload); emits connection preface on first pull'
       }
 
       Http20DecoderStage = component 'Http20DecoderStage' {
         #graphstage #http2
         technology 'GraphStage'
         description 'Parses wire bytes into HTTP/2 frames (handles TCP fragmentation)'
-      }
-
-      Http20ConnectionStage = component 'Http20ConnectionStage' {
-        #graphstage #http2
-        technology 'GraphStage (BidiFlow)'
-        description 'Bidirectional HTTP/2 connection manager: flow control, SETTINGS/PING/GOAWAY handling, stream backpressure'
-      }
-
-      Http20StreamStage = component 'Http20StreamStage' {
-        #graphstage #http2
-        technology 'GraphStage'
-        description 'Assembles per-stream HEADERS + DATA frames into HttpResponseMessage'
-      }
-
-      Http20PrependPrefaceStage = component 'Http20PrependPrefaceStage' {
-        #graphstage #http2
-        technology 'GraphStage'
-        description 'Injects the HTTP/2 connection preface on first connect'
-      }
-
-      Http20CorrelationStage = component 'Http20CorrelationStage' {
-        #graphstage #http2
-        technology 'GraphStage'
-        description 'Stream-ID-based request-response correlation for multiplexed HTTP/2 streams'
       }
 
       // HTTP/3 stages
@@ -560,12 +530,9 @@ model {
   turbohttp.streams.Http11Engine -> turbohttp.streams.ConnectionStage 'Reads/writes bytes via transport'
 
   // HTTP/2 engine internals
-  turbohttp.streams.Http20Engine -> turbohttp.streams.Http20StreamIdAllocatorStage 'Allocates stream IDs'
-  turbohttp.streams.Http20Engine -> turbohttp.streams.Http20Request2FrameStage 'Converts requests to HEADERS + DATA frames'
-  turbohttp.streams.Http20Engine -> turbohttp.streams.Http20ConnectionStage 'Manages connection-level frames'
+  turbohttp.streams.Http20Engine -> turbohttp.streams.Http20ConnectionStage 'Manages HTTP/2 streams: ID allocation, HPACK encoding, flow control, response assembly, correlation'
   turbohttp.streams.Http20Engine -> turbohttp.streams.Http20EncoderStage 'Serialises frames to bytes'
   turbohttp.streams.Http20Engine -> turbohttp.streams.Http20DecoderStage 'Parses bytes to frames'
-  turbohttp.streams.Http20Engine -> turbohttp.streams.Http20StreamStage 'Assembles response from frames'
   turbohttp.streams.Http20Engine -> turbohttp.streams.ConnectionStage 'Reads/writes bytes via transport'
 
   // HTTP/3 engine internals
@@ -592,9 +559,9 @@ model {
   turbohttp.streams.Http10DecoderStage -> turbohttp.protocol.Http10Decoder 'Delegates decoding'
   turbohttp.streams.Http11DecoderStage -> turbohttp.protocol.Http11Decoder 'Delegates decoding'
   turbohttp.streams.Http20DecoderStage -> turbohttp.protocol.Http2FrameDecoder 'Delegates frame decoding'
-  turbohttp.streams.Http20StreamStage -> turbohttp.protocol.HpackDecoder 'Decompresses response headers'
-  turbohttp.streams.Http20Request2FrameStage -> turbohttp.protocol.Http2RequestEncoder 'Encodes requests to HEADERS + DATA frames'
-  turbohttp.streams.Http20Request2FrameStage -> turbohttp.protocol.HpackEncoder 'Compresses request headers'
+  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.Http2RequestEncoder 'Encodes requests to HEADERS + DATA frames'
+  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.HpackEncoder 'Compresses request headers'
+  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.HpackDecoder 'Decompresses response headers'
 
   // HPACK internals
   turbohttp.protocol.HpackEncoder -> turbohttp.protocol.HpackDynamicTable 'Maintains dynamic table'

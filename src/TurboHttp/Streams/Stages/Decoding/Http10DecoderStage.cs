@@ -2,7 +2,7 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC1945;
+using TurboHttp.Protocol.Http10;
 
 namespace TurboHttp.Streams.Stages.Decoding;
 
@@ -65,7 +65,7 @@ public sealed class Http10DecoderStage : GraphStage<FlowShape<IInputItem, HttpRe
                         return;
                     }
 
-                    if (item is not DataItem dataItem)
+                    if (item is not NetworkBuffer dataItem)
                     {
                         Pull(stage._in);
                         return;
@@ -73,23 +73,23 @@ public sealed class Http10DecoderStage : GraphStage<FlowShape<IInputItem, HttpRe
 
                     try
                     {
-                        var data = dataItem.Memory.Memory[..dataItem.Length];
+                        var data = dataItem.Memory;
 
                         if (_decoder.TryDecode(data, out var response) && response is not null)
                         {
-                            dataItem.Memory.Dispose();
+                            dataItem.Dispose();
                             Push(stage._out, response);
                         }
                         else
                         {
                             // Not enough data yet – return the buffer and wait for more
-                            dataItem.Memory.Dispose();
+                            dataItem.Dispose();
                             Pull(stage._in);
                         }
                     }
                     catch (Exception ex)
                     {
-                        dataItem.Memory.Dispose();
+                        dataItem.Dispose();
                         Log.Warning("Http10DecoderStage: Failed to decode response: {0}", ex.Message);
                         _decoder.Reset();
                         if (!HasBeenPulled(stage._in))

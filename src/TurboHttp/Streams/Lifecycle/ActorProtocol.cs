@@ -22,12 +22,9 @@ public static class ClientStreamOwner
     public sealed record Shutdown;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
 // Message Flow Diagrams (Merged Design: Owner handles materialization directly)
-// ──────────────────────────────────────────────────────────────────────────────
 //
 // HAPPY PATH: Create → Materialize → Run → Shutdown
-// ──────────────────────────────────────────────────
 //
 //   StreamManager                   Owner
 //       │                             │
@@ -45,7 +42,6 @@ public static class ClientStreamOwner
 //
 //
 // ERROR PATH: Materialization Failure → Retry with Backoff
-// ─────────────────────────────────────────────────────────
 //
 //   StreamManager                   Owner
 //       │                             │
@@ -66,7 +62,6 @@ public static class ClientStreamOwner
 //
 //
 // ERROR PATH: Retries Exhausted
-// ──────────────────────────────
 //
 //   StreamManager                   Owner
 //       │                             │

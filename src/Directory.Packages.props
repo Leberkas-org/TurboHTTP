@@ -3,11 +3,11 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <PropertyGroup Label="SharedVersions">
-        <AkkaVersion>1.5.63</AkkaVersion>
+        <AkkaVersion>1.5.64</AkkaVersion>
         <XunitVersion>3.2.2</XunitVersion>
     </PropertyGroup>
     <ItemGroup Label="Akka.NET">
-        <PackageVersion Include="Akka.Logger.Extensions.Logging" Version="1.4.22"/>
+        <PackageVersion Include="Akka.Hosting" Version="1.5.64"/>
         <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)"/>
         <PackageVersion Include="Akka.Streams.TestKit" Version="$(AkkaVersion)"/>
         <PackageVersion Include="Akka.TestKit.Xunit" Version="$(AkkaVersion)"/>

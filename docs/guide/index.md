@@ -59,8 +59,8 @@ Write requests from one task and read responses from another, running concurrent
 var client = new TurboHttpClient(new TurboClientOptions
 {
     BaseAddress = new Uri("https://api.example.com"),
-    DefaultRequestVersion = HttpVersion.Version20,
 }, actorSystem);
+client.DefaultRequestVersion = HttpVersion.Version20;
 
 var ids = Enumerable.Range(1, 1000).ToList();
 

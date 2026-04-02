@@ -13,58 +13,71 @@ aliases:
   - Test Infrastructure
   - Testing Guide
 ---
-
 # Test Organization & Infrastructure
 
-**Last Updated**: 2026-03-26
+**Last Updated**: 2026-04-07
 
 ## Test Projects
 
 | Project | Purpose | Count |
 |---------|---------|-------|
-| `src/TurboHttp.Tests/` | Unit tests organized by RFC | 260+ |
+| `src/TurboHttp.Tests/` | Unit tests organized by component/protocol version | 260+ |
 | `src/TurboHttp.StreamTests/` | Akka.Streams stage behavior tests | — |
 | `src/TurboHttp.IntegrationTests/` | End-to-end tests with Kestrel | 515+ |
 | `src/TurboHttp.Benchmarks/` | BenchmarkDotNet performance tests | 25+ |
 
 ## Unit Tests (`TurboHttp.Tests/`)
 
-Organized by RFC in subfolders:
+Organized by component/protocol version (post-Feature-040):
 
-| Folder | RFC | Files | Tests |
-|--------|-----|-------|-------|
-| `RFC1945/` (01–17) | HTTP/1.0 | 17 | 233 |
-| `RFC9112/` (01–26) | HTTP/1.1 | 26 | 374 |
-| `RFC9113/` (01–27) | HTTP/2 | 27 | 545 |
-| `RFC7541/` (01–07) | HPACK | 7 | 419 |
-| `RFC9110/` (01–02) | HTTP Semantics | 2 | 123 |
-| `RFC9111/` (01–04) | Caching | 4 | 75 |
-| `RFC6265/` (01–02) | Cookies | 2 | 66 |
-| `RFC9114/` (01–32) | HTTP/3 | 32 | — |
-| `RFC9204/` (01–11) | QPACK | 11 | — |
-| `Hosting/` | Client Builder | 4 | — |
+| Folder | Component | RFC | Example Files |
+|--------|-----------|-----|----------------|
+| `Http10/` | HTTP/1.0 | RFC 1945 | `Http10EncoderSpec.cs`, `Http10ParserSpec.cs` |
+| `Http11/` | HTTP/1.1 | RFC 9112 | `Http11EncoderSpec.cs`, `Http11ChunkedDecoderSpec.cs` |
+| `Http11/Encoding/` | HTTP/1.1 Encoding | RFC 9112 | `Http11EncoderSpec.cs` |
+| `Http11/Decoding/` | HTTP/1.1 Decoding | RFC 9112 | `Http11DecoderSpec.cs` |
+| `Http11/Chunking/` | HTTP/1.1 Chunked Transfer | RFC 9112 | `Http11ChunkedDecoderSpec.cs` |
+| `Http2/` | HTTP/2 Frames & Streams | RFC 9113 | `Http2FrameDecoderSpec.cs`, `Http2ConnectionSpec.cs` |
+| `Http2/Frames/` | HTTP/2 Frame Layer | RFC 9113 | `Http2FrameDecoderSpec.cs` |
+| `Http2/Connection/` | HTTP/2 Connection | RFC 9113 | `Http2ConnectionSpec.cs` |
+| `Http2/Stream/` | HTTP/2 Stream | RFC 9113 | `Http2StreamSpec.cs` |
+| `Http2/Hpack/` | HPACK Header Compression | RFC 7541 | `HpackEncodingSpec.cs`, `HpackDecodingSpec.cs` |
+| `Http3/` | HTTP/3 (QUIC) | RFC 9114 | `Http3ConnectionSpec.cs`, `Http3FrameDecoderSpec.cs` |
+| `Http3/Frames/` | HTTP/3 Frame Layer | RFC 9114 | `Http3FrameDecoderSpec.cs` |
+| `Http3/Connection/` | HTTP/3 Connection | RFC 9114 | `Http3ConnectionSpec.cs` |
+| `Http3/Qpack/` | QPACK Header Compression | RFC 9204 | `QpackEncodingSpec.cs`, `QpackDecodingSpec.cs` |
+| `Semantics/` | HTTP Semantics | RFC 9110 | `RedirectHandlingSpec.cs`, `RetryPolicySpec.cs` |
+| `Caching/` | HTTP Caching | RFC 9111 | `CacheValidationSpec.cs`, `CacheStorageSpec.cs` |
+| `Cookies/` | HTTP State Management | RFC 6265 | `CookieInjectionSpec.cs`, `CookieStorageSpec.cs` |
+| `Transport/` | Connection pooling & management | — | `ConnectionPoolSpec.cs`, `LeaseManagementSpec.cs` |
+| `Security/` | TLS, certificate validation | — | `CertificateValidationSpec.cs` |
+| `Diagnostics/` | Telemetry & logging | — | `LoggingSpec.cs`, `TraceContextSpec.cs` |
+| `Hosting/` | Client builder & DI | — | `ClientBuilderSpec.cs`, `HostingExtensionsSpec.cs` |
 
-**File naming**: `NN_<ThemaTests>.cs` — two-digit prefix groups by RFC section.
+**File naming**: `<Subject>Spec.cs` — descriptive name with `Spec` suffix (Akka.NET convention). Numeric prefixes (`NN_`) are deprecated.
 
 ## Stream Tests (`TurboHttp.StreamTests/`)
 
-Tests Akka.Streams GraphStage behavior. Organized by RFC (mirroring `TurboHttp.Tests`):
+Tests Akka.Streams GraphStage behavior. Organized by component (mirroring `TurboHttp.Tests`):
 
 | Folder | Coverage |
 |--------|----------|
-| `RFC1945/` | HTTP/1.0 encoder/decoder/roundtrip stages, TCP fragmentation |
-| `RFC6265/` | Cookie injection and storage stage tests |
-| `RFC7541/` | HPACK stream integration tests |
-| `RFC9110/` | Decompression, redirect, retry stage tests |
-| `RFC9111/` | Cache lookup and storage stage tests |
-| `RFC9112/` | HTTP/1.1 encoder/decoder/chunked/correlation/pipeline/connection stages |
-| `RFC9113/` | HTTP/2 encoder/decoder/connection/stream/HPACK/pseudo-header/flow-control/correlation stages |
-| `RFC9114/` | HTTP/3 encoder/decoder/connection/stream/field-validation/origin-validation/certificate/idle-timeout stages |
-| `RFC9204/` | QPACK stream stage tests |
+| `Http10/` | HTTP/1.0 encoder/decoder/roundtrip stages, TCP fragmentation |
+| `Http11/` | HTTP/1.1 encoder/decoder/chunked/correlation/pipeline/connection stages |
+| `Http2/Frames/` | HTTP/2 frame encoding/decoding stages |
+| `Http2/Connection/` | HTTP/2 connection management stages |
+| `Http2/Stream/` | HTTP/2 stream lifecycle stages |
+| `Http2/Hpack/` | HPACK encoder/decoder stream integration |
+| `Http3/Frames/` | HTTP/3 frame encoding/decoding stages |
+| `Http3/Connection/` | HTTP/3 connection management stages |
+| `Http3/Qpack/` | QPACK encoder/decoder stream integration |
+| `Semantics/` | Decompression, redirect, retry stage tests |
+| `Caching/` | Cache lookup and storage stage tests |
+| `Cookies/` | Cookie injection and storage stage tests |
 | `Streams/` | Stage infrastructure: connection, engine routing, enricher, buffer lifecycle, pipeline wiring |
 | `IO/` | ConnectionActor, HostPool, ConnectionState, ConnectionHandle, ClientByteMover, ClientRunner, QUIC tests |
 
-**File naming**: RFC subfolder files use descriptive names (`Http11EncoderStageTests.cs`); `Streams/` uses `NN_` prefix for ordered tests.
+**File naming**: Component-based folder files use descriptive names with `Spec` suffix (`Http11EncoderSpec.cs`, `HpackEncodingSpec.cs`); `Streams/` and `IO/` use numeric prefix for ordered tests.
 
 ## Base Classes
 
@@ -97,13 +110,15 @@ Kestrel-based fixtures for end-to-end HTTP testing:
 - **SmokeTests.cs** provides initial end-to-end coverage
 - Each fixture starts a real Kestrel server with dynamic port discovery
 
-## Conventions
+## Conventions (Post-Feature-040)
 
-- **Max 500 lines** per test file — split into multiple focused files if exceeded
+- **Max 500 lines** per test class — split into multiple focused files if exceeded
 - **Timeout REQUIRED** on all async tests: `[Fact(Timeout = 5000)]` or `CancellationToken`
-- **DisplayName**: `"RFC-section-cat-nnn: description"` on all `[Fact]`/`[Theory]`
+- **RFC Traceability**: Use `[Trait("RFC", "RFC<number>-<section>")]` instead of `DisplayName` (e.g., `[Trait("RFC", "RFC9113-4.1")]`)
+- **Method names**: BDD style `Subject_should_behavior()` (e.g., `Http2Encoder_should_set_key_from_frame()`)
 - **Sealed classes**: `public sealed class` for all test classes
-- **Namespace**: matches RFC folder (e.g., `namespace TurboHttp.Tests.RFC9113;`)
+- **Namespace**: matches component folder (e.g., `namespace TurboHttp.Tests.Http2;` or `TurboHttp.Tests.Http2.Encoding;`)
+- **File naming**: `<Subject>Spec.cs` with `Spec` suffix (Akka.NET convention)
 - **No `#nullable enable`**: enabled at project level
 
 ## Completed Testing Phases

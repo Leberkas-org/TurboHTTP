@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -54,7 +54,6 @@ internal sealed class TracingBidiStage
 
         public Logic(TracingBidiStage stage) : base(stage.Shape)
         {
-            // ── Request direction ──────────────────────────────────────
             SetHandler(stage._inRequest,
                 onPush: () =>
                 {
@@ -72,7 +71,14 @@ internal sealed class TracingBidiStage
                     TurboTrace.Request.Info(this, "Request started: {0} {1}", method, uri);
 
                     // Record request start timestamp for duration calculation
-                    request.Options.Set(RequestTimestampKey, Stopwatch.GetTimestamp());
+                    // Only store when tracing or metrics is active to avoid unnecessary allocation
+                    if (TurboHttpInstrumentation.Source.HasListeners()
+                        || TurboTrace.ShouldTrace(TurboTraceCategory.Request, TurboTraceLevel.Info)
+                        || TurboHttpMetrics.RequestCount.Enabled
+                        || TurboHttpMetrics.RequestDuration.Enabled)
+                    {
+                        request.Options.Set(RequestTimestampKey, Stopwatch.GetTimestamp());
+                    }
 
                     Push(stage._outRequest, request);
                 },
@@ -95,7 +101,6 @@ internal sealed class TracingBidiStage
                 onPull: () => Pull(stage._inRequest),
                 onDownstreamFinish: _ => Cancel(stage._inRequest));
 
-            // ── Response direction ─────────────────────────────────────
             SetHandler(stage._inResponse,
                 onPush: () =>
                 {
@@ -148,6 +153,11 @@ internal sealed class TracingBidiStage
 
         private static void RecordRequestMetrics(HttpResponseMessage response, double durationMs)
         {
+            if (!TurboHttpMetrics.RequestCount.Enabled && !TurboHttpMetrics.RequestDuration.Enabled)
+            {
+                return;
+            }
+
             var request = response.RequestMessage;
             if (request is null)
             {

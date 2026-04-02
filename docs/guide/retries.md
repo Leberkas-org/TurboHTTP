@@ -2,7 +2,7 @@
 
 TurboHttp automatically retries failed requests when it is safe to do so — specifically, when the HTTP method is **idempotent** (safe to repeat without side effects) and the failure is a transient network or server error.
 
-Retries are disabled by default. Enable them by setting `RetryPolicy` in `TurboClientOptions`.
+Retries are disabled by default. Enable them by calling `.WithRetry()` on the builder.
 
 ## How It Works
 
@@ -48,41 +48,25 @@ If the date is in the past, the delay is treated as zero. Set `RespectRetryAfter
 
 ## Configuration
 
-Retries are configured via `RetryPolicy` on `TurboClientOptions`:
+Retries are configured via `.WithRetry()` on the builder:
 
 ```csharp
 // Enable retries with defaults: up to 3 retries, Retry-After respected
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient(options =>
 {
-    RetryPolicy = RetryPolicy.Default
-};
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRetry(RetryPolicy.Default);
 
 // Custom retry policy
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient("api", options =>
 {
-    RetryPolicy = new RetryPolicy
-    {
-        MaxRetries = 5,          // retry up to 5 times (default: 3)
-        RespectRetryAfter = true // honour Retry-After header (default: true)
-    }
-};
-
-// Disable retries entirely
-var options = new TurboClientOptions
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRetry(new RetryPolicy
 {
-    RetryPolicy = null  // null disables retries
-};
-```
-
-With DI:
-
-```csharp
-services.AddTurboHttpClient();
-
-// Then use via factory
-var client = factory.CreateClient(opts => opts with
-{
-    RetryPolicy = new RetryPolicy { MaxRetries = 5 }
+    MaxRetries = 5,          // retry up to 5 times (default: 3)
+    RespectRetryAfter = true // honour Retry-After header (default: true)
 });
 ```
 
@@ -100,11 +84,11 @@ The following situations are **never retried**, regardless of the method or stat
 The simplest way to enable retries with sensible defaults:
 
 ```csharp
-var client = new TurboHttpClient(new TurboClientOptions
+builder.Services.AddTurboHttpClient(options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-    RetryPolicy = RetryPolicy.Default  // 3 retries, Retry-After respected
-});
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRetry(RetryPolicy.Default);
 ```
 
 `RetryPolicy.Default` retries up to 3 times and honours `Retry-After` delays from the server.

@@ -3,7 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Diagnostics;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9113;
+using TurboHttp.Protocol.Http2;
 
 namespace TurboHttp.Streams.Stages.Decoding;
 
@@ -36,22 +36,17 @@ public sealed class Http20DecoderStage : GraphStage<FlowShape<IInputItem, Http2F
                 {
                     var item = Grab(stage._in);
 
-                    if (item is not DataItem dataItem)
+                    if (item is not NetworkBuffer buffer)
                     {
                         Pull(stage._in);
                         return;
                     }
 
-                    IReadOnlyList<Http2Frame> frames;
-                    try
-                    {
-                        var data = dataItem.Memory.Memory[..dataItem.Length];
-                        frames = _decoder.Decode(data);
-                    }
-                    finally
-                    {
-                        dataItem.Memory.Dispose();
-                    }
+                    // Transfer ownership of the NetworkBuffer to the decoder.
+                    // The decoder keeps the buffer alive until the next Decode() call,
+                    // ensuring returned frame slices remain valid while downstream processes them.
+                    // Akka back-pressure guarantees all frames are consumed before the next onPush.
+                    var frames = _decoder.Decode(buffer);
 
                     // Filter out UnknownFrame — RFC 9113 §5.5: unknown types MUST be ignored.
                     // Avoid LINQ allocation: scan once to check for unknown frames before deciding.

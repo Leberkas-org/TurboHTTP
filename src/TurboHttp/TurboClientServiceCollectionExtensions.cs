@@ -1,11 +1,12 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Event;
-using Akka.Logger.Extensions.Logging;
+using Akka.Hosting.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TurboHttp.Internal;
 
 namespace TurboHttp;
 
@@ -15,7 +16,7 @@ namespace TurboHttp;
 public static class TurboClientServiceCollectionExtensions
 {
     private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
-        """akka.loggers = ["Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging"]""");
+        """akka.loggers = ["Akka.Hosting.Logging.LoggerFactoryLogger, Akka.Hosting"]""");
 
     /// <summary>
     /// Registers a named TurboHttp client and returns an <see cref="ITurboHttpClientBuilder"/>
@@ -41,26 +42,42 @@ public static class TurboClientServiceCollectionExtensions
             var system = provider.GetService<ActorSystem>();
             if (system is null)
             {
+                // Derive dispatcher thread counts from the highest MaxEndpointSubstreams
+                // across all registered clients.
+                var optionsMonitor = provider.GetRequiredService<IOptionsMonitor<TurboClientOptions>>();
+                var maxSubstreams = provider.GetServices<TurboHttpClientName>()
+                    .Select(n => optionsMonitor.Get(n.Name).MaxEndpointSubstreams)
+                    .DefaultIfEmpty(TurboClientOptions.DefaultMaxEndpointSubstreams)
+                    .Max();
+
+                var config = LoggingHocon
+                    .WithFallback(TurboHttpDispatchers.CreateConfig(maxSubstreams));
+
                 var loggerFactory = provider.GetService<ILoggerFactory>();
                 if (loggerFactory is not null)
                 {
                     // Bridge Akka logging to Microsoft.Extensions.Logging
-                    LoggingLogger.LoggerFactory = loggerFactory;
-                    system = ActorSystem.Create("turbohttp", LoggingHocon);
+                    var setup = BootstrapSetup.Create().WithConfig(config)
+                        .And(new LoggerFactorySetup(loggerFactory));
+                    system = ActorSystem.Create("turbohttp", setup);
                 }
                 else
                 {
                     // Standalone usage — fallback to Akka's default logger
-                    system = ActorSystem.Create("turbohttp");
+                    system = ActorSystem.Create("turbohttp", config);
                 }
 
-                system.Log.Info("Created new Akka.NET ActorSystem {0} - none found in IServiceCollection", system.Name);
+                system.Log.Info("Created ActorSystem {0} — dispatchers sized from MaxEndpointSubstreams={1}",
+                    system.Name, maxSubstreams);
             }
 
             var options = provider.GetRequiredService<IOptionsMonitor<TurboClientOptions>>();
             var descriptors = provider.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>();
             return new TurboHttpClientFactory(options, descriptors, provider, system);
         });
+
+        // Register client name so the factory can resolve MaxEndpointSubstreams at startup.
+        services.AddSingleton(new TurboHttpClientName(name));
 
         return new TurboHttpClientBuilder(name, services);
     }
@@ -92,7 +109,8 @@ public static class TurboClientServiceCollectionExtensions
         where TClient : class
     {
         var name = typeof(TClient).Name;
-        services.AddTransient<TClient>(sp => (TClient)sp.GetRequiredService<ITurboHttpClientFactory>().CreateClient(name));
+        services.AddTransient<TClient>(sp =>
+            (TClient)sp.GetRequiredService<ITurboHttpClientFactory>().CreateClient(name));
         return services.AddTurboHttpClient(name, configure);
     }
 
@@ -113,11 +131,12 @@ public static class TurboClientServiceCollectionExtensions
         where TImpl : class, TClient
     {
         var name = typeof(TClient).Name;
-        services.AddTransient<TClient>(sp => (TClient)sp.GetRequiredService<ITurboHttpClientFactory>().CreateClient(name));
+        services.AddTransient<TClient>(sp =>
+            (TClient)sp.GetRequiredService<ITurboHttpClientFactory>().CreateClient(name));
         services.AddTransient<TImpl>(sp => (TImpl)sp.GetRequiredService<ITurboHttpClientFactory>().CreateClient(name));
         return services.AddTurboHttpClient(name, configure);
     }
-    
+
     public static ITurboHttpClient CreateClient(this ITurboHttpClientFactory factory)
     {
         ArgumentNullException.ThrowIfNull(factory);

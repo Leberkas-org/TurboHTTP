@@ -9,7 +9,7 @@ tags:
   - guide
   - meta
 created: '2026-03-28'
-updated: '2026-03-28'
+updated: '2026-04-07'
 ---
 # Developer Onboarding Guide
 
@@ -45,15 +45,24 @@ src/
 │   ├── Handlers/               # TurboHandler (HttpMessageHandler bridge)
 │   ├── Hosting/                # DI registration extensions
 │   ├── Streams/                # GraphStages: Encoding/, Decoding/, Features/, Routing/
-│   ├── Protocol/               # Encoders/Decoders, HPACK/QPACK, RFC subfolders
-│   └── Transport/              # Actor-free connection pool, Channels, TCP/QUIC
-├── TurboHttp.Tests/            # RFC-organized test suite
+│   ├── Protocol/               # Encoders/Decoders, HPACK/QPACK, component subfolders
+│   │   ├── Http10/             # HTTP/1.0 (RFC 1945)
+│   │   ├── Http11/             # HTTP/1.1 (RFC 9112)
+│   │   ├── Http2/              # HTTP/2 + Hpack/ (RFC 9113, RFC 7541)
+│   │   ├── Http3/              # HTTP/3 + Qpack/ (RFC 9114, RFC 9204)
+│   │   ├── Semantics/          # HTTP semantics: redirect, retry, compression (RFC 9110)
+│   │   ├── Caching/            # HTTP caching (RFC 9111)
+│   │   └── Cookies/            # Cookie management (RFC 6265)
+│   └── Transport/              # Actor-free connection pool, Channels
+│       ├── Connection/         # ConnectionPool, ConnectionLease, IConnectionScope, ConnectionStage
+│       ├── Tcp/                # TcpTransportHandler, ClientState, ClientByteMover
+│       └── Quic/               # QuicTransportHandler, QuicConnectionManager
+├── TurboHttp.Tests/            # Component-organized test suite
 ├── TurboHttp.StreamTests/      # Akka.Streams stage tests
 ├── TurboHttp.Benchmarks/       # BenchmarkDotNet performance suite
 └── TurboHttp.sln               # Solution file
 notes/                          # This vault — single source of truth for non-code knowledge
 docs/                           # VitePress documentation site
-planning/                       # Feature plans, release notes, memory
 ```
 
 ## Build Commands
@@ -67,10 +76,13 @@ dotnet build --configuration Release ./src/TurboHttp.sln
 dotnet test ./src/TurboHttp.sln
 
 # Run specific test class (xUnit v3 MTP filter — note: args after --)
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-class "TurboHttp.Tests.RFC9113.Http2DecoderBasicFrameTests"
+dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-class "TurboHttp.Tests.Http2.Http2DecoderBasicFrameTests"
 
-# Run specific RFC section (by namespace)
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.RFC9113"
+# Run tests for a component
+dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.Http2"
+
+# Run tests with specific RFC trait
+dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter "Trait~RFC9113"
 
 # Run benchmarks
 dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
@@ -134,7 +146,7 @@ Every AI agent session must follow this sequence:
 ### MCP Tools to Use
 
 | Task | MCP Tool |
-|------|---------|
+|------|----------|
 | Find existing notes | `search_notes` |
 | Read a note | `read_note` |
 | Create a new note | `write_note` |
@@ -146,7 +158,7 @@ Every AI agent session must follow this sequence:
 ### Knowledge Capture Rules
 
 | Discovery Type | Destination | Template |
-|----------------|-------------|----------|
+|---|---|---|
 | RFC compliance gaps | `notes/RFC/` | RFC-Note |
 | Architecture decisions | `notes/Architecture/` | ADR |
 | Protocol limitations | `notes/Architecture/` | ADR |
@@ -238,18 +250,18 @@ Key rules:
 - Always pass `CancellationToken` through async call chains
 - Always use braces for control structures, even single-line
 
-### Test Conventions
+### Test Conventions (Post-Feature-040)
 
 ```csharp
-// Namespace matches RFC folder
-namespace TurboHttp.Tests.RFC9113;
+// Namespace matches component folder
+namespace TurboHttp.Tests.Http2.Encoding;
 
-public sealed class MyRfcTests
+public sealed class Http2EncoderSpec : StreamTestBase
 {
     // Timeout is REQUIRED on all async tests
     [Fact(Timeout = 5000)]
-    [DisplayName("RFC-9113-frm-001: DATA frame must not be sent on idle stream")]
-    public async Task DataFrame_NotSentOnIdleStream()
+    [Trait("RFC", "RFC9113-4.1")]
+    public async Task Http2Encoder_should_encode_data_frame_correctly()
     {
         // ...
     }
@@ -257,20 +269,22 @@ public sealed class MyRfcTests
     // Theory with InlineData for parameterised cases
     [Theory(Timeout = 5000)]
     [InlineData("GET"), InlineData("POST")]
-    [DisplayName("RFC-9113-hdr-001: method pseudo-header must be present")]
-    public async Task MethodPseudoHeader_MustBePresent(string method)
+    [Trait("RFC", "RFC9113-4.3")]
+    public async Task Http2Encoder_must_include_method_pseudo_header(string method)
     {
         // ...
     }
 }
 ```
 
-Key rules:
+Key rules (post-Feature-040):
 
-- Test classes: `public sealed class`, namespace matches RFC folder (e.g. `TurboHttp.Tests.RFC9113`)
-- File naming: `NN_<ThemaTests>.cs` — two-digit prefix groups tests by RFC section
-- Use `[Fact]` for single cases, `[Theory]` + `[InlineData]` for parameterised cases
-- `DisplayName` format: `"RFC-section-cat-nnn: description"`
+- **Test classes**: `public sealed class`, namespace matches component folder (e.g., `TurboHttp.Tests.Http2.Encoding`, `TurboHttp.Tests.Caching`)
+- **File naming**: `<Subject>Spec.cs` — descriptive name with `Spec` suffix (Akka.NET convention)
+- **Use `[Fact]`** for single cases, **`[Theory]`** + **`[InlineData]`** for parameterised cases
+- **RFC Traceability**: `[Trait("RFC", "RFC<number>-<section>")]` (e.g., `[Trait("RFC", "RFC9113-4.1")]`)
+  - CI filter: `dotnet test --filter "Trait~RFC9113"`
+- **Method names**: BDD style `Subject_should_behavior()` (e.g., `Http2Encoder_should_encode_data_frame_correctly()`)
 - **Timeout is REQUIRED** — all async tests must have `[Fact(Timeout = 5000)]` or `[Theory(Timeout = 5000)]`
 - **Max 500 lines per test class** — split into multiple files if exceeded
 - Do NOT add `#nullable enable` at the top of test files
@@ -282,3 +296,4 @@ Key rules:
 - [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — full architecture reference
 - [[Architecture/Status/04-CURRENT_STATE_SUMMARY|Current State Summary]] — project status and roadmap
 - [[RFC/00-RFC_STATUS_MATRIX|RFC Status Matrix]] — compliance tracking by RFC
+- [[Architecture/Guides/12-TEST_ORGANIZATION|Test Organization]] — detailed test folder mapping and structure

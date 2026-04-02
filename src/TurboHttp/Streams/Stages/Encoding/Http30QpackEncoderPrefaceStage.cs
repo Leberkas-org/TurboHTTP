@@ -1,4 +1,3 @@
-using System.Buffers;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -58,11 +57,11 @@ public sealed class Http30QpackEncoderPrefaceStage : GraphStage<FlowShape<ReadOn
                     bytes = instructions.ToArray();
                 }
 
-                var owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
-                bytes.AsSpan().CopyTo(owner.Memory.Span);
+                var buf = NetworkBuffer.Rent(bytes.Length);
+                bytes.AsSpan().CopyTo(buf.FullMemory.Span);
+                buf.Length = bytes.Length;
 
-                var dataItem = new DataItem(owner, bytes.Length);
-                Push(stage._out, new Http3OutputTaggedItem(dataItem, OutputStreamType.QpackEncoder));
+                Push(stage._out, new Http3OutputTaggedItem(buf, OutputStreamType.QpackEncoder));
             },
             onUpstreamFinish: CompleteStage,
             onUpstreamFailure: ex =>

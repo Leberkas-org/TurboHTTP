@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using TurboHttp.Benchmarks.Internal;
 
 namespace TurboHttp.Benchmarks;
 
@@ -11,7 +12,7 @@ namespace TurboHttp.Benchmarks;
 [WarmupCount(3)]
 [IterationCount(5)]
 [InvocationCount(32)]
-public sealed class HttpClientSingleRequestBenchmarks : BenchmarkBaseClass
+public class HttpClientSingleRequestBenchmarks : BenchmarkBaseClass
 {
     private HttpClient _httpClient = null!;
     private static readonly byte[] HeavyPayload = GeneratePayload(10 * 1024);
@@ -92,10 +93,13 @@ public sealed class HttpClientSingleRequestBenchmarks : BenchmarkBaseClass
 [WarmupCount(3)]
 [IterationCount(5)]
 [InvocationCount(32)]
-public sealed class HttpClientConcurrentBenchmarks : BenchmarkBaseClass
+public class HttpClientConcurrentBenchmarks : BenchmarkBaseClass
 {
     private HttpClient _httpClient = null!;
     private static readonly byte[] HeavyPayload = GeneratePayload(10 * 1024);
+
+    // Pre-allocated per parameter combination — avoids Task[] heap allocation inside the hot path.
+    private Task[] _tasks = null!;
 
     /// <summary>
     /// Creates an <see cref="HttpClient"/> configured for the current HTTP version with
@@ -122,6 +126,7 @@ public sealed class HttpClientConcurrentBenchmarks : BenchmarkBaseClass
             DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact,
         };
 
+        _tasks = new Task[ConcurrencyLevel];
         WarmupRequest().GetAwaiter().GetResult();
     }
 
@@ -147,13 +152,12 @@ public sealed class HttpClientConcurrentBenchmarks : BenchmarkBaseClass
     [Benchmark]
     public Task ConcurrentRequests_Light()
     {
-        var tasks = new Task[ConcurrencyLevel];
         for (var i = 0; i < ConcurrencyLevel; i++)
         {
-            tasks[i] = SendLightRequest();
+            _tasks[i] = SendLightRequest();
         }
 
-        return Task.WhenAll(tasks);
+        return Task.WhenAll(_tasks);
     }
 
     /// <summary>
@@ -163,13 +167,12 @@ public sealed class HttpClientConcurrentBenchmarks : BenchmarkBaseClass
     [Benchmark]
     public Task ConcurrentRequests_Heavy()
     {
-        var tasks = new Task[ConcurrencyLevel];
         for (var i = 0; i < ConcurrencyLevel; i++)
         {
-            tasks[i] = SendHeavyRequest();
+            _tasks[i] = SendHeavyRequest();
         }
 
-        return Task.WhenAll(tasks);
+        return Task.WhenAll(_tasks);
     }
 
     private async Task SendLightRequest()

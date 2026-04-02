@@ -28,18 +28,36 @@ The Transport Layer manages physical network connections — TCP sockets, TLS st
 
 | File | Purpose |
 |------|---------|
-| `src/TurboHttp/Transport/ConnectionPool.cs` | Thread-safe per-host pool: `AcquireAsync`/`Release` API |
-| `src/TurboHttp/Transport/ConnectionLease.cs` | Single connection lease with busy/idle state, stream count, lifetime tracking |
-| `src/TurboHttp/Transport/ConnectionStage.cs` | Unified `GraphStage` bridging pipeline ↔ transport; delegates to `ITransportHandler` |
-| `src/TurboHttp/Transport/ITransportHandler.cs` | Strategy interface: `TcpTransportHandler` (TCP) or `QuicTransportHandler` (QUIC) |
-| `src/TurboHttp/Transport/TcpTransportHandler.cs` | TCP/TLS single-stream handler |
-| `src/TurboHttp/Transport/QuicTransportHandler.cs` | QUIC multi-stream handler |
-| `src/TurboHttp/Transport/QuicConnectionManager.cs` | QUIC connection + stream lifecycle management |
-| `src/TurboHttp/Transport/ClientState.cs` | Per-connection state: inbound/outbound `Channel<T>`, `Pipe`, stream direction |
-| `src/TurboHttp/Transport/ClientByteMover.cs` | Async read/write pump between `Stream` and `Channel<T>` |
-| `src/TurboHttp/Transport/DirectConnectionFactory.cs` | Establishes new TCP/TLS/QUIC connections |
-| `src/TurboHttp/Transport/TcpOptionsFactory.cs` | Builds `TcpOptions`/`TlsOptions`/`QuicOptions` from URI + client config |
+### Connection Management & Pooling
+
+| `src/TurboHttp/Transport/Connection/ConnectionPool.cs` | Thread-safe per-host pool: `AcquireAsync`/`Release` API |
+| `src/TurboHttp/Transport/Connection/ConnectionLease.cs` | Single connection lease with busy/idle state, stream count, lifetime tracking |
+| `src/TurboHttp/Transport/Connection/ConnectionStage.cs` | Unified `GraphStage` bridging pipeline ↔ transport; delegates to `ITransportHandler` |
 | `src/TurboHttp/Pooling/ConnectionHandle.cs` | Bundles Channel read/write handles for direct TCP I/O |
+
+### Connection Scopes (Protocol-Aware Lifecycle)
+
+| `src/TurboHttp/Transport/Connection/IConnectionScope.cs` | Interface: Acquire, Return, CanReuse, Cleanup, transport callback |
+| `src/TurboHttp/Transport/Connection/SingleRequestConnectionScope.cs` | HTTP/1.0: always new connection |
+| `src/TurboHttp/Transport/Connection/PersistentConnectionScope.cs` | HTTP/1.1+: reuse when keep-alive |
+| `src/TurboHttp/Transport/Connection/DeferredConnectionScope.cs` | Factory: defers scope creation until first request provides TcpOptions |
+
+### TCP/TLS Transport
+
+| `src/TurboHttp/Transport/Tcp/ITransportHandler.cs` | Strategy interface: `TcpTransportHandler` (TCP) or `QuicTransportHandler` (QUIC) |
+| `src/TurboHttp/Transport/Tcp/TcpTransportHandler.cs` | TCP/TLS single-stream handler |
+| `src/TurboHttp/Transport/Tcp/ClientState.cs` | Per-connection state: inbound/outbound `Channel<T>`, `Pipe`, stream direction |
+| `src/TurboHttp/Transport/Tcp/ClientByteMover.cs` | Async read/write pump between `Stream` and `Channel<T>` |
+| `src/TurboHttp/Transport/Tcp/TcpOptionsFactory.cs` | Builds `TcpOptions`/`TlsOptions` from URI + client config |
+
+### QUIC/HTTP3 Transport
+
+| `src/TurboHttp/Transport/Quic/QuicTransportHandler.cs` | QUIC multi-stream handler |
+| `src/TurboHttp/Transport/Quic/QuicConnectionManager.cs` | QUIC connection + stream lifecycle management |
+
+### Utilities
+
+| `src/TurboHttp/Transport/DirectConnectionFactory.cs` | Establishes new TCP/TLS/QUIC connections |
 | `src/TurboHttp/Internal/Messages.cs` | Pipeline message types: `DataItem`, `ConnectItem`, `CloseSignalItem`, etc. |
 
 ## Data Flow
@@ -186,13 +204,7 @@ ConnectionStage delegates to:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-**Key files:**
-| File | Purpose |
-|------|---------|
-| `src/TurboHttp/Transport/ConnectionScope/IConnectionScope.cs` | Interface: Acquire, Return, CanReuse, Cleanup, transport callback |
-| `src/TurboHttp/Transport/ConnectionScope/SingleRequestConnectionScope.cs` | HTTP/1.0: always new connection |
-| `src/TurboHttp/Transport/ConnectionScope/PersistentConnectionScope.cs` | HTTP/1.1+: reuse when keep-alive |
-| `src/TurboHttp/Transport/ConnectionScope/DeferredConnectionScope.cs` | Factory: defers scope creation until first request provides TcpOptions |
+(See Key Files section above for scope implementation locations in `src/TurboHttp/Transport/Connection/`.)
 
 **Signal flow:** `ConnectionReuseFlowStage` calls `scope.ReturnAsync(canReuse)` → scope invokes registered callback → `TcpTransportHandler.OnTransportReturned(canReuse)` does cleanup (stop pump, clear handle, increment gen). All synchronous within the fused actor — no graph edges needed.
 

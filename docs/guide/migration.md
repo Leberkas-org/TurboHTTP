@@ -98,8 +98,8 @@ builder.Services.AddHttpClient("my-api")
 builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
-    options.RetryPolicy = RetryPolicy.Default; // 3 retries, respects Retry-After
-});
+})
+.WithRetry(RetryPolicy.Default); // 3 retries, respects Retry-After
 ```
 
 No Polly dependency needed. TurboHttp automatically:
@@ -206,8 +206,8 @@ var actorSystem = ActorSystem.Create("turbo");
 await using var client = new TurboHttpClient(new TurboClientOptions
 {
     BaseAddress = new Uri("https://api.example.com"),
-    DefaultRequestVersion = HttpVersion.Version20,
 }, actorSystem);
+client.DefaultRequestVersion = HttpVersion.Version20;
 ```
 
 TurboHttp provides full HTTP/2 multiplexing — all requests to the same host share a single TCP connection with concurrent streams. See [HTTP/2 & Multiplexing](./http2).
@@ -270,9 +270,9 @@ builder.Services.AddHttpClient("legacy-api", client =>
 builder.Services.AddTurboHttpClient("new-api", options =>
 {
     options.BaseAddress = new Uri("https://new.api.com");
-    options.RetryPolicy = RetryPolicy.Default;
-    options.CachePolicy = CachePolicy.Default;
-});
+})
+.WithRetry(RetryPolicy.Default)
+.WithCache(CachePolicy.Default);
 ```
 
 Migrate service by service, starting with the ones that benefit most from retries, caching, or HTTP/2 multiplexing.

@@ -2,8 +2,8 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9112;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http11;
+using TurboHttp.Protocol.Http3;
 
 namespace TurboHttp.Streams.Stages.Features;
 
@@ -59,8 +59,8 @@ internal sealed class
                     _isHttp10 = response.Version is { Major: 1, Minor: 0 };
 
                     // HTTP/1.0: skip feedback signal — ExtractOptionsStage emits ConnectItem
-                    // unconditionally for H10 (Protocol-Flag, TASK-001-001) because HTTP/1.0
-                    // always closes the connection after each response (RFC 9110 §9.2.1).
+                    // unconditionally for HTTP/1.0 because the protocol always closes the
+                    // connection after each response (RFC 9110 §9.2.1).
                     // Connection reuse does not apply; therefore, the feedback signal is not needed.
                     //
                     // WARNING: Skipping the signal does NOT satisfy the signal outlet demand.
@@ -71,7 +71,7 @@ internal sealed class
                     // behavior (see TryPullIfReady() for details).
                     if (!_isHttp10)
                     {
-                        _pendingSignal = new ConnectionReuseItem(endpoint, decision);
+                        _pendingSignal = ConnectionReuseItem.Rent(endpoint, decision);
                     }
                     else
                     {
@@ -234,8 +234,8 @@ internal sealed class
             // PROTOCOL-SPECIFIC DEMAND CHECK:
             // For HTTP/1.0, the signal outlet is intentionally NOT fed because connection reuse
             // does not apply to HTTP/1.0 (the protocol mandates connection-close semantics per
-            // RFC 9110 §9.2.1). ExtractOptionsStage handles reconnection directly via the
-            // protocol-flag detection (TASK-001-001).
+            // RFC 9110 §9.2.1). ExtractOptionsStage handles reconnection directly via HTTP/1.0
+            // protocol detection.
             //
             // Since no signal is ever emitted for HTTP/1.0, the signal outlet is never pulled
             // and _signalOutletDemand never becomes true. To avoid a permanent deadlock, we

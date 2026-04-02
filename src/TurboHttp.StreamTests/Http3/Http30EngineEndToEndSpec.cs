@@ -1,0 +1,173 @@
+using System.IO.Compression;
+using System.Net;
+using System.Text;
+using TurboHttp.Protocol.Http3;
+using TurboHttp.Protocol.Http3.Qpack;
+using TurboHttp.Streams;
+
+namespace TurboHttp.StreamTests.Http3;
+
+/// <summary>
+/// RFC-tagged round-trip tests for the HTTP/3 engine per RFC 9114.
+/// Verifies end-to-end request encoding and response decoding through the full HTTP/3 protocol flow including QPACK.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http30Engine"/>.
+/// RFC 9114 §3–§7: HTTP/3 connection setup, frame exchange, and HTTP message mapping.
+/// </remarks>
+public sealed class Http30EngineEndToEndSpec : EngineTestBase
+{
+    private static Http30Engine Engine => new();
+
+    private readonly QpackEncoder _qpack = new(maxTableCapacity: 0);
+
+    private ReadOnlyMemory<byte> EncodeResponseHeaders(params (string Name, string Value)[] headers)
+        => _qpack.Encode(headers);
+
+    private static byte[] ServerSettings()
+        => new Http3SettingsFrame([]).Serialize();
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-ENG-001")]
+    public async Task Http30Engine_should_return_200_response_when_get_request_round_trips_with_settings_and_headers()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/hello")
+        {
+            Version = HttpVersion.Version30
+        };
+
+        var headersFrame = new Http3HeadersFrame(
+            EncodeResponseHeaders((":status", "200"))).Serialize();
+
+        var (response, outboundFrames) = await SendH3EngineAsync(
+            Engine.CreateFlow(),
+            request,
+            ServerSettings(),
+            headersFrame);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(outboundFrames, f => f is Http3HeadersFrame);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-ENG-002")]
+    public async Task Http30Engine_should_emit_headers_and_data_frames_when_post_request_with_body_encoded()
+    {
+        const string payload = "field=value";
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")
+        {
+            Version = HttpVersion.Version30,
+            Content = new StringContent(payload, Encoding.UTF8, "application/x-www-form-urlencoded")
+        };
+
+        var headersFrame = new Http3HeadersFrame(
+            EncodeResponseHeaders((":status", "200"))).Serialize();
+
+        var (response, outboundFrames) = await SendH3EngineAsync(
+            Engine.CreateFlow(),
+            request,
+            ServerSettings(),
+            headersFrame);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(outboundFrames, f => f is Http3HeadersFrame);
+        Assert.Contains(outboundFrames, f => f is Http3DataFrame);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-ENG-003")]
+    public async Task Http30Engine_should_preserve_raw_compressed_body_when_content_encoding_is_gzip()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data")
+        {
+            Version = HttpVersion.Version30
+        };
+
+        var originalBody = "Hello, compressed HTTP/3 world!"u8.ToArray();
+        byte[] compressedBody;
+        using (var ms = new MemoryStream())
+        {
+            await using (var gzip = new GZipStream(ms, CompressionMode.Compress, leaveOpen: true))
+            {
+                gzip.Write(originalBody);
+            }
+
+            compressedBody = ms.ToArray();
+        }
+
+        var headersFrame = new Http3HeadersFrame(
+            EncodeResponseHeaders(
+                (":status", "200"),
+                ("content-encoding", "gzip"))).Serialize();
+
+        var dataFrame = new Http3DataFrame(compressedBody).Serialize();
+
+        // Concatenate headers + data into a single server frame buffer
+        var responseFrames = new byte[headersFrame.Length + dataFrame.Length];
+        headersFrame.CopyTo(responseFrames, 0);
+        dataFrame.CopyTo(responseFrames, headersFrame.Length);
+
+        var (response, _) = await SendH3EngineAsync(
+            Engine.CreateFlow(),
+            request,
+            ServerSettings(),
+            responseFrames);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content!.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        // Engine preserves raw compressed bytes — decompression is handled by feature layer
+        Assert.Equal(compressedBody, body);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-ENG-004")]
+    public async Task Http30Engine_should_emit_settings_frame_when_engine_starts()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/settings-test")
+        {
+            Version = HttpVersion.Version30
+        };
+
+        var headersFrame = new Http3HeadersFrame(
+            EncodeResponseHeaders((":status", "200"))).Serialize();
+
+        var (response, outboundFrames) = await SendH3EngineAsync(
+            Engine.CreateFlow(),
+            request,
+            ServerSettings(),
+            headersFrame);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(outboundFrames, f => f is Http3SettingsFrame);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-ENG-005")]
+    public async Task Http30Engine_should_preserve_body_content_when_response_has_body()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/body-test")
+        {
+            Version = HttpVersion.Version30
+        };
+
+        var expectedBody = "Response body content"u8.ToArray();
+
+        var headersFrame = new Http3HeadersFrame(
+            EncodeResponseHeaders((":status", "200"))).Serialize();
+        var dataFrame = new Http3DataFrame(expectedBody).Serialize();
+
+        var responseFrames = new byte[headersFrame.Length + dataFrame.Length];
+        headersFrame.CopyTo(responseFrames, 0);
+        dataFrame.CopyTo(responseFrames, headersFrame.Length);
+
+        var (response, _) = await SendH3EngineAsync(
+            Engine.CreateFlow(),
+            request,
+            ServerSettings(),
+            responseFrames);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content!.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(expectedBody, body);
+    }
+}

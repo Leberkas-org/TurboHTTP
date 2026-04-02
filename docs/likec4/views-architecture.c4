@@ -72,14 +72,9 @@ views {
     include turbohttp.streams.Http1XCorrelationStage
 
     // HTTP/2 stages
-    include turbohttp.streams.Http20StreamIdAllocatorStage
-    include turbohttp.streams.Http20Request2FrameStage
+    include turbohttp.streams.Http20ConnectionStage
     include turbohttp.streams.Http20EncoderStage
     include turbohttp.streams.Http20DecoderStage
-    include turbohttp.streams.Http20ConnectionStage
-    include turbohttp.streams.Http20StreamStage
-    include turbohttp.streams.Http20PrependPrefaceStage
-    include turbohttp.streams.Http20CorrelationStage
 
     // HTTP/3 stages
     include turbohttp.streams.Http30Request2FrameStage

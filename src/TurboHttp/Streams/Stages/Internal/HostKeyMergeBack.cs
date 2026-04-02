@@ -15,15 +15,18 @@ internal sealed class HostKeyMergeBack<TIn, TMat> : IMergeBack<TIn, TMat>
     private readonly IFlow<TIn, TMat> _baseFlow;
     private readonly Func<TIn, RequestEndpoint> _keyFunction;
     private readonly uint _maxSubstreams;
-    private readonly int _maxSubstreamsPerKey;
+    private readonly Func<RequestEndpoint, int>? _maxSubstreamsPerKey;
+    private readonly Func<RequestEndpoint, int>? _maxConcurrencyPerSlot;
 
     public HostKeyMergeBack(IFlow<TIn, TMat> baseFlow, Func<TIn, RequestEndpoint> keyFunction, uint maxSubstreams,
-        int maxSubstreamsPerKey = 1)
+        Func<RequestEndpoint, int>? maxSubstreamsPerKey = null,
+        Func<RequestEndpoint, int>? maxConcurrencyPerSlot = null)
     {
         _baseFlow = baseFlow;
         _keyFunction = keyFunction;
         _maxSubstreams = maxSubstreams;
         _maxSubstreamsPerKey = maxSubstreamsPerKey;
+        _maxConcurrencyPerSlot = maxConcurrencyPerSlot;
     }
 
     // Called by SubFlowImpl.MergeSubstreamsWithParallelism(breadth).
@@ -37,7 +40,7 @@ internal sealed class HostKeyMergeBack<TIn, TMat> : IMergeBack<TIn, TMat>
             : breadth;
 
         return _baseFlow
-            .Via(new GroupByRequestEndpointStage<TIn>(_keyFunction, maxSubstreams, _maxSubstreamsPerKey))
+            .Via(new GroupByRequestEndpointStage<TIn>(_keyFunction, maxSubstreams, _maxSubstreamsPerKey, _maxConcurrencyPerSlot))
             .Via(Flow.Create<Source<TIn, NotUsed>>()
                 .Select(src => src.Via(flow)))
             .Via(new MergeSubstreamsStage<TOut>(effectiveBreadth));

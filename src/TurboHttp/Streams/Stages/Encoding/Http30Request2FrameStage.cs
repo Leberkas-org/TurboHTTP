@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http3;
 
 namespace TurboHttp.Streams.Stages.Encoding;
 

@@ -34,7 +34,7 @@ The idle timeout is measured from the moment a connection returns to the pool wi
 If a connection is dropped unexpectedly (network interruption, server-side timeout, or RST), TurboHttp detects the failure and reconnects automatically. While reconnecting, queued requests wait for the connection to recover. Once reconnected, TurboHttp replays the queue.
 
 ::: tip Backoff timing
-Reconnect attempts use exponential backoff — each failed attempt waits progressively longer before the next try (1 s → 2 s → 4 s → 8 s → 16 s cap). You can control timing with `ReconnectInterval` and `MaxReconnectAttempts` in [Configuration](./configuration).
+Reconnect attempts use exponential backoff — each failed attempt waits progressively longer before the next try (1 s → 2 s → 4 s → 8 s → 16 s cap).
 :::
 
 ## Per-Host Concurrency Limits
@@ -44,40 +44,18 @@ Each host has a configurable maximum number of simultaneous connections:
 - **HTTP/1.1** — default limit is **6 connections per host**
 - **HTTP/2** — default is **1 multiplexed connection per host** (multiple concurrent requests share that single connection as independent streams)
 
-These defaults are chosen conservatively to avoid overwhelming servers. Adjust them via `ConnectionPolicy` (see [Configuration](#configuration) below).
+These defaults are chosen conservatively to avoid overwhelming servers. Adjust them via `MaxConnectionsPerServer` in `TurboClientOptions` (see [Configuration](#configuration) below).
 
 ## Configuration
 
-Connection pool behaviour is controlled via `ConnectionPolicy` on `TurboClientOptions`:
+Connection pool behaviour is controlled via properties on `TurboClientOptions`:
 
 ```csharp
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient("my-api", options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-    ConnectionPolicy = new ConnectionPolicy
-    {
-        MaxConnectionsPerHost = 10,         // max simultaneous connections (default: 6)
-    }
-};
-```
-
-With DI:
-
-```csharp
-services.AddTurboHttpClient("my-api", opts =>
-{
-    opts = opts with
-    {
-        BaseAddress = new Uri("https://api.example.com"),
-    };
-});
-
-var client = factory.CreateClient(opts => opts with
-{
-    ConnectionPolicy = new ConnectionPolicy
-    {
-        MaxConnectionsPerHost = 20,
-    }
+    options.BaseAddress = new Uri("https://api.example.com");
+    options.MaxConnectionsPerServer = 10;        // max simultaneous connections (default: 6)
+    options.PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2); // evict idle connections after 2 min
 });
 ```
 
@@ -86,32 +64,22 @@ var client = factory.CreateClient(opts => opts with
 **High-throughput API client** — increase connections per host:
 
 ```csharp
-ConnectionPolicy = new ConnectionPolicy
-{
-    MaxConnectionsPerHost = 20,
-}
+options.MaxConnectionsPerServer = 20;
 ```
 
 **Low-traffic background service** — reduce connections to release sockets promptly:
 
 ```csharp
-ConnectionPolicy = new ConnectionPolicy
-{
-    MaxConnectionsPerHost = 2,
-}
+options.MaxConnectionsPerServer = 2;
+options.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
 ```
 
-**HTTP/2 server** — a single multiplexed connection handles many concurrent streams. Keep the per-host limit at 1 to avoid redundant TCP handshakes:
+**HTTP/2 server** — a single multiplexed connection handles many concurrent streams. The default `MaxConnectionsPerServer = 6` is fine; TurboHttp opens additional connections only when the existing one reaches its stream limit:
 
 ```csharp
-var options = new TurboClientOptions
-{
-    DefaultRequestVersion = HttpVersion.Version20,
-    ConnectionPolicy = new ConnectionPolicy
-    {
-        MaxConnectionsPerHost = 1,
-    }
-};
+var client = factory.CreateClient("http2-api");
+client.DefaultRequestVersion = HttpVersion.Version20;
+client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 ```
 
 ## Pool Lifecycle

@@ -1,17 +1,18 @@
-﻿using System.Buffers;
-using Akka;
+﻿using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9113;
+using TurboHttp.Protocol.Http2;
 using TurboHttp.Streams.Stages.Decoding;
 using TurboHttp.Streams.Stages.Encoding;
-using TurboHttp.Streams.Stages.Routing;
 
 namespace TurboHttp.Streams;
 
 public class Http20Engine : IHttpProtocolEngine
 {
+    // Stateless cast flow — reused across all materializations to avoid per-call allocation.
+    private static readonly Flow<IControlItem, IOutputItem, NotUsed> _signalCast =
+        Flow.Create<IControlItem>().Select(IOutputItem (x) => x);
     internal const long MaxBatchWeight = 65_536;
 
     /// <summary>
@@ -21,17 +22,14 @@ public class Http20Engine : IHttpProtocolEngine
     /// </summary>
     internal const int DefaultMaxConcurrentStreams = int.MaxValue;
 
-    private readonly int _initialWindowSize;
-    private readonly int _maxConcurrentStreams;
-
-    public Http20Engine() : this(65535)
+    public Http20Engine() : this(1_048_576)
     {
     }
 
     public Http20Engine(int initialWindowSize, int maxConcurrentStreams = DefaultMaxConcurrentStreams)
     {
-        _initialWindowSize = initialWindowSize;
-        _maxConcurrentStreams = maxConcurrentStreams;
+        InitialWindowSize = initialWindowSize;
+        MaxConcurrentStreams = maxConcurrentStreams;
     }
 
     /// <summary>
@@ -40,74 +38,77 @@ public class Http20Engine : IHttpProtocolEngine
     /// and will be updated at runtime when the server sends a SETTINGS frame
     /// with <see cref="SettingsParameter.MaxConcurrentStreams"/>.
     /// </summary>
-    public int MaxConcurrentStreams => _maxConcurrentStreams;
+    public int MaxConcurrentStreams { get; }
+
+    /// <summary>The configured initial receive flow-control window size in bytes.</summary>
+    internal int InitialWindowSize { get; }
 
     public BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> CreateFlow()
     {
-        var requestEncoder = new Http2RequestEncoder();
-        var windowSize = _initialWindowSize;
-
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            var streamIdAllocator = b.Add(new Http20StreamIdAllocatorStage());
-            var broadcast = b.Add(new Broadcast<(HttpRequestMessage, int)>(2));
-            var requestToFrame = b.Add(new Http20Request2FrameStage(requestEncoder));
-            var frameEncoder = b.Add(new Http20EncoderStage());
+            var frameEncoder = b.Add(new Http20EncoderStage(InitialWindowSize));
             var frameDecoder = b.Add(new Http20DecoderStage());
-            var streamDecoder = b.Add(new Http20StreamStage());
-            var correlation = b.Add(new Http20CorrelationStage());
-            var prependPreface = b.Add(new Http20PrependPrefaceStage());
-            var connection = b.Add(new Http20ConnectionStage(windowSize, _maxConcurrentStreams));
+            var connection = b.Add(new Http20ConnectionStage(InitialWindowSize, MaxConcurrentStreams));
             var signalMerge = b.Add(new MergePreferred<IOutputItem>(1));
 
-            // Request path: allocate stream ID → broadcast to both frame encoder and correlation
-            b.From(streamIdAllocator.Outlet).To(broadcast.In);
-            b.From(broadcast.Out(0)).To(requestToFrame.Inlet);
-            b.From(broadcast.Out(1)).To(correlation.In0);
-
-            b.From(requestToFrame.Outlet).To(connection.InApp);
-            b.From(connection.OutServer).To(frameEncoder.Inlet);
-            b.From(frameDecoder.Outlet).To(connection.InServer);
-
-            // Response path: frames → stream decoder → correlation (sets RequestMessage)
-            b.From(connection.OutStream).To(streamDecoder.Inlet);
-            b.From(streamDecoder.Outlet).To(correlation.In1);
-
-            var signalCast = b.Add(Flow.Create<IControlItem>().Select(IOutputItem (x) => x));
-
-            var batchFlow = b.Add(
-                Flow.Create<IOutputItem>()
+            // Accumulate frames from OutServer into batches before encoding.
+            // Each batch is serialised into a single NetworkBuffer, eliminating N-1
+            // intermediate allocations and memory copies under concurrent load.
+            var frameBatch = b.Add(
+                Flow.Create<Http2Frame>()
                     .BatchWeighted(
                         MaxBatchWeight,
-                        item => item is DataItem d ? d.Length : 0L,
-                        item => item,
-                        BatchConsolidate));
+                        f => (long)f.SerializedSize,
+                        f => new List<Http2Frame>(4) { f },
+                        (list, f) => { list.Add(f); return list; }));
 
-            b.From(frameEncoder.Outlet).Via(batchFlow).To(signalMerge.In(0));
+            b.From(connection.OutServer).To(frameBatch.Inlet);
+            b.From(frameBatch.Outlet).To(frameEncoder.Inlet);
+            b.From(frameDecoder.Outlet).To(connection.InServer);
+
+            var signalCast = b.Add(_signalCast);
+
+            // Encoder emits RFC 9113 §3.4 preface on its first pull (before any frame is encoded).
+            // PrependPrefaceStage stage removed — preface is now inline in Http20EncoderStage.
+            b.From(frameEncoder.Outlet).To(signalMerge.In(0));
             b.From(connection.OutSignal).Via(signalCast).To(signalMerge.Preferred);
-            b.From(signalMerge.Out).To(prependPreface.Inlet);
 
             return new BidiShape<
                 HttpRequestMessage,
                 IOutputItem,
                 IInputItem,
                 HttpResponseMessage>(
-                streamIdAllocator.Inlet,
-                prependPreface.Outlet,
+                connection.InApp,
+                signalMerge.Out,
                 frameDecoder.Inlet,
-                correlation.Out);
+                connection.OutResponse);
         }));
     }
 
     internal static IOutputItem BatchConsolidate(IOutputItem accumulated, IOutputItem next)
     {
-        if (accumulated is not DataItem accData || next is not DataItem nextData) return next;
-        var totalLength = accData.Length + nextData.Length;
-        var owner = MemoryPool<byte>.Shared.Rent(totalLength);
-        accData.Memory.Memory[..accData.Length].CopyTo(owner.Memory);
-        nextData.Memory.Memory[..nextData.Length].CopyTo(owner.Memory[accData.Length..]);
-        accData.Memory.Dispose();
-        nextData.Memory.Dispose();
-        return new DataItem(owner, totalLength) { Key = accData.Key };
+        if (accumulated is not NetworkBuffer acc || next is not NetworkBuffer nxt) return next;
+        var totalLength = acc.Length + nxt.Length;
+
+        // Fast path: if the accumulated buffer has enough capacity, append in-place (zero-alloc).
+        // MemoryPool.Rent often returns buffers larger than requested, so this is common.
+        if (acc.Capacity >= totalLength)
+        {
+            nxt.Memory.CopyTo(acc.FullMemory[acc.Length..]);
+            nxt.Dispose();
+            acc.Length = totalLength;
+            return acc;
+        }
+
+        // Slow path: rent larger buffer and copy both.
+        var merged = NetworkBuffer.Rent(totalLength);
+        acc.Memory.CopyTo(merged.FullMemory);
+        nxt.Memory.CopyTo(merged.FullMemory[acc.Length..]);
+        acc.Dispose();
+        nxt.Dispose();
+        merged.Length = totalLength;
+        merged.Key = acc.Key;
+        return merged;
     }
 }

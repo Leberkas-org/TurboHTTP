@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text;
 using System.Threading.Channels;
 using Akka;
@@ -8,8 +7,8 @@ using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using Akka.TestKit.Xunit;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9113;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http2;
+using TurboHttp.Protocol.Http3;
 
 namespace TurboHttp.StreamTests;
 
@@ -24,7 +23,7 @@ public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem
 {
     private readonly Func<byte[]> _responseFactory;
 
-    public Channel<DataItem> OutboundChannel { get; } = Channel.CreateUnbounded<DataItem>();
+    public Channel<NetworkBuffer> OutboundChannel { get; } = Channel.CreateUnbounded<NetworkBuffer>();
 
     public Inlet<IOutputItem> In { get; } = new("fake-tcp.in");
     public Outlet<IInputItem> Out { get; } = new("fake-tcp.out");
@@ -42,7 +41,7 @@ public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem
     private sealed class Logic : GraphStageLogic
     {
         private readonly EngineFakeConnectionStage _stage;
-        private readonly Queue<(IMemoryOwner<byte>, int)> _buffer = new();
+        private readonly Queue<NetworkBuffer> _buffer = new();
         private bool _downstreamWaiting;
 
         public Logic(EngineFakeConnectionStage stage) : base(stage.Shape)
@@ -53,26 +52,23 @@ public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is DataItem(var owner, var length))
+                    if (item is NetworkBuffer dataChunk)
                     {
-                        var copy = new byte[length];
-                        owner.Memory.Span[..length].CopyTo(copy);
-                        stage.OutboundChannel.Writer.TryWrite(new DataItem(new SimpleMemoryOwner(copy), length)
-                            { Key = RequestEndpoint.Default });
-                        owner.Dispose();
+                        var copy = new byte[dataChunk.Length];
+                        dataChunk.Span.CopyTo(copy);
+                        stage.OutboundChannel.Writer.TryWrite(NetworkBuffer.FromArray(copy));
+                        dataChunk.Dispose();
 
                         var responseBytes = _stage._responseFactory();
-                        IMemoryOwner<byte> responseOwner = new SimpleMemoryOwner(responseBytes);
 
                         if (_downstreamWaiting)
                         {
                             _downstreamWaiting = false;
-                            Push(stage.Out,
-                                new DataItem(responseOwner, responseBytes.Length) { Key = RequestEndpoint.Default });
+                            Push(stage.Out, NetworkBuffer.FromArray(responseBytes));
                         }
                         else
                         {
-                            _buffer.Enqueue((responseOwner, responseBytes.Length));
+                            _buffer.Enqueue(NetworkBuffer.FromArray(responseBytes));
                         }
                     }
 
@@ -86,7 +82,7 @@ public sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem
                 {
                     if (_buffer.TryDequeue(out var chunk))
                     {
-                        Push(stage.Out, new DataItem(chunk.Item1, chunk.Item2) { Key = RequestEndpoint.Default });
+                        Push(stage.Out, chunk);
                     }
                     else
                     {
@@ -111,8 +107,8 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
 {
     private readonly IReadOnlyList<byte[]> _serverFrames;
 
-    public Channel<(IMemoryOwner<byte>, int)> OutboundChannel { get; } =
-        Channel.CreateUnbounded<(IMemoryOwner<byte>, int)>();
+    public Channel<NetworkBuffer> OutboundChannel { get; } =
+        Channel.CreateUnbounded<NetworkBuffer>();
 
     public Inlet<IOutputItem> In { get; } = new("h2-engine-fake.in");
     public Outlet<IInputItem> Out { get; } = new("h2-engine-fake.out");
@@ -148,26 +144,23 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
                     {
                         Unlock();
                     }
-                    else if (item is DataItem(var owner, var length))
+                    else if (item is NetworkBuffer dataChunk)
                     {
-                        var span = owner.Memory.Span[..length];
-                        if (length >= 24 && span[..24].SequenceEqual(H2Preface))
+                        var span = dataChunk.Span;
+                        if (span.Length >= 24 && span[..24].SequenceEqual(H2Preface))
                         {
                             var remainder = span[24..];
                             if (remainder.Length > 0)
                             {
-                                var copy = remainder.ToArray();
-                                stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), copy.Length));
+                                stage.OutboundChannel.Writer.TryWrite(NetworkBuffer.FromArray(remainder.ToArray()));
                             }
                         }
                         else
                         {
-                            var copy = new byte[length];
-                            span.CopyTo(copy);
-                            stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), length));
+                            stage.OutboundChannel.Writer.TryWrite(NetworkBuffer.FromArray(span.ToArray()));
                         }
 
-                        owner.Dispose();
+                        dataChunk.Dispose();
                         Unlock();
                     }
 
@@ -208,8 +201,7 @@ public sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
         private void PushNextFrame()
         {
             var frameBytes = _stage._serverFrames[_serverFrameIndex++];
-            IMemoryOwner<byte> frameOwner = new SimpleMemoryOwner(frameBytes);
-            Push(_stage.Out, new DataItem(frameOwner, frameBytes.Length) { Key = RequestEndpoint.Default });
+            Push(_stage.Out, NetworkBuffer.FromArray(frameBytes));
         }
 
         public override void PreStart() => Pull(_stage.In);
@@ -252,7 +244,7 @@ public abstract class EngineTestBase : TestKit
         var rawBuilder = new StringBuilder();
         while (fake.OutboundChannel.Reader.TryRead(out var chunk))
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Memory.Memory.Span[..chunk.Length]));
+            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
         }
 
         return (response, rawBuilder.ToString());
@@ -286,7 +278,7 @@ public abstract class EngineTestBase : TestKit
         var rawBuilder = new StringBuilder();
         while (fake.OutboundChannel.Reader.TryRead(out var chunk))
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Memory.Memory.Span[..chunk.Length]));
+            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
         }
 
         return (results, rawBuilder.ToString());
@@ -384,8 +376,8 @@ public abstract class EngineTestBase : TestKit
         var controlBytes = new List<byte>();
         while (fake.OutboundChannel.Reader.TryRead(out var chunk))
         {
-            var bytes = chunk.Item1.Memory.Span[..chunk.Item2].ToArray();
-            switch (chunk.Item3)
+            var bytes = chunk.Buffer.Span.ToArray();
+            switch (chunk.StreamType)
             {
                 case OutputStreamType.Control:
                     controlBytes.AddRange(bytes);
@@ -439,7 +431,7 @@ public abstract class EngineTestBase : TestKit
             {
                 while (fake.OutboundChannel.Reader.TryRead(out var chunk))
                 {
-                    outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
+                    outboundBytes.AddRange(chunk.Span.ToArray());
                 }
             }
         }
@@ -448,7 +440,7 @@ public abstract class EngineTestBase : TestKit
             // Timeout — drain any remaining items synchronously.
             while (fake.OutboundChannel.Reader.TryRead(out var chunk))
             {
-                outboundBytes.AddRange(chunk.Item1.Memory.Span[..chunk.Item2].ToArray());
+                outboundBytes.AddRange(chunk.Span.ToArray());
             }
         }
 
@@ -464,8 +456,8 @@ public sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
 {
     private readonly IReadOnlyList<byte[]> _serverFrames;
 
-    public Channel<(IMemoryOwner<byte>, int, OutputStreamType?)> OutboundChannel { get; } =
-        Channel.CreateUnbounded<(IMemoryOwner<byte>, int, OutputStreamType?)>();
+    public Channel<(NetworkBuffer Buffer, OutputStreamType? StreamType)> OutboundChannel { get; } =
+        Channel.CreateUnbounded<(NetworkBuffer, OutputStreamType?)>();
 
     public Inlet<IOutputItem> In { get; } = new("h3-engine-fake.in");
     public Outlet<IInputItem> Out { get; } = new("h3-engine-fake.out");
@@ -505,12 +497,10 @@ public sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
                         inner = tagged.Inner;
                     }
 
-                    if (inner is DataItem(var owner, var length))
+                    if (inner is NetworkBuffer dataChunk)
                     {
-                        var copy = new byte[length];
-                        owner.Memory.Span[..length].CopyTo(copy);
-                        stage.OutboundChannel.Writer.TryWrite((new SimpleMemoryOwner(copy), copy.Length, streamType));
-                        owner.Dispose();
+                        stage.OutboundChannel.Writer.TryWrite((NetworkBuffer.FromArray(dataChunk.Span.ToArray()), streamType));
+                        dataChunk.Dispose();
                     }
 
                     // Every outbound push (tagged or not) unlocks a server frame.
@@ -568,8 +558,7 @@ public sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
         private void PushNextFrame()
         {
             var frameBytes = _stage._serverFrames[_serverFrameIndex++];
-            IMemoryOwner<byte> frameOwner = new SimpleMemoryOwner(frameBytes);
-            Push(_stage.Out, new DataItem(frameOwner, frameBytes.Length) { Key = RequestEndpoint.Default });
+            Push(_stage.Out, NetworkBuffer.FromArray(frameBytes));
 
             // HTTP/3 relies on QUIC FIN (upstream completion) to signal stream end.
             // After all server frames are delivered, complete the output to propagate

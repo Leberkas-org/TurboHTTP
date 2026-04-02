@@ -1,8 +1,7 @@
-using System.Buffers;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http3;
 
 namespace TurboHttp.Streams.Stages.Encoding;
 
@@ -24,12 +23,13 @@ public sealed class Http30EncoderStage : GraphStage<FlowShape<Http3Frame, IOutpu
             {
                 var frame = Grab(stage._in);
 
-                var owner = MemoryPool<byte>.Shared.Rent(frame.SerializedSize);
-                var span = owner.Memory.Span;
+                var buf = NetworkBuffer.Rent(frame.SerializedSize);
+                var span = buf.FullMemory.Span;
 
                 frame.WriteTo(ref span);
+                buf.Length = frame.SerializedSize;
 
-                Push(stage._out, new DataItem(owner, frame.SerializedSize));
+                Push(stage._out, buf);
             });
 
             SetHandler(stage._out, () => Pull(stage._in));

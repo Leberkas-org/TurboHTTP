@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using Akka.Actor;
-using OwnerMsg = TurboHttp.Streams.Lifecycle.ClientStreamOwner;
+using TurboHttp.Internal;
+using Owner = TurboHttp.Streams.Lifecycle.ClientStreamOwner;
 
 namespace TurboHttp.Streams.Lifecycle;
 
@@ -57,13 +58,16 @@ internal sealed class TurboClientStreamManager : IDisposable
 
         // Create the Owner actor — it materializes the stream directly,
         // tracks pending work, and handles retry with exponential backoff.
-        _owner = system.ActorOf(Props.Create(() => new ClientStreamOwnerActor()),
+        // Uses dedicated dispatcher if available; falls back to default for external ActorSystems.
+        _owner = system.ActorOf(
+            Props.Create(() => new ClientStreamOwnerActor())
+                .WithStreamDispatcher(system),
             $"stream-owner-{Guid.NewGuid():N}");
 
         // Tell the Owner to create a stream instance. The instance will materialize
         // the Akka.Streams pipeline using our channels. Requests written to the channel
         // before materialization completes are buffered in the unbounded channel.
-        _owner.Tell(new OwnerMsg.CreateStreamInstance(
+        _owner.Tell(new Owner.CreateStreamInstance(
             clientOptions,
             requestOptionsFactory,
             descriptor,
@@ -84,9 +88,17 @@ internal sealed class TurboClientStreamManager : IDisposable
 
         // Signal the Owner to shut down gracefully. It waits for pending work
         // to drain (up to 5s), then stops the instance and itself.
-        _owner.Tell(new OwnerMsg.Shutdown());
+        _owner.Tell(new Owner.Shutdown());
 
-        // Complete the response channel so downstream consumers (DrainResponsesAsync) terminate.
+        // Complete the response channel so downstream ITurboHttpClient.Responses consumers terminate.
         ResponseWriter.TryComplete();
     }
+
+    /// <summary>
+    /// Returns a <see cref="Task"/> that completes when the owner actor has fully stopped.
+    /// Sends a <see cref="Owner.Shutdown"/> message (harmlessly ignored if already shutting down)
+    /// and waits for actor termination up to <paramref name="timeout"/>.
+    /// </summary>
+    internal Task WhenTerminatedAsync(TimeSpan timeout)
+        => _owner.GracefulStop(timeout, new Owner.Shutdown());
 }

@@ -112,7 +112,7 @@ Set-Cookie: sid=abc123   ← no expiry: lasts until the client is disposed
 `CookieJar` is a public class. You can construct one independently to pre-populate cookies, test cookie matching logic, or share a jar across request processing outside the pipeline.
 
 ```csharp
-using TurboHttp.Protocol.RFC6265;
+using TurboHttp.Protocol.Cookies;
 
 var jar = new CookieJar();
 

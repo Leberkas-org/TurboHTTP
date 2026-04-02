@@ -71,17 +71,26 @@ GET /a → 302 → /b → 302 → /a   ← RedirectException (loop detected)
 
 ## Configuration
 
-Redirect behaviour is controlled via `RedirectPolicy` on `TurboClientOptions`.
+Redirect behaviour is controlled via `.WithRedirect()` on the builder:
 
 ```csharp
-var options = new TurboClientOptions
+// Enable redirects with defaults: max 10 hops, no HTTPS→HTTP downgrade
+builder.Services.AddTurboHttpClient(options =>
 {
-    RedirectPolicy = new RedirectPolicy
-    {
-        MaxRedirects = 5,
-        AllowHttpsToHttpDowngrade = false,  // default
-    }
-};
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRedirect();
+
+// Custom limit
+builder.Services.AddTurboHttpClient("strict", options =>
+{
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRedirect(new RedirectPolicy
+{
+    MaxRedirects = 5,
+    AllowHttpsToHttpDowngrade = false,  // default
+});
 ```
 
 ### `MaxRedirects`
@@ -96,14 +105,7 @@ This is rarely needed. Only enable it in fully-trusted internal networks where y
 
 ### Disabling Redirects
 
-Set `RedirectPolicy` to `null` to disable redirect following entirely. All 3xx responses are returned as-is.
-
-```csharp
-var options = new TurboClientOptions
-{
-    RedirectPolicy = null   // no redirect following
-};
-```
+Omit `.WithRedirect()` to leave redirects disabled entirely. All 3xx responses are returned as-is.
 
 ## Handling Redirect Exceptions
 

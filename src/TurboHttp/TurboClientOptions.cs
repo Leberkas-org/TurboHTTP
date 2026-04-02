@@ -1,42 +1,92 @@
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using TurboHttp.Protocol.RFC9112;
 
 namespace TurboHttp;
 
 /// <summary>
-/// Immutable configuration record for a <see cref="TurboHttpClient"/> instance.
-/// Pass to <see cref="ITurboHttpClientFactory.CreateClient"/> or construct directly when
-/// creating a <see cref="TurboHttpClient"/> without the DI factory.
+/// Configuration for a <see cref="TurboHttpClient"/> instance.
+/// Property names and defaults are aligned with <see cref="System.Net.Http.SocketsHttpHandler"/>
+/// where applicable, so TurboHttp is a familiar drop-in for existing HttpClient users.
 /// </summary>
-public record TurboClientOptions
+public sealed class TurboClientOptions
 {
     /// <summary>Base address used to resolve relative request URIs.</summary>
-    public Uri? BaseAddress { get; init; }
+    public Uri? BaseAddress { get; set; }
 
-    /// <summary>Timeout for establishing a new TCP connection. Default is 10 seconds.</summary>
-    public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(10);
+    /// <summary>
+    /// Timeout for establishing a new TCP connection.
+    /// Default is 15 seconds (same as <c>SocketsHttpHandler.ConnectTimeout</c>).
+    /// </summary>
+    public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(15);
 
-    /// <summary>Time a connection may remain idle before it is evicted from the pool. Default is 10 seconds.</summary>
-    public TimeSpan IdleTimeout { get; init; } = TimeSpan.FromSeconds(10);
+    /// <summary>
+    /// Time a connection may remain idle in the pool before it is evicted.
+    /// Default is 90 seconds (same as <c>SocketsHttpHandler.PooledConnectionIdleTimeout</c>).
+    /// </summary>
+    public TimeSpan PooledConnectionIdleTimeout { get; set; } = TimeSpan.FromSeconds(90);
+
+    /// <summary>
+    /// Maximum number of concurrent TCP connections per server for HTTP/1.x.
+    /// Each connection is managed as an independent substream.
+    /// Default is 6 (matching browser defaults and RFC 9112 §9.4 guidance).
+    /// </summary>
+    /// <remarks>
+    /// <c>SocketsHttpHandler</c> does not expose this directly but defaults to
+    /// <c>int.MaxValue</c>. TurboHttp uses 6 to match browser conventions.
+    /// For HTTP/2, multiple connections are opened when a single connection's
+    /// <c>MAX_CONCURRENT_STREAMS</c> limit is reached (similar to
+    /// <c>SocketsHttpHandler.EnableMultipleHttp2Connections</c>).
+    /// </remarks>
+    public int MaxH1ConnectionsPerServer { get; set; } = 6;
+
+    /// <summary>
+    /// Maximum number of pipelined HTTP/1.1 requests allowed per connection before waiting for responses.
+    /// Higher values increase throughput on high-latency links; lower values reduce head-of-line blocking.
+    /// Default is 16. TurboHttp-specific (no <c>HttpClient</c> equivalent).
+    /// </summary>
+    public int MaxPipelineDepth { get; set; } = 16;
 
     /// <summary>Maximum HTTP/2 frame size in bytes. Default is 128 KiB.</summary>
-    public int MaxFrameSize { get; init; } = 128 * 1024;
+    public int MaxFrameSize { get; set; } = 128 * 1024;
+
+    /// <summary>
+    /// Maximum number of concurrent HTTP/2 streams per connection.
+    /// Controls how many requests can be in-flight simultaneously on a single H/2 TCP connection,
+    /// enabling true request multiplexing within each substream.
+    /// Default is 100. TurboHttp-specific.
+    /// </summary>
+    public int MaxH2ConcurrentStreams { get; set; } = 100;
+
+    /// <summary>
+    /// Maximum number of concurrent TCP connections per server for HTTP/2.
+    /// HTTP/2 multiplexes many streams over a single connection, so far fewer connections
+    /// are optimal compared to HTTP/1.x. Default is 2.
+    /// TurboHttp-specific (analogous to <c>SocketsHttpHandler.EnableMultipleHttp2Connections</c>).
+    /// </summary>
+    public int MaxH2ConnectionsPerServer { get; set; } = 2;
+
+    /// <summary>
+    /// Maximum number of distinct endpoint substreams (identified by <c>(scheme, host, port, version)</c>)
+    /// that may be active concurrently. Controls the ceiling for per-endpoint multiplexing and connection pooling.
+    /// Must be at least 1. Default is 256. TurboHttp-specific.
+    /// </summary>
+    internal const uint DefaultMaxEndpointSubstreams = 256;
+
+    public uint MaxEndpointSubstreams { get; set; } = DefaultMaxEndpointSubstreams;
 
     /// <summary>
     /// When <see langword="true"/>, all server certificates are accepted regardless of validation
-    /// errors. This overrides <see cref="ServerCertificateValidationCallback"/> and is intended
-    /// only for development or testing scenarios. Default is <see langword="false"/>.
+    /// errors. Overrides <see cref="ServerCertificateValidationCallback"/>.
+    /// Intended only for development or testing. Default is <see langword="false"/>.
     /// </summary>
-    public bool DangerousAcceptAnyServerCertificate { get; init; }
+    public bool DangerousAcceptAnyServerCertificate { get; set; }
 
     /// <summary>
-    /// Callback invoked to validate the server's TLS certificate. Defaults to accepting only
-    /// connections with no TLS policy errors (<see cref="SslPolicyErrors.None"/>).
+    /// Callback invoked to validate the server's TLS certificate.
     /// Ignored when <see cref="DangerousAcceptAnyServerCertificate"/> is <see langword="true"/>.
     /// </summary>
-    public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; init; } =
+    public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; set; } =
         static (_, _, _, sslPolicyErrors) => sslPolicyErrors is SslPolicyErrors.None;
 
     /// <summary>
@@ -49,30 +99,11 @@ public record TurboClientOptions
             : ServerCertificateValidationCallback;
 
     /// <summary>Client certificates presented during TLS handshake. <see langword="null"/> means no client certificate.</summary>
-    public X509CertificateCollection? ClientCertificates { get; init; }
+    public X509CertificateCollection? ClientCertificates { get; set; }
 
     /// <summary>
     /// TLS protocol versions to enable. Defaults to <see cref="SslProtocols.None"/>,
     /// which lets the OS choose the best available protocol.
     /// </summary>
-    public SslProtocols EnabledSslProtocols { get; init; } = SslProtocols.None;
-
-    /// <summary>
-    /// Time a pipeline stage may remain idle (no elements passing) before a stall event is reported.
-    /// Default is 10 seconds. Set to <see cref="TimeSpan.Zero"/> to disable monitoring entirely.
-    /// </summary>
-    public TimeSpan PipelineStallTimeout { get; init; } = TimeSpan.FromSeconds(10);
-
-    /// <summary>Connection management policy controlling per-host connection limits and HTTP/2 multiplexing.</summary>
-    public ConnectionPolicy? ConnectionPolicy { get; init; }
-
-    /// <summary>
-    /// Maximum number of distinct endpoint substreams (identified by <c>(scheme, host, port, version)</c>)
-    /// that may be active concurrently. This controls the ceiling for per-endpoint multiplexing and connection pooling.
-    /// Must be at least 1. Default is 256.
-    /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the value is less than 1.
-    /// </exception>
-    public uint MaxEndpointSubstreams { get; } = 256;
+    public SslProtocols EnabledSslProtocols { get; set; } = SslProtocols.None;
 }

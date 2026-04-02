@@ -32,6 +32,18 @@ public static class TurboHttpInstrumentation
     public static ActivitySource Source { get; } = new(SourceName, Version);
 
     /// <summary>
+    /// Returns <c>true</c> when any tracing or metrics listener is active and the
+    /// <see cref="TracingBidiStage"/> should be materialized into the pipeline.
+    /// Checked once at stream materialization time — if no listener is subscribed,
+    /// the tracing stage is omitted entirely (zero overhead, no graph node).
+    /// </summary>
+    public static bool IsTracingActive =>
+        Source.HasListeners()
+        || TurboTrace.ShouldTrace(TurboTraceCategory.Request, TurboTraceLevel.Info)
+        || TurboHttpMetrics.RequestCount.Enabled
+        || TurboHttpMetrics.RequestDuration.Enabled;
+
+    /// <summary>
     /// Starts a root "TurboHttp.Request" activity for an outgoing HTTP request.
     /// Returns <c>null</c> when no listener is attached (zero overhead).
     /// </summary>

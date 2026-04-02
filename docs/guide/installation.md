@@ -62,20 +62,19 @@ public sealed class OrderService
 Register multiple clients with different configurations:
 
 ```csharp
-// Public API — HTTP/2, caching enabled
+// Public API — caching enabled
 builder.Services.AddTurboHttpClient("public-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestVersion = HttpVersion.Version20;
-    options.CachePolicy = CachePolicy.Default;
-});
+})
+.WithCache(CachePolicy.Default);
 
-// Internal service — HTTP/1.1, aggressive retries
+// Internal service — aggressive retries
 builder.Services.AddTurboHttpClient("internal", options =>
 {
     options.BaseAddress = new Uri("http://internal-service:8080");
-    options.RetryPolicy = RetryPolicy.Default with { MaxRetries = 5 };
-});
+})
+.WithRetry(new RetryPolicy { MaxRetries = 5 });
 ```
 
 Resolve by name:
@@ -102,8 +101,8 @@ Bind a client directly to a service class:
 builder.Services.AddTurboHttpClient<OrderService>(options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
-    options.RetryPolicy = RetryPolicy.Default;
-});
+})
+.WithRetry(RetryPolicy.Default);
 ```
 
 The DI container injects `ITurboHttpClient` into `OrderService` automatically.

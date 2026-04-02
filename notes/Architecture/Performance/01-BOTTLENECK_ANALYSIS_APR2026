@@ -1,0 +1,112 @@
+---
+tags:
+  - performance
+  - bottleneck
+  - H1.1
+  - H2
+  - allocation
+  - throughput
+created: '2026-04-04'
+updated: '2026-04-04'
+---
+# TurboHttp Performance Bottleneck Analysis — April 2026
+
+**Benchmark Gap Summary:**
+- H1.1 streaming 10k requests: 1.65x slower, 2x allocation
+- H2 16-concurrent: 3x slower throughput
+- H2 256-concurrent: 4x slower throughput
+- H1.1 256-concurrent: 1.85x slower
+
+---
+
+## Critical Findings
+
+### HIGH-IMPACT ALLOCATION HOTSPOTS
+
+#### 1. HTTP/1.1 Streaming Body Materialization (Http11DecoderStage)
+- **Problem**: Connection-close-delimited bodies accumulated in `List<byte[]>` with one copy per chunk + final reassembly
+- **Location**: Lines 66, 213-240 of Http11DecoderStage.cs
+- **Impact**: Explains 2x allocation gap on streaming (52MB vs 24MB)
+- **Fix**: Stream body directly via `StreamContent` wrapping lazy chunk iterator, avoid materialization
+
+#### 2. ClientByteMover Redundant Copy
+- **Problem**: Redundant copy from `PipeReader` → rented buffer → channel → downstream. Data flows 4x through buffers.
+- **Location**: Lines 71-77 of ClientByteMover.cs
+- **Impact**: 10-15% H2 throughput loss
+- **Fix**: Rent buffer directly from socket, pass to channel without intermediate copy
+
+#### 3. Http20StreamStage Per-Stream Allocations
+- **Problem**: Each H2 stream allocates header buffer (16KB), body buffer, ContentHeaders list. Reallocations during fragmented headers.
+- **Location**: Lines 39-122 of Http20StreamStage.cs
+- **Impact**: 100+MB pressure on 256 concurrent streams
+- **Fix**: Implement stream state pool, pre-allocate headers at RFC limit (16KB), reuse buffers
+
+#### 4. ContentEncodingBidiStage Full-Body Reads
+- **Problem**: Double-buffering during compression/decompression (read → intermediate array → compress → new array)
+- **Location**: Lines 228-268, 138-168 of ContentEncodingBidiStage.cs
+- **Impact**: 5-10% allocation overhead
+- **Fix**: Streaming compression/decompression, `StreamContent` wrappers
+
+---
+
+### HIGH-IMPACT THROUGHPUT BOTTLENECKS
+
+#### 5. Excessive Async Callback Chain Depth (H2 Concurrent)
+- **Problem**: H2 requests traverse 8+ stage boundaries with async callbacks (GetAsyncCallback). HttpClient has ~2.
+- **Impact**: HIGH — Primary cause of 3-4x H2 concurrent slowdown
+- **Fix Direction**: Merge stages (PrependPreface → Connection, RequestToFrame inline), implement direct synchronous dispatch on fast path
+
+#### 6. GroupByRequestEndpointStage Channel Overhead
+- **Problem**: 256 concurrent requests = 256 channels being polled. Channel TryWrite + async callback per write.
+- **Location**: Lines 410-412, 528-531 of GroupByRequestEndpointStage.cs
+- **Impact**: 10-15% H2 throughput loss
+- **Fix**: Lock-free slot selection, priority queue dispatch, avoid channel for fast path
+
+#### 7. ConnectionManagerActor Serialization (H2 Only)
+- **Problem**: All connection acquisitions single-threaded through actor mailbox
+- **Impact**: MEDIUM on H2 concurrent (256 pending connections queued)
+- **Fix**: Shard actor, or lock-free concurrent queue for acquisition
+
+#### 8. Http20Engine Batch Consolidation Copies
+- **Problem**: Frame batching consolidates multiple frames via memory copy
+- **Location**: Lines 105-129 of Http20Engine.cs
+- **Impact**: MEDIUM on H2
+- **Fix**: Smarter batching heuristic (avoid consolidation for large frames)
+
+---
+
+### MEDIUM-IMPACT FINDINGS
+
+#### 9. Http20StreamStage Incremental Header Reallocation
+- May reallocate header buffer multiple times as HEADERS + CONTINUATION frames arrive
+- **Fix**: Fast-path for single-frame headers, pool reallocation overhead
+
+#### 10. Decoder Remainder Handling (Http11DecoderStage)
+- Remainder data flushed and stored in body chunks list
+- **Fix**: Keep remainder in decoder buffer, read on next pull
+
+#### 11. TcpConnectionStage ContinueWith Allocations
+- Used for connection acquisition and outbound write callbacks
+- **Fix**: Use `.UnsafeOnCompleted()` instead, inline FlushNext logic
+
+#### 12. ConnectionLease Volatile Reads
+- Multiple volatile reads per request check
+- **Fix**: Cache IsAlive state in local variable
+
+---
+
+## Phase-1 Fix Priority
+
+1. **Http11DecoderStage: Streaming body (HIGH)** → 50% allocation reduction, 1.65x → 1.3x H1.1 speedup
+2. **Async callback chain reduction (HIGH)** → Merge stages, 30-50% H2 concurrent improvement
+3. **ClientByteMover copy elimination (MEDIUM)** → 10-15% H2 throughput
+4. **Http20StreamStage buffer pooling (MEDIUM)** → Memory relief on H2 256-conc
+
+---
+
+## Implementation Notes
+
+- All bottlenecks validated by code inspection; confirm with `dotnet-trace` or dotMemory profiling
+- H2 multiplexing overhead is architectural — consider custom "Http2MultiplexStage" consolidating current 4-5 stages
+- Benchmark on both light payloads (128B) and streaming (1MB+) to verify fix applicability
+- Watch for regression on pipelined H1.1 scenarios when refactoring decoder

@@ -2,7 +2,7 @@ using System.Net;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Protocol.RFC9110;
+using TurboHttp.Protocol.Semantics;
 
 namespace TurboHttp.Streams.Stages.Features;
 

@@ -4,7 +4,7 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Diagnostics;
-using TurboHttp.Protocol.RFC9111;
+using TurboHttp.Protocol.Caching;
 
 namespace TurboHttp.Streams.Stages.Features;
 
@@ -256,9 +256,8 @@ internal sealed class CacheBidiStage
                 // RFC 9111 §5.2.2.3 — strip qualified no-cache fields before serving
                 StripNoCacheFields(cachedResponse, result.Entry.CacheControl);
 
-                // Bind the cached response to the current request so that
-                // TurboHttpClient.DrainResponsesAsync can match the response
-                // back to the correct SendAsync caller via request Options.
+                // Bind the cached response to the request so the pipeline Sink
+                // can extract the TCS from request Options and complete it (G2).
                 cachedResponse.RequestMessage = request;
 
                 // Cache hit — short-circuit to response output
@@ -402,7 +401,7 @@ internal sealed class CacheBidiStage
                         failureCallback(t.Exception?.GetBaseException()
                             ?? new InvalidOperationException("Async body read failed"));
                     }
-                }, TaskScheduler.Default);
+                }, TaskContinuationOptions.ExecuteSynchronously);
 
                 return (response, true);
             }

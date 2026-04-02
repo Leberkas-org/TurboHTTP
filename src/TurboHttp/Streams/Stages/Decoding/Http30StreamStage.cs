@@ -3,8 +3,9 @@ using System.Net;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Protocol.RFC9114;
-using TurboHttp.Protocol.RFC9204;
+using TurboHttp.Internal;
+using TurboHttp.Protocol.Http3;
+using TurboHttp.Protocol.Http3.Qpack;
 
 namespace TurboHttp.Streams.Stages.Decoding;
 
@@ -143,15 +144,18 @@ public sealed class Http30StreamStage : GraphStage<FlowShape<Http3Frame, HttpRes
 
             if (_bodyLength > 0)
             {
-                var bodyBytes = _bodyBuffer[.._bodyLength].ToArray();
-                response.Content = new ByteArrayContent(bodyBytes);
+                response.Content = new PooledBodyContent(_bodyOwner!, _bodyLength);
+                _bodyOwner = null; // ownership transferred — PooledBodyContent disposes
                 ApplyContentHeaders(response);
+            }
+            else
+            {
+                _bodyOwner?.Dispose();
+                _bodyOwner = null;
             }
 
             Emit(_stage._out, response);
 
-            _bodyOwner?.Dispose();
-            _bodyOwner = null;
             _bodyLength = 0;
             _response = null;
             _contentHeaders = null;

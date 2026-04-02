@@ -16,7 +16,7 @@
 //   redirect   ─── redirect request ──▶ cookie (re-enters with cookie injection for new URL)
 //   retry      ─── retry request    ──▶ expect100 (re-enters below cookie, above engine)
 //   cache hit  ─── cached response  ──▶ response chain at retry level (bypasses ContentEncoding + engine)
-//   QPACK      ─── table updates    ──▶ Http30Request2FrameStage (encoder/decoder table sync)
+//   QPACK      ─── table updates    ──▶ Http30Request2FrameStage (QPACK encoder/decoder table sync)
 
 model {
   // ── Request chain — outermost to innermost ────────────────────────────────
@@ -54,19 +54,13 @@ model {
   turbohttp.streams.ConnectionReuseStage -[feedback]-> turbohttp.streams.ConnectionStage 'reuse or close decision'
   turbohttp.streams.Http1XCorrelationStage -[flows]-> turbohttp.streams.ContentEncodingBidiStage 'matched response'
 
-  // ── HTTP/2 engine: stream IDs → HPACK → frames → TCP ─────────────────────
-  turbohttp.streams.Http20Engine -[flows]-> turbohttp.streams.Http20StreamIdAllocatorStage 'HttpRequestMessage'
-  turbohttp.streams.Http20StreamIdAllocatorStage -[flows]-> turbohttp.streams.Http20Request2FrameStage 'request with stream ID (frame path)'
-  turbohttp.streams.Http20StreamIdAllocatorStage -[flows]-> turbohttp.streams.Http20CorrelationStage 'request with stream ID (correlation path)'
-  turbohttp.streams.Http20Request2FrameStage -[flows]-> turbohttp.streams.Http20ConnectionStage 'HEADERS + DATA frames'
-  turbohttp.streams.Http20ConnectionStage -[flows]-> turbohttp.streams.Http20EncoderStage 'outbound frames'
-  turbohttp.streams.Http20EncoderStage -[flows]-> turbohttp.streams.Http20PrependPrefaceStage 'outbound bytes'
-  turbohttp.streams.Http20PrependPrefaceStage -[flows]-> turbohttp.streams.ConnectionStage 'bytes with connection preface'
+  // ── HTTP/2 engine: connection stage → HPACK → frames → TCP ──────────────────
+  turbohttp.streams.Http20Engine -[flows]-> turbohttp.streams.Http20ConnectionStage 'HttpRequestMessage'
+  turbohttp.streams.Http20ConnectionStage -[flows]-> turbohttp.streams.Http20EncoderStage 'outbound frames (batched)'
+  turbohttp.streams.Http20EncoderStage -[flows]-> turbohttp.streams.ConnectionStage 'bytes (with preface on first connect)'
   turbohttp.streams.ConnectionStage -[flows]-> turbohttp.streams.Http20DecoderStage 'inbound bytes'
   turbohttp.streams.Http20DecoderStage -[flows]-> turbohttp.streams.Http20ConnectionStage 'inbound frames'
-  turbohttp.streams.Http20ConnectionStage -[flows]-> turbohttp.streams.Http20StreamStage 'response frames per stream'
-  turbohttp.streams.Http20StreamStage -[flows]-> turbohttp.streams.Http20CorrelationStage 'assembled HttpResponseMessage'
-  turbohttp.streams.Http20CorrelationStage -[flows]-> turbohttp.streams.ContentEncodingBidiStage 'matched response'
+  turbohttp.streams.Http20ConnectionStage -[flows]-> turbohttp.streams.ContentEncodingBidiStage 'matched response'
 
   // ── HTTP/3 engine: QPACK → frames → QUIC ─────────────────────────────────
   turbohttp.streams.Http30Engine -[flows]-> turbohttp.streams.Http30Request2FrameStage 'HttpRequestMessage'

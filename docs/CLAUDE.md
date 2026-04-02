@@ -42,4 +42,4 @@ Every page targets **library users** — .NET developers who use TurboHttp in th
 
 ## Build Commands
 
-See root `CLAUDE.md` for VitePress dev server, build, preview, and LikeC4 SVG export commands.
+See root `CLAUDE.md` for VitePress dev server, build, and preview commands.

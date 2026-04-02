@@ -1,9 +1,8 @@
-﻿using System.Buffers;
-using Akka.Event;
+﻿using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9112;
+using TurboHttp.Protocol.Http11;
 
 namespace TurboHttp.Streams.Stages.Encoding;
 
@@ -40,7 +39,7 @@ public sealed class Http11EncoderStage : GraphStage<FlowShape<HttpRequestMessage
                 onPush: () =>
                 {
                     var request = Grab(stage._in);
-                    IMemoryOwner<byte>? owner = null;
+                    NetworkBuffer? item = null;
 
                     try
                     {
@@ -48,16 +47,18 @@ public sealed class Http11EncoderStage : GraphStage<FlowShape<HttpRequestMessage
                         var contentLength = Convert.ToInt32(request.Content?.Headers.ContentLength ?? 0);
                         var estimatedSize = _minBufferSize + contentLength;
                         var bufferSize = Math.Min(estimatedSize, _maxBufferSize);
-                        owner = MemoryPool<byte>.Shared.Rent(bufferSize);
-                        var buffer = owner.Memory.Span;
+                        item = NetworkBuffer.Rent(bufferSize);
+                        item.Key = key;
+                        var span = item.FullMemory.Span;
 
-                        var written = Http11Encoder.Encode(request, ref buffer);
+                        var written = Http11Encoder.Encode(request, ref span);
+                        item.Length = written;
 
-                        Push(stage._out, new DataItem(owner, written) { Key = key });
+                        Push(stage._out, item);
                     }
                     catch (Exception ex)
                     {
-                        owner?.Dispose();
+                        item?.Dispose();
                         Log.Warning("Http11EncoderStage: Failed to encode request [{0}]: {1}",
                             request.RequestUri, ex.Message);
                         if (!HasBeenPulled(stage._in))

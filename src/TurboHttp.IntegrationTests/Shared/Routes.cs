@@ -8,6 +8,553 @@ namespace TurboHttp.IntegrationTests.Shared;
 
 internal static class Routes
 {
+    internal static void RegisterRoutes(WebApplication app)
+    {
+
+        app.MapMethods("/hello", ["GET", "HEAD"], (HttpContext ctx) =>
+        {
+            if (ctx.Request.Method == "HEAD") return Results.NoContent();
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 11;
+            return Results.Content("Hello World", "text/plain");
+        });
+
+        app.MapGet("/ping", () => Results.Content("pong", "text/plain"));
+
+        app.MapGet("/large/{kb:int}", (int kb) =>
+        {
+            var body = new byte[kb * 1024];
+            Array.Fill(body, (byte)'A');
+            return Results.Bytes(body, "application/octet-stream");
+        });
+
+        app.MapGet("/status/{code:int}", async (HttpContext ctx, int code) =>
+        {
+            ctx.Response.StatusCode = code;
+            if (code != 204 && code != 304)
+            {
+                var body = "ok"u8.ToArray();
+                ctx.Response.ContentLength = body.Length;
+                await ctx.Response.Body.WriteAsync(body);
+            }
+        });
+
+        app.MapGet("/content/{*ct}", async (HttpContext ctx, string ct) =>
+        {
+            ctx.Response.ContentType = ct;
+            var body = "body"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/methods", (HttpContext ctx) => Results.Content(ctx.Request.Method, "text/plain"));
+
+        app.MapMethods("/any",
+            ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+            (HttpContext ctx) => Results.Content(ctx.Request.Method, "text/plain"));
+
+
+        app.MapPost("/echo", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            var contentType = ctx.Request.ContentType ?? "application/octet-stream";
+            ctx.Response.ContentType = contentType;
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapPut("/echo", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            var contentType = ctx.Request.ContentType ?? "application/octet-stream";
+            ctx.Response.ContentType = contentType;
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapMethods("/echo", ["PATCH"], async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            var contentType = ctx.Request.ContentType ?? "application/octet-stream";
+            ctx.Response.ContentType = contentType;
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+
+        app.MapGet("/headers/echo", (HttpContext ctx) =>
+        {
+            foreach (var header in ctx.Request.Headers)
+            {
+                if (header.Key.StartsWith("X-", StringComparison.OrdinalIgnoreCase))
+                {
+                    ctx.Response.Headers[header.Key] = header.Value;
+                }
+            }
+
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
+        app.MapGet("/headers/set", (HttpContext ctx) =>
+        {
+            foreach (var param in ctx.Request.Query)
+            {
+                ctx.Response.Headers[param.Key] = param.Value;
+            }
+
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
+        app.MapGet("/headers/user-agent", (HttpContext ctx) =>
+        {
+            var value = ctx.Request.Headers.UserAgent.ToString();
+            ctx.Response.ContentType = "text/plain";
+            return Results.Text(value);
+        });
+
+        app.MapGet("/headers/count", (HttpContext ctx) =>
+        {
+            var count = ctx.Request.Headers.Count;
+            ctx.Response.Headers["X-Header-Count"] = count.ToString();
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
+        app.MapGet("/auth", (HttpContext ctx) =>
+        {
+            if (!ctx.Request.Headers.ContainsKey("Authorization"))
+            {
+                return Results.StatusCode(401);
+            }
+
+            return Results.Ok();
+        });
+
+        app.MapGet("/multiheader", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers.Append("X-Value", "alpha");
+            ctx.Response.Headers.Append("X-Value", "beta");
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
+
+        app.MapMethods("/chunked/{kb:int}", ["GET", "HEAD"], async (HttpContext ctx, int kb) =>
+        {
+            ctx.Response.ContentType = "application/octet-stream";
+            await ctx.Response.StartAsync();
+            if (ctx.Request.Method == "HEAD")
+            {
+                return;
+            }
+
+            const int chunkSize = 8192;
+            var chunk = new byte[chunkSize];
+            Array.Fill(chunk, (byte)'A');
+            var remaining = kb * 1024;
+            while (remaining > 0)
+            {
+                var toWrite = Math.Min(remaining, chunkSize);
+                await ctx.Response.Body.WriteAsync(chunk.AsMemory(0, toWrite));
+                await ctx.Response.Body.FlushAsync();
+                remaining -= toWrite;
+            }
+        });
+
+        app.MapGet("/chunked/exact/{count:int}/{chunkBytes:int}", async (HttpContext ctx, int count, int chunkBytes) =>
+        {
+            ctx.Response.ContentType = "application/octet-stream";
+            await ctx.Response.StartAsync();
+            var chunk = new byte[chunkBytes];
+            Array.Fill(chunk, (byte)'B');
+            for (var i = 0; i < count; i++)
+            {
+                await ctx.Response.Body.WriteAsync(chunk);
+                await ctx.Response.Body.FlushAsync();
+            }
+        });
+
+        app.MapPost("/echo/chunked", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = ctx.Request.ContentType ?? "application/octet-stream";
+            await ctx.Response.StartAsync();
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/chunked/trailer", async ctx =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            await ctx.Response.StartAsync();
+            var body = "chunked-with-trailer"u8.ToArray();
+            await ctx.Response.Body.WriteAsync(body);
+            await ctx.Response.Body.FlushAsync();
+            if (ctx.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseTrailersFeature>() is
+                { } trailersFeature)
+            {
+                trailersFeature.Trailers["X-Checksum"] = "abc123";
+            }
+        });
+
+        app.MapGet("/chunked/md5", async ctx =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            var body = "checksum-body"u8.ToArray();
+            var md5 = Convert.ToBase64String(System.Security.Cryptography.MD5.HashData(body));
+            ctx.Response.Headers.ContentMD5 = md5;
+            await ctx.Response.StartAsync();
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+
+        app.MapGet("/close", async ctx =>
+        {
+            ctx.Response.Headers.Connection = "close";
+            ctx.Response.ContentType = "text/plain";
+            var body = "closing"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+
+        app.MapGet("/etag", async ctx =>
+        {
+            const string etag = "\"v1\"";
+            if (ctx.Request.Headers.IfNoneMatch == etag)
+            {
+                ctx.Response.StatusCode = 304;
+                ctx.Response.Headers.ETag = etag;
+                return;
+            }
+
+            ctx.Response.Headers.ETag = etag;
+            ctx.Response.ContentType = "text/plain";
+            var body = "etag-resource"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/cache", async ctx =>
+        {
+            ctx.Response.Headers.CacheControl = "max-age=3600, public";
+            ctx.Response.Headers.LastModified = DateTimeOffset.UtcNow.AddHours(-1).ToString("R");
+            ctx.Response.Headers.Expires = DateTimeOffset.UtcNow.AddHours(1).ToString("R");
+            ctx.Response.Headers.Pragma = "no-cache";
+            ctx.Response.ContentType = "text/plain";
+            var body = "cached-resource"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        var fixedLastModified = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        app.MapGet("/if-modified-since", async ctx =>
+        {
+            ctx.Response.Headers.LastModified = fixedLastModified.ToString("R");
+            if (ctx.Request.Headers.TryGetValue("If-Modified-Since", out var ims) &&
+                DateTimeOffset.TryParse(ims, out var imsDate) &&
+                imsDate >= fixedLastModified)
+            {
+                ctx.Response.StatusCode = 304;
+                return;
+            }
+
+            ctx.Response.ContentType = "text/plain";
+            var body = "fresh-resource"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+
+        app.MapGet("/negotiate", (HttpContext ctx) =>
+        {
+            var accept = ctx.Request.Headers.Accept.ToString();
+            if (accept.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.Content("{\"ok\":true}", "application/json");
+            }
+
+            if (accept.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.Content("<html><body>ok</body></html>", "text/html");
+            }
+
+            return Results.Content("default", "text/plain");
+        });
+
+        app.MapGet("/negotiate/vary", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers.Vary = "Accept";
+            return Results.Content("data", "text/plain");
+        });
+
+        app.MapGet("/gzip-meta", async ctx =>
+        {
+            ctx.Response.Headers.ContentEncoding = "identity";
+            ctx.Response.ContentType = "text/plain";
+            var body = "encoded-body"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+
+        app.MapPost("/form/multipart", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var received = ms.ToArray();
+            ctx.Response.ContentType = "text/plain";
+            var response = System.Text.Encoding.UTF8.GetBytes($"received:{received.Length}");
+            ctx.Response.ContentLength = response.Length;
+            await ctx.Response.Body.WriteAsync(response);
+        });
+
+        app.MapPost("/form/urlencoded", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var received = ms.ToArray();
+            ctx.Response.ContentType = "text/plain";
+            var response = System.Text.Encoding.UTF8.GetBytes($"received:{received.Length}");
+            ctx.Response.ContentLength = response.Length;
+            await ctx.Response.Body.WriteAsync(response);
+        });
+
+
+        app.MapGet("/range/{kb:int}", (int kb) =>
+        {
+            var body = new byte[kb * 1024];
+            for (var i = 0; i < body.Length; i++)
+            {
+                body[i] = (byte)(i % 256);
+            }
+
+            return Results.Bytes(body, "application/octet-stream", enableRangeProcessing: true);
+        });
+
+        const string rangeEtag = "\"range-v1\"";
+        app.MapGet("/range/etag", (HttpContext _) =>
+        {
+            var body = new byte[512];
+            for (var i = 0; i < body.Length; i++)
+            {
+                body[i] = (byte)(i % 256);
+            }
+
+            var entityTag = new Microsoft.Net.Http.Headers.EntityTagHeaderValue(rangeEtag);
+            return Results.Bytes(body, "application/octet-stream",
+                entityTag: entityTag,
+                enableRangeProcessing: true);
+        });
+
+
+        app.MapGet("/slow/{count:int}", async (HttpContext ctx, int count) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            await ctx.Response.StartAsync();
+            var single = new[] { (byte)'x' };
+            for (var i = 0; i < count; i++)
+            {
+                await ctx.Response.Body.WriteAsync(single);
+                await ctx.Response.Body.FlushAsync();
+                await Task.Delay(1);
+            }
+        });
+
+        app.MapGet("/delay/{ms:int}", async (HttpContext ctx, int ms) =>
+        {
+            await Task.Delay(ms);
+            ctx.Response.ContentType = "text/plain";
+            var body = "delayed"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+
+        app.MapGet("/empty-cl", (HttpContext ctx) =>
+        {
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+
+        app.MapGet("/unknown-headers", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["X-Unknown-Foo"] = "bar";
+            ctx.Response.Headers["X-Unknown-Bar"] = "baz";
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 2;
+            return Results.Content("ok", "text/plain");
+        });
+
+        app.MapGet("/edge/close-mid-response", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 10000;
+            await ctx.Response.StartAsync();
+            await ctx.Response.Body.WriteAsync("partial"u8.ToArray());
+            await ctx.Response.Body.FlushAsync();
+            ctx.Abort();
+        });
+
+        app.MapGet("/edge/large-header/{kb:int}", async (HttpContext ctx, int kb) =>
+        {
+            var headerValue = new string('X', kb * 1024);
+            ctx.Response.Headers["X-Large-Header"] = headerValue;
+            ctx.Response.ContentType = "text/plain";
+            var body = "ok"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/edge/unknown-encoding", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.Headers.ContentEncoding = "x-custom";
+            var body = "raw-payload"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/edge/empty-body", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 0;
+            await ctx.Response.StartAsync();
+        });
+    }
+
+    internal static void RegisterH2Routes(WebApplication app)
+    {
+        app.MapGet("/h2/settings", (HttpContext _) => Results.Content("h2-ok", "text/plain"));
+
+        app.MapGet("/h2/many-headers", (HttpContext ctx) =>
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                ctx.Response.Headers[$"X-Custom-{i:D3}"] = $"value-{i:D3}";
+            }
+
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 12;
+            return Results.Content("many-headers", "text/plain");
+        });
+
+        app.MapPost("/h2/echo-binary", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = "application/octet-stream";
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/h2/cookie", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers.Append("Set-Cookie", "session=abc123; Path=/; HttpOnly");
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 10;
+            return Results.Content("cookie-set", "text/plain");
+        });
+
+        app.MapGet("/h2/large-headers/{kb:int}", (HttpContext ctx, int kb) =>
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                ctx.Response.Headers[$"X-Large-{i:D2}"] = new string('v', 90);
+            }
+
+            var body = new byte[kb * 1024];
+            Array.Fill(body, (byte)'A');
+            return Results.Bytes(body, "application/octet-stream");
+        });
+
+        app.MapGet("/h2/priority/{kb:int}", (int kb) =>
+        {
+            var body = new byte[kb * 1024];
+            Array.Fill(body, (byte)'P');
+            return Results.Bytes(body, "application/octet-stream");
+        });
+
+        app.MapGet("/h2/echo-path", (HttpContext ctx) =>
+        {
+            var path = ctx.Request.Path + ctx.Request.QueryString;
+            return Results.Content(path, "text/plain");
+        });
+
+        app.MapGet("/h2/settings/max-concurrent", (HttpContext ctx) =>
+        {
+            var streamId = ctx.Request.Headers["X-Stream-Id"].ToString();
+            ctx.Response.Headers["X-Stream-Id"] = streamId;
+            ctx.Response.ContentLength = 0;
+            return Results.Empty;
+        });
+    }
+
+    internal static void RegisterH3Routes(WebApplication app)
+    {
+        app.MapGet("/h3/settings", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers["X-Protocol"] = ctx.Request.Protocol;
+            return Results.Content("h3-ok", "text/plain");
+        });
+
+        app.MapGet("/h3/protocol", (HttpContext ctx) =>
+            Results.Content(ctx.Request.Protocol, "text/plain"));
+
+        app.MapGet("/h3/many-headers", (HttpContext ctx) =>
+        {
+            for (var i = 0; i < 20; i++)
+            {
+                ctx.Response.Headers[$"X-Custom-{i:D3}"] = $"value-{i:D3}";
+            }
+
+            ctx.Response.ContentType = "text/plain";
+            ctx.Response.ContentLength = 12;
+            return Results.Content("many-headers", "text/plain");
+        });
+
+        app.MapPost("/h3/echo-binary", async ctx =>
+        {
+            using var ms = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(ms);
+            var body = ms.ToArray();
+            ctx.Response.ContentType = "application/octet-stream";
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/h3/delay/{ms:int}", async (HttpContext ctx, int ms) =>
+        {
+            await Task.Delay(ms);
+            ctx.Response.ContentType = "text/plain";
+            var body = "delayed"u8.ToArray();
+            ctx.Response.ContentLength = body.Length;
+            await ctx.Response.Body.WriteAsync(body);
+        });
+
+        app.MapGet("/h3/stream/{count:int}", async (HttpContext ctx, int count) =>
+        {
+            ctx.Response.ContentType = "application/octet-stream";
+            await ctx.Response.StartAsync();
+            var single = new[] { (byte)'x' };
+            for (var i = 0; i < count; i++)
+            {
+                await ctx.Response.Body.WriteAsync(single);
+                await ctx.Response.Body.FlushAsync();
+            }
+        });
+    }
+
     internal static void RegisterCookieRoutes(WebApplication app)
     {
         // GET /cookie/set/{name}/{value} → Set-Cookie: {name}={value}; Path=/
@@ -636,7 +1183,7 @@ internal static class Routes
     internal static void RegisterResilienceRoutes(WebApplication app)
     {
         // GET /resilience/content-length-mismatch → Content-Length: 1000 but sends only 500 bytes, then closes
-        app.MapGet("/resilience/content-length-mismatch", async (HttpContext ctx) =>
+        app.MapGet("/resilience/content-length-mismatch", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             ctx.Response.ContentLength = 1000;
@@ -646,7 +1193,7 @@ internal static class Routes
         });
 
         // GET /resilience/corrupt-gzip → Content-Encoding: gzip but body is random bytes
-        app.MapGet("/resilience/corrupt-gzip", async (HttpContext ctx) =>
+        app.MapGet("/resilience/corrupt-gzip", async ctx =>
         {
             var body = new byte[256];
             Random.Shared.NextBytes(body);
@@ -657,7 +1204,7 @@ internal static class Routes
         });
 
         // GET /resilience/corrupt-br → Content-Encoding: br but body is random bytes
-        app.MapGet("/resilience/corrupt-br", async (HttpContext ctx) =>
+        app.MapGet("/resilience/corrupt-br", async ctx =>
         {
             var body = new byte[256];
             Random.Shared.NextBytes(body);
@@ -704,7 +1251,7 @@ internal static class Routes
         });
 
         // GET /resilience/invalid-header → response with header containing unusual characters
-        app.MapGet("/resilience/invalid-header", async (HttpContext ctx) =>
+        app.MapGet("/resilience/invalid-header", async ctx =>
         {
             ctx.Response.Headers["X-Invalid"] = "value\twith\ttabs";
             ctx.Response.ContentType = "text/plain";
@@ -725,7 +1272,7 @@ internal static class Routes
     {
         // POST /compress/echo → reads request body, echoes back uncompressed
         // Returns X-Content-Encoding header showing what Content-Encoding the server received
-        app.MapPost("/compress/echo", async (HttpContext ctx) =>
+        app.MapPost("/compress/echo", async ctx =>
         {
             var receivedEncoding = ctx.Request.Headers.ContentEncoding.ToString();
             using var ms = new MemoryStream();
@@ -740,13 +1287,13 @@ internal static class Routes
         });
 
         // POST /compress/verify-gzip → verifies body is valid gzip, decompresses, echoes
-        app.MapPost("/compress/verify-gzip", async (HttpContext ctx) =>
+        app.MapPost("/compress/verify-gzip", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
             ms.Position = 0;
             using var decompressed = new MemoryStream();
-            using (var gz = new GZipStream(ms, CompressionMode.Decompress))
+            await using (var gz = new GZipStream(ms, CompressionMode.Decompress))
             {
                 await gz.CopyToAsync(decompressed);
             }
@@ -759,13 +1306,13 @@ internal static class Routes
 
         // POST /compress/verify-deflate → verifies body is valid zlib-deflate, decompresses, echoes
         // Uses ZLibStream because the TurboHttp client compresses deflate as zlib-wrapped deflate (RFC 1950).
-        app.MapPost("/compress/verify-deflate", async (HttpContext ctx) =>
+        app.MapPost("/compress/verify-deflate", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
             ms.Position = 0;
             using var decompressed = new MemoryStream();
-            using (var ds = new ZLibStream(ms, CompressionMode.Decompress))
+            await using (var ds = new ZLibStream(ms, CompressionMode.Decompress))
             {
                 await ds.CopyToAsync(decompressed);
             }
@@ -777,13 +1324,13 @@ internal static class Routes
         });
 
         // POST /compress/verify-br → verifies body is valid brotli, decompresses, echoes
-        app.MapPost("/compress/verify-br", async (HttpContext ctx) =>
+        app.MapPost("/compress/verify-br", async ctx =>
         {
             using var ms = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(ms);
             ms.Position = 0;
             using var decompressed = new MemoryStream();
-            using (var bs = new BrotliStream(ms, CompressionMode.Decompress))
+            await using (var bs = new BrotliStream(ms, CompressionMode.Decompress))
             {
                 await bs.CopyToAsync(decompressed);
             }
@@ -833,14 +1380,15 @@ internal static class Routes
     internal static void RegisterInteractionRoutes(WebApplication app)
     {
         // GET /interaction/cache-gzip → gzip-compressed body + Cache-Control: max-age=3600
-        app.MapGet("/interaction/cache-gzip", async (HttpContext ctx) =>
+        app.MapGet("/interaction/cache-gzip", async ctx =>
         {
             var payload = "interaction-cache-gzip-payload"u8.ToArray();
             using var ms = new MemoryStream();
-            using (var gz = new GZipStream(ms, CompressionLevel.Fastest))
+            await using (var gz = new GZipStream(ms, CompressionLevel.Fastest))
             {
                 gz.Write(payload, 0, payload.Length);
             }
+
             var compressed = ms.ToArray();
             ctx.Response.Headers.CacheControl = "max-age=3600";
             ctx.Response.ContentType = "text/plain";
@@ -883,10 +1431,12 @@ internal static class Routes
                     ctx.Response.Headers[header.Key] = header.Value;
                 }
             }
+
             if (ctx.Request.Headers.TryGetValue("Cookie", out var cookie))
             {
                 ctx.Response.Headers["X-Received-Cookie"] = cookie;
             }
+
             ctx.Response.ContentLength = 0;
             return Results.Empty;
         });

@@ -38,9 +38,9 @@ public static class TurboTrace
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool ShouldTrace(TurboTraceCategory category, TurboTraceLevel level)
     {
-        return _listener != null
-               && (_enabledCategories & category) != 0
-               && level >= _minimumLevel;
+        return _listener != null && _listener.IsEnabled(level, category)
+                                 && (_enabledCategories & category) != 0
+                                 && level >= _minimumLevel;
     }
 
     internal static void WriteEvent(in TraceEvent evt)

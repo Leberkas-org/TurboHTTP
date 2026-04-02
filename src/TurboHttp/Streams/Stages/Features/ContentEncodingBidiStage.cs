@@ -1,9 +1,11 @@
 using System.Buffers;
+using System.IO.Compression;
+using System.Net;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Protocol;
-using TurboHttp.Protocol.RFC9110;
+using TurboHttp.Protocol.Semantics;
 
 namespace TurboHttp.Streams.Stages.Features;
 
@@ -138,9 +140,9 @@ internal sealed class ContentEncodingBidiStage
             var (owner, written) = ReadContentAsMemory(request.Content);
             try
             {
-                var compressed = ContentEncodingEncoder.Compress(owner.Memory[..written].ToArray(), policy.Encoding);
+                var (compBuf, compLen) = ContentEncodingEncoder.Compress(owner.Memory[..written].Span, policy.Encoding);
 
-                var newContent = new ByteArrayContent(compressed);
+                var newContent = new PooledArrayContent(compBuf, compLen);
 
                 // Copy existing content headers (except Content-Encoding and Content-Length)
                 foreach (var header in request.Content.Headers)
@@ -156,7 +158,7 @@ internal sealed class ContentEncodingBidiStage
 
                 // Set Content-Encoding and update Content-Length
                 newContent.Headers.TryAddWithoutValidation("Content-Encoding", policy.Encoding);
-                newContent.Headers.ContentLength = compressed.Length;
+                newContent.Headers.ContentLength = compLen;
 
                 request.Content = newContent;
                 return request;
@@ -191,37 +193,184 @@ internal sealed class ContentEncodingBidiStage
                 return response;
             }
 
-            var (owner, written) = ReadContentAsMemory(response.Content);
-            try
+            HttpContent newContent;
+
+            // Streaming decompression for gzip/brotli (single encoding) when the body is
+            // large enough to justify the streaming overhead. For small or unknown bodies
+            // the buffered path is used — it can catch corrupt data and fall back to raw passthrough.
+            // Deflate always uses the buffered path because it needs a ZLib→raw DEFLATE fallback
+            // that requires a seekable stream.
+            const long streamingThreshold = 64 * 1024;
+            var contentLength = response.Content.Headers.ContentLength;
+            var canStream = !encoding.Contains(',') &&
+                            !encoding.Equals(WellKnownHeaders.Deflate, StringComparison.OrdinalIgnoreCase) &&
+                            contentLength > streamingThreshold;
+
+            if (canStream)
             {
-                var decompressed = ContentEncodingDecoder.Decompress(owner.Memory[..written].ToArray(), encoding);
-
-                var newContent = new ByteArrayContent(decompressed);
-
-                foreach (var header in response.Content.Headers)
+                // Large-body streaming path: wrap the original content stream in a
+                // decompression stream. The body is decompressed lazily on read,
+                // avoiding a full buffering + copy cycle.
+                newContent = new DecompressingContent(response.Content, encoding);
+            }
+            else
+            {
+                // Buffered path: small bodies, deflate (ZLib/raw fallback), stacked encodings,
+                // and unknown Content-Length. Errors are caught and the raw response is passed through.
+                var (owner, written) = ReadContentAsMemory(response.Content);
+                try
                 {
-                    if (header.Key.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase))
+                    (byte[] Buffer, int Length) result;
+                    if (!encoding.Contains(','))
                     {
-                        continue;
+                        result = DecompressToPool(owner.Memory[..written].Span, encoding);
+                    }
+                    else
+                    {
+                        result = ContentEncodingDecoder.Decompress(owner.Memory[..written].Span, encoding);
                     }
 
-                    newContent.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                    newContent = new PooledArrayContent(result.Buffer, result.Length);
+                }
+                catch (Exception ex) when (ex is HttpDecoderException or InvalidDataException or InvalidOperationException)
+                {
+                    owner.Dispose();
+                    Log.Warning("ContentEncodingBidiStage: decompression failed ({0}), passing raw response through", ex.Message);
+                    return response;
+                }
+                finally
+                {
+                    owner.Dispose();
+                }
+            }
+
+            foreach (var header in response.Content.Headers)
+            {
+                if (header.Key.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase) ||
+                    header.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
                 }
 
-                newContent.Headers.ContentLength = decompressed.Length;
+                newContent.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
 
-                response.Content = newContent;
-                return response;
-            }
-            catch (HttpDecoderException)
+            response.Content = newContent;
+            return response;
+        }
+
+        /// <summary>
+        /// Decompresses <paramref name="data"/> using a single encoding into an
+        /// <see cref="ArrayPool{T}"/>-rented buffer. The caller must ensure the
+        /// returned buffer is returned to the pool (typically via <see cref="PooledArrayContent"/>).
+        /// </summary>
+        private static (byte[] Buffer, int Length) DecompressToPool(ReadOnlySpan<byte> data, string encoding)
+        {
+            if (data.IsEmpty)
             {
-                // Decompression failure on a supported encoding — pass the response
-                // through unmodified rather than killing the stream.
-                return response;
+                return ([], 0);
             }
-            finally
+
+            // Conservative estimate: 4× compressed size, floor 4 KB.
+            var estimatedSize = Math.Max(4096, data.Length * 4);
+
+            if (encoding.Equals(WellKnownHeaders.Gzip, StringComparison.OrdinalIgnoreCase) ||
+                encoding.Equals(WellKnownHeaders.XGzip, StringComparison.OrdinalIgnoreCase))
             {
-                owner.Dispose();
+                return DecompressGzipToPool(data, estimatedSize);
+            }
+
+            if (encoding.Equals(WellKnownHeaders.Deflate, StringComparison.OrdinalIgnoreCase))
+            {
+                return DecompressDeflateToPool(data, estimatedSize);
+            }
+
+            if (encoding.Equals(WellKnownHeaders.Brotli, StringComparison.OrdinalIgnoreCase))
+            {
+                return DecompressBrotliToPool(data, estimatedSize);
+            }
+
+            throw new HttpDecoderException(HttpDecoderError.DecompressionFailed,
+                $"RFC 9110 §8.4: Unknown Content-Encoding '{encoding}'; cannot decompress response.");
+        }
+
+        private static (byte[] Buffer, int Length) DecompressGzipToPool(ReadOnlySpan<byte> data, int estimatedSize)
+        {
+            using var input = SpanToMemoryStream(data);
+            using var gzip = new GZipStream(input, CompressionMode.Decompress);
+            return ReadDecompressorToPool(gzip, estimatedSize);
+        }
+
+        private static (byte[] Buffer, int Length) DecompressBrotliToPool(ReadOnlySpan<byte> data, int estimatedSize)
+        {
+            using var input = SpanToMemoryStream(data);
+            using var brotli = new BrotliStream(input, CompressionMode.Decompress);
+            return ReadDecompressorToPool(brotli, estimatedSize);
+        }
+
+        private static (byte[] Buffer, int Length) DecompressDeflateToPool(ReadOnlySpan<byte> data, int estimatedSize)
+        {
+            // RFC 9110 §8.4.2: "deflate" is the zlib format (RFC 1950), not raw DEFLATE.
+            // However, some servers send raw DEFLATE (RFC 1951) without the zlib wrapper.
+            // Try ZLib first; fall back to raw DEFLATE if it fails.
+            try
+            {
+                using var input = SpanToMemoryStream(data);
+                using var zlib = new ZLibStream(input, CompressionMode.Decompress);
+                return ReadDecompressorToPool(zlib, estimatedSize);
+            }
+            catch
+            {
+                using var input = SpanToMemoryStream(data);
+                using var deflate = new DeflateStream(input, CompressionMode.Decompress);
+                return ReadDecompressorToPool(deflate, estimatedSize);
+            }
+        }
+
+        private static MemoryStream SpanToMemoryStream(ReadOnlySpan<byte> data)
+        {
+            var ms = new MemoryStream(data.Length);
+            ms.Write(data);
+            ms.Position = 0;
+            return ms;
+        }
+
+        /// <summary>
+        /// Reads all bytes from <paramref name="decompressor"/> into an
+        /// <see cref="ArrayPool{T}"/>-rented buffer, growing it as needed.
+        /// </summary>
+        private static (byte[] Buffer, int Length) ReadDecompressorToPool(Stream decompressor, int estimatedSize)
+        {
+            var buffer = ArrayPool<byte>.Shared.Rent(estimatedSize);
+            var written = 0;
+
+            try
+            {
+                while (true)
+                {
+                    if (written == buffer.Length)
+                    {
+                        var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
+                        buffer.AsSpan(0, written).CopyTo(larger);
+                        ArrayPool<byte>.Shared.Return(buffer);
+                        buffer = larger;
+                    }
+
+                    var read = decompressor.Read(buffer, written, buffer.Length - written);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    written += read;
+                }
+
+                return (buffer, written);
+            }
+            catch
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+                throw;
             }
         }
 
@@ -265,6 +414,125 @@ internal sealed class ContentEncodingBidiStage
                 pooled.Dispose();
                 throw;
             }
+        }
+    }
+
+    /// <summary>
+    /// An <see cref="HttpContent"/> that lazily decompresses the underlying content on read.
+    /// Avoids buffering the entire compressed body in memory — the decompression stream wraps
+    /// the original content's stream and decompresses on-the-fly as downstream consumers read.
+    /// </summary>
+    private sealed class DecompressingContent : HttpContent
+    {
+        private readonly HttpContent _inner;
+        private readonly string _encoding;
+
+        public DecompressingContent(HttpContent inner, string encoding)
+        {
+            _inner = inner;
+            _encoding = encoding;
+        }
+
+        protected override void SerializeToStream(Stream stream, TransportContext? context, CancellationToken ct)
+        {
+            using var source = _inner.ReadAsStream(ct);
+            using var decompressor = CreateDecompressor(source, _encoding);
+            decompressor.CopyTo(stream);
+        }
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            await using var source = await _inner.ReadAsStreamAsync().ConfigureAwait(false);
+            await using var decompressor = CreateDecompressor(source, _encoding);
+            await decompressor.CopyToAsync(stream).ConfigureAwait(false);
+        }
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken ct)
+        {
+            await using var source = await _inner.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            await using var decompressor = CreateDecompressor(source, _encoding);
+            await decompressor.CopyToAsync(stream, ct).ConfigureAwait(false);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            // Decompressed length is unknown without reading the entire stream.
+            length = 0;
+            return false;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _inner.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+
+        private static Stream CreateDecompressor(Stream source, string encoding)
+        {
+            if (encoding.Equals(WellKnownHeaders.Gzip, StringComparison.OrdinalIgnoreCase) ||
+                encoding.Equals(WellKnownHeaders.XGzip, StringComparison.OrdinalIgnoreCase))
+            {
+                return new GZipStream(source, CompressionMode.Decompress);
+            }
+
+            if (encoding.Equals(WellKnownHeaders.Brotli, StringComparison.OrdinalIgnoreCase))
+            {
+                return new BrotliStream(source, CompressionMode.Decompress);
+            }
+
+            if (encoding.Equals(WellKnownHeaders.Deflate, StringComparison.OrdinalIgnoreCase))
+            {
+                return new ZLibStream(source, CompressionMode.Decompress);
+            }
+
+            throw new HttpDecoderException(HttpDecoderError.DecompressionFailed,
+                $"RFC 9110 §8.4: Unknown Content-Encoding '{encoding}'.");
+        }
+    }
+
+    /// <summary>
+    /// An <see cref="HttpContent"/> backed by an <see cref="ArrayPool{T}"/>-rented buffer.
+    /// Returns the buffer to the pool on dispose, avoiding a GC allocation for the decompressed body.
+    /// </summary>
+    private sealed class PooledArrayContent : HttpContent
+    {
+        private byte[]? _buffer;
+        private readonly int _length;
+
+        public PooledArrayContent(byte[] buffer, int length)
+        {
+            _buffer = buffer;
+            _length = length;
+        }
+
+        protected override void SerializeToStream(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+            => stream.Write(_buffer!, 0, _length);
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+            => stream.WriteAsync(_buffer!, 0, _length);
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken ct)
+            => stream.WriteAsync(_buffer!, 0, _length, ct);
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = _length;
+            return true;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _buffer is not null)
+            {
+                ArrayPool<byte>.Shared.Return(_buffer);
+                _buffer = null;
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

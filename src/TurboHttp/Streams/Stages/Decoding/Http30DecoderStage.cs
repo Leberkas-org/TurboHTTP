@@ -2,7 +2,7 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http3;
 
 namespace TurboHttp.Streams.Stages.Decoding;
 
@@ -34,7 +34,7 @@ public sealed class Http30DecoderStage : GraphStage<FlowShape<IInputItem, Http3F
                 {
                     var item = Grab(stage._in);
 
-                    if (item is not DataItem dataItem)
+                    if (item is not NetworkBuffer dataItem)
                     {
                         Pull(stage._in);
                         return;
@@ -43,12 +43,12 @@ public sealed class Http30DecoderStage : GraphStage<FlowShape<IInputItem, Http3F
                     IReadOnlyList<Http3Frame> frames;
                     try
                     {
-                        var data = dataItem.Memory.Memory.Span[..dataItem.Length];
+                        var data = dataItem.Span;
                         frames = _decoder.DecodeAll(data, out _);
                     }
                     finally
                     {
-                        dataItem.Memory.Dispose();
+                        dataItem.Dispose();
                     }
 
                     // Filter out null frames (unknown frame types skipped per RFC 9114 §7.2.8)

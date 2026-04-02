@@ -2,7 +2,7 @@ using System.Buffers;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHttp.Protocol.RFC9204;
+using TurboHttp.Protocol.Http3.Qpack;
 
 namespace TurboHttp.Streams.Stages.Encoding;
 

@@ -19,9 +19,10 @@ internal static class GroupByExtensions
         this IFlow<T, TMat> flow,
         Func<T, RequestEndpoint> keyFunction,
         uint maxSubstreams,
-        int maxSubstreamsPerKey = 1)
+        Func<RequestEndpoint, int>? maxSubstreamsPerKey = null,
+        Func<RequestEndpoint, int>? maxConcurrencyPerSlot = null)
     {
-        var mergeBack = new HostKeyMergeBack<T, TMat>(flow, keyFunction, maxSubstreams, maxSubstreamsPerKey);
+        var mergeBack = new HostKeyMergeBack<T, TMat>(flow, keyFunction, maxSubstreams, maxSubstreamsPerKey, maxConcurrencyPerSlot);
 
         // Flow.Create<T>() gives Flow<T,T,NotUsed>; cast is safe because callers always
         // start with a flow whose TMat is NotUsed (e.g. Flow.Create<HttpRequestMessage>()).

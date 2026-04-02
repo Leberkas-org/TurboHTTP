@@ -83,22 +83,16 @@ HTTP/2 provides **stream multiplexing** — many logical requests share a single
 **Stage sequence:**
 
 ```
-Http20StreamIdAllocatorStage → Http20Request2FrameStage → Http20ConnectionStage → Http20EncoderStage → Http20PrependPrefaceStage → ConnectionStage → TCP
-                                                        ↑
-TCP → ConnectionStage → Http20DecoderStage → Http20ConnectionStage → Http20StreamStage → (response downstream)
+Http20ConnectionStage → [frame batch] → Http20EncoderStage → ConnectionStage → TCP
+TCP → ConnectionStage → Http20DecoderStage → Http20ConnectionStage
 ```
 
 | Stage | Role |
 |-------|------|
-| `Http20StreamIdAllocatorStage` | Allocates client stream IDs (1, 3, 5, …) — odd integers, client-initiated |
-| `Http20Request2FrameStage` | HPACK-encodes request headers; emits `HEADERS` frame + `DATA` frame(s) |
-| `Http20ConnectionStage` | Bidirectional flow control; handles `SETTINGS`, `PING`, `WINDOW_UPDATE`, `GOAWAY` frames |
-| `Http20EncoderStage` | Serialises `Http2Frame` objects to wire bytes (9-byte frame header + payload) |
-| `Http20PrependPrefaceStage` | Injects the HTTP/2 connection preface (`PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n` + client `SETTINGS`) on the first connection |
-| `ConnectionStage` | TCP transport; shared with HTTP/1.x via the `Engine` demultiplexer |
+| `Http20ConnectionStage` | Central bidirectional stage: allocates client stream IDs (1, 3, 5, …), HPACK-encodes request headers and emits `HEADERS` + `DATA` frames, handles connection-level frames (`SETTINGS`, `PING`, `WINDOW_UPDATE`, `GOAWAY`), assembles per-stream `HEADERS` + `DATA` frames into `HttpResponseMessage`, and correlates responses back to pending requests by stream ID |
+| `Http20EncoderStage` | Serialises `Http2Frame` objects to wire bytes (9-byte frame header + payload); emits the HTTP/2 connection preface (`PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n` + client `SETTINGS`) on its first pull |
 | `Http20DecoderStage` | Stateful parser; reassembles frames from TCP byte stream, handles partial frame delivery |
-| `Http20StreamStage` | Assembles per-stream `HEADERS` + `DATA` frames into `HttpResponseMessage`; HPACK-decodes headers |
-| `Http20CorrelationStage` | Maps stream IDs back to pending requests; supports concurrent in-flight streams |
+| `ConnectionStage` | TCP transport; shared with HTTP/1.x via the `Engine` demultiplexer |
 
 **HPACK header compression:**
 
@@ -121,14 +115,14 @@ HTTP/3 runs over **QUIC** instead of TCP. Each request uses an independent QUIC 
 **Stage sequence:**
 
 ```
-Http30Http20Request2FrameStage → Http30ConnectionStage → Http30EncoderStage → Http3ConnectionStage → QUIC
+Http30Request2FrameStage → Http30ConnectionStage → Http30EncoderStage → Http3ConnectionStage → QUIC
                                      ↑
 QUIC → Http3ConnectionStage → Http30DecoderStage → Http30ConnectionStage → Http30StreamStage → (response downstream)
 ```
 
 | Stage | Role |
 |-------|------|
-| `Http30Http20Request2FrameStage` | QPACK-encodes request headers; emits `HEADERS` frame + `DATA` frame(s) |
+| `Http30Request2FrameStage` | QPACK-encodes request headers; emits `HEADERS` frame + `DATA` frame(s) |
 | `Http30ConnectionStage` | Bidirectional connection manager; handles `SETTINGS`, `GOAWAY`, and stream lifecycle |
 | `Http30EncoderStage` | Serialises HTTP/3 frames to wire bytes using QUIC variable-length encoding |
 | `Http3ConnectionStage` | QUIC transport bridge; acquires a QUIC connection from the pool, writes/reads bytes |

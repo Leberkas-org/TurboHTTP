@@ -2,7 +2,8 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using TurboHttp.Transport;
+using TurboHttp.Internal;
+using TurboHttp.Transport.Connection;
 using OwnerMsg = TurboHttp.Streams.Lifecycle.ClientStreamOwner;
 
 namespace TurboHttp.Streams.Lifecycle;
@@ -36,15 +37,13 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
 
-    // === Lifecycle state ===
     private int _retryAttempts;
     private Exception? _lastError;
     private OwnerMsg.CreateStreamInstance? _createRequest;
     private IActorRef _createRequester = Nobody.Instance;
     private bool _shuttingDown;
 
-    // === Stream materialization state ===
-    private ConnectionPool? _pool;
+    private IActorRef? _connectionManager;
     private ActorMaterializer? _materializer;
     private SharedKillSwitch? _killSwitch;
     private bool _streamRunning;
@@ -105,20 +104,27 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         try
         {
-            // Create connection pool
-            _pool = new ConnectionPool(create.ClientOptions.IdleTimeout);
+            // Create connection manager actor — use dedicated dispatcher if available,
+            // fall back to default for externally provided ActorSystems without TurboHttp HOCON.
+            _connectionManager = Context.ActorOf(
+                Props.Create(() => new ConnectionManagerActor(
+                        create.ClientOptions.PooledConnectionIdleTimeout,
+                        create.ClientOptions.MaxH1ConnectionsPerServer))
+                    .WithIoDispatcher(Context.System),
+                "connection-manager");
 
             // Build the engine flow
             var engine = new Engine();
             var engineFlow = engine.CreateFlow(
-                _pool,
+                _connectionManager,
                 create.ClientOptions,
                 create.RequestOptionsFactory,
                 create.Pipeline);
 
             // Materialize the graph
             var materializerSettings = ActorMaterializerSettings.Create(Context.System)
-                .WithInputBuffer(initialSize: 4, maxSize: 16);
+                .WithInputBuffer(initialSize: 32, maxSize: 128)
+                .WithStreamDispatcher(Context.System);
             _materializer = Context.System.Materializer(
                 settings: materializerSettings,
                 namePrefix: $"stream-owner-{Self.Path.Name}");
@@ -136,7 +142,21 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
                 .Via(_killSwitch.Flow<HttpRequestMessage>())
                 .Via(engineFlow)
                 .RunWith(
-                    Sink.ForEach<HttpResponseMessage>(msg => create.ResponseWriter.TryWrite(msg)),
+                    Sink.ForEach<HttpResponseMessage>(msg =>
+                    {
+                        // Direct PendingRequest completion — no dictionary lookup (G2).
+                        // Version guard prevents stale completions when PendingRequest is pooled (E4).
+                        if (msg.RequestMessage is { } req &&
+                            req.Options.TryGetValue(TcsCorrelation.Key, out var pending) &&
+                            req.Options.TryGetValue(TcsCorrelation.VersionKey, out var ver))
+                        {
+                            pending.TrySetResult(msg, ver);
+                            return;
+                        }
+
+                        // Also write to the response channel for ITurboHttpClient.Responses consumers.
+                        create.ResponseWriter.TryWrite(msg);
+                    }),
                     _materializer);
 
             MonitorSinkCompletion(completionTask);
@@ -279,7 +299,7 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
             {
                 self.Tell(new StreamSinkCompleted(null));
             }
-        }, TaskScheduler.Default);
+        }, TaskContinuationOptions.ExecuteSynchronously);
     }
 
     private void HandleStreamSinkCompleted(StreamSinkCompleted completed)
@@ -341,19 +361,19 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
             _materializer = null;
         }
 
-        // Dispose connection pool
-        if (_pool is not null)
+        // Stop connection manager actor (PostStop disposes all leases)
+        if (_connectionManager is not null)
         {
             try
             {
-                _pool.Dispose();
+                Context.Stop(_connectionManager);
             }
             catch (Exception ex)
             {
-                _log.Warning("Error disposing connection pool: {0}", ex.Message);
+                _log.Warning("Error stopping connection manager: {0}", ex.Message);
             }
 
-            _pool = null;
+            _connectionManager = null;
         }
 
         _killSwitch = null;

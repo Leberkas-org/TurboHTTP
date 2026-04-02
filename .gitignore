@@ -366,3 +366,5 @@ notes/Debugging/
 TurboHttp/.obsidian/
 
 .maggus/work.pid
+
+.worktrees/

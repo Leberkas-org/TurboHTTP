@@ -1,4 +1,4 @@
-using TurboHttp.Protocol.RFC7541;
+using TurboHttp.Protocol.Http2.Hpack;
 
 namespace TurboHttp.Protocol;
 

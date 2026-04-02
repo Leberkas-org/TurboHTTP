@@ -1,11 +1,12 @@
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.DependencyInjection;
-using Akka.Logger.Extensions.Logging;
+using Akka.Hosting.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TurboHttp.Internal;
 
 namespace TurboHttp.IntegrationTests.Shared;
 
@@ -17,7 +18,7 @@ namespace TurboHttp.IntegrationTests.Shared;
 public sealed class ClientHelper : IAsyncDisposable
 {
     private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
-        @"akka.loggers = [""Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging""]");
+        @"akka.loggers = [""Akka.Hosting.Logging.LoggerFactoryLogger, Akka.Hosting""]");
 
     private readonly Microsoft.Extensions.DependencyInjection.ServiceProvider _provider;
     private readonly ITurboHttpClient _client;
@@ -65,16 +66,20 @@ public sealed class ClientHelper : IAsyncDisposable
             // Create an ActorSystem with DependencyResolver so that Servus.Akka
             // ResolveActor<T> works inside TurboClientStreamManager.
             var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());
+            var dispatcherConfig = TurboHttpDispatchers.CreateConfig(
+                TurboClientOptions.DefaultMaxEndpointSubstreams);
             var bootstrap = BootstrapSetup.Create();
 
             if (loggerFactory is not null)
-            {
-                // Bridge Akka logging to Microsoft.Extensions.Logging
-                LoggingLogger.LoggerFactory = loggerFactory;
-                bootstrap = bootstrap.WithConfig(LoggingHocon);
-            }
+                bootstrap = bootstrap.WithConfig(LoggingHocon.WithFallback(dispatcherConfig));
+            else
+                bootstrap = bootstrap.WithConfig(dispatcherConfig);
 
-            system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", bootstrap.And(diSetup));
+            var setup = loggerFactory is not null
+                ? bootstrap.And(diSetup).And(new LoggerFactorySetup(loggerFactory))
+                : bootstrap.And(diSetup);
+
+            system = ActorSystem.Create($"turbohttp-{Guid.NewGuid()}", setup);
             ownsSystem = true;
         }
 
@@ -119,10 +124,6 @@ public sealed class ClientHelper : IAsyncDisposable
                 await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
                 await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
 
-                // Reset the static LoggerFactory so the next ActorSystem doesn't
-                // reference a disposed ILoggerFactory from a previous test.
-                LoggingLogger.LoggerFactory = null!;
-
                 // Allow Akka dispatcher threads to fully wind down before the
                 // next ActorSystem is created. Without this, lingering threads
                 // from the terminated system can interfere with the new one.
@@ -130,35 +131,25 @@ public sealed class ClientHelper : IAsyncDisposable
             }
         }
 
-        // Signal the pipeline to drain by completing the request channel.
-        // The source sees the channel complete, completion propagates through all
-        // stages, and the sink completes the response channel writer.
-        _client.Requests.TryComplete();
-
-        // Wait for the pipeline to actually finish draining before disposing the
-        // client (which disposes the ConnectionPool). Without this, pool disposal
-        // kills in-flight connections while stages are still processing, and on a
-        // shared ActorSystem the lingering actors interfere with the next test.
-        try
-        {
-            await _client.Responses.Completion.WaitAsync(TimeSpan.FromSeconds(5));
-        }
-        catch
-        {
-            // Pipeline may complete with an error — that's fine during shutdown.
-        }
-
+        // Dispose sends Shutdown to the owner actor (fires KillSwitch, starts drain)
+        // and completes both channels. Call this first so the actor begins shutting down.
         _client.Dispose();
 
-        // Allow Akka dispatcher threads to finish processing remaining cleanup
-        // messages (PostStop, actor termination) before the next test materialises
-        // a new pipeline on the shared ActorSystem. The materializer.Shutdown()
-        // in TurboClientStreamManager.Dispose() sends PoisonPill to the supervisor,
-        // but actor termination is async — we must wait long enough for all stream
-        // actors (main pipeline + substreams) to fully stop.
-        if (!_ownsSystem)
+        // Wait for the owner actor to fully stop. GracefulStop sends Shutdown
+        // (idempotent — already sent by Dispose) and blocks until the actor's
+        // PostStop has run, so all stream actors are cleanly stopped before the
+        // next test materialises a new pipeline on the shared ActorSystem.
+        // The actor's internal safety timeout is 5s, so 6s is sufficient.
+        if (!_ownsSystem && _client is TurboHttpClient concrete)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(500));
+            try
+            {
+                await concrete.Manager.WhenTerminatedAsync(TimeSpan.FromSeconds(6));
+            }
+            catch
+            {
+                // Actor may already be stopped or system shutting down — fine.
+            }
         }
 
         await _provider.DisposeAsync();

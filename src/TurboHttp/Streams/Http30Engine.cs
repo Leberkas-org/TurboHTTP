@@ -1,9 +1,8 @@
-using System.Buffers;
-using Akka;
+﻿using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHttp.Internal;
-using TurboHttp.Protocol.RFC9114;
+using TurboHttp.Protocol.Http3;
 using TurboHttp.Streams.Stages.Decoding;
 using TurboHttp.Streams.Stages.Encoding;
 using TurboHttp.Streams.Stages.Routing;
@@ -31,7 +30,6 @@ public sealed class Http30Engine : IHttpProtocolEngine
 
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            // ── Request path: broadcast to encoder and FIFO correlation ──
             var broadcast = b.Add(new Broadcast<HttpRequestMessage>(2));
             var requestToFrame = b.Add(new Http30Request2FrameStage(requestEncoder));
             var correlation = b.Add(new Http30CorrelationStage());
@@ -39,21 +37,18 @@ public sealed class Http30Engine : IHttpProtocolEngine
             b.From(broadcast.Out(0)).To(requestToFrame.In);
             b.From(broadcast.Out(1)).To(correlation.In0);
 
-            // ── Connection stage ──
             var connection = b.Add(new Http30ConnectionStage());
             b.From(requestToFrame.OutFrame).To(connection.InApp);
 
-            // ── QPACK encoder instruction path ──
             var encoderPreface = b.Add(new Http30QpackEncoderPrefaceStage());
             b.From(requestToFrame.OutEncoder).To(encoderPreface.Inlet);
 
-            // ── Outbound: connection → frame encoder → batch ──
             var frameEncoder = b.Add(new Http30EncoderStage());
             var batchFlow = b.Add(
                 Flow.Create<IOutputItem>()
                     .BatchWeighted(
                         MaxBatchWeight,
-                        item => item is DataItem d ? d.Length : 0L,
+                        item => item is NetworkBuffer d ? d.Length : 0L,
                         item => item,
                         BatchConsolidate));
 
@@ -64,12 +59,10 @@ public sealed class Http30Engine : IHttpProtocolEngine
             b.From(frameEncoder.Outlet).Via(batchFlow).To(preDemuxMerge.In(0));
             b.From(encoderPreface.Outlet).To(preDemuxMerge.In(1));
 
-            // ── Control stream preface → demux → merge back ──
             var controlPreface = b.Add(new Http30ControlStreamPrefaceStage());
 
             b.From(preDemuxMerge.Out).To(controlPreface.Inlet);
 
-            // ── Inbound: partition decoder stream bytes from regular frames ──
             var partition = b.Add(new Partition<IInputItem>(2, ClassifyInputItem));
             var frameDecoder = b.Add(new Http30DecoderStage());
             var extractBytes = b.Add(
@@ -80,7 +73,6 @@ public sealed class Http30Engine : IHttpProtocolEngine
             b.From(partition.Out(0)).To(frameDecoder.Inlet);
             b.From(partition.Out(1)).Via(extractBytes).Via(decoderStream).To(feedback);
 
-            // ── Server response path: frames → connection → stream assembly → correlation ──
             var streamDecoder = b.Add(new Http30StreamStage());
             b.From(frameDecoder.Outlet).To(connection.InServer);
             b.From(connection.OutApp).To(streamDecoder.Inlet);
@@ -107,19 +99,28 @@ public sealed class Http30Engine : IHttpProtocolEngine
     private static ReadOnlyMemory<byte> ExtractDecoderStreamBytes(IInputItem item)
     {
         var tagged = (Http3InputTaggedItem)item;
-        var data = (DataItem)tagged.Inner;
-        return data.Memory.Memory[..data.Length];
+        var data = (NetworkBuffer)tagged.Inner;
+        return data.Memory;
     }
 
     private static IOutputItem BatchConsolidate(IOutputItem accumulated, IOutputItem next)
     {
-        if (accumulated is not DataItem accData || next is not DataItem nextData) return next;
-        var totalLength = accData.Length + nextData.Length;
-        var owner = MemoryPool<byte>.Shared.Rent(totalLength);
-        accData.Memory.Memory[..accData.Length].CopyTo(owner.Memory);
-        nextData.Memory.Memory[..nextData.Length].CopyTo(owner.Memory[accData.Length..]);
-        accData.Memory.Dispose();
-        nextData.Memory.Dispose();
-        return new DataItem(owner, totalLength) { Key = accData.Key };
+        if (accumulated is not NetworkBuffer acc || next is not NetworkBuffer nxt) return next;
+        var totalLength = acc.Length + nxt.Length;
+        if (acc.Capacity >= totalLength)
+        {
+            nxt.Memory.CopyTo(acc.FullMemory[acc.Length..]);
+            nxt.Dispose();
+            acc.Length = totalLength;
+            return acc;
+        }
+        var merged = NetworkBuffer.Rent(totalLength);
+        acc.Memory.CopyTo(merged.FullMemory);
+        nxt.Memory.CopyTo(merged.FullMemory[acc.Length..]);
+        acc.Dispose();
+        nxt.Dispose();
+        merged.Length = totalLength;
+        merged.Key = acc.Key;
+        return merged;
     }
 }

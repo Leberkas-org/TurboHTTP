@@ -5,8 +5,6 @@ namespace TurboHttp.Protocol;
 /// </summary>
 public enum HttpDecoderError
 {
-    // ── General Errors ──────────────────────────────────────────────────────────
-
     /// <summary>More data required to complete parsing.</summary>
     NeedMoreData,
 
@@ -24,8 +22,6 @@ public enum HttpDecoderError
 
     /// <summary>Content decompression failed.</summary>
     DecompressionFailed,
-
-    // ── RFC 9112 Specific Errors ────────────────────────────────────────────────
 
     /// <summary>RFC 9112 Section 5.4: Line exceeds configured maximum length.</summary>
     LineTooLong,

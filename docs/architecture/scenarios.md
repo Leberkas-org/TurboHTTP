@@ -26,7 +26,7 @@ Here's what happens when you send a request with different HTTP versions. The de
 9. The server's response bytes arrive via TCP and flow through `ClientByteMover` into the inbound channel.
 10. `Http10DecoderStage` parses the HTTP/1.0 response; body length is determined by `Content-Length` or EOF.
 11. `Http1XCorrelationStage` matches the response to the pending request.
-12. `DecompressionBidiStage` decompresses the body if needed.
+12. `ContentEncodingBidiStage` decompresses the body if needed.
 13. `CookieBidiStage` stores any `Set-Cookie` headers.
 14. `CacheBidiStage` caches the response if it is cacheable.
 15. `RetryBidiStage` passes the response through (no retry needed for a successful response).
@@ -79,12 +79,10 @@ HTTP/2 is fundamentally different from HTTP/1.x. A single TCP connection carries
 
 ### Request Framing
 
-1. `Http20StreamIdAllocatorStage` assigns the next available stream ID (1, 3, 5, …).
-2. `Http20Request2FrameStage` HPACK-encodes the request headers into a `HEADERS` frame, and the body (if any) into `DATA` frame(s).
-3. `Http20ConnectionStage` applies connection-level and stream-level flow control — it will withhold frames if the server's receive window is exhausted.
-4. `Http20EncoderStage` serialises each `Http2Frame` to its 9-byte framed wire format.
-5. `Http20PrependPrefaceStage` injects the HTTP/2 connection preface (`PRI * HTTP/2.0…` + initial `SETTINGS`) on the first connection only.
-6. Frames travel to TCP via `ConnectionStage` and `ClientByteMover`.
+1. `Http20ConnectionStage` assigns the next available stream ID (1, 3, 5, …), HPACK-encodes the request headers into a `HEADERS` frame, and serialises the body (if any) into `DATA` frame(s).
+2. `Http20ConnectionStage` applies connection-level and stream-level flow control — it will withhold frames if the server's receive window is exhausted.
+3. `Http20EncoderStage` serialises each `Http2Frame` to its 9-byte framed wire format; on the first connection it also injects the HTTP/2 connection preface (`PRI * HTTP/2.0…` + initial `SETTINGS`).
+4. Frames travel to TCP via `ConnectionStage` and `ClientByteMover`.
 
 ### Connection-Level Frames
 
@@ -98,10 +96,8 @@ While request/response streams are active, `Http20ConnectionStage` also handles:
 ### Response Assembly
 
 7. Raw bytes from TCP are parsed by `Http20DecoderStage` into `Http2Frame` objects (handles partial frames across TCP boundaries).
-8. `Http20ConnectionStage` routes connection-level frames (SETTINGS, PING, GOAWAY) to internal handlers and forwards per-stream frames downstream.
-9. `Http20StreamStage` groups `HEADERS` and `DATA` frames by stream ID and assembles them into an `HttpResponseMessage`; HPACK-decodes the response headers.
-10. `Http20CorrelationStage` matches each assembled response back to its pending request using the stream ID.
-11. The response continues through `DecompressionBidiStage`, `CookieBidiStage`, `CacheBidiStage`, `RetryBidiStage`, and `RedirectBidiStage` — the same response chain as HTTP/1.x.
+8. `Http20ConnectionStage` routes connection-level frames (`SETTINGS`, `PING`, `GOAWAY`) to internal handlers, assembles per-stream `HEADERS` + `DATA` frames into an `HttpResponseMessage`, HPACK-decodes response headers, and correlates each assembled response back to its pending request using the stream ID.
+9. The response continues through `ContentEncodingBidiStage`, `CookieBidiStage`, `CacheBidiStage`, `RetryBidiStage`, and `RedirectBidiStage` — the same response chain as HTTP/1.x.
 
 ### Stream ID Exhaustion
 
@@ -119,7 +115,7 @@ HTTP/3 replaces TCP with **QUIC**, a UDP-based transport that provides built-in 
 
 ### Request Framing
 
-1. `Http30Http20Request2FrameStage` QPACK-encodes the request headers into a `HEADERS` frame, and the body (if any) into `DATA` frame(s).
+1. `Http30Request2FrameStage` QPACK-encodes the request headers into a `HEADERS` frame, and the body (if any) into `DATA` frame(s).
 2. `Http30ConnectionStage` manages connection-level concerns — `SETTINGS`, `GOAWAY`, and stream lifecycle.
 3. `Http30EncoderStage` serialises each HTTP/3 frame to wire bytes using QUIC variable-length integer encoding.
 4. `Http3ConnectionStage` acquires a QUIC connection from the pool and sends the bytes over the network.
@@ -136,7 +132,7 @@ While request/response streams are active, `Http30ConnectionStage` handles:
 5. Raw bytes from QUIC are parsed by `Http30DecoderStage` into HTTP/3 frame objects.
 6. `Http30ConnectionStage` routes connection-level frames to internal handlers and forwards per-stream frames downstream.
 7. `Http30StreamStage` groups `HEADERS` and `DATA` frames by stream and assembles them into an `HttpResponseMessage`; QPACK-decodes the response headers.
-8. The response continues through `DecompressionBidiStage`, `CookieBidiStage`, `CacheBidiStage`, `RetryBidiStage`, and `RedirectBidiStage` — the same response chain as HTTP/1.x and HTTP/2.
+8. The response continues through `ContentEncodingBidiStage`, `CookieBidiStage`, `CacheBidiStage`, `RetryBidiStage`, and `RedirectBidiStage` — the same response chain as HTTP/1.x and HTTP/2.
 
 ### Key Differences from HTTP/2
 

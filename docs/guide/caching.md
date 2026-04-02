@@ -2,7 +2,7 @@
 
 TurboHttp includes a built-in in-memory cache that automatically stores and reuses responses — eliminating redundant network round-trips without any configuration.
 
-Caching is disabled by default. Enable it by setting `CachePolicy` in `TurboClientOptions`.
+Caching is disabled by default. Enable it by calling `.WithCache()` on the builder.
 
 ## What Gets Cached
 
@@ -101,49 +101,28 @@ Means: the cache key includes both `Accept` and `Accept-Language` header values.
 
 ## Configuration
 
-Caching is configured via `CachePolicy` on `TurboClientOptions`:
+Caching is configured via `.WithCache()` on the builder:
 
 ```csharp
 // Enable caching with defaults
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient(options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-    CachePolicy = CachePolicy.Default
-};
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithCache(CachePolicy.Default);
 ```
 
 Customise the cache size or behaviour:
 
 ```csharp
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient("api", options =>
 {
-    CachePolicy = new CachePolicy
-    {
-        MaxEntries = 500,            // maximum number of cached responses (default: 1000)
-        MaxBodyBytes = 1024 * 512,    // maximum body size to cache, in bytes (default: 1 MB)
-    }
-};
-```
-
-Disable caching entirely:
-
-```csharp
-var options = new TurboClientOptions
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithCache(new CachePolicy
 {
-    CachePolicy = null  // null disables the cache
-};
-```
-
-With DI:
-
-```csharp
-builder.Services.AddTurboHttpClient(options =>
-{
-    options = options with
-    {
-        BaseAddress = new Uri("https://api.example.com"),
-        CachePolicy = CachePolicy.Default,
-    };
+    MaxEntries = 500,             // maximum number of cached responses (default: 1000)
+    MaxBodyBytes = 512 * 1024,    // maximum body size to cache, in bytes (default: 50 MiB)
 });
 ```
 
@@ -170,30 +149,26 @@ request.Headers.CacheControl = new CacheControlHeaderValue
 };
 ```
 
-## Custom Cache Store
+## Sharing a Cache Store
 
-The default cache is an in-memory LRU store (`HttpCacheStore`) scoped to the client instance. To use a different backing store — for example, a distributed cache or a persistent store — you can extend or replace it:
-
-```csharp
-// Example: custom cache store extending HttpCacheStore for specialized backends
-public sealed class RedisHttpCacheStore : HttpCacheStore
-{
-    private readonly IDatabase _db;
-
-    public RedisHttpCacheStore(IDatabase db) => _db = db;
-
-    // Override methods to persist to Redis
-}
-```
-
-Register the custom store via the builder:
+By default each named client gets its own `CacheStore`. To share a single store across multiple named clients — for example, to deduplicate in-flight requests across services — create a `CacheStore` once and pass it directly:
 
 ```csharp
-builder.Services.AddTurboHttpClient("my-api", options =>
+var sharedStore = new CacheStore(CachePolicy.Default);
+
+builder.Services.AddTurboHttpClient("client-a", options =>
 {
-    options = options with { CachePolicy = CachePolicy.Default };
+    options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(customCacheStore: new RedisHttpCacheStore(redisDb));
+.WithCache(sharedStore);
+
+builder.Services.AddTurboHttpClient("client-b", options =>
+{
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithCache(sharedStore);
 ```
 
-See the [Configuration guide](./configuration) for more details on integrating custom stores.
+`CacheStore` is thread-safe and designed for concurrent access from multiple clients.
+
+See the [Configuration guide](./configuration) for more details on cache setup.
