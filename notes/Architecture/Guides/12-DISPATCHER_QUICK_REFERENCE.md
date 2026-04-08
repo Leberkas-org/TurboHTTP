@@ -10,7 +10,7 @@ tags:
 
 ## TL;DR: Choose ChannelExecutor
 
-For TurboHttp's HTTP/2 pipeline with 64+ concurrent requests:
+For TurboHTTP's HTTP/2 pipeline with 64+ concurrent requests:
 
 ```hocon
 akka.actor.default-dispatcher = {
@@ -85,7 +85,7 @@ parallelism-max = 32
 throughput = 20
 ```
 
-### Balanced (Default for TurboHttp)
+### Balanced (Default for TurboHTTP)
 ```hocon
 executor = channel-executor
 parallelism-factor = 2.0
@@ -128,7 +128,7 @@ throughput = 30
 ## Decision Tree: Which Dispatcher?
 
 ```
-Is this TurboHttp HTTP/2 streaming?
+Is this TurboHTTP HTTP/2 streaming?
 ├─ YES → ChannelExecutor ✓
 └─ NO
    ├─ Need low latency variance (<1ms)?
@@ -160,8 +160,8 @@ Is this TurboHttp HTTP/2 streaming?
 [ ] Add ChannelExecutor config to LoggingHocon
 [ ] Add ChannelExecutor config to BenchHocon
 [ ] Run: dotnet build
-[ ] Run: dotnet test --project TurboHttp.Tests
-[ ] Run: dotnet run --project TurboHttp.Benchmarks
+[ ] Run: dotnet test --project TurboHTTP.Tests
+[ ] Run: dotnet run --project TurboHTTP.Benchmarks
 [ ] Verify: No deadlocks, timeouts, hangs
 [ ] Done!
 ```
@@ -210,9 +210,9 @@ Console.WriteLine(system.Settings.Config);
 
 ## File Locations
 
-- **Main config:** `/src/TurboHttp/TurboClientServiceCollectionExtensions.cs` (LoggingHocon)
-- **Benchmark config:** `/src/TurboHttp.Benchmarks/StreamingThroughputBenchmarks.cs` (BenchHocon)
-- **Test config:** `/src/TurboHttp.IntegrationTests/Shared/ActorSystemFixture.cs` (optional)
+- **Main config:** `/src/TurboHTTP/TurboClientServiceCollectionExtensions.cs` (LoggingHocon)
+- **Benchmark config:** `/src/TurboHTTP.Benchmarks/StreamingThroughputBenchmarks.cs` (BenchHocon)
+- **Test config:** `/src/TurboHTTP.IntegrationTests/Shared/ActorSystemFixture.cs` (optional)
 
 ---
 

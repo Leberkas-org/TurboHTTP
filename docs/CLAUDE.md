@@ -4,14 +4,14 @@ This file guides Claude Code when working on files inside `docs/`.
 
 ## Audience
 
-Every page targets **library users** — .NET developers who use TurboHttp in their applications and want to understand how it works. The reader is NOT a protocol implementor, RFC editor, or contributor to this library's internals.
+Every page targets **library users** — .NET developers who use TurboHTTP in their applications and want to understand how it works. The reader is NOT a protocol implementor, RFC editor, or contributor to this library's internals.
 
 ## Content Rules
 
 ### No RFC References
 
 - Never cite RFC numbers, section numbers, or specification language (e.g. "RFC 9110 §15.4", "per RFC 9112")
-- Describe **behaviour** instead: "TurboHttp follows redirects automatically" not "implements RFC 9110 §15.4 redirect semantics"
+- Describe **behaviour** instead: "TurboHTTP follows redirects automatically" not "implements RFC 9110 §15.4 redirect semantics"
 - If a feature exists because of a spec requirement, explain the *user-visible effect*, not the spec clause
 
 ### No 1:1 Implementation Mapping

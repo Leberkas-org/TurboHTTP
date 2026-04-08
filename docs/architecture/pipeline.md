@@ -1,6 +1,6 @@
 # Full Pipeline Flow
 
-The pipeline view shows every stage in TurboHttp's request/response path — the forward flow of data, the backward flow of connection-reuse signals, and the short-circuit paths for cache hits, retries, and redirects.
+The pipeline view shows every stage in TurboHTTP's request/response path — the forward flow of data, the backward flow of connection-reuse signals, and the short-circuit paths for cache hits, retries, and redirects.
 
 <ClientOnly>
   <LikeC4Diagram viewId="pipelineFlow" :height="700" />
@@ -83,6 +83,6 @@ The pipeline uses a connection pool to reuse TCP (or QUIC for HTTP/3) connection
 - **HTTP/1.1**: Connections are kept alive and reused for multiple requests to the same host
 - **HTTP/2 & HTTP/3**: A single connection is shared by multiple concurrent requests as independent streams
 
-This all happens automatically. You don't manage connections — TurboHttp does.
+This all happens automatically. You don't manage connections — TurboHTTP does.
 
 See [Connection Pooling Guide](../guide/connection-pooling) for tuning options.

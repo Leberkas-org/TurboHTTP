@@ -2,7 +2,7 @@
 
 ## Overview
 
-TurboHttp is a high-performance **.NET 10 HTTP client library** built on **Akka.Streams**. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) as a reactive streaming pipeline with full RFC compliance. Connection pooling, redirect following, retry, caching, cookie management, and content encoding are composable BidiFlow stages stacked around a version-demultiplexed protocol core.
+TurboHTTP is a high-performance **.NET 10 HTTP client library** built on **Akka.Streams**. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) as a reactive streaming pipeline with full RFC compliance. Connection pooling, redirect following, retry, caching, cookie management, and content encoding are composable BidiFlow stages stacked around a version-demultiplexed protocol core.
 
 ---
 
@@ -23,9 +23,10 @@ TurboHttp is a high-performance **.NET 10 HTTP client library** built on **Akka.
 │ │ → Cache → ContentEncoding                   │ │
 │ ├─────────────────────────────────────────────┤ │
 │ │ Protocol Engine Core (Island 2)             │ │
-│ │ RequestEnricher → Partition(version)        │ │
-│ │ → GroupByHost → [H10|H11|H20|H30] engines   │ │
-│ │ → MergeSubstreams → Merge(4)                │ │
+│ │ RequestEnricher → GroupByRequestEndpoint    │ │
+│ │ → EndpointDispatchStage → [H10|H11|H20|H30] │ │
+│ │ engines ↔ ITransportFactory                 │ │
+│ │ → MergeSubstreams                           │ │
 │ └─────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────┤
 │ Protocol Layer (RFC-subfolder encoders/decoders)│
@@ -38,6 +39,7 @@ TurboHttp is a high-performance **.NET 10 HTTP client library** built on **Akka.
 │ - ConnectionLease, ClientByteMover              │
 │ - System.Threading.Channels + IO.Pipelines      │
 │ - TCP/TLS + QUIC                                │
+│ - ITransportFactory: TCP, QUIC plug-in point    │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -52,7 +54,7 @@ TurboHttp is a high-performance **.NET 10 HTTP client library** built on **Akka.
 | `ITurboHttpClient` | Public API: `ChannelWriter<HttpRequestMessage>` + `ChannelReader<HttpResponseMessage>` + `SendAsync()` |
 | `ITurboHttpClientFactory` | Creates named/typed client instances; owns `ConnectionPool` lifetime |
 | `ITurboHttpClientBuilder` | Fluent DI configuration surface (extends `IServiceCollection`) |
-| `TurboClientOptions` | Per-client config: timeouts, TLS certificates, max frame size |
+| `TurboClientOptions` | Per-client config: nested `Http1Options`, `Http2Options`, `Http3Options`; timeouts, TLS certificates |
 | `TurboRequestOptions` | Per-request defaults: base address, version, headers |
 | `PipelineDescriptor` | Aggregates all optional policies into a single record for pipeline construction |
 | `TurboHandler` | User middleware (bridges delegating-handler pattern into the BidiFlow chain) |
@@ -101,10 +103,9 @@ The protocol engine core routes requests by endpoint and version, then wires the
 
 ```
 RequestEnricherStage
-    → GroupByRequestKey(RequestEndpoint)   [per-endpoint substream]
-        → per-endpoint substream: Partition(version) [Out0: 1.0 | Out1: 1.1 | Out2: 2.0 | Out3: 3.0]
+    → GroupByRequestEndpoint(endpoint)   [per-endpoint substream]
+        → per-endpoint substream: EndpointDispatchStage [lazy flow initialization per endpoint]
             → [H10|H11|H20|H30] engines ↔ ConnectionStage ↔ ConnectionReuseStage
-            → Merge(4)
     → MergeSubstreams
 ```
 
@@ -120,6 +121,14 @@ RequestEnricherStage
 | HTTP/1.1 | `Http11EncoderStage` | `Http11DecoderStage` + `Http1XCorrelationStage` |
 | HTTP/2 | `Http20EncoderStage` + `PrependPrefaceStage` + `Request2FrameStage` | `Http20DecoderStage` + `ConnectionStage` + `StreamStage` + `CorrelationStage` + `StreamIdAllocatorStage` |
 | HTTP/3 | `Http30EncoderStage` + control/QPACK preface stages + `Request2FrameStage` | `Http30DecoderStage` + `ConnectionStage` + `StreamStage` + `CorrelationStage` + `StreamDemuxStage` + QPACK stream stages |
+
+### Builders (Streams Layer Orchestration)
+
+| Builder | Responsibility |
+|---------|-----------------|
+| `Engine` | Thin orchestrator; wires `ProtocolCoreBuilder` and `FeaturePipelineBuilder` to create the final client-facing flow |
+| `ProtocolCoreBuilder` | Owns endpoint grouping (`GroupByRequestEndpoint`), version dispatch via `EndpointDispatchStage`, version-specific engine instantiation, and transport selection via `TransportRegistry` (zero Transport-layer imports) |
+| `FeaturePipelineBuilder` | Owns BidiFlow feature stack composition (ContentEncoding, Cache, Expect100, Retry, Cookie, Redirect, Handlers, Tracing) |
 
 ### Stage Naming Convention
 
@@ -226,6 +235,23 @@ Network → Stream.ReadAsync() → Pipe → InboundChannel → Pipeline (IInputI
 
 `ClientByteMover` runs two async loops per connection (read pump + write pump). On read completion it sets `CloseKind` (clean TLS `close_notify` vs. abrupt TCP RST) so decoders can apply RFC 9112 §9.8 rules.
 
+### Transport Factory Plugin
+
+`ITransportFactory` — formal contract for transport stage creation:
+
+```csharp
+internal interface ITransportFactory
+{
+    Flow<IOutputItem, IInputItem, NotUsed> Create();
+}
+```
+
+- **`TcpTransportFactory`** — encapsulates `IActorRef connectionManager` + `TurboClientOptions`; registered for HTTP/1.0, 1.1, 2.0
+- **`QuicTransportFactory`** — parameterless; registered for HTTP/3
+- **`TransportRegistry`** — `Dictionary<Version, ITransportFactory>` + `Get(Version)` lookup; used in production and for test injection
+
+Custom transports (Unix domain sockets, named pipes, etc.) are implemented by creating a new `ITransportFactory` and registering it before calling `Engine.CreateFlow()`.
+
 ### ConnectionStage Strategy Pattern
 
 `ConnectionStage` delegates to an `ITransportHandler`:
@@ -253,7 +279,7 @@ Connection lifecycle is managed by `IConnectionScope`:
 
 | Mechanism | API | Purpose |
 |-----------|-----|---------|
-| `TracingBidiStage` | `ActivitySource("TurboHttp")` | W3C trace context, root `Activity` per request |
+| `TracingBidiStage` | `ActivitySource("TurboHTTP")` | W3C trace context, root `Activity` per request |
 | `TurboHttpDiagnosticListener` | `DiagnosticListener` | Publish/subscribe event bus (compatible with `HttpClient` tooling) |
 | `TurboHttpEventSource` | ETW `EventSource` | High-performance structured logging (zero alloc on hot path) |
 | `TurboHttpMetrics` | OTel `Meter` | `ConnectionActive`, `ConnectionIdle`, `ConnectionDuration` gauges |
@@ -265,10 +291,10 @@ Connection lifecycle is managed by `IConnectionScope`:
 
 | Project | Contents |
 |---------|----------|
-| `TurboHttp.Tests` | Unit tests organized by RFC namespace (`RFC9112`, `RFC9113`, …) |
-| `TurboHttp.StreamTests` | Akka.Streams `GraphStage` behavior via `StreamTestBase` |
-| `TurboHttp.IntegrationTests` | End-to-end with Kestrel fixtures |
-| `TurboHttp.Benchmarks` | BenchmarkDotNet suite (25+ benchmarks) |
+| `TurboHTTP.Tests` | Unit tests organized by RFC namespace (`RFC9112`, `RFC9113`, …) |
+| `TurboHTTP.StreamTests` | Akka.Streams `GraphStage` behavior via `StreamTestBase` |
+| `TurboHTTP.IntegrationTests` | End-to-end with Kestrel fixtures |
+| `TurboHTTP.Benchmarks` | BenchmarkDotNet suite (25+ benchmarks) |
 
 All `[Fact]`/`[Theory]` tests carry `DisplayName("RFC-section-cat-nnn: description")` and explicit timeouts (`Timeout = 5000` or `CancellationToken`). Max 500 lines per test file.
 
@@ -279,8 +305,10 @@ All `[Fact]`/`[Theory]` tests carry `DisplayName("RFC-section-cat-nnn: descripti
 | Extension point | How |
 |----------------|-----|
 | Custom middleware | Implement `TurboHandler`; add via `TurboHttpClientBuilder` |
-| Custom BidiFlow stages | Extend `GraphStage<BidiShape<...>>`; wire into `Engine.BuildExtendedPipeline()` |
+| Custom BidiFlow stages | Extend `GraphStage<BidiShape<...>>`; wire into `FeaturePipelineBuilder.Build()` |
 | Custom encoders/decoders | Replace Protocol-layer implementations (maintain RFC wire compatibility) |
+| Custom transport | Implement `ITransportFactory`; register via `TransportRegistry` (production + test injection) |
+| Transport registry override | Inject a `TransportRegistry` into `Engine.CreateFlow()` with alternate or test `ITransportFactory` instances |
 | DI registration | `AddTurboHttpClient()` + `ITurboHttpClientBuilder.Services` |
 
 ---
@@ -292,7 +320,7 @@ All `[Fact]`/`[Theory]` tests carry `DisplayName("RFC-section-cat-nnn: descripti
 | HTTP/1.0 | 85/100 | Stable |
 | HTTP/1.1 | 92/100 | Stable |
 | HTTP/2 | 87/100 | Stable |
-| HTTP/3 | 60/100 | Frame parsing done; QUIC transport missing |
+| HTTP/3 | 75/100 | Frame parsing + QUIC transport fully wired via `ITransportFactory` |
 | HPACK | 90/100 | Stable |
 | QPACK | 40/100 | Decoder only; encoder missing |
 | Cookies | 80/100 | Stable |

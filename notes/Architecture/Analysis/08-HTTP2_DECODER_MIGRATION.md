@@ -43,7 +43,7 @@ aliases:
 
 **Goal**: Remove `Http2Decoder`, `Http2DecodeResult`, `Http2StreamLifecycleState` from production
 
-**Key**: Phase 44 creates `Http2ProtocolSession` (test helper in `src/TurboHttp.Tests/Http2ProtocolSession.cs`) — lightweight stateful wrapper over `Http2FrameDecoder`.
+**Key**: Phase 44 creates `Http2ProtocolSession` (test helper in `src/TurboHTTP.Tests/Http2ProtocolSession.cs`) — lightweight stateful wrapper over `Http2FrameDecoder`.
 
 ### Migration Mapping
 

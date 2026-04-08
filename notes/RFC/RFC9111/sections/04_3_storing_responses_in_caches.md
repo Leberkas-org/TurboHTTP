@@ -206,12 +206,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not store responses in any cache. No logic exists to evaluate whether a response is cacheable based on request method, status code, or Cache-Control directives. All responses are passed directly to the caller without storage consideration.
+TurboHTTP does not store responses in any cache. No logic exists to evaluate whether a response is cacheable based on request method, status code, or Cache-Control directives. All responses are passed directly to the caller without storage consideration.
 
 **Key Gaps:**
 - No response storage mechanism

@@ -115,7 +115,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -127,9 +127,9 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9113/08_Http2FlowControlTests.cs` — Window tracking, credit consumption, overflow detection
-- `TurboHttp.Tests/RFC9113/09_Http2WindowUpdateTests.cs` — WINDOW_UPDATE processing, connection vs stream windows
-- `TurboHttp.StreamTests/` — End-to-end flow control under backpressure
+- `TurboHTTP.Tests/RFC9113/08_Http2FlowControlTests.cs` — Window tracking, credit consumption, overflow detection
+- `TurboHTTP.Tests/RFC9113/09_Http2WindowUpdateTests.cs` — WINDOW_UPDATE processing, connection vs stream windows
+- `TurboHTTP.StreamTests/` — End-to-end flow control under backpressure
 
 ### Known Gaps
 

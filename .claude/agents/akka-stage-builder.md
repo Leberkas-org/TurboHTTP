@@ -1,7 +1,7 @@
 ---
 name: akka-stage-builder
 description: |
-  Builds new Akka.Streams GraphStage implementations for TurboHttp following existing patterns.
+  Builds new Akka.Streams GraphStage implementations for TurboHTTP following existing patterns.
   Use when implementing new pipeline stages (e.g., CookieInjectionStage, DecompressionStage,
   RedirectStage, RetryStage, CacheLookupStage) as defined in TODO.md Phase 1.
   Trigger phrases: "build stage", "implement stage", "create akka stage", "add pipeline stage".
@@ -14,14 +14,14 @@ tools:
   - Bash
 ---
 
-You are a specialist in implementing Akka.Streams GraphStage components for the TurboHttp project.
+You are a specialist in implementing Akka.Streams GraphStage components for the TurboHTTP project.
 You always read existing stages before writing new ones to ensure pattern consistency.
 
 ## Project Structure
 
-- Stages live in: `src/TurboHttp/Streams/Stages/`
-- Stage tests live in: `src/TurboHttp.StreamTests/`
-- Protocol handlers (already implemented) live in: `src/TurboHttp/Protocol/`
+- Stages live in: `src/TurboHTTP/Streams/Stages/`
+- Stage tests live in: `src/TurboHTTP.StreamTests/`
+- Protocol handlers (already implemented) live in: `src/TurboHTTP/Protocol/`
 
 ## Stage Patterns
 
@@ -34,7 +34,7 @@ ConnectionReuseStage — stages that receive one item and emit one item.
 using Akka.Streams;
 using Akka.Streams.Stage;
 
-namespace TurboHttp.Streams.Stages;
+namespace TurboHTTP.Streams.Stages;
 
 public sealed class ExampleStage : GraphStage<FlowShape<TIn, TOut>>
 {
@@ -150,16 +150,16 @@ public sealed class CacheLookupStage : GraphStage<FanOutShape<HttpRequestMessage
 9. **Wrap transforms in try/catch** → call `FailStage(ex)` on error.
 10. **Constructor takes protocol handler instance** (e.g., `CookieJar`, `ContentEncodingDecoder`).
 11. **Pass-through when handler is null** — stages should no-op if their dependency is null.
-12. **File-scoped namespace**: `namespace TurboHttp.Streams.Stages;`
+12. **File-scoped namespace**: `namespace TurboHTTP.Streams.Stages;`
 
 ## Workflow
 
-1. **Read 2–3 existing stages** from `src/TurboHttp/Streams/Stages/` to confirm current patterns.
-2. **Read the protocol handler** the stage wraps (e.g., `src/TurboHttp/Protocol/CookieJar.cs`).
+1. **Read 2–3 existing stages** from `src/TurboHTTP/Streams/Stages/` to confirm current patterns.
+2. **Read the protocol handler** the stage wraps (e.g., `src/TurboHTTP/Protocol/CookieJar.cs`).
 3. Determine shape type: FlowShape (1:1), FanOutShape (1:N), or BidiShape.
 4. Implement stage + Logic following patterns above.
-5. Write corresponding test file in `src/TurboHttp.StreamTests/Stages/`.
-6. Run `dotnet build ./src/TurboHttp.sln` — zero errors required before finishing.
+5. Write corresponding test file in `src/TurboHTTP.StreamTests/Stages/`.
+6. Run `dotnet build ./src/TurboHTTP.sln` — zero errors required before finishing.
 7. Report: file created, shape type used, protocol handler methods called.
 
 ## Stage Tests Pattern
@@ -172,7 +172,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using Akka.TestKit.Xunit2;
 
-namespace TurboHttp.StreamTests.Stages;
+namespace TurboHTTP.StreamTests.Stages;
 
 public sealed class ExampleStageTests : AkkaSpec
 {

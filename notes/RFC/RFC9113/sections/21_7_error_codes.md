@@ -72,7 +72,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -83,7 +83,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 - **`Http2ConnectionStage.cs`** — Generates appropriate error codes for protocol violations (PROTOCOL_ERROR, FLOW_CONTROL_ERROR, FRAME_SIZE_ERROR, COMPRESSION_ERROR)
 
 ### Test References
-- `TurboHttp.Tests/RFC9113/21_Http2ErrorCodeTests.cs` — Error code propagation and handling tests
+- `TurboHTTP.Tests/RFC9113/21_Http2ErrorCodeTests.cs` — Error code propagation and handling tests
 
 ### Known Gaps
 - ⚠️ ENHANCE_YOUR_CALM (0x0b) — Not actively sent; no rate-limiting detection implemented

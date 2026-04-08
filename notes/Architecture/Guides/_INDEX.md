@@ -10,7 +10,7 @@ tags:
 ---
 # Guides
 
-Conventions, workflows, and reference guides for working with TurboHttp.
+Conventions, workflows, and reference guides for working with TurboHTTP.
 
 ## Notes
 

@@ -83,12 +83,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp's `Http11ResponseDecoder` parses status-lines per §4. The decoder extracts HTTP-version, 3-digit status code, and optional reason-phrase. The reason-phrase is parsed but not used for application logic (as recommended by the RFC). Status codes are mapped to `HttpStatusCode` enum values.
+TurboHTTP's `Http11ResponseDecoder` parses status-lines per §4. The decoder extracts HTTP-version, 3-digit status code, and optional reason-phrase. The reason-phrase is parsed but not used for application logic (as recommended by the RFC). Status codes are mapped to `HttpStatusCode` enum values.
 
 **Key Components:**
 - `Http11ResponseDecoder` — parses `HTTP-version SP status-code SP [reason-phrase]`
@@ -102,7 +102,7 @@ TurboHttp's `Http11ResponseDecoder` parses status-lines per §4. The decoder ext
 
 **Gaps:** None identified
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

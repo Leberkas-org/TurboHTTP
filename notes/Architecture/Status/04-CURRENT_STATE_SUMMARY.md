@@ -1,7 +1,7 @@
 ---
-title: TurboHttp Current State Summary
+title: TurboHTTP Current State Summary
 description: >-
-  Comprehensive snapshot of TurboHttp implementation status, completion scores
+  Comprehensive snapshot of TurboHTTP implementation status, completion scores
   by RFC, what works well, what needs work, and next milestones
 tags:
   - status
@@ -13,7 +13,7 @@ aliases:
   - Project Status
   - v1.0 Roadmap
 ---
-# TurboHttp Current State Summary
+# TurboHTTP Current State Summary
 
 **Last Updated**: 2026-04-07
 **Version**: Pre-1.0 (Development)
@@ -232,7 +232,7 @@ ConnectionLease
 
 ### Features 047–052: Protocol Namespace Reorganisation ✅
 - Protocol layer reorganised into component-based subfolders (Http10, Http11, Http2, Http3, Semantics, Caching, Cookies)
-- All namespaces updated: `TurboHttp.Protocol.<Component>`
+- All namespaces updated: `TurboHTTP.Protocol.<Component>`
 - Obsidian vault updated to reflect component folder structure
 
 ### Features 040–046: Test Organisation + Transport Split ✅
@@ -275,11 +275,11 @@ ConnectionLease
 
 | Resource | Path |
 |----------|------|
-| **Source Code** | `src/TurboHttp/` |
-| **Unit Tests** | `src/TurboHttp.Tests/` (organized by component) |
-| **Stream Tests** | `src/TurboHttp.StreamTests/` (Akka.Streams behavior) |
-| **Integration Tests** | `src/TurboHttp.IntegrationTests/` (Kestrel fixtures) |
-| **Benchmarks** | `src/TurboHttp.Benchmarks/` (BenchmarkDotNet) |
+| **Source Code** | `src/TurboHTTP/` |
+| **Unit Tests** | `src/TurboHTTP.Tests/` (organized by component) |
+| **Stream Tests** | `src/TurboHTTP.StreamTests/` (Akka.Streams behavior) |
+| **Integration Tests** | `src/TurboHTTP.IntegrationTests/` (Kestrel fixtures) |
+| **Benchmarks** | `src/TurboHTTP.Benchmarks/` (BenchmarkDotNet) |
 | **Documentation** | `docs/` (VitePress) |
 | **Obsidian Vault** | `notes/` (architecture, RFC notes, decisions) |
 | **Feature Plans** | Internal planning directory (feature_NNN.md) |
@@ -292,26 +292,26 @@ ConnectionLease
 ### Build Commands
 ```bash
 # Build all
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 
 # Run all tests
-dotnet test ./src/TurboHttp.sln
+dotnet test ./src/TurboHTTP.sln
 
 # Run tests for a component
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- \
-  --filter-namespace "TurboHttp.Tests.Http2"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj -- \
+  --filter-namespace "TurboHTTP.Tests.Http2"
 
 # Run tests with specific RFC trait
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- \
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj -- \
   --filter "Trait~RFC9113"
 
 # Run benchmarks
-dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
+dotnet run --configuration Release ./src/TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 ```
 
 ### Development Workflow
 1. Create feature branch from `main`
-2. Implement in `src/TurboHttp/` and tests in `src/TurboHttp.Tests/`
+2. Implement in `src/TurboHTTP/` and tests in `src/TurboHTTP.Tests/`
 3. Add `[Trait("RFC", "RFC<number>-<section>")]` for RFC traceability (e.g., `[Trait("RFC", "RFC9113-4.1")]`)
 4. Ensure max 500 lines per test file
 5. Run full test suite (`dotnet test`)
@@ -329,7 +329,7 @@ dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmar
 
 Before committing code:
 - ✅ `dotnet build --configuration Release` succeeds
-- ✅ `dotnet test ./src/TurboHttp.sln` passes (100%)
+- ✅ `dotnet test ./src/TurboHTTP.sln` passes (100%)
 - ✅ No new compiler warnings (TreatWarningsAsErrors enabled)
 - ✅ Test files ≤ 500 lines
 - ✅ All async tests have explicit timeouts

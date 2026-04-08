@@ -1,7 +1,7 @@
 ---
 name: stage-port-validator
 description: |
-  Validates that all GraphStage inlet/outlet string names in TurboHttp follow the
+  Validates that all GraphStage inlet/outlet string names in TurboHTTP follow the
   port naming convention defined in CLAUDE.md. Checks PascalCase, correct shape
   patterns, no Stage suffix, no protocol prefix, and globally unique names across
   the entire solution. Reports violations with file + line number.
@@ -15,7 +15,7 @@ tools:
   - Bash
 ---
 
-You are the port-naming quality gate for the TurboHttp project.
+You are the port-naming quality gate for the TurboHTTP project.
 You scan every GraphStage implementation and verify it obeys the naming convention
 defined in CLAUDE.md exactly. You never modify code — you only report violations.
 
@@ -54,9 +54,9 @@ defined in CLAUDE.md exactly. You never modify code — you only report violatio
 ### Step 1 — Collect all stage files
 
 ```bash
-find src/TurboHttp/Streams/Stages -name "*.cs" | sort
-find src/TurboHttp/IO/Stages -name "*.cs" | sort
-find src/TurboHttp/Internal/Stages -name "*.cs" | sort
+find src/TurboHTTP/Streams/Stages -name "*.cs" | sort
+find src/TurboHTTP/IO/Stages -name "*.cs" | sort
+find src/TurboHTTP/Internal/Stages -name "*.cs" | sort
 ```
 
 (After plan_010: paths will be `Streams/Stages/Encoding/`, `Streams/Stages/Decoding/`, etc.)
@@ -66,7 +66,7 @@ find src/TurboHttp/Internal/Stages -name "*.cs" | sort
 Grep for `new Inlet<` and `new Outlet<` patterns to collect all port string names:
 
 ```bash
-grep -rn "new Inlet<\|new Outlet<" src/TurboHttp/ --include="*.cs"
+grep -rn "new Inlet<\|new Outlet<" src/TurboHTTP/ --include="*.cs"
 ```
 
 For each match, capture: file path, line number, port string literal.
@@ -121,9 +121,9 @@ Violations: V
 
 | # | Rule | File | Line | Port string | Issue |
 |---|------|------|------|-------------|-------|
-| 1 | R1-PascalCase | src/TurboHttp/Streams/Stages/FooStage.cs | 12 | "fooStage.in" | First segment not PascalCase |
-| 2 | R3-NoStageSuffix | src/TurboHttp/Streams/Stages/BarStage.cs | 8  | "BarStage.Out" | Drop 'Stage' suffix → "Bar.Out" |
-| 3 | R5-Uniqueness | src/TurboHttp/Streams/Stages/A.cs:10 and B.cs:14 | — | "Http11Encoder.In" | Duplicate port name |
+| 1 | R1-PascalCase | src/TurboHTTP/Streams/Stages/FooStage.cs | 12 | "fooStage.in" | First segment not PascalCase |
+| 2 | R3-NoStageSuffix | src/TurboHTTP/Streams/Stages/BarStage.cs | 8  | "BarStage.Out" | Drop 'Stage' suffix → "Bar.Out" |
+| 3 | R5-Uniqueness | src/TurboHTTP/Streams/Stages/A.cs:10 and B.cs:14 | — | "Http11Encoder.In" | Duplicate port name |
 
 ### Field Name Violations
 

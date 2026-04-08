@@ -200,7 +200,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -213,9 +213,9 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9113/10_Http2SettingsTests.cs` — Settings encoding/decoding, value validation
-- `TurboHttp.Tests/RFC9113/11_Http2SettingsAckTests.cs` — ACK synchronization, timeout handling
-- `TurboHttp.Tests/RFC9113/12_Http2SettingsErrorTests.cs` — Invalid settings detection (bad stream ID, wrong length, invalid values)
+- `TurboHTTP.Tests/RFC9113/10_Http2SettingsTests.cs` — Settings encoding/decoding, value validation
+- `TurboHTTP.Tests/RFC9113/11_Http2SettingsAckTests.cs` — ACK synchronization, timeout handling
+- `TurboHTTP.Tests/RFC9113/12_Http2SettingsErrorTests.cs` — Invalid settings detection (bad stream ID, wrong length, invalid values)
 
 ### Known Gaps
 

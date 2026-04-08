@@ -292,12 +292,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp implements the full message body length determination algorithm from §6.3. The decoder supports Transfer-Encoding (chunked), Content-Length, and connection-close body framing. Transfer-Encoding takes precedence over Content-Length when both are present. The client generates Content-Length for known-size bodies and chunked encoding for streaming bodies.
+TurboHTTP implements the full message body length determination algorithm from §6.3. The decoder supports Transfer-Encoding (chunked), Content-Length, and connection-close body framing. Transfer-Encoding takes precedence over Content-Length when both are present. The client generates Content-Length for known-size bodies and chunked encoding for streaming bodies.
 
 **Key Components:**
 - `Http11ResponseDecoder` — body length determination, chunked decoding, Content-Length framing
@@ -316,7 +316,7 @@ TurboHttp implements the full message body length determination algorithm from �
 **Gaps:**
 - CONNECT tunnel response handling (§6.3 rule 2) — CONNECT not supported
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

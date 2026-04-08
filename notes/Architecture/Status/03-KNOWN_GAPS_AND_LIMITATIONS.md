@@ -5,7 +5,7 @@ tags: [gaps, limitations, issues, roadmap, critical]
 aliases: [KnownGaps, Limitations, Blockers, Issues]
 ---
 
-# TurboHttp Known Gaps & Limitations
+# TurboHTTP Known Gaps & Limitations
 
 **Last Updated**: 2026-03-26  
 **Severity Levels**: 🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low
@@ -16,7 +16,7 @@ aliases: [KnownGaps, Limitations, Blockers, Issues]
 
 **Problem**: Only client-side HTTP client library exists. No server.
 
-**Impact**: Cannot build HTTP server applications with TurboHttp. No symmetric API.
+**Impact**: Cannot build HTTP server applications with TurboHTTP. No symmetric API.
 
 **Current State**:
 - Encoders (serialize HttpRequestMessage) ✅ exist
@@ -25,7 +25,7 @@ aliases: [KnownGaps, Limitations, Blockers, Issues]
 - Server response encoding ❌ missing
 
 **Solution**: Post-v1.0 roadmap item. Requires:
-1. New `/TurboHttp/Server/` layer with `ITurboHttpServer`
+1. New `/TurboHTTP/Server/` layer with `ITurboHttpServer`
 2. Reverse of client pipeline: requests in, responses out
 3. ASP.NET Core integration (MapTurboHttpServer middleware)
 

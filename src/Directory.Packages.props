@@ -7,7 +7,7 @@
         <XunitVersion>3.2.2</XunitVersion>
     </PropertyGroup>
     <ItemGroup Label="Akka.NET">
-        <PackageVersion Include="Akka.Hosting" Version="1.5.64"/>
+        <PackageVersion Include="Akka.Hosting" Version="$(AkkaVersion)"/>
         <PackageVersion Include="Akka.Streams" Version="$(AkkaVersion)"/>
         <PackageVersion Include="Akka.Streams.TestKit" Version="$(AkkaVersion)"/>
         <PackageVersion Include="Akka.TestKit.Xunit" Version="$(AkkaVersion)"/>
@@ -21,5 +21,8 @@
     </ItemGroup>
     <ItemGroup Label="Benchmarks">
         <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
+    </ItemGroup>
+    <ItemGroup Label="Memory">
+        <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1"/>
     </ItemGroup>
 </Project>

@@ -36,8 +36,8 @@
 - No connection reuse optimization
 
 **Test Files**:
-- `TurboHttp.Tests/RFC1945/` — 17 test classes, 233 unit tests
-- `TurboHttp.StreamTests/RFC1945/` — encoder/decoder stage tests, TCP fragmentation
+- `TurboHTTP.Tests/RFC1945/` — 17 test classes, 233 unit tests
+- `TurboHTTP.StreamTests/RFC1945/` — encoder/decoder stage tests, TCP fragmentation
 
 ### RFC 9112 (HTTP/1.1) — 92/100
 
@@ -57,8 +57,8 @@
 - Limited strictness on obsolete-text headers
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9112/` — 26 test classes, 374 unit tests
-- `TurboHttp.StreamTests/RFC9112/` — encoder/decoder/chunked/correlation/pipeline stages
+- `TurboHTTP.Tests/RFC9112/` — 26 test classes, 374 unit tests
+- `TurboHTTP.StreamTests/RFC9112/` — encoder/decoder/chunked/correlation/pipeline stages
 
 ### RFC 9113 (HTTP/2) — 87/100
 
@@ -81,8 +81,8 @@
 - No alternate service (Alt-Svc) handling
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9113/` — 27 test classes, 545 unit tests
-- `TurboHttp.StreamTests/RFC9113/` — encoder/decoder/connection/stream/HPACK/correlation
+- `TurboHTTP.Tests/RFC9113/` — 27 test classes, 545 unit tests
+- `TurboHTTP.StreamTests/RFC9113/` — encoder/decoder/connection/stream/HPACK/correlation
 
 ### RFC 7541 (HPACK) — 90/100
 
@@ -102,8 +102,8 @@
 - Limited error recovery on corrupted tables
 
 **Test Files**:
-- `TurboHttp.Tests/RFC7541/` — 7 test classes, 419 unit tests
-- `TurboHttp.StreamTests/RFC7541/` — HPACK stream integration
+- `TurboHTTP.Tests/RFC7541/` — 7 test classes, 419 unit tests
+- `TurboHTTP.StreamTests/RFC7541/` — HPACK stream integration
 
 ### RFC 9114 (HTTP/3) — 60/100
 
@@ -125,8 +125,8 @@
 - Most advanced flow control semantics
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9114/` — Exists but minimal coverage
-- `TurboHttp.StreamTests/RFC9114/` — Partial encoder/decoder stubs
+- `TurboHTTP.Tests/RFC9114/` — Exists but minimal coverage
+- `TurboHTTP.StreamTests/RFC9114/` — Partial encoder/decoder stubs
 
 ### RFC 9000 (QUIC) — 50/100
 
@@ -147,8 +147,8 @@
 - Stream frame structure (left to HTTP/3)
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9114/` — QUIC integer tests only
-- Actual QUIC implementation is in TurboHttp.Transport.Quic (if exists)
+- `TurboHTTP.Tests/RFC9114/` — QUIC integer tests only
+- Actual QUIC implementation is in TurboHTTP.Transport.Quic (if exists)
 
 ### RFC 9204 (QPACK) — 90/100
 
@@ -169,8 +169,8 @@
 **Test Note**: QPACK encoder/decoder fully implemented with all core features.
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9204/` — 11 test classes, 180+ unit tests
-- `TurboHttp.StreamTests/RFC9204/` — Encoder/decoder stage tests
+- `TurboHTTP.Tests/RFC9204/` — 11 test classes, 180+ unit tests
+- `TurboHTTP.StreamTests/RFC9204/` — Encoder/decoder stage tests
 
 ### RFC 9110 (HTTP Semantics) — 82/100
 
@@ -188,8 +188,8 @@
 - Limited content negotiation (server-driven only)
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9110/` — 2 test classes (small, should expand)
-- `TurboHttp.StreamTests/RFC9110/` — Redirect, retry, decompression stages
+- `TurboHTTP.Tests/RFC9110/` — 2 test classes (small, should expand)
+- `TurboHTTP.StreamTests/RFC9110/` — Redirect, retry, decompression stages
 
 ### RFC 6265 (Cookies) — 80/100
 
@@ -212,8 +212,8 @@
 - Limited origin validation
 
 **Test Files**:
-- `TurboHttp.Tests/RFC6265/` — 2 test classes, 66 unit tests
-- `TurboHttp.StreamTests/RFC6265/` — Cookie injection/storage stages
+- `TurboHTTP.Tests/RFC6265/` — 2 test classes, 66 unit tests
+- `TurboHTTP.StreamTests/RFC6265/` — Cookie injection/storage stages
 
 ### RFC 9111 (Caching) — 78/100
 
@@ -233,12 +233,12 @@
 - Limited cache invalidation on POST/PUT/DELETE
 
 **Test Files**:
-- `TurboHttp.Tests/RFC9111/` — 4 test classes, 75 unit tests
-- `TurboHttp.StreamTests/RFC9111/` — Cache lookup/storage stages
+- `TurboHTTP.Tests/RFC9111/` — 4 test classes, 75 unit tests
+- `TurboHTTP.StreamTests/RFC9111/` — Cache lookup/storage stages
 
 ## Section-Level Compliance Documentation
 
-Each core RFC now has ≥8 section files with detailed `TurboHttp Compliance` blocks documenting implementation status, key components, compliance details, gaps, and test references.
+Each core RFC now has ≥8 section files with detailed `TurboHTTP Compliance` blocks documenting implementation status, key components, compliance details, gaps, and test references.
 
 | RFC | Total Section Files | Files with Compliance Docs | Key Sections Covered |
 |-----|--------------------|-----------------------------|----------------------|

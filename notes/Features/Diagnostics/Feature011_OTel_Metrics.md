@@ -23,14 +23,14 @@ Added `System.Diagnostics.Metrics`-based metrics infrastructure using `TurboHttp
 - Instrumented pipeline stages and the connection pooling layer with metric recording calls
 - Added unit tests using `MeterListener` to verify metric names, units, and values under load
 
-Metrics exposed under meter name `TurboHttp` with instruments following .NET OTel naming conventions (`turbohttp.request.count`, `turbohttp.request.duration`, etc.).
+Metrics exposed under meter name `TurboHTTP` with instruments following .NET OTel naming conventions (`turbohttp.request.count`, `turbohttp.request.duration`, etc.).
 
 ## Key Source Files
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Diagnostics/TurboHttpMetrics.cs` | Meter and instrument definitions |
-| `src/TurboHttp.Tests/Diagnostics/TurboHttpMetricsTests.cs` | MeterListener-based unit tests |
+| `src/TurboHTTP/Diagnostics/TurboHttpMetrics.cs` | Meter and instrument definitions |
+| `src/TurboHTTP.Tests/Diagnostics/TurboHttpMetricsTests.cs` | MeterListener-based unit tests |
 
 ## See Also
 

@@ -414,12 +414,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not parse or act on Cache-Control directives. The Cache-Control header is passed through in requests and responses as a standard header but no directive-specific logic exists. The client does not honor `no-cache`, `no-store`, `max-age`, `must-revalidate`, or any other cache directives.
+TurboHTTP does not parse or act on Cache-Control directives. The Cache-Control header is passed through in requests and responses as a standard header but no directive-specific logic exists. The client does not honor `no-cache`, `no-store`, `max-age`, `must-revalidate`, or any other cache directives.
 
 **Key Gaps:**
 - No Cache-Control directive parsing

@@ -8,21 +8,21 @@
 ## Install the Package
 
 ```bash
-dotnet add package TurboHttp
+dotnet add package TurboHTTP
 ```
 
 Or add it to your `.csproj`:
 
 ```xml
-<PackageReference Include="TurboHttp" Version="1.*" />
+<PackageReference Include="TurboHTTP" Version="1.*" />
 ```
 
 ## Dependency Injection (Recommended)
 
-Register TurboHttp in your `IServiceCollection`:
+Register TurboHTTP in your `IServiceCollection`:
 
 ```csharp
-using TurboHttp;
+using TurboHTTP;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,7 +149,7 @@ Always `await using` the client to ensure connections are properly cleaned up.
 A complete console application:
 
 ```csharp
-using TurboHttp.Client;
+using TurboHTTP.Client;
 using Akka.Actor;
 
 var actorSystem = ActorSystem.Create("turbo");

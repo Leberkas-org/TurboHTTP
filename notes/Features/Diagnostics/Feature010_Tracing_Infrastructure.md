@@ -29,8 +29,8 @@ Traces exposed via `TurboHttpInstrumentation.ActivitySourceName` for consumption
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Diagnostics/TurboHttpInstrumentation.cs` | ActivitySource and span helpers |
-| `src/TurboHttp.Tests/Diagnostics/TurboHttpInstrumentationTests.cs` | Tracing unit tests |
+| `src/TurboHTTP/Diagnostics/TurboHttpInstrumentation.cs` | ActivitySource and span helpers |
+| `src/TurboHTTP.Tests/Diagnostics/TurboHttpInstrumentationTests.cs` | Tracing unit tests |
 
 ## See Also
 

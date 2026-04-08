@@ -21,13 +21,13 @@ Conducted comprehensive benchmark run following the transport layer refactoring 
 ## Key Results
 
 ### Execution Times
-- **TurboHttp Single Request Benchmarks**: 4:02 (242.77 sec) - 40 benchmarks
+- **TurboHTTP Single Request Benchmarks**: 4:02 (242.77 sec) - 40 benchmarks
 - **HttpClient Single Request Benchmarks**: 0:19 (19.35 sec) - 40 benchmarks
 - **No hangs, timeouts, or deadlocks observed**
 
 ### Performance Comparison (HTTP/1.1, CL=1, Light Payload)
 
-| Metric | TurboHttp | HttpClient | Ratio |
+| Metric | TurboHTTP | HttpClient | Ratio |
 |--------|-----------|-----------|-------|
 | Mean Latency | 166.2 μs | 96.2 μs | 1.73x slower |
 | Req/sec | 6,017 | 10,399 | 0.58x |
@@ -35,7 +35,7 @@ Conducted comprehensive benchmark run following the transport layer refactoring 
 
 ### Performance Comparison (HTTP/2, CL=1, Light Payload)
 
-| Metric | TurboHttp | HttpClient | Ratio |
+| Metric | TurboHTTP | HttpClient | Ratio |
 |--------|-----------|-----------|-------|
 | Mean Latency | 205.2 μs | 124.8 μs | 1.64x slower |
 | Req/sec | 4,873 | 8,010 | 0.61x |
@@ -43,16 +43,16 @@ Conducted comprehensive benchmark run following the transport layer refactoring 
 
 ### Performance Comparison (HTTP/1.1, CL=256, Light Payload)
 
-At high concurrency, TurboHttp shows larger relative overhead:
+At high concurrency, TurboHTTP shows larger relative overhead:
 
-| Metric | TurboHttp | HttpClient | Ratio |
+| Metric | TurboHTTP | HttpClient | Ratio |
 |--------|-----------|-----------|-------|
 | Mean Latency | 169.1 μs | 88.2 μs | 1.92x slower |
 | Req/sec | 5,914 | 11,342 | 0.52x |
 
 ### Memory Allocation Pattern
 
-- **Light Payloads (no body)**: TurboHttp allocates 2.7-2.8x more than HttpClient
+- **Light Payloads (no body)**: TurboHTTP allocates 2.7-2.8x more than HttpClient
   - This suggests pipeline overhead for minimal request/response
 - **Heavy Payloads (10 KB)**: Allocation overhead shrinks to 1.11x (HTTP/1.1) or 0.21x (HTTP/2)
   - Indicates the streaming pipeline is more efficient with larger payloads
@@ -60,7 +60,7 @@ At high concurrency, TurboHttp shows larger relative overhead:
 
 ### Latency Percentiles (HTTP/1.1, CL=1, Light Payload)
 
-| Percentile | TurboHttp | HttpClient | Delta |
+| Percentile | TurboHTTP | HttpClient | Delta |
 |-----------|-----------|-----------|-------|
 | P50 | 165.3 μs | 100.0 μs | +65.3% |
 | P95 | 188.3 μs | 104.4 μs | +80.3% |
@@ -80,9 +80,9 @@ All percentiles consistent across concurrency levels - no tail latency explosion
 5. ✓ Scaling behavior is linear (no degradation at CL=256)
 
 **Performance Characteristics**:
-1. TurboHttp is 1.4-1.9x slower than HttpClient baseline
+1. TurboHTTP is 1.4-1.9x slower than HttpClient baseline
 2. HTTP/1.1 has smaller overhead (1.4-1.6x) than HTTP/2 (1.6-1.9x)
-3. Heavy payloads show better TurboHttp performance (narrower gap)
+3. Heavy payloads show better TurboHTTP performance (narrower gap)
 4. Akka.Streams architecture adds ~2.7x memory per small request
 
 ### Root Causes of Overhead
@@ -99,7 +99,7 @@ The overhead is expected for a stream-based architecture handling RFC compliance
 1. **No immediate action required** - Transport layer refactoring is working correctly
 2. **Buffer pooling opportunity** - Could reduce allocations by 30-40% for light payloads
 3. **HTTP/2 optimization** - Investigate frame batching to reduce latency
-4. **Larger payload benchmarking** - Test with 1MB+ bodies where TurboHttp may excel
+4. **Larger payload benchmarking** - Test with 1MB+ bodies where TurboHTTP may excel
 5. **Connection reuse scenario** - Current benchmarks create new clients per iteration; test persistent connections
 
 ## Related Notes

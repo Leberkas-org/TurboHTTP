@@ -237,12 +237,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not perform cache validation. No conditional request generation (If-None-Match, If-Modified-Since) for cache revalidation exists. The client does not send conditional requests automatically to revalidate stale cached responses, nor does it process 304 (Not Modified) responses for cache update purposes.
+TurboHTTP does not perform cache validation. No conditional request generation (If-None-Match, If-Modified-Since) for cache revalidation exists. The client does not send conditional requests automatically to revalidate stale cached responses, nor does it process 304 (Not Modified) responses for cache update purposes.
 
 **Key Gaps:**
 - No conditional request generation for revalidation

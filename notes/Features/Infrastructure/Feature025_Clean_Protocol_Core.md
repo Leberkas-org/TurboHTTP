@@ -71,12 +71,12 @@ With one GroupByRequestKey the limit is shared across all versions. `256` is use
 
 | Action | File |
 |--------|------|
-| **Delete** | `src/TurboHttp/Streams/ProtocolCoreGraphBuilder.cs` |
-| **Rewrite** | `src/TurboHttp/Streams/Engine.cs` |
-| Keep | `src/TurboHttp/Internal/RequestEndpoint.cs` |
-| Keep | `src/TurboHttp/Streams/Stages/Internal/GroupByRequestKeyStage.cs` |
-| Keep | `src/TurboHttp/Streams/Stages/Internal/HostKeyGroupByExtensions.cs` |
-| Keep | `src/TurboHttp.StreamTests/Streams/10_EngineVersionRoutingTests.cs` |
+| **Delete** | `src/TurboHTTP/Streams/ProtocolCoreGraphBuilder.cs` |
+| **Rewrite** | `src/TurboHTTP/Streams/Engine.cs` |
+| Keep | `src/TurboHTTP/Internal/RequestEndpoint.cs` |
+| Keep | `src/TurboHTTP/Streams/Stages/Internal/GroupByRequestKeyStage.cs` |
+| Keep | `src/TurboHTTP/Streams/Stages/Internal/HostKeyGroupByExtensions.cs` |
+| Keep | `src/TurboHTTP.StreamTests/Streams/10_EngineVersionRoutingTests.cs` |
 
 ## Implementation Sketch
 
@@ -142,12 +142,12 @@ private static IGraph<FlowShape<HttpRequestMessage, HttpResponseMessage>, NotUse
 ## Verification
 
 ```bash
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 
-dotnet test ./src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj \
-    -- --filter-class "TurboHttp.StreamTests.Streams.EngineVersionRoutingTests"
+dotnet test ./src/TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj \
+    -- --filter-class "TurboHTTP.StreamTests.Streams.EngineVersionRoutingTests"
 
-dotnet test ./src/TurboHttp.sln
+dotnet test ./src/TurboHTTP.sln
 ```
 
 ## See Also

@@ -17,7 +17,7 @@ status: completed
 
 ## Description
 
-Integrated `Akka.Logger.Extensions.Logging` to bridge Akka.NET's internal actor system logging to the standard `Microsoft.Extensions.Logging` pipeline. This allowed Akka debug/info/error messages to appear in the same log output as ASP.NET Core and TurboHttp application logs.
+Integrated `Akka.Logger.Extensions.Logging` to bridge Akka.NET's internal actor system logging to the standard `Microsoft.Extensions.Logging` pipeline. This allowed Akka debug/info/error messages to appear in the same log output as ASP.NET Core and TurboHTTP application logs.
 
 - Added `Akka.Logger.Extensions.Logging` NuGet package
 - Configured the logging bridge in the hosting layer (`TurboHttpServiceCollectionExtensions`)
@@ -27,8 +27,8 @@ Integrated `Akka.Logger.Extensions.Logging` to bridge Akka.NET's internal actor 
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Hosting/TurboHttpServiceCollectionExtensions.cs` | DI configuration for logging bridge |
-| `src/TurboHttp.IntegrationTests/Diagnostics/AkkaLoggingBridgeTests.cs` | Bridge integration tests |
+| `src/TurboHTTP/Hosting/TurboHttpServiceCollectionExtensions.cs` | DI configuration for logging bridge |
+| `src/TurboHTTP.IntegrationTests/Diagnostics/AkkaLoggingBridgeTests.cs` | Bridge integration tests |
 
 ## See Also
 

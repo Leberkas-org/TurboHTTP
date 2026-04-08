@@ -68,12 +68,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not implement an HTTP cache. The client library forwards all requests directly to the origin server without any cache lookup, storage, or revalidation logic. CacheLookupStage is planned as a future pipeline stage but not yet implemented.
+TurboHTTP does not implement an HTTP cache. The client library forwards all requests directly to the origin server without any cache lookup, storage, or revalidation logic. CacheLookupStage is planned as a future pipeline stage but not yet implemented.
 
 **Key Gaps:**
 - No cache storage or retrieval mechanism

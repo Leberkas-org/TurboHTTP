@@ -10,7 +10,7 @@ tags:
 ---
 # Analysis
 
-Technical investigations, audits, and migration plans for TurboHttp.
+Technical investigations, audits, and migration plans for TurboHTTP.
 
 ## Notes
 

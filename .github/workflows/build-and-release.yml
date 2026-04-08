@@ -12,7 +12,7 @@ on:
 
 env:
   GLOBAL_JSON_PATH: './src/global.json'
-  PROJECT_PATH: './src/TurboHttp.sln'
+  PROJECT_PATH: './src/TurboHTTP.sln'
   PACKAGE_OUTPUT_DIRECTORY: './packages'
   TEST_OUTPUT_DIRECTORY: '${{ github.workspace }}/testresults'
   COVERAGE_REPORT_DIRECTORY: './coveragereport'
@@ -64,10 +64,10 @@ jobs:
           VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: |
           cat > notes.md << EOF
-          🎯 TurboHttp v$VERSION
-          
-          📦 NuGet: https://nuget.org/packages/TurboHttp
-          🔗 Release: https://github.com/st0o0/TurboHttp/releases/v$VERSION
+          🎯 TurboHTTP v$VERSION
+
+          📦 NuGet: https://nuget.org/packages/TurboHTTP
+          🔗 Release: https://github.com/st0o0/TurboHTTP/releases/v$VERSION
           
           See release page for full changelog and details!
           
@@ -147,7 +147,7 @@ jobs:
     needs: build
     environment:
       name: nuget
-      url: https://www.nuget.org/packages/TurboHttp
+      url: https://www.nuget.org/packages/TurboHTTP
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
@@ -180,10 +180,10 @@ jobs:
           VERSION: ${{ needs.build.outputs.releaseVersion }}
         run: |
           cat > notes.md << EOF
-          🎯 TurboHttp v$VERSION
-          
-          [![NuGet](https://img.shields.io/nuget/v/TurboHttp?logo=nuget)](https://nuget.org/packages/TurboHttp)
-          [![GitHub](https://img.shields.io/github/last-commit/st0o0/TurboHttp/main?logo=github)](https://github.com/st0o0/TurboHttp)
+          🎯 TurboHTTP v$VERSION
+
+          [![NuGet](https://img.shields.io/nuget/v/TurboHTTP?logo=nuget)](https://nuget.org/packages/TurboHTTP)
+          [![GitHub](https://img.shields.io/github/last-commit/st0o0/TurboHTTP/main?logo=github)](https://github.com/st0o0/TurboHTTP)
           
           EOF
           
@@ -202,7 +202,7 @@ jobs:
         with:
           tag_name: "v${{ needs.build.outputs.releaseVersion }}"
           target_commitish: ${{ github.sha }}
-          name: "TurboHttp v${{ needs.build.outputs.releaseVersion }}"
+          name: "TurboHTTP v${{ needs.build.outputs.releaseVersion }}"
           body: ${{ steps.notes.outputs.release-notes }}
           draft: false
           prerelease: false

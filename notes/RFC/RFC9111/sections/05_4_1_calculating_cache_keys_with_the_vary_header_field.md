@@ -139,12 +139,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not compute cache keys or process the Vary header field for cache selection purposes. The Vary header is passed through in responses but not used for any storage or retrieval logic.
+TurboHTTP does not compute cache keys or process the Vary header field for cache selection purposes. The Vary header is passed through in responses but not used for any storage or retrieval logic.
 
 **Key Gaps:**
 - No cache key computation from effective request URI

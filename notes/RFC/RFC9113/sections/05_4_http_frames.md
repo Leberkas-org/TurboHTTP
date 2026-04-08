@@ -207,7 +207,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 

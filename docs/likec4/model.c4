@@ -1,14 +1,14 @@
-// TurboHttp — Model
+// TurboHTTP — Model
 // All elements (person, system, containers, components, actors) and their
 // structural relationships. Pipeline-specific flow/feedback/delegates
 // relationships live in model-pipeline.c4.
 
 model {
   user = person 'Application' {
-    description 'Any .NET application using TurboHttp'
+    description 'Any .NET application using TurboHTTP'
   }
 
-  turbohttp = system 'TurboHttp' {
+  turbohttp = system 'TurboHTTP' {
     description 'High-performance HTTP client library for .NET built on Akka.Streams'
     technology '.NET 10 / Akka.Streams 1.5'
 

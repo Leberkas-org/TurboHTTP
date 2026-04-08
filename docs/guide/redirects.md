@@ -1,10 +1,10 @@
 # Redirects
 
-TurboHttp follows redirects automatically. When a server responds with a redirect status code, TurboHttp builds a new request to the `Location` URL and re-sends it — transparently, within the same `SendAsync` call. You always receive the final response; intermediate hops are handled for you.
+TurboHTTP follows redirects automatically. When a server responds with a redirect status code, TurboHTTP builds a new request to the `Location` URL and re-sends it — transparently, within the same `SendAsync` call. You always receive the final response; intermediate hops are handled for you.
 
 ## How It Works
 
-When a redirect response arrives, TurboHttp:
+When a redirect response arrives, TurboHTTP:
 
 1. Validates the `Location` header (resolves relative URLs against the original request URI).
 2. Checks for redirect loops and enforces the maximum hop limit.
@@ -15,9 +15,9 @@ When a redirect response arrives, TurboHttp:
 
 ## Status Code Behaviour
 
-Each redirect status code tells TurboHttp how to handle the follow-up request:
+Each redirect status code tells TurboHTTP how to handle the follow-up request:
 
-| Status code | What TurboHttp does |
+| Status code | What TurboHTTP does |
 |-------------|---------------------|
 | `301` Moved Permanently | POST becomes GET for legacy compatibility; all other methods stay the same. Body is dropped. |
 | `302` Found | Same as 301 — POST becomes GET, other methods unchanged. Body is dropped. |
@@ -27,7 +27,7 @@ Each redirect status code tells TurboHttp how to handle the follow-up request:
 
 **In practice:**
 
-- **301 and 302** change POST to GET because that is how browsers have behaved for decades. If you send a `PUT /resource` and get a 301, TurboHttp re-sends it as `PUT` — only POST is affected.
+- **301 and 302** change POST to GET because that is how browsers have behaved for decades. If you send a `PUT /resource` and get a 301, TurboHTTP re-sends it as `PUT` — only POST is affected.
 - **307 and 308** are the modern alternatives that guarantee the request is replayed exactly as-is. Use these when the body matters (file uploads, API calls).
 - **303** is designed specifically for "form submitted, now go see the result" flows.
 
@@ -35,7 +35,7 @@ Each redirect status code tells TurboHttp how to handle the follow-up request:
 
 ### Authorization Header Stripping
 
-When a redirect crosses an origin (a different scheme, hostname, or port), TurboHttp removes the `Authorization` header from the forwarded request. This prevents your credentials from leaking to a third-party server you didn't intend to authenticate with.
+When a redirect crosses an origin (a different scheme, hostname, or port), TurboHTTP removes the `Authorization` header from the forwarded request. This prevents your credentials from leaking to a third-party server you didn't intend to authenticate with.
 
 ```
 Original:  POST https://api.example.com/login   Authorization: Bearer token123
@@ -48,7 +48,7 @@ Same-origin redirects preserve the `Authorization` header normally.
 
 ### HTTPS → HTTP Downgrade Protection
 
-TurboHttp blocks redirects that would downgrade from `https://` to `http://`. If a server tries to redirect you from an encrypted connection to a cleartext one, TurboHttp throws a `RedirectException` with `RedirectError.ProtocolDowngrade` instead of following it.
+TurboHTTP blocks redirects that would downgrade from `https://` to `http://`. If a server tries to redirect you from an encrypted connection to a cleartext one, TurboHTTP throws a `RedirectException` with `RedirectError.ProtocolDowngrade` instead of following it.
 
 ```
 Original:  GET https://secure.example.com/data
@@ -59,11 +59,11 @@ This protects your traffic from being silently moved off an encrypted channel.
 
 ### Cookie Re-evaluation
 
-The `Cookie` header is never blindly forwarded across redirects. For each redirect hop, TurboHttp re-evaluates applicable cookies from the cookie jar using the new URL's domain, path, and security rules. This prevents cookies scoped to one site from being sent to a different one.
+The `Cookie` header is never blindly forwarded across redirects. For each redirect hop, TurboHTTP re-evaluates applicable cookies from the cookie jar using the new URL's domain, path, and security rules. This prevents cookies scoped to one site from being sent to a different one.
 
 ## Loop Detection
 
-TurboHttp tracks every URL visited during a redirect chain. If the same URL appears twice, it throws a `RedirectException` with `RedirectError.RedirectLoop` immediately rather than continuing. This prevents infinite redirect loops caused by misconfigured servers from hanging your application.
+TurboHTTP tracks every URL visited during a redirect chain. If the same URL appears twice, it throws a `RedirectException` with `RedirectError.RedirectLoop` immediately rather than continuing. This prevents infinite redirect loops caused by misconfigured servers from hanging your application.
 
 ```
 GET /a → 302 → /b → 302 → /a   ← RedirectException (loop detected)
@@ -109,7 +109,7 @@ Omit `.WithRedirect()` to leave redirects disabled entirely. All 3xx responses a
 
 ## Handling Redirect Exceptions
 
-When a redirect cannot be completed, TurboHttp throws `RedirectException`. You can handle each case separately:
+When a redirect cannot be completed, TurboHTTP throws `RedirectException`. You can handle each case separately:
 
 ```csharp
 try

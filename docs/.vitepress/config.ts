@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-    title: 'TurboHttp',
+    title: 'TurboHTTP',
     description: 'High-performance HTTP client library for .NET built on Akka.Streams — HTTP/1.0, HTTP/1.1, and HTTP/2 with automatic retries, caching, cookies, and connection pooling.',
     base: '/',
     head: [
@@ -18,7 +18,7 @@ export default defineConfig({
             { text: 'Guide', link: '/guide/' },
             { text: 'Architecture', link: '/architecture/' },
             { text: 'API', link: '/api/' },
-            { text: 'Why TurboHttp?', link: '/why/' },
+            { text: 'Why TurboHTTP?', link: '/why/' },
         ],
 
         sidebar: {
@@ -75,7 +75,7 @@ export default defineConfig({
             ],
             '/why/': [
                 {
-                    text: 'Why TurboHttp?',
+                    text: 'Why TurboHTTP?',
                     items: [
                         { text: 'Comparison', link: '/why/' },
                     ],
@@ -92,12 +92,12 @@ export default defineConfig({
         },
 
         socialLinks: [
-            { icon: 'github', link: 'https://github.com/st0o0/TurboHttp' },
+            { icon: 'github', link: 'https://github.com/st0o0/TurboHTTP' },
         ],
 
         footer: {
             message: 'Released under the MIT License.',
-            copyright: 'Copyright © TurboHttp Contributors',
+            copyright: 'Copyright © TurboHTTP Contributors',
         },
     },
 })

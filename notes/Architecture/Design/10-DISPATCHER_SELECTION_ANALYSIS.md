@@ -18,7 +18,7 @@ related:
 
 ## Executive Summary
 
-TurboHttp processes 64+ concurrent HTTP/2 requests through Akka.Streams GraphStages, causing ThreadPool contention that leads to deadlocks in BenchmarkDotNet processes. This analysis evaluates all six available Akka.NET dispatcher types to identify the optimal choice for high-throughput stream processing without starving the .NET ThreadPool.
+TurboHTTP processes 64+ concurrent HTTP/2 requests through Akka.Streams GraphStages, causing ThreadPool contention that leads to deadlocks in BenchmarkDotNet processes. This analysis evaluates all six available Akka.NET dispatcher types to identify the optimal choice for high-throughput stream processing without starving the .NET ThreadPool.
 
 **Recommendation: ChannelExecutor** — Runs on ThreadPool but dynamically scales it, reducing idle threads and contention. Available in Akka.NET 1.5.x (introduced 1.4.19).
 
@@ -163,7 +163,7 @@ akka.actor.default-dispatcher = {
 - Excellent in Docker and bare metal environments
 
 **When to Use:**
-- High-throughput streaming (HTTP/2 multiplexing) ← **Best for TurboHttp**
+- High-throughput streaming (HTTP/2 multiplexing) ← **Best for TurboHTTP**
 - Variable-load scenarios
 - Cloud/containerized deployments
 - When memory efficiency matters
@@ -271,7 +271,7 @@ The problem: **Akka and application code compete for the same ThreadPool resourc
 
 ## Recommendations by Scenario
 
-### Scenario A: Maximum Performance (TurboHttp Benchmarks)
+### Scenario A: Maximum Performance (TurboHTTP Benchmarks)
 
 **Use ChannelExecutor**
 
@@ -298,7 +298,7 @@ akka {
 
 ---
 
-### Scenario B: Production (TurboHttp in ASP.NET Core)
+### Scenario B: Production (TurboHTTP in ASP.NET Core)
 
 **Use ChannelExecutor** (same as above)
 
@@ -337,7 +337,7 @@ akka {
 
 ---
 
-## Implementation for TurboHttp
+## Implementation for TurboHTTP
 
 ### Current State
 - Using default ThreadPoolDispatcher (via `ConfigurationFactory.Empty`)
@@ -346,7 +346,7 @@ akka {
 
 ### Proposed Change
 
-**File:** `/src/TurboHttp/TurboClientServiceCollectionExtensions.cs`
+**File:** `/src/TurboHTTP/TurboClientServiceCollectionExtensions.cs`
 
 Modify `LoggingHocon` to include ChannelExecutor configuration:
 
@@ -368,7 +368,7 @@ private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
 
 Alternatively, for benchmarks specifically:
 
-**File:** `/src/TurboHttp.Benchmarks/StreamingThroughputBenchmarks.cs`
+**File:** `/src/TurboHTTP.Benchmarks/StreamingThroughputBenchmarks.cs`
 
 ```csharp
 private static readonly Config BenchHocon = ConfigurationFactory.ParseString(
@@ -403,7 +403,7 @@ With ChannelExecutor configured:
 ## References
 
 - **Official Akka.NET Docs:** https://getakka.net/articles/actors/dispatchers.html
-- **Akka.NET v1.5.64:** Current TurboHttp version (ChannelExecutor available since 1.4.19)
+- **Akka.NET v1.5.64:** Current TurboHTTP version (ChannelExecutor available since 1.4.19)
 - **Benchmark Evidence:** [[Benchmark_2026-04-03_Transport_Refactoring.md]]
 
 ---
@@ -412,7 +412,7 @@ With ChannelExecutor configured:
 
 | Use Case | Dispatcher | Reason |
 |----------|-----------|--------|
-| **TurboHttp (high-throughput HTTP/2)** | **ChannelExecutor** | Dynamic scaling, proven performance, ThreadPool-friendly |
+| **TurboHTTP (high-throughput HTTP/2)** | **ChannelExecutor** | Dynamic scaling, proven performance, ThreadPool-friendly |
 | Low-throughput systems | Default | Simplicity, adequate for light load |
 | Extreme latency control | ForkJoinDispatcher | Eliminates TPL variance |
 | UI applications | SynchronizedDispatcher | Thread affinity required |

@@ -2,7 +2,7 @@
 title: Diagnostics Integration Architecture
 description: >-
   Three-pillar observability: DiagnosticListener events, ETW EventSource, and
-  OpenTelemetry-compatible Metrics for TurboHttp
+  OpenTelemetry-compatible Metrics for TurboHTTP
 tags:
   - architecture
   - diagnostics
@@ -14,7 +14,7 @@ tags:
 
 ## Purpose
 
-TurboHttp provides a three-pillar observability model that integrates with standard .NET diagnostic infrastructure. All telemetry is opt-in — zero overhead when no listeners are attached. The three pillars are:
+TurboHTTP provides a three-pillar observability model that integrates with standard .NET diagnostic infrastructure. All telemetry is opt-in — zero overhead when no listeners are attached. The three pillars are:
 
 1. **`DiagnosticListener`** — Rich structured events for distributed tracing and APM tools
 2. **`EventSource` (ETW)** — Lightweight keyword-filtered events for production logging and PerfView
@@ -40,7 +40,7 @@ TurboHttp provides a three-pillar observability model that integrates with stand
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│                     TurboHttp Pipeline                       │
+│                     TurboHTTP Pipeline                       │
 │                                                              │
 │  TracingBidiStage ◄──── Creates Activity per request         │
 │       │                                                      │
@@ -69,27 +69,27 @@ TurboHttp provides a three-pillar observability model that integrates with stand
 
 ## Pillar 1: DiagnosticListener
 
-`TurboHttpDiagnosticListener` is a static class exposing a single `DiagnosticListener` named `"TurboHttp"`.
+`TurboHttpDiagnosticListener` is a static class exposing a single `DiagnosticListener` named `"TurboHTTP"`.
 
 ### Events
 
 | Event Name | Payload | Emitted By |
 |------------|---------|------------|
-| `TurboHttp.Request.Start` | `HttpRequestMessage` | TracingBidiStage (request direction) |
-| `TurboHttp.Request.Stop` | `HttpResponseMessage` | TracingBidiStage (response direction) |
-| `TurboHttp.Request.Failed` | `Exception` | TracingBidiStage (on upstream failure) |
-| `TurboHttp.Connection.Opened` | `RequestEndpoint` | ConnectionStage (on connect) |
-| `TurboHttp.Connection.Closed` | `RequestEndpoint, CloseKind` | ConnectionStage (on disconnect) |
-| `TurboHttp.DeadlockStall` | `StageName, Duration` | DeadlockWatchdogStage (DEBUG only) |
+| `TurboHTTP.Request.Start` | `HttpRequestMessage` | TracingBidiStage (request direction) |
+| `TurboHTTP.Request.Stop` | `HttpResponseMessage` | TracingBidiStage (response direction) |
+| `TurboHTTP.Request.Failed` | `Exception` | TracingBidiStage (on upstream failure) |
+| `TurboHTTP.Connection.Opened` | `RequestEndpoint` | ConnectionStage (on connect) |
+| `TurboHTTP.Connection.Closed` | `RequestEndpoint, CloseKind` | ConnectionStage (on disconnect) |
+| `TurboHTTP.DeadlockStall` | `StageName, Duration` | DeadlockWatchdogStage (DEBUG only) |
 
 ### Guard Pattern
 
 All event emission is guarded by `IsEnabled()` checks to avoid payload allocation when no subscriber is attached:
 
 ```csharp
-if (Source.IsEnabled("TurboHttp.Request.Start"))
+if (Source.IsEnabled("TurboHTTP.Request.Start"))
 {
-    Source.Write("TurboHttp.Request.Start", new { Request = request });
+    Source.Write("TurboHTTP.Request.Start", new { Request = request });
 }
 ```
 
@@ -100,7 +100,7 @@ This ensures **zero allocation overhead** when diagnostics are not subscribed.
 ```csharp
 DiagnosticListener.AllListeners.Subscribe(listener =>
 {
-    if (listener.Name == "TurboHttp")
+    if (listener.Name == "TurboHTTP")
     {
         listener.Subscribe(kvp =>
         {
@@ -112,7 +112,7 @@ DiagnosticListener.AllListeners.Subscribe(listener =>
 
 ### Activity Integration
 
-`TracingBidiStage` creates a root `Activity` named `"TurboHttp.Request"` for each request passing through the pipeline. The activity:
+`TracingBidiStage` creates a root `Activity` named `"TurboHTTP.Request"` for each request passing through the pipeline. The activity:
 - Starts on request entry (outermost BidiStage, request direction)
 - Tags with `http.method`, `http.url`, `http.version`
 - Stops on response exit (outermost BidiStage, response direction)
@@ -145,21 +145,21 @@ This integrates with `System.Diagnostics.ActivitySource` for W3C Trace Context p
 ### Usage with dotnet-trace
 
 ```bash
-dotnet-trace collect --providers TurboHttp:0x1F:4
+dotnet-trace collect --providers TurboHTTP:0x1F:4
 #                                 name    keywords level(Informational)
 ```
 
 ### Usage with PerfView
 
 ```text
-PerfView /providers=TurboHttp:0x1F:4 collect
+PerfView /providers=TurboHTTP:0x1F:4 collect
 ```
 
 ---
 
 ## Pillar 3: Metrics (OpenTelemetry-Compatible)
 
-`TurboHttpMetrics` exposes a static `Meter` named `"TurboHttp"` with instruments following OpenTelemetry semantic conventions.
+`TurboHttpMetrics` exposes a static `Meter` named `"TurboHTTP"` with instruments following OpenTelemetry semantic conventions.
 
 ### Instruments
 
@@ -189,7 +189,7 @@ Metrics are tagged with:
 builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics =>
     {
-        metrics.AddMeter("TurboHttp");  // Subscribe to all TurboHttp instruments
+        metrics.AddMeter("TurboHTTP");  // Subscribe to all TurboHTTP instruments
     });
 ```
 
@@ -199,7 +199,7 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics =>
     {
-        metrics.AddMeter("TurboHttp");
+        metrics.AddMeter("TurboHTTP");
         metrics.AddPrometheusExporter();
     });
 ```
@@ -216,7 +216,7 @@ builder.Services.AddOpenTelemetry()
 
 4. **Static singletons** — `TurboHttpEventSource.Log` and `TurboHttpDiagnosticListener.Source` are static singletons. This matches .NET conventions and avoids per-client diagnostic overhead. Metrics use a static `Meter` for the same reason.
 
-5. **DEBUG-only watchdog** — `DeadlockWatchdogStage` is conditionally compiled (`#if DEBUG`) to avoid production overhead. It emits `TurboHttp.DeadlockStall` events when a stage stalls beyond a configurable threshold, aiding development-time deadlock detection.
+5. **DEBUG-only watchdog** — `DeadlockWatchdogStage` is conditionally compiled (`#if DEBUG`) to avoid production overhead. It emits `TurboHTTP.DeadlockStall` events when a stage stalls beyond a configurable threshold, aiding development-time deadlock detection.
 
 ---
 
@@ -241,7 +241,7 @@ builder.Services.AddOpenTelemetry()
 | Protocol stages → EventSource | Outbound | Protocol keyword events |
 | All stages → Metrics | Outbound | Counter/histogram recordings |
 | External APM → DiagnosticListener | Inbound | `AllListeners.Subscribe()` |
-| External OTel → Metrics | Inbound | `AddMeter("TurboHttp")` |
+| External OTel → Metrics | Inbound | `AddMeter("TurboHTTP")` |
 | External ETW → EventSource | Inbound | Provider name + keyword mask |
 
 ---

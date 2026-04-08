@@ -1,6 +1,6 @@
 # Client API
 
-TurboHttp provides a simple, familiar interface for making HTTP requests.
+TurboHTTP provides a simple, familiar interface for making HTTP requests.
 
 ## SendAsync
 

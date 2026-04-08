@@ -1,6 +1,6 @@
 # API Reference
 
-TurboHttp exposes a small, focused public API. The primary entry point is `ITurboHttpClient`, obtained via `ITurboHttpClientFactory`.
+TurboHTTP exposes a small, focused public API. The primary entry point is `ITurboHttpClient`, obtained via `ITurboHttpClientFactory`.
 
 ## ITurboHttpClientFactory
 

@@ -19,7 +19,7 @@ status: completed
 
 Added low-level observability infrastructure using both ETW `EventSource` and the `DiagnosticListener` pattern — the same approach used by `HttpClient` and ASP.NET Core.
 
-- Added `TurboHttpEventSource` (`[EventSource(Name = "TurboHttp")]`) for ETW/EventPipe diagnostics consumable by `dotnet-trace`, PerfView, and Application Insights
+- Added `TurboHttpEventSource` (`[EventSource(Name = "TurboHTTP")]`) for ETW/EventPipe diagnostics consumable by `dotnet-trace`, PerfView, and Application Insights
 - Added `TurboHttpDiagnosticListener` for programmatic in-process event subscription (same pattern as `System.Net.Http` DiagnosticListener)
 - Wired both into pipeline stages and the transport layer
 - Added unit tests verifying EventSource event payloads and DiagnosticListener subscription/unsubscription
@@ -28,9 +28,9 @@ Added low-level observability infrastructure using both ETW `EventSource` and th
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Diagnostics/TurboHttpEventSource.cs` | ETW EventSource (later moved to TracingBidiStage) |
-| `src/TurboHttp/Diagnostics/TurboHttpDiagnosticListener.cs` | DiagnosticListener (later moved to TracingBidiStage) |
-| `src/TurboHttp.Tests/Diagnostics/DiagnosticsUnitTests.cs` | Diagnostic infrastructure tests |
+| `src/TurboHTTP/Diagnostics/TurboHttpEventSource.cs` | ETW EventSource (later moved to TracingBidiStage) |
+| `src/TurboHTTP/Diagnostics/TurboHttpDiagnosticListener.cs` | DiagnosticListener (later moved to TracingBidiStage) |
+| `src/TurboHTTP.Tests/Diagnostics/DiagnosticsUnitTests.cs` | Diagnostic infrastructure tests |
 
 ## See Also
 

@@ -8,7 +8,7 @@ tags: [meta, guide, style]
 
 **Last Updated**: 2026-03-26
 
-This guide ensures consistency across the entire TurboHttp knowledge base.
+This guide ensures consistency across the entire TurboHTTP knowledge base.
 
 ---
 
@@ -278,10 +278,10 @@ public sealed class ConnectionPoolExample
 
 ```bash
 # Comment explaining the command
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 
 # Running tests
-dotnet test ./src/TurboHttp.Tests/ -- --filter-namespace "TurboHttp.Tests.RFC9113"
+dotnet test ./src/TurboHTTP.Tests/ -- --filter-namespace "TurboHTTP.Tests.RFC9113"
 ```
 
 ---
@@ -390,7 +390,7 @@ Every RFC tracked in the vault **MUST** have an index file at `RFC/RFCXXXX/RFCXX
 ---
 title: "RFC XXXX — Protocol Name"
 rfc_number: XXXX
-description: "One-line description of RFC scope and TurboHttp relevance"
+description: "One-line description of RFC scope and TurboHTTP relevance"
 tags: [rfc, rfcXXXX, protocol-category]
 ---
 ```
@@ -629,7 +629,7 @@ var x = 5; // No language, no explanation
 Save this as `.obsidian/snippets/turbohttp-style.css`:
 
 ```css
-/* TurboHttp Vault Styling */
+/* TurboHTTP Vault Styling */
 
 /* Headings */
 .cm-header { font-weight: 600; }

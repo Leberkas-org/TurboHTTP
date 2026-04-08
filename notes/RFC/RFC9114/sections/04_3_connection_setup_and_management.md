@@ -158,7 +158,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -167,12 +167,12 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 - **`Http3ControlStream.cs`** — Manages the HTTP/3 control stream lifecycle with state machine (`AwaitingSettings` → `Active` → `GoAway` → `Closed`); sends SETTINGS as first frame per §3.2
 - **`Http3Settings.cs`** — Encodes/decodes SETTINGS parameters using QUIC variable-length integers; supports `SETTINGS_MAX_FIELD_SECTION_SIZE` and reserved identifiers per §7.2.4.1
 - **`Http3Connection.cs`** — Connection lifecycle management including GOAWAY frame exchange for graceful shutdown per §3.3
-- **`QuicTransportAdapter.cs`** — QUIC transport abstraction bridging System.Net.Quic to TurboHttp's connection model
+- **`QuicTransportAdapter.cs`** — QUIC transport abstraction bridging System.Net.Quic to TurboHTTP's connection model
 
 ### Test References
 
-- `TurboHttp.StreamTests/` — ~134 stream-level tests covering control stream state transitions and connection setup
-- `TurboHttp.Tests/RFC9114/` — 32 unit test files covering frame encoding, settings validation, error codes
+- `TurboHTTP.StreamTests/` — ~134 stream-level tests covering control stream state transitions and connection setup
+- `TurboHTTP.Tests/RFC9114/` — 32 unit test files covering frame encoding, settings validation, error codes
 
 ### Known Gaps
 

@@ -21,12 +21,12 @@ aliases:
 
 | Project | Purpose | Count |
 |---------|---------|-------|
-| `src/TurboHttp.Tests/` | Unit tests organized by component/protocol version | 260+ |
-| `src/TurboHttp.StreamTests/` | Akka.Streams stage behavior tests | — |
-| `src/TurboHttp.IntegrationTests/` | End-to-end tests with Kestrel | 515+ |
-| `src/TurboHttp.Benchmarks/` | BenchmarkDotNet performance tests | 25+ |
+| `src/TurboHTTP.Tests/` | Unit tests organized by component/protocol version | 260+ |
+| `src/TurboHTTP.StreamTests/` | Akka.Streams stage behavior tests | — |
+| `src/TurboHTTP.IntegrationTests/` | End-to-end tests with Kestrel | 515+ |
+| `src/TurboHTTP.Benchmarks/` | BenchmarkDotNet performance tests | 25+ |
 
-## Unit Tests (`TurboHttp.Tests/`)
+## Unit Tests (`TurboHTTP.Tests/`)
 
 Organized by component/protocol version (post-Feature-040):
 
@@ -56,9 +56,9 @@ Organized by component/protocol version (post-Feature-040):
 
 **File naming**: `<Subject>Spec.cs` — descriptive name with `Spec` suffix (Akka.NET convention). Numeric prefixes (`NN_`) are deprecated.
 
-## Stream Tests (`TurboHttp.StreamTests/`)
+## Stream Tests (`TurboHTTP.StreamTests/`)
 
-Tests Akka.Streams GraphStage behavior. Organized by component (mirroring `TurboHttp.Tests`):
+Tests Akka.Streams GraphStage behavior. Organized by component (mirroring `TurboHTTP.Tests`):
 
 | Folder | Coverage |
 |--------|----------|
@@ -84,7 +84,7 @@ Tests Akka.Streams GraphStage behavior. Organized by component (mirroring `Turbo
 ### StreamTestBase
 - Extends `TestKit` (Akka.TestKit.Xunit)
 - Creates `IMaterializer` for test-scoped stream materialization
-- Used by all stream tests in `TurboHttp.StreamTests/`
+- Used by all stream tests in `TurboHTTP.StreamTests/`
 
 ### EngineTestBase
 - Full engine round-trip helper
@@ -92,7 +92,7 @@ Tests Akka.Streams GraphStage behavior. Organized by component (mirroring `Turbo
 - Provides helper methods for encoding requests and decoding responses through the full pipeline
 
 ### IOActorTestBase
-- Actor lifecycle tests in `TurboHttp.StreamTests/IO/`
+- Actor lifecycle tests in `TurboHTTP.StreamTests/IO/`
 - Tests connection actors, host pools, and transport-level behavior
 
 ## Integration Test Fixtures
@@ -117,7 +117,7 @@ Kestrel-based fixtures for end-to-end HTTP testing:
 - **RFC Traceability**: Use `[Trait("RFC", "RFC<number>-<section>")]` instead of `DisplayName` (e.g., `[Trait("RFC", "RFC9113-4.1")]`)
 - **Method names**: BDD style `Subject_should_behavior()` (e.g., `Http2Encoder_should_set_key_from_frame()`)
 - **Sealed classes**: `public sealed class` for all test classes
-- **Namespace**: matches component folder (e.g., `namespace TurboHttp.Tests.Http2;` or `TurboHttp.Tests.Http2.Encoding;`)
+- **Namespace**: matches component folder (e.g., `namespace TurboHTTP.Tests.Http2;` or `TurboHTTP.Tests.Http2.Encoding;`)
 - **File naming**: `<Subject>Spec.cs` with `Spec` suffix (Akka.NET convention)
 - **No `#nullable enable`**: enabled at project level
 

@@ -1,6 +1,6 @@
-# TurboHttp Knowledge Base
+# TurboHTTP Knowledge Base
 
-This is the central hub for all TurboHttp project knowledge — connecting session logs, architecture decisions, RFC compliance notes, and feature planning.
+This is the central hub for all TurboHTTP project knowledge — connecting session logs, architecture decisions, RFC compliance notes, and feature planning.
 
 ## Architecture & Design Decisions
 
@@ -60,7 +60,7 @@ See [Architecture Notes](./Architecture/) for full decision records.
 - [[Features/Infrastructure/Feature019_Stream_Survival|Feature 019: Stream Survival]] — Stream error absorption and survival hardening
 
 ### Performance
-- [[Features/Performance/Feature024_Benchmark_Comparison|Feature 024: Benchmark Comparison]] — TurboHttp vs HttpClient performance comparison
+- [[Features/Performance/Feature024_Benchmark_Comparison|Feature 024: Benchmark Comparison]] — TurboHTTP vs HttpClient performance comparison
 
 ## Active Debugging
 

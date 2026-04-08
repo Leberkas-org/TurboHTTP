@@ -30,8 +30,8 @@ The `KestrelTlsFixture` spins up a Kestrel server with a self-signed dev certifi
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.IntegrationTests/Tls/TlsIntegrationTests.cs` | TLS integration tests |
-| `src/TurboHttp.IntegrationTests/Shared/KestrelTlsFixture.cs` | TLS server fixture |
+| `src/TurboHTTP.IntegrationTests/Tls/TlsIntegrationTests.cs` | TLS integration tests |
+| `src/TurboHTTP.IntegrationTests/Shared/KestrelTlsFixture.cs` | TLS server fixture |
 
 ## See Also
 

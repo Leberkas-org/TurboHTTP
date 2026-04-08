@@ -201,7 +201,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -214,9 +214,9 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9114/04_Http3StreamTypeTests.cs` — Stream type identification and routing
-- `TurboHttp.Tests/RFC9114/05_Http3ControlStreamTests.cs` — Control stream lifecycle, SETTINGS-first validation
-- `TurboHttp.StreamTests/` — Stream multiplexing and bidirectional stream tests
+- `TurboHTTP.Tests/RFC9114/04_Http3StreamTypeTests.cs` — Stream type identification and routing
+- `TurboHTTP.Tests/RFC9114/05_Http3ControlStreamTests.cs` — Control stream lifecycle, SETTINGS-first validation
+- `TurboHTTP.StreamTests/` — Stream multiplexing and bidirectional stream tests
 
 ### Known Gaps
 

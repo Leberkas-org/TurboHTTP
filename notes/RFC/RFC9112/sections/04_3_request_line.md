@@ -323,12 +323,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp's `Http11RequestEncoder` generates compliant request-lines with method, request-target (origin-form), and HTTP-version. The Host header is always included in HTTP/1.1 requests. Request-target is derived from the target URI using origin-form (absolute-path + query).
+TurboHTTP's `Http11RequestEncoder` generates compliant request-lines with method, request-target (origin-form), and HTTP-version. The Host header is always included in HTTP/1.1 requests. Request-target is derived from the target URI using origin-form (absolute-path + query).
 
 **Key Components:**
 - `Http11RequestEncoder` — generates `method SP request-target SP HTTP-version CRLF`
@@ -339,7 +339,7 @@ TurboHttp's `Http11RequestEncoder` generates compliant request-lines with method
 - ✅ Host header always sent in HTTP/1.1 requests
 - ✅ Origin-form used for direct requests (absolute-path + query)
 - ✅ Empty path normalized to "/"
-- ⚠️ Absolute-form (proxy requests) not currently used (TurboHttp is not a proxy client)
+- ⚠️ Absolute-form (proxy requests) not currently used (TurboHTTP is not a proxy client)
 - ⚠️ Authority-form (CONNECT) not supported
 - ⚠️ Asterisk-form (OPTIONS *) not supported
 
@@ -348,7 +348,7 @@ TurboHttp's `Http11RequestEncoder` generates compliant request-lines with method
 - No CONNECT method support
 - No OPTIONS * (server-wide) support
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

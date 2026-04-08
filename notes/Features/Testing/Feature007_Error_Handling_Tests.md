@@ -29,8 +29,8 @@ Tests used a dedicated `/error/` route family on the `KestrelFixture` server to 
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.IntegrationTests/H11/ErrorHandlingIntegrationTests.cs` | HTTP/1.1 error tests |
-| `src/TurboHttp.IntegrationTests/H20/ErrorHandlingH2IntegrationTests.cs` | HTTP/2 error tests |
+| `src/TurboHTTP.IntegrationTests/H11/ErrorHandlingIntegrationTests.cs` | HTTP/1.1 error tests |
+| `src/TurboHTTP.IntegrationTests/H20/ErrorHandlingH2IntegrationTests.cs` | HTTP/2 error tests |
 
 ## See Also
 

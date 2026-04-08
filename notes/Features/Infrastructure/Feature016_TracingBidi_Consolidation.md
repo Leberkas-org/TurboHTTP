@@ -27,8 +27,8 @@ Consolidated the diagnostics infrastructure introduced in [[Features/Diagnostics
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Streams/Stages/Features/TracingBidiStage.cs` | Consolidated diagnostics stage |
-| `src/TurboHttp/Streams/Stages/Features/HandlerBidiStage.cs` | Simplified handler bridge |
+| `src/TurboHTTP/Streams/Stages/Features/TracingBidiStage.cs` | Consolidated diagnostics stage |
+| `src/TurboHTTP/Streams/Stages/Features/HandlerBidiStage.cs` | Simplified handler bridge |
 
 ## See Also
 

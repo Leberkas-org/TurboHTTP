@@ -194,7 +194,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -207,10 +207,10 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame sequence validation tests
-- `TurboHttp.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Frame encoding tests
-- `TurboHttp.Tests/RFC9114/03_Http3MessageFramingTests.cs` — Malformed message detection, Content-Length mismatch tests
-- `TurboHttp.StreamTests/` — Stream-level integration tests for full request/response exchanges
+- `TurboHTTP.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame sequence validation tests
+- `TurboHTTP.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Frame encoding tests
+- `TurboHTTP.Tests/RFC9114/03_Http3MessageFramingTests.cs` — Malformed message detection, Content-Length mismatch tests
+- `TurboHTTP.StreamTests/` — Stream-level integration tests for full request/response exchanges
 
 ### Known Gaps
 

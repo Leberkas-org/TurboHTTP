@@ -1,13 +1,13 @@
 # Cookie Management
 
-TurboHttp handles cookies automatically. When a server sends a `Set-Cookie` header, TurboHttp stores it and attaches it to subsequent requests that match the cookie's domain and path — no configuration needed.
+TurboHTTP handles cookies automatically. When a server sends a `Set-Cookie` header, TurboHTTP stores it and attaches it to subsequent requests that match the cookie's domain and path — no configuration needed.
 
 ## How It Works
 
 The cookie lifecycle has two steps:
 
-1. **Store** — after every response, TurboHttp scans for `Set-Cookie` headers and adds matching cookies to an internal `CookieJar`.
-2. **Inject** — before every outgoing request, TurboHttp checks the jar for applicable cookies and adds them to the `Cookie` request header.
+1. **Store** — after every response, TurboHTTP scans for `Set-Cookie` headers and adds matching cookies to an internal `CookieJar`.
+2. **Inject** — before every outgoing request, TurboHTTP checks the jar for applicable cookies and adds them to the `Cookie` request header.
 
 Both steps happen transparently inside the request pipeline. Cookies from a login response are automatically sent on the very next request to the same domain.
 
@@ -26,7 +26,7 @@ var authClient = new TurboHttpClient(options, system);
 
 ## Domain Matching
 
-A cookie is only sent to the domain it was set for. TurboHttp uses proper label-boundary matching — a cookie for `example.com` does not match `notexample.com`.
+A cookie is only sent to the domain it was set for. TurboHTTP uses proper label-boundary matching — a cookie for `example.com` does not match `notexample.com`.
 
 - **Host-only cookies** (no `Domain` attribute) — sent only to the exact host that set them.
 - **Domain cookies** (`Domain=example.com`) — sent to `example.com` and all subdomains (`api.example.com`, `auth.example.com`, etc.).
@@ -59,7 +59,7 @@ Set-Cookie: token=abc; Secure   ← sent on https://, not http://
 
 ### `HttpOnly`
 
-Marks a cookie as server-only — it cannot be read by client-side scripts. TurboHttp stores and sends `HttpOnly` cookies normally; the attribute is informational for browsers.
+Marks a cookie as server-only — it cannot be read by client-side scripts. TurboHTTP stores and sends `HttpOnly` cookies normally; the attribute is informational for browsers.
 
 ```
 Set-Cookie: session=xyz; HttpOnly
@@ -69,7 +69,7 @@ Set-Cookie: session=xyz; HttpOnly
 
 ### `SameSite`
 
-Controls whether a cookie is sent with cross-site requests. TurboHttp stores the `SameSite` attribute but does **not** enforce it — the library always sends cookies that match domain and path rules. SameSite enforcement is a browser-level protection that does not apply to programmatic HTTP clients.
+Controls whether a cookie is sent with cross-site requests. TurboHTTP stores the `SameSite` attribute but does **not** enforce it — the library always sends cookies that match domain and path rules. SameSite enforcement is a browser-level protection that does not apply to programmatic HTTP clients.
 
 | Value | Meaning |
 |-------|---------|
@@ -112,7 +112,7 @@ Set-Cookie: sid=abc123   ← no expiry: lasts until the client is disposed
 `CookieJar` is a public class. You can construct one independently to pre-populate cookies, test cookie matching logic, or share a jar across request processing outside the pipeline.
 
 ```csharp
-using TurboHttp.Protocol.Cookies;
+using TurboHTTP.Protocol.Cookies;
 
 var jar = new CookieJar();
 

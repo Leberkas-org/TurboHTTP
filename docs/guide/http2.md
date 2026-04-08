@@ -1,6 +1,6 @@
 # HTTP/2 & Multiplexing
 
-HTTP/2 is the recommended protocol for high-throughput workloads. TurboHttp enables it with a single property change — everything else is handled automatically.
+HTTP/2 is the recommended protocol for high-throughput workloads. TurboHTTP enables it with a single property change — everything else is handled automatically.
 
 ## When to Use HTTP/2
 
@@ -33,17 +33,17 @@ HTTP/2 (1 connection, 4 streams):
   stream 7: ──────── req D ─────────
 ```
 
-The server can also respond out of order — if response B is ready before response A, TurboHttp routes it to the correct caller automatically.
+The server can also respond out of order — if response B is ready before response A, TurboHTTP routes it to the correct caller automatically.
 
 ## Header Compression
 
 HTTP/2 compresses request and response headers automatically. Repeated headers (like `Authorization`, `Content-Type`, or `User-Agent`) are not retransmitted in full — only the difference from the previous request is sent. On APIs where headers dwarf the body, this alone can cut wire size significantly.
 
-Header compression is fully transparent. You set headers the same way as with HTTP/1.1; TurboHttp handles compression and decompression for you.
+Header compression is fully transparent. You set headers the same way as with HTTP/1.1; TurboHTTP handles compression and decompression for you.
 
 ## Flow Control
 
-HTTP/2 has built-in flow control to prevent a fast sender from overwhelming a slow receiver. TurboHttp manages flow control windows automatically — you never need to interact with it directly.
+HTTP/2 has built-in flow control to prevent a fast sender from overwhelming a slow receiver. TurboHTTP manages flow control windows automatically — you never need to interact with it directly.
 
 ## Enabling HTTP/2
 
@@ -73,7 +73,7 @@ var client = factory.CreateClient(opts => opts with
 client.DefaultRequestVersion = HttpVersion.Version20;
 ```
 
-All requests will now use HTTP/2. If the server does not support HTTP/2, TurboHttp will establish the connection and the server will reject or downgrade — no automatic fallback to HTTP/1.1 is performed when you explicitly request HTTP/2.
+All requests will now use HTTP/2. If the server does not support HTTP/2, TurboHTTP will establish the connection and the server will reject or downgrade — no automatic fallback to HTTP/1.1 is performed when you explicitly request HTTP/2.
 
 ## Multiplexing Configuration
 
@@ -107,7 +107,7 @@ This is rarely needed but may be useful when a server limits concurrent streams 
 
 ## HTTP/2 over TLS vs. Cleartext
 
-HTTP/2 is normally negotiated during the TLS handshake (the server advertises `h2` support and TurboHttp activates it). This is the standard path for `https://` URLs — no extra configuration required.
+HTTP/2 is normally negotiated during the TLS handshake (the server advertises `h2` support and TurboHTTP activates it). This is the standard path for `https://` URLs — no extra configuration required.
 
 HTTP/2 over cleartext (`http://` URLs, sometimes called h2c) is also supported. Set `DefaultRequestVersion = HttpVersion.Version20` and use an `http://` base address. Note that many public APIs and proxies do not support h2c, so this is mainly useful for internal service-to-service communication within a trusted network.
 
@@ -126,7 +126,7 @@ Larger frames mean fewer round-trips for big payloads but more memory per in-fli
 
 ## Sending Parallel Requests
 
-Use standard .NET concurrency patterns — TurboHttp multiplexes automatically:
+Use standard .NET concurrency patterns — TurboHTTP multiplexes automatically:
 
 ```csharp
 using var client = new TurboHttpClient(new TurboClientOptions

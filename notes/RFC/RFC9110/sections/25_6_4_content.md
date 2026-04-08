@@ -144,7 +144,7 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -155,7 +155,7 @@ tags:
 - **`ContentIdentification.cs`** — Applies §6.4.2 rules for identifying content via Content-Location and request method
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/25_ContentTests.cs` — Content semantics, zero-length bodies, HEAD response handling
+- `TurboHTTP.Tests/RFC9110/25_ContentTests.cs` — Content semantics, zero-length bodies, HEAD response handling
 
 ### Known Gaps
 - None

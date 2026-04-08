@@ -34,10 +34,10 @@ Consolidated all HTTP response body decompression logic — which had accumulate
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Streams/Stages/Features/ContentEncodingBidiStage.cs` | Consolidated decompression stage |
-| `src/TurboHttp/Streams/Routing/ProtocolCoreGraphBuilder.cs` | Pipeline wiring updated |
-| `src/TurboHttp/Protocol/RFC9110/Http10Decoder.cs` | Decompression removed |
-| `src/TurboHttp/Protocol/RFC9113/Http20StreamStage.cs` | Decompression removed |
+| `src/TurboHTTP/Streams/Stages/Features/ContentEncodingBidiStage.cs` | Consolidated decompression stage |
+| `src/TurboHTTP/Streams/Routing/ProtocolCoreGraphBuilder.cs` | Pipeline wiring updated |
+| `src/TurboHTTP/Protocol/RFC9110/Http10Decoder.cs` | Decompression removed |
+| `src/TurboHTTP/Protocol/RFC9113/Http20StreamStage.cs` | Decompression removed |
 
 ## See Also
 

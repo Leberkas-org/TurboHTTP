@@ -200,7 +200,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -210,7 +210,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 - **`TlsHelper.cs`** — TLS 1.2+ required per §9.2; SNI extension always sent; TLS compression disabled; renegotiation rejected with PROTOCOL_ERROR
 
 ### Test References
-- `TurboHttp.Tests/RFC9113/30_Http2ConnectionTests.cs` — Connection lifecycle, reuse, TLS requirements
+- `TurboHTTP.Tests/RFC9113/30_Http2ConnectionTests.cs` — Connection lifecycle, reuse, TLS requirements
 
 ### Known Gaps
 - ❌ TLS 1.2 cipher suite enforcement — Prohibited cipher suite list (Appendix A) not actively validated; relies on .NET runtime TLS defaults

@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: TurboHttp
+  name: TurboHTTP
   text: High-Performance HTTP Client for .NET
   tagline: Built on Akka.Streams — automatic retries, caching, cookies, and HTTP/2 multiplexing out of the box.
   image:
     src: /logo/logo.png
-    alt: TurboHttp
+    alt: TurboHTTP
   actions:
     - theme: brand
       text: Get Started
@@ -17,7 +17,7 @@ hero:
       link: /architecture/
     - theme: alt
       text: GitHub
-      link: https://github.com/st0o0/TurboHttp
+      link: https://github.com/st0o0/TurboHTTP
 
 features:
   - icon: ⚡

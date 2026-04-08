@@ -100,12 +100,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp's HTTP/1.1 decoder correctly parses field lines as `field-name ":" OWS field-value OWS`. Leading and trailing whitespace around field values is trimmed. Field names are treated case-insensitively. Obsolete line folding (obs-fold) is handled by replacing with SP octets.
+TurboHTTP's HTTP/1.1 decoder correctly parses field lines as `field-name ":" OWS field-value OWS`. Leading and trailing whitespace around field values is trimmed. Field names are treated case-insensitively. Obsolete line folding (obs-fold) is handled by replacing with SP octets.
 
 **Key Components:**
 - `Http11ResponseDecoder` — header field parsing and extraction
@@ -120,7 +120,7 @@ TurboHttp's HTTP/1.1 decoder correctly parses field lines as `field-name ":" OWS
 
 **Gaps:** None identified
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

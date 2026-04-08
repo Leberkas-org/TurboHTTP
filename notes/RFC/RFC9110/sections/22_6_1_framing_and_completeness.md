@@ -100,7 +100,7 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -111,7 +111,7 @@ tags:
 - **`MessageCompleteness.cs`** — Shared abstraction tracking whether headers, content, and trailers are complete
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/22_FramingCompletenessTests.cs` — Message completeness detection across protocol versions
+- `TurboHTTP.Tests/RFC9110/22_FramingCompletenessTests.cs` — Message completeness detection across protocol versions
 
 ### Known Gaps
 - None

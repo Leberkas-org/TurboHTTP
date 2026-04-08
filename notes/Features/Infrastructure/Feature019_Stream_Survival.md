@@ -34,10 +34,10 @@ The fix pattern: override `onUpstreamFailure`, log the error, and call `Complete
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Streams/Stages/Routing/ConnectionStage.cs` | Outbound write failure absorption |
-| `src/TurboHttp/Streams/Stages/Features/TracingBidiStage.cs` | Response path failure absorption |
-| `src/TurboHttp/Streams/Stages/Routing/CorrelationHttp1XStage.cs` | HTTP/1.x correlation absorption |
-| `src/TurboHttp/Streams/Stages/Routing/CorrelationHttp20Stage.cs` | HTTP/2 correlation absorption |
+| `src/TurboHTTP/Streams/Stages/Routing/ConnectionStage.cs` | Outbound write failure absorption |
+| `src/TurboHTTP/Streams/Stages/Features/TracingBidiStage.cs` | Response path failure absorption |
+| `src/TurboHTTP/Streams/Stages/Routing/CorrelationHttp1XStage.cs` | HTTP/1.x correlation absorption |
+| `src/TurboHTTP/Streams/Stages/Routing/CorrelationHttp20Stage.cs` | HTTP/2 correlation absorption |
 
 ## See Also
 

@@ -12,10 +12,10 @@ related:
 ---
 # Dispatcher Configuration Implementation Guide
 
-## Quick Reference: Akka.NET Dispatchers for TurboHttp
+## Quick Reference: Akka.NET Dispatchers for TurboHTTP
 
 ### The Problem
-TurboHttp's HTTP/2 multiplexing with 64+ concurrent requests causes .NET ThreadPool contention, leading to deadlocks in BenchmarkDotNet processes. The default dispatcher routes all actor work through the shared global ThreadPool, which also handles application async/await continuations.
+TurboHTTP's HTTP/2 multiplexing with 64+ concurrent requests causes .NET ThreadPool contention, leading to deadlocks in BenchmarkDotNet processes. The default dispatcher routes all actor work through the shared global ThreadPool, which also handles application async/await continuations.
 
 ### The Solution
 **Use ChannelExecutor dispatcher** (available in Akka.NET 1.5.x).
@@ -31,7 +31,7 @@ ChannelExecutor:
 
 ## Configuration Options
 
-### Option 1: Global Default (Recommended for TurboHttp)
+### Option 1: Global Default (Recommended for TurboHTTP)
 
 Apply ChannelExecutor as the system-wide default dispatcher:
 
@@ -132,12 +132,12 @@ akka {
 
 ---
 
-## Implementation Steps for TurboHttp
+## Implementation Steps for TurboHTTP
 
 ### Step 1: Update TurboClientServiceCollectionExtensions.cs
 
 ```csharp
-// File: /src/TurboHttp/TurboClientServiceCollectionExtensions.cs
+// File: /src/TurboHTTP/TurboClientServiceCollectionExtensions.cs
 
 private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
     """
@@ -157,7 +157,7 @@ private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
 ### Step 2: Update Benchmark Configuration
 
 ```csharp
-// File: /src/TurboHttp.Benchmarks/StreamingThroughputBenchmarks.cs
+// File: /src/TurboHTTP.Benchmarks/StreamingThroughputBenchmarks.cs
 
 private static readonly Config BenchHocon = ConfigurationFactory.ParseString(
     """
@@ -177,13 +177,13 @@ private static readonly Config BenchHocon = ConfigurationFactory.ParseString(
 
 ```bash
 # Run benchmarks to confirm no deadlocks/hangs
-dotnet run --configuration Release --project src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
+dotnet run --configuration Release --project src/TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 
 # Run integration tests
-dotnet test --project src/TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj
+dotnet test --project src/TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj
 
 # Run stream tests
-dotnet test --project src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj
+dotnet test --project src/TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj
 ```
 
 ### Step 4: Performance Validation

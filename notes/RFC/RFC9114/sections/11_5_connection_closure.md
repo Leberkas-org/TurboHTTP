@@ -165,7 +165,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -174,13 +174,13 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 - **`Http3Connection.cs`** — Implements graceful shutdown via GOAWAY frame exchange per §5.2; tracks last accepted stream ID; supports multiple GOAWAY frames with decreasing IDs
 - **`Http3ControlStream.cs`** — Sends GOAWAY on control stream before connection closure per §5.2; uses `H3_NO_ERROR` for graceful close per §5.2
 - **`Http3IdleTimeoutHandler.cs`** — Monitors QUIC idle timeout and triggers reconnection per §5.1
-- **`QuicTransportAdapter.cs`** — Maps QUIC CONNECTION_CLOSE to TurboHttp connection termination per §5.3
+- **`QuicTransportAdapter.cs`** — Maps QUIC CONNECTION_CLOSE to TurboHTTP connection termination per §5.3
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9114/15_Http3ConnectionClosureTests.cs` — GOAWAY frame exchange, graceful shutdown sequence
-- `TurboHttp.Tests/RFC9114/16_Http3IdleTimeoutTests.cs` — Idle connection management
-- `TurboHttp.StreamTests/` — End-to-end connection lifecycle tests
+- `TurboHTTP.Tests/RFC9114/15_Http3ConnectionClosureTests.cs` — GOAWAY frame exchange, graceful shutdown sequence
+- `TurboHTTP.Tests/RFC9114/16_Http3IdleTimeoutTests.cs` — Idle connection management
+- `TurboHTTP.StreamTests/` — End-to-end connection lifecycle tests
 
 ### Known Gaps
 

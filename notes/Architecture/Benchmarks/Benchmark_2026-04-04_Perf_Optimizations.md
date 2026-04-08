@@ -21,7 +21,7 @@ Benchmark run following three performance optimizations:
 
 ## Key Results
 
-### TurboHttp Single Request (selected)
+### TurboHTTP Single Request (selected)
 
 | Concurrency | Payload | Version | Mean | Req/sec | Allocated |
 |-------------|---------|---------|------|---------|-----------|
@@ -32,30 +32,30 @@ Benchmark run following three performance optimizations:
 | 256 | light | 1.1 | 174 μs | 5,751 | 6.40 KB |
 | 256 | light | 2.0 | 195 μs | 5,127 | 9.74 KB |
 
-### TurboHttp vs HttpClient — Concurrent (CL=1, light payload)
+### TurboHTTP vs HttpClient — Concurrent (CL=1, light payload)
 
-| Metric | TurboHttp H1.1 | HttpClient H1.1 | TurboHttp H2 | HttpClient H2 |
+| Metric | TurboHTTP H1.1 | HttpClient H1.1 | TurboHTTP H2 | HttpClient H2 |
 |--------|---------------|----------------|--------------|---------------|
 | Mean | 171 μs | 102 μs | 201 μs | 119 μs |
 | Req/sec | 5,834 | 9,769 | 4,977 | 8,371 |
 | Allocated | 6.43 KB | 2.68 KB | 6.69 KB | 8.11 KB |
 
-TurboHttp is ~1.7x slower than HttpClient at CL=1 (consistent with previous baseline).
+TurboHTTP is ~1.7x slower than HttpClient at CL=1 (consistent with previous baseline).
 
-### TurboHttp vs HttpClient — Concurrent Throughput (light payload)
+### TurboHTTP vs HttpClient — Concurrent Throughput (light payload)
 
-| CL | TurboHttp H1.1 | HttpClient H1.1 | TurboHttp H2 | HttpClient H2 |
+| CL | TurboHTTP H1.1 | HttpClient H1.1 | TurboHTTP H2 | HttpClient H2 |
 |----|----------------|----------------|--------------|---------------|
 | 4 | 21K req/sec | 22K req/sec | 16K req/sec | 22K req/sec |
 | 16 | 40K req/sec | 46K req/sec | 31K req/sec | **84K req/sec** |
 | 64 | 34K req/sec | 53K req/sec | 27K req/sec | **46K req/sec** |
 | 256 | 28K req/sec | 43K req/sec | 24K req/sec | **134K req/sec** |
 
-HttpClient H2 at CL=256 achieves 134K req/sec (light) vs TurboHttp 24K req/sec — because HttpClient multiplexes all 256 requests over a small number of connections, while TurboHttp creates separate per-endpoint substreams.
+HttpClient H2 at CL=256 achieves 134K req/sec (light) vs TurboHTTP 24K req/sec — because HttpClient multiplexes all 256 requests over a small number of connections, while TurboHTTP creates separate per-endpoint substreams.
 
 ### Streaming Throughput (HTTP/1.1)
 
-| Requests | TurboHttp | HttpClient | Ratio | TurboHttp Alloc | HttpClient Alloc |
+| Requests | TurboHTTP | HttpClient | Ratio | TurboHTTP Alloc | HttpClient Alloc |
 |----------|-----------|------------|-------|-----------------|-----------------|
 | 1,000 | 22.91 ms | 19.96 ms | 1.15x | 5.23 MB | 2.43 MB |
 | 5,000 | 137.32 ms | 97.93 ms | 1.40x | 26.16 MB | 12.42 MB |
@@ -67,10 +67,10 @@ Streaming overhead grows to ~1.4x at scale. Memory is ~2.1x compared to HttpClie
 
 | Library | Mean | Allocated |
 |---------|------|-----------|
-| TurboHttp | 188 μs | 7.14 KB |
+| TurboHTTP | 188 μs | 7.14 KB |
 | HttpClient | 157 μs | 50.45 KB |
 
-TurboHttp allocates **7x LESS** than HttpClient for H2 heavy payload at CL=1. The pipeline's pooled buffers avoid materialising the response body on the heap.
+TurboHTTP allocates **7x LESS** than HttpClient for H2 heavy payload at CL=1. The pipeline's pooled buffers avoid materialising the response body on the heap.
 
 ## Comparison vs Previous Baseline (2026-04-03)
 
@@ -96,7 +96,7 @@ The bottleneck is **Akka actor message passing** (async scheduler), not the elim
 
 ### HttpClient H2 CL=256 anomaly (134K req/sec)
 
-HttpClient's HTTP/2 multiplexer sends 256 concurrent requests over ~1–2 connections. TurboHttp currently opens one substream per endpoint (connection-per-slot model). This is a fundamental architectural difference, not a bug. For the HTTP/2 benchmark to be fair, TurboHttp would need to multiplex multiple logical requests over a single physical H2 connection at the GroupBy level.
+HttpClient's HTTP/2 multiplexer sends 256 concurrent requests over ~1–2 connections. TurboHTTP currently opens one substream per endpoint (connection-per-slot model). This is a fundamental architectural difference, not a bug. For the HTTP/2 benchmark to be fair, TurboHTTP would need to multiplex multiple logical requests over a single physical H2 connection at the GroupBy level.
 
 ### Streaming overhead
 

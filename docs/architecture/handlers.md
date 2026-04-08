@@ -1,4 +1,4 @@
-# Handler Design for TurboHttp
+# Handler Design for TurboHTTP
 
 ## What HttpClient Provides Out of the Box
 
@@ -25,7 +25,7 @@ services.AddHttpClient("myapi", c => c.BaseAddress = new Uri("https://api.exampl
 
 ## Configuring Clients with `ITurboHttpClientBuilder`
 
-TurboHttp follows the same builder pattern as `Microsoft.Extensions.Http` — you configure everything at DI registration time, and the pipeline is assembled for you when the client is first created:
+TurboHTTP follows the same builder pattern as `Microsoft.Extensions.Http` — you configure everything at DI registration time, and the pipeline is assembled for you when the client is first created:
 
 ```csharp
 public interface ITurboHttpClientBuilder
@@ -91,7 +91,7 @@ These methods only register their configuration in `IServiceCollection` (as `IOp
 
 ## User Middleware
 
-Instead of `DelegatingHandler`, TurboHttp provides its own stream-compatible middleware abstraction. The interface is intentionally simple — no Akka knowledge required:
+Instead of `DelegatingHandler`, TurboHTTP provides its own stream-compatible middleware abstraction. The interface is intentionally simple — no Akka knowledge required:
 
 ```csharp
 public abstract class TurboHandler
@@ -270,9 +270,9 @@ The engine reads this descriptor and wires up only the stages you have actually 
 
 ---
 
-## Comparison: HttpClient vs. TurboHttp
+## Comparison: HttpClient vs. TurboHTTP
 
-| Aspect | HttpClient | TurboHttp |
+| Aspect | HttpClient | TurboHTTP |
 |---|---|---|
 | Registration | `services.AddHttpClient("name", ...)` | `services.AddTurboHttpClient("name", ...)` |
 | Handlers | `.AddHttpMessageHandler<T>()` | `.AddHandler<T>()` |

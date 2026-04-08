@@ -8,7 +8,7 @@ tags:
 ---
 # Layers
 
-Per-layer deep dives into each architectural layer of TurboHttp.
+Per-layer deep dives into each architectural layer of TurboHTTP.
 
 ## Notes
 

@@ -17,7 +17,7 @@ related:
 
 ## Problem Statement
 
-TurboHttp's high-throughput HTTP/2 pipeline (64+ concurrent requests) experiences .NET ThreadPool contention, causing deadlocks in BenchmarkDotNet processes. The root cause is architectural: the default Akka.NET dispatcher (ThreadPoolDispatcher) shares the global .NET ThreadPool with application code, creating a circular dependency:
+TurboHTTP's high-throughput HTTP/2 pipeline (64+ concurrent requests) experiences .NET ThreadPool contention, causing deadlocks in BenchmarkDotNet processes. The root cause is architectural: the default Akka.NET dispatcher (ThreadPoolDispatcher) shares the global .NET ThreadPool with application code, creating a circular dependency:
 
 1. Akka reserves ThreadPool threads to queue actor messages
 2. GraphStage async I/O operations also queue to ThreadPool
@@ -31,7 +31,7 @@ Implement ChannelExecutor as the default dispatcher. ChannelExecutor:
 - Dynamically scales .NET ThreadPool based on actual demand
 - Eliminates idle thread overhead (key advantage over ForkJoinDispatcher)
 - Proven faster in Akka.NET benchmarks (5,200+ req/s vs 5,100 req/s for ForkJoinDispatcher)
-- Available in Akka.NET 1.5.x (TurboHttp uses 1.5.64 — fully supported)
+- Available in Akka.NET 1.5.x (TurboHTTP uses 1.5.64 — fully supported)
 
 ## Dispatcher Type Summary
 
@@ -66,13 +66,13 @@ Implement ChannelExecutor as the default dispatcher. ChannelExecutor:
 
 ### Files to Modify
 
-1. **`/src/TurboHttp/TurboClientServiceCollectionExtensions.cs`**
+1. **`/src/TurboHTTP/TurboClientServiceCollectionExtensions.cs`**
    - Add ChannelExecutor configuration to LoggingHocon
 
-2. **`/src/TurboHttp.Benchmarks/StreamingThroughputBenchmarks.cs`**
+2. **`/src/TurboHTTP.Benchmarks/StreamingThroughputBenchmarks.cs`**
    - Add ChannelExecutor configuration to BenchHocon
 
-3. **`/src/TurboHttp.IntegrationTests/Shared/ActorSystemFixture.cs`** (Optional)
+3. **`/src/TurboHTTP.IntegrationTests/Shared/ActorSystemFixture.cs`** (Optional)
    - Add ChannelExecutor configuration for test ActorSystem
 
 ### Configuration Template
@@ -160,24 +160,24 @@ private static readonly Config BenchHocon = ConfigurationFactory.ParseString(
 
 ### Phase 1: Compilation & Syntax
 ```bash
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 ```
 
 ### Phase 2: Unit & Stream Tests
 ```bash
-dotnet test --project TurboHttp.Tests/TurboHttp.Tests.csproj
-dotnet test --project TurboHttp.StreamTests/TurboHttp.StreamTests.csproj
+dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj
+dotnet test --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj
 ```
 
 ### Phase 3: Benchmark Validation
 ```bash
-dotnet run --configuration Release --project TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
+dotnet run --configuration Release --project TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 ```
 Expected: No hangs, timeouts, or deadlocks at any concurrency level (1, 4, 16, 64, 256).
 
 ### Phase 4: Integration Tests
 ```bash
-dotnet test --project TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj
+dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj
 ```
 Expected: All HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3 tests pass.
 
@@ -251,7 +251,7 @@ Implementation is successful if:
 
 ## Conclusion
 
-ChannelExecutor is the optimal dispatcher for TurboHttp's high-throughput HTTP/2 pipeline. It:
+ChannelExecutor is the optimal dispatcher for TurboHTTP's high-throughput HTTP/2 pipeline. It:
 - Solves ThreadPool contention directly
 - Improves performance over alternatives
 - Requires minimal code changes

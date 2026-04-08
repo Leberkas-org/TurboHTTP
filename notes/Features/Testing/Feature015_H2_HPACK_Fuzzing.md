@@ -28,8 +28,8 @@ Tests complemented the security tests from [[Features/Testing/Feature013_Securit
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.Tests/RFC9113/Http20FrameParserFuzzingTests.cs` | HTTP/2 frame parser fuzz cases |
-| `src/TurboHttp.Tests/RFC9113/HpackDecoderFuzzingTests.cs` | HPACK decoder adversarial tests |
+| `src/TurboHTTP.Tests/RFC9113/Http20FrameParserFuzzingTests.cs` | HTTP/2 frame parser fuzz cases |
+| `src/TurboHTTP.Tests/RFC9113/HpackDecoderFuzzingTests.cs` | HPACK decoder adversarial tests |
 
 ## See Also
 

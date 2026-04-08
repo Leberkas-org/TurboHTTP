@@ -80,7 +80,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -90,7 +90,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 - **`StatusCodeClassification.cs`** — Classifies by first digit: informational, successful, redirection, client error, server error; handles interim (1xx) vs final responses
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/75_StatusCodeTests.cs` — Status code parsing, class-based fallback, invalid code handling
+- `TurboHTTP.Tests/RFC9110/75_StatusCodeTests.cs` — Status code parsing, class-based fallback, invalid code handling
 
 ### Known Gaps
 - None

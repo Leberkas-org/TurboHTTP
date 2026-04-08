@@ -130,7 +130,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -141,11 +141,11 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 - **`Http2ConnectionStage.cs`** — Detects and rejects malformed messages per §8.1.1; sends PROTOCOL_ERROR stream errors for violations
 
 ### Test References
-- `TurboHttp.Tests/RFC9113/22_Http2MessageFramingTests.cs` — Message structure, END_STREAM handling, malformed message detection
+- `TurboHTTP.Tests/RFC9113/22_Http2MessageFramingTests.cs` — Message structure, END_STREAM handling, malformed message detection
 
 ### Known Gaps
 - ⚠️ Trailer field pseudo-header rejection — Trailers with pseudo-headers detected but error response generation is basic
-- ❌ Intermediary forwarding rules — TurboHttp is a client library, not an intermediary; forwarding checks not applicable
+- ❌ Intermediary forwarding rules — TurboHTTP is a client library, not an intermediary; forwarding checks not applicable
 
 ---
 

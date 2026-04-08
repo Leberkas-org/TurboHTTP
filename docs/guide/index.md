@@ -1,19 +1,19 @@
 # Getting Started
 
-TurboHttp is a high-performance HTTP client for .NET built on Akka.Streams. It supports HTTP/1.0, HTTP/1.1, and HTTP/2 with automatic retries, caching, cookies, and connection pooling — all built in.
+TurboHTTP is a high-performance HTTP client for .NET built on Akka.Streams. It supports HTTP/1.0, HTTP/1.1, and HTTP/2 with automatic retries, caching, cookies, and connection pooling — all built in.
 
-::: tip New to TurboHttp?
+::: tip New to TurboHTTP?
 See [Installation & Setup](./installation) for DI registration, named clients, and the fluent builder API. Coming from HttpClient? Check the [Migration Guide](./migration).
 :::
 
 ## Quick Start
 
 ```bash
-dotnet add package TurboHttp
+dotnet add package TurboHTTP
 ```
 
 ```csharp
-using TurboHttp.Client;
+using TurboHTTP.Client;
 
 var actorSystem = ActorSystem.Create("turbo");
 await using var client = new TurboHttpClient(new TurboClientOptions
@@ -31,7 +31,7 @@ Console.WriteLine(await response.Content.ReadAsStringAsync());
 
 ## High-Throughput Usage
 
-In addition to `SendAsync`, TurboHttp exposes a channel-based API for scenarios where you want to stream requests and responses without `await`-ing each one individually.
+In addition to `SendAsync`, TurboHTTP exposes a channel-based API for scenarios where you want to stream requests and responses without `await`-ing each one individually.
 
 ```csharp
 var client = new TurboHttpClient(new TurboClientOptions
@@ -49,7 +49,7 @@ ChannelReader<HttpResponseMessage> responseReader = client.Responses;
 Use the channel API when:
 - You have a producer loop generating requests faster than you can await responses
 - You want to decouple request creation from response processing
-- You are integrating TurboHttp into a pipeline that already uses `System.Threading.Channels`
+- You are integrating TurboHTTP into a pipeline that already uses `System.Threading.Channels`
 
 ### Batch Pattern
 
@@ -96,7 +96,7 @@ The channel has a bounded capacity. If the connection cannot keep up with your p
 
 ## What's Included
 
-TurboHttp works out of the box — no middleware to wire up, no Polly policies to configure.
+TurboHTTP works out of the box — no middleware to wire up, no Polly policies to configure.
 
 | Feature | Description |
 |---------|-------------|

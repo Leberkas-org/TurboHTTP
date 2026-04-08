@@ -2,7 +2,7 @@
 title: "RFC XXXX — Protocol Name"
 rfc_number: XXXX
 source_url: https://www.rfc-editor.org/rfc/rfcXXXX
-description: "One-line description of the RFC scope and TurboHttp relevance"
+description: "One-line description of the RFC scope and TurboHTTP relevance"
 tags: [rfc, rfcXXXX, protocol-category]
 ---
 
@@ -18,9 +18,9 @@ tags: [rfc, rfcXXXX, protocol-category]
 |--------|-------|
 | **Compliance Score** | XX/100 |
 | **Implementation Status** | ✅ Complete / 🔶 Partial / 🟡 Draft / ❌ Missing |
-| **Implementation Path** | `TurboHttp/Protocol/RFCXXXX/` |
-| **Unit Test Files** | `TurboHttp.Tests/RFCXXXX/` — N files, M tests |
-| **Stream Test Files** | `TurboHttp.StreamTests/RFCXXXX/` — N files |
+| **Implementation Path** | `TurboHTTP/Protocol/RFCXXXX/` |
+| **Unit Test Files** | `TurboHTTP.Tests/RFCXXXX/` — N files, M tests |
+| **Stream Test Files** | `TurboHTTP.StreamTests/RFCXXXX/` — N files |
 | **Key Gaps** | Brief summary of main gaps |
 
 ## Core Concepts
@@ -55,8 +55,8 @@ Key ideas from this RFC, with links to section files:
 
 | Location | Count | Focus |
 |----------|-------|-------|
-| `TurboHttp.Tests/RFCXXXX/` | N tests | Protocol compliance |
-| `TurboHttp.StreamTests/RFCXXXX/` | N tests | Stage behaviour |
+| `TurboHTTP.Tests/RFCXXXX/` | N tests | Protocol compliance |
+| `TurboHTTP.StreamTests/RFCXXXX/` | N tests | Stage behaviour |
 
 ## Sections
 

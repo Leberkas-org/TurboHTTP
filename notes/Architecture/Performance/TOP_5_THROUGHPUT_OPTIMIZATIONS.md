@@ -10,7 +10,7 @@
 **Impact: +12-15μs per request | ~7-8% throughput gain**
 
 ### Current Problem
-**File:** `src/TurboHttp/Protocol/RFC9113/Http2RequestEncoder.cs:49`
+**File:** `src/TurboHTTP/Protocol/RFC9113/Http2RequestEncoder.cs:49`
 
 ```csharp
 public (int StreamId, IReadOnlyList<Http2Frame> Frames) Encode(HttpRequestMessage request, int streamId)
@@ -88,7 +88,7 @@ public (int StreamId, IReadOnlyList<Http2Frame> Frames) Encode(HttpRequestMessag
 **Impact: +8-12μs per request | ~5-7% throughput gain**
 
 ### Current Problem
-**File:** `src/TurboHttp/TurboHttpClient.cs:225-227`
+**File:** `src/TurboHTTP/TurboHttpClient.cs:225-227`
 
 ```csharp
 CancellationTokenSource cts = cancellationToken.CanBeCanceled
@@ -215,7 +215,7 @@ public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, Can
 **Impact: +6-8μs per request | ~3-4% throughput gain**
 
 ### Current Problem
-**File:** `src/TurboHttp/Protocol/RFC9113/Http2RequestEncoder.cs:44-46`
+**File:** `src/TurboHTTP/Protocol/RFC9113/Http2RequestEncoder.cs:44-46`
 
 ```csharp
 _headerBlockWriter.Clear();
@@ -284,7 +284,7 @@ private void EncodeHeadersFromMemory(List<Http2Frame> frames, int streamId, Read
 **Impact: +5-10μs per request | ~3-6% throughput gain (scales with concurrency)**
 
 ### Current Problem
-**File:** `src/TurboHttp/TurboHttpClient.cs:213-216, 241-244`
+**File:** `src/TurboHTTP/TurboHttpClient.cs:213-216, 241-244`
 
 ```csharp
 lock (_pendingLock)
@@ -402,7 +402,7 @@ public void CancelPendingRequests()
 **Impact: +4-6μs per request | ~2-3% throughput gain**
 
 ### Current Problem
-**File:** `src/TurboHttp/Streams/Stages/Internal/GroupByRequestEndpointStage.cs:413`
+**File:** `src/TurboHTTP/Streams/Stages/Internal/GroupByRequestEndpointStage.cs:413`
 
 ```csharp
 var channelStage = new ChannelSourceStage<T>(
@@ -418,7 +418,7 @@ var channelStage = new ChannelSourceStage<T>(
 - At 18 Akka stages, each with their own context switches, eliminating this callback overhead saves CPU time
 
 **Secondary issue:**
-**File:** `src/TurboHttp/Streams/Stages/Internal/ChannelSourceStage.cs:104-112`
+**File:** `src/TurboHTTP/Streams/Stages/Internal/ChannelSourceStage.cs:104-112`
 
 ```csharp
 _onItemCallback = GetAsyncCallback<T>(item =>
@@ -547,13 +547,13 @@ Run micro-benchmarks before/after each fix:
 
 ```bash
 # HTTP/1.1 low concurrency (target workload)
-dotnet run --project TurboHttp.Benchmarks -- \
+dotnet run --project TurboHTTP.Benchmarks -- \
   --filter "*ConcurrentRequests*" \
   --column Median --column StdDev \
   --job Dry
 
 # Measure GC impact
-dotnet run --project TurboHttp.Benchmarks -- \
+dotnet run --project TurboHTTP.Benchmarks -- \
   --filter "*ConcurrentRequests*" \
   --column Gen0 --column Gen1 --column "Allocated"
 ```

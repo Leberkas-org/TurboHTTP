@@ -8,7 +8,7 @@ tags:
 ---
 # Status
 
-Project status, known gaps, and roadmap tracking for TurboHttp.
+Project status, known gaps, and roadmap tracking for TurboHTTP.
 
 ## Notes
 

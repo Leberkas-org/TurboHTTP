@@ -1,10 +1,10 @@
 # Connection Pooling
 
-TurboHttp automatically manages a pool of connections for each host, so you never need to open, close, or track connections yourself.
+TurboHTTP automatically manages a pool of connections for each host, so you never need to open, close, or track connections yourself.
 
 ## How It Works
 
-Each unique host (scheme + hostname + port + HTTP version) gets its own connection pool. When a request arrives, TurboHttp tries to reuse an existing open connection. If all connections are busy and the per-host limit has not been reached, a new connection is established. If the limit is already reached, the request waits until a connection becomes free.
+Each unique host (scheme + hostname + port + HTTP version) gets its own connection pool. When a request arrives, TurboHTTP tries to reuse an existing open connection. If all connections are busy and the per-host limit has not been reached, a new connection is established. If the limit is already reached, the request waits until a connection becomes free.
 
 ```
 Request → ConnectionPool → HostConnections (per-host manager)
@@ -31,7 +31,7 @@ The idle timeout is measured from the moment a connection returns to the pool wi
 
 ## Automatic Reconnect
 
-If a connection is dropped unexpectedly (network interruption, server-side timeout, or RST), TurboHttp detects the failure and reconnects automatically. While reconnecting, queued requests wait for the connection to recover. Once reconnected, TurboHttp replays the queue.
+If a connection is dropped unexpectedly (network interruption, server-side timeout, or RST), TurboHTTP detects the failure and reconnects automatically. While reconnecting, queued requests wait for the connection to recover. Once reconnected, TurboHTTP replays the queue.
 
 ::: tip Backoff timing
 Reconnect attempts use exponential backoff — each failed attempt waits progressively longer before the next try (1 s → 2 s → 4 s → 8 s → 16 s cap).
@@ -74,7 +74,7 @@ options.MaxConnectionsPerServer = 2;
 options.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
 ```
 
-**HTTP/2 server** — a single multiplexed connection handles many concurrent streams. The default `MaxConnectionsPerServer = 6` is fine; TurboHttp opens additional connections only when the existing one reaches its stream limit:
+**HTTP/2 server** — a single multiplexed connection handles many concurrent streams. The default `MaxConnectionsPerServer = 6` is fine; TurboHTTP opens additional connections only when the existing one reaches its stream limit:
 
 ```csharp
 var client = factory.CreateClient("http2-api");

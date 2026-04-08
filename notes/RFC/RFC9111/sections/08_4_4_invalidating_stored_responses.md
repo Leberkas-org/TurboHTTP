@@ -56,12 +56,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not implement cache invalidation. No logic exists to invalidate stored responses after successful unsafe method requests (POST, PUT, DELETE). Since no cache storage exists, there is nothing to invalidate.
+TurboHTTP does not implement cache invalidation. No logic exists to invalidate stored responses after successful unsafe method requests (POST, PUT, DELETE). Since no cache storage exists, there is nothing to invalidate.
 
 **Key Gaps:**
 - No invalidation triggered by unsafe methods

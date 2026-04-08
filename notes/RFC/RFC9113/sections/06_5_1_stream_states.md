@@ -341,7 +341,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -353,9 +353,9 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9113/05_Http2StreamStateTests.cs` — Stream state machine transitions, invalid state detection
-- `TurboHttp.Tests/RFC9113/06_Http2StreamIdTests.cs` — Stream identifier ordering, odd/even validation
-- `TurboHttp.Tests/RFC9113/07_Http2ConcurrencyTests.cs` — `SETTINGS_MAX_CONCURRENT_STREAMS` enforcement
+- `TurboHTTP.Tests/RFC9113/05_Http2StreamStateTests.cs` — Stream state machine transitions, invalid state detection
+- `TurboHTTP.Tests/RFC9113/06_Http2StreamIdTests.cs` — Stream identifier ordering, odd/even validation
+- `TurboHTTP.Tests/RFC9113/07_Http2ConcurrencyTests.cs` — `SETTINGS_MAX_CONCURRENT_STREAMS` enforcement
 
 ### Known Gaps
 

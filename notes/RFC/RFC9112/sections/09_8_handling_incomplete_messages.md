@@ -50,12 +50,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp correctly detects and records incomplete response messages. When a connection closes prematurely (before Content-Length bytes received or before chunked zero-chunk), the response is marked as incomplete. The decoder distinguishes between connection-close terminated responses (complete if headers intact) and prematurely truncated responses.
+TurboHTTP correctly detects and records incomplete response messages. When a connection closes prematurely (before Content-Length bytes received or before chunked zero-chunk), the response is marked as incomplete. The decoder distinguishes between connection-close terminated responses (complete if headers intact) and prematurely truncated responses.
 
 **Key Components:**
 - `Http11ResponseDecoder` — incomplete message detection
@@ -70,7 +70,7 @@ TurboHttp correctly detects and records incomplete response messages. When a con
 
 **Gaps:** None identified
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

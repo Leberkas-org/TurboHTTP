@@ -28,8 +28,8 @@ All fuzz inputs were crafted as deterministic test cases (not property-based) fo
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.Tests/RFC1945/Http10DecoderFuzzingTests.cs` | HTTP/1.0 decoder fuzz cases |
-| `src/TurboHttp.Tests/RFC9112/Http11DecoderFuzzingTests.cs` | HTTP/1.1 decoder fuzz cases |
+| `src/TurboHTTP.Tests/RFC1945/Http10DecoderFuzzingTests.cs` | HTTP/1.0 decoder fuzz cases |
+| `src/TurboHTTP.Tests/RFC9112/Http11DecoderFuzzingTests.cs` | HTTP/1.1 decoder fuzz cases |
 
 ## See Also
 

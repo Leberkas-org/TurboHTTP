@@ -9,7 +9,7 @@ status: all-fixed
 ---
 # Deadlock Analysis Catalog
 
-Complete catalog of all known deadlock patterns in TurboHttp, organized by layer. Each entry includes root cause, affected files, fix status, and test coverage.
+Complete catalog of all known deadlock patterns in TurboHTTP, organized by layer. Each entry includes root cause, affected files, fix status, and test coverage.
 
 > **DL-009** and **DL-010** are **Fixed** — resolved by Feature 030 (IConnectionScope + linear topology rewrite).
 

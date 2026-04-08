@@ -10,7 +10,7 @@ tags:
 ---
 # Design
 
-Core architectural patterns and design decisions for TurboHttp.
+Core architectural patterns and design decisions for TurboHTTP.
 
 ## Notes
 

@@ -4,13 +4,13 @@
 
 ### Do I need to install Akka.NET separately?
 
-No. Akka.NET is a transitive dependency of TurboHttp — it is pulled in automatically when you install the package.
+No. Akka.NET is a transitive dependency of TurboHTTP — it is pulled in automatically when you install the package.
 
-### Can I use TurboHttp alongside HttpClient?
+### Can I use TurboHTTP alongside HttpClient?
 
 Yes. Both can coexist in the same application. Use `IHttpClientFactory` for your existing services and `ITurboHttpClientFactory` for new ones. See [Gradual Migration](./migration#gradual-migration).
 
-### Is TurboHttp thread-safe?
+### Is TurboHTTP thread-safe?
 
 Yes. `ITurboHttpClient` is fully thread-safe. Multiple threads can call `SendAsync` concurrently. The channel-based API (`Requests` / `Responses`) supports concurrent producers and consumers.
 
@@ -27,7 +27,7 @@ var client = new TurboHttpClient(new TurboClientOptions
 }, actorSystem);
 ```
 
-### Does TurboHttp support HTTPS?
+### Does TurboHTTP support HTTPS?
 
 Yes. TLS is handled automatically for `https://` URIs. Configure TLS options via `TurboClientOptions`:
 
@@ -86,7 +86,7 @@ var client = factory.CreateClient(opts => opts with
 
 **Symptom:** `RedirectException` with `RedirectError.ProtocolDowngrade` on a redirect.
 
-**Cause:** A server redirected from `https://` to `http://`, which TurboHttp blocks by default for security.
+**Cause:** A server redirected from `https://` to `http://`, which TurboHTTP blocks by default for security.
 
 **Fix (if the downgrade is intentional):**
 
@@ -178,7 +178,7 @@ options.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // grace
 
 ### Enable Akka Logging
 
-TurboHttp uses Akka's logging infrastructure. To see connection lifecycle events:
+TurboHTTP uses Akka's logging infrastructure. To see connection lifecycle events:
 
 ```csharp
 // In your Akka configuration

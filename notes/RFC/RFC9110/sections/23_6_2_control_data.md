@@ -74,7 +74,7 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -85,7 +85,7 @@ tags:
 - **`HttpResponseDecoder.cs`** — Parses status code and reason phrase from response control data
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/23_ControlDataTests.cs` — Version negotiation, pseudo-header mapping
+- `TurboHTTP.Tests/RFC9110/23_ControlDataTests.cs` — Version negotiation, pseudo-header mapping
 
 ### Known Gaps
 - ⚠️ Version downgrade — Client does not automatically retry with lower HTTP version if server indicates incompatibility

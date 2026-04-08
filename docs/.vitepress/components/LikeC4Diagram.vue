@@ -112,7 +112,7 @@ onUnmounted(() =>
         <div v-else-if="status === 'error'" class="likec4-overlay likec4-fallback">
             <p>Interactive diagram could not be loaded.</p>
             <img
-                :src="`/TurboHttp/diagrams/${viewId}.svg`"
+                :src="`/TurboHTTP/diagrams/${viewId}.svg`"
                 :alt="`Architecture diagram: ${viewId}`"
                 class="likec4-fallback-img"
             />

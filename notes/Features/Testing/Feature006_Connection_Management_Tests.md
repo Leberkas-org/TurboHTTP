@@ -23,8 +23,8 @@ Added integration tests for HTTP/1.1 connection management behaviour, covering k
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.IntegrationTests/H11/ConnectionIntegrationTests.cs` | Connection management tests |
-| `src/TurboHttp.IntegrationTests/Shared/Routes.cs` | Test server routes |
+| `src/TurboHTTP.IntegrationTests/H11/ConnectionIntegrationTests.cs` | Connection management tests |
+| `src/TurboHTTP.IntegrationTests/Shared/Routes.cs` | Test server routes |
 
 ## See Also
 

@@ -1,18 +1,18 @@
 <div align="center">
-  <img src="docs/logo/logo.svg" alt="TurboHttp" width="200" />
-  <h1>TurboHttp</h1>
+  <img src="docs/logo/logo.svg" alt="TurboHTTP" width="200" />
+  <h1>TurboHTTP</h1>
   <p><strong>High-performance HTTP client for .NET — built on Akka.Streams with automatic retries, caching, cookies, and HTTP/2 multiplexing.</strong></p>
 
-  [![Build](https://github.com/st0o0/TurboHttp/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/st0o0/TurboHttp/actions/workflows/build-and-release.yml)
-  [![NuGet](https://img.shields.io/nuget/v/TurboHttp.svg)](https://www.nuget.org/packages/TurboHttp)
+  [![Build](https://github.com/st0o0/TurboHTTP/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/st0o0/TurboHTTP/actions/workflows/build-and-release.yml)
+  [![NuGet](https://img.shields.io/nuget/v/TurboHTTP.svg)](https://www.nuget.org/packages/TurboHTTP)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 </div>
 
 ---
 
-## Why TurboHttp?
+## Why TurboHTTP?
 
-TurboHttp replaces `HttpClient` with a reactive, backpressure-aware HTTP pipeline built on [Akka.Streams](https://getakka.net/). Actors manage connection lifecycle while data flows through `System.Threading.Channels` — zero bytes ever touch an actor mailbox. The result: high throughput, low allocations, and a pipeline that never dies on transient errors.
+TurboHTTP replaces `HttpClient` with a reactive, backpressure-aware HTTP pipeline built on [Akka.Streams](https://getakka.net/). Actors manage connection lifecycle while data flows through `System.Threading.Channels` — zero bytes ever touch an actor mailbox. The result: high throughput, low allocations, and a pipeline that never dies on transient errors.
 
 ---
 
@@ -57,7 +57,7 @@ TurboHttp replaces `HttpClient` with a reactive, backpressure-aware HTTP pipelin
 ### Installation
 
 ```bash
-dotnet add package TurboHttp
+dotnet add package TurboHTTP
 ```
 
 Requires **.NET 10.0** or later.
@@ -67,7 +67,7 @@ Requires **.NET 10.0** or later.
 Register and inject via dependency injection:
 
 ```csharp
-using TurboHttp;
+using TurboHTTP;
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -223,7 +223,7 @@ For interactive architecture diagrams, see the [documentation site](https://turb
 
 ## Documentation
 
-Full documentation — including feature guides, architecture deep-dives, and a comparison with `HttpClient` — is available at **[https://st0o0.github.io/TurboHttp/](https://st0o0.github.io/TurboHttp/)**.
+Full documentation — including feature guides, architecture deep-dives, and a comparison with `HttpClient` — is available at **[https://st0o0.github.io/TurboHTTP/](https://st0o0.github.io/TurboHTTP/)**.
 
 ---
 
@@ -231,14 +231,14 @@ Full documentation — including feature guides, architecture deep-dives, and a 
 
 ```bash
 # Restore and build
-dotnet restore ./src/TurboHttp.sln
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet restore ./src/TurboHTTP.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 
 # Run all tests
-dotnet test ./src/TurboHttp.sln
+dotnet test ./src/TurboHTTP.sln
 
 # Run benchmarks
-dotnet run --configuration Release --project ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
+dotnet run --configuration Release --project ./src/TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 ```
 
 ---
@@ -251,4 +251,4 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for br
 
 ## License
 
-TurboHttp is licensed under the [MIT License](LICENSE).
+TurboHTTP is licensed under the [MIT License](LICENSE).

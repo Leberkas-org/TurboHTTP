@@ -63,10 +63,10 @@ ConnectionManagerActor (router/supervisor)
 
 ```csharp
 using Akka.Actor;
-using TurboHttp.Diagnostics;
-using TurboHttp.Internal;
+using TurboHTTP.Diagnostics;
+using TurboHTTP.Internal;
 
-namespace TurboHttp.Transport;
+namespace TurboHTTP.Transport;
 
 /// <summary>
 /// Single-host connection manager for TCP (HTTP/1.x, 2.0).
@@ -490,10 +490,10 @@ internal sealed class TcpHostConnectionActor : ReceiveActor, IWithTimers
 
 ```csharp
 using Akka.Actor;
-using TurboHttp.Diagnostics;
-using TurboHttp.Internal;
+using TurboHTTP.Diagnostics;
+using TurboHTTP.Internal;
 
-namespace TurboHttp.Transport;
+namespace TurboHTTP.Transport;
 
 /// <summary>
 /// Root connection manager actor that routes Acquire/Release messages
@@ -642,7 +642,7 @@ internal sealed class ConnectionManagerActor : ReceiveActor
 
 ### Phase 3: Update Tests (1 hour)
 
-#### File: `TurboHttp.Tests/Transport/ConnectionPoolTests.cs`
+#### File: `TurboHTTP.Tests/Transport/ConnectionPoolTests.cs`
 
 **Add new test class at end of file:**
 
@@ -702,12 +702,12 @@ cd /d/GIT/Akka.Streams.Http/src
 dotnet build --configuration Release
 
 # Run transport tests
-dotnet test --project TurboHttp.Tests/TurboHttp.Tests.csproj -- \
-  --filter-namespace "TurboHttp.Tests.Transport"
+dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- \
+  --filter-namespace "TurboHTTP.Tests.Transport"
 
 # Run integration tests (full system)
-dotnet test --project TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj -- \
-  --filter-namespace "TurboHttp.IntegrationTests.H11"
+dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- \
+  --filter-namespace "TurboHTTP.IntegrationTests.H11"
 ```
 
 **Expected result**: All tests pass. Existing tests should not need changes (transparent refactoring).
@@ -721,7 +721,7 @@ dotnet test --project TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.cspr
 **Replace Transport Layer section:**
 
 ```markdown
-### Transport Layer (`TurboHttp/Transport/`)
+### Transport Layer (`TurboHTTP/Transport/`)
 
 **Hierarchical connection pool** — per-endpoint actor with fault isolation:
 - `ConnectionManagerActor` — root router/supervisor
@@ -768,8 +768,8 @@ dotnet test --project TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.cspr
   - [ ] Remove per-host logic (all in child now)
   - [ ] Add supervision strategy
 - [ ] Run `dotnet build --configuration Release`
-- [ ] Run transport tests: `dotnet test --project TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.Transport"`
-- [ ] Run integration tests: `dotnet test --project TurboHttp.IntegrationTests/...`
+- [ ] Run transport tests: `dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- --filter-namespace "TurboHTTP.Tests.Transport"`
+- [ ] Run integration tests: `dotnet test --project TurboHTTP.IntegrationTests/...`
 - [ ] Verify GraphStage unchanged (no changes needed)
 - [ ] Verify TcpTransportHandler unchanged (still calls root actor)
 - [ ] Update documentation

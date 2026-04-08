@@ -1,7 +1,7 @@
 ---
 title: Connection Pool Actor Hierarchy Analysis
 description: >-
-  Deep analysis of three actor hierarchy options for TurboHttp connection
+  Deep analysis of three actor hierarchy options for TurboHTTP connection
   management
 tags:
   - architecture
@@ -17,7 +17,7 @@ aliases:
 
 **Status**: Complete analysis with recommendation  
 **Date**: 2026-04-03  
-**Context**: TurboHttp connection pooling actor design decision
+**Context**: TurboHTTP connection pooling actor design decision
 
 ---
 
@@ -582,7 +582,7 @@ public async Task ConnectionManagerActor_Routes_To_Child_By_Endpoint()
 
 ## References
 
-- **Current**: `/d/GIT/Akka.Streams.Http/src/TurboHttp/Transport/ConnectionManagerActor.cs` (461 lines)
-- **QUIC**: `/d/GIT/Akka.Streams.Http/src/TurboHttp/Transport/QuicConnectionManager.cs` (377 lines, non-actor)
-- **Transport Handler**: `/d/GIT/Akka.Streams.Http/src/TurboHttp/Transport/TcpTransportHandler.cs`
+- **Current**: `/d/GIT/Akka.Streams.Http/src/TurboHTTP/Transport/ConnectionManagerActor.cs` (461 lines)
+- **QUIC**: `/d/GIT/Akka.Streams.Http/src/TurboHTTP/Transport/QuicConnectionManager.cs` (377 lines, non-actor)
+- **Transport Handler**: `/d/GIT/Akka.Streams.Http/src/TurboHTTP/Transport/TcpTransportHandler.cs`
 - **Docs**: `notes/Architecture/Design/01-LAYERED_ARCHITECTURE.md`

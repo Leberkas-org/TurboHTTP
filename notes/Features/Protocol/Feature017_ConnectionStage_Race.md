@@ -27,8 +27,8 @@ Fixed a race condition in `ConnectionStage` where stage completion could be trig
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Streams/Stages/Routing/ConnectionStage.cs` | Race condition fix |
-| `src/TurboHttp.Tests/Features/RedirectHandlerTests.cs` | Test assertion fix |
+| `src/TurboHTTP/Streams/Stages/Routing/ConnectionStage.cs` | Race condition fix |
+| `src/TurboHTTP.Tests/Features/RedirectHandlerTests.cs` | Test assertion fix |
 
 ## See Also
 

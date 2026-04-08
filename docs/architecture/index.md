@@ -1,6 +1,6 @@
 # How It Works
 
-TurboHttp handles HTTP requests through a simple pipeline. You send a request, and the library automatically handles cookies, caching, retries, redirects, and connection reuse — all transparently.
+TurboHTTP handles HTTP requests through a simple pipeline. You send a request, and the library automatically handles cookies, caching, retries, redirects, and connection reuse — all transparently.
 
 <ClientOnly>
   <LikeC4Diagram viewId="index" :height="300" />

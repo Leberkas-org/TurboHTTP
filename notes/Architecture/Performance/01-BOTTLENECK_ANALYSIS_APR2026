@@ -9,7 +9,7 @@ tags:
 created: '2026-04-04'
 updated: '2026-04-04'
 ---
-# TurboHttp Performance Bottleneck Analysis — April 2026
+# TurboHTTP Performance Bottleneck Analysis — April 2026
 
 **Benchmark Gap Summary:**
 - H1.1 streaming 10k requests: 1.65x slower, 2x allocation

@@ -331,7 +331,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -354,9 +354,9 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 | §15.3.7 206 Partial Content | ⚠️ Partial | Single-part Content-Range parsed; multipart/byteranges not fully supported |
 
 ### Test References
-- `TurboHttp.Tests/RFC1945/12_RoundTripStatusCodeTests.cs` — HTTP/1.0 status code round-trips including 2xx
-- `TurboHttp.Tests/RFC9112/17_RoundTripStatusCodeTests.cs` — HTTP/1.1 status code round-trips including 2xx
-- `TurboHttp.StreamTests/RFC9112/09_Http11StatusCodeParsingTests.cs` — Status line parsing stage tests
+- `TurboHTTP.Tests/RFC1945/12_RoundTripStatusCodeTests.cs` — HTTP/1.0 status code round-trips including 2xx
+- `TurboHTTP.Tests/RFC9112/17_RoundTripStatusCodeTests.cs` — HTTP/1.1 status code round-trips including 2xx
+- `TurboHTTP.StreamTests/RFC9112/09_Http11StatusCodeParsingTests.cs` — Status line parsing stage tests
 
 ### Known Gaps
 - 206 multipart/byteranges response assembly not implemented (§15.3.7.2)

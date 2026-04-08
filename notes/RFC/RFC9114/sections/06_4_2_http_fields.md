@@ -84,7 +84,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -97,9 +97,9 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9114/12_Http3QpackTests.cs` — QPACK encoding/decoding round-trips, static table lookups
-- `TurboHttp.Tests/RFC9114/13_Http3HeaderValidationTests.cs` — Connection-specific header rejection, uppercase field name detection, TE header validation
-- `TurboHttp.Tests/RFC9114/14_Http3CookieTests.cs` — Cookie splitting and concatenation per §4.2.1
+- `TurboHTTP.Tests/RFC9114/12_Http3QpackTests.cs` — QPACK encoding/decoding round-trips, static table lookups
+- `TurboHTTP.Tests/RFC9114/13_Http3HeaderValidationTests.cs` — Connection-specific header rejection, uppercase field name detection, TE header validation
+- `TurboHTTP.Tests/RFC9114/14_Http3CookieTests.cs` — Cookie splitting and concatenation per §4.2.1
 
 ### Known Gaps
 

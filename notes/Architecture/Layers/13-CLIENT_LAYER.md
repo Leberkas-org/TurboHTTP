@@ -2,7 +2,7 @@
 title: Client Layer
 description: >-
   Public API surface, factory pattern, DI integration, and request lifecycle for
-  TurboHttp client layer
+  TurboHTTP client layer
 tags:
   - architecture
   - client
@@ -11,7 +11,7 @@ tags:
 ---
 # Client Layer
 
-The Client Layer is TurboHttp's public API surface — the entry point for consumers who want to send HTTP requests. It follows the `HttpClientFactory` pattern from `Microsoft.Extensions.Http`, providing named/typed client instances with DI-friendly configuration.
+The Client Layer is TurboHTTP's public API surface — the entry point for consumers who want to send HTTP requests. It follows the `HttpClientFactory` pattern from `Microsoft.Extensions.Http`, providing named/typed client instances with DI-friendly configuration.
 
 > **Scope**: This note covers the client-facing types only. For the internal pipeline that executes requests, see [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]].
 
@@ -26,12 +26,12 @@ The Client Layer is TurboHttp's public API surface — the entry point for consu
 
 | File | Purpose |
 |------|---------|
-| `src/TurboHttp/ITurboHttpClientFactory.cs` | Factory interface — creates named `ITurboHttpClient` instances |
-| `src/TurboHttp/ITurboHttpClientBuilder.cs` | Builder interface — configures a named client's `IServiceCollection` |
-| `src/TurboHttp/TurboClientOptions.cs` | Per-client configuration: timeouts, TLS, certificates, max frame size |
-| `src/TurboHttp/TurboRequestOptions.cs` | Per-request defaults: base address, headers, version, timeout |
-| `src/TurboHttp/TurboHandler.cs` | User middleware — injected into the BidiFlow pipeline |
-| `src/TurboHttp/Streams/PipelineDescriptor.cs` | Aggregates all policies into a single record for pipeline construction |
+| `src/TurboHTTP/ITurboHttpClientFactory.cs` | Factory interface — creates named `ITurboHttpClient` instances |
+| `src/TurboHTTP/ITurboHttpClientBuilder.cs` | Builder interface — configures a named client's `IServiceCollection` |
+| `src/TurboHTTP/TurboClientOptions.cs` | Per-client configuration: timeouts, TLS, certificates, max frame size |
+| `src/TurboHTTP/TurboRequestOptions.cs` | Per-request defaults: base address, headers, version, timeout |
+| `src/TurboHTTP/TurboHandler.cs` | User middleware — injected into the BidiFlow pipeline |
+| `src/TurboHTTP/Streams/PipelineDescriptor.cs` | Aggregates all policies into a single record for pipeline construction |
 
 ## Data Flow
 
@@ -63,7 +63,7 @@ HttpResponseMessage returned to caller
 
 ### Factory Pattern over Direct Instantiation
 
-TurboHttp uses `ITurboHttpClientFactory` rather than exposing constructors directly. This enables:
+TurboHTTP uses `ITurboHttpClientFactory` rather than exposing constructors directly. This enables:
 - **Named clients** with different configurations (e.g., "github-api" vs "internal-service")
 - **Lifetime management** — the factory controls `ConnectionPool` sharing across clients
 - **DI integration** — `ITurboHttpClientBuilder` plugs into `IServiceCollection` for clean startup code

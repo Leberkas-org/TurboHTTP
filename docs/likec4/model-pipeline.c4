@@ -1,4 +1,4 @@
-// TurboHttp — Pipeline Flow Relationships
+// TurboHTTP — Pipeline Flow Relationships
 // Extends model.c4 with ordered flow and feedback relationships
 // that represent BuildExtendedPipeline's data paths and control loops.
 //

@@ -15,7 +15,7 @@ tags:
 
 ## Purpose
 
-The Protocol layer (`src/TurboHttp/Protocol/`) implements wire-format encoding and decoding for all supported HTTP versions. Each HTTP version and cross-cutting concern gets its own component subfolder containing encoders, decoders, and version-specific business logic. Shared codecs (HPACK under `Http2/Hpack/`, QPACK under `Http3/Qpack/`, Huffman at the root) are consumed by multiple protocol versions.
+The Protocol layer (`src/TurboHTTP/Protocol/`) implements wire-format encoding and decoding for all supported HTTP versions. Each HTTP version and cross-cutting concern gets its own component subfolder containing encoders, decoders, and version-specific business logic. Shared codecs (HPACK under `Http2/Hpack/`, QPACK under `Http3/Qpack/`, Huffman at the root) are consumed by multiple protocol versions.
 
 This layer sits **below** the Streams layer (which orchestrates stage graphs) and **above** the Transport layer (which moves raw bytes). Protocol types convert between `HttpRequestMessage`/`HttpResponseMessage` and the `IOutputItem`/`IInputItem` message protocol used by the pipeline.
 
@@ -183,7 +183,7 @@ HPACK relies on TCP ordering — encoder and decoder see frames in the same orde
 ## Component Folder Structure
 
 ```text
-src/TurboHttp/Protocol/
+src/TurboHTTP/Protocol/
 ├── HuffmanCodec.cs          # Shared — HPACK + QPACK (RFC 7541 Appendix B)
 ├── WellKnownHeaders.cs      # Shared header name constants across all versions
 ├── HttpDecodeResult.cs      # Discriminated union: NeedMoreData/HeadersComplete/Complete/Error
@@ -248,15 +248,15 @@ src/TurboHttp/Protocol/
 
 | Component Folder | Namespace | RFC(s) |
 |-----------------|-----------|--------|
-| `Protocol/Http10/` | `TurboHttp.Protocol.Http10` | RFC 1945 |
-| `Protocol/Http11/` | `TurboHttp.Protocol.Http11` | RFC 9112 |
-| `Protocol/Http2/` | `TurboHttp.Protocol.Http2` | RFC 9113 |
-| `Protocol/Http2/Hpack/` | `TurboHttp.Protocol.Http2.Hpack` | RFC 7541 |
-| `Protocol/Http3/` | `TurboHttp.Protocol.Http3` | RFC 9114 |
-| `Protocol/Http3/Qpack/` | `TurboHttp.Protocol.Http3.Qpack` | RFC 9204 |
-| `Protocol/Semantics/` | `TurboHttp.Protocol.Semantics` | RFC 9110 |
-| `Protocol/Caching/` | `TurboHttp.Protocol.Caching` | RFC 9111 |
-| `Protocol/Cookies/` | `TurboHttp.Protocol.Cookies` | RFC 6265 |
+| `Protocol/Http10/` | `TurboHTTP.Protocol.Http10` | RFC 1945 |
+| `Protocol/Http11/` | `TurboHTTP.Protocol.Http11` | RFC 9112 |
+| `Protocol/Http2/` | `TurboHTTP.Protocol.Http2` | RFC 9113 |
+| `Protocol/Http2/Hpack/` | `TurboHTTP.Protocol.Http2.Hpack` | RFC 7541 |
+| `Protocol/Http3/` | `TurboHTTP.Protocol.Http3` | RFC 9114 |
+| `Protocol/Http3/Qpack/` | `TurboHTTP.Protocol.Http3.Qpack` | RFC 9204 |
+| `Protocol/Semantics/` | `TurboHTTP.Protocol.Semantics` | RFC 9110 |
+| `Protocol/Caching/` | `TurboHTTP.Protocol.Caching` | RFC 9111 |
+| `Protocol/Cookies/` | `TurboHTTP.Protocol.Cookies` | RFC 6265 |
 
 ### Naming Convention
 

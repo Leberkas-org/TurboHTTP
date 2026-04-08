@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TurboHttp is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with full RFC compliance, including connection pooling, redirect handling, retry logic, and cookie management.
+TurboHTTP is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with full RFC compliance, including connection pooling, redirect handling, retry logic, and cookie management.
 
 ## Build Commands
 
@@ -14,42 +14,42 @@ TurboHttp is a high-performance HTTP client library for .NET built on Akka.Strea
 
 ```bash
 # Restore and build
-dotnet restore ./src/TurboHttp.sln
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet restore ./src/TurboHTTP.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 
 # Run all tests (includes integration tests — requires network)
-dotnet test --project TurboHttp.sln
+dotnet test --project TurboHTTP.sln
 
 # Run unit tests only
-dotnet test --project TurboHttp.Tests/TurboHttp.Tests.csproj
+dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj
 
 # Run specific test class (xUnit v3 direct runner — -class flag)
-dotnet run --project TurboHttp.Tests/TurboHttp.Tests.csproj -- -class "TurboHttp.Tests.RFC9113.Http2DecoderErrorCodeTests"
+dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- -class "TurboHTTP.Tests.RFC9113.Http2DecoderErrorCodeTests"
 
 # Run specific RFC section (by namespace)
-dotnet test --project TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.RFC9113"
+dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- --filter-namespace "TurboHTTP.Tests.RFC9113"
 
 # Run integration tests (H10/H11/H2/H3/TLS — requires network)
-dotnet test --project TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj
+dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj
 
 # Run integration tests for one HTTP version
-dotnet test --project TurboHttp.IntegrationTests/TurboHttp.IntegrationTests.csproj -- --filter-namespace "TurboHttp.IntegrationTests.H11"
+dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- --filter-namespace "TurboHTTP.IntegrationTests.H11"
 
 # Run Akka.Streams stage tests
-dotnet test --project TurboHttp.StreamTests/TurboHttp.StreamTests.csproj
+dotnet test --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj
 
 # Run stage tests for one RFC section
-dotnet test --project TurboHttp.StreamTests/TurboHttp.StreamTests.csproj -- --filter-namespace "TurboHttp.StreamTests.RFC9113"
+dotnet test --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj -- --filter-namespace "TurboHTTP.StreamTests.RFC9113"
 
 # Run benchmarks
-dotnet run --configuration Release --project TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
+dotnet run --configuration Release --project TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 ```
 
 ### Documentation Site (requires Node.js 20+)
 
 ```bash
 cd docs && npm install
-npm run docs:dev          # Dev server at http://localhost:5173/TurboHttp/
+npm run docs:dev          # Dev server at http://localhost:5173/TurboHTTP/
 npm run docs:build        # Static site output: docs/.vitepress/dist/
 npm run docs:preview      # Preview production build
 ```
@@ -57,10 +57,10 @@ npm run docs:preview      # Preview production build
 ## Architecture (High-Level)
 
 ```
-Client Surface (TurboHttp/)              — ITurboHttpClient, factory, builder, DI extensions
-Streams Layer (TurboHttp/Streams/)       — Engines, GraphStages: Encoding/, Decoding/, Features/, Routing/
-Protocol Layer (TurboHttp/Protocol/)     — Encoders/Decoders, HPACK/QPACK, business logic (RFC subfolders)
-Transport Layer (TurboHttp/Transport/)   — Connection pool, leases, TCP/QUIC handlers
+Client Surface (TurboHTTP/)              — ITurboHttpClient, factory, builder, DI extensions
+Streams Layer (TurboHTTP/Streams/)       — Engines, GraphStages: Encoding/, Decoding/, Features/, Routing/
+Protocol Layer (TurboHTTP/Protocol/)     — Encoders/Decoders, HPACK/QPACK, business logic (RFC subfolders)
+Transport Layer (TurboHTTP/Transport/)   — Connection pool, leases, TCP/QUIC handlers
 ```
 
 > **Details**: Architecture, protocol internals, transport design, decoder pipeline, known limitations, and project status are documented in the **Obsidian vault** at `notes/Architecture/`. Use the Obsidian MCP to search and read.
@@ -165,9 +165,9 @@ Starting with Feature 040, test files are organized by **component/protocol vers
 
 | Project | Structure |
 |---------|-----------|
-| `TurboHttp.Tests/` | `Http10/`, `Http11/`, `Http2/`, `Http3/`, `Semantics/`, `Caching/`, `Cookies/`, `Transport/`, `Security/`, `Diagnostics/`, `Hosting/` |
-| `TurboHttp.StreamTests/` | `Http10/`, `Http11/`, `Http2/`, `Http3/`, `Semantics/`, `Caching/`, `Cookies/`, `Transport/`, `Dispatchers/`, `Streams/` |
-| `TurboHttp.IntegrationTests/` | Unchanged: `H10/`, `H11/`, `H2/`, `H3/`, `TLS/` |
+| `TurboHTTP.Tests/` | `Http10/`, `Http11/`, `Http2/`, `Http3/`, `Semantics/`, `Caching/`, `Cookies/`, `Transport/`, `Security/`, `Diagnostics/`, `Hosting/` |
+| `TurboHTTP.StreamTests/` | `Http10/`, `Http11/`, `Http2/`, `Http3/`, `Semantics/`, `Caching/`, `Cookies/`, `Transport/`, `Dispatchers/`, `Streams/` |
+| `TurboHTTP.IntegrationTests/` | Unchanged: `H10/`, `H11/`, `H2/`, `H3/`, `TLS/` |
 
 #### RFC → Component Mapping
 
@@ -196,7 +196,7 @@ public async Task Should_SetKeyFromFrame() { }
 **New convention** (component-based, post-Feature-040):
 ```csharp
 // File: Http2/Encoding/Http2EncoderSpec.cs
-// Namespace: TurboHttp.StreamTests.Http2.Encoding
+// Namespace: TurboHTTP.StreamTests.Http2.Encoding
 // Class: Http2EncoderSpec : StreamTestBase
 // Method: [Trait("RFC", "RFC9113-4.1")]
 public sealed class Http2EncoderSpec : StreamTestBase
@@ -220,7 +220,7 @@ public sealed class Http2EncoderSpec : StreamTestBase
   - `Http2Encoder_should_set_key_from_frame()`
   - `Cache_must_reject_expired_entries_when_max_age_exceeded()`
 - **Namespaces**: Component-based, matching folder structure
-  - `TurboHttp.Tests.Http2.Encoding`, `TurboHttp.Tests.Caching`, `TurboHttp.Tests.Cookies`
+  - `TurboHTTP.Tests.Http2.Encoding`, `TurboHTTP.Tests.Caching`, `TurboHTTP.Tests.Cookies`
 - **RFC traceability**: Use `[Trait("RFC", "RFC<number>-<section>")]` (replaces `DisplayName` RFC tags)
   - `[Trait("RFC", "RFC9113-4.1")]`, `[Trait("RFC", "RFC7541-6.3")]`, `[Trait("RFC", "RFC6265-4.1")]`
   - CI filter: `dotnet test --filter "Trait~RFC9113"` (tilde = contains)

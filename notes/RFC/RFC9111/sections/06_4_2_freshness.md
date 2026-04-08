@@ -241,12 +241,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ❌ Missing
 
 **Implementation Notes:**
-TurboHttp does not perform freshness calculations. No age computation, freshness lifetime evaluation, or stale response serving logic exists. The client does not interpret `max-age`, `s-maxage`, `Expires`, or heuristic freshness rules.
+TurboHTTP does not perform freshness calculations. No age computation, freshness lifetime evaluation, or stale response serving logic exists. The client does not interpret `max-age`, `s-maxage`, `Expires`, or heuristic freshness rules.
 
 **Key Gaps:**
 - No age calculation algorithm (§4.2.3)

@@ -39,8 +39,8 @@ After the [[Features/Protocol/Feature004_HTTP10_Deadlock_Fix\|Feature 004 deadlo
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.IntegrationTests/H10/` | 10 affected test classes (88 tests total) |
-| `src/TurboHttp.IntegrationTests/Shared/` | `ActorSystemFixture`, `ServerFixture` |
+| `src/TurboHTTP.IntegrationTests/H10/` | 10 affected test classes (88 tests total) |
+| `src/TurboHTTP.IntegrationTests/Shared/` | `ActorSystemFixture`, `ServerFixture` |
 
 ## See Also
 

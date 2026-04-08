@@ -1,4 +1,4 @@
-# Contributing to TurboHttp
+# Contributing to TurboHTTP
 
 Thank you for your interest in contributing! This document covers branch conventions, PR requirements, local development
 setup, and the recommended branch protection configuration for maintainers.
@@ -26,7 +26,7 @@ Before opening a PR, verify the following locally:
 ### 1. Build passes
 
 ```bash
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 ```
 
 The build must produce **zero errors and zero warnings** (`TreatWarningsAsErrors` is enabled).
@@ -34,17 +34,17 @@ The build must produce **zero errors and zero warnings** (`TreatWarningsAsErrors
 ### 2. All tests pass
 
 ```bash
-dotnet test ./src/TurboHttp.sln
+dotnet test ./src/TurboHTTP.sln
 ```
 
 Run a specific RFC section to speed up iteration:
 
 ```bash
 # Run only HTTP/2 tests
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9113"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj --filter "FullyQualifiedName~RFC9113"
 
 # Run a specific test class
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~Http2DecoderBasicFrameTests"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj --filter "FullyQualifiedName~Http2DecoderBasicFrameTests"
 ```
 
 ### 3. Slopwatch clean
@@ -53,7 +53,7 @@ dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifie
 suppressed warnings, and empty catch blocks. Run it after any substantive change:
 
 ```bash
-dotnet slopwatch ./src/TurboHttp.sln
+dotnet slopwatch ./src/TurboHTTP.sln
 ```
 
 The output must report **no issues**.
@@ -80,19 +80,19 @@ See [CLAUDE.md](CLAUDE.md) for test conventions and file naming.
 
 ```bash
 # Full test suite
-dotnet test ./src/TurboHttp.sln
+dotnet test ./src/TurboHTTP.sln
 
 # Unit tests only
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj
 
 # Stream tests only
-dotnet test ./src/TurboHttp.StreamTests/TurboHttp.StreamTests.csproj
+dotnet test ./src/TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj
 
 # Filter by RFC
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC9112"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj --filter "FullyQualifiedName~RFC9112"
 
 # Filter by display name keyword
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "DisplayName~HPACK"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj --filter "DisplayName~HPACK"
 ```
 
 ---

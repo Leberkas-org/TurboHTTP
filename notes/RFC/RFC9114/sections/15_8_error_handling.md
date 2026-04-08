@@ -112,7 +112,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -125,9 +125,9 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9114/09_Http3ErrorCodeTests.cs` — Error code value validation, unknown code handling
-- `TurboHttp.Tests/RFC9114/10_Http3ConnectionErrorTests.cs` — Connection-level error propagation tests
-- `TurboHttp.Tests/RFC9114/11_Http3StreamErrorTests.cs` — Stream-level error isolation tests
+- `TurboHTTP.Tests/RFC9114/09_Http3ErrorCodeTests.cs` — Error code value validation, unknown code handling
+- `TurboHTTP.Tests/RFC9114/10_Http3ConnectionErrorTests.cs` — Connection-level error propagation tests
+- `TurboHTTP.Tests/RFC9114/11_Http3StreamErrorTests.cs` — Stream-level error isolation tests
 
 ### Known Gaps
 

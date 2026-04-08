@@ -178,12 +178,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp's `Http11ResponseDecoder` and `Http11RequestEncoder` implement HTTP/1.1 message framing per §2. Messages are parsed as octet sequences (not Unicode strings). The decoder handles start-line parsing, header field extraction, and body length determination. CRLF line terminators are required; bare LF tolerance is implemented for robustness. Bare CR characters within protocol elements are rejected.
+TurboHTTP's `Http11ResponseDecoder` and `Http11RequestEncoder` implement HTTP/1.1 message framing per §2. Messages are parsed as octet sequences (not Unicode strings). The decoder handles start-line parsing, header field extraction, and body length determination. CRLF line terminators are required; bare LF tolerance is implemented for robustness. Bare CR characters within protocol elements are rejected.
 
 **Key Components:**
 - `Http11ResponseDecoder` — parses status-line, headers, and body from byte stream
@@ -200,7 +200,7 @@ TurboHttp's `Http11ResponseDecoder` and `Http11RequestEncoder` implement HTTP/1.
 
 **Gaps:** None identified
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

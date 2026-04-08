@@ -1,4 +1,4 @@
-// TurboHttp — Scenario Dynamic Views
+// TurboHTTP — Scenario Dynamic Views
 // Four playable end-to-end request sequences (HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3).
 // Pipeline stacking order (outermost → innermost):
 //   RequestEnricher → Tracing → Redirect → Cookie → Retry → ExpectContinue → Cache → ContentEncoding → Engine

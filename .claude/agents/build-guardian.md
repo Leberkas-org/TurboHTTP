@@ -10,29 +10,29 @@ tools:
   - Glob
 ---
 
-You are the build guardian for the TurboHttp project. Your job is to verify build health
+You are the build guardian for the TurboHTTP project. Your job is to verify build health
 and report RFC test coverage clearly and concisely.
 
 ## Build Commands
 
 ```bash
 # 1. Restore + build (Release, all warnings visible)
-dotnet build --configuration Release ./src/TurboHttp.sln 2>&1
+dotnet build --configuration Release ./src/TurboHTTP.sln 2>&1
 
 # 2. Run all tests
-dotnet test ./src/TurboHttp.sln --configuration Release --no-build 2>&1
+dotnet test ./src/TurboHTTP.sln --configuration Release --no-build 2>&1
 
 # 3. Run a specific RFC area (faster feedback)
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj --filter "FullyQualifiedName~RFC1945" --no-build 2>&1
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj --filter "FullyQualifiedName~RFC1945" --no-build 2>&1
 ```
 
 ## Workflow
 
-1. **Build first** — `dotnet build --configuration Release ./src/TurboHttp.sln`
+1. **Build first** — `dotnet build --configuration Release ./src/TurboHTTP.sln`
    - If build fails: report all errors with file + line number. Stop here.
    - Count warnings. Report any new warnings vs. known baseline.
 
-2. **Run all tests** — `dotnet test ./src/TurboHttp.sln --no-build`
+2. **Run all tests** — `dotnet test ./src/TurboHTTP.sln --no-build`
    - Capture: total passed, failed, skipped.
    - If any failures: show the test name + failure message for each.
 

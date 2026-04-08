@@ -1,0 +1,264 @@
+using System.Net;
+using System.Text;
+using Akka.Streams.Dsl;
+using TurboHTTP.Internal;
+using TurboHTTP.Protocol.Http2;
+using TurboHTTP.Streams.Stages.Decoding;
+
+namespace TurboHTTP.StreamTests.Streams;
+
+/// <summary>
+/// Tests partial-frame accumulation in HTTP/1.x and HTTP/2 decoder stages.
+/// Verifies that incomplete frames are buffered and correctly reassembled across TCP chunks.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http11DecoderStage"/>, <see cref="Http20DecoderStage"/>.
+/// Validates stateful remainder buffering across fragmented TCP delivery.
+/// </remarks>
+public sealed class DecoderStagePartialSpec : StreamTestBase
+{
+    private static NetworkBuffer H2Chunk(byte[] data)
+        => NetworkBuffer.FromArray(data);
+
+    private static NetworkBuffer Chunk(string ascii)
+    {
+        var bytes = Encoding.Latin1.GetBytes(ascii);
+        return NetworkBuffer.FromArray(bytes);
+    }
+
+    private async Task<HttpResponseMessage> Decode11Async(
+        IEnumerable<IInputItem> fragments)
+    {
+        return await Source.From(fragments)
+            .Via(Flow.FromGraph(new Http11DecoderStage()))
+            .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
+    }
+
+    private async Task<IReadOnlyList<Http2Frame>> Decode20Async(
+        IEnumerable<IInputItem> fragments)
+    {
+        return await Source.From(fragments)
+            .Via(Flow.FromGraph(new Http20DecoderStage()))
+            .RunWith(Sink.Seq<Http2Frame>(), Materializer);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_wait_for_next_chunk_when_Http1x_header_is_incomplete()
+    {
+        // The response header is sent in two chunks:
+        //   Chunk 1: "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n"  ← no \r\n\r\n yet
+        //   Chunk 2: "\r\nHello"                                  ← completes the header + body
+        // The decoder must NOT emit after chunk 1 (headers incomplete).
+        // It MUST emit exactly one response after chunk 2 completes the frame.
+
+        const string partialHeaders = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n";
+        const string headerTerminatorAndBody = "\r\nHello";
+
+        var fragments = new List<IInputItem>
+        {
+            Chunk(partialHeaders),
+            Chunk(headerTerminatorAndBody)
+        };
+
+        var response = await Decode11Async(fragments);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpVersion.Version11, response.Version);
+
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("Hello", body);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_decode_header_correctly_when_Http1x_header_split_mid_field()
+    {
+        // Split inside the status line, before \r\n
+        //   Chunk 1: "HTTP/1.1 20"
+        //   Chunk 2: "0 OK\r\nContent-Length: 3\r\n\r\nABC"
+        var fragments = new List<IInputItem>
+        {
+            Chunk("HTTP/1.1 20"),
+            Chunk("0 OK\r\nContent-Length: 3\r\n\r\nABC")
+        };
+
+        var response = await Decode11Async(fragments);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("ABC", body);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_accumulate_body_fragments_when_Http1x_body_incomplete()
+    {
+        // Full body is 15 bytes "AAAAABBBBBCCCCC", sent as 3 separate body fragments.
+        // The decoder must NOT emit after partial body fragments; it emits only when
+        // all 15 bytes have been received.
+        const string bodyText = "AAAAABBBBBCCCCC"; // 15 bytes
+
+        var fragments = new List<IInputItem>
+        {
+            Chunk($"HTTP/1.1 200 OK\r\nContent-Length: {bodyText.Length}\r\n\r\n"),
+            Chunk("AAAAA"), // first 5 bytes — decoder must not emit yet
+            Chunk("BBBBB"), // next 5 bytes — still incomplete
+            Chunk("CCCCC") // final 5 bytes — now Content-Length satisfied → emit
+        };
+
+        var response = await Decode11Async(fragments);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpVersion.Version11, response.Version);
+        Assert.Equal(bodyText.Length, response.Content.Headers.ContentLength);
+
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(bodyText, body);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_accumulate_full_body_when_Http1x_body_arrives_one_byte_at_a_time()
+    {
+        // Send a 4-byte body one byte per TCP chunk to stress the accumulation logic.
+        const string bodyText = "Test";
+
+        var fragments = new List<IInputItem>
+        {
+            Chunk($"HTTP/1.1 200 OK\r\nContent-Length: {bodyText.Length}\r\n\r\n")
+        };
+
+        foreach (var ch in bodyText)
+        {
+            fragments.Add(Chunk(ch.ToString()));
+        }
+
+        var response = await Decode11Async(fragments);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(bodyText, body);
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_wait_for_remaining_header_bytes_when_Http2_frame_header_split_at_byte5()
+    {
+        // An HTTP/2 frame header is exactly 9 bytes.
+        // Sending only bytes 0..4 (5 bytes) must NOT cause the decoder to emit a frame.
+        // Sending bytes 5..8 (the remaining 4 header bytes) + payload completes the frame.
+
+        var payload = new byte[] { 0x82, 0x84, 0x86 };
+        var rawBytes = new HeadersFrame(streamId: 1, headerBlock: payload, endHeaders: true)
+            .Serialize();
+
+        // Frame header: bytes 0–8 (9 bytes), payload: bytes 9+
+        Assert.True(rawBytes.Length > 9, "Test prerequisite: frame must be larger than 9 bytes");
+
+        // Send exactly 5 bytes of the 9-byte frame header in chunk 1
+        var chunk1 = rawBytes[..5];
+        // Send the remaining header bytes + full payload in chunk 2
+        var chunk2 = rawBytes[5..];
+
+        var fragments = new List<IInputItem>
+        {
+            H2Chunk(chunk1),
+            H2Chunk(chunk2)
+        };
+
+        var frames = await Decode20Async(fragments);
+
+        Assert.Single(frames);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.Equal(1, headersFrame.StreamId);
+        Assert.True(headersFrame.EndHeaders);
+        Assert.Equal(payload, headersFrame.HeaderBlockFragment.ToArray());
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_wait_for_remaining_header_bytes_when_Http2_frame_header_has_one_byte()
+    {
+        // Send only the very first byte of the 9-byte frame header, then the rest.
+        var body = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
+        var rawBytes = new DataFrame(streamId: 3, data: body, endStream: true).Serialize();
+
+        var chunk1 = rawBytes[..1]; // just 1 byte of 9-byte header
+        var chunk2 = rawBytes[1..]; // the rest (8 header bytes + payload)
+
+        var fragments = new List<IInputItem>
+        {
+            H2Chunk(chunk1),
+            H2Chunk(chunk2)
+        };
+
+        var frames = await Decode20Async(fragments);
+
+        Assert.Single(frames);
+        var dataFrame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(3, dataFrame.StreamId);
+        Assert.True(dataFrame.EndStream);
+        Assert.Equal(body, dataFrame.Data.ToArray());
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_reassemble_frame_when_Http2_payload_spread_across_three_chunks()
+    {
+        // A DATA frame with a 12-byte payload is split as:
+        //   Chunk 1: 9-byte frame header (complete)
+        //   Chunk 2: first 4 bytes of payload
+        //   Chunk 3: remaining 8 bytes of payload
+        // The decoder must hold the partial payload until all bytes arrive.
+
+        var payload = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C }; // 12 bytes
+        var rawBytes = new DataFrame(streamId: 5, data: payload, endStream: true).Serialize();
+
+        // rawBytes layout: [0..8] = 9-byte header, [9..] = payload
+        Assert.Equal(9 + payload.Length, rawBytes.Length);
+
+        var chunk1 = rawBytes[..9]; // complete frame header
+        var chunk2 = rawBytes[9..13]; // first 4 bytes of payload
+        var chunk3 = rawBytes[13..]; // remaining 8 bytes of payload
+
+        var fragments = new List<IInputItem>
+        {
+            H2Chunk(chunk1),
+            H2Chunk(chunk2),
+            H2Chunk(chunk3)
+        };
+
+        var frames = await Decode20Async(fragments);
+
+        Assert.Single(frames);
+        var dataFrame = Assert.IsType<DataFrame>(frames[0]);
+        Assert.Equal(5, dataFrame.StreamId);
+        Assert.True(dataFrame.EndStream);
+        Assert.Equal(payload, dataFrame.Data.ToArray());
+    }
+
+    [Fact(Timeout = 10_000)]
+    public async Task DecoderStagePartial_should_reassemble_headers_frame_when_Http2_payload_arrives_bytewise()
+    {
+        // HEADERS frame with 3-byte HPACK payload sent as:
+        //   Chunk 1: full 9-byte frame header
+        //   Chunk 2: 1st payload byte
+        //   Chunk 3: 2nd payload byte
+        //   Chunk 4: 3rd payload byte
+        var hpackBlock = new byte[] { 0x82, 0x84, 0x86 };
+        var rawBytes = new HeadersFrame(streamId: 7, headerBlock: hpackBlock, endHeaders: true)
+            .Serialize();
+
+        Assert.Equal(9 + hpackBlock.Length, rawBytes.Length);
+
+        var fragments = new List<IInputItem>
+        {
+            H2Chunk(rawBytes[..9]), // 9-byte frame header
+            H2Chunk(rawBytes[9..10]), // 1st payload byte
+            H2Chunk(rawBytes[10..11]), // 2nd payload byte
+            H2Chunk(rawBytes[11..]) // 3rd payload byte
+        };
+
+        var frames = await Decode20Async(fragments);
+
+        Assert.Single(frames);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.Equal(7, headersFrame.StreamId);
+        Assert.True(headersFrame.EndHeaders);
+        Assert.Equal(hpackBlock, headersFrame.HeaderBlockFragment.ToArray());
+    }
+}

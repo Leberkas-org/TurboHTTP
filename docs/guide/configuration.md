@@ -1,10 +1,10 @@
 # Configuration
 
-TurboHttp is configured through `TurboClientOptions` — a mutable class covering connection pool settings and TLS configuration. Features like caching, retries, and redirects are composed separately via the fluent builder API returned by `AddTurboHttpClient`.
+TurboHTTP is configured through `TurboClientOptions` — a mutable class covering connection pool settings and TLS configuration. Features like caching, retries, and redirects are composed separately via the fluent builder API returned by `AddTurboHttpClient`.
 
 ## DI Registration
 
-Register TurboHttp in your ASP.NET Core or generic host application:
+Register TurboHTTP in your ASP.NET Core or generic host application:
 
 ```csharp
 builder.Services.AddTurboHttpClient(options =>

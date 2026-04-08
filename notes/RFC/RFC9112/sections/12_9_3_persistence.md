@@ -121,12 +121,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp fully supports HTTP/1.1 persistent connections. The connection pool maintains keep-alive connections and reuses them for subsequent requests. The `close` connection option is respected — connections are released when the server sends `Connection: close`. HTTP/1.0 keep-alive is also supported. The client reads the entire response body before reusing connections.
+TurboHTTP fully supports HTTP/1.1 persistent connections. The connection pool maintains keep-alive connections and reuses them for subsequent requests. The `close` connection option is respected — connections are released when the server sends `Connection: close`. HTTP/1.0 keep-alive is also supported. The client reads the entire response body before reusing connections.
 
 **Key Components:**
 - `ConnectionPool` — manages persistent connection lifecycle, keep-alive, and reuse
@@ -144,7 +144,7 @@ TurboHttp fully supports HTTP/1.1 persistent connections. The connection pool ma
 **Gaps:**
 - HTTP/1.1 pipelining not supported (sequential requests only)
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

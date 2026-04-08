@@ -390,7 +390,7 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -404,10 +404,10 @@ tags: [RFC9114, HTTP/3, QUIC, variable-length-frames, unidirectional-streams, QP
 
 ### Test References
 
-- `TurboHttp.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame type dispatch and payload parsing
-- `TurboHttp.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Encoding round-trips
-- `TurboHttp.Tests/RFC9114/07_Http3SettingsTests.cs` — SETTINGS validation
-- `TurboHttp.Tests/RFC9114/08_Http3GoAwayTests.cs` — GOAWAY frame processing
+- `TurboHTTP.Tests/RFC9114/01_Http3FrameDecoderTests.cs` — Frame type dispatch and payload parsing
+- `TurboHTTP.Tests/RFC9114/02_Http3FrameEncoderTests.cs` — Encoding round-trips
+- `TurboHTTP.Tests/RFC9114/07_Http3SettingsTests.cs` — SETTINGS validation
+- `TurboHTTP.Tests/RFC9114/08_Http3GoAwayTests.cs` — GOAWAY frame processing
 
 ### Known Gaps
 

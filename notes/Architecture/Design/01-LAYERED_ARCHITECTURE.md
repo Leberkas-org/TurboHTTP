@@ -5,11 +5,11 @@ tags: [architecture, design, layers, akka, streams]
 aliases: [ArchitectureOverview, LayerDesign, SystemArchitecture]
 ---
 
-# TurboHttp Layered Architecture
+# TurboHTTP Layered Architecture
 
 ## Overview
 
-TurboHttp implements a **strict layered architecture** with data flowing from user API down through handlers, streams, encoders/decoders, and finally to the transport layer (TCP/QUIC).
+TurboHTTP implements a **strict layered architecture** with data flowing from user API down through handlers, streams, encoders/decoders, and finally to the transport layer (TCP/QUIC).
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -49,7 +49,7 @@ TurboHttp implements a **strict layered architecture** with data flowing from us
 
 ## Layer Responsibilities
 
-### Client Layer (`TurboHttp/Client/`)
+### Client Layer (`TurboHTTP/Client/`)
 - **ITurboHttpClient**: Channel-based API
   - `ChannelWriter<HttpRequestMessage>` — requests
   - `ChannelReader<HttpResponseMessage>` — responses
@@ -60,17 +60,17 @@ TurboHttp implements a **strict layered architecture** with data flowing from us
 - **TurboClientOptions**: Per-client config (timeouts, redirects, retries)
 - **TurboClientStreamManager**: Akka stream lifecycle management
 
-### Handlers Layer (`TurboHttp/Handlers/`)
+### Handlers Layer (`TurboHTTP/Handlers/`)
 - **TurboHandler**: Delegating handler that bridges `HttpMessageHandler` → Akka stream pipeline
 - **TurboHttpClientBuilder**: Fluent API for composing handler pipeline
 - **TurboClientDescriptor**: Configuration snapshot for a client instance
 
-### Hosting Layer (`TurboHttp/Hosting/`)
+### Hosting Layer (`TurboHTTP/Hosting/`)
 - **TurboClientServiceCollectionExtensions**: DI registration
 - Integrates with `IServiceCollection` (Microsoft.Extensions.DependencyInjection)
 - Supports named and typed client registration
 
-### Streams Layer (`TurboHttp/Streams/`)
+### Streams Layer (`TurboHTTP/Streams/`)
 
 Four separate **protocol engines** route requests by HTTP version:
 
@@ -105,7 +105,7 @@ Four separate **protocol engines** route requests by HTTP version:
 - `StreamIdAllocatorStage` — allocates client stream IDs (1, 3, 5, …)
 - `GroupByHostKeyStage` / `HostKeyMergeBack` — per-host sub-stream routing
 
-### Protocol Layer (`TurboHttp/Protocol/`)
+### Protocol Layer (`TurboHTTP/Protocol/`)
 
 **Encoders** — Serialize `HttpRequestMessage` → bytes:
 - Use `ref Span<byte>` and `ref Memory<byte>` for zero-allocation patterns
@@ -145,7 +145,7 @@ Four separate **protocol engines** route requests by HTTP version:
 - `CacheFreshnessEvaluator` — RFC 9111 freshness lifetime calculation
 - `CacheValidationRequestBuilder` — RFC 9111 conditional request building
 
-### Transport Layer (`TurboHttp/Transport/`)
+### Transport Layer (`TurboHTTP/Transport/`)
 
 **Actor-free connection pool** — zero mailbox hops:
 - `ConnectionPool` — thread-safe async pool; owns nested `HostConnections` per host:port
@@ -161,7 +161,7 @@ Four separate **protocol engines** route requests by HTTP version:
 - `ClientByteMover` spawns as background async tasks per connection
 - TCP/QUIC data flows through `System.IO.Pipelines.Pipe`
 
-## Actor-Based Stream Lifecycle (`TurboHttp/Client/`)
+## Actor-Based Stream Lifecycle (`TurboHTTP/Client/`)
 
 The Akka stream pipeline is supervised by a two-actor hierarchy:
 

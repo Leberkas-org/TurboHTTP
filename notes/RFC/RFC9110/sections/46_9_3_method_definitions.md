@@ -501,7 +501,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ⚠️ Partial
 
@@ -512,7 +512,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 - **`HttpMethodProperties.cs`** — Safe/idempotent/cacheable method property lookup per §9.2
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/46_MethodDefinitionTests.cs` — Method encoding, redirect method changes, safe/idempotent classification
+- `TurboHTTP.Tests/RFC9110/46_MethodDefinitionTests.cs` — Method encoding, redirect method changes, safe/idempotent classification
 
 ### Known Gaps
 - ⚠️ TRACE — Not actively tested; client sends TRACE but response body parsing as message/http not implemented

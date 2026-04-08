@@ -1,7 +1,7 @@
 ---
 title: Developer Onboarding Guide
 description: >-
-  Start here — orients new developers and fresh AI sessions to TurboHttp
+  Start here — orients new developers and fresh AI sessions to TurboHTTP
   architecture, workflows, and vault navigation
 tags:
   - architecture
@@ -13,11 +13,11 @@ updated: '2026-04-07'
 ---
 # Developer Onboarding Guide
 
-Welcome to TurboHttp. This note is the single starting point for new developers and fresh AI agent sessions. Read it once, then follow the links to deeper references.
+Welcome to TurboHTTP. This note is the single starting point for new developers and fresh AI agent sessions. Read it once, then follow the links to deeper references.
 
 ## Project Purpose
 
-TurboHttp is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with full RFC compliance, including:
+TurboHTTP is a high-performance HTTP client library for .NET built on Akka.Streams. It implements HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with full RFC compliance, including:
 
 - Connection pooling and keep-alive management
 - Redirect following and retry logic
@@ -40,7 +40,7 @@ The library exposes an `ITurboHttpClient` interface compatible with `HttpMessage
 
 ```text
 src/
-├── TurboHttp/                  # Main library
+├── TurboHTTP/                  # Main library
 │   ├── Client/                 # ITurboHttpClient, factory, DI
 │   ├── Handlers/               # TurboHandler (HttpMessageHandler bridge)
 │   ├── Hosting/                # DI registration extensions
@@ -57,10 +57,10 @@ src/
 │       ├── Connection/         # ConnectionPool, ConnectionLease, IConnectionScope, ConnectionStage
 │       ├── Tcp/                # TcpTransportHandler, ClientState, ClientByteMover
 │       └── Quic/               # QuicTransportHandler, QuicConnectionManager
-├── TurboHttp.Tests/            # Component-organized test suite
-├── TurboHttp.StreamTests/      # Akka.Streams stage tests
-├── TurboHttp.Benchmarks/       # BenchmarkDotNet performance suite
-└── TurboHttp.sln               # Solution file
+├── TurboHTTP.Tests/            # Component-organized test suite
+├── TurboHTTP.StreamTests/      # Akka.Streams stage tests
+├── TurboHTTP.Benchmarks/       # BenchmarkDotNet performance suite
+└── TurboHTTP.sln               # Solution file
 notes/                          # This vault — single source of truth for non-code knowledge
 docs/                           # VitePress documentation site
 ```
@@ -69,30 +69,30 @@ docs/                           # VitePress documentation site
 
 ```bash
 # Restore and build
-dotnet restore ./src/TurboHttp.sln
-dotnet build --configuration Release ./src/TurboHttp.sln
+dotnet restore ./src/TurboHTTP.sln
+dotnet build --configuration Release ./src/TurboHTTP.sln
 
 # Run all tests
-dotnet test ./src/TurboHttp.sln
+dotnet test ./src/TurboHTTP.sln
 
 # Run specific test class (xUnit v3 MTP filter — note: args after --)
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-class "TurboHttp.Tests.Http2.Http2DecoderBasicFrameTests"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj -- --filter-class "TurboHTTP.Tests.Http2.Http2DecoderBasicFrameTests"
 
 # Run tests for a component
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter-namespace "TurboHttp.Tests.Http2"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj -- --filter-namespace "TurboHTTP.Tests.Http2"
 
 # Run tests with specific RFC trait
-dotnet test ./src/TurboHttp.Tests/TurboHttp.Tests.csproj -- --filter "Trait~RFC9113"
+dotnet test ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj -- --filter "Trait~RFC9113"
 
 # Run benchmarks
-dotnet run --configuration Release ./src/TurboHttp.Benchmarks/TurboHttp.Benchmarks.csproj
+dotnet run --configuration Release ./src/TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 ```
 
 ### Documentation Site (requires Node.js 20+)
 
 ```bash
 cd docs && npm install
-npm run docs:dev          # Dev server at http://localhost:5173/TurboHttp/
+npm run docs:dev          # Dev server at http://localhost:5173/TurboHTTP/
 npm run docs:build        # Static site output: docs/.vitepress/dist/
 npm run docs:preview      # Preview production build
 ```
@@ -196,7 +196,7 @@ To create a feature plan, use the `maggus:maggus-plan` skill in Claude Code.
 ### PR Process
 
 1. Implement in a feature branch
-2. Run full test suite: `dotnet test ./src/TurboHttp.sln`
+2. Run full test suite: `dotnet test ./src/TurboHTTP.sln`
 3. Verify zero diagnostics via Roslyn Navigator `get_diagnostics`
 4. Stage specific changed files: `git add <files>`
 5. Write commit message to `COMMIT.md` in repo root
@@ -254,7 +254,7 @@ Key rules:
 
 ```csharp
 // Namespace matches component folder
-namespace TurboHttp.Tests.Http2.Encoding;
+namespace TurboHTTP.Tests.Http2.Encoding;
 
 public sealed class Http2EncoderSpec : StreamTestBase
 {
@@ -279,7 +279,7 @@ public sealed class Http2EncoderSpec : StreamTestBase
 
 Key rules (post-Feature-040):
 
-- **Test classes**: `public sealed class`, namespace matches component folder (e.g., `TurboHttp.Tests.Http2.Encoding`, `TurboHttp.Tests.Caching`)
+- **Test classes**: `public sealed class`, namespace matches component folder (e.g., `TurboHTTP.Tests.Http2.Encoding`, `TurboHTTP.Tests.Caching`)
 - **File naming**: `<Subject>Spec.cs` — descriptive name with `Spec` suffix (Akka.NET convention)
 - **Use `[Fact]`** for single cases, **`[Theory]`** + **`[InlineData]`** for parameterised cases
 - **RFC Traceability**: `[Trait("RFC", "RFC<number>-<section>")]` (e.g., `[Trait("RFC", "RFC9113-4.1")]`)

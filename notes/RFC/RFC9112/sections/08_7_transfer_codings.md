@@ -255,12 +255,12 @@ tags:
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status:** ✅ Compliant
 
 **Implementation Notes:**
-TurboHttp fully supports chunked transfer coding for both decoding responses and encoding requests. The `ChunkedDecodingStage` handles chunk-size parsing, chunk-data extraction, last-chunk detection, and trailer section processing. Chunk extensions are parsed and ignored per spec. Compression transfer codings (gzip, deflate) are handled by the separate `DecompressionStage`.
+TurboHTTP fully supports chunked transfer coding for both decoding responses and encoding requests. The `ChunkedDecodingStage` handles chunk-size parsing, chunk-data extraction, last-chunk detection, and trailer section processing. Chunk extensions are parsed and ignored per spec. Compression transfer codings (gzip, deflate) are handled by the separate `DecompressionStage`.
 
 **Key Components:**
 - `ChunkedDecodingStage` — Akka.Streams stage for chunked transfer decoding
@@ -281,7 +281,7 @@ TurboHttp fully supports chunked transfer coding for both decoding responses and
 - Compress/x-compress (LZW) not supported
 - Chunk extension parameters not treated as error (SHOULD)
 
-**Test References:** `TurboHttp.Tests.RFC9112`
+**Test References:** `TurboHTTP.Tests.RFC9112`
 
 ---
 

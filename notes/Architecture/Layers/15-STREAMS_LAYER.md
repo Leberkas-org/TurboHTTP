@@ -12,7 +12,7 @@ tags:
 ---
 # Streams Layer
 
-The Streams Layer is TurboHttp's core — it composes Akka.Streams `GraphStage` and `BidiFlow` components into a reactive pipeline that transforms `HttpRequestMessage` into `HttpResponseMessage`. Every HTTP feature (redirect, retry, caching, compression, cookies) is a composable BidiFlow stage.
+The Streams Layer is TurboHTTP's core — it composes Akka.Streams `GraphStage` and `BidiFlow` components into a reactive pipeline that transforms `HttpRequestMessage` into `HttpResponseMessage`. Every HTTP feature (redirect, retry, caching, compression, cookies) is a composable BidiFlow stage.
 
 > **Scope**: This note covers pipeline composition and stage organization. For individual encoder/decoder internals, see [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]]. For stage patterns and naming, see [[Architecture/Design/02-STAGE_PATTERNS|GraphStage Patterns]].
 
@@ -27,14 +27,14 @@ The Streams Layer is TurboHttp's core — it composes Akka.Streams `GraphStage` 
 
 | File | Purpose |
 |------|---------|
-| `src/TurboHttp/Streams/Engine.cs` | Top-level pipeline builder — stacks feature BidiFlows via `Atop` |
-| `src/TurboHttp/Streams/ProtocolCoreGraphBuilder.cs` | Version-demux graph: Partition → 4 protocol flows → Merge |
-| `src/TurboHttp/Streams/PipelineDescriptor.cs` | Aggregates optional policies for conditional BidiFlow insertion |
-| `src/TurboHttp/Streams/IProtocolEngine.cs` | Interface for per-version BidiFlow factories |
-| `src/TurboHttp/Streams/Http10Engine.cs` | HTTP/1.0 BidiFlow assembly |
-| `src/TurboHttp/Streams/Http11Engine.cs` | HTTP/1.1 BidiFlow assembly |
-| `src/TurboHttp/Streams/Http20Engine.cs` | HTTP/2 BidiFlow assembly |
-| `src/TurboHttp/Streams/Http30Engine.cs` | HTTP/3 BidiFlow assembly |
+| `src/TurboHTTP/Streams/Engine.cs` | Top-level pipeline builder — stacks feature BidiFlows via `Atop` |
+| `src/TurboHTTP/Streams/ProtocolCoreGraphBuilder.cs` | Version-demux graph: Partition → 4 protocol flows → Merge |
+| `src/TurboHTTP/Streams/PipelineDescriptor.cs` | Aggregates optional policies for conditional BidiFlow insertion |
+| `src/TurboHTTP/Streams/IProtocolEngine.cs` | Interface for per-version BidiFlow factories |
+| `src/TurboHTTP/Streams/Http10Engine.cs` | HTTP/1.0 BidiFlow assembly |
+| `src/TurboHTTP/Streams/Http11Engine.cs` | HTTP/1.1 BidiFlow assembly |
+| `src/TurboHTTP/Streams/Http20Engine.cs` | HTTP/2 BidiFlow assembly |
+| `src/TurboHTTP/Streams/Http30Engine.cs` | HTTP/3 BidiFlow assembly |
 
 ## Full Pipeline Data Flow
 
@@ -47,7 +47,7 @@ HttpRequestMessage
 │  (outermost → innermost, composed via Atop)                 │
 │                                                             │
 │  ┌──────────────┐                                           │
-│  │   Tracing    │  Creates root "TurboHttp.Request" Activity│
+│  │   Tracing    │  Creates root "TurboHTTP.Request" Activity│
 │  └──────┬───────┘                                           │
 │  ┌──────┴───────┐                                           │
 │  │  Handler[0]  │  User middleware (outermost)              │

@@ -13,9 +13,9 @@ tags:
 
 ## Executive Summary
 
-A systematic audit of all 48 GraphStage implementations in TurboHttp found **20 confirmed bugs** where stream termination signals (onUpstreamFinish, onUpstreamFailure, onDownstreamFinish) were not properly propagated. These omissions violated the Reactive Streams contract and could lead to **backpressure deadlocks**, where downstream stages wait indefinitely for termination signals that never arrive.
+A systematic audit of all 48 GraphStage implementations in TurboHTTP found **20 confirmed bugs** where stream termination signals (onUpstreamFinish, onUpstreamFailure, onDownstreamFinish) were not properly propagated. These omissions violated the Reactive Streams contract and could lead to **backpressure deadlocks**, where downstream stages wait indefinitely for termination signals that never arrive.
 
-**Status (2026-03-27): All 20 bugs fixed.** Each fix adds `FailStage(ex)` (or `Fail(outlet, ex)` for BidiStages) after existing logging. 17 regression tests added in `TurboHttp.StreamTests/Streams/26–29_*StageCompletionRegressionTests.cs`. **0 open bugs remain.**
+**Status (2026-03-27): All 20 bugs fixed.** Each fix adds `FailStage(ex)` (or `Fail(outlet, ex)` for BidiStages) after existing logging. 17 regression tests added in `TurboHTTP.StreamTests/Streams/26–29_*StageCompletionRegressionTests.cs`. **0 open bugs remain.**
 
 ---
 

@@ -27,8 +27,8 @@ Introduced `DecompressionStage`, an Akka.Streams `GraphStage<FlowShape<HttpRespo
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Streams/Stages/DecompressionStage.cs` | Stage implementation (later removed) |
-| `src/TurboHttp.StreamTests/Streams/DecompressionStageTests.cs` | Unit tests |
+| `src/TurboHTTP/Streams/Stages/DecompressionStage.cs` | Stage implementation (later removed) |
+| `src/TurboHTTP.StreamTests/Streams/DecompressionStageTests.cs` | Unit tests |
 
 ## See Also
 

@@ -1,0 +1,265 @@
+using Akka.Streams;
+using Akka.Streams.Dsl;
+using TurboHTTP.Protocol.Http3;
+using TurboHTTP.Streams.Stages.Decoding;
+
+namespace TurboHTTP.StreamTests.Http3;
+
+/// <summary>
+/// Tests the HTTP/3 connection stage per RFC 9114 §6.2.1, §5.2, §7.2.4.
+/// Verifies control stream management (SETTINGS/GOAWAY) and frame routing
+/// between app and server.
+/// </summary>
+/// <remarks>
+/// Stage under test: <see cref="Http30ConnectionStage"/>.
+/// RFC 9114 §6.2.1: Control stream — first frame MUST be SETTINGS.
+/// RFC 9114 §5.2: GOAWAY — graceful connection shutdown.
+/// RFC 9114 §7.2.4: SETTINGS frame processing and validation.
+/// </remarks>
+public sealed class Http30ConnectionSpec : StreamTestBase
+{
+    /// <summary>
+    /// Runs the Http30ConnectionStage with the given server frames (arriving on InServer).
+    /// Returns (downstream frames from OutApp, server-bound frames from OutServer).
+    /// InApp is fed Source.Never so the stage stays alive until InServer finishes.
+    /// </summary>
+    private async Task<(IReadOnlyList<Http3Frame> Downstream, IReadOnlyList<Http3Frame> ServerBound)> RunAsync(
+        params Http3Frame[] serverFrames)
+    {
+        var downstreamSink = Sink.Seq<Http3Frame>();
+        var serverBoundSink = Sink.Seq<Http3Frame>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink,
+                (m1, m2) => (m1, m2),
+                (b, dsSink, sbSink) =>
+                {
+                    var stage = b.Add(new Http30ConnectionStage());
+                    var serverSource = b.Add(Source.From(serverFrames));
+                    var requestSource = b.Add(Source.Never<Http3Frame>());
+
+                    b.From(serverSource).To(stage.InServer);
+                    b.From(stage.OutApp).To(dsSink);
+                    b.From(requestSource).To(stage.InApp);
+                    b.From(stage.OutServer).To(sbSink);
+
+                    return ClosedShape.Instance;
+                }));
+
+        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
+
+        var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        var serverBound = await serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        return (downstream, serverBound);
+    }
+
+    /// <summary>
+    /// Runs the stage with both server frames and app (request) frames.
+    /// Returns (downstream from OutApp, server-bound from OutServer).
+    /// </summary>
+    private async Task<(IReadOnlyList<Http3Frame> Downstream, IReadOnlyList<Http3Frame> ServerBound)> RunWithAppAsync(
+        Http3Frame[] serverFrames, Http3Frame[] appFrames)
+    {
+        var downstreamSink = Sink.Seq<Http3Frame>();
+        var serverBoundSink = Sink.Seq<Http3Frame>();
+
+        var graph = RunnableGraph.FromGraph(
+            GraphDsl.Create(downstreamSink, serverBoundSink,
+                (m1, m2) => (m1, m2),
+                (b, dsSink, sbSink) =>
+                {
+                    var stage = b.Add(new Http30ConnectionStage());
+                    var serverSource = b.Add(Source.From(serverFrames));
+                    var requestSource = b.Add(Source.From(appFrames));
+
+                    b.From(serverSource).To(stage.InServer);
+                    b.From(stage.OutApp).To(dsSink);
+                    b.From(requestSource).To(stage.InApp);
+                    b.From(stage.OutServer).To(sbSink);
+
+                    return ClosedShape.Instance;
+                }));
+
+        var (downstreamTask, serverBoundTask) = graph.Run(Materializer);
+
+        var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        var serverBound = await serverBoundTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        return (downstream, serverBound);
+    }
+
+    // SETTINGS Tests (RFC 9114 §7.2.4)
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
+    public async Task Http30Connection_should_absorb_settings_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192)]);
+
+        var (downstream, _) = await RunAsync(settings);
+
+        // SETTINGS is connection-level and should not be forwarded to the app
+        Assert.Empty(downstream);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
+    public async Task Http30Connection_should_accept_empty_settings_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([]);
+
+        var (downstream, _) = await RunAsync(settings);
+
+        Assert.Empty(downstream);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
+    public async Task Http30Connection_should_not_send_settings_when_stage_starts()
+    {
+        // No server frames — just let the stage start and capture outbound
+        var (_, serverBound) = await RunAsync();
+
+        // SETTINGS now belongs on the unidirectional control stream, emitted by
+        // Http30ControlStreamPrefaceStage — ConnectionStage no longer emits it.
+        Assert.DoesNotContain(serverBound, f => f is Http3SettingsFrame);
+    }
+
+    // GOAWAY Tests (RFC 9114 §5.2)
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-5.2")]
+    public async Task Http30Connection_should_absorb_goaway_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var goAway = new Http3GoAwayFrame(0);
+
+        var (downstream, _) = await RunAsync(settings, goAway);
+
+        Assert.Empty(downstream);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-5.2")]
+    public async Task Http30Connection_should_absorb_goaway_when_received_on_control_stream()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var goAway = new Http3GoAwayFrame(4);
+
+        var (downstream, _) = await RunAsync(settings, goAway);
+
+        // Neither SETTINGS nor GOAWAY should be forwarded to the app
+        Assert.Empty(downstream);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-5.2")]
+    public async Task Http30Connection_should_accept_decreasing_goaway_when_multiple_received()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var goAway1 = new Http3GoAwayFrame(8);
+        var goAway2 = new Http3GoAwayFrame(4);
+
+        var (downstream, _) = await RunAsync(settings, goAway1, goAway2);
+
+        // Both GOAWAYs absorbed — no frames forwarded
+        Assert.Empty(downstream);
+    }
+
+    // Frame Routing Tests
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.1")]
+    public async Task Http30Connection_should_forward_data_frame_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var data = new Http3DataFrame(new byte[] { 0x48, 0x65, 0x6c, 0x6c, 0x6f });
+
+        var (downstream, _) = await RunAsync(settings, data);
+
+        Assert.Single(downstream);
+        Assert.IsType<Http3DataFrame>(downstream[0]);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.2")]
+    public async Task Http30Connection_should_forward_headers_frame_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var headers = new Http3HeadersFrame(new byte[] { 0x00, 0x00 });
+
+        var (downstream, _) = await RunAsync(settings, headers);
+
+        Assert.Single(downstream);
+        Assert.IsType<Http3HeadersFrame>(downstream[0]);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.3")]
+    public async Task Http30Connection_should_absorb_cancel_push_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var cancelPush = new Http3CancelPushFrame(0);
+
+        var (downstream, _) = await RunAsync(settings, cancelPush);
+
+        Assert.Empty(downstream);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-7.2.7")]
+    public async Task Http30Connection_should_absorb_max_push_id_when_received_from_server()
+    {
+        var settings = new Http3SettingsFrame([]);
+        var maxPushId = new Http3MaxPushIdFrame(10);
+
+        var (downstream, _) = await RunAsync(settings, maxPushId);
+
+        Assert.Empty(downstream);
+    }
+
+    // App-to-Server Forwarding Tests
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-4.1")]
+    public async Task Http30Connection_should_forward_app_headers_when_sent()
+    {
+        var headerBlock = new byte[] { 0x00, 0x00 };
+        var appFrame = new Http3HeadersFrame(headerBlock);
+
+        var (_, serverBound) = await RunWithAppAsync(
+            [],
+            [appFrame]);
+
+        // Should contain initial SETTINGS and the app HEADERS frame
+        Assert.Contains(serverBound, f => f is Http3HeadersFrame);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9114-4.1")]
+    public async Task Http30Connection_should_forward_app_data_when_sent()
+    {
+        var appFrame = new Http3DataFrame(new byte[] { 0x01, 0x02, 0x03 });
+
+        var (_, serverBound) = await RunWithAppAsync(
+            [],
+            [appFrame]);
+
+        Assert.Contains(serverBound, f => f is Http3DataFrame);
+    }
+
+    // Port Name Verification
+
+    [Fact]
+    public void Http30Connection_should_have_correct_port_names_when_inspected()
+    {
+        var stage = new Http30ConnectionStage();
+        var shape = stage.Shape;
+
+        Assert.Equal("Http30Connection.In.Server", shape.InServer.Name);
+        Assert.Equal("Http30Connection.Out.App", shape.OutApp.Name);
+        Assert.Equal("Http30Connection.In.App", shape.InApp.Name);
+        Assert.Equal("Http30Connection.Out.Server", shape.OutServer.Name);
+    }
+}

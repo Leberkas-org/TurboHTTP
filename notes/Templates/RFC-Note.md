@@ -25,7 +25,7 @@ Brief description of the compliance gap or limitation. This note documents **spe
 ## Gap Description
 
 ### Current Behavior
-What TurboHttp currently does (or doesn't do).
+What TurboHTTP currently does (or doesn't do).
 
 ### RFC Requirement
 What the RFC specifies or requires.
@@ -43,8 +43,8 @@ If a workaround exists, document it:
 
 ## Test Coverage
 
-- Unit tests: {{X}} tests in `TurboHttp.Tests/RFC{{rfc_number}}/`
-- Integration tests: {{Y}} tests in `TurboHttp.IntegrationTests/`
+- Unit tests: {{X}} tests in `TurboHTTP.Tests/RFC{{rfc_number}}/`
+- Integration tests: {{Y}} tests in `TurboHTTP.IntegrationTests/`
 - Gap coverage: ✅ / 🔶 / ❌
 
 ## Priority

@@ -31,7 +31,7 @@ HTTP/1.0 integration tests exhibited a critical deadlock that did not occur in H
 
 | File | Role |
 |------|------|
-| `src/TurboHttp/Streams/Stages/Routing/ConnectionReuseStage.cs` | Fix applied here (lines 225–278) |
+| `src/TurboHTTP/Streams/Stages/Routing/ConnectionReuseStage.cs` | Fix applied here (lines 225–278) |
 
 ## See Also
 

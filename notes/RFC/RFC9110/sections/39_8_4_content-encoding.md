@@ -111,7 +111,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -121,7 +121,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 - **`AcceptEncodingBuilder.cs`** — Generates Accept-Encoding request header advertising supported codings (gzip, deflate, br)
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/39_ContentEncodingTests.cs` — gzip/deflate/br decoding, multi-layer encoding, x-gzip equivalence
+- `TurboHTTP.Tests/RFC9110/39_ContentEncodingTests.cs` — gzip/deflate/br decoding, multi-layer encoding, x-gzip equivalence
 
 ### Known Gaps
 - ❌ Compress (LZW) — Not supported; x-compress/compress coding not implemented

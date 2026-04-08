@@ -1,9 +1,9 @@
-// TurboHttp — Engine Views
+// TurboHTTP — Engine Views
 // Per-version engine internals and protocol subsystem views.
 
 views {
   view http10Engine of turbohttp.streams.Http10Engine {
-    title 'TurboHttp — HTTP/1.0 Engine Internals'
+    title 'TurboHTTP — HTTP/1.0 Engine Internals'
     description 'Encode → TCP → decode. No keep-alive; connection closes after each response.'
     include turbohttp.streams.Http10Engine
     include turbohttp.streams.Http10EncoderStage
@@ -13,7 +13,7 @@ views {
   }
 
   view http11Engine of turbohttp.streams.Http11Engine {
-    title 'TurboHttp — HTTP/1.1 Engine Internals'
+    title 'TurboHTTP — HTTP/1.1 Engine Internals'
     description 'Encode → TCP → decode. After each response, a keep-alive signal feeds back to the transport to reuse or close the connection.'
     include turbohttp.streams.Http11Engine
     include turbohttp.streams.Http11EncoderStage
@@ -24,7 +24,7 @@ views {
   }
 
   view http2Engine of turbohttp.streams.Http20Engine {
-    title 'TurboHttp — HTTP/2 Engine Internals'
+    title 'TurboHTTP — HTTP/2 Engine Internals'
     description 'Multiplexed HTTP/2: assign stream ID → compress headers → bidirectional connection management → serialise frames → reassemble responses.'
     include turbohttp.streams.Http20Engine
     include turbohttp.streams.Http20StreamIdAllocatorStage
@@ -39,7 +39,7 @@ views {
   }
 
   view http3Engine of turbohttp.streams.Http30Engine {
-    title 'TurboHttp — HTTP/3 Engine Internals'
+    title 'TurboHTTP — HTTP/3 Engine Internals'
     description 'QPACK-compressed frames multiplexed over QUIC streams. Outbound: request → QPACK encode → connection → frame encode → control preface → transport. Inbound: transport → frame decode → per-stream assembly → correlate. QPACK decoder table updates feed back to the encoder for header compression synchronisation.'
     include turbohttp.streams.Http30Engine
     include turbohttp.streams.Http30Request2FrameStage

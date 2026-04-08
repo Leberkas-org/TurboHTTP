@@ -1,10 +1,10 @@
-// TurboHttp — Architecture Views (User-focused)
+// TurboHTTP — Architecture Views (User-focused)
 // Top-level and layer-scoped static views showing public features and behavior.
 
 views {
   view index {
-    title 'TurboHttp — System Overview'
-    description 'Application, TurboHttp client library, and remote servers'
+    title 'TurboHTTP — System Overview'
+    description 'Application, TurboHTTP client library, and remote servers'
     include user
     include turbohttp.client
     include tcp
@@ -14,7 +14,7 @@ views {
   }
 
   view turbohttp {
-    title 'TurboHttp — Architecture'
+    title 'TurboHTTP — Architecture'
     description 'Client API and the request/response pipeline with all processing stages'
     include user
     include turbohttp.client.*

@@ -313,7 +313,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -323,7 +323,7 @@ tags: [RFC9110, HTTP-semantics, methods, status-codes, redirects, retries, conte
 - **`MethodTransformation.cs`** — POST→GET conversion for 301/302/303; method preservation for 307/308; strips content headers when method changes to GET/HEAD
 
 ### Test References
-- `TurboHttp.Tests/RFC9110/78_RedirectTests.cs` — All redirect status codes, cross-origin header stripping, cycle detection, method transformation
+- `TurboHTTP.Tests/RFC9110/78_RedirectTests.cs` — All redirect status codes, cross-origin header stripping, cycle detection, method transformation
 
 ### Known Gaps
 - ⚠️ 300 Multiple Choices — Not automatically handled; returned as-is to caller (no content parsing for alternatives)

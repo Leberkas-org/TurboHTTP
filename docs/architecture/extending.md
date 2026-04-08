@@ -4,7 +4,7 @@
 This page assumes familiarity with [Akka.Streams](https://getakka.net/articles/streams/introduction.html) graph stages. If you haven't worked with Akka.Streams before, start with their documentation first.
 :::
 
-TurboHttp's request pipeline is built on Akka.Streams. You can insert custom graph stages directly into the pipeline for request signing, telemetry, protocol translation, and other transformations.
+TurboHTTP's request pipeline is built on Akka.Streams. You can insert custom graph stages directly into the pipeline for request signing, telemetry, protocol translation, and other transformations.
 
 ## Writing a Custom Stage
 

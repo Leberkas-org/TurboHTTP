@@ -17,7 +17,7 @@ status: completed
 
 ## Description
 
-Added a comprehensive adversarial security test suite targeting HTTP protocol attack vectors. Tests verified that TurboHttp correctly rejects or handles malicious inputs across all protocol layers.
+Added a comprehensive adversarial security test suite targeting HTTP protocol attack vectors. Tests verified that TurboHTTP correctly rejects or handles malicious inputs across all protocol layers.
 
 | # | Coverage |
 |---|----------|
@@ -31,11 +31,11 @@ Added a comprehensive adversarial security test suite targeting HTTP protocol at
 
 | File | Role |
 |------|------|
-| `src/TurboHttp.Tests/Security/HeaderSecurityTests.cs` | Header injection and smuggling |
-| `src/TurboHttp.Tests/Security/TlsSecurityTests.cs` | Transport security |
-| `src/TurboHttp.Tests/Security/CookieSecurityTests.cs` | Cookie attack surface |
-| `src/TurboHttp.Tests/Security/UriSecurityTests.cs` | URI sanitization |
-| `src/TurboHttp.Tests/Security/HpackSecurityTests.cs` | HPACK bomb and protocol abuse |
+| `src/TurboHTTP.Tests/Security/HeaderSecurityTests.cs` | Header injection and smuggling |
+| `src/TurboHTTP.Tests/Security/TlsSecurityTests.cs` | Transport security |
+| `src/TurboHTTP.Tests/Security/CookieSecurityTests.cs` | Cookie attack surface |
+| `src/TurboHTTP.Tests/Security/UriSecurityTests.cs` | URI sanitization |
+| `src/TurboHTTP.Tests/Security/HpackSecurityTests.cs` | HPACK bomb and protocol abuse |
 
 ## See Also
 

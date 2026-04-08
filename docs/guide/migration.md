@@ -1,10 +1,10 @@
 # Migrating from HttpClient
 
-This guide shows how to migrate common `HttpClient` patterns to TurboHttp. The API is intentionally similar — most code changes are mechanical.
+This guide shows how to migrate common `HttpClient` patterns to TurboHTTP. The API is intentionally similar — most code changes are mechanical.
 
 ## Quick Comparison
 
-| HttpClient | TurboHttp |
+| HttpClient | TurboHTTP |
 |---|---|
 | `new HttpClient()` | `new TurboHttpClient(options, actorSystem)` |
 | `IHttpClientFactory` | `ITurboHttpClientFactory` |
@@ -25,7 +25,7 @@ var response = await client.GetAsync("/users/42");
 var body = await response.Content.ReadAsStringAsync();
 ```
 
-**After (TurboHttp):**
+**After (TurboHTTP):**
 
 ```csharp
 var actorSystem = ActorSystem.Create("turbo");
@@ -63,7 +63,7 @@ public class MyService(IHttpClientFactory factory)
 }
 ```
 
-**After (TurboHttp):**
+**After (TurboHTTP):**
 
 ```csharp
 builder.Services.AddTurboHttpClient("my-api", options =>
@@ -92,7 +92,7 @@ builder.Services.AddHttpClient("my-api")
             TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 ```
 
-**After (TurboHttp):**
+**After (TurboHTTP):**
 
 ```csharp
 builder.Services.AddTurboHttpClient("my-api", options =>
@@ -102,7 +102,7 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 .WithRetry(RetryPolicy.Default); // 3 retries, respects Retry-After
 ```
 
-No Polly dependency needed. TurboHttp automatically:
+No Polly dependency needed. TurboHTTP automatically:
 - Retries only idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS, TRACE)
 - Never retries POST or PATCH
 - Respects `Retry-After` headers
@@ -123,7 +123,7 @@ var handler = new HttpClientHandler
 using var client = new HttpClient(handler);
 ```
 
-**After (TurboHttp):**
+**After (TurboHTTP):**
 
 ```csharp
 // Cookies are automatic — no setup needed
@@ -134,7 +134,7 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 .WithCookies(); // enable automatic cookie handling
 ```
 
-TurboHttp's `CookieJar` handles domain matching, path matching, Secure/HttpOnly attributes, and expiration automatically. Each client has its own isolated jar.
+TurboHTTP's `CookieJar` handles domain matching, path matching, Secure/HttpOnly attributes, and expiration automatically. Each client has its own isolated jar.
 
 ## Custom Middleware
 
@@ -157,7 +157,7 @@ builder.Services.AddHttpClient("my-api")
     .AddHttpMessageHandler<LoggingHandler>();
 ```
 
-**After (TurboHttp TurboHandler):**
+**After (TurboHTTP TurboHandler):**
 
 ```csharp
 public sealed class LoggingHandler : TurboHandler
@@ -199,7 +199,7 @@ client.DefaultRequestVersion = HttpVersion.Version20;
 client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 ```
 
-**After (TurboHttp):**
+**After (TurboHTTP):**
 
 ```csharp
 var actorSystem = ActorSystem.Create("turbo");
@@ -210,7 +210,7 @@ await using var client = new TurboHttpClient(new TurboClientOptions
 client.DefaultRequestVersion = HttpVersion.Version20;
 ```
 
-TurboHttp provides full HTTP/2 multiplexing — all requests to the same host share a single TCP connection with concurrent streams. See [HTTP/2 & Multiplexing](./http2).
+TurboHTTP provides full HTTP/2 multiplexing — all requests to the same host share a single TCP connection with concurrent streams. See [HTTP/2 & Multiplexing](./http2).
 
 ## Timeout
 
@@ -220,7 +220,7 @@ TurboHttp provides full HTTP/2 multiplexing — all requests to the same host sh
 client.Timeout = TimeSpan.FromSeconds(30);
 ```
 
-**After (TurboHttp):**
+**After (TurboHTTP):**
 
 ```csharp
 client.Timeout = TimeSpan.FromSeconds(30);
@@ -230,13 +230,13 @@ using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 var response = await client.SendAsync(request, cts.Token);
 ```
 
-Same API. TurboHttp additionally respects `CancellationToken` at every layer.
+Same API. TurboHTTP additionally respects `CancellationToken` at every layer.
 
 ## What You Get for Free
 
-By switching to TurboHttp, these features work out of the box without additional libraries:
+By switching to TurboHTTP, these features work out of the box without additional libraries:
 
-| Feature | HttpClient Approach | TurboHttp |
+| Feature | HttpClient Approach | TurboHTTP |
 |---|---|---|
 | Retries | Polly + DelegatingHandler | Built-in `RetryPolicy` |
 | Caching | Custom DelegatingHandler or nothing | Built-in `CachePolicy` |
@@ -251,13 +251,13 @@ By switching to TurboHttp, these features work out of the box without additional
 Be aware of trade-offs:
 
 - **No `GetAsync` / `PostAsync` / `PutAsync` convenience methods** — always use `SendAsync` with `HttpRequestMessage`
-- **No typed client interfaces** — if you need Refit-style interfaces, TurboHttp isn't the right tool
+- **No typed client interfaces** — if you need Refit-style interfaces, TurboHTTP isn't the right tool
 - **Akka.NET dependency** — adds ~5 MB to your deployment; not an issue for most apps, but worth noting for size-constrained environments
 - **Learning curve** — understanding the pipeline model requires reading the [Architecture](/architecture/) docs
 
 ## Gradual Migration
 
-You don't have to migrate everything at once. TurboHttp and `HttpClient` can coexist in the same application:
+You don't have to migrate everything at once. TurboHTTP and `HttpClient` can coexist in the same application:
 
 ```csharp
 // Keep existing HttpClient registrations
@@ -266,7 +266,7 @@ builder.Services.AddHttpClient("legacy-api", client =>
     client.BaseAddress = new Uri("https://old.api.com");
 });
 
-// Add TurboHttp for new services
+// Add TurboHTTP for new services
 builder.Services.AddTurboHttpClient("new-api", options =>
 {
     options.BaseAddress = new Uri("https://new.api.com");

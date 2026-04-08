@@ -127,7 +127,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 
 ---
 
-## TurboHttp Compliance
+## TurboHTTP Compliance
 
 **Status**: ✅ Compliant
 
@@ -138,7 +138,7 @@ tags: [RFC9113, HTTP/2, binary-framing, streams, multiplexing, flow-control, SET
 - **`Http2RequestEncoder.cs`** — Ensures TE header only contains "trailers" value when present
 
 ### Test References
-- `TurboHttp.Tests/RFC9113/23_Http2FieldTests.cs` — Field validation, connection-specific header rejection, Cookie compression
+- `TurboHTTP.Tests/RFC9113/23_Http2FieldTests.cs` — Field validation, connection-specific header rejection, Cookie compression
 
 ### Known Gaps
 - ⚠️ Cookie reconstitution — Split Cookie headers are concatenated on decode but edge cases with malformed cookie-pairs may not be fully covered

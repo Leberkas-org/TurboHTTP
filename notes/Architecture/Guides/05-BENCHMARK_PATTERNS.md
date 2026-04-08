@@ -18,7 +18,7 @@ aliases:
 
 ## BenchmarkDotNet Conventions
 
-Standard attributes for TurboHttp benchmarks:
+Standard attributes for TurboHTTP benchmarks:
 ```csharp
 [MemoryDiagnoser]
 [Config(typeof(MicroBenchmarkConfig))]
@@ -27,7 +27,7 @@ Standard attributes for TurboHttp benchmarks:
 
 **Dry-run command:**
 ```bash
-dotnet run --configuration Release --project src/TurboHttp.Benchmarks/... -- --filter "*ClassName*" --job dry
+dotnet run --configuration Release --project src/TurboHTTP.Benchmarks/... -- --filter "*ClassName*" --job dry
 ```
 
 **Key**: BDN runs each benchmark×job in a separate child process; each child calls `GlobalSetup → benchmark → GlobalCleanup`.

@@ -5,7 +5,7 @@ tags: [patterns, akka, stages, design, conventions]
 aliases: [StagePatterns, GraphStagePatterns, PortNaming]
 ---
 
-# TurboHttp Akka.Streams Stage Patterns
+# TurboHTTP Akka.Streams Stage Patterns
 
 ## Port Naming Convention
 
