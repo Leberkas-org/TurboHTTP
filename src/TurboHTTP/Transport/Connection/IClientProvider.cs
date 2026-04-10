@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using TurboHTTP.Diagnostics;
 
 namespace TurboHTTP.Transport.Connection;
 
@@ -55,14 +57,66 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         var port = options.Port;
 
         _socket = CreateSocket(options.SocketSendBufferSize, options.SocketReceiveBufferSize);
-        var addresses = await Dns.GetHostAddressesAsync(host, ct).ConfigureAwait(false);
-        if (addresses.Length == 0)
+
+        // --- DNS resolution ---
+        var dnsActivity = TurboHttpInstrumentation.StartDnsLookup(host);
+        TurboHttpEventSource.Instance.DnsLookupStart(host);
+        IPAddress[] addresses;
+        try
         {
-            throw new InvalidOperationException($"Could not resolve any IP addresses for host '{host}'.");
+            var dnsStart = Stopwatch.GetTimestamp();
+            addresses = await Dns.GetHostAddressesAsync(host, ct).ConfigureAwait(false);
+            var dnsDurationMs = Stopwatch.GetElapsedTime(dnsStart).TotalMilliseconds;
+
+            if (addresses.Length == 0)
+            {
+                throw new InvalidOperationException($"Could not resolve any IP addresses for host '{host}'.");
+            }
+
+            if (dnsActivity is not null)
+            {
+                TurboHttpInstrumentation.SetDnsAnswers(dnsActivity,
+                    Array.ConvertAll(addresses, a => a.ToString()));
+            }
+
+            TurboHttpEventSource.Instance.DnsLookupStop(host, dnsDurationMs);
+            TurboHttpMetrics.DnsLookupDuration.Record(dnsDurationMs / 1000.0,
+                new KeyValuePair<string, object?>("dns.question.name", host));
+            dnsActivity?.Stop();
+        }
+        catch (Exception ex)
+        {
+            if (dnsActivity is not null)
+            {
+                TurboHttpInstrumentation.SetError(dnsActivity, ex);
+                dnsActivity.Stop();
+            }
+
+            TurboHttpEventSource.Instance.DnsLookupStop(host, 0);
+            throw;
         }
 
-        await _socket.ConnectAsync(addresses, port, ct)
-            .ConfigureAwait(false);
+        // --- Socket connect ---
+        var networkType = addresses[0].AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+            ? "ipv6" : "ipv4";
+        var socketActivity = TurboHttpInstrumentation.StartSocketConnect(
+            addresses[0].ToString(), port, "tcp", networkType);
+        try
+        {
+            await _socket.ConnectAsync(addresses, port, ct).ConfigureAwait(false);
+            socketActivity?.Stop();
+        }
+        catch (Exception ex)
+        {
+            if (socketActivity is not null)
+            {
+                TurboHttpInstrumentation.SetError(socketActivity, ex);
+                socketActivity.Stop();
+            }
+
+            throw;
+        }
+
         return new NetworkStream(_socket, ownsSocket: false);
     }
 
@@ -145,9 +199,51 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
             ClientCertificates = options.ClientCertificates,
         };
 
-        await _sslStream.AuthenticateAsClientAsync(authOptions, ct)
-            .WaitAsync(options.ConnectTimeout, ct)
-            .ConfigureAwait(false);
+        // --- TLS handshake ---
+        var tlsActivity = TurboHttpInstrumentation.StartTlsHandshake(targetHost);
+        TurboHttpEventSource.Instance.TlsHandshakeStart(targetHost);
+        var tlsStart = Stopwatch.GetTimestamp();
+        try
+        {
+            await _sslStream.AuthenticateAsClientAsync(authOptions, ct)
+                .WaitAsync(options.ConnectTimeout, ct)
+                .ConfigureAwait(false);
+
+            var tlsDurationMs = Stopwatch.GetElapsedTime(tlsStart).TotalMilliseconds;
+
+            if (tlsActivity is not null)
+            {
+                var protocolName = _sslStream.SslProtocol switch
+                {
+                    SslProtocols.Tls12 => "tls",
+                    SslProtocols.Tls13 => "tls",
+                    _ => "tls"
+                };
+                var protocolVersion = _sslStream.SslProtocol switch
+                {
+                    SslProtocols.Tls12 => "1.2",
+                    SslProtocols.Tls13 => "1.3",
+                    _ => _sslStream.SslProtocol.ToString()
+                };
+                TurboHttpInstrumentation.SetTlsInfo(tlsActivity, protocolName, protocolVersion);
+                tlsActivity.Stop();
+            }
+
+            TurboHttpEventSource.Instance.TlsHandshakeStop(targetHost, tlsDurationMs);
+        }
+        catch (Exception ex)
+        {
+            if (tlsActivity is not null)
+            {
+                TurboHttpInstrumentation.SetError(tlsActivity, ex);
+                tlsActivity.Stop();
+            }
+
+            var tlsDurationMs = Stopwatch.GetElapsedTime(tlsStart).TotalMilliseconds;
+            TurboHttpEventSource.Instance.TlsHandshakeStop(targetHost, tlsDurationMs);
+            throw;
+        }
+
         return _sslStream;
     }
 

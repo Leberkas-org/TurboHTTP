@@ -239,11 +239,13 @@ internal sealed class CacheBidiStage
             if (isHit)
             {
                 TurboHttpMetrics.CacheHit.Add(1);
+                TurboHttpEventSource.Instance.CacheHit(uri);
                 TurboTrace.Cache.Info(this, "Cache hit: {0}", uri);
             }
             else
             {
                 TurboHttpMetrics.CacheMiss.Add(1);
+                TurboHttpEventSource.Instance.CacheMiss(uri);
                 TurboTrace.Cache.Info(this, "Cache miss: {0}", uri);
             }
 

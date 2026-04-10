@@ -97,11 +97,11 @@ public sealed class Http30Request2FrameBackpressureSpec : StreamTestBase
 
         // Push second request — frame outlet should still work.
         reqSub.SendNext(MakeRequest("/second"));
-        await frameOut.ExpectNextAsync(TimeSpan.FromSeconds(3));
+        await frameOut.ExpectNextAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
 
         // Push third request — still flowing.
         reqSub.SendNext(MakeRequest("/third"));
-        await frameOut.ExpectNextAsync(TimeSpan.FromSeconds(3));
+        await frameOut.ExpectNextAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000)]

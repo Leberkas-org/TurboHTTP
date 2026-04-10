@@ -64,7 +64,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var activity = TurboHttpInstrumentation.StartRequest(request);
 
         Assert.NotNull(activity);
-        Assert.Equal("https://example.com/path?q=1", activity.GetTagItem("url.full"));
+        Assert.Equal("https://example.com/path?*", activity.GetTagItem("url.full"));
     }
 
     [Fact]
@@ -468,6 +468,73 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
 
 
     [Fact]
+    public void InjectTraceContext_should_add_traceparent_header()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        TurboHttpInstrumentation.InjectTraceContext(activity, request);
+
+        Assert.True(request.Headers.Contains("traceparent"));
+        var traceparent = request.Headers.GetValues("traceparent").Single();
+        // W3C format: 00-{traceId}-{spanId}-{flags}
+        Assert.Matches(@"^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$", traceparent);
+        Assert.Contains(activity.TraceId.ToString(), traceparent);
+        Assert.Contains(activity.SpanId.ToString(), traceparent);
+    }
+
+    [Fact]
+    public void InjectTraceContext_should_add_tracestate_when_present()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+        activity.TraceStateString = "vendor1=value1";
+
+        TurboHttpInstrumentation.InjectTraceContext(activity, request);
+
+        Assert.True(request.Headers.Contains("tracestate"));
+        Assert.Equal("vendor1=value1", request.Headers.GetValues("tracestate").Single());
+    }
+
+    [Fact]
+    public void InjectTraceContext_should_not_add_tracestate_when_absent()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        TurboHttpInstrumentation.InjectTraceContext(activity, request);
+
+        Assert.False(request.Headers.Contains("tracestate"));
+    }
+
+    [Fact]
+    public void InjectTraceContext_should_propagate_recorded_flag()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        // Our listener samples with AllDataAndRecorded, so Recorded should be set
+        TurboHttpInstrumentation.InjectTraceContext(activity, request);
+
+        var traceparent = request.Headers.GetValues("traceparent").Single();
+        Assert.EndsWith("-01", traceparent);
+    }
+
+    [Fact]
+    public void InjectTraceContext_should_not_overwrite_existing_traceparent()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
+        request.Headers.TryAddWithoutValidation("traceparent", "00-11111111111111111111111111111111-2222222222222222-01");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        TurboHttpInstrumentation.InjectTraceContext(activity, request);
+
+        // TryAddWithoutValidation won't overwrite — both values present
+        var values = request.Headers.GetValues("traceparent").ToList();
+        Assert.Contains("00-11111111111111111111111111111111-2222222222222222-01", values);
+    }
+
+    [Fact]
     public void ActivitySource_should_have_correct_name()
     {
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.Source.Name);
@@ -477,5 +544,297 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     public void ActivitySource_should_have_version()
     {
         Assert.False(string.IsNullOrEmpty(TurboHttpInstrumentation.Source.Version));
+    }
+
+
+    // --- URL Redaction ---
+
+    [Fact]
+    public void RedactUrl_should_replace_query_with_asterisk()
+    {
+        var uri = new Uri("https://example.com/path?secret=abc&token=xyz");
+        Assert.Equal("https://example.com/path?*", TurboHttpInstrumentation.RedactUrl(uri));
+    }
+
+    [Fact]
+    public void RedactUrl_should_preserve_url_without_query()
+    {
+        var uri = new Uri("https://example.com/path");
+        Assert.Equal("https://example.com/path", TurboHttpInstrumentation.RedactUrl(uri));
+    }
+
+    [Fact]
+    public void RedactUrl_should_strip_fragment()
+    {
+        var uri = new Uri("https://example.com/path#section");
+        Assert.Equal("https://example.com/path", TurboHttpInstrumentation.RedactUrl(uri));
+    }
+
+    [Fact]
+    public void RedactUrl_should_strip_fragment_and_redact_query()
+    {
+        var uri = new Uri("https://example.com/path?q=1#frag");
+        Assert.Equal("https://example.com/path?*", TurboHttpInstrumentation.RedactUrl(uri));
+    }
+
+
+    // --- Method Normalization ---
+
+    [Theory]
+    [InlineData("GET", "GET")]
+    [InlineData("POST", "POST")]
+    [InlineData("PUT", "PUT")]
+    [InlineData("DELETE", "DELETE")]
+    [InlineData("HEAD", "HEAD")]
+    [InlineData("OPTIONS", "OPTIONS")]
+    [InlineData("TRACE", "TRACE")]
+    [InlineData("PATCH", "PATCH")]
+    [InlineData("CONNECT", "CONNECT")]
+    public void NormalizeMethod_should_return_standard_methods_uppercased(string input, string expected)
+    {
+        Assert.Equal(expected, TurboHttpInstrumentation.NormalizeMethod(input));
+    }
+
+    [Theory]
+    [InlineData("PURGE")]
+    [InlineData("LOCK")]
+    [InlineData("CUSTOM")]
+    public void NormalizeMethod_should_return_OTHER_for_nonstandard(string method)
+    {
+        Assert.Equal("_OTHER", TurboHttpInstrumentation.NormalizeMethod(method));
+    }
+
+    [Fact]
+    public void StartRequest_should_set_method_original_for_nonstandard()
+    {
+        var request = new HttpRequestMessage(new HttpMethod("PURGE"), "https://example.com/cache");
+
+        var activity = TurboHttpInstrumentation.StartRequest(request);
+
+        Assert.NotNull(activity);
+        Assert.Equal("_OTHER", activity.GetTagItem("http.request.method"));
+        Assert.Equal("PURGE", activity.GetTagItem("http.request.method_original"));
+    }
+
+    [Fact]
+    public void StartRequest_should_not_set_method_original_for_standard()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+
+        var activity = TurboHttpInstrumentation.StartRequest(request);
+
+        Assert.NotNull(activity);
+        Assert.Equal("GET", activity.GetTagItem("http.request.method"));
+        Assert.Null(activity.GetTagItem("http.request.method_original"));
+    }
+
+
+    // --- Protocol Version Formatting ---
+
+    [Theory]
+    [InlineData(1, 0, "1.0")]
+    [InlineData(1, 1, "1.1")]
+    [InlineData(2, 0, "2")]
+    [InlineData(3, 0, "3")]
+    public void FormatProtocolVersion_should_return_correct_format(int major, int minor, string expected)
+    {
+        Assert.Equal(expected, TurboHttpInstrumentation.FormatProtocolVersion(new Version(major, minor)));
+    }
+
+
+    // --- url.scheme tag ---
+
+    [Fact]
+    public void StartRequest_should_set_url_scheme_tag()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+
+        var activity = TurboHttpInstrumentation.StartRequest(request);
+
+        Assert.NotNull(activity);
+        Assert.Equal("https", activity.GetTagItem("url.scheme"));
+    }
+
+
+    // --- SetResponse enriched tags ---
+
+    [Fact]
+    public void SetResponse_should_set_protocol_version_tag()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Version = new Version(2, 0) };
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Equal("2", activity.GetTagItem("network.protocol.version"));
+    }
+
+    [Fact]
+    public void SetResponse_should_set_error_type_for_4xx()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound);
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Equal("404", activity.GetTagItem("error.type"));
+        Assert.Equal(ActivityStatusCode.Error, activity.Status);
+    }
+
+    [Fact]
+    public void SetResponse_should_set_error_type_for_5xx()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Equal("500", activity.GetTagItem("error.type"));
+        Assert.Equal(ActivityStatusCode.Error, activity.Status);
+    }
+
+    [Fact]
+    public void SetResponse_should_not_set_error_for_2xx()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Null(activity.GetTagItem("error.type"));
+        Assert.NotEqual(ActivityStatusCode.Error, activity.Status);
+    }
+
+    [Fact]
+    public void SetError_should_set_error_type_tag()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        TurboHttpInstrumentation.SetError(activity, new HttpRequestException("fail"));
+
+        Assert.Equal(typeof(HttpRequestException).FullName, activity.GetTagItem("error.type"));
+    }
+
+
+    // --- New Span Types ---
+
+    [Fact]
+    public void StartDnsLookup_should_create_activity()
+    {
+        var activity = TurboHttpInstrumentation.StartDnsLookup("example.com");
+
+        Assert.NotNull(activity);
+        Assert.Equal("TurboHTTP.DnsLookup", activity.OperationName);
+        Assert.Equal("example.com", activity.GetTagItem("dns.question.name"));
+    }
+
+    [Fact]
+    public void StartSocketConnect_should_create_activity()
+    {
+        var activity = TurboHttpInstrumentation.StartSocketConnect("93.184.216.34", 443);
+
+        Assert.NotNull(activity);
+        Assert.Equal("TurboHTTP.SocketConnect", activity.OperationName);
+        Assert.Equal("93.184.216.34", activity.GetTagItem("network.peer.address"));
+        Assert.Equal(443, activity.GetTagItem("network.peer.port"));
+        Assert.Equal("tcp", activity.GetTagItem("network.transport"));
+    }
+
+    [Fact]
+    public void StartSocketConnect_should_set_network_type_when_provided()
+    {
+        var activity = TurboHttpInstrumentation.StartSocketConnect("93.184.216.34", 443, "tcp", "ipv4");
+
+        Assert.NotNull(activity);
+        Assert.Equal("ipv4", activity.GetTagItem("network.type"));
+    }
+
+    [Fact]
+    public void StartSocketConnect_should_omit_network_type_when_null()
+    {
+        var activity = TurboHttpInstrumentation.StartSocketConnect("93.184.216.34", 443);
+
+        Assert.NotNull(activity);
+        Assert.Null(activity.GetTagItem("network.type"));
+    }
+
+    [Fact]
+    public void StartTlsHandshake_should_create_activity()
+    {
+        var activity = TurboHttpInstrumentation.StartTlsHandshake("example.com");
+
+        Assert.NotNull(activity);
+        Assert.Equal("TurboHTTP.TlsHandshake", activity.OperationName);
+        Assert.Equal("example.com", activity.GetTagItem("server.address"));
+    }
+
+    [Fact]
+    public void StartWaitForConnection_should_create_activity()
+    {
+        var activity = TurboHttpInstrumentation.StartWaitForConnection("example.com", 443);
+
+        Assert.NotNull(activity);
+        Assert.Equal("TurboHTTP.WaitForConnection", activity.OperationName);
+        Assert.Equal("example.com", activity.GetTagItem("server.address"));
+        Assert.Equal(443, activity.GetTagItem("server.port"));
+    }
+
+    [Fact]
+    public void StartConnect_should_create_activity()
+    {
+        var activity = TurboHttpInstrumentation.StartConnect(new Uri("https://example.com:8443/"));
+
+        Assert.NotNull(activity);
+        Assert.Equal("TurboHTTP.Connect", activity.OperationName);
+        Assert.Equal("example.com", activity.GetTagItem("server.address"));
+        Assert.Equal(8443, activity.GetTagItem("server.port"));
+    }
+
+    [Fact]
+    public void StartConnect_should_set_url_scheme()
+    {
+        var activity = TurboHttpInstrumentation.StartConnect(new Uri("https://example.com/"));
+
+        Assert.NotNull(activity);
+        Assert.Equal("https", activity.GetTagItem("url.scheme"));
+    }
+
+    [Fact]
+    public void SetTlsInfo_should_set_protocol_tags()
+    {
+        var activity = TurboHttpInstrumentation.StartTlsHandshake("example.com");
+        Assert.NotNull(activity);
+
+        TurboHttpInstrumentation.SetTlsInfo(activity, "tls", "1.3");
+
+        Assert.Equal("tls", activity.GetTagItem("tls.protocol.name"));
+        Assert.Equal("1.3", activity.GetTagItem("tls.protocol.version"));
+    }
+
+    [Fact]
+    public void SetDnsAnswers_should_set_answers_tag()
+    {
+        var activity = TurboHttpInstrumentation.StartDnsLookup("example.com");
+        Assert.NotNull(activity);
+
+        TurboHttpInstrumentation.SetDnsAnswers(activity, ["93.184.216.34", "2606:2800:220:1::"]);
+
+        Assert.Equal(new[] { "93.184.216.34", "2606:2800:220:1::" }, activity.GetTagItem("dns.answers"));
+    }
+
+    [Fact]
+    public void SetNetworkPeerAddress_should_set_tag()
+    {
+        var activity = TurboHttpInstrumentation.StartConnect(new Uri("https://example.com/"));
+        Assert.NotNull(activity);
+
+        TurboHttpInstrumentation.SetNetworkPeerAddress(activity, "93.184.216.34");
+
+        Assert.Equal("93.184.216.34", activity.GetTagItem("network.peer.address"));
     }
 }

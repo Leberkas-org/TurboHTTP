@@ -153,7 +153,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
                 }
                 else
                 {
-                    TurboHttpMetrics.ConnectionIdle.Add(-1,
+                    TurboHttpMetrics.OpenConnections.Add(-1,
+                        new("http.connection.state", "idle"),
                         new("server.address", host.Endpoint.Host),
                         new("server.port", host.Endpoint.Port));
                 }
@@ -164,7 +165,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
             // Stale — dispose and free the slot
             host.Leases.Remove(idle);
             idle.Dispose();
-            TurboHttpMetrics.ConnectionActive.Add(-1,
+            TurboHttpMetrics.OpenConnections.Add(-1,
+                new("http.connection.state", "active"),
                 new("server.address", host.Endpoint.Host),
                 new("server.port", host.Endpoint.Port));
         }
@@ -196,7 +198,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         {
             host.Leases.Remove(msg.Lease);
             msg.Lease.Dispose();
-            TurboHttpMetrics.ConnectionActive.Add(-1,
+            TurboHttpMetrics.OpenConnections.Add(-1,
+                new("http.connection.state", "active"),
                 new("server.address", host.Endpoint.Host),
                 new("server.port", host.Endpoint.Port));
             return;
@@ -207,7 +210,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         {
             host.Leases.Remove(msg.Lease);
             msg.Lease.Dispose();
-            TurboHttpMetrics.ConnectionActive.Add(-1,
+            TurboHttpMetrics.OpenConnections.Add(-1,
+                new("http.connection.state", "active"),
                 new("server.address", host.Endpoint.Host),
                 new("server.port", host.Endpoint.Port));
             ServeNextPending(host);
@@ -232,7 +236,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
 
             // No pending callers — park in idle pool
             host.Idle.Enqueue(msg.Lease);
-            TurboHttpMetrics.ConnectionIdle.Add(1,
+            TurboHttpMetrics.OpenConnections.Add(1,
+                new("http.connection.state", "idle"),
                 new("server.address", host.Endpoint.Host),
                 new("server.port", host.Endpoint.Port));
         }
@@ -241,7 +246,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
             // Not reusable — dispose and free the slot
             host.Leases.Remove(msg.Lease);
             msg.Lease.Dispose();
-            TurboHttpMetrics.ConnectionActive.Add(-1,
+            TurboHttpMetrics.OpenConnections.Add(-1,
+                new("http.connection.state", "active"),
                 new("server.address", host.Endpoint.Host),
                 new("server.port", host.Endpoint.Port));
 
@@ -255,7 +261,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         host.Establishing--;
         host.Leases.Add(msg.Lease);
         msg.Lease.MarkBusy();
-        TurboHttpMetrics.ConnectionActive.Add(1,
+        TurboHttpMetrics.OpenConnections.Add(1,
+            new("http.connection.state", "active"),
             new("server.address", host.Endpoint.Host),
             new("server.port", host.Endpoint.Port));
 
@@ -347,10 +354,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         {
             host.Leases.Remove(lease);
             lease.Dispose();
-            TurboHttpMetrics.ConnectionIdle.Add(-1,
-                new("server.address", host.Endpoint.Host),
-                new("server.port", host.Endpoint.Port));
-            TurboHttpMetrics.ConnectionActive.Add(-1,
+            TurboHttpMetrics.OpenConnections.Add(-1,
+                new("http.connection.state", "idle"),
                 new("server.address", host.Endpoint.Host),
                 new("server.port", host.Endpoint.Port));
         }

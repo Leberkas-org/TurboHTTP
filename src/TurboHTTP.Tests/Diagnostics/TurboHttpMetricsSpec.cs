@@ -235,71 +235,78 @@ public sealed class TurboHttpMetricsSpec : IDisposable
 
 
     [Fact]
-    public void ConnectionActive_should_increment()
+    public void OpenConnections_should_increment_active()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.ConnectionActive.Add(1,
+        TurboHttpMetrics.OpenConnections.Add(1,
+            new KeyValuePair<string, object?>("http.connection.state", "active"),
             new KeyValuePair<string, object?>("server.address", "pool.example.com"),
             new KeyValuePair<string, object?>("server.port", 443));
 
         _listener.RecordObservableInstruments();
 
-        var m = Assert.Single(GetLongMeasurements("http.client.connection.active"));
+        var m = Assert.Single(GetLongMeasurements("http.client.open_connections"));
         Assert.Equal(1, m.Value);
+        Assert.Equal("active", GetTag(m.Tags, "http.connection.state"));
     }
 
     [Fact]
-    public void ConnectionActive_should_decrement()
+    public void OpenConnections_should_decrement_active()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.ConnectionActive.Add(1,
+        TurboHttpMetrics.OpenConnections.Add(1,
+            new KeyValuePair<string, object?>("http.connection.state", "active"),
             new KeyValuePair<string, object?>("server.address", "pool.example.com"),
             new KeyValuePair<string, object?>("server.port", 443));
-        TurboHttpMetrics.ConnectionActive.Add(-1,
+        TurboHttpMetrics.OpenConnections.Add(-1,
+            new KeyValuePair<string, object?>("http.connection.state", "active"),
             new KeyValuePair<string, object?>("server.address", "pool.example.com"),
             new KeyValuePair<string, object?>("server.port", 443));
 
         _listener.RecordObservableInstruments();
 
-        var measurements = GetLongMeasurements("http.client.connection.active");
+        var measurements = GetLongMeasurements("http.client.open_connections");
         Assert.Equal(2, measurements.Count);
         Assert.Contains(measurements, m => m.Value == 1);
         Assert.Contains(measurements, m => m.Value == -1);
     }
 
     [Fact]
-    public void ConnectionActive_should_net_to_zero()
+    public void OpenConnections_should_track_idle()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.ConnectionActive.Add(1);
-        TurboHttpMetrics.ConnectionActive.Add(1);
-        TurboHttpMetrics.ConnectionActive.Add(-1);
-
-        _listener.RecordObservableInstruments();
-
-        var measurements = GetLongMeasurements("http.client.connection.active");
-        Assert.Equal(3, measurements.Count);
-        Assert.Equal(1, measurements.Sum(m => m.Value));
-    }
-
-
-    [Fact]
-    public void ConnectionIdle_should_track()
-    {
-        ClearMeasurements();
-
-        TurboHttpMetrics.ConnectionIdle.Add(1,
+        TurboHttpMetrics.OpenConnections.Add(1,
+            new KeyValuePair<string, object?>("http.connection.state", "idle"),
             new KeyValuePair<string, object?>("server.address", "idle.example.com"),
             new KeyValuePair<string, object?>("server.port", 80));
 
         _listener.RecordObservableInstruments();
 
-        var m = Assert.Single(GetLongMeasurements("http.client.connection.idle"));
+        var m = Assert.Single(GetLongMeasurements("http.client.open_connections"));
         Assert.Equal(1, m.Value);
+        Assert.Equal("idle", GetTag(m.Tags, "http.connection.state"));
         Assert.Equal("idle.example.com", GetTag(m.Tags, "server.address"));
+    }
+
+    [Fact]
+    public void OpenConnections_should_distinguish_active_and_idle()
+    {
+        ClearMeasurements();
+
+        TurboHttpMetrics.OpenConnections.Add(1,
+            new KeyValuePair<string, object?>("http.connection.state", "active"));
+        TurboHttpMetrics.OpenConnections.Add(1,
+            new KeyValuePair<string, object?>("http.connection.state", "idle"));
+
+        _listener.RecordObservableInstruments();
+
+        var measurements = GetLongMeasurements("http.client.open_connections");
+        Assert.Equal(2, measurements.Count);
+        Assert.Contains(measurements, m => GetTag(m.Tags, "http.connection.state")?.ToString() == "active");
+        Assert.Contains(measurements, m => GetTag(m.Tags, "http.connection.state")?.ToString() == "idle");
     }
 
 
@@ -337,6 +344,86 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     }
 
 
+    // --- ActiveRequests ---
+
+    [Fact]
+    public void ActiveRequests_should_increment_and_decrement()
+    {
+        ClearMeasurements();
+
+        TurboHttpMetrics.ActiveRequests.Add(1,
+            new KeyValuePair<string, object?>("http.request.method", "GET"),
+            new KeyValuePair<string, object?>("server.address", "example.com"),
+            new KeyValuePair<string, object?>("server.port", 443),
+            new KeyValuePair<string, object?>("url.scheme", "https"));
+
+        TurboHttpMetrics.ActiveRequests.Add(-1,
+            new KeyValuePair<string, object?>("http.request.method", "GET"),
+            new KeyValuePair<string, object?>("server.address", "example.com"),
+            new KeyValuePair<string, object?>("server.port", 443),
+            new KeyValuePair<string, object?>("url.scheme", "https"));
+
+        _listener.RecordObservableInstruments();
+
+        var measurements = GetLongMeasurements("http.client.active_requests");
+        Assert.Equal(2, measurements.Count);
+        Assert.Equal(0, measurements.Sum(m => m.Value));
+    }
+
+    // --- RequestTimeInQueue ---
+
+    [Fact]
+    public void RequestTimeInQueue_should_record()
+    {
+        ClearMeasurements();
+
+        TurboHttpMetrics.RequestTimeInQueue.Record(0.050,
+            new KeyValuePair<string, object?>("http.request.method", "GET"),
+            new KeyValuePair<string, object?>("server.address", "example.com"),
+            new KeyValuePair<string, object?>("server.port", 443),
+            new KeyValuePair<string, object?>("url.scheme", "https"));
+
+        _listener.RecordObservableInstruments();
+
+        var m = Assert.Single(GetDoubleMeasurements("http.client.request.time_in_queue"));
+        Assert.Equal(0.050, m.Value);
+    }
+
+    // --- DnsLookupDuration ---
+
+    [Fact]
+    public void DnsLookupDuration_should_record()
+    {
+        ClearMeasurements();
+
+        TurboHttpMetrics.DnsLookupDuration.Record(0.015,
+            new KeyValuePair<string, object?>("dns.question.name", "example.com"));
+
+        _listener.RecordObservableInstruments();
+
+        var m = Assert.Single(GetDoubleMeasurements("dns.lookup.duration"));
+        Assert.Equal(0.015, m.Value);
+        Assert.Equal("example.com", GetTag(m.Tags, "dns.question.name"));
+    }
+
+    // --- PipelineStall ---
+
+    [Fact]
+    public void PipelineStall_should_increment()
+    {
+        ClearMeasurements();
+
+        TurboHttpMetrics.PipelineStall.Add(1,
+            new KeyValuePair<string, object?>("stage", "Http20Connection"),
+            new KeyValuePair<string, object?>("direction", "request"));
+
+        _listener.RecordObservableInstruments();
+
+        var m = Assert.Single(GetLongMeasurements("turbohttp.pipeline.stall"));
+        Assert.Equal(1, m.Value);
+    }
+
+
     [Fact]
     public void Instruments_should_have_correct_units()
     {
@@ -347,8 +434,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
         Assert.Equal("{retry}", TurboHttpMetrics.RetryCount.Unit);
         Assert.Equal("{redirect}", TurboHttpMetrics.RedirectCount.Unit);
         Assert.Equal("s", TurboHttpMetrics.ConnectionDuration.Unit);
-        Assert.Equal("{connection}", TurboHttpMetrics.ConnectionActive.Unit);
-        Assert.Equal("{connection}", TurboHttpMetrics.ConnectionIdle.Unit);
+        Assert.Equal("{connection}", TurboHttpMetrics.OpenConnections.Unit);
+        Assert.Equal("{request}", TurboHttpMetrics.ActiveRequests.Unit);
+        Assert.Equal("s", TurboHttpMetrics.RequestTimeInQueue.Unit);
+        Assert.Equal("s", TurboHttpMetrics.DnsLookupDuration.Unit);
+        Assert.Equal("{stall}", TurboHttpMetrics.PipelineStall.Unit);
     }
 
     [Fact]
@@ -361,8 +451,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RetryCount.Description));
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RedirectCount.Description));
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.ConnectionDuration.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.ConnectionActive.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.ConnectionIdle.Description));
+        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.OpenConnections.Description));
+        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.ActiveRequests.Description));
+        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RequestTimeInQueue.Description));
+        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.DnsLookupDuration.Description));
+        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.PipelineStall.Description));
     }
 
 

@@ -1,9 +1,11 @@
 ﻿using System.Buffers;
+using System.Diagnostics;
 using System.Threading.Channels;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
 
@@ -52,6 +54,8 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private int _connectionGen;
         private RequestEndpoint _currentKey;
         private ConnectItem? _pendingConnect;
+        private Activity? _waitActivity;
+        private long _acquireTimestamp;
 
         /// <summary>
         /// Tracks the number of in-flight pipelined requests that have been acquired
@@ -315,6 +319,10 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             Log.Warning("TcpConnectionStage: Connection acquisition timed out for {0}:{1}",
                 _pendingConnect.Key.Host, _pendingConnect.Key.Port);
 
+            // Stop WaitForConnection span on timeout
+            _waitActivity?.Stop();
+            _waitActivity = null;
+
             var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Key };
             _pendingConnect = null;
 
@@ -326,6 +334,14 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private void OnLeaseAcquired(ConnectionLease lease)
         {
             CancelTimer(ConnectTimerKey);
+
+            // Stop WaitForConnection span and record RequestTimeInQueue metric
+            _waitActivity?.Stop();
+            _waitActivity = null;
+            var waitDurationS = Stopwatch.GetElapsedTime(_acquireTimestamp).TotalSeconds;
+            TurboHttpMetrics.RequestTimeInQueue.Record(waitDurationS,
+                new("server.address", lease.Key.Host),
+                new("server.port", lease.Key.Port));
 
             // Guard: duplicate lease arrival
             if (_pendingConnect is null && _handle is not null)
@@ -382,6 +398,15 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private void OnAcquisitionFailed(Exception ex)
         {
             CancelTimer(ConnectTimerKey);
+
+            // Stop WaitForConnection span with error
+            if (_waitActivity is not null)
+            {
+                TurboHttpInstrumentation.SetError(_waitActivity, ex);
+                _waitActivity.Stop();
+                _waitActivity = null;
+            }
+
             Log.Warning("TcpConnectionStage: Connection acquisition failed — {0}", ex.Message);
 
             if (_pendingConnect is null)
@@ -454,6 +479,10 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
 
         private void AcquireConnection(ConnectItem connect)
         {
+            _waitActivity = TurboHttpInstrumentation.StartWaitForConnection(
+                connect.Key.Host, connect.Key.Port);
+            _acquireTimestamp = Stopwatch.GetTimestamp();
+
             var acquireTask = ConnectionManagerActor.AcquireAsync(
                 _stage.ConnectionManager, connect.Options, connect.Key);
 

@@ -1,3 +1,4 @@
+using System.Net;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
@@ -34,10 +35,23 @@ internal static class DirectConnectionFactory
             _ => new TcpClientProvider(options)
         };
 
+        // Start a Connect span that wraps the entire establishment (DNS + socket + TLS)
+        var uri = new Uri($"{(options is TlsOptions ? "https" : "http")}://{endpoint.Host}:{endpoint.Port}/");
+        var connectActivity = TurboHttpInstrumentation.StartConnect(uri);
+        TurboHttpEventSource.Instance.ConnectionStart(endpoint.Host, endpoint.Port);
+
         try
         {
             // 2. Establish TCP/TLS connection
             var stream = await provider.GetStreamAsync(ct).ConfigureAwait(false);
+
+            // Set resolved peer address on the Connect span
+            if (connectActivity is not null && provider.RemoteEndPoint is IPEndPoint remoteEp)
+            {
+                TurboHttpInstrumentation.SetNetworkPeerAddress(connectActivity, remoteEp.Address.ToString());
+            }
+
+            connectActivity?.Stop();
 
             // 3. Create ClientState with channels + Pipe
             var state = new ClientState(
@@ -72,7 +86,8 @@ internal static class DirectConnectionFactory
 
             // 7. Emit connection opened metrics + diagnostics
             var protocol = VersionToProtocol(endpoint.Version);
-            TurboHttpMetrics.ConnectionActive.Add(1,
+            TurboHttpMetrics.OpenConnections.Add(1,
+                new("http.connection.state", "active"),
                 new("server.address", endpoint.Host),
                 new("server.port", endpoint.Port));
             TurboTrace.Connection.Info(typeof(DirectConnectionFactory), "Connection opened: {0}:{1} ({2})",
@@ -80,8 +95,14 @@ internal static class DirectConnectionFactory
 
             return lease;
         }
-        catch
+        catch (Exception ex)
         {
+            if (connectActivity is not null)
+            {
+                TurboHttpInstrumentation.SetError(connectActivity, ex);
+                connectActivity.Stop();
+            }
+
             await provider.DisposeAsync().ConfigureAwait(false);
             throw;
         }

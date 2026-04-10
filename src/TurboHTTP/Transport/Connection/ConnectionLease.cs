@@ -144,6 +144,7 @@ internal sealed class ConnectionLease : IDisposable
             durationMs / 1000.0,
             new("server.address", host),
             new("server.port", port));
+        TurboHttpEventSource.Instance.ConnectionStop(host, port, durationMs);
         TurboTrace.Connection.Info(this, "Connection closed: {0}:{1} ({2}ms)", host, port, durationMs);
     }
 

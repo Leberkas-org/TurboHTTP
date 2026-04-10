@@ -62,13 +62,23 @@ internal sealed class TracingBidiStage
                     if (activity is not null)
                     {
                         request.Options.Set(TurboHttpInstrumentation.RequestActivityKey, activity);
+                        TurboHttpInstrumentation.InjectTraceContext(activity, request);
                         _currentActivity = activity;
                     }
+
+                    // Emit diagnostic events
+                    TurboHttpDiagnosticSource.OnRequestStart(request);
+                    TurboHttpEventSource.Instance.RequestStart(
+                        request.Method.Method,
+                        request.RequestUri?.OriginalString ?? "");
 
                     // Emit request start trace event
                     var method = request.Method.Method;
                     var uri = request.RequestUri?.OriginalString ?? "";
                     TurboTrace.Request.Info(this, "Request started: {0} {1}", method, uri);
+
+                    // Track active requests
+                    RecordActiveRequestStart(request);
 
                     // Record request start timestamp for duration calculation
                     // Only store when tracing or metrics is active to avoid unnecessary allocation
@@ -86,6 +96,7 @@ internal sealed class TracingBidiStage
                 onUpstreamFailure: ex =>
                 {
                     TurboTrace.Request.Warning(this, $"Request failed: {ex.GetType().Name} — {ex.Message}");
+                    TurboHttpEventSource.Instance.RequestFailed("UNKNOWN", "", ex.GetType().Name);
 
                     if (_currentActivity is not null)
                     {
@@ -125,6 +136,17 @@ internal sealed class TracingBidiStage
                     var statusCode = (int)response.StatusCode;
                     TurboTrace.Request.Info(this, "Request completed: {0} ({1:F1}ms)", statusCode, durationMs);
 
+                    // Emit diagnostic/ETW events
+                    if (request is not null)
+                    {
+                        TurboHttpDiagnosticSource.OnRequestStop(request, response, TaskStatus.RanToCompletion);
+                    }
+                    TurboHttpEventSource.Instance.RequestStop(
+                        request?.Method.Method ?? "UNKNOWN", statusCode, durationMs);
+
+                    // Track active requests
+                    RecordActiveRequestEnd(request);
+
                     // Record request metrics
                     RecordRequestMetrics(response, durationMs);
 
@@ -134,6 +156,7 @@ internal sealed class TracingBidiStage
                 onUpstreamFailure: ex =>
                 {
                     TurboTrace.Request.Warning(this, $"Request failed: {ex.GetType().Name} — {ex.Message}");
+                    TurboHttpEventSource.Instance.RequestFailed("UNKNOWN", "", ex.GetType().Name);
 
                     if (_currentActivity is not null)
                     {
@@ -142,6 +165,9 @@ internal sealed class TracingBidiStage
                         _currentActivity = null;
                     }
 
+                    // Decrement active requests on failure (no request available for tags)
+                    TurboHttpMetrics.ActiveRequests.Add(-1);
+
                     Log.Debug("TracingBidiStage: Propagating response upstream failure to outResponse: {0}", ex.Message);
                     Fail(stage._outResponse, ex);
                 });
@@ -149,6 +175,44 @@ internal sealed class TracingBidiStage
             SetHandler(stage._outResponse,
                 onPull: () => Pull(stage._inResponse),
                 onDownstreamFinish: _ => Cancel(stage._inResponse));
+        }
+
+        private static void RecordActiveRequestStart(HttpRequestMessage request)
+        {
+            if (!TurboHttpMetrics.ActiveRequests.Enabled)
+            {
+                return;
+            }
+
+            var method = TurboHttpInstrumentation.NormalizeMethod(request.Method.Method);
+            var host = request.RequestUri?.Host ?? "unknown";
+            var port = request.RequestUri?.Port ?? 0;
+            var scheme = request.RequestUri?.Scheme ?? "https";
+
+            TurboHttpMetrics.ActiveRequests.Add(1,
+                new KeyValuePair<string, object?>("http.request.method", method),
+                new KeyValuePair<string, object?>("server.address", host),
+                new KeyValuePair<string, object?>("server.port", port),
+                new KeyValuePair<string, object?>("url.scheme", scheme));
+        }
+
+        private static void RecordActiveRequestEnd(HttpRequestMessage? request)
+        {
+            if (!TurboHttpMetrics.ActiveRequests.Enabled || request is null)
+            {
+                return;
+            }
+
+            var method = TurboHttpInstrumentation.NormalizeMethod(request.Method.Method);
+            var host = request.RequestUri?.Host ?? "unknown";
+            var port = request.RequestUri?.Port ?? 0;
+            var scheme = request.RequestUri?.Scheme ?? "https";
+
+            TurboHttpMetrics.ActiveRequests.Add(-1,
+                new KeyValuePair<string, object?>("http.request.method", method),
+                new KeyValuePair<string, object?>("server.address", host),
+                new KeyValuePair<string, object?>("server.port", port),
+                new KeyValuePair<string, object?>("url.scheme", scheme));
         }
 
         private static void RecordRequestMetrics(HttpResponseMessage response, double durationMs)
@@ -164,18 +228,35 @@ internal sealed class TracingBidiStage
                 return;
             }
 
-            var method = request.Method.Method;
+            var method = TurboHttpInstrumentation.NormalizeMethod(request.Method.Method);
             var statusCode = (int)response.StatusCode;
             var host = request.RequestUri?.Host ?? "unknown";
+            var port = request.RequestUri?.Port ?? 0;
+            var scheme = request.RequestUri?.Scheme ?? "https";
+            var protocolVersion = TurboHttpInstrumentation.FormatProtocolVersion(response.Version);
 
             TurboHttpMetrics.RequestCount.Add(1,
                 new KeyValuePair<string, object?>("http.request.method", method),
                 new KeyValuePair<string, object?>("http.response.status_code", statusCode),
                 new KeyValuePair<string, object?>("server.address", host));
 
+            var durationTags = new List<KeyValuePair<string, object?>>
+            {
+                new("http.request.method", method),
+                new("http.response.status_code", statusCode),
+                new("network.protocol.version", protocolVersion),
+                new("server.address", host),
+                new("server.port", port),
+                new("url.scheme", scheme),
+            };
+
+            if (statusCode >= 400)
+            {
+                durationTags.Add(new("error.type", statusCode.ToString()));
+            }
+
             TurboHttpMetrics.RequestDuration.Record(durationMs / 1000.0,
-                new KeyValuePair<string, object?>("http.request.method", method),
-                new KeyValuePair<string, object?>("http.response.status_code", statusCode));
+                durationTags.ToArray().AsSpan());
         }
     }
 }

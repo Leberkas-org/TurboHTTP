@@ -95,22 +95,46 @@ public static class TurboHttpMetrics
             description: "Duration of HTTP connections in seconds");
 
     /// <summary>
-    /// Currently active connections.
+    /// Number of open HTTP connections.
+    /// Tags: <c>http.connection.state</c> (<c>"active"</c> or <c>"idle"</c>),
+    /// <c>server.address</c>, <c>server.port</c>.
+    /// Matches .NET HttpClient's <c>http.client.open_connections</c> instrument.
     /// </summary>
-    public static UpDownCounter<long> ConnectionActive { get; } =
+    public static UpDownCounter<long> OpenConnections { get; } =
         Meter.CreateUpDownCounter<long>(
-            "http.client.connection.active",
+            "http.client.open_connections",
             unit: "{connection}",
-            description: "Number of currently active HTTP connections");
+            description: "Number of currently open HTTP connections");
 
     /// <summary>
-    /// Currently idle connections.
+    /// Currently active (in-flight) HTTP requests.
+    /// Tags: <c>http.request.method</c>, <c>server.address</c>, <c>server.port</c>, <c>url.scheme</c>.
     /// </summary>
-    public static UpDownCounter<long> ConnectionIdle { get; } =
+    public static UpDownCounter<long> ActiveRequests { get; } =
         Meter.CreateUpDownCounter<long>(
-            "http.client.connection.idle",
-            unit: "{connection}",
-            description: "Number of currently idle HTTP connections");
+            "http.client.active_requests",
+            unit: "{request}",
+            description: "Number of currently active HTTP requests");
+
+    /// <summary>
+    /// Time HTTP requests spend waiting for an available connection from the pool.
+    /// Tags: <c>http.request.method</c>, <c>server.address</c>, <c>server.port</c>, <c>url.scheme</c>.
+    /// </summary>
+    public static Histogram<double> RequestTimeInQueue { get; } =
+        Meter.CreateHistogram<double>(
+            "http.client.request.time_in_queue",
+            unit: "s",
+            description: "Time HTTP requests spend waiting for a connection");
+
+    /// <summary>
+    /// Duration of DNS lookups.
+    /// Tags: <c>dns.question.name</c>, <c>error.type</c> (if failed).
+    /// </summary>
+    public static Histogram<double> DnsLookupDuration { get; } =
+        Meter.CreateHistogram<double>(
+            "dns.lookup.duration",
+            unit: "s",
+            description: "Duration of DNS lookups");
 
     /// <summary>
     /// Pipeline stall events detected by <c>PipelineHealthMonitorStage</c>.

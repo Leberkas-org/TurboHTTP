@@ -64,10 +64,10 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var netSubscription = await networkSub.ExpectSubscriptionAsync();
-        var resSubscription = await responseSub.ExpectSubscriptionAsync();
-        var appSubscription = await appProbe.ExpectSubscriptionAsync();
-        var serverSubscription = await serverProbe.ExpectSubscriptionAsync();
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
         // Pull on network outlet to signal demand
         netSubscription.Request(10);
@@ -77,10 +77,10 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         appSubscription.SendNext(MakeRequest("/test"));
 
         // Should get StreamAcquireItem + NetworkBuffer on network outlet
-        var item1 = await networkSub.ExpectNextAsync();
+        var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<StreamAcquireItem>(item1);
 
-        var item2 = await networkSub.ExpectNextAsync();
+        var item2 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         var buffer = Assert.IsType<NetworkBuffer>(item2);
         var encoded = Encoding.ASCII.GetString(buffer.Span);
         Assert.StartsWith("GET /test HTTP/1.0\r\n", encoded);
@@ -114,10 +114,10 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
             return ClosedShape.Instance;
         })).Run(Materializer);
 
-        var netSubscription = await networkSub.ExpectSubscriptionAsync();
-        var resSubscription = await responseSub.ExpectSubscriptionAsync();
-        var appSubscription = await appProbe.ExpectSubscriptionAsync();
-        var serverSubscription = await serverProbe.ExpectSubscriptionAsync();
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
         netSubscription.Request(10);
         resSubscription.Request(10);
