@@ -1,7 +1,6 @@
 <div align="center">
   <img src="docs/logo/logo.svg" alt="TurboHTTP" width="200" />
-  <h1>TurboHTTP</h1>
-  <p><strong>High-performance HTTP client for .NET — built on Akka.Streams with automatic retries, caching, cookies, and HTTP/2 multiplexing.</strong></p>
+  <p><strong>High-performance HTTP client for .NET — built on Akka.Streams with automatic retries, caching, cookies, HTTP/2 multiplexing, and HTTP/3 (QUIC).</strong></p>
 
   [![Build](https://github.com/st0o0/TurboHTTP/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/st0o0/TurboHTTP/actions/workflows/build-and-release.yml)
   [![NuGet](https://img.shields.io/nuget/v/TurboHTTP.svg)](https://www.nuget.org/packages/TurboHTTP)
@@ -22,6 +21,7 @@ TurboHTTP replaces `HttpClient` with a reactive, backpressure-aware HTTP pipelin
 
 - **HTTP/1.0 and HTTP/1.1** — chunked transfer encoding, keep-alive, pipelining
 - **HTTP/2** — binary framing, stream multiplexing, HPACK header compression, flow control
+- **HTTP/3 (QUIC)** — UDP-based transport, QPACK header compression, 0-RTT connection establishment
 
 ### Resilience
 
@@ -39,7 +39,7 @@ TurboHTTP replaces `HttpClient` with a reactive, backpressure-aware HTTP pipelin
 
 ### Performance
 
-- **Zero-allocation internals** — `Span<T>`, `ReadOnlyMemory<byte>`, `IBufferWriter<byte>`, and `System.Threading.Channels` throughout the hot path
+- **Zero-allocation internals** — `MemoryPool<byte>`, `Span<T>`, `ReadOnlyMemory<byte>`, `IBufferWriter<byte>`, and `System.Threading.Channels` throughout the hot path
 - **HTTP/2 multiplexing** — multiple concurrent requests over a single TCP connection with header compression and per-stream flow control
 - **Backpressure** — Akka.Streams backpressure propagates end-to-end from the network to the caller, preventing buffer bloat and memory exhaustion under load
 - **Channel-based API** — for high-throughput scenarios, bypass `SendAsync` and write/read directly to `System.Threading.Channels` for pipelined I/O
@@ -47,8 +47,9 @@ TurboHTTP replaces `HttpClient` with a reactive, backpressure-aware HTTP pipelin
 ### Extensibility
 
 - **Handler pipeline** — compose custom request/response transforms via `TurboHandler` subclasses or inline delegates, ordered FIFO
+- **Distributed tracing** — built-in OpenTelemetry-compatible tracing via `TracingBidiStage` for request/response lifecycle visibility
 - **DI integration** — first-class `IServiceCollection` support with named and typed clients, `IOptionsMonitor` for runtime configuration changes
-- **3,600+ tests** — unit tests, stream stage tests, integration tests, and benchmarks
+- **4,200+ tests** — unit tests, stream stage tests, integration tests, and benchmarks
 
 ---
 
@@ -208,13 +209,17 @@ Client Layer       ITurboHttpClient (SendAsync / channel API)
 Handlers Layer     TurboHandler pipeline (Auth, Logging, custom transforms)
       ↓
 Streams Layer      Akka.Streams GraphStages — Engine, Feature BidiStages, Protocol Engines
-                   Features: Cache, Cookies, Redirect, Retry, ContentEncoding, Expect-Continue
+                   Features: Cache, Cookies, Redirect, Retry, ContentEncoding,
+                             Expect-Continue, Tracing, ConnectionReuse
       ↓
-Protocol Layer     Encoders/Decoders, HPACK, frame types
+Protocol Layer     Encoders/Decoders, HPACK/QPACK, frame types
+                   HTTP/1.0 · HTTP/1.1 · HTTP/2 · HTTP/3
       ↓
 Pooling Layer      PoolRouter → HostPool → ConnectionActor (lifecycle only)
       ↓
-Transport Layer    ConnectionStage ←→ Channel<byte> ←→ ClientByteMover ←→ TCP
+Transport Layer    ITransportFactory abstraction
+                   ├─ TCP  → TcpConnectionStage ←→ Channel<byte> ←→ ClientByteMover
+                   └─ QUIC → QuicConnectionManager ←→ QUIC streams
 ```
 
 For interactive architecture diagrams, see the [documentation site](https://turbohttp.st0o0.net/).
