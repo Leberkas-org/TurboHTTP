@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.Security;
 /// This is Part 2 of the fuzz harness tests (FZ-011 through FZ-025).
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §4.2: Receivers must treat frames with unknown types as PROTOCOL_ERROR or ignore them safely.
 /// </remarks>
 public sealed class Http2FuzzHarnessPart2Spec
@@ -21,7 +21,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     /// Feeds <paramref name="frame"/> to the decoder and asserts that the outcome
     /// is either a successful decode or an Http2Exception. Any other exception is a bug.
     /// </summary>
-    private static void AssertDecodeNeverCrashes(Http2FrameDecoder decoder, byte[] frame)
+    private static void AssertDecodeNeverCrashes(FrameDecoder decoder, byte[] frame)
     {
         try
         {
@@ -103,7 +103,7 @@ public sealed class Http2FuzzHarnessPart2Spec
 
         for (var trial = 0; trial < 30; trial++)
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var garbage = new byte[rng.Next(1, 200)];
             rng.NextBytes(garbage);
             var frame = BuildHeadersFrame(1, garbage);
@@ -119,7 +119,7 @@ public sealed class Http2FuzzHarnessPart2Spec
 
         for (var trial = 0; trial < 30; trial++)
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
 
             // Start with indexed :status 200 (0x88), then append garbage.
             var garbage = new byte[rng.Next(1, 100)];
@@ -137,7 +137,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC9113-4.3")]
     public void Http2FrameDecoder_should_handle_hpack_oversized_string_length_without_crashing()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Literal without indexing (0x00), index=0 (new name), then oversized length field.
         // 0x7F = 127 in 7-bit prefix → requires multi-byte encoding (continuation bytes).
@@ -151,7 +151,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC7541-6.1")]
     public void Http2FrameDecoder_should_handle_out_of_range_hpack_index_without_crashing()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // RFC 7541 §6.1: index 0 is illegal; index > (static + dynamic count) is a COMPRESSION_ERROR.
         // Encode index = 200 using 7-bit prefix: first byte = 0xFF (prefix saturated at 127),
@@ -169,7 +169,7 @@ public sealed class Http2FuzzHarnessPart2Spec
 
         for (var trial = 0; trial < 20; trial++)
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
 
             // Build a literal without indexing (0x00), new name (0x00),
             // then name with Huffman flag (0x80 | length) + random bytes as "Huffman" data.
@@ -195,7 +195,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_reject_connection_window_overflow_with_explicit_enforcement()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Initial connection send window = 65535.
         // WINDOW_UPDATE of 0x7FFFFFFF = 2,147,483,647.
@@ -219,7 +219,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_reject_stream_window_overflow_with_explicit_enforcement()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Open stream 1 first with HEADERS.
         var openFrame = BuildHeadersFrame(1, Status200HpackBlock);
@@ -244,7 +244,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_reject_zero_increment_window_update_with_protocol_error()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         var payload = new byte[4]; // all zeros → increment = 0
         var frame = BuildRawFrame(0x8, 0, 0, payload);
@@ -257,7 +257,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_accept_settings_initial_window_size_at_maximum_valid_value()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // RFC 9113 §6.5.2: INITIAL_WINDOW_SIZE max = 2^31-1 = 2,147,483,647.
         var frame = BuildSettingsFrame(false, [(0x4, 0x7FFFFFFF)]);
@@ -270,7 +270,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_reject_settings_initial_window_size_exceeding_max_with_explicit_enforcement()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // RFC 9113 §6.5.2: INITIAL_WINDOW_SIZE = 2^31 is illegal (exceeds 2^31-1).
         var frame = BuildSettingsFrame(false, [(0x4, 0x80000000)]);
@@ -330,7 +330,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     public void Http2FrameDecoder_should_handle_rapid_header_table_size_changes_without_crashing()
     {
         var rng = new Random(42);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         for (var i = 0; i < 50; i++)
         {
@@ -344,7 +344,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     [Trait("RFC", "RFC7541-6.3")]
     public void Http2FrameDecoder_should_handle_header_table_size_zero_followed_by_normal_headers()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Set HEADER_TABLE_SIZE=0 via SETTINGS — dynamic table must be disabled.
         var settingsFrame = BuildSettingsFrame(false, [(0x1, 0)]);
@@ -361,7 +361,7 @@ public sealed class Http2FuzzHarnessPart2Spec
     public void Http2FrameDecoder_should_survive_extended_random_frame_sequence_without_unhandled_exceptions()
     {
         var rng = new Random(314159);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var streamCounter = 1; // Next client stream ID to use
 
         for (var iteration = 0; iteration < 1000; iteration++)

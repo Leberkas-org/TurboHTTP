@@ -11,8 +11,8 @@ public sealed class OTelCollection;
 public sealed class TurboHttpMetricsSpec : IDisposable
 {
     private readonly MeterListener _listener;
-    private readonly ConcurrentBag<MetricMeasurement<long>> _longMeasurements = new();
-    private readonly ConcurrentBag<MetricMeasurement<double>> _doubleMeasurements = new();
+    private readonly ConcurrentBag<MetricMeasurement<long>> _longMeasurements = [];
+    private readonly ConcurrentBag<MetricMeasurement<double>> _doubleMeasurements = [];
 
     public TurboHttpMetricsSpec()
     {

@@ -22,7 +22,7 @@ public sealed class Http2HeadersValidationPart1Spec
         var headerBlock = hpack.Encode([(":status", "200")]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<HeadersFrame>(frames[0]);
     }
@@ -37,7 +37,7 @@ public sealed class Http2HeadersValidationPart1Spec
             var headerBlock = hpack.Encode([(":status", status)]);
             var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-            var frames = new Http2FrameDecoder().Decode(frame);
+            var frames = new FrameDecoder().Decode(frame);
             Assert.NotEmpty(frames);
         }
     }
@@ -55,7 +55,7 @@ public sealed class Http2HeadersValidationPart1Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -111,7 +111,7 @@ public sealed class Http2HeadersValidationPart1Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -127,7 +127,7 @@ public sealed class Http2HeadersValidationPart1Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -143,7 +143,7 @@ public sealed class Http2HeadersValidationPart1Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 

@@ -119,7 +119,7 @@ public sealed class HpackFuzzSpec
     public void HpackDecoder_should_throw_when_indexed_reference_is_zero()
     {
         var decoder = new HpackDecoder();
-        byte[] data = { 0x80 };
+        byte[] data = [0x80];
 
         var ex = Assert.Throws<HpackException>(() => decoder.Decode(data));
         Assert.NotNull(ex);

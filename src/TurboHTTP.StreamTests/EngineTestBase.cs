@@ -307,7 +307,7 @@ public abstract class EngineTestBase : TestKit
         var outboundBytes = await DrainOutboundH2Async(fake);
 
         var frames = outboundBytes.Count > 0
-            ? new Http2FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
+            ? new FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
             : [];
 
         return (response, frames);
@@ -346,7 +346,7 @@ public abstract class EngineTestBase : TestKit
         var outboundBytes = await DrainOutboundH2Async(fake);
 
         var frames = outboundBytes.Count > 0
-            ? new Http2FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
+            ? new FrameDecoder().Decode(outboundBytes.ToArray().AsMemory())
             : [];
 
         return (results, frames);

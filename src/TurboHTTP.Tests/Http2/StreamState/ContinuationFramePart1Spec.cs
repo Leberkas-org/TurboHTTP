@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.StreamState;
 /// Verifies that fragmented header blocks are correctly joined before HPACK decoding.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.10: CONTINUATION frames must immediately follow HEADERS or PUSH_PROMISE; END_HEADERS flag terminates the sequence.
 /// </remarks>
 public sealed class ContinuationFramePart1Spec
@@ -110,7 +110,7 @@ public sealed class ContinuationFramePart1Spec
         var block = EncodeBlock((":status", "200"));
         var bytes = new HeadersFrame(1, block.AsMemory(), endStream: true, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -132,7 +132,7 @@ public sealed class ContinuationFramePart1Spec
         var partial = block[..1];
         var bytes = new HeadersFrame(1, partial.AsMemory(), endStream: true, endHeaders: false).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -149,7 +149,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..split], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[split..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = ConcatArrays(headersBytes, contBytes);
         var decoded = decoder.Decode(frames);
 
@@ -173,7 +173,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..third], endStream: true, endHeaders: false).Serialize();
         var cont1Bytes = new ContinuationFrame(1, block.AsMemory()[third..Math.Min(2 * third, block.Length)], endHeaders: false).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decoded = decoder.Decode(ConcatArrays(headersBytes, cont1Bytes));
 
         Assert.Equal(2, decoded.Count);
@@ -193,7 +193,7 @@ public sealed class ContinuationFramePart1Spec
         var c2 = new ContinuationFrame(1, block.AsMemory()[(2 * quarter)..(3 * quarter)], endHeaders: false).Serialize();
         var c3 = new ContinuationFrame(1, block.AsMemory()[(3 * quarter)..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decoded = decoder.Decode(ConcatArrays(h, c1, c2, c3));
         Assert.Equal(4, decoded.Count);
 
@@ -214,7 +214,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..half], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[half..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decoded = decoder.Decode(ConcatArrays(headersBytes, contBytes));
         Assert.Equal(2, decoded.Count);
 
@@ -242,7 +242,7 @@ public sealed class ContinuationFramePart1Spec
             0x61, 0x62, 0x63  // "abc"
         };
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(dataFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
@@ -256,7 +256,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: false, endHeaders: false).Serialize();
         var pingBytes = new PingFrame(new byte[8]).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(pingBytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
@@ -270,7 +270,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: false, endHeaders: false).Serialize();
         var settingsBytes = new SettingsFrame([]).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(settingsBytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
@@ -284,7 +284,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: false, endHeaders: false).Serialize();
         var rstBytes = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rstBytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
@@ -298,7 +298,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: false, endHeaders: false).Serialize();
         var windowUpdateBytes = new WindowUpdateFrame(0, 65535).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(windowUpdateBytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
@@ -312,7 +312,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: false, endHeaders: false).Serialize();
         var goAwayBytes = new GoAwayFrame(1, Http2ErrorCode.NoError).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(goAwayBytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
@@ -326,7 +326,7 @@ public sealed class ContinuationFramePart1Spec
         var headersBytes1 = new HeadersFrame(1, block.AsMemory()[..1], endStream: false, endHeaders: false).Serialize();
         var headersBytes3 = new HeadersFrame(3, block.AsMemory(), endStream: true, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersBytes1);
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(headersBytes3));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);

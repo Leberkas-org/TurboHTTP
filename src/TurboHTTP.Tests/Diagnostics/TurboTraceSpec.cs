@@ -10,7 +10,7 @@ public sealed class TurboTraceSpec : IDisposable
 {
     private sealed class MockTraceListener : ITurboTraceListener
     {
-        public List<TraceEvent> Events { get; } = new();
+        public List<TraceEvent> Events { get; } = [];
         public bool IsEnabled(TurboTraceLevel level, TurboTraceCategory category) => true;
         public void Write(in TraceEvent evt) => Events.Add(evt);
     }

@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.Security;
 /// This is Part 1 of the fuzz harness tests (FZ-001 through FZ-010).
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §4.2: Receivers must treat frames with unknown types as PROTOCOL_ERROR or ignore them safely.
 /// </remarks>
 public sealed class Http2FuzzHarnessPart1Spec
@@ -21,7 +21,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     /// Feeds <paramref name="frame"/> to the decoder and asserts that the outcome
     /// is either a successful decode or an Http2Exception. Any other exception is a bug.
     /// </summary>
-    private static void AssertDecodeNeverCrashes(Http2FrameDecoder decoder, byte[] frame)
+    private static void AssertDecodeNeverCrashes(FrameDecoder decoder, byte[] frame)
     {
         try
         {
@@ -100,7 +100,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     public void Http2FrameDecoder_should_handle_random_headers_data_sequences_without_crashing()
     {
         var rng = new Random(42);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         for (var i = 0; i < 50; i++)
         {
@@ -120,7 +120,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     public void Http2FrameDecoder_should_handle_random_rst_stream_frames_without_crashing()
     {
         var rng = new Random(137);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         for (var i = 0; i < 100; i++)
         {
@@ -138,7 +138,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     public void Http2FrameDecoder_should_handle_random_window_update_frames_without_crashing()
     {
         var rng = new Random(7);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         for (var i = 0; i < 100; i++)
         {
@@ -153,7 +153,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     public void Http2FrameDecoder_should_handle_interleaved_frame_types_without_crashing()
     {
         var rng = new Random(99);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         Func<byte[]>[] frameBuilders =
         [
@@ -176,7 +176,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     public void Http2FrameDecoder_should_ignore_unknown_frame_types_per_rfc9113()
     {
         var rng = new Random(555);
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // RFC 9113 §5.5: Implementations MUST ignore and discard frames with unknown types.
         for (var i = 0; i < 50; i++)
@@ -195,7 +195,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_reject_oversized_frame_with_frame_size_error()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Declare length = 20000 > default MaxFrameSize (16384), provide full buffer.
         // NOTE: Http2FrameDecoder does not enforce MAX_FRAME_SIZE. The frame is decoded;
@@ -216,7 +216,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_buffer_truncated_frame_without_crashing()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Declare a PING with length=8 but provide only 4 payload bytes → decoder returns empty.
         var frame = new byte[9 + 4];
@@ -233,7 +233,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_reject_ping_with_wrong_payload_length_with_frame_size_error()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // PING must be exactly 8 bytes; 5 bytes is wrong.
         var payload = new byte[5];
@@ -247,7 +247,7 @@ public sealed class Http2FuzzHarnessPart1Spec
     [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_reject_settings_with_non_multiple_of_6_payload_with_frame_size_error()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // SETTINGS payload must be a multiple of 6; 7 is not.
         var payload = new byte[7];
@@ -265,7 +265,7 @@ public sealed class Http2FuzzHarnessPart1Spec
 
         for (var trial = 0; trial < 50; trial++)
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
 
             // Build a frame with a random 3-byte declared length that may not match
             // the actual buffer size — simulates length-field corruption.

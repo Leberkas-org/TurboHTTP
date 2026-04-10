@@ -16,7 +16,7 @@ namespace TurboHTTP.Tests.Security;
 /// </summary>
 /// <remarks>
 /// Classes under test: <see cref="UriSanitizer"/>, <see cref="RedirectHandler"/>,
-/// <see cref="Http10Encoder"/>, <see cref="Http11Encoder"/>, <see cref="Http2RequestEncoder"/>.
+/// <see cref="Http10Encoder"/>, <see cref="Http11Encoder"/>, <see cref="RequestEncoder"/>.
 /// Attack vectors: path traversal, fragment injection, userinfo embedded in URIs,
 /// unicode normalization, double-encoding passthrough, null bytes, backslash handling,
 /// extremely long URI components.

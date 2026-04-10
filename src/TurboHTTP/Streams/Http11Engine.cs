@@ -2,9 +2,8 @@
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
+using TurboHTTP.Streams.Stages;
 using TurboHTTP.Streams.Stages.Decoding;
-using TurboHTTP.Streams.Stages.Encoding;
-using TurboHTTP.Streams.Stages.Routing;
 
 namespace TurboHTTP.Streams;
 
@@ -25,17 +24,7 @@ public class Http11Engine : IHttpProtocolEngine
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            var encoder = b.Add(new Http11EncoderStage());
-            var decoder = b.Add(new Http11DecoderStage());
-            var correlation = b.Add(new Http11CorrelationStage(_maxPipelineDepth));
-
-            var requestBCast = b.Add(new Broadcast<HttpRequestMessage>(2));
-            var signalMerge = b.Add(new MergePreferred<IOutputItem>(1));
-
-            b.From(requestBCast.Out(0)).To(encoder.Inlet);
-            b.From(requestBCast.Out(1)).To(correlation.InRequest);
-
-            b.From(decoder.Outlet).To(correlation.InResponse);
+            var connection = b.Add(new Http11ConnectionStage(_maxPipelineDepth));
 
             // BatchWeighted consolidates multiple small NetworkBuffers from the encoder
             // into fewer, larger writes before they hit the transport — reducing
@@ -50,18 +39,17 @@ public class Http11Engine : IHttpProtocolEngine
                         item => item,
                         BatchConsolidate));
 
-            b.From(encoder.Outlet).Via(batchFlow).To(signalMerge.In(0));
-            b.From(correlation.OutControl).To(signalMerge.Preferred);
+            b.From(connection.OutNetwork).Via(batchFlow);
 
             return new BidiShape<
                 HttpRequestMessage,
                 IOutputItem,
                 IInputItem,
                 HttpResponseMessage>(
-                requestBCast.In,
-                signalMerge.Out,
-                decoder.Inlet,
-                correlation.OutResponse);
+                connection.InApp,
+                batchFlow.Outlet,
+                connection.InServer,
+                connection.OutResponse);
         }));
     }
 

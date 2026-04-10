@@ -155,7 +155,7 @@ internal sealed class QuicConnectionManager : IAsyncDisposable
     /// </summary>
     internal void AddBufferedInbound(InputStreamType streamType)
     {
-        var stream = new System.IO.MemoryStream();
+        var stream = new MemoryStream();
         var lease = CreateStreamLease(stream, StreamDirection.ReadOnly);
         lock (_lock)
         {

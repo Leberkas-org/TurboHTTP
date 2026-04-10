@@ -273,7 +273,7 @@ public sealed class QpackInstructionDecoderSpec
     public void Should_ClearRemainder_WhenReset()
     {
         // Feed partial data
-        _decoder.TryDecodeEncoderInstruction(new byte[] { 0xFF }, out _);
+        _decoder.TryDecodeEncoderInstruction([0xFF], out _);
         Assert.True(_decoder.HasRemainder);
 
         _decoder.Reset();

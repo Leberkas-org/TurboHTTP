@@ -251,7 +251,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
     {
         private readonly LogLevel _enabledLevel;
 
-        public List<LogEntry> LogEntries { get; } = new();
+        public List<LogEntry> LogEntries { get; } = [];
 
         public TestLogger(LogLevel enabledLevel = LogLevel.Trace)
         {

@@ -202,7 +202,7 @@ public sealed class HpackSensitiveHeaderSpec
     [Trait("RFC", "RFC7541-7.1.3")]
     public void HpackSensitiveHeader_should_reduce_size_for_non_sensitive_on_repeat()
     {
-        var encoder = new Http2RequestEncoder(useHuffman: false);
+        var encoder = new RequestEncoder(useHuffman: false);
 
         var req1 = MakeGetRequest();
         req1.Headers.TryAddWithoutValidation("X-Custom-Header", "some-stable-value");
@@ -318,12 +318,12 @@ public sealed class HpackSensitiveHeaderSpec
 
     private static List<HpackHeader> EncodeAndDecodeHeaders(HttpRequestMessage request, bool useHuffman = false)
     {
-        var encoder = new Http2RequestEncoder(useHuffman);
+        var encoder = new RequestEncoder(useHuffman);
         var hpackBlock = encoder.EncodeToHpackBlock(request);
         return new HpackDecoder().Decode(hpackBlock);
     }
 
-    private static byte[] ExtractHpackBlockFromEncoder(Http2RequestEncoder encoder, HttpRequestMessage request)
+    private static byte[] ExtractHpackBlockFromEncoder(RequestEncoder encoder, HttpRequestMessage request)
     {
         return encoder.EncodeToHpackBlock(request);
     }

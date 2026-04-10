@@ -32,7 +32,7 @@ public sealed class QpackDecoder
     // Reused per-Decode/TryDecode-call header list. Cleared at the start of each call.
     // Safe to reuse: QPACK processes one header block at a time per connection; Akka back-pressure
     // guarantees the list is consumed before the next Decode/TryDecode call.
-    private readonly List<(string Name, string Value)> _headers = new();
+    private readonly List<(string Name, string Value)> _headers = [];
 
     /// <summary>
     /// Creates a new QPACK decoder.

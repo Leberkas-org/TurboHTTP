@@ -7,7 +7,7 @@ namespace TurboHTTP.Tests.Http2.FlowControl;
 /// Verifies increment values, boundary conditions, and zero-increment error handling.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.9.1: A zero-increment WINDOW_UPDATE on a stream is a stream error (PROTOCOL_ERROR).
 /// </remarks>
 public sealed class DecoderStreamFlowControlSpec
@@ -17,7 +17,7 @@ public sealed class DecoderStreamFlowControlSpec
     public void Http2FrameDecoder_should_decode_correctly_when_window_update_on_stream_0()
     {
         var frame = new WindowUpdateFrame(0, 32768).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(frame);
 
         Assert.Single(frames);
@@ -31,7 +31,7 @@ public sealed class DecoderStreamFlowControlSpec
     public void Http2FrameDecoder_should_decode_correctly_when_window_update_on_stream_n()
     {
         var frame = new WindowUpdateFrame(3, 8192).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(frame);
 
         Assert.Single(frames);
@@ -52,7 +52,7 @@ public sealed class DecoderStreamFlowControlSpec
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x00, 0x00, 0x00, // increment = 0 — illegal
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
@@ -70,7 +70,7 @@ public sealed class DecoderStreamFlowControlSpec
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x00, 0x01, 0x00, 0x00, // 5 payload bytes
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
     }
@@ -81,7 +81,7 @@ public sealed class DecoderStreamFlowControlSpec
     {
         var data = new byte[] { 0x01, 0x02, 0x03 };
         var frame = new DataFrame(1, data, endStream: true).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(frame);
 
         Assert.Single(frames);
@@ -100,7 +100,7 @@ public sealed class DecoderStreamFlowControlSpec
         foreach (var increment in increments)
         {
             var bytes = new WindowUpdateFrame(1, increment).Serialize();
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var frames = decoder.Decode(bytes);
 
             Assert.Single(frames);

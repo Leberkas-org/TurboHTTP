@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.Frames;
 /// Covers stream ID rules, payload size validation, flags, and frame ordering.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §4.1: The frame header is 9 bytes — length(24) + type(8) + flags(8) + stream(31).
 /// </remarks>
 public sealed class Http2FrameParsingPart2Spec
@@ -26,7 +26,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00,
             0x00, 0x00, 0x00, 0x01
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -43,7 +43,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x01,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -63,7 +63,7 @@ public sealed class Http2FrameParsingPart2Spec
         frame[7] = 0;
         frame[8] = 1;
 
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -73,7 +73,7 @@ public sealed class Http2FrameParsingPart2Spec
     public void Http2FrameDecoder_should_accept_when_window_update_on_stream_0()
     {
         var frame = new WindowUpdateFrame(0, 1024).Serialize();
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<WindowUpdateFrame>(frames[0]);
     }
@@ -83,7 +83,7 @@ public sealed class Http2FrameParsingPart2Spec
     public void Http2FrameDecoder_should_accept_when_window_update_on_non_zero_stream()
     {
         var frame = new WindowUpdateFrame(3, 4096).Serialize();
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<WindowUpdateFrame>(frames[0]);
     }
@@ -102,7 +102,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -119,7 +119,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x01, 0x00, 0x00, 0x10, 0x00
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -136,7 +136,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -153,7 +153,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -170,7 +170,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x01
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -187,7 +187,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x01,
             0x00, 0x00, 0x01
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -204,7 +204,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x01,
             0x00, 0x00, 0x00, 0x00, 0x00
         };
-        var ex = Assert.Throws<Http2Exception>(() => new Http2FrameDecoder().Decode(frame));
+        var ex = Assert.Throws<Http2Exception>(() => new FrameDecoder().Decode(frame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
@@ -223,7 +223,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x03, 0x00, 0x00, 0x00, 0x64
         };
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<SettingsFrame>(frames[0]);
     }
@@ -240,7 +240,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08
         };
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<PingFrame>(frames[0]);
     }
@@ -252,7 +252,7 @@ public sealed class Http2FrameParsingPart2Spec
         var debugData = "shutdown"u8.ToArray();
         var frame = new GoAwayFrame(5, Http2ErrorCode.NoError, debugData).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         var goAwayFrame = Assert.IsType<GoAwayFrame>(frames[0]);
         Assert.Equal(5, goAwayFrame.LastStreamId);
@@ -273,7 +273,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x01,
             0x88
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(frame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
@@ -291,7 +291,7 @@ public sealed class Http2FrameParsingPart2Spec
         headersFrame.CopyTo(combined, 0);
         pingFrame.CopyTo(combined, headersFrame.Length);
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(combined));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }

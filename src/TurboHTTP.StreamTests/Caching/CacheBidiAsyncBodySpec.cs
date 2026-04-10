@@ -30,7 +30,7 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
 
         public void Fail(Exception ex) => _tcs.SetException(ex);
 
-        protected override async Task SerializeToStreamAsync(System.IO.Stream stream, System.Net.TransportContext? context)
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
             var data = await _tcs.Task;
             await stream.WriteAsync(data, TestContext.Current.CancellationToken);
@@ -42,12 +42,12 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
             return false;
         }
 
-        protected override Task<System.IO.Stream> CreateContentReadStreamAsync()
+        protected override Task<Stream> CreateContentReadStreamAsync()
         {
             return _tcs.Task.ContinueWith(t =>
             {
-                var ms = new System.IO.MemoryStream(t.Result);
-                return (System.IO.Stream)ms;
+                var ms = new MemoryStream(t.Result);
+                return (Stream)ms;
             }, TaskScheduler.Default);
         }
     }

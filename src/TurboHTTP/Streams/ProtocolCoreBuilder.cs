@@ -3,7 +3,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages.Internal;
-using TurboHTTP.Streams.Stages.Routing;
 
 namespace TurboHTTP.Streams;
 
@@ -45,7 +44,7 @@ internal static class ProtocolCoreBuilder
         int MaxConcurrencyPerSlot(RequestEndpoint endpoint)
             => endpoint.Version.Major >= 2 ? maxConcurrentH2Streams
              : endpoint.Version is { Major: 1, Minor: 0 } ? 1  // HTTP/1.0 no pipelining
-             : clientOptions.Http1.MaxPipelineDepth;              // HTTP/1.1 pre-fill slots
+             : clientOptions.Http1.MaxPipelineDepth;           // HTTP/1.1 pre-fill slots
 
         int MaxSubstreamsPerKey(RequestEndpoint endpoint)
             => endpoint.Version.Major >= 2 ? maxConnsH2 : maxConnsH1;
@@ -56,15 +55,14 @@ internal static class ProtocolCoreBuilder
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlowForEndpoint(RequestEndpoint endpoint)
         {
             var version = endpoint.Version;
-            var engine = (version switch
+            IHttpProtocolEngine engine = version switch
             {
-                { Major: 1, Minor: 0 } => (IHttpProtocolEngine)new Http10Engine(clientOptions.Http1.MaxPipelineDepth),
+                { Major: 1, Minor: 0 } => new Http10Engine(),
                 { Major: 1, Minor: 1 } => new Http11Engine(clientOptions.Http1.MaxPipelineDepth),
-                { Major: 2, Minor: 0 } => new Http20Engine(clientOptions.Http2.InitialWindowSize, maxConcurrentH2Streams, clientOptions.Http2MaxBatchWeight),
+                { Major: 2, Minor: 0 } => new Http20Engine(clientOptions.Http2.InitialWindowSize, maxConcurrentH2Streams),
                 { Major: 3, Minor: 0 } => new Http30Engine(),
-                _ => throw new ArgumentOutOfRangeException(nameof(version), version,
-                    $"Unsupported HTTP version: {version}")
-            });
+                _ => throw new ArgumentOutOfRangeException(nameof(version), version, $"Unsupported HTTP version: {version}")
+            };
 
             // Async boundary on the joined flow: the full engine+transport sub-graph
             // runs in its own sub-actor (separate from GroupBy/EndpointDispatch).

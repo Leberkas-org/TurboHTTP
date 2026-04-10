@@ -9,7 +9,7 @@ namespace TurboHTTP.Tests.Http2.StreamState;
 /// Part 3: HEADERS frame, CONTINUATION frame.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// </remarks>
 public sealed class Http2ConnectionPrefacePart3Spec
 {
@@ -21,7 +21,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
     // Helper: Decode server responses from frame bytes (replaces Http2ProtocolSession.Responses)
     private static List<(int StreamId, HttpResponseMessage Response)> DecodeResponses(ReadOnlyMemory<byte> data)
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var hpack = new HpackDecoder();
         var frames = decoder.Decode(data);
         var responses = new List<(int, HttpResponseMessage)>();
@@ -113,7 +113,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         var headerBlock = hpack.Encode([(":status", "200")]);
         var frame = new HeadersFrame(1, headerBlock, endStream: false, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(frame);
 
         // If END_HEADERS was respected, a subsequent non-CONTINUATION frame must not throw.
@@ -196,7 +196,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         var contFrame = new ContinuationFrame(1, split2, endHeaders: true).Serialize();
 
         // Use same decoder instance to maintain state
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames1 = decoder.Decode(headersFrame);
         Assert.Single(frames1); // HEADERS frame is decoded
 
@@ -218,7 +218,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
             0x00, 0x00, 0x00, 0x00, // stream=0
             0x88
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         // Decoder parses the frame itself without validation of stream ID constraints
         var frames = decoder.Decode(frame);
         var headersFrame = Assert.IsType<HeadersFrame>(Assert.Single(frames));
@@ -239,7 +239,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         var contFrame = new ContinuationFrame(1, headerBlock[split..], endHeaders: true).Serialize();
 
         // Use same decoder instance to maintain continuation state
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersFrame);
 
         var frames = decoder.Decode(contFrame);
@@ -258,7 +258,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         var headersFrame = new HeadersFrame(1, headerBlock[..1], endStream: true, endHeaders: false).Serialize();
         var contFrame = new ContinuationFrame(1, headerBlock[1..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersFrame);
         var frames = decoder.Decode(contFrame);
 
@@ -279,7 +279,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         var cont1 = new ContinuationFrame(1, headerBlock[third..(2 * third)], endHeaders: false).Serialize();
         var cont2 = new ContinuationFrame(1, headerBlock[(2 * third)..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersFrame);
         decoder.Decode(cont1);
         var frames = decoder.Decode(cont2);
@@ -309,7 +309,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         };
 
         var combined = headersFrame.Concat(contFrame).ToArray();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(combined));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
@@ -325,7 +325,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         var headersFrame = new HeadersFrame(1, headerBlock, endStream: false, endHeaders: false).Serialize();
         var pingFrame = new PingFrame(new byte[8]).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         decoder.Decode(headersFrame);
 
         // PING while awaiting CONTINUATION must be PROTOCOL_ERROR.
@@ -353,7 +353,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
         };
 
         var combined = headersOnStream1.Concat(contOnStream0).ToArray();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(combined));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
@@ -363,7 +363,7 @@ public sealed class Http2ConnectionPrefacePart3Spec
     public void Http2FrameDecoder_should_throw_protocol_error_when_continuation_frame_has_no_preceding_headers()
     {
         var contFrame = new ContinuationFrame(1, new byte[] { 0x88 }, endHeaders: true).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(contFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }

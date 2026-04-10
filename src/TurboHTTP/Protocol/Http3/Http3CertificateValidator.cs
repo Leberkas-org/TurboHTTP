@@ -66,9 +66,9 @@ public static class Http3CertificateValidator
             // On Linux, multiple SANs may appear comma-separated on a single line:
             // "DNS:a.com, DNS:b.com" — so we split on newlines first, then on ", ".
             var formatted = ext.Format(multiLine: true);
-            foreach (var line in formatted.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var line in formatted.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
             {
-                foreach (var token in line.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries))
+                foreach (var token in line.Split([", "], StringSplitOptions.RemoveEmptyEntries))
                 {
                     var trimmed = token.Trim();
 

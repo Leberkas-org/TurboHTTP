@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.Connection;
 /// Verifies that every frame produced by the encoder can be decoded to equivalent values.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/> and <see cref="Http2RequestEncoder"/>.
+/// Class under test: <see cref="FrameDecoder"/> and <see cref="RequestEncoder"/>.
 /// These tests validate the full encode→transmit→decode pipeline used by TurboHttp connections.
 /// </remarks>
 public sealed class Http2CrossComponentValidationPart2Spec
@@ -160,7 +160,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_decrement_active_stream_count_when_rst_stream_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -189,7 +189,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_carry_error_code_when_rst_stream_frame_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Open stream 1
         decoder.Decode(BuildHeadersFrame(1, ValidStatusHeaderBlock()));
@@ -206,7 +206,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_throw_stream_closed_error_when_data_sent_on_reset_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var closedStreams = new HashSet<int>();
 
         // Open stream 1
@@ -233,7 +233,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_have_error_code_in_payload_when_rst_stream_frame_built()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Open stream 1
         decoder.Decode(BuildHeadersFrame(1, ValidStatusHeaderBlock()));
@@ -251,7 +251,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_decode_correct_last_stream_id_when_go_away_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Open stream 1 first
         decoder.Decode(BuildHeadersFrame(1, ValidStatusHeaderBlock()));
@@ -268,7 +268,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_reject_new_headers_when_stream_id_exceeds_go_away_last_stream_id()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // GOAWAY with lastStreamId = 0
         var goAway = decoder.Decode(BuildGoAwayFrame(0, Http2ErrorCode.NoError));
@@ -289,7 +289,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_set_last_stream_id_correctly_when_go_away_built()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Open streams 1, 3, 5
         decoder.Decode(BuildHeadersFrame(1, ValidStatusHeaderBlock()));
@@ -307,7 +307,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_decode_error_code_correctly_when_go_away_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         var goAway = decoder.Decode(BuildGoAwayFrame(0, Http2ErrorCode.FlowControlError));
         var frame = Assert.IsType<GoAwayFrame>(goAway[0]);
@@ -325,7 +325,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
         var corruptHpack = new byte[] { 0x80 }; // indexed, index=0 (reserved)
         var headersFrame = BuildHeadersFrame(1, corruptHpack);
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(headersFrame);
         var frame = Assert.IsType<HeadersFrame>(frames[0]);
 
@@ -361,7 +361,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
 
         var headersFrame = BuildHeadersFrame(1, combined.ToArray());
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(headersFrame);
         var frame = Assert.IsType<HeadersFrame>(frames[0]);
 

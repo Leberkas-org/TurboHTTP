@@ -9,7 +9,7 @@ namespace TurboHTTP.Tests.Http2.StreamState;
 /// Verifies the magic octets and initial SETTINGS frame are correctly produced and parsed.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §3.4: The client connection preface starts with the PRI magic string followed by a SETTINGS frame.
 /// </remarks>
 public sealed class Http2ConnectionPrefacePart1Spec
@@ -25,7 +25,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void Http2FrameUtils_should_match_spec_when_checking_magic_octets()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         Assert.True(preface.Length >= MagicLength, "Preface too short to contain magic");
         Assert.Equal(Magic, preface[..MagicLength]);
@@ -44,7 +44,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void SettingsFrame_should_follow_magic_immediately_at_byte_24()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         Assert.True(preface.Length >= MagicLength + FrameHeaderLength,
             "Preface too short to contain frame header after magic");
@@ -58,7 +58,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void PrefaceSettingsFrame_should_use_stream_id_zero()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         Assert.True(preface.Length >= MagicLength + FrameHeaderLength);
         // Stream ID occupies bytes [magic+5 .. magic+8] (31-bit big-endian, R bit masked)
@@ -71,7 +71,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void ClientPreface_should_be_magic_plus_settings_frame_length()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         // Minimum: 24-byte magic + 9-byte frame header = 33 bytes
         Assert.True(preface.Length >= 33, $"Expected >= 33 bytes, got {preface.Length}");
@@ -81,7 +81,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void SettingsPayloadLength_should_be_multiple_of_6()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         // Payload length is in the first 3 bytes of the frame header (24-bit big-endian)
         var payloadLen = (preface[MagicLength] << 16)
@@ -96,7 +96,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void PrefaceSettingsFrame_should_have_flags_zero()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         var flags = preface[MagicLength + 4]; // flags byte
         Assert.Equal(0, flags & (byte)Settings.Ack);
@@ -107,7 +107,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     public void MagicBytes_should_spell_correct_ascii_string()
     {
         // Verify readable portion: "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
         var text = System.Text.Encoding.ASCII.GetString(preface[..MagicLength]);
         Assert.Equal("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", text);
     }
@@ -119,7 +119,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     public void Http2FrameDecoder_should_return_true_when_server_sends_valid_settings_frame()
     {
         var bytes = SettingsFrame.SettingsAck();
-        var list = new Http2FrameDecoder().Decode(bytes);
+        var list = new FrameDecoder().Decode(bytes);
         var frame = list[0];
         // A valid server preface SETTINGS frame must be on stream 0
         Assert.IsType<SettingsFrame>(frame);
@@ -134,15 +134,15 @@ public sealed class Http2ConnectionPrefacePart1Spec
         // Fewer than 9 bytes cannot contain a complete frame header, so preface is incomplete
 
         // 8 bytes — cannot determine frame type yet
-        var frames8 = new Http2FrameDecoder().Decode(new byte[8].AsMemory());
+        var frames8 = new FrameDecoder().Decode(new byte[8].AsMemory());
         Assert.Empty(frames8);
 
         // 1 byte
-        var frames1 = new Http2FrameDecoder().Decode(new byte[1].AsMemory());
+        var frames1 = new FrameDecoder().Decode(new byte[1].AsMemory());
         Assert.Empty(frames1);
 
         // 0 bytes
-        var frames0 = new Http2FrameDecoder().Decode(ReadOnlyMemory<byte>.Empty);
+        var frames0 = new FrameDecoder().Decode(ReadOnlyMemory<byte>.Empty);
         Assert.Empty(frames0);
     }
 
@@ -316,7 +316,7 @@ public sealed class Http2ConnectionPrefacePart1Spec
     [Trait("RFC", "RFC9113-3.4")]
     public void ClientPrefaceSettings_should_have_entries_of_6_bytes()
     {
-        var preface = Http2FrameUtils.BuildConnectionPreface();
+        var preface = BuildConnectionPreface();
 
         var payloadLen = (preface[MagicLength] << 16)
                          | (preface[MagicLength + 1] << 8)
@@ -330,5 +330,49 @@ public sealed class Http2ConnectionPrefacePart1Spec
 
         // Total length = magic + 9-byte header + payload
         Assert.Equal(MagicLength + 9 + payloadLen, preface.Length);
+    }
+    
+    /// <summary>
+    /// Builds HTTP/2 connection preface: magic string + default SETTINGS frame.
+    /// RFC 7540 §3.5
+    /// </summary>
+    public static byte[] BuildConnectionPreface()
+    {
+        const int frameHeaderSize = 9;
+        var magic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
+
+        // Default SETTINGS: HeaderTableSize, EnablePush, InitialWindowSize, MaxFrameSize
+        var settingsParams = new (SettingsParameter, uint)[]
+        {
+            (SettingsParameter.HeaderTableSize, 4096),
+            (SettingsParameter.EnablePush, 0),
+            (SettingsParameter.InitialWindowSize, 65535),
+            (SettingsParameter.MaxFrameSize, 16384),
+        };
+
+        var payloadSize = settingsParams.Length * 6;
+        var result = new byte[magic.Length + frameHeaderSize + payloadSize];
+
+        magic.CopyTo(result, 0);
+
+        // Write SETTINGS frame header (streamId=0, no flags)
+        var frameHeaderSpan = result.AsSpan(magic.Length, frameHeaderSize);
+        frameHeaderSpan[0] = (byte)(payloadSize >> 16);
+        frameHeaderSpan[1] = (byte)(payloadSize >> 8);
+        frameHeaderSpan[2] = (byte)payloadSize;
+        frameHeaderSpan[3] = (byte)FrameType.Settings;
+        frameHeaderSpan[4] = 0; // flags
+        BinaryPrimitives.WriteUInt32BigEndian(frameHeaderSpan[5..], 0); // streamId=0
+
+        // Write SETTINGS parameters
+        var settingsSpan = result.AsSpan(magic.Length + frameHeaderSize);
+        foreach (var (key, val) in settingsParams)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(settingsSpan, (ushort)key);
+            BinaryPrimitives.WriteUInt32BigEndian(settingsSpan[2..], val);
+            settingsSpan = settingsSpan[6..];
+        }
+
+        return result;
     }
 }

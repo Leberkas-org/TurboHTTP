@@ -99,7 +99,7 @@ public sealed class HpackHeaderBlockPrimitiveSpec
     {
         var decoder = new HpackDecoder();
         // String with length indicating more bytes than provided → truncated → HpackException
-        var block = RawString(new List<byte>(), "name", 10, "val");
+        var block = RawString([], "name", 10, "val");
 
         Assert.Throws<HpackException>(() => decoder.Decode(block));
     }
@@ -121,7 +121,7 @@ public sealed class HpackHeaderBlockPrimitiveSpec
     public void HpackHeaderBlockPrimitive_should_handle_zero_length_string()
     {
         var decoder = new HpackDecoder();
-        var block = RawString(new List<byte>() { 0x00 }, "name", 0, "");
+        var block = RawString([0x00], "name", 0, "");
 
         var decoded = decoder.Decode(block);
         Assert.NotEmpty(decoded);

@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.Frames;
 /// Verifies SETTINGS, DATA, HEADERS, WINDOW_UPDATE, RST_STREAM, and GOAWAY frame parsing.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6: Frame format specification for all frame types.
 /// </remarks>
 public sealed class Http2DecoderBasicFrameSpec
@@ -20,7 +20,7 @@ public sealed class Http2DecoderBasicFrameSpec
         var settings = new SettingsFrame([(SettingsParameter.HeaderTableSize, 4096u)]);
         var frame = settings.Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         Assert.IsType<SettingsFrame>(frames[0]);
     }
@@ -32,7 +32,7 @@ public sealed class Http2DecoderBasicFrameSpec
         var data = new byte[] { 1, 2, 3, 4, 5 };
         var frame = new DataFrame(1, data).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         Assert.IsType<DataFrame>(frames[0]);
     }
@@ -45,7 +45,7 @@ public sealed class Http2DecoderBasicFrameSpec
         var headerBlock = hpack.Encode([(":method", "GET")]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         Assert.IsType<HeadersFrame>(frames[0]);
     }
@@ -56,7 +56,7 @@ public sealed class Http2DecoderBasicFrameSpec
     {
         var frame = new WindowUpdateFrame(1, 65535).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         var wuFrame = Assert.IsType<WindowUpdateFrame>(frames[0]);
         Assert.Equal(65535, wuFrame.Increment);
@@ -68,7 +68,7 @@ public sealed class Http2DecoderBasicFrameSpec
     {
         var frame = new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         Assert.IsType<RstStreamFrame>(frames[0]);
     }
@@ -79,7 +79,7 @@ public sealed class Http2DecoderBasicFrameSpec
     {
         var frame = new GoAwayFrame(1, Http2ErrorCode.NoError, ReadOnlyMemory<byte>.Empty).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         Assert.IsType<GoAwayFrame>(frames[0]);
     }
@@ -96,7 +96,7 @@ public sealed class Http2DecoderBasicFrameSpec
         chunk1.CopyTo(combined, 0);
         chunk2.CopyTo(combined, chunk1.Length);
 
-        var frames = new Http2FrameDecoder().Decode(combined);
+        var frames = new FrameDecoder().Decode(combined);
         Assert.Single(frames);
         Assert.IsType<PingFrame>(frames[0]);
     }
@@ -113,7 +113,7 @@ public sealed class Http2DecoderBasicFrameSpec
         settingsBytes.CopyTo(combined, 0);
         pingBytes.CopyTo(combined, settingsBytes.Length);
 
-        var frames = new Http2FrameDecoder().Decode(combined);
+        var frames = new FrameDecoder().Decode(combined);
         Assert.Equal(2, frames.Count);
         Assert.IsType<SettingsFrame>(frames[0]);
         Assert.IsType<PingFrame>(frames[1]);
@@ -126,7 +126,7 @@ public sealed class Http2DecoderBasicFrameSpec
         var data = new byte[] { 1, 2, 3 };
         var frame = new DataFrame(1, data, endStream: true).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         var dataFrame = Assert.IsType<DataFrame>(frames[0]);
         Assert.True(dataFrame.EndStream);
@@ -140,7 +140,7 @@ public sealed class Http2DecoderBasicFrameSpec
         var headerBlock = hpack.Encode([(":status", "200")]);
         var frame = new HeadersFrame(1, headerBlock, endHeaders: true).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.Single(frames);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         Assert.True(headersFrame.EndHeaders);
@@ -152,7 +152,7 @@ public sealed class Http2DecoderBasicFrameSpec
     {
         var ack = SettingsFrame.SettingsAck();
 
-        var frames = new Http2FrameDecoder().Decode(ack);
+        var frames = new FrameDecoder().Decode(ack);
         Assert.Single(frames);
         var settingsFrame = Assert.IsType<SettingsFrame>(frames[0]);
         Assert.True(settingsFrame.IsAck);

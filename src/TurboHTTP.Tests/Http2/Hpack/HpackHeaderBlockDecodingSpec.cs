@@ -27,10 +27,7 @@ public sealed class HpackHeaderBlockDecodingSpec
     public void HpackHeaderBlockDecoding_should_decode_literal_with_incremental_indexing()
     {
         var decoder = new HpackDecoder();
-        var block = RawString(new List<byte>
-        {
-            0x40        // Literal with incremental indexing (new name)
-        }, "name", 5, "value");
+        var block = RawString([0x40], "name", 5, "value");
 
         var decoded = decoder.Decode(block);
 
@@ -42,10 +39,7 @@ public sealed class HpackHeaderBlockDecodingSpec
     public void HpackHeaderBlockDecoding_should_decode_literal_without_indexing()
     {
         var decoder = new HpackDecoder();
-        var block = RawString(new List<byte>
-        {
-            0x00        // Literal without indexing
-        }, "name", 5, "value");
+        var block = RawString([0x00], "name", 5, "value");
 
         var decoded = decoder.Decode(block);
 
@@ -57,10 +51,7 @@ public sealed class HpackHeaderBlockDecodingSpec
     public void HpackHeaderBlockDecoding_should_decode_literal_never_indexed()
     {
         var decoder = new HpackDecoder();
-        var block = RawString(new List<byte>
-        {
-            0x10        // Literal never indexed
-        }, "name", 5, "value");
+        var block = RawString([0x10], "name", 5, "value");
 
         var decoded = decoder.Decode(block);
 
@@ -90,10 +81,7 @@ public sealed class HpackHeaderBlockDecodingSpec
         var decoded1 = decoder.Decode(block1);
 
         // Add literal header
-        var block2 = RawString(new List<byte>
-        {
-            0x40
-        }, "test", 5, "value");
+        var block2 = RawString([0x40], "test", 5, "value");
         var decoded2 = decoder.Decode(block2);
 
         Assert.NotEmpty(decoded1);

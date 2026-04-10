@@ -162,7 +162,7 @@ public sealed class HpackDecoder
     // Reused per-Decode-call header list. Cleared at the start of each Decode() call.
     // Safe to reuse: HTTP/2 processes one header block at a time per connection; Akka back-pressure
     // guarantees the list is consumed before the next Decode() call.
-    private readonly List<HpackHeader> _headers = new();
+    private readonly List<HpackHeader> _headers = [];
 
     /// <summary>
     /// Sets the maximum table size allowed by the peer via SETTINGS_HEADER_TABLE_SIZE.

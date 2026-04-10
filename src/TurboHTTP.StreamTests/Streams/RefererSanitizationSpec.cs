@@ -1,4 +1,5 @@
 using System.Net;
+using TurboHTTP.Streams.Stages;
 using TurboHTTP.Streams.Stages.Routing;
 
 namespace TurboHTTP.StreamTests.Streams;

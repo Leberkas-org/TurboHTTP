@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Net;
+using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Protocol.Caching;
@@ -102,7 +103,7 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(body))
+            Content = new ByteArrayContent(Encoding.UTF8.GetBytes(body))
         };
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
         response.Headers.Date = DateTimeOffset.UtcNow;
@@ -118,7 +119,7 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         }
 
         var now = DateTimeOffset.UtcNow;
-        store.Put(request, response, System.Text.Encoding.UTF8.GetBytes(body), now, now);
+        store.Put(request, response, Encoding.UTF8.GetBytes(body), now, now);
         return store;
     }
 
@@ -132,7 +133,7 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(body))
+            Content = new ByteArrayContent(Encoding.UTF8.GetBytes(body))
         };
         // max-age=1 with Date 100s ago → stale
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=1, must-revalidate");
@@ -149,7 +150,7 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         }
 
         var now = DateTimeOffset.UtcNow.AddSeconds(-100);
-        store.Put(request, response, System.Text.Encoding.UTF8.GetBytes(body), now, now);
+        store.Put(request, response, Encoding.UTF8.GetBytes(body), now, now);
         return store;
     }
 
@@ -161,8 +162,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         string? cacheControl = null)
     {
         var content = body is not null
-            ? new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(body))
-            : new ByteArrayContent(Array.Empty<byte>());
+            ? new ByteArrayContent(Encoding.UTF8.GetBytes(body))
+            : new ByteArrayContent([]);
 
         var response = new HttpResponseMessage(statusCode)
         {
@@ -365,7 +366,7 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
         var body = await result.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
-        Assert.Equal("original body", System.Text.Encoding.UTF8.GetString(body));
+        Assert.Equal("original body", Encoding.UTF8.GetString(body));
     }
 
     [Trait("RFC", "RFC9111-4.3.4")]

@@ -21,7 +21,7 @@ public sealed class StageCompletionRegressionSpec : StreamTestBase
         // which was the broken path. Wire request direction with an empty source.
         var error = new InvalidOperationException("upstream error");
 
-        var responseSource = Source.From(new[] { new HttpResponseMessage() })
+        var responseSource = Source.From([new HttpResponseMessage()])
             .Concat(Source.Failed<HttpResponseMessage>(error));
 
         var graph = GraphDsl.Create(

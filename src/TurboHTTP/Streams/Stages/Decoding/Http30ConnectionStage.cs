@@ -169,7 +169,7 @@ public sealed class Http30ConnectionStage : GraphStage<Http30ConnectionShape>
         /// <summary>The current MAX_PUSH_ID value, or 0 (no pushes accepted by default).</summary>
         public long MaxPushId { get; set; }
 
-        private readonly HashSet<long> _cancelledPushIds = new();
+        private readonly HashSet<long> _cancelledPushIds = [];
         private int _pushCount;
         private readonly int _maxPushCount;
 

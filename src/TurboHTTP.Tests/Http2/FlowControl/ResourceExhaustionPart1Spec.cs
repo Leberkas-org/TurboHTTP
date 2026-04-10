@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.FlowControl;
 /// Verifies that flood protection thresholds produce Http2Exception with EnhanceYourCalm.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §10.5: Implementations should limit the rate at which control frames can be received to protect against floods.
 /// </remarks>
 public sealed class ResourceExhaustionPart1Spec
@@ -88,7 +88,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_101_settings_frames_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var settingsBytes = BuildSettingsFrame(ack: false, []);
         var settingsCount = 0;
 
@@ -124,7 +124,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_accept_100_settings_frames_without_exception()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var settingsBytes = BuildSettingsFrame(ack: false, []);
         var settingsCount = 0;
 
@@ -148,7 +148,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_not_count_settings_ack_toward_flood_threshold()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var settingsAck = BuildSettingsFrame(ack: true, []);
         var settingsCount = 0;
 
@@ -174,7 +174,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_101_rst_stream_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
         var rstCount = 0;
 
@@ -212,7 +212,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_accept_100_rst_stream_frames_without_exception()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
         var rstCount = 0;
 
@@ -237,7 +237,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_include_cve_reference_in_rapid_reset_message()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
         var rstCount = 0;
 
@@ -264,7 +264,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.10")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_1000_continuation_frames_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var headersFrame = BuildRawFrame(0x1, 0x0, 1, [0x88]);  // no END_HEADERS
         var continuationNoEnd = BuildRawFrame(0x9, 0x0, 1, []);
 
@@ -307,7 +307,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.10")]
     public void Http2FrameDecoder_should_accept_999_continuation_frames_without_exception()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var headersFrame = BuildRawFrame(0x1, 0x0, 1, [0x88]);  // no END_HEADERS
         var continuationNoEnd = BuildRawFrame(0x9, 0x0, 1, []);
 
@@ -337,7 +337,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_1001_ping_frames_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var pingPayload = new byte[8];  // 8-byte PING payload
         var pingFrame = BuildRawFrame(0x6, 0x0, 0, pingPayload);  // type=PING, flags=0 (no ACK)
         var pingCount = 0;
@@ -373,7 +373,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_accept_1000_ping_frames_without_exception()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var pingPayload = new byte[8];
         var pingFrame = BuildRawFrame(0x6, 0x0, 0, pingPayload);
         var pingCount = 0;
@@ -398,7 +398,7 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_not_count_ping_ack_toward_flood_threshold()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var pingPayload = new byte[8];
         var pingAckFrame = BuildRawFrame(0x6, 0x1, 0, pingPayload);  // flags=0x1 → PING ACK
         var pingCount = 0;

@@ -9,7 +9,7 @@ namespace TurboHTTP.Tests.Security;
 /// violations. Companion to <see cref="Http2FrameFuzzSpec"/> which covers categories 1–6.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// Each test uses seeded <see cref="Random"/> so failures are reproducible.
 /// Invariant: Decode must either return valid frames or throw
 /// <see cref="Http2Exception"/> — never an unhandled crash.
@@ -19,7 +19,7 @@ public sealed class Http2FrameFuzzSpec2
     private const int IterationsPerSeed = 100;
     private const long MaxBytesPerIteration = 1_048_576;
 
-    private static void AssertDecodeNeverCrashes(Http2FrameDecoder decoder, byte[] data)
+    private static void AssertDecodeNeverCrashes(FrameDecoder decoder, byte[] data)
     {
         try
         {
@@ -79,7 +79,7 @@ public sealed class Http2FrameFuzzSpec2
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var allocBefore = GC.GetAllocatedBytesForCurrentThread();
 
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
 
             var payloadSize = rng.Next(16385, 65536);
             var payload = new byte[payloadSize];
@@ -125,7 +125,7 @@ public sealed class Http2FrameFuzzSpec2
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var allocBefore = GC.GetAllocatedBytesForCurrentThread();
 
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var crashed = false;
 
             var frameCount = rng.Next(10, 31);
@@ -134,7 +134,7 @@ public sealed class Http2FrameFuzzSpec2
                 byte[] frame;
                 if (f % 2 == 0)
                 {
-                    frame = BuildRawFrame(0x04, 0x01, 0, Array.Empty<byte>());
+                    frame = BuildRawFrame(0x04, 0x01, 0, []);
                 }
                 else
                 {
@@ -164,7 +164,7 @@ public sealed class Http2FrameFuzzSpec2
             Assert.False(crashed);
 
             decoder.Reset();
-            var probe = BuildRawFrame(0x04, 0x01, 0, Array.Empty<byte>());
+            var probe = BuildRawFrame(0x04, 0x01, 0, []);
             var probeFrames = decoder.Decode(probe);
             Assert.Single(probeFrames);
 
@@ -194,7 +194,7 @@ public sealed class Http2FrameFuzzSpec2
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var allocBefore = GC.GetAllocatedBytesForCurrentThread();
 
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
 
             var paramCount = rng.Next(1, 6);
             var parameters = new (ushort id, uint value)[paramCount];
@@ -235,7 +235,7 @@ public sealed class Http2FrameFuzzSpec2
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var allocBefore = GC.GetAllocatedBytesForCurrentThread();
 
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
 
             var streamId = rng.Next(0, 100);
             var frame = BuildWindowUpdateFrame(streamId, 0);

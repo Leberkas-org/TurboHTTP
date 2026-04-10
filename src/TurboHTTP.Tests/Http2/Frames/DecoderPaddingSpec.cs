@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.Frames;
 /// Verifies correct extraction and validation of padded frame payloads.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.4: DATA frames can include padding to obscure message size.
 /// RFC 9113 §6.2: HEADERS frames can include padding for similar purposes.
 /// </remarks>
@@ -22,7 +22,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 8;
         var frame = BuildPaddedDataFrame(1, dataPayload, paddingLength);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<DataFrame>(frames[0]);
     }
@@ -35,7 +35,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 0;
         var frame = BuildPaddedDataFrame(1, dataPayload, paddingLength);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<DataFrame>(frames[0]);
     }
@@ -48,7 +48,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 255;
         var frame = BuildPaddedDataFrame(1, dataPayload, paddingLength);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<DataFrame>(frames[0]);
     }
@@ -62,7 +62,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 10;
         var frame = BuildPaddedHeadersFrame(1, headerBlock, paddingLength);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<HeadersFrame>(frames[0]);
     }
@@ -76,7 +76,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 0;
         var frame = BuildPaddedHeadersFrame(1, headerBlock, paddingLength);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<HeadersFrame>(frames[0]);
     }
@@ -90,7 +90,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 255;
         var frame = BuildPaddedHeadersFrame(1, headerBlock, paddingLength);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         Assert.IsType<HeadersFrame>(frames[0]);
     }
@@ -103,7 +103,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 5;
         var frame = BuildPaddedDataFrame(1, dataPayload, paddingLength, endStream: true);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         var dataFrame = Assert.IsType<DataFrame>(frames[0]);
         Assert.True(dataFrame.EndStream);
@@ -118,7 +118,7 @@ public sealed class Http2DecoderPaddingSpec
         var paddingLength = 5;
         var frame = BuildPaddedHeadersFrame(1, headerBlock, paddingLength, endHeaders: true);
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         Assert.True(headersFrame.EndHeaders);
@@ -139,7 +139,7 @@ public sealed class Http2DecoderPaddingSpec
         System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), (uint)streamId);
 
         frame[9] = (byte)paddingLength;
-        System.Array.Copy(data, 0, frame, 10, data.Length);
+        Array.Copy(data, 0, frame, 10, data.Length);
 
         return frame;
     }

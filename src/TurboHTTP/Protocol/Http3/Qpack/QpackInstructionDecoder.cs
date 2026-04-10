@@ -383,7 +383,7 @@ public sealed class QpackInstructionDecoder : IDisposable
     /// </summary>
     public EncoderInstruction[] DecodeAllEncoderInstructions(ReadOnlySpan<byte> data)
     {
-        var results = new System.Collections.Generic.List<EncoderInstruction>();
+        var results = new List<EncoderInstruction>();
         var first = true;
 
         while (true)
@@ -410,7 +410,7 @@ public sealed class QpackInstructionDecoder : IDisposable
     /// </summary>
     public DecoderInstruction[] DecodeAllDecoderInstructions(ReadOnlySpan<byte> data)
     {
-        var results = new System.Collections.Generic.List<DecoderInstruction>();
+        var results = new List<DecoderInstruction>();
         var first = true;
 
         while (true)

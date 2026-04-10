@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.FlowControl;
 /// Verifies stream multiplexing with many parallel streams processed sequentially through the decoder.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §5.1.1: Stream identifiers are assigned sequentially by the client; concurrent streams are multiplexed on a single connection.
 /// </remarks>
 public sealed class HighConcurrencyPart2Spec
@@ -81,7 +81,7 @@ public sealed class HighConcurrencyPart2Spec
 
         var tasks = Enumerable.Range(0, 50).Select(_idx => Task.Run(() =>
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var frames = decoder.Decode(headersFrame);
             Assert.NotEmpty(frames);
         }));
@@ -95,7 +95,7 @@ public sealed class HighConcurrencyPart2Spec
     {
         var tasks = Enumerable.Range(0, 100).Select(_idx => Task.Run(() =>
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var activeCount = 0;
 
             for (var i = 0; i < 20; i++)
@@ -128,7 +128,7 @@ public sealed class HighConcurrencyPart2Spec
         // Decoder i decodes (i + 1) streams; verify each decoder's stream count matches
         var tasks = Enumerable.Range(0, 20).Select(n => Task.Run(() =>
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var streamCount = 0;
 
             for (var i = 0; i < n + 1; i++)
@@ -178,7 +178,7 @@ public sealed class HighConcurrencyPart2Spec
         const int streamCount = 10;
 
         // Sequential baseline: decode 10 streams on one decoder
-        var seqDecoder = new Http2FrameDecoder();
+        var seqDecoder = new FrameDecoder();
         var expectedClosed = 0;
         for (var i = 0; i < streamCount; i++)
         {
@@ -195,7 +195,7 @@ public sealed class HighConcurrencyPart2Spec
         // Parallel: 20 independent decoders each decode the same 10 streams
         var tasks = Enumerable.Range(0, 20).Select(_idx => Task.Run(() =>
         {
-            var decoder = new Http2FrameDecoder();
+            var decoder = new FrameDecoder();
             var closedCount = 0;
 
             for (var i = 0; i < streamCount; i++)
@@ -222,7 +222,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_accept_data_when_total_bytes_do_not_exceed_connection_window()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var connectionWindow = 65535;
 
         // Open stream 1
@@ -266,7 +266,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_throw_flow_control_error_when_data_exceeds_connection_receive_window()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var connectionWindow = 100;
         var streamWindows = new Dictionary<int, int> { { 1, 65535 } };
 
@@ -290,7 +290,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_accept_further_data_after_connection_window_restored()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var connectionWindow = 65535;
         var streamWindows = new Dictionary<int, int> { { 1, 65535 } };
 
@@ -329,7 +329,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_enforce_per_stream_window_without_affecting_other_streams()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var streamWindows = new Dictionary<int, int>
         {
             { 1, 50 },
@@ -367,7 +367,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_handle_sequential_open_send_close_cycles_with_correct_final_state()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var activeSteams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
         var connectionWindow = 65535;
@@ -414,7 +414,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_new_streams_on_fresh_decoder_without_prior_state_interference()
     {
-        var decoder1 = new Http2FrameDecoder();
+        var decoder1 = new FrameDecoder();
 
         // Load the first decoder with 500 open streams
         for (var i = 0; i < 500; i++)
@@ -423,7 +423,7 @@ public sealed class HighConcurrencyPart2Spec
         }
 
         // Create a fresh decoder (no prior state)
-        var decoder2 = new Http2FrameDecoder();
+        var decoder2 = new FrameDecoder();
 
         // Reuse stream IDs 1..20 — on the fresh decoder they are not in prior closed-stream tracking,
         // so they are treated as fresh idle streams

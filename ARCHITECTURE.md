@@ -117,8 +117,8 @@ RequestEnricherStage
 
 | Version | Encode path | Decode path |
 |---------|------------|------------|
-| HTTP/1.0 | `Http10EncoderStage` | `Http10DecoderStage` + `Http1XCorrelationStage` |
-| HTTP/1.1 | `Http11EncoderStage` | `Http11DecoderStage` + `Http1XCorrelationStage` |
+| HTTP/1.0 | `Http10ConnectionStage` (unified encode + decode + correlation) | — |
+| HTTP/1.1 | `Http11ConnectionStage` (unified encode + decode + correlation) | — |
 | HTTP/2 | `Http20EncoderStage` + `PrependPrefaceStage` + `Request2FrameStage` | `Http20DecoderStage` + `ConnectionStage` + `StreamStage` + `CorrelationStage` + `StreamIdAllocatorStage` |
 | HTTP/3 | `Http30EncoderStage` + control/QPACK preface stages + `Request2FrameStage` | `Http30DecoderStage` + `ConnectionStage` + `StreamStage` + `CorrelationStage` + `StreamDemuxStage` + QPACK stream stages |
 

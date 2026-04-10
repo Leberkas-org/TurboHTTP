@@ -9,7 +9,7 @@ namespace TurboHTTP.Tests.Http2.Frames;
 /// Verifies that :method, :path, :scheme, and :authority are correctly populated and validated.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2RequestEncoder"/>.
+/// Class under test: <see cref="RequestEncoder"/>.
 /// RFC 9113 §8.1.2.1: Request pseudo-headers must include :method; :path, :scheme, and :authority are required for absolute URIs.
 /// </remarks>
 public sealed class Http2EncoderPseudoHeaderSpec
@@ -28,7 +28,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
             headers.Add(new HpackHeader($"x-header-{i}", $"value-{i}"));
         }
 
-        var ex = Record.Exception(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Record.Exception(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Null(ex);
     }
 
@@ -42,7 +42,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
     {
         var headers = AllFourPseudos("/", "GET", "https", "example.com");
         headers.RemoveAll(h => h.Name == missingHeader);
-        var ex = Assert.Throws<Http2Exception>(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.Contains(missingHeader, ex.Message);
     }
@@ -59,7 +59,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
             headers.Add(new HpackHeader(":method", "GET"));
         }
 
-        var ex = Assert.Throws<Http2Exception>(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         foreach (var expected in expectedMissingCsv.Split(','))
         {
@@ -77,7 +77,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
     {
         var headers = AllFourPseudos("/", "GET", "https", "example.com");
         headers.Insert(1, new HpackHeader(pseudoHeader, duplicateValue));
-        var ex = Assert.Throws<Http2Exception>(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.Contains(pseudoHeader, ex.Message);
     }
@@ -90,7 +90,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
     {
         var headers = AllFourPseudos("/", "GET", "https", "example.com");
         headers.Add(new HpackHeader(unknownHeader, value));
-        var ex = Assert.Throws<Http2Exception>(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.Contains(unknownHeader, ex.Message);
     }
@@ -104,7 +104,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
     {
         var headers = AllFourPseudos("/", "GET", "https", "example.com");
         headers.Insert(insertIndex, new HpackHeader(regularName, regularValue));
-        var ex = Assert.Throws<Http2Exception>(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
@@ -120,7 +120,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
             new(":scheme", "https"),
             new(":authority", "example.com"),
         };
-        var ex = Assert.Throws<Http2Exception>(() => Http2RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         // Message includes the last pseudo-header index (4) and the first regular header index (1)
         Assert.Contains("4", ex.Message);
         Assert.Contains("1", ex.Message);
@@ -320,7 +320,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
 
     private static (int StreamId, byte[] Data) EncodeRequest(HttpRequestMessage request, bool useHuffman = false)
     {
-        var encoder = new Http2RequestEncoder(useHuffman);
+        var encoder = new RequestEncoder(useHuffman);
         var headerBlock = encoder.EncodeToHpackBlock(request);
 
         // Wrap in HTTP/2 HEADERS frame format for DecodeHeaderList()
@@ -331,7 +331,7 @@ public sealed class Http2EncoderPseudoHeaderSpec
         frame[3] = (byte)FrameType.Headers;
         frame[4] = 0x05; // END_HEADERS
         System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), 1); // streamId=1
-        System.Array.Copy(headerBlock, 0, frame, 9, headerBlock.Length);
+        Array.Copy(headerBlock, 0, frame, 9, headerBlock.Length);
 
         return (1, frame);
     }

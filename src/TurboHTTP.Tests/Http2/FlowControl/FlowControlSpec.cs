@@ -7,7 +7,7 @@ namespace TurboHTTP.Tests.Http2.FlowControl;
 /// Covers both connection-level (stream 0) and stream-level window update semantics.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.9: WINDOW_UPDATE frames carry a 31-bit increment and apply to stream 0 (connection) or a specific stream.
 /// </remarks>
 public sealed class FlowControlSpec
@@ -19,7 +19,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_have_correct_stream_id_when_window_update_on_stream_0()
     {
         var bytes = new WindowUpdateFrame(0, 1000).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -32,7 +32,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_have_correct_increment_when_window_update_on_stream_0()
     {
         var bytes = new WindowUpdateFrame(0, 32768).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -45,7 +45,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_have_correct_frame_type_when_window_update_on_stream_0()
     {
         var bytes = new WindowUpdateFrame(0, 1).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -61,7 +61,7 @@ public sealed class FlowControlSpec
         var wu2 = new WindowUpdateFrame(0, 500).Serialize();
         var combined = wu1.Concat(wu2).ToArray();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(combined);
 
         Assert.Equal(2, frames.Count);
@@ -78,7 +78,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_accept_when_window_update_on_stream_0_with_increment_one()
     {
         var bytes = new WindowUpdateFrame(0, 1).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -91,7 +91,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_accept_when_window_update_on_stream_0_with_max_increment()
     {
         var bytes = new WindowUpdateFrame(0, 0x7FFFFFFF).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -106,7 +106,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_have_correct_stream_id_when_window_update_on_stream_1()
     {
         var bytes = new WindowUpdateFrame(1, 2000).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -119,7 +119,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_have_correct_increment_when_window_update_on_stream_3()
     {
         var bytes = new WindowUpdateFrame(3, 65535).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -137,7 +137,7 @@ public sealed class FlowControlSpec
         var wu3 = new WindowUpdateFrame(3, 300).Serialize();
         var combined = wu0.Concat(wu1).Concat(wu3).ToArray();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(combined);
 
         Assert.Equal(3, frames.Count);
@@ -157,7 +157,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_decode_correctly_when_window_update_has_large_stream_id()
     {
         var bytes = new WindowUpdateFrame(0x7FFFFFFE, 1024).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -171,7 +171,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_accept_when_window_update_on_stream_n_with_increment_one()
     {
         var bytes = new WindowUpdateFrame(5, 1).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -185,7 +185,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_accept_when_window_update_on_stream_n_with_max_increment()
     {
         var bytes = new WindowUpdateFrame(7, 0x7FFFFFFF).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -209,7 +209,7 @@ public sealed class FlowControlSpec
             0x00, 0x00, 0x00, 0x01, // stream = 1
             0x80, 0x00, 0x00, 0x01, // increment with high bit set → stripped to 1
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(rawFrame);
 
         Assert.Single(frames);
@@ -223,7 +223,7 @@ public sealed class FlowControlSpec
     {
         var original = new WindowUpdateFrame(0, 131072);
         var bytes = original.Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -238,7 +238,7 @@ public sealed class FlowControlSpec
     {
         var original = new WindowUpdateFrame(9, 4096);
         var bytes = original.Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -255,7 +255,7 @@ public sealed class FlowControlSpec
         var part1 = bytes[..7];
         var part2 = bytes[7..];
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames1 = decoder.Decode(part1);
         var frames2 = decoder.Decode(part2);
 
@@ -280,7 +280,7 @@ public sealed class FlowControlSpec
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x00, 0x00, 0x00, // increment = 0 — MUST be > 0
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -298,7 +298,7 @@ public sealed class FlowControlSpec
             0x00, 0x00, 0x00, 0x01, // stream = 1
             0x00, 0x00, 0x00, 0x00, // increment = 0 — MUST be > 0
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -316,7 +316,7 @@ public sealed class FlowControlSpec
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x00, 0x01, // only 3 payload bytes
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -330,7 +330,7 @@ public sealed class FlowControlSpec
     {
         var data = new byte[] { 1, 2, 3, 4, 5 };
         var bytes = new DataFrame(1, data).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -345,7 +345,7 @@ public sealed class FlowControlSpec
     {
         var data = new byte[10];
         var bytes = new DataFrame(3, data, endStream: true).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -360,7 +360,7 @@ public sealed class FlowControlSpec
     {
         var data = new byte[10];
         var bytes = new DataFrame(5, data, endStream: false).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -373,7 +373,7 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_decode_correctly_when_data_frame_is_zero_length()
     {
         var bytes = new DataFrame(1, ReadOnlyMemory<byte>.Empty, endStream: true).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -389,7 +389,7 @@ public sealed class FlowControlSpec
         var data = new byte[] { 0xDE, 0xAD, 0xBE, 0xEF };
         var original = new DataFrame(7, data, endStream: true);
         var bytes = original.Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -407,7 +407,7 @@ public sealed class FlowControlSpec
         var df = new DataFrame(1, new byte[] { 0x42 }, endStream: true).Serialize();
         var combined = wu.Concat(df).ToArray();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(combined);
 
         Assert.Equal(2, frames.Count);
@@ -423,7 +423,7 @@ public sealed class FlowControlSpec
         for (var i = 0; i < data.Length; i++) { data[i] = (byte)(i & 0xFF); }
 
         var bytes = new DataFrame(1, data).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);

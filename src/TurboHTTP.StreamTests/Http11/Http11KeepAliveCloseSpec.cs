@@ -1,6 +1,5 @@
 using System.Net;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages.Decoding;
 
 namespace TurboHTTP.StreamTests.Http11;
 
@@ -9,7 +8,7 @@ namespace TurboHTTP.StreamTests.Http11;
 /// Verifies that Connection: close, keep-alive, and version downgrade semantics are correctly handled.
 /// </summary>
 /// <remarks>
-/// Stage under test: <see cref="Http11DecoderStage"/> and connection management logic.
+/// Stage under test: <see cref="TestHttp11Decoder"/> and connection management logic.
 /// RFC 9112 §9.6: HTTP/1.1 connection option handling and persistent connection negotiation.
 /// </remarks>
 public sealed class Http11KeepAliveCloseSpec : EngineTestBase

@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.StreamState;
 /// Part 2: Frame header parsing, DATA frame.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// </remarks>
 public sealed class Http2ConnectionPrefacePart2Spec
 {
@@ -22,7 +22,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
     // Helper: Decode server responses from frame bytes (replaces Http2ProtocolSession.Responses)
     private static List<(int StreamId, HttpResponseMessage Response)> DecodeResponses(ReadOnlyMemory<byte> data)
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var hpack = new HpackDecoder();
         var frames = decoder.Decode(data);
         var responses = new List<(int, HttpResponseMessage)>();
@@ -82,7 +82,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
     {
         // A SETTINGS ACK is the smallest valid frame (9-byte header, no payload).
         var frameBytes = SettingsFrame.SettingsAck();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(frameBytes);
         Assert.NotEmpty(frames);
         var settings = Assert.IsType<SettingsFrame>(Assert.Single(frames));
@@ -110,7 +110,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         }
 
         // Http2FrameDecoder has no MAX_FRAME_SIZE check; the large SETTINGS decodes directly.
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(buf);
         Assert.NotEmpty(frames);
         var settings = Assert.IsType<SettingsFrame>(frames[0]);
@@ -163,7 +163,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
             ]
         };
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         // Allow any Http2Exception — the handler was reached and detected an error condition.
         try
         {
@@ -190,7 +190,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         };
 
         // RFC 7540 §4.1 / RFC 9113 §5.5: Unknown frame types MUST be ignored.
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var result = decoder.Decode(frame);
         Assert.Empty(result); // unknown frame produces no output — silently discarded
     }
@@ -213,7 +213,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         // stream ID = 0 in header (bytes 5–8)
         payload.CopyTo(frame, 9);
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(frame);
 
         var goAway = Assert.IsType<GoAwayFrame>(Assert.Single(frames));
@@ -233,7 +233,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         // Http2FrameDecoder masks the R-bit and decodes the frame normally.
         // NOTE: RFC 7540 §4.1 says a set R-bit MUST be treated as PROTOCOL_ERROR,
         // but Http2FrameDecoder silently strips it. This test documents current behaviour.
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(settingsFrame);
         Assert.NotEmpty(frames); // decoded successfully — no exception
     }
@@ -258,7 +258,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         // RFC 9113 §4.2: FRAME_SIZE_ERROR for frames exceeding MAX_FRAME_SIZE.
         // Http2FrameDecoder is a stateless frame parser and does not enforce MAX_FRAME_SIZE.
         // Size validation occurs at the session layer where MAX_FRAME_SIZE is negotiated via SETTINGS.
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(fullFrame);
         Assert.Single(frames);
         Assert.IsType<DataFrame>(frames[0]);
@@ -295,7 +295,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         Assert.Single(responses);
 
         // Verify that the DATA frame had END_STREAM flag
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(dataFrame);
         var frame = Assert.IsType<DataFrame>(Assert.Single(frames));
         Assert.True(frame.EndStream);
@@ -340,7 +340,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
             0x00, 0x00, 0x00, 0x00, // stream=0
             0x00
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(frame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
@@ -357,7 +357,7 @@ public sealed class Http2ConnectionPrefacePart2Spec
         var headerBlock = hpack.Encode([(":status", "200")]);
         var headersFrame = new HeadersFrame(1, headerBlock, endStream: true, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var headerFrames = decoder.Decode(headersFrame);
         Assert.Single(headerFrames);
 

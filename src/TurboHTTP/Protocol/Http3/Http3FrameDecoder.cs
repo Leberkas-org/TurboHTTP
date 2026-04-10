@@ -35,7 +35,7 @@ public sealed class Http3FrameDecoder : IDisposable
     // Reused per-DecodeAll-call frame list. Cleared at the start of each call.
     // Safe to reuse: Akka back-pressure guarantees all frames are consumed by downstream
     // before the next DecodeAll call.
-    private readonly List<Http3Frame> _frames = new();
+    private readonly List<Http3Frame> _frames = [];
 
     /// <summary>
     /// Attempts to decode one HTTP/3 frame from <paramref name="input"/>.

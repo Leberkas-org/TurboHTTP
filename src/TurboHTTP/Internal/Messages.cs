@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Protocol.Http11;
+using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Internal;
 
@@ -219,8 +220,8 @@ public sealed class StreamAcquireItem : IControlItem
 /// <summary>
 /// Carries an orphaned in-flight request whose pipelined response was never received
 /// because the server closed the connection. Emitted by
-/// <see cref="TurboHTTP.Streams.Stages.Routing.Http11CorrelationStage"/> via the
-/// <c>OutControl</c> outlet so that upstream layers can re-issue the request on a
+/// <see cref="Http11ConnectionStage"/> via the
+/// <c>OutNetwork</c> outlet so that upstream layers can re-issue the request on a
 /// fresh connection.
 /// </summary>
 public record PipelineRetryItem(HttpRequestMessage Request) : IControlItem

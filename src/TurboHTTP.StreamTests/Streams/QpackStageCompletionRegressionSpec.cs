@@ -22,7 +22,7 @@ public sealed class QpackStageCompletionRegressionSpec : StreamTestBase
     [Fact(Timeout = 5000)]
     public async Task QpackDecoderStreamStage_outlet_should_terminate_when_upstream_fails()
     {
-        var source = Source.From(new[] { (ReadOnlyMemory<byte>)new byte[] { 0x00 } })
+        var source = Source.From([(ReadOnlyMemory<byte>)new byte[] { 0x00 }])
             .Concat(Source.Failed<ReadOnlyMemory<byte>>(UpstreamError));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -41,7 +41,7 @@ public sealed class QpackStageCompletionRegressionSpec : StreamTestBase
             Type = EncoderInstructionType.SetDynamicTableCapacity,
             IntValue = 4096
         };
-        var source = Source.From(new[] { instruction })
+        var source = Source.From([instruction])
             .Concat(Source.Failed<EncoderInstruction>(UpstreamError));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>

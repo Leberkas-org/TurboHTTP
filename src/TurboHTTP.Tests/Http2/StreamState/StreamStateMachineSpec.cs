@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.StreamState;
 /// Verifies that HEADERS, DATA, and RST_STREAM frames drive stream state correctly.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §5.1: Streams progress through idle, open, half-closed, and closed states.
 /// </remarks>
 public sealed class StreamStateMachineSpec
@@ -86,7 +86,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_as_headers_frame_when_headers_has_no_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeHeadersBytes(streamId: 1, endStream: false));
 
         Assert.Single(frames);
@@ -101,7 +101,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_with_end_stream_flag_when_headers_has_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeHeadersBytes(streamId: 1, endStream: true));
 
         Assert.Single(frames);
@@ -115,7 +115,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_with_end_stream_flag_when_data_frame_has_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var payload = "response body"u8.ToArray();
         var frames = decoder.Decode(MakeDataBytes(streamId: 1, endStream: true, body: payload));
 
@@ -131,7 +131,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_with_end_stream_false_when_data_frame_has_no_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeDataBytes(streamId: 1, endStream: false));
 
         Assert.Single(frames);
@@ -147,7 +147,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_with_correct_fields_when_rst_stream_frame()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(new RstStreamFrame(1, Http2ErrorCode.Cancel).Serialize());
 
         Assert.Single(frames);
@@ -161,7 +161,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_as_sequence_when_headers_then_data_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var bytes = Concat(
             MakeHeadersBytes(streamId: 1, endStream: false),
             MakeDataBytes(streamId: 1, endStream: true));
@@ -181,7 +181,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_have_independent_stream_ids_when_frames_for_different_streams()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var bytes = Concat(
             MakeHeadersBytes(streamId: 1, endStream: false),
             MakeHeadersBytes(streamId: 3, endStream: true));
@@ -203,7 +203,7 @@ public sealed class StreamStateMachineSpec
         var block = hpack.Encode([(":status", "204"), ("content-type", "text/plain")]);
         var bytes = new HeadersFrame(1, block, endStream: true, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -222,7 +222,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_be_protocol_error_when_headers_on_stream_0()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeHeadersBytes(streamId: 0, endStream: false));
 
         // Decoder produces the frame; stream-0 validation is the caller's responsibility.
@@ -249,7 +249,7 @@ public sealed class StreamStateMachineSpec
             0x01, 0x02, 0x03, 0x04, // payload
         };
         // RFC 9113 §6.1: Http2FrameDecoder rejects DATA on stream 0 at the frame level.
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
@@ -260,7 +260,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_be_protocol_error_when_data_on_idle_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeDataBytes(streamId: 1, endStream: false));
 
         var frame = Assert.IsType<DataFrame>(frames[0]);
@@ -278,7 +278,7 @@ public sealed class StreamStateMachineSpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_be_stream_closed_error_when_data_on_closed_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Step 1: decode HEADERS+END_STREAM → stream 1 is now Closed.
         var headersBytes = MakeHeadersBytes(streamId: 1, endStream: true);

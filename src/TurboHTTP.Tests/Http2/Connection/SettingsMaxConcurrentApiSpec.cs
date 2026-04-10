@@ -9,7 +9,7 @@ namespace TurboHTTP.Tests.Http2.Connection;
 /// Part 1: API tests.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.5.2: SETTINGS_MAX_CONCURRENT_STREAMS limits the number of simultaneously open streams on a connection.
 /// </remarks>
 public sealed class Http2SettingsMaxConcurrentApiSpec
@@ -121,7 +121,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_decode_correctly_when_max_concurrent_streams_is_1()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeMaxConcurrentStreamsSettingsBytes(1));
 
         var frame = Assert.IsType<SettingsFrame>(frames[0]);
@@ -133,7 +133,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_decode_correctly_when_max_concurrent_streams_is_0()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeMaxConcurrentStreamsSettingsBytes(0));
 
         var frame = Assert.IsType<SettingsFrame>(frames[0]);
@@ -145,7 +145,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_decode_correctly_when_max_concurrent_streams_is_100()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeMaxConcurrentStreamsSettingsBytes(100));
 
         var frame = Assert.IsType<SettingsFrame>(frames[0]);
@@ -157,7 +157,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_recognize_as_ack_when_settings_ack_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(SettingsFrame.SettingsAck());
 
         var frame = Assert.IsType<SettingsFrame>(frames[0]);
@@ -168,7 +168,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_open_stream_when_headers_received_without_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeResponseHeadersBytes(streamId: 1, endStream: false));
 
         var frame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -184,7 +184,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_close_stream_immediately_when_headers_received_with_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeResponseHeadersBytes(streamId: 1, endStream: true));
 
         var frame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -201,7 +201,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_close_stream_when_data_received_with_end_stream()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -221,7 +221,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_track_concurrent_streams_independently_when_multiple_streams_open()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -246,7 +246,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_close_stream_when_rst_stream_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -312,7 +312,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_accept_new_stream_when_previous_stream_closed()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
         var maxConcurrent = 1;

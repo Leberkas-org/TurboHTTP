@@ -4,7 +4,6 @@ using System.Net;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using TurboHTTP.Internal;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Semantics;
 

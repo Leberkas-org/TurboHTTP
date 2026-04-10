@@ -218,7 +218,7 @@ public sealed class HpackSensitiveHeaderVerificationSpec
         // Low-level verification via a proper HPACK byte walker.
         // authorization is at static index 23, so the NeverIndexed encoding uses the index,
         // not a literal name. The walker handles this correctly.
-        var encoder = new Http2RequestEncoder(useHuffman: false);
+        var encoder = new RequestEncoder(useHuffman: false);
         var req = MakeGetRequest();
         req.Headers.TryAddWithoutValidation("Authorization", "Bearer raw-check");
         var block = ExtractHpackBlockFromEncoder(encoder, req);
@@ -231,7 +231,7 @@ public sealed class HpackSensitiveHeaderVerificationSpec
     [Trait("RFC", "RFC7541-7.1.3")]
     public void HpackSensitiveHeaderVerification_should_have_never_indexed_encoding_for_cookie()
     {
-        var encoder = new Http2RequestEncoder(useHuffman: false);
+        var encoder = new RequestEncoder(useHuffman: false);
         var req = MakeGetRequest();
         req.Headers.TryAddWithoutValidation("Cookie", "session=walker-check");
         var block = ExtractHpackBlockFromEncoder(encoder, req);
@@ -244,7 +244,7 @@ public sealed class HpackSensitiveHeaderVerificationSpec
     [Trait("RFC", "RFC7541-7.1.3")]
     public void HpackSensitiveHeaderVerification_should_have_incremental_indexing_for_non_sensitive()
     {
-        var encoder = new Http2RequestEncoder(useHuffman: false);
+        var encoder = new RequestEncoder(useHuffman: false);
         var req = MakeGetRequest();
         req.Headers.TryAddWithoutValidation("X-Correlation-Id", "corr-abc123");
         var block = ExtractHpackBlockFromEncoder(encoder, req);
@@ -259,12 +259,12 @@ public sealed class HpackSensitiveHeaderVerificationSpec
 
     private static List<HpackHeader> EncodeAndDecodeHeaders(HttpRequestMessage request, bool useHuffman = false)
     {
-        var encoder = new Http2RequestEncoder(useHuffman);
+        var encoder = new RequestEncoder(useHuffman);
         var hpackBlock = encoder.EncodeToHpackBlock(request);
         return new HpackDecoder().Decode(hpackBlock);
     }
 
-    private static byte[] ExtractHpackBlockFromEncoder(Http2RequestEncoder encoder, HttpRequestMessage request)
+    private static byte[] ExtractHpackBlockFromEncoder(RequestEncoder encoder, HttpRequestMessage request)
     {
         return encoder.EncodeToHpackBlock(request);
     }
@@ -371,7 +371,7 @@ public sealed class HpackSensitiveHeaderVerificationSpec
     private static string ReadHpackStringRaw(ReadOnlySpan<byte> data, ref int pos)
     {
         var len = ReadHpackInt(data, ref pos, 7); // H-bit is 7th bit; value = lower 7 bits
-        var str = System.Text.Encoding.UTF8.GetString(data.Slice(pos, len));
+        var str = Encoding.UTF8.GetString(data.Slice(pos, len));
         pos += len;
         return str;
     }

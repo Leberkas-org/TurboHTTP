@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.StreamState;
 /// Verifies END_HEADERS continuations and stream ID constraints.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.2: When END_HEADERS is not set, the HEADERS frame must be followed by CONTINUATION frames on the same stream.
 /// </remarks>
 public sealed class DecoderStreamValidationSpec
@@ -42,7 +42,7 @@ public sealed class DecoderStreamValidationSpec
         var block = MakeBlock((":status", "200"));
         var bytes = new HeadersFrame(1, block.AsMemory(), endStream: true, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -58,7 +58,7 @@ public sealed class DecoderStreamValidationSpec
         var block = MakeBlock((":status", "200"));
         var bytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: true, endHeaders: false).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -76,7 +76,7 @@ public sealed class DecoderStreamValidationSpec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..split], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[split..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(Concat(headersBytes, contBytes));
 
         Assert.Equal(2, frames.Count);
@@ -93,7 +93,7 @@ public sealed class DecoderStreamValidationSpec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..1], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[1..], endHeaders: false).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(Concat(headersBytes, contBytes));
 
         Assert.Equal(2, frames.Count);
@@ -109,7 +109,7 @@ public sealed class DecoderStreamValidationSpec
         var block = MakeBlock((":status", "200"), ("content-type", "text/plain"));
         var bytes = new HeadersFrame(1, block.AsMemory(), endStream: true, endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         var hf = Assert.IsType<HeadersFrame>(frames[0]);
@@ -135,7 +135,7 @@ public sealed class DecoderStreamValidationSpec
         var headersBytes = new HeadersFrame(1, part1.AsMemory(), endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, part2.AsMemory(), endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decoded = decoder.Decode(Concat(headersBytes, contBytes));
 
         Assert.Equal(2, decoded.Count);
@@ -158,7 +158,7 @@ public sealed class DecoderStreamValidationSpec
         var headersBytes = new HeadersFrame(1, block.AsMemory()[..half], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[half..], endHeaders: true).Serialize();
 
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decoded = decoder.Decode(Concat(headersBytes, contBytes));
 
         Assert.Equal(2, decoded.Count);
@@ -190,7 +190,7 @@ public sealed class DecoderStreamValidationSpec
 
         // Serialize → decode frame bytes → decode HPACK.
         var bytes = headersFrame.Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decoded = decoder.Decode(bytes);
 
         Assert.Single(decoded);

@@ -18,7 +18,7 @@ public sealed class UserinfoStrippingSpec
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_Should_StripUserinfo_When_HttpUri()
     {
-        var encoder = new Http2RequestEncoder();
+        var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://user:pass@example.com/path");
 
         var headerBlock = encoder.EncodeToHpackBlock(request);
@@ -34,7 +34,7 @@ public sealed class UserinfoStrippingSpec
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_Should_StripUserinfo_When_HttpsUri()
     {
-        var encoder = new Http2RequestEncoder();
+        var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://user:pass@secure.example.com/");
 
         var headerBlock = encoder.EncodeToHpackBlock(request);
@@ -49,7 +49,7 @@ public sealed class UserinfoStrippingSpec
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_Should_PreservePort_When_UserinfoPresent()
     {
-        var encoder = new Http2RequestEncoder();
+        var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://u:p@host.example.com:8080/");
 
         var headerBlock = encoder.EncodeToHpackBlock(request);
@@ -63,7 +63,7 @@ public sealed class UserinfoStrippingSpec
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_Should_NotChange_When_NoUserinfo()
     {
-        var encoder = new Http2RequestEncoder();
+        var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com:443/resource");
 
         var headerBlock = encoder.EncodeToHpackBlock(request);

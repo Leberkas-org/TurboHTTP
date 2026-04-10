@@ -118,7 +118,7 @@ public sealed class ConcurrencySpec : IAsyncLifetime
 
             var responses = await Task.WhenAll(tasks);
             Assert.Equal(64, responses.Length);
-            Assert.All(responses, r => Assert.Equal(System.Net.HttpStatusCode.OK, r.StatusCode));
+            Assert.All(responses, r => Assert.Equal(HttpStatusCode.OK, r.StatusCode));
             foreach (var r in responses) r.Dispose();
         }
     }

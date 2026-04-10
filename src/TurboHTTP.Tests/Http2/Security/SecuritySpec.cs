@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Http2.Security;
 /// Verifies that implementation-defined safety limits are enforced.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §10: HTTP/2 connections are susceptible to amplification attacks; implementations must enforce resource limits.
 /// </remarks>
 public sealed class Http2SecuritySpec
@@ -97,7 +97,7 @@ public sealed class Http2SecuritySpec
     [Trait("RFC", "RFC9113-6.10")]
     public void Http2FrameDecoder_should_detect_continuation_flood_when_explicit_enforcement_applied()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // HEADERS frame on stream 1, no END_HEADERS (flags=0x0).
         // Payload: one valid HPACK byte (0x88 = indexed :status: 200).
@@ -142,7 +142,7 @@ public sealed class Http2SecuritySpec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_detect_rst_flood_when_explicit_enforcement_applied()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Send 100 RST_STREAM frames on distinct stream IDs — decoder accepts all.
         // RST_STREAM payload: 4 bytes error code (NO_ERROR = 0x0).
@@ -178,7 +178,7 @@ public sealed class Http2SecuritySpec
     [Trait("RFC", "RFC9113-6.1")]
     public void Http2FrameDecoder_should_detect_empty_data_flood_when_explicit_enforcement_applied()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Build a buffer with 10001 empty DATA frames on stream 1.
         // Each frame: 9-byte header + 0-byte payload = 9 bytes.
@@ -208,7 +208,7 @@ public sealed class Http2SecuritySpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_detect_invalid_enable_push_when_settings_enforcement_applied()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // SETTINGS frame: EnablePush = 2 (invalid — only 0 or 1 are valid).
         var settingsFrame = new SettingsFrame(new List<(SettingsParameter, uint)>
@@ -230,7 +230,7 @@ public sealed class Http2SecuritySpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_detect_initial_window_size_overflow_when_settings_enforcement_applied()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // SETTINGS frame: InitialWindowSize = 2^31 = 0x80000000 (exceeds 2^31-1).
         var settingsFrame = new SettingsFrame(new List<(SettingsParameter, uint)>
@@ -254,7 +254,7 @@ public sealed class Http2SecuritySpec
     [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_silently_decode_unknown_parameter_when_settings_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // SETTINGS frame with an unknown parameter ID (0x00FF is not defined in RFC 9113).
         var unknownParam = (SettingsParameter)0x00FF;

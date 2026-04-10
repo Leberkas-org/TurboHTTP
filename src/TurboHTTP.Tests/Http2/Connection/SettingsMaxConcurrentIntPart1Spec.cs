@@ -9,7 +9,7 @@ namespace TurboHTTP.Tests.Http2.Connection;
 /// Part 1: Integration tests (MCS-INT-001 through MCS-INT-011).
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.5.2: SETTINGS_MAX_CONCURRENT_STREAMS limits the number of simultaneously open streams on a connection.
 /// </remarks>
 public sealed class Http2SettingsMaxConcurrentIntPart1Spec
@@ -121,7 +121,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_succeed_when_single_stream_under_default_limit()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(MakeResponseHeadersBytes(streamId: 1, endStream: true));
 
         Assert.Single(frames);
@@ -133,7 +133,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_succeed_when_multiple_streams_under_limit()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -168,7 +168,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_not_affect_existing_streams_when_new_stream_limit_enforced()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -196,7 +196,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_allow_new_stream_when_stream_counter_decrements_on_end_stream_data()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
         var maxConcurrent = 1;
@@ -219,7 +219,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_update_max_concurrent_streams_when_settings_frame_processed()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // First SETTINGS: no limit (default int.MaxValue)
         var currentLimit = int.MaxValue;
@@ -236,7 +236,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_update_limit_again_when_second_settings_frame_processed()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var currentLimit = int.MaxValue;
 
         // First SETTINGS
@@ -254,7 +254,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_decrement_active_count_when_rst_stream_processed()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -286,7 +286,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart1Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_allow_sequential_streams_when_limit_is_one()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 

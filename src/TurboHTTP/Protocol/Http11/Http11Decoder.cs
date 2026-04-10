@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Net;
 using System.Text;
 using TurboHTTP.Internal;
+using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Protocol.Http11;
 
@@ -19,7 +20,7 @@ public sealed class Http11Decoder : IDisposable
 
     private bool _disposed;
 
-    private readonly List<HttpResponseMessage> _decodeBuffer = new();
+    private readonly List<HttpResponseMessage> _decodeBuffer = [];
 
     // Pooled structures for header parsing — reused across calls (decoder is single-threaded per actor).
     // Avoids ~1 Dictionary + ~15 List<string> allocations per response (~1.6 KB GC pressure per decode).
@@ -427,7 +428,7 @@ public sealed class Http11Decoder : IDisposable
 
     /// <summary>
     /// Returns any buffered remainder bytes and clears the remainder.
-    /// Used by <see cref="TurboHTTP.Streams.Stages.Decoding.Http11DecoderStage"/> to extract
+    /// Used by <see cref="Http11ConnectionStage"/> to extract
     /// body data that was in the same chunk as headers for connection-close-delimited responses.
     /// </summary>
     public byte[] FlushRemainder()

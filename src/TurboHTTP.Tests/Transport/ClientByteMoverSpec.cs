@@ -22,7 +22,7 @@ public sealed class ClientByteMoverSpec
 
         // Stream with one byte of data — MoveStreamToChannel will rent a buffer, read 1 byte,
         // try to write to the closed channel, get false from TryWrite, and must dispose the buffer.
-        var stream = new MemoryStream(new byte[] { 0x42 }, writable: false);
+        var stream = new MemoryStream([0x42], writable: false);
 
         var state = new ClientState(65536, stream, inbound, outbound);
 
@@ -42,7 +42,7 @@ public sealed class ClientByteMoverSpec
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
 
-        var stream = new MemoryStream(new byte[] { 0xAB, 0xCD }, writable: false);
+        var stream = new MemoryStream([0xAB, 0xCD], writable: false);
 
         var state = new ClientState(65536, stream, inbound, outbound);
 

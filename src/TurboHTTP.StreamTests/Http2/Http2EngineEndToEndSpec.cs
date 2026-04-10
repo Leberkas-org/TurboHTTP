@@ -294,7 +294,7 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
 
         // Build a custom flow that injects ConnectItem (via MergePreferred) before engine output,
         // captures DataItem bytes, then feeds to fake TCP.
-        // Preface is now emitted by Http20EncoderStage on its first pull (inlined from PrependPrefaceStage).
+        // Preface is emitted by the combined Http20ConnectionStage on its first OutNetwork pull.
         var customFlow = Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(GraphDsl.Create(b =>
         {
             var merge = b.Add(new MergePreferred<IOutputItem>(1));

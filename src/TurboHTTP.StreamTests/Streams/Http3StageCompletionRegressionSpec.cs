@@ -38,7 +38,7 @@ public sealed class Http3StageCompletionRegressionSpec : StreamTestBase
     [Fact(Timeout = 5000)]
     public async Task Http30DecoderStage_outlet_should_terminate_when_upstream_fails()
     {
-        var source = Source.From(new[] { MinimalInputItem() })
+        var source = Source.From([MinimalInputItem()])
             .Concat(Source.Failed<IInputItem>(UpstreamError));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -65,7 +65,7 @@ public sealed class Http3StageCompletionRegressionSpec : StreamTestBase
     [Fact(Timeout = 5000)]
     public async Task Http30ControlStreamPrefaceStage_outlet_should_terminate_when_upstream_fails()
     {
-        var source = Source.From(new[] { MinimalOutputItem() })
+        var source = Source.From([MinimalOutputItem()])
             .Concat(Source.Failed<IOutputItem>(UpstreamError));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -77,7 +77,7 @@ public sealed class Http3StageCompletionRegressionSpec : StreamTestBase
     [Fact(Timeout = 5000)]
     public async Task Http30QpackEncoderPrefaceStage_outlet_should_terminate_when_upstream_fails()
     {
-        var source = Source.From(new[] { (ReadOnlyMemory<byte>)new byte[] { 0x01, 0x02 } })
+        var source = Source.From([(ReadOnlyMemory<byte>)new byte[] { 0x01, 0x02 }])
             .Concat(Source.Failed<ReadOnlyMemory<byte>>(UpstreamError));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -90,7 +90,7 @@ public sealed class Http3StageCompletionRegressionSpec : StreamTestBase
     public async Task Http30Request2FrameStage_outlet_should_terminate_when_upstream_fails()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
-        var source = Source.From(new[] { request })
+        var source = Source.From([request])
             .Concat(Source.Failed<HttpRequestMessage>(UpstreamError));
 
         var encoder = new Http3RequestEncoder();
@@ -118,7 +118,7 @@ public sealed class Http3StageCompletionRegressionSpec : StreamTestBase
     public async Task Http30CorrelationStage_outlet_should_terminate_when_upstream_fails()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
-        var requestSource = Source.From(new[] { request })
+        var requestSource = Source.From([request])
             .Concat(Source.Failed<HttpRequestMessage>(UpstreamError));
 
         var graph = GraphDsl.Create(

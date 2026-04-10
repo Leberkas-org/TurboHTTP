@@ -503,7 +503,7 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
                 capacity: maxOffering,
                 onConsumed: () => consumedCallback((capturedKey, capturedState!)));
 
-            var (_, source) = Source.FromGraph(channelStage).PreMaterialize(Materializer);
+            var (_, source) = Source.FromGraph(channelStage).Async().PreMaterialize(SubFusingMaterializer);
 
             var state = new SubflowState(channelStage, maxOffering);
             capturedState = state;

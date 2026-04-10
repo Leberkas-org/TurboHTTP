@@ -7,7 +7,7 @@ namespace TurboHTTP.Tests.Http2.Connection;
 /// Verifies that out-of-range parameter values are rejected with PROTOCOL_ERROR.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH must be 0 or 1; SETTINGS_INITIAL_WINDOW_SIZE must not exceed 2^31-1.
 /// </remarks>
 public sealed class Http2SettingsSpec
@@ -54,7 +54,7 @@ public sealed class Http2SettingsSpec
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_decode_with_is_ack_true_when_settings_ack_frame()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(SettingsFrame.SettingsAck());
 
         Assert.Single(frames);
@@ -69,7 +69,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_decode_with_is_ack_false_when_non_ack_settings()
     {
         var bytes = new SettingsFrame([(SettingsParameter.MaxFrameSize, 16384u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -89,7 +89,7 @@ public sealed class Http2SettingsSpec
             0x00,             // flags = 0
             0x00, 0x00, 0x00, 0x01, // stream = 1 — MUST be 0
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -110,7 +110,7 @@ public sealed class Http2SettingsSpec
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x05, 0x00, 0x00, 0x40, 0x00, // MaxFrameSize=16384
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -129,7 +129,7 @@ public sealed class Http2SettingsSpec
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, // 7 bytes
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -142,7 +142,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_be_protocol_error_when_max_frame_size_below_min()
     {
         var bytes = new SettingsFrame([(SettingsParameter.MaxFrameSize, 16383u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(bytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -153,7 +153,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_be_protocol_error_when_max_frame_size_above_max()
     {
         var bytes = new SettingsFrame([(SettingsParameter.MaxFrameSize, 16777216u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(bytes));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -164,7 +164,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_accept_when_max_frame_size_at_min()
     {
         var bytes = new SettingsFrame([(SettingsParameter.MaxFrameSize, 16384u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -177,7 +177,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_accept_when_max_frame_size_at_max()
     {
         var bytes = new SettingsFrame([(SettingsParameter.MaxFrameSize, 16777215u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -192,7 +192,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_accept_when_enable_push_is_zero()
     {
         var bytes = new SettingsFrame([(SettingsParameter.EnablePush, 0u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -207,7 +207,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_accept_when_enable_push_is_one()
     {
         var bytes = new SettingsFrame([(SettingsParameter.EnablePush, 1u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -221,7 +221,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_be_protocol_error_when_enable_push_is_two()
     {
         var bytes = new SettingsFrame([(SettingsParameter.EnablePush, 2u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -237,7 +237,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_be_protocol_error_when_enable_push_is_max_value()
     {
         var bytes = new SettingsFrame([(SettingsParameter.EnablePush, 0xFFFFFFFFu)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -254,7 +254,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_be_flow_control_error_when_initial_window_size_overflows()
     {
         var bytes = new SettingsFrame([(SettingsParameter.InitialWindowSize, 0x80000000u)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -270,7 +270,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_accept_when_initial_window_size_at_max()
     {
         var bytes = new SettingsFrame([(SettingsParameter.InitialWindowSize, 0x7FFFFFFFu)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -285,7 +285,7 @@ public sealed class Http2SettingsSpec
     public void Http2FrameDecoder_should_be_flow_control_error_when_initial_window_size_is_max_uint()
     {
         var bytes = new SettingsFrame([(SettingsParameter.InitialWindowSize, 0xFFFFFFFFu)]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -308,7 +308,7 @@ public sealed class Http2SettingsSpec
             0x00,             // flags = 0 (no ACK)
             0x00, 0x00, 0x00, 0x00, // stream = 0
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(emptySettings);
 
         Assert.Single(frames);
@@ -326,7 +326,7 @@ public sealed class Http2SettingsSpec
             (SettingsParameter.EnablePush, 0u),
             (SettingsParameter.MaxFrameSize, 32768u),
         ]).Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);
@@ -351,7 +351,7 @@ public sealed class Http2SettingsSpec
             0xFF, 0xFF,       // unknown parameter = 0xFFFF
             0x00, 0x00, 0x00, 0x2A, // value = 42
         };
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(rawFrame);
 
         Assert.Single(frames);
@@ -371,7 +371,7 @@ public sealed class Http2SettingsSpec
             (SettingsParameter.MaxFrameSize, 16384u),
         ]);
         var bytes = original.Serialize();
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var frames = decoder.Decode(bytes);
 
         Assert.Single(frames);

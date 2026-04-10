@@ -26,20 +26,26 @@ dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj
 # Run specific test class (xUnit v3 direct runner — -class flag)
 dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- -class "TurboHTTP.Tests.RFC9113.Http2DecoderErrorCodeTests"
 
-# Run specific RFC section (by namespace)
-dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- --filter-namespace "TurboHTTP.Tests.RFC9113"
+# Run specific namespace (xUnit v3 direct runner — -namespace flag)
+dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- -namespace "TurboHTTP.Tests.RFC9113"
 
 # Run integration tests (H10/H11/H2/H3/TLS — requires network)
 dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj
 
-# Run integration tests for one HTTP version
-dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- --filter-namespace "TurboHTTP.IntegrationTests.H11"
+# Run integration tests for one HTTP version (prefer per-class — full suite is slow)
+dotnet run --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- -namespace "TurboHTTP.IntegrationTests.H2"
+
+# Run a single integration test class (preferred — integration tests are slow)
+dotnet run --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- -class "TurboHTTP.IntegrationTests.H2.ConnectionSpec"
+
+# Run a single integration test method
+dotnet run --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- -method "TurboHTTP.IntegrationTests.H2.ConnectionSpec.Concurrent_requests_should_be_multiplexed_over_single_connection"
 
 # Run Akka.Streams stage tests
 dotnet test --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj
 
-# Run stage tests for one RFC section
-dotnet test --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj -- --filter-namespace "TurboHTTP.StreamTests.RFC9113"
+# Run stage tests for one namespace
+dotnet run --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj -- -namespace "TurboHTTP.StreamTests.RFC9113"
 
 # Run benchmarks
 dotnet run --configuration Release --project TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj

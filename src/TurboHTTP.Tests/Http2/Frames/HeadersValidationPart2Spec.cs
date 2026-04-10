@@ -74,7 +74,7 @@ public sealed class Http2HeadersValidationPart2Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -92,7 +92,7 @@ public sealed class Http2HeadersValidationPart2Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -108,7 +108,7 @@ public sealed class Http2HeadersValidationPart2Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -125,7 +125,7 @@ public sealed class Http2HeadersValidationPart2Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 
@@ -141,7 +141,7 @@ public sealed class Http2HeadersValidationPart2Spec
         ]);
         var frame = new HeadersFrame(1, headerBlock).Serialize();
 
-        var frames = new Http2FrameDecoder().Decode(frame);
+        var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
     }
 

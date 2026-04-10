@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.FlowControl;
 /// Verifies stream multiplexing with many parallel streams processed sequentially through the decoder.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §5.1.1: Stream identifiers are assigned sequentially by the client; concurrent streams are multiplexed on a single connection.
 /// </remarks>
 public sealed class HighConcurrencyPart1Spec
@@ -52,7 +52,7 @@ public sealed class HighConcurrencyPart1Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_handle_1000_sequential_streams_with_end_stream_headers()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var closedStreams = new HashSet<int>();
         var activeStreams = new HashSet<int>();
 
@@ -83,7 +83,7 @@ public sealed class HighConcurrencyPart1Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_1000_responses_from_1000_streams()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var decodedFrameCount = 0;
 
         for (var i = 0; i < 1000; i++)
@@ -100,7 +100,7 @@ public sealed class HighConcurrencyPart1Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_max_concurrent_streams_from_settings()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         // MAX_CONCURRENT_STREAMS = SettingsParameter id 3
         var settingsBytes = BuildSettingsFrame(false, (3, 500));
         var frames = decoder.Decode(settingsBytes);
@@ -114,7 +114,7 @@ public sealed class HighConcurrencyPart1Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_recycle_stream_capacity_after_bulk_data_close()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
 
@@ -157,7 +157,7 @@ public sealed class HighConcurrencyPart1Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_track_all_closed_streams_with_no_cap_on_closed_stream_count()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var closedStreams = new HashSet<int>();
 
         for (var i = 0; i < 10001; i++)

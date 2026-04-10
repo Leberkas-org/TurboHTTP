@@ -10,7 +10,7 @@ namespace TurboHTTP.Tests.Http2.FlowControl;
 /// Verifies that flood protection thresholds produce Http2Exception with appropriate error codes.
 /// </summary>
 /// <remarks>
-/// Class under test: <see cref="Http2FrameDecoder"/>.
+/// Class under test: <see cref="FrameDecoder"/>.
 /// RFC 9113 §10.5: Implementations should limit the rate at which control frames can be received to protect against floods.
 /// </remarks>
 public sealed class ResourceExhaustionPart2Spec
@@ -118,7 +118,7 @@ public sealed class ResourceExhaustionPart2Spec
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_handle_stream_id_exhaustion_without_crash()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
         var closedStreamIds = new HashSet<int>();
 
         // Decode 10001 HEADERS+END_STREAM frames on distinct stream IDs
@@ -146,7 +146,7 @@ public sealed class ResourceExhaustionPart2Spec
     [Trait("RFC", "RFC9113-6.1")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_10001_empty_data_frames_received()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // First, open stream 1 via HEADERS (END_HEADERS=0x4, no END_STREAM)
         var headersFrame = BuildRawFrame(0x1, 0x4, 1, [0x88]);
@@ -188,7 +188,7 @@ public sealed class ResourceExhaustionPart2Spec
     [Trait("RFC", "RFC9113-6.1")]
     public void Http2FrameDecoder_should_accept_10000_empty_data_frames_without_exception()
     {
-        var decoder = new Http2FrameDecoder();
+        var decoder = new FrameDecoder();
 
         // Open stream 1 via HEADERS (END_HEADERS=0x4, no END_STREAM)
         var headersFrame = BuildRawFrame(0x1, 0x4, 1, [0x88]);
