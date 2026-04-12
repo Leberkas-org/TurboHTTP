@@ -55,6 +55,12 @@ public sealed class Http10ConnectionStage : GraphStage<Http10ConnectionShape>
     private readonly Outlet<HttpResponseMessage> _outResponse = new("Http10Connection.Out.Response");
     private readonly Inlet<HttpRequestMessage> _inApp = new("Http10Connection.In.App");
     private readonly Outlet<IOutputItem> _outNetwork = new("Http10Connection.Out.Network");
+    private readonly int _maxReconnectAttempts;
+
+    public Http10ConnectionStage(int maxReconnectAttempts = 3)
+    {
+        _maxReconnectAttempts = maxReconnectAttempts;
+    }
 
     public override Http10ConnectionShape Shape => new(_inServer, _outResponse, _inApp, _outNetwork);
 
@@ -68,17 +74,25 @@ public sealed class Http10ConnectionStage : GraphStage<Http10ConnectionShape>
         private readonly List<IOutputItem> _pendingOutbound = [];
         private readonly List<HttpResponseMessage> _pendingResponses = [];
         private bool _serverFinished;
+        private bool _reconnectFailed;
 
         public Logic(Http10ConnectionStage stage, Attributes inheritedAttributes) : base(stage.Shape)
         {
             _stage = stage;
 
             var memoryBuffer = inheritedAttributes.GetAttribute(new TurboAttributes.MemoryBuffer(4 * 1024, 256 * 1024));
-            _sm = new Http10StateMachine(this, memoryBuffer.Initial, memoryBuffer.Max);
+            _sm = new Http10StateMachine(this, _stage._maxReconnectAttempts, memoryBuffer.Initial, memoryBuffer.Max);
 
             SetHandler(stage._inServer, onPush: OnServerPush,
                 onUpstreamFinish: () =>
                 {
+                    if (_sm.IsReconnecting)
+                    {
+                        FailStage(new HttpRequestException(
+                            "TurboHTTP: Transport closed during reconnect."));
+                        return;
+                    }
+
                     _serverFinished = true;
 
                     // Try to flush any EOF-delimited response
@@ -144,11 +158,63 @@ public sealed class Http10ConnectionStage : GraphStage<Http10ConnectionShape>
             Log.Warning("Http10ConnectionStage: {0}", message);
         }
 
+        void IHttp10StageOperations.OnReconnectFailed()
+        {
+            _reconnectFailed = true;
+        }
+
         // ─── Handlers ───
 
         private void OnServerPush()
         {
             var item = Grab(_stage._inServer);
+
+            if (item is ConnectedSignalItem)
+            {
+                _sm.HandleConnectedSignal();
+                FlushOutbound();
+                TryPullRequest();
+                // Pull to receive the response from the new connection
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            if (item is CloseSignalItem && _sm.IsReconnecting)
+            {
+                _sm.HandleReconnectAttempt();
+                if (_reconnectFailed)
+                {
+                    FailStage(new HttpRequestException(
+                        "TurboHTTP: Reconnect failed after max attempts; connection lost with in-flight request."));
+                    return;
+                }
+
+                FlushOutbound();
+                // Pull to receive ConnectedSignalItem or next CloseSignalItem
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            if (item is CloseSignalItem && _sm.HasInFlightRequest)
+            {
+                _sm.StartReconnect();
+                FlushOutbound();
+                // Pull to receive ConnectedSignalItem from the reconnected transport
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
 
             try
             {

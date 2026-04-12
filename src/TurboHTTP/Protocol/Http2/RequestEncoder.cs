@@ -11,7 +11,7 @@ namespace TurboHTTP.Protocol.Http2;
 /// </summary>
 public sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize = 16384)
 {
-    private readonly HpackEncoder _hpack = new(useHuffman);
+    private HpackEncoder _hpack = new(useHuffman);
     private int _maxFrameSize = maxFrameSize;
     private long _connectionSendWindow = 65535; // Tracks connection-level flow control (for RFC 9113 compliance)
     private long _initialSendStreamWindow = 65535; // RFC 9113 §6.5.2 default
@@ -350,6 +350,18 @@ public sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize = 1
         }
     }
 
+
+    /// <summary>
+    /// Resets HPACK encoder state and flow-control windows for reconnect.
+    /// Must be called before replaying requests on a new connection.
+    /// </summary>
+    public void ResetHpack()
+    {
+        _hpack = new HpackEncoder(useHuffman);
+        _streamSendWindows.Clear();
+        _connectionSendWindow = 65535;
+        _initialSendStreamWindow = 65535;
+    }
 
     /// <summary>
     /// Disposes all MemoryPool rentals from the previous Encode() call.

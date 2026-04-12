@@ -18,4 +18,11 @@ public sealed class Http1Options
     /// Default is 16.
     /// </summary>
     public int MaxPipelineDepth { get; set; } = 16;
+
+    /// <summary>
+    /// Maximum number of reconnect attempts when a TCP connection drops with in-flight requests.
+    /// After this many failed reconnects, the connection stage fails with an exception.
+    /// Default is 3.
+    /// </summary>
+    public int MaxReconnectAttempts { get; set; } = 3;
 }

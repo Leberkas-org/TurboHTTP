@@ -18,10 +18,24 @@ public sealed class StreamTracker
     public int ActiveStreamCount { get; private set; }
     public int MaxConcurrentStreams { get; set; }
 
+    /// <summary>Current next stream ID (for testing/reset visibility).</summary>
+    public int NextStreamId => _nextStreamId;
+
     /// <summary>
     /// Returns true if a new stream can be opened without exceeding the concurrency limit.
     /// </summary>
     public bool CanOpenStream() => ActiveStreamCount < MaxConcurrentStreams;
+
+    /// <summary>
+    /// Resets to initial state for use on a new connection.
+    /// Stream ID allocation restarts from 1; active set is cleared.
+    /// </summary>
+    public void Reset()
+    {
+        _activeStreamIds.Clear();
+        ActiveStreamCount = 0;
+        _nextStreamId = 1;
+    }
 
     /// <summary>
     /// Allocates the next stream ID (odd, client-initiated) and advances the counter by 2.

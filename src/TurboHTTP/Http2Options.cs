@@ -34,4 +34,11 @@ public sealed class Http2Options
     /// Maximum HTTP/2 frame size in bytes. Default is 128 KiB.
     /// </summary>
     public int MaxFrameSize { get; set; } = 128 * 1024;
+
+    /// <summary>
+    /// Maximum number of reconnect attempts when a TCP connection drops with in-flight requests.
+    /// After this many failed reconnects, the connection stage fails with an exception.
+    /// Default is 3.
+    /// </summary>
+    public int MaxReconnectAttempts { get; set; } = 3;
 }

@@ -13,6 +13,7 @@ public interface IHttp10StageOperations
     void OnResponse(HttpResponseMessage response);
     void OnOutbound(IOutputItem item);
     void OnWarning(string message);
+    void OnReconnectFailed();
 }
 
 /// <summary>
@@ -26,22 +27,34 @@ public sealed class Http10StateMachine
     private readonly Http10Decoder _decoder = new();
     private readonly int _minBufferSize;
     private readonly int _maxBufferSize;
+    private readonly int _maxReconnectAttempts;
 
     private HttpRequestMessage? _inFlightRequest;
     private bool _closed;
+    private HttpRequestMessage? _reconnectBufferedRequest;
+    private bool _reconnecting;
+    private int _reconnectAttempts;
 
-    /// <summary>Whether a new request can be accepted (no in-flight request and not closed).</summary>
-    public bool CanAcceptRequest => _inFlightRequest is null && !_closed;
+    /// <summary>Whether a new request can be accepted (no in-flight request, not closed, not reconnecting).</summary>
+    public bool CanAcceptRequest => _inFlightRequest is null && !_closed && !_reconnecting;
 
     /// <summary>Whether there is an in-flight request waiting for a response.</summary>
     public bool HasInFlightRequest => _inFlightRequest is not null;
 
+    /// <summary>Whether the state machine is currently in reconnect state.</summary>
+    public bool IsReconnecting => _reconnecting;
+
     /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
 
-    public Http10StateMachine(IHttp10StageOperations ops, int minBufferSize = 4 * 1024, int maxBufferSize = 256 * 1024)
+    public Http10StateMachine(
+        IHttp10StageOperations ops,
+        int maxReconnectAttempts = 3,
+        int minBufferSize = 4 * 1024,
+        int maxBufferSize = 256 * 1024)
     {
         _ops = ops;
+        _maxReconnectAttempts = maxReconnectAttempts;
         _minBufferSize = minBufferSize;
         _maxBufferSize = maxBufferSize;
     }
@@ -176,6 +189,52 @@ public sealed class Http10StateMachine
     public void MarkClosed()
     {
         _closed = true;
+    }
+
+    /// <summary>
+    /// Buffers the in-flight request and emits a ReconnectItem to trigger a new TCP connection.
+    /// Call when a CloseSignalItem arrives with an in-flight request and we are not yet reconnecting.
+    /// </summary>
+    public void StartReconnect()
+    {
+        _reconnectBufferedRequest = _inFlightRequest;
+        _inFlightRequest = null;
+        _reconnecting = true;
+        _reconnectAttempts = 1;
+        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+    }
+
+    /// <summary>
+    /// Called when ConnectedSignalItem arrives. Replays the buffered request over the new connection.
+    /// Resets the decoder so stale partial response data from the old connection is discarded.
+    /// </summary>
+    public void HandleConnectedSignal()
+    {
+        _reconnecting = false;
+        _reconnectAttempts = 0;
+        _decoder.Reset();
+
+        if (_reconnectBufferedRequest is { } req)
+        {
+            _reconnectBufferedRequest = null;
+            EncodeRequest(req);
+        }
+    }
+
+    /// <summary>
+    /// Called when a CloseSignalItem arrives while already reconnecting (reconnect attempt failed).
+    /// Increments the attempt counter; emits a new ReconnectItem or calls OnReconnectFailed.
+    /// </summary>
+    public void HandleReconnectAttempt()
+    {
+        if (_reconnectAttempts >= _maxReconnectAttempts)
+        {
+            _ops.OnReconnectFailed();
+            return;
+        }
+
+        _reconnectAttempts++;
+        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
     }
 
     /// <summary>

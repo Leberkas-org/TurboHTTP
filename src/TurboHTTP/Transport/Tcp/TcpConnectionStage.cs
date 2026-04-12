@@ -72,6 +72,7 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
         private readonly Queue<NetworkBuffer> _pendingWrites = new();
 
         private bool _upstreamFinished;
+        private bool _isReconnecting;
         private CancellationTokenSource? _pumpCts;
 
         private Action<ConnectionLease>? _onLeaseAcquired;
@@ -188,6 +189,10 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
                 case PipelineRetryItem retry:
                     HandlePipelineRetryItem(retry);
                     break;
+
+                case ReconnectItem reconnectItem:
+                    HandleReconnectItem(reconnectItem);
+                    break;
             }
         }
 
@@ -198,6 +203,20 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             Log.Warning("TcpConnectionStage: PipelineRetryItem — abandoning {0} (no retry)",
                 retry.Request.RequestUri);
             SignalPullInput();
+        }
+
+        private void HandleReconnectItem(ReconnectItem reconnectItem)
+        {
+            Log.Debug("TcpConnectionStage: ReconnectItem — tearing down and reconnecting to {0}:{1}",
+                reconnectItem.Key.Host, reconnectItem.Key.Port);
+
+            _isReconnecting = true;
+            CleanupTransport();
+
+            var options = TcpOptionsFactory.Build(reconnectItem.Key, _stage.ClientOptions);
+            _pendingConnect = new ConnectItem(options) { Key = reconnectItem.Key };
+            AcquireConnection(_pendingConnect.Value);
+            // Do NOT pull — wait for new ConnectionLease before accepting outbound data
         }
 
         private void AutoConnect(RequestEndpoint endpoint)
@@ -366,6 +385,13 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             _currentKey = lease.Key;
 
             StartInboundPump();
+
+            if (_isReconnecting)
+            {
+                _isReconnecting = false;
+                PushOutput(new ConnectedSignalItem { Key = _currentKey });
+            }
+
             FlushPendingWrites();
         }
 

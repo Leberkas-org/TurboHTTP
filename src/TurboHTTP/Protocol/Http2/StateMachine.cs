@@ -13,6 +13,7 @@ public interface IHttp2StageOperations
     void OnResponse(HttpResponseMessage response);
     void OnOutbound(IOutputItem item);
     void OnWarning(string message);
+    void OnReconnectFailed();
 }
 
 /// <summary>
@@ -22,7 +23,8 @@ public sealed record Http2ConnectionConfig(
     int InitialRecvWindowSize = 1_048_576,
     int MaxConcurrentStreams = 100,
     int MaxHeaderSize = 16 * 1024,
-    int MaxTotalHeaderSize = 64 * 1024);
+    int MaxTotalHeaderSize = 64 * 1024,
+    int MaxReconnectAttempts = 3);
 
 /// <summary>
 /// Encapsulates all HTTP/2 connection protocol logic — frame decoding, request encoding,
@@ -49,12 +51,19 @@ public sealed class StateMachine
     private int _statePoolCapacity;
 
     private bool _prefaceSent;
+    private readonly List<HttpRequestMessage> _reconnectBuffer = [];
+    private bool _reconnecting;
+    private int _reconnectAttempts;
 
     /// <summary>Whether the most recent ProcessFrame call produced a response.</summary>
     public bool ResponseProduced { get; private set; }
 
     /// <summary>Whether a new request stream can be opened (no GOAWAY + concurrency budget).</summary>
-    public bool CanAcceptRequest => !_connection.GoAwayReceived && _tracker.CanOpenStream();
+    public bool CanAcceptRequest => !_connection.GoAwayReceived && !_reconnecting && _tracker.CanOpenStream();
+
+    public bool IsReconnecting => _reconnecting;
+    public int ReconnectBufferCount => _reconnectBuffer.Count;
+    public bool HasInFlightRequests => _correlationMap.Count > 0;
 
     /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
@@ -166,10 +175,13 @@ public sealed class StateMachine
             case GoAwayFrame goAway:
                 _connection.OnGoAway();
                 _ops.OnWarning(
-                    $"RFC 9113 §6.8 — GOAWAY received (lastStreamId={goAway.LastStreamId}, errorCode={goAway.ErrorCode}). Triggering reconnect.");
-                var item = new ConnectionReuseItem(ConnectionReuseDecision.Close("RFC 9113 §6.8: GOAWAY received"))
-                    { Key = Endpoint };
-                _ops.OnOutbound(item);
+                    $"TurboHTTP: GOAWAY received from {Endpoint.Host} — LastStreamId={goAway.LastStreamId}, ErrorCode={goAway.ErrorCode}. Reconnecting.");
+                // Only reconnect if there are in-flight requests to replay; otherwise let the connection drain naturally.
+                if (_correlationMap.Count > 0)
+                {
+                    BufferOrphanedRequests(goAway.LastStreamId);
+                }
+
                 break;
         }
 
@@ -333,6 +345,109 @@ public sealed class StateMachine
             _statePool.Push(state);
         }
     }
+
+    // ─── Reconnect ───
+
+    /// <summary>
+    /// Called when GOAWAY or abrupt close is received with in-flight requests.
+    /// Classifies streams by LastStreamId and idempotency, buffers safe-to-replay requests,
+    /// resets all connection state, and emits a ReconnectItem.
+    /// </summary>
+    public void BufferOrphanedRequests(int lastStreamId)
+    {
+        foreach (var (streamId, request) in _correlationMap)
+        {
+            var streamState = _streams.GetValueOrDefault(streamId);
+            var hasReceivedHeaders = streamState?.Response is not null;
+
+            if (streamId > lastStreamId)
+            {
+                // Server never saw this stream — always safe to replay
+                _reconnectBuffer.Add(request);
+            }
+            else if (IsIdempotentMethod(request.Method) && !hasReceivedHeaders)
+            {
+                // Server may have processed, but idempotent and no response started — replay
+                _reconnectBuffer.Add(request);
+            }
+            else
+            {
+                // Non-idempotent or partial response received — cannot safely replay
+                _ops.OnWarning(
+                    $"TurboHTTP: Dropping non-idempotent or partially-responded request {request.Method} {request.RequestUri} on reconnect.");
+                request.Dispose();
+            }
+        }
+
+        // Release all stream state objects back to pool
+        foreach (var (_, state) in _streams)
+        {
+            ReturnState(state);
+        }
+
+        _streams.Clear();
+        _correlationMap.Clear();
+
+        // Reset connection state for new connection
+        _tracker.Reset();
+        _connection.Reset(_config.InitialRecvWindowSize);
+        _requestEncoder.ResetHpack();
+        _responseDecoder.ResetHpack();
+        _prefaceSent = false;
+
+        _reconnecting = true;
+        _reconnectAttempts = 1;
+        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+    }
+
+    /// <summary>
+    /// Called when ConnectedSignalItem arrives. Emits preface and replays buffered requests.
+    /// </summary>
+    public void HandleConnectedSignal()
+    {
+        _reconnecting = false;
+        _reconnectAttempts = 0;
+
+        // Build and emit preface (_prefaceSent = false was set in BufferOrphanedRequests)
+        var preface = TryBuildPreface();
+        if (preface is not null)
+        {
+            _ops.OnOutbound(preface);
+        }
+
+        // Replay buffered requests with fresh stream IDs from reset tracker
+        var toReplay = _reconnectBuffer.ToList();
+        _reconnectBuffer.Clear();
+
+        foreach (var request in toReplay)
+        {
+            EncodeRequest(request);
+        }
+    }
+
+    /// <summary>
+    /// Called when a CloseSignalItem arrives while already reconnecting (reconnect attempt failed).
+    /// Increments the attempt counter; emits a new ReconnectItem or calls OnReconnectFailed.
+    /// </summary>
+    public void HandleReconnectAttempt()
+    {
+        if (_reconnectAttempts >= _config.MaxReconnectAttempts)
+        {
+            _ops.OnReconnectFailed();
+            return;
+        }
+
+        _reconnectAttempts++;
+        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+    }
+
+    private static bool IsIdempotentMethod(HttpMethod method)
+        => method == HttpMethod.Get
+           || method == HttpMethod.Head
+           || method == HttpMethod.Options
+           || method == HttpMethod.Trace
+           || method == HttpMethod.Delete
+           || method == HttpMethod.Put;
 
     private void HandleHeaders(HeadersFrame frame)
     {

@@ -1,0 +1,173 @@
+using System.Text;
+using Akka.Streams;
+using Akka.Streams.Dsl;
+using Akka.Streams.TestKit;
+using TurboHTTP.Internal;
+using TurboHTTP.Streams.Stages;
+
+namespace TurboHTTP.StreamTests.Http11;
+
+public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
+{
+    private static HttpRequestMessage MakeRequest(string path = "/") =>
+        new(HttpMethod.Get, new Uri($"http://example.com{path}"))
+        {
+            Version = new Version(1, 1)
+        };
+
+    private static NetworkBuffer MakeResponseBuffer(string raw)
+    {
+        var bytes = Encoding.ASCII.GetBytes(raw);
+        var buf = NetworkBuffer.Rent(bytes.Length);
+        bytes.CopyTo(buf.FullMemory.Span);
+        buf.Length = bytes.Length;
+        return buf;
+    }
+
+    [Fact(Timeout = 10000)]
+    [Trait("RFC", "RFC9112-9.3")]
+    public async Task Http11ConnectionStage_should_reconnect_and_replay_request_on_connection_drop()
+    {
+        var stage = new Http11ConnectionStage(maxPipelineDepth: 1, maxReconnectAttempts: 3);
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            b.From(Source.FromPublisher(appProbe)).To(s.InApp);
+            b.From(Source.FromPublisher(serverProbe)).To(s.InServer);
+            b.From(s.OutNetwork).To(Sink.FromSubscriber(networkSub));
+            b.From(s.OutResponse).To(Sink.FromSubscriber(responseSub));
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSub = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSub = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSub = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSub = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSub.Request(20);
+        resSub.Request(10);
+
+        // Send a request
+        appSub.SendNext(MakeRequest());
+
+        // Consume StreamAcquireItem + NetworkBuffer
+        var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<StreamAcquireItem>(item1);
+        var item2 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<NetworkBuffer>(item2);
+
+        // Connection drops while request is in-flight
+        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
+
+        // Stage must emit ReconnectItem
+        var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        var reconnect = Assert.IsType<ReconnectItem>(reconnectRaw);
+
+        // Simulate reconnect success → sends ConnectedSignalItem
+        serverSub.SendNext(new ConnectedSignalItem { Key = reconnect.Key });
+
+        // Stage must replay the request — expect StreamAcquireItem + NetworkBuffer again
+        var item3 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<StreamAcquireItem>(item3);
+        var item4 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<NetworkBuffer>(item4);
+
+        // Now respond normally
+        serverSub.SendNext(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"));
+
+        var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact(Timeout = 10000)]
+    [Trait("RFC", "RFC9112-9.3")]
+    public async Task Http11ConnectionStage_should_fail_stage_when_max_reconnect_attempts_exceeded()
+    {
+        var stage = new Http11ConnectionStage(maxPipelineDepth: 1, maxReconnectAttempts: 1);
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            b.From(Source.FromPublisher(appProbe)).To(s.InApp);
+            b.From(Source.FromPublisher(serverProbe)).To(s.InServer);
+            b.From(s.OutNetwork).To(Sink.FromSubscriber(networkSub));
+            b.From(s.OutResponse).To(Sink.FromSubscriber(responseSub));
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSub = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSub = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSub = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSub = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSub.Request(20);
+        resSub.Request(10);
+
+        appSub.SendNext(MakeRequest());
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // StreamAcquireItem
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // NetworkBuffer
+
+        // First drop → reconnect attempt 1 (hits max immediately)
+        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
+        var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<ReconnectItem>(reconnectRaw);
+
+        // Reconnect fails → CloseSignalItem again (attempt 2 exceeds max of 1)
+        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
+
+        // Stage should fail — error propagates to response subscriber
+        await Task.Run(() => responseSub.ExpectError(), TestContext.Current.CancellationToken);
+    }
+
+    [Fact(Timeout = 10000)]
+    [Trait("RFC", "RFC9112-9.3")]
+    public async Task Http11ConnectionStage_should_not_reconnect_when_no_inflight_request_on_close()
+    {
+        var stage = new Http11ConnectionStage(maxPipelineDepth: 4, maxReconnectAttempts: 3);
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            b.From(Source.FromPublisher(appProbe)).To(s.InApp);
+            b.From(Source.FromPublisher(serverProbe)).To(s.InServer);
+            b.From(s.OutNetwork).To(Sink.FromSubscriber(networkSub));
+            b.From(s.OutResponse).To(Sink.FromSubscriber(responseSub));
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSub = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSub = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSub = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSub = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSub.Request(20);
+        resSub.Request(10);
+
+        // No requests sent — connection just closes cleanly
+        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.CleanClose));
+
+        // Stage should NOT emit a ReconnectItem — verify no output within 200ms
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+        networkSub.ExpectNoMsg(TimeSpan.Zero);
+
+        // Upstream completes → stage completes
+        serverSub.SendComplete();
+        await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
+    }
+}

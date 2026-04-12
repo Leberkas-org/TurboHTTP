@@ -58,10 +58,12 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
     private readonly Outlet<IOutputItem> _outNetwork = new("Http20Connection.Out.Network");
 
     private readonly Http2ConnectionConfig _config;
+    private readonly int _maxReconnectAttempts;
 
-    public Http20ConnectionStage(Http2ConnectionConfig? config = null)
+    public Http20ConnectionStage(Http2ConnectionConfig? config = null, int maxReconnectAttempts = 3)
     {
-        _config = config ?? new Http2ConnectionConfig();
+        _maxReconnectAttempts = maxReconnectAttempts;
+        _config = config ?? new Http2ConnectionConfig(MaxReconnectAttempts: maxReconnectAttempts);
     }
 
     public override Http20ConnectionShape Shape => new(_inServer, _outResponse, _inApp, _outNetwork);
@@ -75,6 +77,7 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
         private readonly StateMachine _sm;
         private readonly List<IOutputItem> _pendingOutbound = [];
         private readonly List<HttpResponseMessage> _pendingResponses = [];
+        private bool _reconnectFailed;
         public Logic(Http20ConnectionStage stage) : base(stage.Shape)
         {
             _stage = stage;
@@ -83,6 +86,13 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             SetHandler(stage._inServer, onPush: OnServerPush,
                 onUpstreamFinish: () =>
                 {
+                    if (_sm.IsReconnecting)
+                    {
+                        FailStage(new HttpRequestException(
+                            "TurboHTTP: HTTP/2 transport closed during reconnect."));
+                        return;
+                    }
+
                     Log.Debug("Http20ConnectionStage: Completing stage due to server inlet upstream finish.");
                     CompleteStage();
                 },
@@ -128,11 +138,70 @@ public sealed class Http20ConnectionStage : GraphStage<Http20ConnectionShape>
             Log.Warning("Http20ConnectionStage: {0}", message);
         }
 
+        void IHttp2StageOperations.OnReconnectFailed()
+        {
+            _reconnectFailed = true;
+        }
+
         // ─── Handlers ───
 
         private void OnServerPush()
         {
             var item = Grab(_stage._inServer);
+
+            // Reconnect: new connection ready — replay buffered requests
+            if (item is ConnectedSignalItem)
+            {
+                _sm.HandleConnectedSignal();
+                FlushOutbound();
+                TryPullRequest();
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            // Reconnect: connection dropped again while already reconnecting
+            if (item is CloseSignalItem && _sm.IsReconnecting)
+            {
+                _sm.HandleReconnectAttempt();
+                if (_reconnectFailed)
+                {
+                    FailStage(new HttpRequestException(
+                        "TurboHTTP: HTTP/2 reconnect failed after max attempts."));
+                    return;
+                }
+
+                FlushOutbound();
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            // Reconnect: abrupt close with in-flight requests (no GOAWAY)
+            if (item is CloseSignalItem && _sm.HasInFlightRequests)
+            {
+                _sm.BufferOrphanedRequests(lastStreamId: 0);
+                FlushOutbound();
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            // CloseSignalItem with no in-flight — complete normally
+            if (item is CloseSignalItem)
+            {
+                CompleteStage();
+                return;
+            }
 
             if (item is not NetworkBuffer buffer)
             {

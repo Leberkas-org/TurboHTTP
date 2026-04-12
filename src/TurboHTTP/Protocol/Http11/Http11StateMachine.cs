@@ -12,6 +12,7 @@ public interface IHttp11StageOperations
     void OnResponse(HttpResponseMessage response);
     void OnOutbound(IOutputItem item);
     void OnWarning(string message);
+    void OnReconnectFailed();
 }
 
 /// <summary>
@@ -26,9 +27,13 @@ public sealed class Http11StateMachine
     private readonly int _minBufferSize;
     private readonly int _maxBufferSize;
     private readonly int _maxPipelineDepth;
+    private readonly int _maxReconnectAttempts;
 
     private readonly Queue<HttpRequestMessage> _inFlightQueue = new();
     private int _effectivePipelineDepth;
+    private Queue<HttpRequestMessage>? _reconnectBufferedQueue;
+    private bool _reconnecting;
+    private int _reconnectAttempts;
 
     /// <summary>
     /// Holds a response whose body is delimited by connection close (no Content-Length,
@@ -45,11 +50,14 @@ public sealed class Http11StateMachine
     /// </summary>
     private byte[]? _initialBodyBytes;
 
-    /// <summary>Whether a new request can be accepted (queue not full and not closed).</summary>
-    public bool CanAcceptRequest => _inFlightQueue.Count < _effectivePipelineDepth;
+    /// <summary>Whether a new request can be accepted (queue not full and not reconnecting).</summary>
+    public bool CanAcceptRequest => _inFlightQueue.Count < _effectivePipelineDepth && !_reconnecting;
 
     /// <summary>Whether there are in-flight requests waiting for responses.</summary>
     public bool HasInFlightRequests => _inFlightQueue.Count > 0;
+
+    /// <summary>Whether the state machine is currently in reconnect state.</summary>
+    public bool IsReconnecting => _reconnecting;
 
     /// <summary>Whether we are accumulating a close-delimited body.</summary>
     public bool IsAccumulatingCloseDelimitedBody => _pendingCloseDelimitedResponse is not null;
@@ -60,12 +68,14 @@ public sealed class Http11StateMachine
     public Http11StateMachine(
         IHttp11StageOperations ops,
         int maxPipelineDepth = 8,
+        int maxReconnectAttempts = 3,
         int minBufferSize = 4 * 1024,
         int maxBufferSize = 256 * 1024)
     {
         _ops = ops;
         _maxPipelineDepth = maxPipelineDepth;
         _effectivePipelineDepth = maxPipelineDepth;
+        _maxReconnectAttempts = maxReconnectAttempts;
         _minBufferSize = minBufferSize;
         _maxBufferSize = maxBufferSize;
     }
@@ -245,6 +255,56 @@ public sealed class Http11StateMachine
         {
             _ops.OnOutbound(new PipelineRetryItem(_inFlightQueue.Dequeue()));
         }
+    }
+
+    /// <summary>
+    /// Buffers all in-flight requests and emits a ReconnectItem to trigger a new TCP connection.
+    /// Call when a CloseSignalItem arrives with in-flight requests and we are not yet reconnecting.
+    /// </summary>
+    public void StartReconnect()
+    {
+        _reconnectBufferedQueue = new Queue<HttpRequestMessage>(_inFlightQueue);
+        _inFlightQueue.Clear();
+        _reconnecting = true;
+        _reconnectAttempts = 1;
+        _decoder.Reset();
+        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+    }
+
+    /// <summary>
+    /// Called when ConnectedSignalItem arrives. Replays all buffered requests over the new connection.
+    /// Resets the decoder so stale partial response data from the old connection is discarded.
+    /// </summary>
+    public void HandleConnectedSignal()
+    {
+        _reconnecting = false;
+        _reconnectAttempts = 0;
+        _decoder.Reset();
+
+        if (_reconnectBufferedQueue is { Count: > 0 } queue)
+        {
+            _reconnectBufferedQueue = null;
+            while (queue.Count > 0)
+            {
+                EncodeRequest(queue.Dequeue());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called when a CloseSignalItem arrives while already reconnecting (reconnect attempt failed).
+    /// Increments the attempt counter; emits a new ReconnectItem or calls OnReconnectFailed.
+    /// </summary>
+    public void HandleReconnectAttempt()
+    {
+        if (_reconnectAttempts >= _maxReconnectAttempts)
+        {
+            _ops.OnReconnectFailed();
+            return;
+        }
+
+        _reconnectAttempts++;
+        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
     }
 
     /// <summary>

@@ -220,6 +220,25 @@ public readonly record struct CloseSignalItem(TlsCloseKind CloseKind) : IInputIt
 }
 
 /// <summary>
+/// Emitted by TcpConnectionStage.OnLeaseAcquired after a successful (re)connect.
+/// Flows into the connection stage via InServer to signal the new TCP connection is ready.
+/// Connection stages ignore this when not in reconnect state.
+/// </summary>
+public readonly record struct ConnectedSignalItem : IInputItem
+{
+    public RequestEndpoint Key { get; init; }
+}
+
+/// <summary>
+/// Emitted by a connection stage when it needs to reconnect using the same endpoint.
+/// TcpConnectionStage reuses the options from the previous ConnectItem on receipt.
+/// </summary>
+public readonly record struct ReconnectItem : IControlItem, IOutputItem
+{
+    public RequestEndpoint Key { get; init; }
+}
+
+/// <summary>
 /// Identifies the QUIC stream that an HTTP/3 output item should be routed to.
 /// Used by <c>Http30StreamDemuxStage</c> to route tagged items to the correct QUIC stream.
 /// </summary>

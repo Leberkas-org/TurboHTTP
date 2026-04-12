@@ -14,7 +14,7 @@ public sealed class ResponseDecoder
     // Shared empty content — reused for headers-only responses with no content headers.
     private static readonly HttpContent SharedEmptyContent = new ByteArrayContent([]);
 
-    private readonly HpackDecoder _hpack;
+    private HpackDecoder _hpack;
     private readonly int _maxHeaderSize;
     private readonly int _maxTotalHeaderSize;
 
@@ -23,6 +23,15 @@ public sealed class ResponseDecoder
         _hpack = hpack;
         _maxHeaderSize = maxHeaderSize;
         _maxTotalHeaderSize = maxTotalHeaderSize;
+    }
+
+    /// <summary>
+    /// Resets HPACK decoder state for reconnect.
+    /// Must be called before decoding responses on a new connection.
+    /// </summary>
+    public void ResetHpack()
+    {
+        _hpack = new HpackDecoder();
     }
 
     /// <summary>

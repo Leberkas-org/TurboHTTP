@@ -189,6 +189,22 @@ public sealed class ConnectionState
     }
 
     /// <summary>
+    /// Resets all state for use on a new connection.
+    /// Flow control windows revert to initial values; GOAWAY flag is cleared.
+    /// </summary>
+    public void Reset(int initialRecvWindowSize)
+    {
+        GoAwayReceived = false;
+        RecvConnectionWindow = initialRecvWindowSize;
+        InitialRecvStreamWindow = initialRecvWindowSize;
+        SendConnectionWindow = 65535;
+        InitialSendStreamWindow = 65535;
+        _recvStreamWindows.Clear();
+        _pendingConnIncrement = 0;
+        _pendingStreamIncrements.Clear();
+    }
+
+    /// <summary>
     /// Clean up per-stream flow control state when a stream closes.
     /// Returns a WINDOW_UPDATE frame if there was pending increment.
     /// </summary>

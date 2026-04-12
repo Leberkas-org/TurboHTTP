@@ -57,10 +57,12 @@ public sealed class Http11ConnectionStage : GraphStage<Http11ConnectionShape>
     private readonly Outlet<IOutputItem> _outNetwork = new("Http11Connection.Out.Network");
 
     private readonly int _maxPipelineDepth;
+    private readonly int _maxReconnectAttempts;
 
-    public Http11ConnectionStage(int maxPipelineDepth = 8)
+    public Http11ConnectionStage(int maxPipelineDepth = 8, int maxReconnectAttempts = 3)
     {
         _maxPipelineDepth = maxPipelineDepth;
+        _maxReconnectAttempts = maxReconnectAttempts;
     }
 
     public override Http11ConnectionShape Shape => new(_inServer, _outResponse, _inApp, _outNetwork);
@@ -75,17 +77,25 @@ public sealed class Http11ConnectionStage : GraphStage<Http11ConnectionShape>
         private readonly List<IOutputItem> _pendingOutbound = [];
         private readonly List<HttpResponseMessage> _pendingResponses = [];
         private bool _serverFinished;
+        private bool _reconnectFailed;
 
         public Logic(Http11ConnectionStage stage, Attributes inheritedAttributes) : base(stage.Shape)
         {
             _stage = stage;
 
             var memoryBuffer = inheritedAttributes.GetAttribute(new TurboAttributes.MemoryBuffer(4 * 1024, 256 * 1024));
-            _sm = new Http11StateMachine(this, stage._maxPipelineDepth, memoryBuffer.Initial, memoryBuffer.Max);
+            _sm = new Http11StateMachine(this, stage._maxPipelineDepth, stage._maxReconnectAttempts, memoryBuffer.Initial, memoryBuffer.Max);
 
             SetHandler(stage._inServer, onPush: OnServerPush,
                 onUpstreamFinish: () =>
                 {
+                    if (_sm.IsReconnecting)
+                    {
+                        FailStage(new HttpRequestException(
+                            "TurboHTTP: Transport closed during reconnect."));
+                        return;
+                    }
+
                     _serverFinished = true;
 
                     // Try to flush any EOF-delimited response
@@ -151,11 +161,63 @@ public sealed class Http11ConnectionStage : GraphStage<Http11ConnectionShape>
             Log.Warning("Http11ConnectionStage: {0}", message);
         }
 
+        void IHttp11StageOperations.OnReconnectFailed()
+        {
+            _reconnectFailed = true;
+        }
+
         // --- Handlers ---
 
         private void OnServerPush()
         {
             var item = Grab(_stage._inServer);
+
+            if (item is ConnectedSignalItem)
+            {
+                _sm.HandleConnectedSignal();
+                FlushOutbound();
+                TryPullRequest();
+                // Pull to receive the response from the new connection
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            if (item is CloseSignalItem && _sm.IsReconnecting)
+            {
+                _sm.HandleReconnectAttempt();
+                if (_reconnectFailed)
+                {
+                    FailStage(new HttpRequestException(
+                        "TurboHTTP: Reconnect failed after max attempts; connection lost with in-flight requests."));
+                    return;
+                }
+
+                FlushOutbound();
+                // Pull to receive ConnectedSignalItem or next CloseSignalItem
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
+
+            if (item is CloseSignalItem && _sm.HasInFlightRequests)
+            {
+                _sm.StartReconnect();
+                FlushOutbound();
+                // Pull to receive ConnectedSignalItem from the reconnected transport
+                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                {
+                    Pull(_stage._inServer);
+                }
+
+                return;
+            }
 
             try
             {
