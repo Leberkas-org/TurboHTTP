@@ -7,7 +7,8 @@ using TurboHTTP.Transport.Connection;
 namespace TurboHTTP.Tests.Transport;
 
 /// <summary>
-/// Tests <see cref="QuicConnectionManager"/> — QUIC multi-stream management without actors.
+/// Tests <see cref="QuicConnectionHandle"/> — per-connection stream-opening,
+/// inbound-stream acceptance, and provider disposal.
 /// </summary>
 [SupportedOSPlatform("linux")]
 [SupportedOSPlatform("macOS")]
@@ -22,17 +23,24 @@ public sealed class QuicConnectionManagerSpec
         Version = new Version(3, 0)
     };
 
-    [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_return_lease_when_opening_request_stream()
+    private static QuicOptions CreateTestOptions() => new()
     {
-        // Arrange: use a fake provider that returns MemoryStreams
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
+        Host = "localhost",
+        Port = 8443,
+        MaxFrameSize = 16384,
+    };
 
-        // Act
-        var lease = await manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
+    private static QuicConnectionHandle CreateHandle(FakeClientProvider provider)
+        => new(provider, CreateTestOptions(), TestEndpoint);
 
-        // Assert
+    [Fact(Timeout = 5000)]
+    public async Task QuicConnectionHandle_should_return_live_lease_when_opening_request_stream()
+    {
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
+
+        var lease = await handle.OpenStreamAsLeaseAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
+
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
         Assert.Equal(TestEndpoint, lease.Key);
@@ -41,12 +49,12 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_return_lease_when_opening_control_stream()
+    public async Task QuicConnectionHandle_should_return_live_lease_when_opening_control_stream()
     {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
 
-        var lease = await manager.OpenStreamAsync(OutputStreamType.Control, TestContext.Current.CancellationToken);
+        var lease = await handle.OpenStreamAsLeaseAsync(OutputStreamType.Control, TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -55,12 +63,12 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_return_lease_when_opening_qpack_encoder_stream()
+    public async Task QuicConnectionHandle_should_return_live_lease_when_opening_qpack_encoder_stream()
     {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
 
-        var lease = await manager.OpenStreamAsync(OutputStreamType.QpackEncoder, TestContext.Current.CancellationToken);
+        var lease = await handle.OpenStreamAsLeaseAsync(OutputStreamType.QpackEncoder, TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -69,85 +77,40 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_reuse_provider_when_opening_multiple_streams()
+    public async Task QuicConnectionHandle_should_reuse_provider_across_multiple_stream_opens()
     {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
 
-        var lease1 = await manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
-        var lease2 = await manager.OpenStreamAsync(OutputStreamType.Control, TestContext.Current.CancellationToken);
+        var lease1 = await handle.OpenStreamAsLeaseAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
+        var lease2 = await handle.OpenStreamAsLeaseAsync(OutputStreamType.Control, TestContext.Current.CancellationToken);
 
-        // Both leases should be alive and tracked
         Assert.True(lease1.IsAlive);
         Assert.True(lease2.IsAlive);
-
-        // Provider should have been created only once
-        Assert.Equal(1, manager.ProviderCreationCount);
+        Assert.Equal(2, provider.StreamsOpened);
 
         lease1.Dispose();
         lease2.Dispose();
     }
 
     [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_dispose_all_streams_when_manager_disposed()
+    public async Task QuicConnectionHandle_should_open_streams_concurrently_without_deadlock()
     {
-        var options = CreateTestOptions();
-        var manager = new TestableQuicConnectionManager(options, TestEndpoint);
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
 
-        var lease1 = await manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
-        var lease2 = await manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
-
-        Assert.True(lease1.IsAlive);
-        Assert.True(lease2.IsAlive);
-
-        // Act
-        await manager.DisposeAsync();
-
-        // Assert: both leases should be disposed
-        Assert.False(lease1.IsAlive);
-        Assert.False(lease2.IsAlive);
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_throw_object_disposed_when_open_after_dispose()
-    {
-        var options = CreateTestOptions();
-        var manager = new TestableQuicConnectionManager(options, TestEndpoint);
-        await manager.DisposeAsync();
-
-        await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken));
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_not_throw_when_disposed_twice()
-    {
-        var options = CreateTestOptions();
-        var manager = new TestableQuicConnectionManager(options, TestEndpoint);
-
-        await manager.DisposeAsync();
-        await manager.DisposeAsync(); // should not throw
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_open_streams_concurrently_without_deadlock()
-    {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
-
-        // Launch multiple opens concurrently — QUIC transport handles flow control, no C# lock needed
         var tasks = new[]
         {
-            manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken),
-            manager.OpenStreamAsync(OutputStreamType.Control, TestContext.Current.CancellationToken),
-            manager.OpenStreamAsync(OutputStreamType.QpackEncoder, TestContext.Current.CancellationToken),
+            handle.OpenStreamAsLeaseAsync(OutputStreamType.Request, TestContext.Current.CancellationToken),
+            handle.OpenStreamAsLeaseAsync(OutputStreamType.Control, TestContext.Current.CancellationToken),
+            handle.OpenStreamAsLeaseAsync(OutputStreamType.QpackEncoder, TestContext.Current.CancellationToken),
         };
 
         var leases = await Task.WhenAll(tasks);
 
-        // All should succeed — concurrent opens are independent
         Assert.Equal(3, leases.Length);
         Assert.All(leases, l => Assert.True(l.IsAlive));
+        Assert.Equal(3, provider.StreamsOpened);
 
         foreach (var lease in leases)
         {
@@ -156,96 +119,47 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    public async Task QuicConnectionManager_should_flush_buffered_inbound_when_subscriber_registers()
+    public async Task QuicConnectionHandle_should_throw_operation_canceled_when_open_cancelled()
     {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
-
-        // Open a stream first to ensure provider is created
-        var lease = await manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
-
-        // Buffer an inbound notification
-        manager.SimulateInboundStream(InputStreamType.Control);
-
-        // Register subscriber — should receive the buffered notification
-        var received = new List<QuicConnectionManager.InboundStream>();
-        manager.StartInboundAcceptLoopDirect(notification => received.Add(notification));
-
-        Assert.Single(received);
-        Assert.Equal(InputStreamType.Control, received[0].StreamType);
-
-        lease.Dispose();
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task InboundStream_should_have_correct_properties_when_created()
-    {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
-
-        var lease = await manager.OpenStreamAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
-        var notification = new QuicConnectionManager.InboundStream(lease, InputStreamType.QpackDecoder);
-
-        Assert.Same(lease, notification.Lease);
-        Assert.Equal(InputStreamType.QpackDecoder, notification.StreamType);
-
-        lease.Dispose();
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task OpenStreamAsync_should_throw_operation_canceled_when_cancelled()
-    {
-        var options = CreateTestOptions();
-        await using var manager = new TestableQuicConnectionManager(options, TestEndpoint);
+        var provider = new FakeClientProvider(blockGetStream: true);
+        await using var handle = CreateHandle(provider);
 
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => manager.OpenStreamAsync(OutputStreamType.Request, cts.Token));
+            () => handle.OpenStreamAsLeaseAsync(OutputStreamType.Request, cts.Token));
     }
 
-    private static QuicOptions CreateTestOptions()
+    [Fact(Timeout = 5000)]
+    public async Task QuicConnectionHandle_should_return_null_for_unknown_inbound_stream_type()
     {
-        return new QuicOptions
-        {
-            Host = "localhost",
-            Port = 8443,
-            MaxFrameSize = 16384,
-        };
+        // An inbound stream whose varint identifies an unknown type should be discarded (returns null).
+        var provider = new FakeClientProvider(inboundBytes: [0xFF, 0x00]); // unrecognized stream type
+        await using var handle = CreateHandle(provider);
+
+        var result = await handle.AcceptInboundStreamAsLeaseAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
     }
 
-    /// <summary>
-    /// Wrapper that configures a <see cref="QuicConnectionManager"/> with a fake provider,
-    /// avoiding real QUIC requirements (sealed class — cannot subclass).
-    /// </summary>
-    private sealed class TestableQuicConnectionManager : IAsyncDisposable
+    [Fact(Timeout = 5000)]
+    public async Task InboundStream_record_should_hold_lease_and_stream_type()
     {
-        private readonly QuicConnectionManager _inner;
-        private readonly FakeClientProvider _fakeProvider;
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
 
-        public TestableQuicConnectionManager(QuicOptions options, RequestEndpoint endpoint)
-        {
-            _inner = new QuicConnectionManager(options, endpoint);
-            _fakeProvider = new FakeClientProvider();
-            _inner.SetProvider(_fakeProvider);
-        }
+        var lease = await handle.OpenStreamAsLeaseAsync(OutputStreamType.Request, TestContext.Current.CancellationToken);
+        var inbound = new QuicConnectionHandle.InboundStream(lease, InputStreamType.Control);
 
-        public int ProviderCreationCount => _fakeProvider.StreamsOpened > 0 ? 1 : 0;
+        Assert.Same(lease, inbound.Lease);
+        Assert.Equal(InputStreamType.Control, inbound.StreamType);
 
-        public Task<ConnectionLease> OpenStreamAsync(OutputStreamType streamType, CancellationToken ct = default)
-            => _inner.OpenStreamAsync(streamType, ct);
-
-        public void SimulateInboundStream(InputStreamType streamType)
-            => _inner.AddBufferedInbound(streamType);
-
-        public void StartInboundAcceptLoopDirect(Action<QuicConnectionManager.InboundStream> subscriber)
-            => _inner.FlushBufferedToSubscriber(subscriber);
-
-        public ValueTask DisposeAsync() => _inner.DisposeAsync();
+        lease.Dispose();
     }
 
-    private sealed class FakeClientProvider : IClientProvider
+    private sealed class FakeClientProvider(bool blockGetStream = false, byte[]? inboundBytes = null)
+        : IClientProvider
     {
         private int _streamsOpened;
 
@@ -256,6 +170,12 @@ public sealed class QuicConnectionManagerSpec
         public Task<Stream> GetStreamAsync(CancellationToken ct = default)
         {
             ct.ThrowIfCancellationRequested();
+            if (blockGetStream)
+            {
+                return Task.Delay(Timeout.Infinite, ct).ContinueWith<Stream>(_ =>
+                    throw new OperationCanceledException(ct), ct);
+            }
+
             Interlocked.Increment(ref _streamsOpened);
             return Task.FromResult<Stream>(new MemoryStream());
         }
@@ -269,6 +189,11 @@ public sealed class QuicConnectionManagerSpec
 
         public Task<Stream> AcceptInboundStreamAsync(CancellationToken ct = default)
         {
+            if (inboundBytes is not null)
+            {
+                return Task.FromResult<Stream>(new MemoryStream(inboundBytes));
+            }
+
             // Block until cancelled — simulates waiting for server-initiated streams
             return Task.Delay(Timeout.Infinite, ct).ContinueWith<Stream>(_ =>
                 throw new OperationCanceledException(ct), ct);

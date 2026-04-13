@@ -112,33 +112,14 @@ public sealed class ClientHelper : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_ownsSystem)
-        {
-            var system = _provider.GetService<ActorSystem>();
-            if (system is not null)
-            {
-                // Terminate() initiates shutdown; WhenTerminated completes when
-                // all actors are stopped and the system is fully torn down.
-                await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
-                await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
-
-                // Allow Akka dispatcher threads to fully wind down before the
-                // next ActorSystem is created. Without this, lingering threads
-                // from the terminated system can interfere with the new one.
-                await Task.Delay(TimeSpan.FromMilliseconds(250));
-            }
-        }
-
-        // Dispose sends Shutdown to the owner actor (fires KillSwitch, starts drain)
-        // and completes both channels. Call this first so the actor begins shutting down.
+        // 1) Always dispose the client first — sends Shutdown to the owner actor,
+        //    which fires the KillSwitch and begins draining the stream pipeline.
+        //    The ActorSystem must still be alive for this message to be delivered.
         _client.Dispose();
 
-        // Wait for the owner actor to fully stop. GracefulStop sends Shutdown
-        // (idempotent — already sent by Dispose) and blocks until the actor's
-        // PostStop has run, so all stream actors are cleanly stopped before the
-        // next test materialises a new pipeline on the shared ActorSystem.
-        // The actor's internal safety timeout is 5s, so 6s is sufficient.
-        if (!_ownsSystem && _client is TurboHttpClient concrete)
+        // 2) Wait for the owner actor to fully stop so all stream actors are
+        //    cleanly stopped before the next test materialises a new pipeline.
+        if (_client is TurboHttpClient concrete)
         {
             try
             {
@@ -147,6 +128,22 @@ public sealed class ClientHelper : IAsyncDisposable
             catch
             {
                 // Actor may already be stopped or system shutting down — fine.
+            }
+        }
+
+        // 3) Terminate the system if we own it — safe now that the client
+        //    has already drained and the owner actor is stopped.
+        if (_ownsSystem)
+        {
+            var system = _provider.GetService<ActorSystem>();
+            if (system is not null)
+            {
+                await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
+                await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
+
+                // Allow Akka dispatcher threads to fully wind down before the
+                // next ActorSystem is created.
+                await Task.Delay(TimeSpan.FromMilliseconds(250));
             }
         }
 

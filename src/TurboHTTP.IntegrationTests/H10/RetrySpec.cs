@@ -19,7 +19,7 @@ public sealed class RetrySpec
     private ClientHelper CreateRetryClient(int maxRetries = 3)
     {
         return ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithRetry(new RetryPolicy { MaxRetries = maxRetries }),
             system: _systemFixture.System);

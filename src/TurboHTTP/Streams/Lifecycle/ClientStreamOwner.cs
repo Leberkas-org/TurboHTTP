@@ -6,6 +6,9 @@ using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Quic;
 using TurboHTTP.Transport.Tcp;
+
+// QuicConnectionManagerActor is guarded on linux/macOS/windows — all desktop platforms.
+#pragma warning disable CA1416
 using OwnerMsg = TurboHTTP.Streams.Lifecycle.ClientStreamOwner;
 
 namespace TurboHTTP.Streams.Lifecycle;
@@ -45,7 +48,8 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
     private IActorRef _createRequester = Nobody.Instance;
     private bool _shuttingDown;
 
-    private IActorRef? _connectionManager;
+    private IActorRef? _tcpConnectionManager;
+    private IActorRef? _quicConnectionManager;
     private ActorMaterializer? _materializer;
     private SharedKillSwitch? _killSwitch;
     private bool _streamRunning;
@@ -106,21 +110,26 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         try
         {
-            // Create connection manager actor — use dedicated dispatcher if available,
-            // fall back to default for externally provided ActorSystems without TurboHttp HOCON.
-            _connectionManager = Context.ActorOf(
-                Props.Create(() => new ConnectionManagerActor(
+            // Create TCP and QUIC connection manager actors as sibling children.
+            // Both fall back to the default dispatcher if no TurboHTTP HOCON is present.
+            _tcpConnectionManager = Context.ActorOf(
+                Props.Create(() => new TcpConnectionManagerActor(
                     create.ClientOptions.PooledConnectionIdleTimeout,
                     create.ClientOptions.Http1.MaxConnectionsPerServer)),
-                "connection-manager");
+                "tcp-pool");
+
+            _quicConnectionManager = Context.ActorOf(
+                Props.Create(() => new QuicConnectionManagerActor(
+                    create.ClientOptions.PooledConnectionIdleTimeout)),
+                "quic-pool");
 
             // Build transport registry and engine flow
-            var tcpFactory = new TcpTransportFactory(_connectionManager, create.ClientOptions);
+            var tcpFactory = new TcpTransportFactory(_tcpConnectionManager, create.ClientOptions);
             var transports = new TransportRegistry()
                 .Register(new Version(1, 0), tcpFactory)
                 .Register(new Version(1, 1), tcpFactory)
                 .Register(new Version(2, 0), tcpFactory)
-                .Register(new Version(3, 0), new QuicTransportFactory());
+                .Register(new Version(3, 0), new QuicTransportFactory(_quicConnectionManager));
 
             var engine = new Engine();
             var engineFlow = engine.CreateFlow(
@@ -303,7 +312,19 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         if (completed.Error is not null)
         {
-            HandleMaterializationFailed(completed.Error);
+            if (_shuttingDown)
+            {
+                // Stream failed while graceful shutdown was in progress.
+                // The error is expected (pipeline aborted by KillSwitch or connection failure).
+                // Cancel the safety timeout and stop immediately — no need to wait 5s.
+                Timers.Cancel(ShutdownTimerKey);
+                _log.Debug("Stream failed during shutdown — stopping immediately");
+                Context.Stop(Self);
+            }
+            else
+            {
+                HandleMaterializationFailed(completed.Error);
+            }
         }
         else
         {
@@ -355,19 +376,33 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
             _materializer = null;
         }
 
-        // Stop connection manager actor (PostStop disposes all leases)
-        if (_connectionManager is not null)
+        // Stop connection manager actors (PostStop disposes all leases)
+        if (_tcpConnectionManager is not null)
         {
             try
             {
-                Context.Stop(_connectionManager);
+                Context.Stop(_tcpConnectionManager);
             }
             catch (Exception ex)
             {
-                _log.Warning("Error stopping connection manager: {0}", ex.Message);
+                _log.Warning("Error stopping TCP connection manager: {0}", ex.Message);
             }
 
-            _connectionManager = null;
+            _tcpConnectionManager = null;
+        }
+
+        if (_quicConnectionManager is not null)
+        {
+            try
+            {
+                Context.Stop(_quicConnectionManager);
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Error stopping QUIC connection manager: {0}", ex.Message);
+            }
+
+            _quicConnectionManager = null;
         }
 
         _killSwitch = null;

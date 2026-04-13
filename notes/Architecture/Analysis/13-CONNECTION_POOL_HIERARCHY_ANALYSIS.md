@@ -580,6 +580,13 @@ public async Task ConnectionManagerActor_Routes_To_Child_By_Endpoint()
 
 ---
 
+## See Also
+
+- [[Architecture/Analysis/14-OPTION_B_IMPLEMENTATION_GUIDE|Option B Implementation Guide]] — Step-by-step implementation of the recommended hierarchical architecture
+- [[Architecture/Layers/14-TRANSPORT_LAYER|Transport Layer]] — Actor-free connection pool, Channels I/O, TCP/QUIC, backpressure
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — 7-layer design with strict separation of concerns
+- [[Architecture/Status/12-THREADPOOL_CONTENTION_RESOLUTION|ThreadPool Contention Resolution]] — Related dispatcher optimization for high-concurrency scenarios
+
 ## References
 
 - **Current**: `/d/GIT/Akka.Streams.Http/src/TurboHTTP/Transport/ConnectionManagerActor.cs` (461 lines)

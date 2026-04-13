@@ -1,6 +1,6 @@
 using System.Net.Security;
-
 using TurboHTTP.Transport.Connection;
+
 namespace TurboHTTP.Transport.Quic;
 
 /// <summary>

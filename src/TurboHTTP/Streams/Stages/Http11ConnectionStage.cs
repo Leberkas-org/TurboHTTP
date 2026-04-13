@@ -93,7 +93,11 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
             SetHandler(stage._inApp, onPush: OnAppPush,
                 onUpstreamFinish: () =>
                 {
-                    // App upstream finished — no more requests, but keep processing responses
+                    // App upstream finished — complete immediately if nothing is in-flight
+                    if (_sm is { HasInFlightRequests: false, IsReconnecting: false })
+                    {
+                        CompleteStage();
+                    }
                 },
                 onUpstreamFailure: ex =>
                 {
@@ -177,6 +181,14 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
                 return;
             }
 
+            if (item is CloseSignalItem)
+            {
+                // Connection closed with no in-flight requests and no reconnect pending.
+                // App upstream is either already finished or will complete via onUpstreamFinish.
+                CompleteStage();
+                return;
+            }
+
             try
             {
                 var needMore = _sm.DecodeServerData(item);
@@ -189,7 +201,13 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
                 }
                 else if (needMore && !_serverFinished)
                 {
-                    // No response yet — pull more server data
+                    // No response yet — pull more server data, unless we're done with requests
+                    if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                    {
+                        CompleteStage();
+                        return;
+                    }
+
                     if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
                         Pull(_stage._inServer);
@@ -222,6 +240,12 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
         {
             if (_pendingResponses.Count == 0)
             {
+                if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                {
+                    CompleteStage();
+                    return;
+                }
+
                 if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                 {
                     Pull(_stage._inServer);
@@ -242,6 +266,15 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
                 EmitMultiple(_stage._outResponse, responses,
                     () =>
                     {
+                        // App upstream finished and no more in-flight requests: we will never send
+                        // another request, so the server may never close the connection (HTTP/1.1
+                        // keep-alive). Complete now rather than waiting indefinitely.
+                        if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                        {
+                            CompleteStage();
+                            return;
+                        }
+
                         if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                         {
                             Pull(_stage._inServer);

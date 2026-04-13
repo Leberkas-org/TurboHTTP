@@ -18,7 +18,7 @@ public sealed class CompressionSpec
     private ClientHelper CreateClient()
     {
         return ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             system: _systemFixture.System);
     }

@@ -218,9 +218,9 @@ Console.WriteLine(system.Settings.Config);
 
 ## Links
 
-- Full Analysis: [[10-DISPATCHER_SELECTION_ANALYSIS.md]]
-- Implementation Guide: [[11-DISPATCHER_CONFIGURATION_GUIDE.md]]
-- Status Report: [[12-THREADPOOL_CONTENTION_RESOLUTION.md]]
+- Full Analysis: [[Architecture/Design/10-DISPATCHER_SELECTION_ANALYSIS|Dispatcher Selection Analysis]]
+- Implementation Guide: [[Architecture/Guides/11-DISPATCHER_CONFIGURATION_GUIDE|Dispatcher Configuration Guide]]
+- Status Report: [[Architecture/Status/12-THREADPOOL_CONTENTION_RESOLUTION|ThreadPool Contention Resolution]]
 - Official Docs: https://getakka.net/articles/actors/dispatchers.html
 
 ---

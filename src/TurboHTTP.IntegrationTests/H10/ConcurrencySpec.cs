@@ -18,7 +18,7 @@ public sealed class ConcurrencySpec
 
     private ClientHelper CreateClient()
     {
-        return ClientHelper.CreateClient(_server.HttpPort, new Version(1, 0), system: _systemFixture.System);
+        return ClientHelper.CreateClient(_server.H1Port, new Version(1, 0), system: _systemFixture.System);
     }
 
     [Fact(Timeout = 60000)]

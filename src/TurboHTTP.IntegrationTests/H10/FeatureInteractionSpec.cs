@@ -23,7 +23,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCookies().WithRedirect(),
             system: _systemFixture.System);
@@ -42,7 +42,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCache(CachePolicy.Default).WithDecompression(),
             system: _systemFixture.System);
@@ -66,7 +66,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithRedirect().WithRetry(new RetryPolicy { MaxRetries = 3 }),
             system: _systemFixture.System);
@@ -85,7 +85,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCookies().WithRetry(new RetryPolicy { MaxRetries = 3 }),
             system: _systemFixture.System);
@@ -112,7 +112,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCache(CachePolicy.Default).WithCookies(),
             system: _systemFixture.System);
@@ -143,7 +143,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCookies().WithRedirect(),
             system: _systemFixture.System);
@@ -164,7 +164,7 @@ public sealed class FeatureInteractionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCache(CachePolicy.Default).WithRetry(new RetryPolicy { MaxRetries = 3 }),
             system: _systemFixture.System);

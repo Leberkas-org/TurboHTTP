@@ -20,7 +20,7 @@ public sealed class CookieSpec
     private ClientHelper CreateCookieClient(CookieJar jar)
     {
         return ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCookies(jar),
             system: _systemFixture.System);

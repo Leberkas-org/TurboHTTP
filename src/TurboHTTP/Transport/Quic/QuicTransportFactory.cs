@@ -1,4 +1,5 @@
 using Akka;
+using Akka.Actor;
 using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams;
@@ -9,16 +10,14 @@ namespace TurboHTTP.Transport.Quic;
 
 /// <summary>
 /// Transport factory for QUIC connections (HTTP/3).
-/// QUIC is self-contained and requires no external dependencies (no connection manager, no client options).
+/// Mirrors <see cref="TurboHTTP.Transport.Tcp.TcpTransportFactory"/> — accepts a shared
+/// <see cref="IActorRef"/> pointing to a <see cref="TurboHTTP.Transport.Connection.QuicConnectionManagerActor"/>.
 /// </summary>
-internal sealed class QuicTransportFactory : ITransportFactory
+internal sealed class QuicTransportFactory(IActorRef connectionManager) : ITransportFactory
 {
     /// <summary>
-    /// Creates a QUIC transport stage.
+    /// Creates a QUIC transport stage wired to the shared connection manager actor.
     /// </summary>
-    /// <returns>A flow wrapping a <see cref="QuicConnectionStage"/>.</returns>
     public Flow<IOutputItem, IInputItem, NotUsed> Create()
-    {
-        return Flow.FromGraph(new QuicConnectionStage());
-    }
+        => Flow.FromGraph(new QuicConnectionStage(connectionManager));
 }

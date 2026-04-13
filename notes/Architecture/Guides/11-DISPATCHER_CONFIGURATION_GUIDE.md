@@ -349,7 +349,7 @@ akka.actor.default-dispatcher.executor = channel-executor
 
 ## References
 
-- [[10-DISPATCHER_SELECTION_ANALYSIS.md]] — Full comparison of all dispatcher types
+- [[Architecture/Design/10-DISPATCHER_SELECTION_ANALYSIS|Dispatcher Selection Analysis]] — Full comparison of all dispatcher types
 - [Official Akka.NET Docs](https://getakka.net/articles/actors/dispatchers.html)
 - Akka.NET GitHub: https://github.com/akkadotnet/akka.net
 

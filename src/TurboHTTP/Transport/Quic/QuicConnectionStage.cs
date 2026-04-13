@@ -12,24 +12,21 @@ namespace TurboHTTP.Transport.Quic;
 
 /// <summary>
 /// Transport stage for HTTP/3 (QUIC). Manages multi-stream I/O (request, control, encoder),
-/// tagged item routing, and multiple inbound pumps. Connection lifecycle (stream opening,
-/// provider management) is handled by <see cref="QuicConnectionManager"/> directly —
-/// no actor needed for QUIC since it multiplexes natively.
-/// <para>
-/// All transport state and logic is encapsulated in <see cref="QuicTransportStateMachine"/>.
-/// Async events are marshaled through <see cref="GraphStageLogic.GetStageActor"/> +
-/// <see cref="IActorRef.Tell(object)"/> — no <c>GetAsyncCallback</c> is used.
-/// </para>
+/// tagged item routing, and multiple inbound pumps. Connection lifecycle (pooling, reuse,
+/// eviction) is handled by <see cref="TurboHTTP.Transport.Connection.QuicConnectionManagerActor"/>.
 /// </summary>
 internal sealed class QuicConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
     private readonly Inlet<IOutputItem> _in = new("QuicConnection.In");
     private readonly Outlet<IInputItem> _out = new("QuicConnection.Out");
 
+    private readonly IActorRef _connectionManager;
+
     public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
-    public QuicConnectionStage()
+    public QuicConnectionStage(IActorRef connectionManager)
     {
+        _connectionManager = connectionManager;
         Shape = new FlowShape<IOutputItem, IInputItem>(_in, _out);
     }
 
@@ -68,7 +65,7 @@ internal sealed class QuicConnectionStage : GraphStage<FlowShape<IOutputItem, II
         public override void PreStart()
         {
             var stageActor = GetStageActor(OnReceive);
-            _sm = new QuicTransportStateMachine(this, stageActor.Ref);
+            _sm = new QuicTransportStateMachine(this, stageActor.Ref, _stage._connectionManager);
             Pull(_stage._in);
         }
 
@@ -107,8 +104,7 @@ internal sealed class QuicConnectionStage : GraphStage<FlowShape<IOutputItem, II
 
         void ITransportOperations.OnCompleteStage() => CompleteStage();
 
-        void ITransportOperations.OnScheduleTimer(string key, TimeSpan delay)
-            => ScheduleOnce(key, delay);
+        void ITransportOperations.OnScheduleTimer(string key, TimeSpan delay) => ScheduleOnce(key, delay);
 
         void ITransportOperations.OnCancelTimer(string key) => CancelTimer(key);
 

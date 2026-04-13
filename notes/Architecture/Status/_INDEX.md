@@ -14,3 +14,4 @@ Project status, known gaps, and roadmap tracking for TurboHTTP.
 
 - [[Architecture/Status/03-KNOWN_GAPS_AND_LIMITATIONS|Known Gaps & Limitations]] — Critical issues, high-priority gaps, and recommended fixes before v1.0
 - [[Architecture/Status/04-CURRENT_STATE_SUMMARY|Current State Summary]] — Implementation status, completion scores by RFC, and next milestones
+- [[Architecture/Status/12-THREADPOOL_CONTENTION_RESOLUTION|ThreadPool Contention Resolution]] — ChannelExecutor migration plan to eliminate ThreadPool starvation under HTTP/2 load

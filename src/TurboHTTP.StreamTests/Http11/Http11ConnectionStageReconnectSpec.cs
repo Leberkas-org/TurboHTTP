@@ -162,12 +162,7 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         // No requests sent — connection just closes cleanly
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.CleanClose));
 
-        // Stage should NOT emit a ReconnectItem — verify no output within 200ms
-        await Task.Delay(200, TestContext.Current.CancellationToken);
-        networkSub.ExpectNoMsg(TimeSpan.Zero, TestContext.Current.CancellationToken);
-
-        // Upstream completes → stage completes
-        serverSub.SendComplete();
+        // Stage completes immediately (no in-flight requests → no reconnect, just CompleteStage)
         await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }

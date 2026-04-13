@@ -47,6 +47,7 @@ internal sealed class TcpTransportStateMachine
     private bool _upstreamFinished;
     private bool _isReconnecting;
     private CancellationTokenSource? _pumpCts;
+    private CancellationTokenSource? _acquireCts;
 
     public TcpTransportStateMachine(
         ITransportOperations ops,
@@ -64,13 +65,13 @@ internal sealed class TcpTransportStateMachine
     {
         switch (evt)
         {
-            case ITcpTransportEvent.LeaseAcquired e:
+            case LeaseAcquired e:
                 OnLeaseAcquired(e.Lease);
                 break;
-            case ITcpTransportEvent.AcquisitionFailed e:
+            case AcquisitionFailed e:
                 OnAcquisitionFailed(e.Error);
                 break;
-            case ITcpTransportEvent.InboundBatch e:
+            case InboundBatch e:
                 if (e.Gen == _connectionGen)
                 {
                     OnInboundBatch(e.Batch, e.Count);
@@ -79,21 +80,22 @@ internal sealed class TcpTransportStateMachine
                 {
                     ArrayPool<IInputItem>.Shared.Return(e.Batch);
                 }
+
                 break;
-            case ITcpTransportEvent.InboundComplete e:
+            case InboundComplete e:
                 OnInboundComplete(e.CloseKind, e.Gen);
                 break;
-            case ITcpTransportEvent.InboundPumpFailed e:
+            case InboundPumpFailed e:
                 _ops.Log.Warning("TcpConnectionStage: Inbound pump failed — {0}", e.Error.Message);
                 OnInboundComplete(TlsCloseKind.AbruptClose, _connectionGen);
                 break;
-            case ITcpTransportEvent.OutboundWriteDone:
+            case OutboundWriteDone:
                 _ops.OnSignalPullInput();
                 break;
-            case ITcpTransportEvent.OutboundWriteFailed e:
+            case OutboundWriteFailed e:
                 OnOutboundWriteFailed(e.Error);
                 break;
-            case ITcpTransportEvent.FlushNextCompleted:
+            case FlushNextCompleted:
                 FlushNext();
                 break;
         }
@@ -151,6 +153,19 @@ internal sealed class TcpTransportStateMachine
         {
             _ops.OnCompleteStage();
         }
+        else if (_pendingResponseCount == 0 && _pendingWrites.Count == 0)
+        {
+            // Connection is idle — no pending responses or buffered writes.
+            // Complete now; otherwise we'd wait forever since no more
+            // ConnectionReuseItem signals will arrive.
+            _connectionGen++;
+            StopInboundPump();
+            ReturnLeaseToPool(canReuse: true);
+            _handle = null;
+            _currentLease = null;
+            _ops.OnCompleteStage();
+        }
+        // else: responses still in-flight — HandleConnectionReuseItem will complete when done
     }
 
     public void HandleDownstreamFinish()
@@ -166,7 +181,7 @@ internal sealed class TcpTransportStateMachine
         _isReconnecting = true;
         CleanupTransport();
 
-        var options = TcpOptionsFactory.Build(reconnectItem.Key, _clientOptions);
+        var options = OptionsFactory.Build(reconnectItem.Key, _clientOptions);
         _pendingConnect = new ConnectItem(options) { Key = reconnectItem.Key };
         AcquireConnection(_pendingConnect.Value);
     }
@@ -175,7 +190,7 @@ internal sealed class TcpTransportStateMachine
     {
         _ops.Log.Debug("TcpConnectionStage: AutoConnect for {0}:{1}", endpoint.Host, endpoint.Port);
 
-        var options = TcpOptionsFactory.Build(endpoint, _clientOptions);
+        var options = OptionsFactory.Build(endpoint, _clientOptions);
         _pendingConnect = new ConnectItem(options) { Key = endpoint };
         AcquireConnection(_pendingConnect.Value);
     }
@@ -255,30 +270,30 @@ internal sealed class TcpTransportStateMachine
 
     public void OnTimer(string? timerKey)
     {
-        if (timerKey != ConnectTimerKey)
+        switch (timerKey)
         {
-            return;
+            case ConnectTimerKey:
+            {
+                if (_pendingConnect is null)
+                {
+                    return;
+                }
+
+                _ops.Log.Warning("TcpConnectionStage: Connection acquisition timed out for {0}:{1}",
+                    _pendingConnect.Value.Key.Host, _pendingConnect.Value.Key.Port);
+
+                _waitActivity?.Stop();
+                _waitActivity = null;
+
+                var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Value.Key };
+                _pendingConnect = null;
+
+                _ops.OnPushOutput(signal);
+                _ops.OnSignalPullInput();
+                break;
+            }
         }
-
-        if (_pendingConnect is null)
-        {
-            return;
-        }
-
-        _ops.Log.Warning("TcpConnectionStage: Connection acquisition timed out for {0}:{1}",
-            _pendingConnect.Value.Key.Host, _pendingConnect.Value.Key.Port);
-
-        _waitActivity?.Stop();
-        _waitActivity = null;
-
-        var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Value.Key };
-        _pendingConnect = null;
-
-        _ops.OnPushOutput(signal);
-        _ops.OnSignalPullInput();
     }
-
-    // ─── Async Event Handlers ───
 
     private void OnLeaseAcquired(ConnectionLease lease)
     {
@@ -415,25 +430,20 @@ internal sealed class TcpTransportStateMachine
 
     private void AcquireConnection(ConnectItem connect)
     {
+        _acquireCts?.Cancel();
+        _acquireCts?.Dispose();
+        _acquireCts = new CancellationTokenSource();
+
         _waitActivity = TurboHttpInstrumentation.StartWaitForConnection(
             connect.Key.Host, connect.Key.Port);
         _acquireTimestamp = Stopwatch.GetTimestamp();
 
-        var acquireTask = ConnectionManagerActor.AcquireAsync(
-            _connectionManager, connect.Options, connect.Key);
+        var acquireTask = TcpConnectionManagerActor.AcquireAsync(
+            _connectionManager, connect.Options, connect.Key, _acquireCts.Token);
 
-        var self = _self;
-
-        acquireTask.ContinueWith(
-            static (t, state) => ((IActorRef)state!).Tell(new ITcpTransportEvent.LeaseAcquired(t.Result)),
-            self,
-            TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnRanToCompletion);
-
-        acquireTask.ContinueWith(
-            static (t, state) =>
-                ((IActorRef)state!).Tell(new ITcpTransportEvent.AcquisitionFailed(t.Exception!.GetBaseException())),
-            self,
-            TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
+        acquireTask.PipeTo(_self,
+            success: lease => new LeaseAcquired(lease),
+            failure: ex => new AcquisitionFailed(ex.GetBaseException()));
 
         const int DefaultConnectTimeoutSeconds = 10;
         var timeout = connect.Options.ConnectTimeout;
@@ -453,7 +463,7 @@ internal sealed class TcpTransportStateMachine
         }
 
         _leaseReturned = true;
-        _connectionManager.Tell(new ConnectionManagerActor.Release(_currentLease, canReuse));
+        _connectionManager.Tell(new TcpConnectionManagerActor.Release(_currentLease, canReuse));
     }
 
     private void CleanupTransport()
@@ -461,6 +471,17 @@ internal sealed class TcpTransportStateMachine
         _ops.Log.Debug("TcpConnectionStage: CleanupTransport gen={0}", _connectionGen);
         _connectionGen++;
         StopInboundPump();
+
+        // Cancel any in-flight connection acquisition so the ConnectionManager
+        // can immediately release the lease instead of sending it to dead letters.
+        _acquireCts?.Cancel();
+        _acquireCts?.Dispose();
+        _acquireCts = null;
+
+        // Stop any pending wait-for-connection activity before it gets
+        // overwritten by a subsequent AcquireConnection call.
+        _waitActivity?.Stop();
+        _waitActivity = null;
 
         if (_currentLease is { } lease)
         {
@@ -523,7 +544,7 @@ internal sealed class TcpTransportStateMachine
 
                     if (count == batch.Length)
                     {
-                        self.Tell(new ITcpTransportEvent.InboundBatch(batch, count, gen));
+                        self.Tell(new InboundBatch(batch, count, gen));
                         batch = ArrayPool<IInputItem>.Shared.Rent(count * 2);
                         count = 0;
                     }
@@ -533,7 +554,7 @@ internal sealed class TcpTransportStateMachine
 
                 if (count > 0)
                 {
-                    self.Tell(new ITcpTransportEvent.InboundBatch(batch!, count, gen));
+                    self.Tell(new InboundBatch(batch!, count, gen));
                 }
                 else if (batch is not null)
                 {
@@ -551,11 +572,11 @@ internal sealed class TcpTransportStateMachine
         }
         catch (Exception ex)
         {
-            self.Tell(new ITcpTransportEvent.InboundPumpFailed(ex));
+            self.Tell(new InboundPumpFailed(ex));
             return;
         }
 
-        self.Tell(new ITcpTransportEvent.InboundComplete(closeKind, gen));
+        self.Tell(new InboundComplete(closeKind, gen));
     }
 
     private void StopInboundPump()
@@ -571,36 +592,12 @@ internal sealed class TcpTransportStateMachine
         _pumpCts = null;
     }
 
-    // ─── Outbound Writing ───
-
     private void WriteToOutbound(NetworkBuffer buffer)
     {
-        var vt = _handle!.OutboundWriter.WriteAsync(buffer);
-
-        if (vt.IsCompletedSuccessfully)
-        {
-            // Fast path: synchronous completion — no Tell overhead.
-            _ops.OnSignalPullInput();
-            return;
-        }
-
-        // Slow path: async completion — dispatch through StageActorRef.
-        var self = _self;
-        _ = AwaitWrite(vt, self);
-        return;
-
-        static async Task AwaitWrite(ValueTask vt, IActorRef self)
-        {
-            try
-            {
-                await vt.ConfigureAwait(false);
-                self.Tell(new ITcpTransportEvent.OutboundWriteDone());
-            }
-            catch (Exception ex)
-            {
-                self.Tell(new ITcpTransportEvent.OutboundWriteFailed(ex));
-            }
-        }
+        _handle!.OutboundWriter.WriteAsync(buffer)
+            .PipeTo(_self,
+                success: () => new OutboundWriteDone(),
+                failure: ex => new OutboundWriteFailed(ex));
     }
 
     private void FlushPendingWrites()
@@ -624,34 +621,22 @@ internal sealed class TcpTransportStateMachine
 
         if (_handle is { } handle)
         {
-            var vt = handle.OutboundWriter.WriteAsync(dataItem);
-
-            if (vt.IsCompletedSuccessfully)
-            {
-                // Fast path: synchronous completion — continue draining.
-                FlushNext();
-                return;
-            }
-
-            var self = _self;
-            _ = AwaitFlushNext(vt, self);
-
-            static async Task AwaitFlushNext(ValueTask vt, IActorRef self)
-            {
-                try
-                {
-                    await vt.ConfigureAwait(false);
-                    self.Tell(new ITcpTransportEvent.FlushNextCompleted());
-                }
-                catch (Exception ex)
-                {
-                    self.Tell(new ITcpTransportEvent.OutboundWriteFailed(ex));
-                }
-            }
+            _ = handle.OutboundWriter.WriteAsync(dataItem).PipeTo(_self,
+                success: () => new FlushNextCompleted(),
+                failure: ex => new OutboundWriteFailed(ex));
         }
         else
         {
-            FlushNext();
+            // No handle — connection was torn down while writes were pending.
+            // Drain and dispose all remaining writes to avoid leaking buffers,
+            // then pull to let upstream know we're ready for new items.
+            dataItem.Dispose();
+            while (_pendingWrites.TryDequeue(out var orphan))
+            {
+                orphan.Dispose();
+            }
+
+            _ops.OnSignalPullInput();
         }
     }
 

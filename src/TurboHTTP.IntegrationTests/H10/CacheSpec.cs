@@ -19,7 +19,7 @@ public sealed class CacheSpec
     private ClientHelper CreateCacheClient(CacheStore store, CachePolicy? policy = null)
     {
         return ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithCache(store, policy),
             system: _systemFixture.System);

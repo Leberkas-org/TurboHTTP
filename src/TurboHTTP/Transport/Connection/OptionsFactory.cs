@@ -1,10 +1,9 @@
 using TurboHTTP.Internal;
-using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Quic;
 
-namespace TurboHTTP.Transport.Tcp;
+namespace TurboHTTP.Transport.Connection;
 
-internal static class TcpOptionsFactory
+internal static class OptionsFactory
 {
     private static bool IsTls(this Uri value)
     {

@@ -404,7 +404,7 @@ With ChannelExecutor configured:
 
 - **Official Akka.NET Docs:** https://getakka.net/articles/actors/dispatchers.html
 - **Akka.NET v1.5.64:** Current TurboHTTP version (ChannelExecutor available since 1.4.19)
-- **Benchmark Evidence:** [[Benchmark_2026-04-03_Transport_Refactoring.md]]
+- **Benchmark Evidence:** [[Architecture/Benchmarks/Benchmark_2026-04-03_Transport_Refactoring|Benchmark 2026-04-03]]
 
 ---
 
@@ -419,6 +419,13 @@ With ChannelExecutor configured:
 | Individual actor isolation | PinnedDispatcher | Rare, expensive |
 
 ---
+
+## See Also
+
+- [[Architecture/Guides/11-DISPATCHER_CONFIGURATION_GUIDE|Dispatcher Configuration Guide]] — Detailed configuration and tuning guide
+- [[Architecture/Guides/12-DISPATCHER_QUICK_REFERENCE|Dispatcher Quick Reference]] — One-page decision tree and config templates
+- [[Architecture/Status/12-THREADPOOL_CONTENTION_RESOLUTION|ThreadPool Contention Resolution]] — ChannelExecutor migration recommendation
+- [[Architecture/Benchmarks/Benchmark_2026-04-03_Transport_Refactoring|Benchmark 2026-04-03]] — Transport refactoring baseline measurements
 
 ## Next Steps
 

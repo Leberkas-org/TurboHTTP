@@ -7,10 +7,10 @@ using TurboHTTP.Transport.Connection;
 namespace TurboHTTP.StreamTests.Transport;
 
 /// <summary>
-/// Tests <see cref="ConnectionManagerActor"/> directly: version-aware acquire/release,
+/// Tests <see cref="TcpConnectionManagerActor"/> directly: version-aware acquire/release,
 /// idle reuse, MRU selection, per-host limits, idle eviction, and actor disposal.
 /// </summary>
-public sealed class ConnectionManagerActorSpec : IAsyncLifetime
+public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
 {
     private ActorSystem? _system;
     private TcpListener? _listener;
@@ -50,21 +50,21 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
     };
 
     private IActorRef CreateActor(TimeSpan? idleTimeout = null)
-        => _system!.ActorOf(Props.Create(() => new ConnectionManagerActor(idleTimeout ?? TimeSpan.FromSeconds(5))));
+        => _system!.ActorOf(Props.Create(() => new TcpConnectionManagerActor(idleTimeout ?? TimeSpan.FromSeconds(5))));
 
     [Fact(Timeout = 5000)]
-    public async Task ConnectionManagerActor_should_always_create_new_connection_for_http10()
+    public async Task TcpConnectionManagerActor_should_always_create_new_connection_for_http10()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version10);
 
         var lease1 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        actor.Tell(new ConnectionManagerActor.Release(lease1, CanReuse: true));
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         var lease2 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         // HTTP/1.0 never reuses — must be different leases
         Assert.NotSame(lease1, lease2);
@@ -73,21 +73,21 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
     }
 
     [Fact(Timeout = 5000)]
-    public async Task ConnectionManagerActor_should_reuse_idle_connection_for_http11()
+    public async Task TcpConnectionManagerActor_should_reuse_idle_connection_for_http11()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
         var lease1 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        actor.Tell(new ConnectionManagerActor.Release(lease1, CanReuse: true));
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         // Small delay for actor mailbox to process Release before Acquire
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
         var lease2 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         // HTTP/1.1 should reuse the idle connection
         Assert.Same(lease1, lease2);
@@ -102,9 +102,9 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await ConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
             TestContext.Current.CancellationToken);
-        actor.Tell(new ConnectionManagerActor.Release(lease, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
@@ -119,9 +119,9 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await ConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
             TestContext.Current.CancellationToken);
-        actor.Tell(new ConnectionManagerActor.Release(lease, CanReuse: false));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: false));
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
 
@@ -136,13 +136,13 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
         var lease1 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         var lease2 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         Assert.NotSame(lease1, lease2);
 
-        actor.Tell(new ConnectionManagerActor.Release(lease1, CanReuse: true));
-        actor.Tell(new ConnectionManagerActor.Release(lease2, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
         // Wait for idle timeout + eviction timer to fire
         await Task.Delay(300, TestContext.Current.CancellationToken);
@@ -159,12 +159,12 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
         var lease1 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         var lease2 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
-        actor.Tell(new ConnectionManagerActor.Release(lease1, CanReuse: true));
-        actor.Tell(new ConnectionManagerActor.Release(lease2, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
         await Task.Delay(300, TestContext.Current.CancellationToken);
 
@@ -185,14 +185,14 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await ConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken));
         }
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
         });
 
         foreach (var lease in leases)
@@ -209,19 +209,19 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var endpoint = CreateEndpoint(HttpVersion.Version20);
 
         var lease1 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        actor.Tell(new ConnectionManagerActor.Release(lease1, CanReuse: true));
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
         lease1.MarkNoReuse();
 
         var lease2 =
-            await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         Assert.True(lease2.LastActivity >= lease1.LastActivity);
 
-        actor.Tell(new ConnectionManagerActor.Release(lease2, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
         lease1.Dispose();
     }
 
@@ -232,7 +232,7 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await ConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
             TestContext.Current.CancellationToken);
 
         await actor.GracefulStop(TimeSpan.FromSeconds(5));
@@ -247,9 +247,9 @@ public sealed class ConnectionManagerActorSpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version10);
 
-        var lease = await ConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
             TestContext.Current.CancellationToken);
-        actor.Tell(new ConnectionManagerActor.Release(lease, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: true));
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.False(lease.IsAlive);

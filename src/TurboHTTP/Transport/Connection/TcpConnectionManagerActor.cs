@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Tcp;
@@ -6,7 +6,7 @@ using TurboHTTP.Transport.Tcp;
 namespace TurboHTTP.Transport.Connection;
 
 /// <summary>
-/// Single actor that manages ALL per-host connection state: acquire, release, idle reuse,
+/// Single actor that manages ALL per-host TCP/TLS connection state: acquire, release, idle reuse,
 /// eviction, and HTTP version-specific slot limits. Every <see cref="TcpConnectionStage"/> talks
 /// to this same actor directly via <see cref="Acquire"/> / <see cref="Release"/>.
 /// <para>
@@ -14,14 +14,16 @@ namespace TurboHTTP.Transport.Connection;
 /// <see cref="Dictionary{TKey,TValue}"/> of <see cref="HostState"/> instances — all accessed
 /// on the actor's single-threaded mailbox, so no locks needed.
 /// </para>
+/// Mirrors <see cref="QuicConnectionManagerActor"/> structurally — a senior dev who knows
+/// one immediately understands the other.
 /// </summary>
-internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
+internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
 {
     internal sealed record Acquire(
         TcpOptions Options,
         RequestEndpoint Endpoint,
         TaskCompletionSource<ConnectionLease> Tcs,
-        CancellationToken Ct);
+        CancellationToken Token);
 
     internal sealed record Release(ConnectionLease Lease, bool CanReuse);
 
@@ -72,8 +74,6 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
     public static Task<ConnectionLease> AcquireAsync(
         IActorRef actor, TcpOptions options, RequestEndpoint endpoint, CancellationToken ct = default)
     {
-        // TaskCreationOptions.None: lets ContinueWith(ExecuteSynchronously) run the callback
-        // on the actor thread that calls TrySetResult, eliminating one ThreadPool hop per acquire.
         var tcs = new TaskCompletionSource<ConnectionLease>();
 
         if (ct.CanBeCanceled)
@@ -87,7 +87,7 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         return tcs.Task;
     }
 
-    public ConnectionManagerActor(TimeSpan idleTimeout, int maxConnectionsPerServer = 6)
+    public TcpConnectionManagerActor(TimeSpan idleTimeout, int maxConnectionsPerServer = 6)
     {
         _idleTimeout = idleTimeout;
         _maxConnectionsPerServer = maxConnectionsPerServer;
@@ -361,7 +361,6 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         }
     }
 
-
     protected override void PostStop()
     {
         Timers.CancelAll();
@@ -371,8 +370,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
             while (host.Pending.TryDequeue(out var pending))
             {
                 pending.Tcs.TrySetException(new ObjectDisposedException(
-                    nameof(ConnectionManagerActor),
-                    "Connection manager was stopped while requests were pending."));
+                    nameof(TcpConnectionManagerActor),
+                    "TCP connection manager was stopped while requests were pending."));
             }
 
             host.Idle.Clear();
@@ -388,7 +387,6 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
         _hosts.Clear();
     }
 
-
     private HostState GetOrCreateHost(RequestEndpoint endpoint)
     {
         if (!_hosts.TryGetValue(endpoint, out var state))
@@ -403,8 +401,8 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
     private void Establish(HostState host, Acquire msg)
     {
         host.Establishing++;
-        DirectConnectionFactory
-            .EstablishAsync(msg.Options, msg.Endpoint, msg.Ct)
+        _ = DirectConnectionFactory
+            .EstablishAsync(msg.Options, msg.Endpoint, msg.Token)
             .PipeTo(Self,
                 success: lease => new Established(lease, msg),
                 failure: ex => new EstablishFailed(ex, msg));
@@ -421,5 +419,4 @@ internal sealed class ConnectionManagerActor : ReceiveActor, IWithTimers
             }
         }
     }
-
 }

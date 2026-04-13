@@ -22,6 +22,30 @@ This is the central hub for all TurboHTTP project knowledge — connecting sessi
 - [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]] — Encoder/decoder patterns, HPACK/QPACK, RFC subfolder structure
 - [[Architecture/Guides/17-DIAGNOSTICS_INTEGRATION|Diagnostics Integration]] — DiagnosticListener, ETW EventSource, OTel Metrics
 
+### Dispatcher & Threading
+- [[Architecture/Design/10-DISPATCHER_SELECTION_ANALYSIS|Dispatcher Selection Analysis]] — All six Akka.NET dispatcher types evaluated for HTTP/2 streaming
+- [[Architecture/Guides/11-DISPATCHER_CONFIGURATION_GUIDE|Dispatcher Configuration Guide]] — ChannelExecutor configuration, tuning, and implementation steps
+- [[Architecture/Guides/12-DISPATCHER_QUICK_REFERENCE|Dispatcher Quick Reference]] — One-page decision tree and config templates
+- [[Architecture/Status/12-THREADPOOL_CONTENTION_RESOLUTION|ThreadPool Contention Resolution]] — ChannelExecutor migration to eliminate ThreadPool starvation
+
+### Analysis
+- [[Architecture/Analysis/13-CONNECTION_POOL_HIERARCHY_ANALYSIS|Connection Pool Hierarchy Analysis]] — Connection pool design patterns and hierarchy options
+- [[Architecture/Analysis/14-OPTION_B_IMPLEMENTATION_GUIDE|Option B Implementation Guide]] — Selected connection pool architecture implementation
+
+### Guides (New)
+- [[Architecture/Guides/10-TEST_CONVENTIONS|Test Conventions]] — BDD naming, Spec suffix, Trait-based RFC traceability
+- [[Architecture/Guides/11-STAGE_PORT_NAMING|Stage Port Naming]] — PascalCase port naming, shape patterns, global uniqueness
+- [[Architecture/Guides/12-OBSIDIAN_WORKFLOW|Obsidian Workflow]] — Vault conventions and knowledge capture workflow
+
+### Benchmarks & Performance
+- [[Architecture/Benchmarks/Benchmark_2026-04-03_Transport_Refactoring|Benchmark 2026-04-03]] — Transport refactoring baseline
+- [[Architecture/Benchmarks/Benchmark_2026-04-04_Perf_Optimizations|Benchmark 2026-04-04]] — Performance optimizations follow-up
+- [[Architecture/Performance/01-BOTTLENECK_ANALYSIS_APR2026|Bottleneck Analysis (Apr 2026)]] — Systematic bottleneck analysis with profiling data
+- [[Architecture/Performance/TOP_5_THROUGHPUT_OPTIMIZATIONS|Top 5 Throughput Optimizations]] — Highest-impact throughput improvements
+
+### HTTP/3
+- [[Architecture/Design/HTTP3_CONSOLIDATION_PLAN|HTTP/3 Consolidation Plan]] — QUIC support consolidation into stage-based architecture
+
 See [Architecture Notes](./Architecture/) for full decision records.
 
 ## RFC Compliance & Coverage
@@ -58,6 +82,7 @@ See [Architecture Notes](./Architecture/) for full decision records.
 - [[Features/Infrastructure/Feature016_TracingBidi_Consolidation|Feature 016: TracingBidi Consolidation]] — Consolidation of tracing/diagnostics into TracingBidiStage
 - [[Features/Infrastructure/Feature018_Docs_Site_Revision|Feature 018: Docs Site Revision]] — VitePress documentation site revision and content update
 - [[Features/Infrastructure/Feature019_Stream_Survival|Feature 019: Stream Survival]] — Stream error absorption and survival hardening
+- [[Features/Infrastructure/Feature025_Clean_Protocol_Core|Feature 025: Clean Protocol Core]] — Invert protocol-core topology with GroupByRequestKey routing
 
 ### Performance
 - [[Features/Performance/Feature024_Benchmark_Comparison|Feature 024: Benchmark Comparison]] — TurboHTTP vs HttpClient performance comparison

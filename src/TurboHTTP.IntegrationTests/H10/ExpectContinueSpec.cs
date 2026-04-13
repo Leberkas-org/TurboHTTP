@@ -19,7 +19,7 @@ public sealed class ExpectContinueSpec
     private ClientHelper CreateExpectClient()
     {
         return ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithExpectContinue(),
             system: _systemFixture.System);

@@ -89,7 +89,11 @@ public sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
             SetHandler(stage._inApp, onPush: OnAppPush,
                 onUpstreamFinish: () =>
                 {
-                    // App upstream finished — no more requests, but keep processing responses
+                    // App upstream finished — complete immediately if nothing is in-flight
+                    if (_sm is { HasInFlightRequest: false, IsReconnecting: false })
+                    {
+                        CompleteStage();
+                    }
                 },
                 onUpstreamFailure: ex =>
                 {
@@ -172,6 +176,13 @@ public sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
 
                     return;
                 }
+                case CloseSignalItem:
+                {
+                    // Connection closed with no in-flight request and no reconnect pending.
+                    // App upstream is either already finished or will complete via onUpstreamFinish.
+                    CompleteStage();
+                    return;
+                }
             }
 
             try
@@ -191,13 +202,10 @@ public sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
             {
                 FlushResponses();
             }
-            else if (!_serverFinished)
+            else if (!_serverFinished && !HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
             {
                 // No response yet — pull more server data
-                if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
-                {
-                    Pull(_stage._inServer);
-                }
+                Pull(_stage._inServer);
             }
 
             TryPullRequest();
@@ -220,6 +228,12 @@ public sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
         {
             if (_pendingResponses.Count == 0)
             {
+                if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequest)
+                {
+                    CompleteStage();
+                    return;
+                }
+
                 if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                 {
                     Pull(_stage._inServer);
@@ -240,6 +254,14 @@ public sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
                 EmitMultiple(_stage._outResponse, responses,
                     () =>
                     {
+                        // App upstream finished and no more in-flight request: complete now.
+                        // HTTP/1.0 server will close, but we may as well not wait.
+                        if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequest)
+                        {
+                            CompleteStage();
+                            return;
+                        }
+
                         if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                         {
                             Pull(_stage._inServer);

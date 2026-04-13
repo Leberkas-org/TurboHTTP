@@ -17,7 +17,7 @@ public sealed class SmokeSpec : IAsyncLifetime
 
     public ValueTask InitializeAsync()
     {
-        _helper = ClientHelper.CreateClient(_server.HttpPort, new Version(1, 0), system: _systemFixture.System);
+        _helper = ClientHelper.CreateClient(_server.H1Port, new Version(1, 0), system: _systemFixture.System);
         return ValueTask.CompletedTask;
     }
 

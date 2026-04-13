@@ -7,7 +7,7 @@ namespace TurboHTTP.Tests.Semantics;
 /// <summary>
 /// Tests for RFC 9110 §4.3.4 — certificate validation callbacks on <see cref="TurboClientOptions"/>.
 /// Verifies that the default options enforce certificate validation, custom callbacks are
-/// propagated through <see cref="TcpOptionsFactory"/>, and <see cref="TurboClientOptions.DangerousAcceptAnyServerCertificate"/>
+/// propagated through <see cref="OptionsFactory"/>, and <see cref="TurboClientOptions.DangerousAcceptAnyServerCertificate"/>
 /// overrides validation.
 /// </summary>
 public sealed class CertificateValidationSpec
@@ -96,7 +96,7 @@ public sealed class CertificateValidationSpec
         };
 
         var uri = new Uri("https://example.com/path");
-        var tcpOptions = TcpOptionsFactory.Build(uri, options);
+        var tcpOptions = OptionsFactory.Build(uri, options);
 
         var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
@@ -112,7 +112,7 @@ public sealed class CertificateValidationSpec
         var options = new TurboClientOptions();
 
         var uri = new Uri("https://example.com/");
-        var tcpOptions = TcpOptionsFactory.Build(uri, options);
+        var tcpOptions = OptionsFactory.Build(uri, options);
 
         var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
@@ -129,7 +129,7 @@ public sealed class CertificateValidationSpec
         var options = new TurboClientOptions();
         var uri = new Uri("http://example.com/");
 
-        var tcpOptions = TcpOptionsFactory.Build(uri, options);
+        var tcpOptions = OptionsFactory.Build(uri, options);
 
         Assert.IsType<TcpOptions>(tcpOptions);
         Assert.IsNotType<TlsOptions>(tcpOptions);

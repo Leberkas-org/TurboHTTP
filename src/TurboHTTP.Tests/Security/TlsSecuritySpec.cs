@@ -12,7 +12,7 @@ namespace TurboHTTP.Tests.Security;
 /// HTTPS→HTTP redirects are blocked, and sensitive headers are stripped on scheme downgrade.
 /// </summary>
 /// <remarks>
-/// Classes under test: <see cref="TurboClientOptions"/>, <see cref="TcpOptionsFactory"/>,
+/// Classes under test: <see cref="TurboClientOptions"/>, <see cref="OptionsFactory"/>,
 /// <see cref="RedirectHandler"/>, <see cref="RedirectPolicy"/>.
 /// Attack vectors: self-signed certificate acceptance, protocol downgrade, credential leakage
 /// on scheme change, TLS option misconfiguration.
@@ -159,7 +159,7 @@ public sealed class TlsSecuritySpec
             ServerCertificateValidationCallback = custom,
         };
 
-        var tcpOptions = TcpOptionsFactory.Build(new Uri("https://example.com/"), options);
+        var tcpOptions = OptionsFactory.Build(new Uri("https://example.com/"), options);
         var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
 
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);

@@ -19,7 +19,7 @@ public sealed class RedirectSpec
     private ClientHelper CreateRedirectClient()
     {
         return ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: builder => builder.WithRedirect(),
             system: _systemFixture.System);

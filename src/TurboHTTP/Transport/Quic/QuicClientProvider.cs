@@ -77,6 +77,12 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
     }
 
     /// <summary>
+    /// Eagerly establishes the QUIC connection. Called by <see cref="QuicConnectionFactory"/>
+    /// before handing the provider to a <see cref="QuicConnectionHandle"/>.
+    /// </summary>
+    internal Task ConnectAsync(CancellationToken ct) => EnsureConnectedAsync(ct);
+
+    /// <summary>
     /// Ensures a QUIC connection is established. The first caller connects; concurrent callers
     /// wait on the semaphore and then reuse the established connection.
     /// </summary>

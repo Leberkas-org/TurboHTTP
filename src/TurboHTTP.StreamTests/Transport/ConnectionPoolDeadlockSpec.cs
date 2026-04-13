@@ -8,7 +8,7 @@ using TurboHTTP.Transport.Connection;
 namespace TurboHTTP.StreamTests.Transport;
 
 /// <summary>
-/// Tests transport-level starvation scenarios for <see cref="ConnectionManagerActor"/>
+/// Tests transport-level starvation scenarios for <see cref="TcpConnectionManagerActor"/>
 /// and <see cref="ClientByteMover"/> to catch deadlocks in isolation.
 /// </summary>
 public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
@@ -57,7 +57,7 @@ public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
     };
 
     private IActorRef CreateActor()
-        => _system!.ActorOf(Props.Create(() => new ConnectionManagerActor(TimeSpan.FromSeconds(30))));
+        => _system!.ActorOf(Props.Create(() => new TcpConnectionManagerActor(TimeSpan.FromSeconds(30))));
 
     private async Task AcceptConnectionsAsync(int count, CancellationToken ct)
     {
@@ -69,7 +69,7 @@ public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
     }
 
     [Fact(Timeout = 5000)]
-    public async Task ConnectionManagerActor_should_free_slot_on_abrupt_close()
+    public async Task TcpConnectionManagerActor_should_free_slot_on_abrupt_close()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
 
@@ -79,22 +79,22 @@ public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
-        actor.Tell(new ConnectionManagerActor.Release(lease1, CanReuse: false));
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: false));
 
-        var secondAcquire = ConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+        var secondAcquire = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
         var completed = await Task.WhenAny(secondAcquire, Task.Delay(TimeSpan.FromSeconds(1), cts.Token));
 
         Assert.Same(secondAcquire, completed);
 
         var lease2 = await secondAcquire;
-        actor.Tell(new ConnectionManagerActor.Release(lease2, CanReuse: false));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: false));
 
         await acceptTask;
     }
 
     [Fact(Timeout = 5000)]
-    public async Task ConnectionManagerActor_should_respect_cancellation_token()
+    public async Task TcpConnectionManagerActor_should_respect_cancellation_token()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
 
@@ -107,18 +107,18 @@ public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await ConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token));
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token));
         }
 
         await acceptTask;
 
         using var shortCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            ConnectionManagerActor.AcquireAsync(actor, options, endpoint, shortCts.Token));
+            TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, shortCts.Token));
 
         foreach (var lease in leases)
         {
-            actor.Tell(new ConnectionManagerActor.Release(lease, CanReuse: false));
+            actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: false));
         }
     }
 

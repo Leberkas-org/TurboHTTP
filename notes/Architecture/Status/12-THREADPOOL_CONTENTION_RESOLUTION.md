@@ -228,9 +228,9 @@ throughput = 30
 
 ## Related Documentation
 
-- [[10-DISPATCHER_SELECTION_ANALYSIS.md]] — Complete analysis of all six dispatcher types
-- [[11-DISPATCHER_CONFIGURATION_GUIDE.md]] — Detailed configuration and tuning guide
-- [[Benchmark_2026-04-03_Transport_Refactoring.md]] — Current benchmark baseline
+- [[Architecture/Design/10-DISPATCHER_SELECTION_ANALYSIS|Dispatcher Selection Analysis]] — Complete analysis of all six dispatcher types
+- [[Architecture/Guides/11-DISPATCHER_CONFIGURATION_GUIDE|Dispatcher Configuration Guide]] — Detailed configuration and tuning guide
+- [[Architecture/Benchmarks/Benchmark_2026-04-03_Transport_Refactoring|Benchmark 2026-04-03]] — Current benchmark baseline
 
 ## Success Criteria
 

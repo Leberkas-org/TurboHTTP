@@ -844,6 +844,12 @@ private async Task OnAcquire(AcquireMsg msg)
 
 ---
 
+## See Also
+
+- [[Architecture/Analysis/13-CONNECTION_POOL_HIERARCHY_ANALYSIS|Connection Pool Hierarchy Analysis]] — Full analysis of the three actor hierarchy options
+- [[Architecture/Layers/14-TRANSPORT_LAYER|Transport Layer]] — Transport layer architecture overview
+- [[Architecture/Design/01-LAYERED_ARCHITECTURE|Layered Architecture]] — Overall layered architecture
+
 ## Time Breakdown
 
 | Phase | Task | Est. Time |

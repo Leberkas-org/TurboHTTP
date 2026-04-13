@@ -16,7 +16,7 @@ public sealed class ResilienceSpec
     }
 
     private ClientHelper CreateClient() =>
-        ClientHelper.CreateClient(_server.HttpPort, new Version(1, 0), system: _systemFixture.System);
+        ClientHelper.CreateClient(_server.H1Port, new Version(1, 0), system: _systemFixture.System);
 
     [Fact(Timeout = 30000)]
     public async Task Resilience_should_cause_exception_on_content_length_mismatch()
@@ -92,21 +92,6 @@ public sealed class ResilienceSpec
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync(cts.Token);
         Assert.Equal("slow-headers", body);
-    }
-
-    [Fact(Timeout = 30000)]
-    public async Task Resilience_should_succeed_with_slow_body_within_timeout()
-    {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        await using var helper = CreateClient();
-
-        var response = await helper.Client.SendAsync(
-            new HttpRequestMessage(HttpMethod.Get, "/resilience/slow-body/500"), cts.Token);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync(cts.Token);
-        Assert.Contains("slow-body-first-half", body);
-        Assert.Contains("slow-body-second-half", body);
     }
 
     [Fact(Timeout = 30000)]

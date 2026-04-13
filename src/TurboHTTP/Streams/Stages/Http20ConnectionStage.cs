@@ -66,7 +66,13 @@ public sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             });
 
             SetHandler(stage._inApp, onPush: OnAppPush,
-                onUpstreamFinish: () => { },
+                onUpstreamFinish: () =>
+                {
+                    if (_sm is { HasInFlightRequests: false, IsReconnecting: false })
+                    {
+                        CompleteStage();
+                    }
+                },
                 onUpstreamFailure: ex =>
                 {
                     Log.Warning("Http20ConnectionStage: App inlet upstream failure: {0}", ex.Message);
@@ -216,6 +222,12 @@ public sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
         {
             if (_pendingResponses.Count == 0)
             {
+                if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                {
+                    CompleteStage();
+                    return;
+                }
+
                 Pull(_stage._inServer);
                 return;
             }
@@ -225,12 +237,28 @@ public sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
                 var response = _pendingResponses[0];
                 _pendingResponses.Clear();
                 Push(_stage._outResponse, response);
+
+                if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                {
+                    CompleteStage();
+                    return;
+                }
+
                 Pull(_stage._inServer);
                 return;
             }
 
             EmitMultiple(_stage._outResponse, _pendingResponses.ToArray(),
-                () => Pull(_stage._inServer));
+                () =>
+                {
+                    if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                    {
+                        CompleteStage();
+                        return;
+                    }
+
+                    Pull(_stage._inServer);
+                });
             _pendingResponses.Clear();
         }
 

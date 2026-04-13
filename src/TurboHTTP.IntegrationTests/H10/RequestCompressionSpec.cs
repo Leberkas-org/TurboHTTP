@@ -32,7 +32,7 @@ public sealed class RequestCompressionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: b => b.WithRequestCompression(new CompressionPolicy { Encoding = "gzip" }),
             system: _systemFixture.System);
@@ -55,7 +55,7 @@ public sealed class RequestCompressionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: b => b.WithRequestCompression(new CompressionPolicy { Encoding = "deflate" }),
             system: _systemFixture.System);
@@ -78,7 +78,7 @@ public sealed class RequestCompressionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: b => b.WithRequestCompression(new CompressionPolicy { Encoding = "br" }),
             system: _systemFixture.System);
@@ -102,7 +102,7 @@ public sealed class RequestCompressionSpec
         // Default threshold is 1024 bytes — a 100-byte body must pass through uncompressed.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: b => b.WithRequestCompression(CompressionPolicy.Default),
             system: _systemFixture.System);
@@ -127,7 +127,7 @@ public sealed class RequestCompressionSpec
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: b => b.WithRequestCompression(new CompressionPolicy { Encoding = "gzip" }),
             system: _systemFixture.System);
@@ -156,7 +156,7 @@ public sealed class RequestCompressionSpec
         // In: client decompresses the GET response (gzip).
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var helper = ClientHelper.CreateClient(
-            _server.HttpPort,
+            _server.H1Port,
             new Version(1, 0),
             configure: b => b
                 .WithRequestCompression(new CompressionPolicy { Encoding = "gzip" })

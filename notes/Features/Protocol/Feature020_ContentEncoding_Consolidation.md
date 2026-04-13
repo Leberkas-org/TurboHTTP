@@ -41,6 +41,6 @@ Consolidated all HTTP response body decompression logic — which had accumulate
 
 ## See Also
 
-- [[Features/Protocol/Feature003_Decompression_Stage\|Feature 003]] — original `DecompressionStage` (superseded by this)
-- [[Architecture/Layers/15-STREAMS_LAYER\|Streams Layer]] — stage layer responsibilities
-- [[Architecture/Layers/16-PROTOCOL_LAYER\|Protocol Layer]] — what remains in protocol decoders after this refactor
+- [[Features/Protocol/Feature003_Decompression_Stage|Feature 003]] — original `DecompressionStage` (superseded by this)
+- [[Architecture/Layers/15-STREAMS_LAYER|Streams Layer]] — stage layer responsibilities
+- [[Architecture/Layers/16-PROTOCOL_LAYER|Protocol Layer]] — what remains in protocol decoders after this refactor

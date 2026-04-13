@@ -14,7 +14,7 @@ public sealed class TransportSelectionSpec
         var uri = new Uri("https://example.com/path");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.Equal("example.com", quicOptions.Host);
@@ -28,7 +28,7 @@ public sealed class TransportSelectionSpec
         var uri = new Uri("http://example.com/path");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version11);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version11);
 
         Assert.IsType<TcpOptions>(result);
         Assert.IsNotType<TlsOptions>(result);
@@ -42,7 +42,7 @@ public sealed class TransportSelectionSpec
         var uri = new Uri("https://example.com/path");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version11);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version11);
 
         Assert.IsType<TlsOptions>(result);
     }
@@ -57,7 +57,7 @@ public sealed class TransportSelectionSpec
             DangerousAcceptAnyServerCertificate = true,
         };
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.NotNull(quicOptions.ServerCertificateValidationCallback);
@@ -71,8 +71,8 @@ public sealed class TransportSelectionSpec
         var httpUri = new Uri("http://example.com/");
         var clientOptions = new TurboClientOptions();
 
-        var httpsResult = TcpOptionsFactory.Build(httpsUri, clientOptions, null);
-        var httpResult = TcpOptionsFactory.Build(httpUri, clientOptions, null);
+        var httpsResult = OptionsFactory.Build(httpsUri, clientOptions, null);
+        var httpResult = OptionsFactory.Build(httpUri, clientOptions, null);
 
         Assert.IsType<TlsOptions>(httpsResult);
         Assert.IsType<TcpOptions>(httpResult);
@@ -86,7 +86,7 @@ public sealed class TransportSelectionSpec
         var uri = new Uri("http://example.com:4433/");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.Equal(4433, quicOptions.Port);

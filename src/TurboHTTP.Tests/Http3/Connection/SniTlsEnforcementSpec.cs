@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Security;
+using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Tcp;
 using TurboHTTP.Transport.Quic;
 
@@ -19,7 +20,7 @@ public sealed class SniTlsEnforcementSpec
         var uri = new Uri("https://example.com/path");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.Equal("example.com", quicOptions.Host);
@@ -32,7 +33,7 @@ public sealed class SniTlsEnforcementSpec
         var uri = new Uri("https://my-server.example.org:8443/api");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.Equal("my-server.example.org", quicOptions.Host);
@@ -87,7 +88,7 @@ public sealed class SniTlsEnforcementSpec
         var uri = new Uri("https://192.168.1.1:443/");
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.Equal("192.168.1.1", quicOptions.Host);
@@ -108,7 +109,7 @@ public sealed class SniTlsEnforcementSpec
         };
 
         var uri = new Uri("https://secure.example.com/");
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.NotNull(quicOptions.ServerCertificateValidationCallback);
@@ -129,7 +130,7 @@ public sealed class SniTlsEnforcementSpec
         var uri = new Uri(uriString);
         var clientOptions = new TurboClientOptions();
 
-        var result = TcpOptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
+        var result = OptionsFactory.Build(uri, clientOptions, HttpVersion.Version30);
 
         var quicOptions = Assert.IsType<QuicOptions>(result);
         Assert.Equal(expectedHost, quicOptions.Host);

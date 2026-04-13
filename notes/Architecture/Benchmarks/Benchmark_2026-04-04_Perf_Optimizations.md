@@ -112,7 +112,7 @@ The ~1.4x streaming overhead at 10K requests and 2.1x allocation ratio are inher
 
 ## Related Notes
 
-- [[Benchmark_2026-04-03_Transport_Refactoring]] — Previous baseline
+- [[Architecture/Benchmarks/Benchmark_2026-04-03_Transport_Refactoring]] — Previous baseline
 - [[05-BENCHMARK_PATTERNS]] — Benchmark conventions and port assignments
 - [[04-CURRENT_STATE_SUMMARY]] — Project status
 

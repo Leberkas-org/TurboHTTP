@@ -18,3 +18,5 @@ Technical investigations, audits, and migration plans for TurboHTTP.
 - [[Architecture/Analysis/08-HTTP2_DECODER_MIGRATION|Http2Decoder Migration Plan]] — Migration from monolithic Http2Decoder to stage-based testing via Http2ProtocolSession
 - [[Architecture/Analysis/10-DEADLOCK_ANALYSIS|Deadlock Analysis Catalog]] — Catalog of deadlock patterns discovered and resolved in the Akka.Streams pipeline
 - [[Architecture/Analysis/11-STAGE_COMPLETION_AUDIT|Stage Completion Propagation Audit]] — Systematic audit of 48 GraphStage implementations finding 20 completion propagation bugs
+- [[Architecture/Analysis/13-CONNECTION_POOL_HIERARCHY_ANALYSIS|Connection Pool Hierarchy Analysis]] — Analysis of connection pool design patterns and hierarchy options
+- [[Architecture/Analysis/14-OPTION_B_IMPLEMENTATION_GUIDE|Option B Implementation Guide]] — Implementation guide for the selected connection pool architecture

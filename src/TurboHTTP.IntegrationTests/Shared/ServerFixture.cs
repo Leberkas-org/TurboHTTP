@@ -21,16 +21,14 @@ public sealed class ServerFixture : IAsyncLifetime
 {
     private WebApplication? _app;
 
-    /// <summary>HTTP/1.x plaintext port (for H10 and H11 tests).</summary>
+    public int H1Port { get; private set; }
+
     public int HttpPort { get; private set; }
 
-    /// <summary>HTTP/2 cleartext (h2c) port.</summary>
     public int H2Port { get; private set; }
 
-    /// <summary>HTTPS port (HTTP/1+2+3, TLS + QUIC).</summary>
     public int HttpsPort { get; private set; }
 
-    /// <summary>Self-signed certificate used for the HTTPS endpoint.</summary>
     public X509Certificate2? Certificate { get; private set; }
 
     public async ValueTask InitializeAsync()
@@ -45,18 +43,14 @@ public sealed class ServerFixture : IAsyncLifetime
             options.Limits.MaxRequestHeaderCount = 2000;
             options.Limits.MaxRequestHeadersTotalSize = 512 * 1024;
 
-            // [0] HTTP/1.x plaintext
             options.Listen(IPAddress.Loopback, 0, lo => lo.Protocols = HttpProtocols.Http1);
-
-            // [1] HTTP/2 h2c (prior knowledge, no TLS)
+            options.Listen(IPAddress.Loopback, 0, lo => lo.Protocols = HttpProtocols.Http1);
             options.Listen(IPAddress.Loopback, 0, lo => lo.Protocols = HttpProtocols.Http2);
 
-            // Raise HTTP/2 limits to support high-concurrency integration tests.
             options.Limits.Http2.MaxStreamsPerConnection = 512;
             options.Limits.Http2.InitialConnectionWindowSize = 4 * 1024 * 1024;
             options.Limits.Http2.InitialStreamWindowSize = 1024 * 1024;
 
-            // [2] HTTPS — HTTP/1 + HTTP/2 + HTTP/3 (QUIC)
             options.Listen(IPAddress.Loopback, 0, lo =>
             {
                 lo.UseHttps(Certificate);
@@ -93,8 +87,9 @@ public sealed class ServerFixture : IAsyncLifetime
         var httpAddresses = addresses.Where(a => a.StartsWith("http://")).ToArray();
         var httpsAddress = addresses.First(a => a.StartsWith("https://"));
 
-        HttpPort = new Uri(httpAddresses[0]).Port;
-        H2Port = new Uri(httpAddresses[1]).Port;
+        H1Port = new Uri(httpAddresses[0]).Port;
+        HttpPort = new Uri(httpAddresses[1]).Port;
+        H2Port = new Uri(httpAddresses[2]).Port;
         HttpsPort = new Uri(httpsAddress).Port;
 
         _app = app;

@@ -14,18 +14,18 @@ namespace TurboHTTP.StreamTests.Streams;
 /// <summary>
 /// Tests <see cref="TcpConnectionStage"/> integration with the actor-based connection management.
 /// Verifies that the stage acquires a <see cref="ConnectionLease"/> via a
-/// <see cref="ConnectionManagerActor"/> and routes bytes through in-memory channels.
+/// <see cref="TcpConnectionManagerActor"/> and routes bytes through in-memory channels.
 /// </summary>
 /// <remarks>
 /// Stage under test: <see cref="TcpConnectionStage"/>.
 /// Uses a <see cref="StubConnectionManagerActor"/> to isolate the stage from real TCP,
 /// while exercising the real actor message protocol.
 /// </remarks>
-public sealed class KöConnectionStageSpec : StreamTestBase
+public sealed class ConnectionStageSpec : StreamTestBase
 {
 
     /// <summary>
-    /// Tracks <see cref="ConnectionManagerActor.Release"/> details for test assertions.
+    /// Tracks <see cref="TcpConnectionManagerActor.Release"/> details for test assertions.
     /// Written on the actor thread; read on the test thread after a delay.
     /// </summary>
     private sealed class ReleaseTracker
@@ -36,14 +36,14 @@ public sealed class KöConnectionStageSpec : StreamTestBase
     }
 
     /// <summary>
-    /// Stub actor that handles <see cref="ConnectionManagerActor.Acquire"/> and
-    /// <see cref="ConnectionManagerActor.Release"/> with controllable behavior.
+    /// Stub actor that handles <see cref="TcpConnectionManagerActor.Acquire"/> and
+    /// <see cref="TcpConnectionManagerActor.Release"/> with controllable behavior.
     /// </summary>
     private sealed class StubConnectionManagerActor : ReceiveActor
     {
         public StubConnectionManagerActor(ConnectionLease? lease, ReleaseTracker tracker)
         {
-            Receive<ConnectionManagerActor.Acquire>(msg =>
+            Receive<TcpConnectionManagerActor.Acquire>(msg =>
             {
                 if (lease is not null)
                 {
@@ -52,7 +52,7 @@ public sealed class KöConnectionStageSpec : StreamTestBase
                 // else: never complete — simulates an actor that never returns a lease
             });
 
-            Receive<ConnectionManagerActor.Release>(msg =>
+            Receive<TcpConnectionManagerActor.Release>(msg =>
             {
                 tracker.Released = true;
                 tracker.ReleasedCanReuse = msg.CanReuse;
@@ -228,6 +228,9 @@ public sealed class KöConnectionStageSpec : StreamTestBase
 
         await Task.Delay(300, TestContext.Current.CancellationToken);
         inboundWriter.Complete();
+        // Allow the async inbound pump to detect channel completion and deliver
+        // the InboundComplete event before upstream finish stops the pump.
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         inputQueue.Complete();
 
         var results = await resultTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
