@@ -12,6 +12,9 @@ namespace TurboHTTP.Benchmarks.Kestrel;
 [IterationCount(10)]
 public class KestrelTurboStreamingConcurrentBenchmarks : KestrelBaseClass
 {
+    [Params(1, 512, 4096)]
+    public int ConcurrencyLevel { get; set; }
+
     private ClientHelper _clientHelper = null!;
 
     [GlobalSetup]

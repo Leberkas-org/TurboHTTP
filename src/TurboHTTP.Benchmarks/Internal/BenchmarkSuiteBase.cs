@@ -11,16 +11,6 @@ namespace TurboHTTP.Benchmarks.Internal;
 [Config(typeof(EngineBenchmarkConfig))]
 public abstract class BenchmarkSuiteBase
 {
-    /// <summary>
-    /// Maximum number of requests simultaneously in-flight for the <c>Task.WhenAll</c>
-    /// fan-out approach. Must be at least as large as the highest <see cref="ConcurrencyLevel"/>.
-    /// </summary>
-    public const int MaxFanOut = 1024;
-
-    /// <summary>Number of concurrent requests to issue per benchmark iteration.</summary>
-    [Params(8, 512, 4096)]
-    public int ConcurrencyLevel { get; set; } = 1;
-
     /// <summary>HTTP protocol version: "1.1" or "2.0".</summary>
     [Params("1.1", "2.0")]
     public string HttpVersion { get; set; } = "1.1";

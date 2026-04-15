@@ -237,6 +237,7 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
             TargetHost = targetHost,
             EnabledSslProtocols = options.EnabledSslProtocols,
             ClientCertificates = options.ClientCertificates,
+            ApplicationProtocols = options.ApplicationProtocols,
         };
 
         var tlsActivity = TurboHttpInstrumentation.StartTlsHandshake(targetHost);
@@ -386,6 +387,7 @@ public record TlsOptions : TcpOptions
     public X509CertificateCollection? ClientCertificates { get; init; }
     public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; init; }
     public SslProtocols EnabledSslProtocols { get; init; } = SslProtocols.None;
+    public List<SslApplicationProtocol>? ApplicationProtocols { get; init; }
 }
 
 /// <summary>

@@ -1,3 +1,4 @@
+using System.Net.Security;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Quic;
 
@@ -15,6 +16,13 @@ internal static class OptionsFactory
         var isTls = endpoint.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)
                     || endpoint.Scheme.Equals("wss", StringComparison.OrdinalIgnoreCase);
         var port = endpoint.Port != 0 ? endpoint.Port : isTls ? 443 : 80;
+        List<SslApplicationProtocol>? alpn = endpoint.Version switch
+        {
+            { Major: 3, Minor: 0 } => [SslApplicationProtocol.Http3],
+            { Major: 2, Minor: 0 } => [SslApplicationProtocol.Http2],
+            { Major: 1, Minor: 1 } => [SslApplicationProtocol.Http11],
+            _ => null
+        };
 
         if (IsHttp3(endpoint.Version))
         {
@@ -28,6 +36,7 @@ internal static class OptionsFactory
                 SocketReceiveBufferSize = clientOptions.SocketReceiveBufferSize,
                 AllowConnectionMigration = clientOptions.Http3.AllowConnectionMigration,
                 AllowEarlyData = clientOptions.Http3.AllowEarlyData,
+                ApplicationProtocols = alpn
             };
         }
 
@@ -47,6 +56,7 @@ internal static class OptionsFactory
                 UseProxy = clientOptions.UseProxy,
                 Proxy = clientOptions.Proxy,
                 DefaultProxyCredentials = clientOptions.DefaultProxyCredentials,
+                ApplicationProtocols = alpn,
             };
         }
 

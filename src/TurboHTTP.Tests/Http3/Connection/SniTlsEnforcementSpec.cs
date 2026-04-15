@@ -59,8 +59,8 @@ public sealed class SniTlsEnforcementSpec
 #pragma warning disable CA1416 // Platform compatibility verified at test runner level
         var provider = new QuicClientProvider(quicOptions);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync(TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(TestContext.Current.CancellationToken));
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
         Assert.Contains("Server Name Indication", ex.Message);
@@ -75,21 +75,11 @@ public sealed class SniTlsEnforcementSpec
 #pragma warning disable CA1416 // Platform compatibility verified at test runner level
         var provider = new QuicClientProvider(quicOptions);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync(TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(TestContext.Current.CancellationToken));
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
         Assert.Contains("Server Name Indication", ex.Message);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-3.2")]
-    public void Should_IncludeH3Alpn_When_QuicOptionsCreated()
-    {
-        var quicOptions = new QuicOptions { Host = "example.com", Port = 443 };
-
-        Assert.Single(quicOptions.ApplicationProtocols);
-        Assert.Equal(new SslApplicationProtocol("h3"), quicOptions.ApplicationProtocols[0]);
     }
 
     [Fact(Timeout = 5000)]

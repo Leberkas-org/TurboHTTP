@@ -5,12 +5,12 @@ namespace TurboHTTP.Benchmarks.Internal;
 /// <summary>
 /// Represents the measured result of a single benchmark scenario.
 /// </summary>
-/// <param name="BenchmarkName">Scenario identifier, e.g. "SingleRequest_Light / CL=1 / HTTP 1.1".</param>
+/// <param name="BenchmarkName">Scenario identifier, e.g. "ConcurrentRequests_Light / CL=1 / HTTP 1.1".</param>
 /// <param name="MeanNanoseconds">Mean elapsed time per operation in nanoseconds.</param>
 /// <param name="P50Nanoseconds">Median (50th-percentile) latency in nanoseconds.</param>
 /// <param name="P95Nanoseconds">95th-percentile latency in nanoseconds.</param>
 /// <param name="P99Nanoseconds">99th-percentile latency in nanoseconds.</param>
-/// <param name="AllocatedBytes">Managed memory allocated per operation in bytes.</param>
+/// <param name="AllocatedBytes">Managed memory allocated per single operation in bytes.</param>
 public sealed record BenchmarkResult(
     string BenchmarkName,
     double MeanNanoseconds,
@@ -22,61 +22,39 @@ public sealed record BenchmarkResult(
 /// <summary>
 /// Generates human-readable markdown reports comparing TurboHttp (SendAsync and Streaming)
 /// against standard <see cref="System.Net.Http.HttpClient"/> benchmark results.
+/// Results are split into single-request (CL=1) and concurrent (CL&gt;1) sections automatically.
 /// </summary>
 public static class BenchmarkComparisonReport
 {
-    private const double DeltaThresholdPercent = 5.0;
-
     /// <summary>
     /// Generates a three-way markdown report comparing HttpClient, TurboHttp SendAsync, and
-    /// TurboHttp Streaming across single-request and concurrent benchmark scenarios.
+    /// TurboHttp Streaming. Results with CL=1 are shown as single-request benchmarks;
+    /// results with CL&gt;1 are shown as concurrent benchmarks.
     /// </summary>
-    /// <param name="httpClientResults">Baseline HttpClient single-request benchmark results.</param>
-    /// <param name="turboSendAsyncResults">TurboHttp SendAsync single-request results.</param>
-    /// <param name="turboStreamingResults">TurboHttp Streaming single-request results.</param>
-    /// <param name="httpClientConcurrentResults">Baseline HttpClient concurrent benchmark results.</param>
-    /// <param name="turboSendAsyncConcurrentResults">TurboHttp SendAsync concurrent results.</param>
-    /// <param name="turboStreamingConcurrentResults">TurboHttp Streaming concurrent results.</param>
-    /// <returns>A markdown-formatted three-way comparison report.</returns>
     public static string GenerateReport(
         IReadOnlyList<BenchmarkResult> httpClientResults,
         IReadOnlyList<BenchmarkResult> turboSendAsyncResults,
-        IReadOnlyList<BenchmarkResult> turboStreamingResults,
-        IReadOnlyList<BenchmarkResult> httpClientConcurrentResults,
-        IReadOnlyList<BenchmarkResult> turboSendAsyncConcurrentResults,
-        IReadOnlyList<BenchmarkResult> turboStreamingConcurrentResults)
+        IReadOnlyList<BenchmarkResult> turboStreamingResults)
     {
         var sb = new StringBuilder();
-        var now = DateTime.UtcNow;
-
-        AppendBinkrakenHeader(sb, now);
-
-        foreach (var version in new[] { "1.1", "2.0" })
-        {
-            var httpSingle = FilterByVersion(httpClientResults, version);
-            var sendSingle = FilterByVersion(turboSendAsyncResults, version);
-            var streamSingle = FilterByVersion(turboStreamingResults, version);
-            var httpConc = FilterByVersion(httpClientConcurrentResults, version);
-            var sendConc = FilterByVersion(turboSendAsyncConcurrentResults, version);
-            var streamConc = FilterByVersion(turboStreamingConcurrentResults, version);
-
-            if (httpSingle.Count == 0 && sendSingle.Count == 0 && streamSingle.Count == 0
-                && httpConc.Count == 0 && sendConc.Count == 0 && streamConc.Count == 0)
-            {
-                continue;
-            }
-
-            sb.AppendLine($"# HTTP/{version}");
-            sb.AppendLine();
-
-            AppendThroughputTable(sb, httpSingle, sendSingle, streamSingle);
-            AppendLatencyTable(sb, httpSingle, sendSingle, streamSingle);
-            AppendMemoryTable(sb, httpSingle, sendSingle, streamSingle);
-            AppendConcurrentSections(sb, httpConc, sendConc, streamConc);
-        }
-
+        AppendBinkrakenHeader(sb, DateTime.UtcNow);
+        AppendVersionSections(sb, httpClientResults, turboSendAsyncResults, turboStreamingResults);
         AppendBinkrakenNotes(sb);
+        return sb.ToString();
+    }
 
+    /// <summary>
+    /// Generates a three-way markdown report for the localhost Kestrel test server.
+    /// </summary>
+    public static string GenerateKestrelReport(
+        IReadOnlyList<BenchmarkResult> httpClientResults,
+        IReadOnlyList<BenchmarkResult> turboSendAsyncResults,
+        IReadOnlyList<BenchmarkResult> turboStreamingResults)
+    {
+        var sb = new StringBuilder();
+        AppendKestrelHeader(sb, DateTime.UtcNow);
+        AppendVersionSections(sb, httpClientResults, turboSendAsyncResults, turboStreamingResults);
+        AppendKestrelNotes(sb);
         return sb.ToString();
     }
 
@@ -84,8 +62,6 @@ public static class BenchmarkComparisonReport
     /// Writes a markdown report to <c>benchmarks/comparison_report_{timestamp}.md</c>
     /// relative to the current working directory, creating the directory if needed.
     /// </summary>
-    /// <param name="markdown">The markdown content returned by <see cref="GenerateReport"/>.</param>
-    /// <returns>The path of the written file.</returns>
     public static string WriteReportToFile(string markdown)
     {
         var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "benchmarks");
@@ -96,6 +72,48 @@ public static class BenchmarkComparisonReport
 
         File.WriteAllText(filePath, markdown, Encoding.UTF8);
         return filePath;
+    }
+
+    private static void AppendVersionSections(
+        StringBuilder sb,
+        IReadOnlyList<BenchmarkResult> httpResults,
+        IReadOnlyList<BenchmarkResult> sendResults,
+        IReadOnlyList<BenchmarkResult> streamResults)
+    {
+        foreach (var version in new[] { "1.1", "2.0" })
+        {
+            var httpAll = FilterByVersion(httpResults, version);
+            var sendAll = FilterByVersion(sendResults, version);
+            var streamAll = FilterByVersion(streamResults, version);
+
+            if (httpAll.Count == 0 && sendAll.Count == 0 && streamAll.Count == 0)
+            {
+                continue;
+            }
+
+            sb.AppendLine($"# HTTP/{version}");
+            sb.AppendLine();
+
+            var httpSingle = FilterByConcurrency(httpAll, cl: 1);
+            var sendSingle = FilterByConcurrency(sendAll, cl: 1);
+            var streamSingle = FilterByConcurrency(streamAll, cl: 1);
+
+            if (httpSingle.Count > 0 || sendSingle.Count > 0 || streamSingle.Count > 0)
+            {
+                AppendThroughputTable(sb, httpSingle, sendSingle, streamSingle);
+                AppendLatencyTable(sb, httpSingle, sendSingle, streamSingle);
+                AppendMemoryTable(sb, httpSingle, sendSingle, streamSingle);
+            }
+
+            var httpConc = FilterByConcurrencyMin(httpAll, 2);
+            var sendConc = FilterByConcurrencyMin(sendAll, 2);
+            var streamConc = FilterByConcurrencyMin(streamAll, 2);
+
+            if (httpConc.Count > 0 || sendConc.Count > 0 || streamConc.Count > 0)
+            {
+                AppendConcurrentSections(sb, httpConc, sendConc, streamConc);
+            }
+        }
     }
 
     private static void AppendBinkrakenHeader(StringBuilder sb, DateTime reportDate)
@@ -133,53 +151,6 @@ public static class BenchmarkComparisonReport
         sb.AppendLine();
     }
 
-    /// <summary>
-    /// Generates a three-way markdown report comparing HttpClient, TurboHttp SendAsync, and
-    /// TurboHttp Streaming across single-request and concurrent benchmark scenarios
-    /// for the localhost Kestrel test server.
-    /// </summary>
-    public static string GenerateKestrelReport(
-        IReadOnlyList<BenchmarkResult> httpClientResults,
-        IReadOnlyList<BenchmarkResult> turboSendAsyncResults,
-        IReadOnlyList<BenchmarkResult> turboStreamingResults,
-        IReadOnlyList<BenchmarkResult> httpClientConcurrentResults,
-        IReadOnlyList<BenchmarkResult> turboSendAsyncConcurrentResults,
-        IReadOnlyList<BenchmarkResult> turboStreamingConcurrentResults)
-    {
-        var sb = new StringBuilder();
-        var now = DateTime.UtcNow;
-
-        AppendKestrelHeader(sb, now);
-
-        foreach (var version in new[] { "1.1", "2.0" })
-        {
-            var httpSingle = FilterByVersion(httpClientResults, version);
-            var sendSingle = FilterByVersion(turboSendAsyncResults, version);
-            var streamSingle = FilterByVersion(turboStreamingResults, version);
-            var httpConc = FilterByVersion(httpClientConcurrentResults, version);
-            var sendConc = FilterByVersion(turboSendAsyncConcurrentResults, version);
-            var streamConc = FilterByVersion(turboStreamingConcurrentResults, version);
-
-            if (httpSingle.Count == 0 && sendSingle.Count == 0 && streamSingle.Count == 0
-                && httpConc.Count == 0 && sendConc.Count == 0 && streamConc.Count == 0)
-            {
-                continue;
-            }
-
-            sb.AppendLine($"# HTTP/{version}");
-            sb.AppendLine();
-
-            AppendThroughputTable(sb, httpSingle, sendSingle, streamSingle);
-            AppendLatencyTable(sb, httpSingle, sendSingle, streamSingle);
-            AppendMemoryTable(sb, httpSingle, sendSingle, streamSingle);
-            AppendConcurrentSections(sb, httpConc, sendConc, streamConc);
-        }
-
-        AppendKestrelNotes(sb);
-
-        return sb.ToString();
-    }
-
     private static void AppendKestrelHeader(StringBuilder sb, DateTime reportDate)
     {
         sb.AppendLine("# TurboHttp vs HttpClient — Localhost Kestrel (Loopback)");
@@ -214,7 +185,6 @@ public static class BenchmarkComparisonReport
         sb.AppendLine("- **SendAsync** uses `Task.WhenAll` fan-out; each concurrent slot gets its own `Task<HttpResponseMessage>`.");
         sb.AppendLine();
     }
-
 
     private static void AppendThroughputTable(
         StringBuilder sb,
@@ -288,7 +258,6 @@ public static class BenchmarkComparisonReport
             var sendVal = selector(row.SendAsync);
             var streamVal = selector(row.Streaming);
 
-            // Lower is better: positive delta = improvement over baseline
             var sendDelta = ComputeLatencyDelta(httpVal, sendVal);
             var streamDelta = ComputeLatencyDelta(httpVal, streamVal);
 
@@ -471,17 +440,6 @@ public static class BenchmarkComparisonReport
         return (baselineValue - turboValue) / baselineValue * 100.0;
     }
 
-    /// <summary>Returns the visual indicator for a performance delta.</summary>
-    public static string ThroughputIndicator(double deltaPercent)
-    {
-        return deltaPercent switch
-        {
-            > DeltaThresholdPercent => "✓",
-            < -DeltaThresholdPercent => "✗",
-            _ => "–"
-        };
-    }
-
     /// <summary>
     /// Converts nanoseconds-per-batch to requests per second, scaling by
     /// <paramref name="concurrencyLevel"/> because each batch completes N requests.
@@ -529,6 +487,28 @@ public static class BenchmarkComparisonReport
     }
 
     /// <summary>
+    /// Returns only results with the exact specified concurrency level.
+    /// </summary>
+    private static IReadOnlyList<BenchmarkResult> FilterByConcurrency(
+        IReadOnlyList<BenchmarkResult> results, int cl)
+    {
+        return results
+            .Where(r => ParseConcurrencyLevel(r.BenchmarkName) == cl)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Returns only results with concurrency level &gt;= <paramref name="minCl"/>.
+    /// </summary>
+    private static IReadOnlyList<BenchmarkResult> FilterByConcurrencyMin(
+        IReadOnlyList<BenchmarkResult> results, int minCl)
+    {
+        return results
+            .Where(r => ParseConcurrencyLevel(r.BenchmarkName) >= minCl)
+            .ToList();
+    }
+
+    /// <summary>
     /// Strips the trailing <c> / HTTP x.x</c> segment from a scenario name so that
     /// the version is not repeated when results are already grouped by version.
     /// </summary>
@@ -541,9 +521,6 @@ public static class BenchmarkComparisonReport
     /// <summary>
     /// Matches rows from three result sets by <see cref="BenchmarkResult.BenchmarkName"/>.
     /// Missing rows on the SendAsync or Streaming side are filled with zeroes.
-    /// Rows present only in HttpClient appear with zero SendAsync and zero Streaming values.
-    /// The <c>/ HTTP x.x</c> suffix is stripped from display names since callers
-    /// already group by version.
     /// </summary>
     private static IReadOnlyList<(string Name, BenchmarkResult Http, BenchmarkResult SendAsync, BenchmarkResult Streaming)>
         MatchRows3Way(
@@ -557,7 +534,6 @@ public static class BenchmarkComparisonReport
         var result = new List<(string, BenchmarkResult, BenchmarkResult, BenchmarkResult)>();
         var matchedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Anchor on SendAsync rows — these define the scenario order
         foreach (var send in sendAsyncResults)
         {
             var name = send.BenchmarkName;
@@ -567,7 +543,6 @@ public static class BenchmarkComparisonReport
             matchedNames.Add(name);
         }
 
-        // Include HttpClient-only rows (no matching SendAsync) with zero SendAsync/Streaming
         foreach (var http in httpResults)
         {
             if (!matchedNames.Contains(http.BenchmarkName))

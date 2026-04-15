@@ -12,6 +12,11 @@ namespace TurboHTTP.Benchmarks.Binkraken;
 [IterationCount(10)]
 public class BinkrakenHttpClientConcurrentBenchmarks : BinkrakenBaseClass
 {
+    private const int MaxFanOut = 1024;
+
+    [Params(1, 512, 4096)]
+    public int ConcurrencyLevel { get; set; }
+
     private HttpClient _httpClient = null!;
     private Task[] _tasks = null!;
     private SemaphoreSlim _fanOutGate = null!;

@@ -13,6 +13,11 @@ namespace TurboHTTP.Benchmarks.Binkraken;
 [IterationCount(10)]
 public class BinkrakenTurboSendAsyncConcurrentBenchmarks : BinkrakenBaseClass
 {
+    private const int MaxFanOut = 1024;
+
+    [Params(1, 512, 4096)]
+    public int ConcurrencyLevel { get; set; }
+
     private static readonly Uri BaseAddress = new("https://binkraken.com");
 
     private ClientHelper _clientHelper = null!;

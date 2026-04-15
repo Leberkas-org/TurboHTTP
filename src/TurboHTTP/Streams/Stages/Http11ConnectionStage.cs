@@ -45,6 +45,7 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
         private readonly List<IOutputItem> _pendingOutbound = [];
         private readonly List<HttpResponseMessage> _pendingResponses = [];
         private bool _serverFinished;
+        private bool _emittingResponses;
         private bool _reconnectFailed;
 
         public Logic(Http11ConnectionStage stage, Attributes inheritedAttributes) : base(stage.Shape)
@@ -82,6 +83,13 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
                     _sm.HandleOrphanedRequests();
                     FlushOutbound();
 
+                    // If EmitMultiple is still delivering responses to downstream,
+                    // defer completion — the emission callback will complete the stage.
+                    if (_emittingResponses)
+                    {
+                        return;
+                    }
+
                     CompleteStage();
                 },
                 onUpstreamFailure: ex =>
@@ -106,7 +114,9 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
                 onUpstreamFinish: () =>
                 {
                     // App upstream finished — complete immediately if nothing is in-flight
-                    if (_sm is { HasInFlightRequests: false, IsReconnecting: false })
+                    // and no responses are being emitted to downstream.
+                    if (_sm is { HasInFlightRequests: false, IsReconnecting: false }
+                        && !_emittingResponses)
                     {
                         CompleteStage();
                     }
@@ -196,7 +206,13 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
             if (item is CloseSignalItem)
             {
                 // Connection closed with no in-flight requests and no reconnect pending.
-                // App upstream is either already finished or will complete via onUpstreamFinish.
+                // If EmitMultiple is still delivering responses, defer completion.
+                if (_emittingResponses)
+                {
+                    _serverFinished = true;
+                    return;
+                }
+
                 CompleteStage();
                 return;
             }
@@ -268,20 +284,34 @@ public sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
 
             var responses = _pendingResponses.ToArray();
             _pendingResponses.Clear();
+            _emittingResponses = true;
 
             if (_serverFinished)
             {
-                EmitMultiple(_stage._outResponse, responses, CompleteStage);
+                EmitMultiple(_stage._outResponse, responses, () =>
+                {
+                    _emittingResponses = false;
+                    CompleteStage();
+                });
             }
             else
             {
                 EmitMultiple(_stage._outResponse, responses,
                     () =>
                     {
+                        _emittingResponses = false;
+
                         // App upstream finished and no more in-flight requests: we will never send
                         // another request, so the server may never close the connection (HTTP/1.1
                         // keep-alive). Complete now rather than waiting indefinitely.
                         if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
+                        {
+                            CompleteStage();
+                            return;
+                        }
+
+                        // Server finished while we were emitting — complete now.
+                        if (_serverFinished)
                         {
                             CompleteStage();
                             return;
