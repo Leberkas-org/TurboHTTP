@@ -14,44 +14,6 @@ namespace TurboHTTP.Tests.Transport;
 public sealed class GenerationCounterSpec
 {
     [Fact(Timeout = 5000)]
-    public void Stale_gen_should_cause_batch_to_be_discarded()
-    {
-        var currentGen = 5;
-        var batchGen = 3;
-
-        var processed = false;
-        var discarded = false;
-
-        if (batchGen == currentGen)
-        {
-            processed = true;
-        }
-        else
-        {
-            discarded = true;
-        }
-
-        Assert.False(processed);
-        Assert.True(discarded);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void Current_gen_should_cause_batch_to_be_processed()
-    {
-        var currentGen = 5;
-        var batchGen = 5;
-
-        var processed = false;
-
-        if (batchGen == currentGen)
-        {
-            processed = true;
-        }
-
-        Assert.True(processed);
-    }
-
-    [Fact(Timeout = 5000)]
     public async Task Pump_should_drain_and_exit_when_cts_canceled()
     {
         // Simulates the pump's inner loop: read items from a channel,
@@ -95,7 +57,7 @@ public sealed class GenerationCounterSpec
                 // Actor cancels after first item is processed
                 cts.Cancel();
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         await pumpTask;
 
@@ -138,7 +100,7 @@ public sealed class GenerationCounterSpec
                     Interlocked.Increment(ref processedCount);
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         await pumpTask;
 
@@ -183,7 +145,7 @@ public sealed class GenerationCounterSpec
                     Interlocked.Increment(ref discardedCount);
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(processedCount > 0, "At least some batches should match current gen");
         Assert.True(discardedCount > 0, "At least some batches should be stale");

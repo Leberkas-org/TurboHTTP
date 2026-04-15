@@ -213,7 +213,7 @@ public sealed class AltSvcCacheSpec
             {
                 cache.Store("example.com", [CreateH3Entry(maxAge: 60)]);
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         var evictTask = Task.Run(() =>
         {
@@ -222,7 +222,7 @@ public sealed class AltSvcCacheSpec
             {
                 cache.TryGetHttp3("example.com", out _, afterExpiry);
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         await Task.WhenAll(storeTask, evictTask);
 

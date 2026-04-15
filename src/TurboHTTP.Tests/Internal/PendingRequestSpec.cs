@@ -134,7 +134,7 @@ public sealed class PendingRequestSpec
                 pendingTcs.TryAdd(pr, 0);
                 Interlocked.Increment(ref addCount);
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         var cancelTask = Task.Run(() =>
         {
@@ -151,7 +151,7 @@ public sealed class PendingRequestSpec
                     }
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         await Task.WhenAll(addTask, cancelTask);
 
