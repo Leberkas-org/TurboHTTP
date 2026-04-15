@@ -226,8 +226,7 @@ public sealed class StageOrderingSpec : EngineTestBase
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: new Version(2, 0),
             DefaultVersionPolicy: HttpVersionPolicy.RequestVersionOrHigher,
-            Timeout: TimeSpan.FromSeconds(30),
-            MaxResponseContentBufferSize: 1024 * 1024);
+            Timeout: TimeSpan.FromSeconds(30));
 
         var enricher = new RequestEnricher(() => options);
 

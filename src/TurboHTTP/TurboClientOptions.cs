@@ -16,7 +16,6 @@ public record TurboRequestOptions(
     Version DefaultRequestVersion,
     HttpVersionPolicy DefaultVersionPolicy,
     TimeSpan Timeout,
-    long MaxResponseContentBufferSize,
     ICredentials? Credentials = null,
     bool PreAuthenticate = false);
 

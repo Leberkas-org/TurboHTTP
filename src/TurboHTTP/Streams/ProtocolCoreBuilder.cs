@@ -82,7 +82,8 @@ internal static class ProtocolCoreBuilder
             { Major: 3, Minor: 0 } => int.MaxValue, // QUIC handles stream limits at transport level
             { Major: 2, Minor: 0 } => h2Streams,
             { Major: 1, Minor: 1 } => h1Streams, // HTTP/1.1 pre-fill slots
-            { Major: 1, Minor: 0 } => 1 // HTTP/1.0 no pipelining
+            { Major: 1, Minor: 0 } => 1, // HTTP/1.0 no pipelining
+            _ => throw new ArgumentOutOfRangeException(nameof(endpoint), endpoint.Version, "Unsupported HTTP version")
         };
     }
 

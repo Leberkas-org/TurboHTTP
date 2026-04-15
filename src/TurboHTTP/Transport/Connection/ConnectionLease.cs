@@ -13,8 +13,8 @@ internal sealed class ConnectionLease : IDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly long _createdTicks = Environment.TickCount64;
     private int _activeStreams;
-    private volatile bool _alive = true;
-    private volatile bool _reusable = true;
+    private bool _alive = true;
+    private bool _reusable = true;
 
     public ConnectionLease(ConnectionHandle handle, ClientState state)
     {
@@ -59,7 +59,7 @@ internal sealed class ConnectionLease : IDisposable
     /// <summary>
     /// Number of currently active streams on this connection.
     /// </summary>
-    public int ActiveStreams => Volatile.Read(ref _activeStreams);
+    public int ActiveStreams => _activeStreams;
 
     /// <summary>
     /// Maximum concurrent streams allowed on this connection.
@@ -99,7 +99,7 @@ internal sealed class ConnectionLease : IDisposable
     /// </summary>
     public void MarkBusy()
     {
-        Interlocked.Increment(ref _activeStreams);
+        _activeStreams++;
         LastActivity = DateTime.UtcNow;
     }
 
@@ -108,7 +108,7 @@ internal sealed class ConnectionLease : IDisposable
     /// </summary>
     public void MarkIdle()
     {
-        Interlocked.Decrement(ref _activeStreams);
+        _activeStreams--;
         LastActivity = DateTime.UtcNow;
     }
 

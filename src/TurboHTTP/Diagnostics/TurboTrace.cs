@@ -5,25 +5,25 @@ namespace TurboHTTP.Diagnostics;
 
 /// <summary>
 /// Static API for zero-cost developer tracing. When no listener is configured,
-/// trace calls are no-ops (single volatile read + inlined branch).
+/// trace calls are no-ops (single null-check + inlined branch).
+/// <see cref="Configure"/> is called once at startup before any worker threads exist,
+/// so the thread-creation happens-before guarantees visibility without barriers.
 /// </summary>
 public static class TurboTrace
 {
-    private static volatile ITurboTraceListener? _listener;
-    private static volatile TurboTraceCategory _enabledCategories = TurboTraceCategory.None;
-    private static volatile TurboTraceLevel _minimumLevel = TurboTraceLevel.Trace;
+    private static TraceConfig? _config;
 
     /// <summary>
     /// Enables tracing with the specified listener, category filter, and minimum level.
+    /// Must be called before the Akka actor system starts — thread creation provides
+    /// happens-before visibility to all worker threads.
     /// </summary>
     public static void Configure(
         ITurboTraceListener listener,
         TurboTraceCategory categories = TurboTraceCategory.All,
         TurboTraceLevel minimumLevel = TurboTraceLevel.Trace)
     {
-        _minimumLevel = minimumLevel;
-        _enabledCategories = categories;
-        _listener = listener;
+        _config = new TraceConfig(listener, categories, minimumLevel);
     }
 
     /// <summary>
@@ -31,22 +31,27 @@ public static class TurboTrace
     /// </summary>
     public static void Disable()
     {
-        _listener = null;
-        _enabledCategories = TurboTraceCategory.None;
+        _config = null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool ShouldTrace(TurboTraceCategory category, TurboTraceLevel level)
     {
-        return _listener != null && _listener.IsEnabled(level, category)
-                                 && (_enabledCategories & category) != 0
-                                 && level >= _minimumLevel;
+        var cfg = _config;
+        return cfg is not null && cfg.Listener.IsEnabled(level, category)
+                               && (cfg.EnabledCategories & category) != 0
+                               && level >= cfg.MinimumLevel;
     }
 
     internal static void WriteEvent(in TraceEvent evt)
     {
-        _listener?.Write(in evt);
+        _config?.Listener.Write(in evt);
     }
+
+    private sealed record TraceConfig(
+        ITurboTraceListener Listener,
+        TurboTraceCategory EnabledCategories,
+        TurboTraceLevel MinimumLevel);
 
     /// <summary>Trace category for connection lifecycle events.</summary>
     public static class Connection

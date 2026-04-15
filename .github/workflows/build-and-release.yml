@@ -98,6 +98,11 @@ jobs:
           /p:Version=${{ steps.gitversion.outputs.fullSemVer }}
           /p:ContinuousIntegrationBuild=true
 
+      - name: Install libmsquic for HTTP/3 support
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmsquic
+
       - name: Run tests
         working-directory: './src'
         run: >

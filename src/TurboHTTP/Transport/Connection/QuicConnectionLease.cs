@@ -21,8 +21,8 @@ internal sealed class QuicConnectionLease : IDisposable
 {
     private readonly long _createdTicks = Environment.TickCount64;
     private int _activeStreams;
-    private volatile bool _alive = true;
-    private volatile bool _reusable = true;
+    private bool _alive = true;
+    private bool _reusable = true;
 
     public QuicConnectionLease(QuicConnectionHandle handle)
     {
@@ -50,7 +50,7 @@ internal sealed class QuicConnectionLease : IDisposable
     /// Number of stages currently holding this connection.
     /// Incremented by <see cref="MarkBusy"/>, decremented by <see cref="MarkIdle"/>.
     /// </summary>
-    public int ActiveStreams => Volatile.Read(ref _activeStreams);
+    public int ActiveStreams => _activeStreams;
 
     /// <summary>
     /// Maximum number of stages that may hold this connection simultaneously.
@@ -83,14 +83,14 @@ internal sealed class QuicConnectionLease : IDisposable
     /// <summary>Marks this connection as acquired by an additional stage.</summary>
     public void MarkBusy()
     {
-        Interlocked.Increment(ref _activeStreams);
+        _activeStreams++;
         LastActivity = DateTime.UtcNow;
     }
 
     /// <summary>Marks one stage as done, reducing the active count.</summary>
     public void MarkIdle()
     {
-        Interlocked.Decrement(ref _activeStreams);
+        _activeStreams--;
         LastActivity = DateTime.UtcNow;
     }
 

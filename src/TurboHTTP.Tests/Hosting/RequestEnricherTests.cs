@@ -27,8 +27,7 @@ public sealed class RequestEnricherTests
             headers,
             defaultVersion ?? HttpVersion.Version11,
             HttpVersionPolicy.RequestVersionExact,
-            TimeSpan.MaxValue,
-            long.MaxValue));
+            TimeSpan.MaxValue));
     }
 
     private static (HttpRequestMessage Holder, HttpRequestHeaders Headers) CreateDefaultHeaders()

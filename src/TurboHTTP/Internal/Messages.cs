@@ -32,6 +32,7 @@ public sealed class NetworkBuffer : IInputItem, IOutputItem
     private static readonly ConcurrentStack<NetworkBuffer> WrapperPool = new();
 
     private static int _maxPoolSize = Environment.ProcessorCount * 2;
+    private static int _poolCount;
 
     private IMemoryOwner<byte>? _owner;
 
@@ -64,6 +65,7 @@ public sealed class NetworkBuffer : IInputItem, IOutputItem
             return new NetworkBuffer { _owner = owner };
         }
 
+        Interlocked.Decrement(ref _poolCount);
         buf._owner = owner;
         buf.Length = 0;
         buf.Key = default;
@@ -82,10 +84,15 @@ public sealed class NetworkBuffer : IInputItem, IOutputItem
 
         owner.Dispose();
 
-        // Only return to pool if capacity allows
-        if (_maxPoolSize > 0 && WrapperPool.Count < _maxPoolSize)
+        // Only return to pool if capacity allows — use atomic increment to avoid
+        // the check-then-push race where multiple threads exceed the pool cap.
+        if (_maxPoolSize > 0 && Interlocked.Increment(ref _poolCount) <= _maxPoolSize)
         {
             WrapperPool.Push(this);
+        }
+        else
+        {
+            Interlocked.Decrement(ref _poolCount);
         }
     }
 

@@ -148,7 +148,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
 
         var (inputQueue, resultTask) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
             .Via(stageFlow)
-            .ToMaterialized(Sink.First<IInputItem>(), Keep.Both)
+            .ToMaterialized(Sink.Seq<IInputItem>(), Keep.Both)
             .Run(Materializer);
 
         await inputQueue.OfferAsync(connectItem);
@@ -159,7 +159,13 @@ public sealed class ConnectionStageSpec : StreamTestBase
         buf.Length = 4;
         await inboundWriter.WriteAsync(buf, TestContext.Current.CancellationToken);
 
-        var received = (NetworkBuffer)await resultTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await Task.Delay(300, TestContext.Current.CancellationToken);
+        inboundWriter.Complete();
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+        inputQueue.Complete();
+
+        var results = await resultTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        var received = results.OfType<NetworkBuffer>().First();
         Assert.Equal(4, received.Length);
         Assert.Equal(0xAB, received.Span[0]);
     }

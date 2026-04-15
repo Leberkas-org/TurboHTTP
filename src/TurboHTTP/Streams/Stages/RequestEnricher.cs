@@ -43,6 +43,13 @@ internal sealed class RequestEnricher
             request.Version = options.DefaultRequestVersion;
         }
 
+        // Rule 2b: VersionPolicy — only override when request is still at the default (RequestVersionOrLower)
+        if (request.VersionPolicy == HttpVersionPolicy.RequestVersionOrLower
+            && options.DefaultVersionPolicy != HttpVersionPolicy.RequestVersionOrLower)
+        {
+            request.VersionPolicy = options.DefaultVersionPolicy;
+        }
+
         // Rule 3: Default headers — add those absent from the request
         foreach (var header in options.DefaultRequestHeaders)
         {

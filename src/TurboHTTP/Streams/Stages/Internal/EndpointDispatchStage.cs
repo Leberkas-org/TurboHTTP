@@ -69,6 +69,13 @@ internal sealed class EndpointDispatchStage
         private Exception? _upstreamFailure;
         private bool _pendingFirstElement;
 
+        // Tracks whether the inner flow finished. When true, the stage completes on
+        // the next downstream pull (after the last response has been delivered).
+        // This prevents dropping a buffered response when the inner flow completes
+        // before MergeSubstreams has pulled the last element.
+        private bool _innerFlowFinished;
+        private Exception? _innerFlowFailure;
+
         public Logic(EndpointDispatchStage stage, Attributes inheritedAttributes) : base(stage.Shape)
         {
             _stage = stage;
@@ -107,6 +114,22 @@ internal sealed class EndpointDispatchStage
             SetHandler(stage._out,
                 onPull: () =>
                 {
+                    if (_innerFlowFinished)
+                    {
+                        // Inner flow completed while a response was in transit to downstream.
+                        // Now that downstream has consumed it, propagate the completion.
+                        if (_innerFlowFailure is not null)
+                        {
+                            FailStage(_innerFlowFailure);
+                        }
+                        else
+                        {
+                            CompleteStage();
+                        }
+
+                        return;
+                    }
+
                     if (_innerSink is not null)
                     {
                         _innerSink.Pull();
@@ -189,15 +212,39 @@ internal sealed class EndpointDispatchStage
                     }
                 }));
 
-            // SubSink: when inner flow pushes a response, we push downstream
+            // SubSink: when inner flow pushes a response, we push downstream.
+            // On upstream finish/failure: defer stage completion until the last pushed
+            // response has been consumed by downstream (onPull). This prevents dropping
+            // a buffered response when the inner flow completes before MergeSubstreams pulls.
             _innerSink.SetHandler(new LambdaInHandler(
                 onPush: () =>
                 {
                     var response = _innerSink.Grab();
                     Push(_stage._out, response);
                 },
-                onUpstreamFinish: CompleteStage,
-                onUpstreamFailure: FailStage));
+                onUpstreamFinish: () =>
+                {
+                    if (IsAvailable(_stage._out))
+                    {
+                        CompleteStage();
+                    }
+                    else
+                    {
+                        _innerFlowFinished = true;
+                    }
+                },
+                onUpstreamFailure: ex =>
+                {
+                    if (IsAvailable(_stage._out))
+                    {
+                        FailStage(ex);
+                    }
+                    else
+                    {
+                        _innerFlowFinished = true;
+                        _innerFlowFailure = ex;
+                    }
+                }));
 
             // If downstream already demanded, start pulling from inner sink
             if (IsAvailable(_stage._out))

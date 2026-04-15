@@ -119,7 +119,7 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
     private async Task<QuicConnection> EnsureConnectedAsync(CancellationToken ct)
     {
         // Fast path: connection already established.
-        var existing = Volatile.Read(ref _connection);
+        var existing = _connection;
         if (existing is not null)
         {
             return existing;
@@ -129,7 +129,9 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
         try
         {
             // Double-check after acquiring the lock.
-            existing = Volatile.Read(ref _connection);
+            // SemaphoreSlim.WaitAsync provides happens-before, so a plain read
+            // sees any write that preceded a prior Release.
+            existing = _connection;
             if (existing is not null)
             {
                 return existing;
@@ -161,7 +163,7 @@ public sealed class QuicClientProvider(QuicOptions options) : IClientProvider
 
             var connection = await QuicConnection.ConnectAsync(clientConnectionOptions, ct).ConfigureAwait(false);
 
-            Volatile.Write(ref _connection, connection);
+            _connection = connection;
             return connection;
         }
         finally

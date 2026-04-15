@@ -197,7 +197,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var maxStreamsSignal = signals.OfType<MaxConcurrentStreamsItem>().FirstOrDefault();
 
-        Assert.NotNull(maxStreamsSignal);
+        Assert.NotEqual(default, maxStreamsSignal);
     }
 
     [Fact(Timeout = 10_000)]

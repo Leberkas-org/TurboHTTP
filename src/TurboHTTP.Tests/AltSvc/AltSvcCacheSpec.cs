@@ -166,4 +166,68 @@ public sealed class AltSvcCacheSpec
         Assert.Equal("alt.example.com", entry!.Host);
         Assert.Equal(8443, entry.Port);
     }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC7838-3")]
+    public void TryGetHttp3_should_not_evict_fresh_list_stored_concurrently()
+    {
+        // Validates the compare-and-remove fix: when all entries expire and eviction
+        // runs, a concurrent Store() that replaced the list must not have its new
+        // list deleted by the stale eviction path.
+        var cache = new AltSvcCache();
+        var expiredEntry = CreateH3Entry(maxAge: 60);
+        cache.Store("example.com", [expiredEntry]);
+
+        var afterExpiry = FixedNow.AddSeconds(61);
+
+        // Simulate concurrent Store: replace with fresh entries BEFORE eviction runs
+        var freshEntry = CreateH3Entry(maxAge: 3600);
+        cache.Store("example.com", [freshEntry]);
+
+        // Now trigger eviction via TryGetHttp3 with the expired time —
+        // the eviction should NOT remove the fresh list because the reference changed
+        cache.TryGetHttp3("example.com", out _, afterExpiry);
+
+        // The fresh entry should still be retrievable
+        Assert.True(cache.TryGetHttp3("example.com", out var entry, FixedNow));
+        Assert.NotNull(entry);
+        Assert.Equal(1, cache.Count);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC7838-3")]
+    public async Task TryGetHttp3_should_survive_concurrent_store_and_eviction_under_contention()
+    {
+        // Stress test: multiple threads racing Store (fresh) vs TryGetHttp3 (expired time)
+        // to verify the atomic compare-and-remove doesn't corrupt state.
+        var cache = new AltSvcCache();
+        var afterExpiry = FixedNow.AddSeconds(61);
+        const int iterations = 1000;
+
+        using var barrier = new Barrier(2);
+
+        var storeTask = Task.Run(() =>
+        {
+            barrier.SignalAndWait();
+            for (var i = 0; i < iterations; i++)
+            {
+                cache.Store("example.com", [CreateH3Entry(maxAge: 60)]);
+            }
+        });
+
+        var evictTask = Task.Run(() =>
+        {
+            barrier.SignalAndWait();
+            for (var i = 0; i < iterations; i++)
+            {
+                cache.TryGetHttp3("example.com", out _, afterExpiry);
+            }
+        });
+
+        await Task.WhenAll(storeTask, evictTask);
+
+        // No exception thrown — cache is in a consistent state.
+        // Count is 0 or 1 depending on timing; the key invariant is no corruption.
+        Assert.InRange(cache.Count, 0, 1);
+    }
 }

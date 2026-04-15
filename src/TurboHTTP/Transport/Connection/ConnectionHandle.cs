@@ -14,8 +14,8 @@ public sealed record ConnectionHandle(
     RequestEndpoint Key,
     IActorRef ConnectionActor)
 {
-    private volatile int _maxConcurrentStreams = 100;
-    private volatile TlsCloseKind _closeKind;
+    private int _maxConcurrentStreams = 100;
+    private TlsCloseKind _closeKind;
 
     public int MaxConcurrentStreams => _maxConcurrentStreams;
 

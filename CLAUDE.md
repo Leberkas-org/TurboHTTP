@@ -56,6 +56,11 @@ Key vault guides: `Architecture/Guides/10-TEST_CONVENTIONS`, `11-STAGE_PORT_NAMI
 
 ## Code Style
 
+- **Threading model**: Akka actor-thread confinement eliminates most cross-thread concerns.
+  Fields in actor-owned types (StateMachines, Leases, Handles) don't need `volatile`/`Interlocked`
+  — Akka message passing provides happens-before. Only add barriers at true system boundaries.
+- **No `volatile` keyword** — prefer `CancellationToken` for cross-thread signaling, or
+  plain fields when actor confinement guarantees single-thread access
 - No decorative separator comments (`// ───`, `// ===`, `// ---` section dividers)
 - Allman braces, 4 spaces, `_fieldName` for private fields
 - `var` when type is apparent, `sealed` by default

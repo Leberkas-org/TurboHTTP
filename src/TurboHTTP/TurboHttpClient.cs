@@ -92,13 +92,13 @@ public sealed class TurboHttpClient : ITurboHttpClient
     // Pooled CancellationTokenSources — reused via TryReset() to avoid per-request allocation.
     // Only used for non-linked CTS (no caller CT). Capped to avoid unbounded growth.
     private readonly ConcurrentStack<CancellationTokenSource> _ctsPool = new();
+    private int _ctsPoolCount;
 
     private Uri? _baseAddress;
     private Version _defaultRequestVersion = HttpVersion.Version11;
     private HttpVersionPolicy _defaultVersionPolicy;
     private TimeSpan _timeout = TimeSpan.FromSeconds(60);
 
-    private long _maxResponseContentBufferSize;
     private readonly ICredentials? _credentials;
     private readonly bool _preAuthenticate;
 
@@ -154,15 +154,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
         }
     }
 
-    public long MaxResponseContentBufferSize
-    {
-        get => _maxResponseContentBufferSize;
-        set
-        {
-            _maxResponseContentBufferSize = value;
-            UpdateCachedOptions();
-        }
-    }
+    public long MaxResponseContentBufferSize { get; set; }
 
     public ChannelWriter<HttpRequestMessage> Requests => Manager.Requests;
     public ChannelReader<HttpResponseMessage> Responses => Manager.Responses;
@@ -177,7 +169,6 @@ public sealed class TurboHttpClient : ITurboHttpClient
             _defaultRequestVersion,
             _defaultVersionPolicy,
             _timeout,
-            _maxResponseContentBufferSize,
             _credentials,
             _preAuthenticate);
     }
@@ -205,7 +196,15 @@ public sealed class TurboHttpClient : ITurboHttpClient
 
         try
         {
-            await Manager.Requests.WriteAsync(request, cancellationToken);
+            try
+            {
+                await Manager.Requests.WriteAsync(request, cancellationToken);
+            }
+            catch (ChannelClosedException)
+            {
+                throw new ObjectDisposedException(nameof(TurboHttpClient),
+                    "Cannot send request because the client has been disposed.");
+            }
 
             // Fast path: no timeout and no caller CT — skip CTS allocation entirely.
             if (Timeout == System.Threading.Timeout.InfiniteTimeSpan && !cancellationToken.CanBeCanceled)
@@ -217,11 +216,21 @@ public sealed class TurboHttpClient : ITurboHttpClient
             // which cancels the PendingRequest without allocating a DelayPromise.
             // Non-linked CTS is rented from pool and returned via TryReset() to avoid per-request allocation.
             var linkedCt = cancellationToken.CanBeCanceled;
-            var cts = linkedCt
-                ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
-                : _ctsPool.TryPop(out var pooled)
-                    ? pooled
-                    : new CancellationTokenSource();
+            CancellationTokenSource cts;
+            if (linkedCt)
+            {
+                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            }
+            else if (_ctsPool.TryPop(out var pooled))
+            {
+                Interlocked.Decrement(ref _ctsPoolCount);
+                cts = pooled;
+            }
+            else
+            {
+                cts = new CancellationTokenSource();
+            }
+
             try
             {
                 cts.CancelAfter(Timeout);
@@ -238,12 +247,13 @@ public sealed class TurboHttpClient : ITurboHttpClient
                 {
                     cts.Dispose();
                 }
-                else if (_ctsPool.Count < 64)
+                else if (Interlocked.Increment(ref _ctsPoolCount) <= 64)
                 {
                     _ctsPool.Push(cts);
                 }
                 else
                 {
+                    Interlocked.Decrement(ref _ctsPoolCount);
                     cts.Dispose();
                 }
             }
@@ -266,8 +276,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
         foreach (var pending in _pendingTcs.Keys)
         {
             pending.TrySetCanceled();
+            _pendingTcs.TryRemove(pending, out _);
         }
-
-        _pendingTcs.Clear();
     }
 }

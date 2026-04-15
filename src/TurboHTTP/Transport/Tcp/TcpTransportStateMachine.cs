@@ -510,14 +510,13 @@ internal sealed class TcpTransportStateMachine
         var gen = _connectionGen;
         var self = _self;
 
-        _ = PumpAsync(reader, key, gen, this, ct, self);
+        _ = PumpAsync(reader, key, gen, ct, self);
     }
 
     private static async Task PumpAsync(
         ChannelReader<NetworkBuffer> reader,
         RequestEndpoint key,
         int gen,
-        TcpTransportStateMachine sm,
         CancellationToken ct,
         IActorRef self)
     {
@@ -531,7 +530,11 @@ internal sealed class TcpTransportStateMachine
 
                 while (reader.TryRead(out var chunk))
                 {
-                    if (gen != sm._connectionGen)
+                    // Early exit when the connection generation changed — the actor thread
+                    // always cancels the pump CTS after incrementing _connectionGen, so
+                    // checking the token is sufficient. This avoids a cross-thread volatile
+                    // read of _connectionGen from the pump's ThreadPool thread.
+                    if (ct.IsCancellationRequested)
                     {
                         chunk.Dispose();
                         while (reader.TryRead(out var stale)) stale.Dispose();

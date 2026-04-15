@@ -73,7 +73,9 @@ internal sealed class AltSvcCache
             }
         }
 
-        // All entries expired — evict.
+        // All entries expired — evict atomically via TryRemove with value comparison.
+        // Only removes if the value reference is still the same list we checked,
+        // preventing deletion of a fresh list concurrently added by Store().
         var allExpired = true;
         foreach (var e in entries)
         {
@@ -86,7 +88,8 @@ internal sealed class AltSvcCache
 
         if (allExpired)
         {
-            _cache.TryRemove(host, out _);
+            ((ICollection<KeyValuePair<string, List<AltSvcEntry>>>)_cache)
+                .Remove(new KeyValuePair<string, List<AltSvcEntry>>(host, entries));
         }
 
         return false;

@@ -19,8 +19,7 @@ public sealed class RefererSanitizationSpec
             holder.Headers,
             HttpVersion.Version11,
             HttpVersionPolicy.RequestVersionExact,
-            TimeSpan.MaxValue,
-            long.MaxValue));
+            TimeSpan.MaxValue));
     }
 
     [Fact(Timeout = 5_000)]
