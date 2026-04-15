@@ -103,10 +103,12 @@ internal sealed class TcpTransportStateMachine
 
     public void HandlePush(IOutputItem item)
     {
-        // Auto-connect: on the first item (any type), derive connection parameters
-        // from the item's endpoint and acquire a connection.
-        if (_handle is null && _pendingConnect is null && item.Key.Scheme is not null &&
-            item.Key != RequestEndpoint.Default)
+        // Auto-connect: on the first data/control item, derive connection parameters
+        // from the item's endpoint and acquire a connection.  Skip ConnectItem — it
+        // handles its own acquisition in HandleConnectItem and running AutoConnect
+        // first would start a duplicate acquire that races with the real one.
+        if (_handle is null && _pendingConnect is null && item is not ConnectItem &&
+            item.Key.Scheme is not null && item.Key != RequestEndpoint.Default)
         {
             AutoConnect(item.Key);
         }
@@ -359,6 +361,15 @@ internal sealed class TcpTransportStateMachine
 
     private void OnAcquisitionFailed(Exception ex)
     {
+        // Ignore cancellations from a previous acquisition that we explicitly
+        // cancelled (e.g. CleanupTransport cancelled the old CTS).  Processing
+        // this would corrupt the _pendingConnect of a newer, valid acquisition.
+        if (ex is OperationCanceledException)
+        {
+            _ops.Log.Debug("TcpConnectionStage: AcquisitionFailed (cancelled) — ignored");
+            return;
+        }
+
         _ops.OnCancelTimer(ConnectTimerKey);
 
         if (_waitActivity is not null)
