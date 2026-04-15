@@ -3,7 +3,7 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <PropertyGroup Label="SharedVersions">
-        <AkkaVersion>1.5.64</AkkaVersion>
+        <AkkaVersion>1.5.65</AkkaVersion>
         <XunitVersion>3.2.2</XunitVersion>
     </PropertyGroup>
     <ItemGroup Label="Akka.NET">
