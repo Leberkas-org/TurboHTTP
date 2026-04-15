@@ -43,6 +43,8 @@ public sealed class ServerFixture : IAsyncLifetime
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
+        builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
+        builder.Logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
 
         builder.WebHost.ConfigureKestrel(options =>
         {

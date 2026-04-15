@@ -137,31 +137,6 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
     }
 
     [Fact(Timeout = 20000)]
-    public async Task Akka_bridge_should_route_stream_creation_message_to_MEL()
-    {
-        // Verifies that ClientStreamOwnerActor's Info log for "Creating stream instance"
-        // flows through the Akka→MEL bridge to the capturing provider.
-        var client = BuildClientViaUserDI();
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-
-        var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/hello"), cts.Token);
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-
-        await Task.Delay(TimeSpan.FromMilliseconds(200), cts.Token);
-
-        var entries = _capture.Entries.ToList();
-        var entry = entries.FirstOrDefault(e =>
-            e.Level == LogLevel.Information &&
-            e.Message.Contains("Creating stream instance", StringComparison.OrdinalIgnoreCase));
-
-        Assert.NotNull(entry);
-        // LoggerFactoryLogger routes all Akka actor messages under the "Akka.Actor.ActorSystem"
-        // MEL category; the actor path (containing "stream-owner") is embedded in the message.
-        Assert.Equal("Akka.Actor.ActorSystem", entry.CategoryName);
-        Assert.Contains("stream-owner", entry.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact(Timeout = 20000)]
     public async Task Akka_bridge_should_route_pipeline_materialized_message_to_MEL()
     {
         // Verifies that "Stream pipeline materialized successfully" (Debug) from

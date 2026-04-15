@@ -92,7 +92,7 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
     private void HandleCreateStreamInstance(OwnerMsg.CreateStreamInstance create)
     {
-        _log.Info("Creating stream instance (options: BaseAddress={0})",
+        _log.Debug("Creating stream instance (options: BaseAddress={0})",
             create.ClientOptions.BaseAddress);
 
         _createRequest = create;
@@ -281,14 +281,14 @@ internal sealed class ClientStreamOwnerActor : UntypedActor, IWithTimers
 
         if (_killSwitch is not null)
         {
-            _log.Info("Shutdown requested — firing KillSwitch, pipeline will drain");
+            _log.Debug("Shutdown requested — firing KillSwitch, pipeline will drain");
             _killSwitch.Shutdown();
 
             Timers.StartSingleTimer(ShutdownTimerKey, ShutdownTimeoutExpired.Instance, ShutdownTimeout);
         }
         else
         {
-            _log.Info("Shutdown requested — no stream materialized, self-terminating");
+            _log.Debug("Shutdown requested — no stream materialized, self-terminating");
             Context.Stop(Self);
         }
     }

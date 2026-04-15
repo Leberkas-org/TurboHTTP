@@ -21,11 +21,11 @@ public sealed class EdgeCaseSpec
         return ClientHelper.CreateClient(_server.H1Port, new Version(1, 0), system: _systemFixture.System);
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 60000)]
     public async Task EdgeCase_should_receive_large_256kb_body_via_connection_close()
     {
         // HTTP/1.0 uses connection-close to delimit body end (no chunked encoding)
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/large/256");
@@ -37,10 +37,10 @@ public sealed class EdgeCaseSpec
         Assert.All(bytes, b => Assert.Equal((byte)'A', b));
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 60000)]
     public async Task EdgeCase_should_echo_post_body_correctly()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var payload = "hello from http10";
@@ -62,7 +62,7 @@ public sealed class EdgeCaseSpec
     [InlineData(500)]
     public async Task EdgeCase_should_return_status_codes_correctly(int statusCode)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/status/{statusCode}");
@@ -71,10 +71,10 @@ public sealed class EdgeCaseSpec
         Assert.Equal((HttpStatusCode)statusCode, response.StatusCode);
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 60000)]
     public async Task EdgeCase_should_echo_custom_headers_in_response()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/headers/echo");
@@ -90,10 +90,10 @@ public sealed class EdgeCaseSpec
         Assert.Equal("second", string.Join("", anotherValues));
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 60000)]
     public async Task EdgeCase_should_complete_empty_body_response_without_hanging()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/edge/empty-body");

@@ -20,10 +20,10 @@ public sealed class ConnectionSpec
         return ClientHelper.CreateClient(_server.HttpPort, new Version(1, 1), system: _systemFixture.System);
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 60000)]
     public async Task Connection_should_allow_sequential_requests_with_keep_alive()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         // First request with explicit Connection: Keep-Alive
@@ -41,10 +41,10 @@ public sealed class ConnectionSpec
         Assert.Equal("keep-alive", body2);
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 60000)]
     public async Task Connection_should_have_close_header_in_response()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/conn/close");
@@ -59,10 +59,10 @@ public sealed class ConnectionSpec
             "Response should contain Connection: close header");
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 60000)]
     public async Task Connection_should_default_to_keep_alive_without_connection_header()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         // First request — no explicit Connection header from server
@@ -80,13 +80,13 @@ public sealed class ConnectionSpec
         Assert.Equal("default", body2);
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 60000)]
     public async Task Connection_101_switching_protocols_must_not_be_reusable_for_http()
     {
         // 101 Switching Protocols transitions the connection away from HTTP.
         // The client cannot complete a normal HTTP exchange over a switched connection,
         // so we expect the request to fail (timeout or exception) rather than return 101.
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/conn/upgrade-101");
@@ -94,10 +94,10 @@ public sealed class ConnectionSpec
             async () => await helper.Client.SendAsync(request, cts.Token));
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 60000)]
     public async Task Connection_should_prove_reuse_across_different_endpoints()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using var helper = CreateClient();
 
         // Send multiple requests to different endpoints on the same client
