@@ -41,7 +41,7 @@ Your Request
     ↓
 [Cache] — stores response if cacheable
     ↓
-[Retry] — re-sends on transient errors or 503/429
+[Retry] — re-sends on transient errors, 408, or 503
     ↓
 [Cookies] — stores Set-Cookie headers
     ↓

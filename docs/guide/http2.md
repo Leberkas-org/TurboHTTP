@@ -47,63 +47,43 @@ HTTP/2 has built-in flow control to prevent a fast sender from overwhelming a sl
 
 ## Enabling HTTP/2
 
-Set `DefaultRequestVersion` on the client:
+Set `DefaultRequestVersion` on the client after obtaining it from the factory:
 
 ```csharp
-var client = new TurboHttpClient(new TurboClientOptions
+builder.Services.AddTurboHttpClient("http2-api", options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-})
-{
-    DefaultRequestVersion = HttpVersion.Version20,
-};
-```
-
-With DI:
-
-```csharp
-services.AddTurboHttpClient();
+    options.BaseAddress = new Uri("https://api.example.com");
+});
 
 // ...
 
-var client = factory.CreateClient(opts => opts with
-{
-    BaseAddress = new Uri("https://api.example.com"),
-});
+var client = factory.CreateClient("http2-api");
 client.DefaultRequestVersion = HttpVersion.Version20;
 ```
 
 All requests will now use HTTP/2. If the server does not support HTTP/2, TurboHTTP will establish the connection and the server will reject or downgrade — no automatic fallback to HTTP/1.1 is performed when you explicitly request HTTP/2.
 
+To allow graceful fallback to HTTP/1.1 when the server doesn't support HTTP/2:
+
+```csharp
+client.DefaultRequestVersion = HttpVersion.Version20;
+client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+```
+
 ## Multiplexing Configuration
 
-By default, multiplexing is enabled and a single TCP connection carries all concurrent requests to the same host. This is controlled by `ConnectionPolicy`:
+By default, TurboHTTP opens up to 6 HTTP/2 connections per host, each carrying up to 100 concurrent streams. Tune these values on the nested `Http2` options:
 
 ```csharp
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient("http2-api", options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-    ConnectionPolicy = new ConnectionPolicy
-    {
-        AllowHttp2Multiplexing = true,   // default: true
-    }
-};
+    options.BaseAddress = new Uri("https://api.example.com");
+    options.Http2.MaxConnectionsPerServer = 4;    // default: 6
+    options.Http2.MaxConcurrentStreams = 200;      // default: 100
+});
 ```
 
-Set `AllowHttp2Multiplexing = false` if you want HTTP/2 connections to be subject to the same per-host connection limit as HTTP/1.1:
-
-```csharp
-var options = new TurboClientOptions
-{
-    ConnectionPolicy = new ConnectionPolicy
-    {
-        AllowHttp2Multiplexing = false,
-        MaxConnectionsPerHost = 4,
-    }
-};
-```
-
-This is rarely needed but may be useful when a server limits concurrent streams per connection and you want to spread load across multiple connections instead.
+When a connection reaches its stream limit, TurboHTTP automatically opens additional connections up to `MaxConnectionsPerServer`.
 
 ## HTTP/2 over TLS vs. Cleartext
 
@@ -113,13 +93,13 @@ HTTP/2 over cleartext (`http://` URLs, sometimes called h2c) is also supported. 
 
 ## Frame Size
 
-Each HTTP/2 request and response is broken into frames before being sent over the wire. The default maximum frame size is 128 KiB. Increase it for workloads that transfer large bodies to reduce framing overhead:
+Each HTTP/2 request and response is broken into frames before being sent over the wire. The default maximum frame size is 16 KiB. Increase it for workloads that transfer large bodies to reduce framing overhead:
 
 ```csharp
-var options = new TurboClientOptions
+builder.Services.AddTurboHttpClient("http2-api", options =>
 {
-    MaxFrameSize = 256 * 1024,   // 256 KiB frames (default: 128 KiB)
-};
+    options.Http2.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB (default: 16 KiB, max: 16 MiB)
+});
 ```
 
 Larger frames mean fewer round-trips for big payloads but more memory per in-flight stream. The default is a good balance for most workloads.
@@ -129,19 +109,14 @@ Larger frames mean fewer round-trips for big payloads but more memory per in-fli
 Use standard .NET concurrency patterns — TurboHTTP multiplexes automatically:
 
 ```csharp
-using var client = new TurboHttpClient(new TurboClientOptions
-{
-    BaseAddress = new Uri("https://api.example.com"),
-})
-{
-    DefaultRequestVersion = HttpVersion.Version20,
-};
+var client = factory.CreateClient("http2-api");
+client.DefaultRequestVersion = HttpVersion.Version20;
 
 // All three requests flow over the same TCP connection simultaneously
 var results = await Task.WhenAll(
-    client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/users")),
-    client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/products")),
-    client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/orders"))
+    client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/users"), ct),
+    client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/products"), ct),
+    client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/orders"), ct)
 );
 ```
 

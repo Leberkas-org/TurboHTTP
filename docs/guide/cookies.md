@@ -20,8 +20,8 @@ Each `TurboHttpClient` instance has its own `CookieJar`. Cookies received by one
 
 ```csharp
 // These two clients have independent cookie jars
-var apiClient = new TurboHttpClient(options, system);
-var authClient = new TurboHttpClient(options, system);
+var apiClient = factory.CreateClient("api");
+var authClient = factory.CreateClient("auth");
 ```
 
 ## Domain Matching

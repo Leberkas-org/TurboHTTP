@@ -1,6 +1,6 @@
 # Getting Started
 
-TurboHTTP is a high-performance HTTP client for .NET built on Akka.Streams. It supports HTTP/1.0, HTTP/1.1, and HTTP/2 with automatic retries, caching, cookies, and connection pooling — all built in.
+TurboHTTP is a high-performance HTTP client for .NET built on Akka.Streams. It supports HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with automatic retries, caching, cookies, and connection pooling — all built in.
 
 ::: tip New to TurboHTTP?
 See [Installation & Setup](./installation) for DI registration, named clients, and the fluent builder API. Coming from HttpClient? Check the [Migration Guide](./migration).
@@ -13,13 +13,19 @@ dotnet add package TurboHTTP
 ```
 
 ```csharp
-using TurboHTTP.Client;
+using TurboHTTP;
 
-var actorSystem = ActorSystem.Create("turbo");
-await using var client = new TurboHttpClient(new TurboClientOptions
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTurboHttpClient(options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-}, actorSystem);
+    options.BaseAddress = new Uri("https://api.example.com");
+});
+
+var app = builder.Build();
+
+var factory = app.Services.GetRequiredService<ITurboHttpClientFactory>();
+var client = factory.CreateClient();
 
 var response = await client.SendAsync(
     new HttpRequestMessage(HttpMethod.Get, "/users"),
@@ -34,10 +40,7 @@ Console.WriteLine(await response.Content.ReadAsStringAsync());
 In addition to `SendAsync`, TurboHTTP exposes a channel-based API for scenarios where you want to stream requests and responses without `await`-ing each one individually.
 
 ```csharp
-var client = new TurboHttpClient(new TurboClientOptions
-{
-    BaseAddress = new Uri("https://api.example.com"),
-}, actorSystem);
+var client = factory.CreateClient();
 
 // Write requests to the input channel
 ChannelWriter<HttpRequestMessage> requestWriter = client.Requests;
@@ -56,10 +59,8 @@ Use the channel API when:
 Write requests from one task and read responses from another, running concurrently:
 
 ```csharp
-var client = new TurboHttpClient(new TurboClientOptions
-{
-    BaseAddress = new Uri("https://api.example.com"),
-}, actorSystem);
+var client = factory.CreateClient();
+client.BaseAddress = new Uri("https://api.example.com");
 client.DefaultRequestVersion = HttpVersion.Version20;
 
 var ids = Enumerable.Range(1, 1000).ToList();
@@ -100,7 +101,7 @@ TurboHTTP works out of the box — no middleware to wire up, no Polly policies t
 
 | Feature | Description |
 |---------|-------------|
-| **HTTP/1.0, HTTP/1.1 & HTTP/2** | Automatic version negotiation; HTTP/2 multiplexes multiple requests over one connection |
+| **HTTP/1.0, HTTP/1.1, HTTP/2 & HTTP/3** | Automatic version negotiation; HTTP/2 multiplexes over TCP, HTTP/3 multiplexes over QUIC |
 | **Automatic Retries** | Idempotent methods (GET, PUT, DELETE) are retried automatically; respects `Retry-After` headers |
 | **Built-in Caching** | In-memory LRU cache with `ETag`/`Last-Modified` conditional requests and `Vary` support |
 | **Redirect Following** | Follows 301/302/303/307/308 with correct method rewriting, loop detection, and auth header stripping |
@@ -126,6 +127,7 @@ TurboHTTP works out of the box — no middleware to wire up, no Polly policies t
 - [Content Encoding](./content-encoding) — gzip, deflate, Brotli, disabling decompression
 - [Connection Pooling](./connection-pooling) — pool lifecycle, idle eviction, concurrency limits
 - [HTTP/2 & Multiplexing](./http2) — when to use HTTP/2, header compression, flow control
+- [HTTP/3 & QUIC](./http3) — QUIC transport, 0-RTT, connection migration, Alt-Svc discovery
 
 - [Troubleshooting](./troubleshooting) — FAQ, common issues, debugging tips
 

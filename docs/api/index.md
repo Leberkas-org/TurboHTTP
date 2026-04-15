@@ -87,7 +87,7 @@ See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing details.
 
 ### Timeout
 
-Per-request timeout applied by `SendAsync`. Defaults to 100 seconds (matching `HttpClient`). Does not affect the channel-based API:
+Per-request timeout applied by `SendAsync`. Defaults to 60 seconds. Does not affect the channel-based API:
 
 ```csharp
 client.Timeout = TimeSpan.FromSeconds(30);
@@ -157,21 +157,31 @@ public sealed class TurboClientOptions
     // Base address
     public Uri? BaseAddress { get; set; }
 
-    // Connection pool
-    public TimeSpan ConnectTimeout { get; set; }            // Default: 15 s
-    public TimeSpan PooledConnectionIdleTimeout { get; set; } // Default: 90 s
-    public int MaxConnectionsPerServer { get; set; }        // Default: 6
-    public int MaxPipelineDepth { get; set; }               // Default: 16
-    public uint MaxEndpointSubstreams { get; set; }         // Default: 256
+    // Version-specific options (nested)
+    public Http1Options Http1 { get; set; }    // HTTP/1.x settings
+    public Http2Options Http2 { get; set; }    // HTTP/2 settings
+    public Http3Options Http3 { get; set; }    // HTTP/3 settings
 
-    // HTTP/2
-    public int MaxFrameSize { get; set; }                   // Default: 128 KiB
+    // Connection pool
+    public TimeSpan ConnectTimeout { get; set; }              // Default: 15 s
+    public TimeSpan PooledConnectionIdleTimeout { get; set; } // Default: 90 s
+    public TimeSpan PooledConnectionLifetime { get; set; }    // Default: infinite
+    public uint MaxEndpointSubstreams { get; set; }           // Default: 256
 
     // TLS
     public bool DangerousAcceptAnyServerCertificate { get; set; }
     public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; set; }
     public X509CertificateCollection? ClientCertificates { get; set; }
     public SslProtocols EnabledSslProtocols { get; set; }
+
+    // Proxy
+    public bool UseProxy { get; set; }                        // Default: true
+    public IWebProxy? Proxy { get; set; }
+    public ICredentials? DefaultProxyCredentials { get; set; }
+
+    // Authentication
+    public ICredentials? Credentials { get; set; }
+    public bool PreAuthenticate { get; set; }                 // Default: false
 }
 ```
 
@@ -180,13 +190,66 @@ public sealed class TurboClientOptions
 | Property | Default | Description |
 |---|---|---|
 | `BaseAddress` | `null` | Base URI for relative requests |
-| `ConnectTimeout` | `15 s` | TCP connection timeout |
+| `ConnectTimeout` | `15 s` | TCP/QUIC connection timeout |
 | `PooledConnectionIdleTimeout` | `90 s` | How long idle connections are kept in the pool |
-| `MaxConnectionsPerServer` | `6` | Max concurrent HTTP/1.x connections per host |
-| `MaxPipelineDepth` | `16` | Max pipelined requests per HTTP/1.1 connection |
+| `PooledConnectionLifetime` | `infinite` | Maximum lifetime of a pooled connection |
 | `MaxEndpointSubstreams` | `256` | Max concurrently active endpoint substreams |
 
+Per-version connection limits are configured on the nested options objects:
+
+| Property | Default | Description |
+|---|---|---|
+| `Http1.MaxConnectionsPerServer` | `6` | Max concurrent HTTP/1.x connections per host |
+| `Http1.MaxPipelineDepth` | `16` | Max pipelined requests per HTTP/1.1 connection |
+| `Http2.MaxConnectionsPerServer` | `6` | Max concurrent HTTP/2 connections per host |
+| `Http2.MaxConcurrentStreams` | `100` | Max concurrent streams per HTTP/2 connection |
+| `Http3.MaxConnectionsPerServer` | `4` | Max concurrent QUIC connections per host |
+
 See [Connection Pooling guide](/guide/connection-pooling) for pool lifecycle details.
+
+### HTTP/1.x options
+
+| Property | Default | Description |
+|---|---|---|
+| `Http1.MaxConnectionsPerServer` | `6` | Max concurrent TCP connections per host |
+| `Http1.MaxPipelineDepth` | `16` | Max pipelined requests per connection |
+| `Http1.MaxBatchWeight` | `65536` (64 KiB) | Max batch weight for request encoding |
+| `Http1.MaxResponseHeadersLength` | `64` (KB) | Max response header size |
+| `Http1.MaxReconnectAttempts` | `3` | Max reconnect attempts on connection drop |
+| `Http1.MaxResponseDrainSize` | `1048576` (1 MB) | Max bytes to drain from incomplete response |
+| `Http1.ResponseDrainTimeout` | `2 s` | Timeout for draining incomplete response body |
+
+### HTTP/2 options
+
+| Property | Default | Description |
+|---|---|---|
+| `Http2.MaxConnectionsPerServer` | `6` | Max concurrent TCP connections per host |
+| `Http2.MaxConcurrentStreams` | `100` | Max concurrent streams per connection |
+| `Http2.InitialConnectionWindowSize` | `67108864` (64 MB) | Connection-level flow control window |
+| `Http2.InitialStreamWindowSize` | `65535` | Per-stream flow control window |
+| `Http2.MaxFrameSize` | `16384` (16 KiB) | Max frame payload size |
+| `Http2.HeaderTableSize` | `4096` | HPACK dynamic table size |
+| `Http2.MaxBatchWeight` | `262144` (256 KiB) | Max batch weight for frame encoding |
+| `Http2.MaxReconnectAttempts` | `3` | Max reconnect attempts on connection drop |
+| `Http2.KeepAlivePingDelay` | `infinite` | Delay before sending keep-alive PING |
+| `Http2.KeepAlivePingTimeout` | `20 s` | Timeout for PING acknowledgment |
+| `Http2.KeepAlivePingPolicy` | `Always` | When to send keep-alive PINGs |
+
+### HTTP/3 options
+
+| Property | Default | Description |
+|---|---|---|
+| `Http3.MaxConnectionsPerServer` | `4` | Max concurrent QUIC connections per host |
+| `Http3.QpackMaxTableCapacity` | `4096` | QPACK dynamic table size |
+| `Http3.QpackBlockedStreams` | `100` | Max streams blocked waiting for QPACK |
+| `Http3.MaxFieldSectionSize` | `65536` (64 KiB) | Max header block size |
+| `Http3.IdleTimeout` | `30 s` | QUIC idle timeout |
+| `Http3.MaxReconnectAttempts` | `3` | Max reconnect attempts on connection drop |
+| `Http3.AllowEarlyData` | `false` | Allow QUIC 0-RTT early data |
+| `Http3.AllowConnectionMigration` | `true` | Allow QUIC connection migration |
+| `Http3.AllowServerPush` | `false` | Allow server push via PUSH_PROMISE |
+| `Http3.MaxBatchWeight` | `262144` (256 KiB) | Max batch weight for frame encoding |
+| `Http3.EnableAltSvcDiscovery` | `false` | Auto-discover HTTP/3 via Alt-Svc headers |
 
 ### TLS options
 
@@ -208,11 +271,11 @@ options.ClientCertificates = new X509CertificateCollection
 ### HTTP/2 frame size
 
 ```csharp
-// Increase frame size for large binary payloads (max: 16 MiB)
-options.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB
+// Increase frame size for large binary payloads (default: 16 KiB, max: 16 MiB)
+options.Http2.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB
 ```
 
-See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing configuration.
+See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing configuration and [HTTP/3 & QUIC guide](/guide/http3) for QUIC-specific settings.
 
 ---
 

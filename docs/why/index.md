@@ -11,6 +11,7 @@ TurboHTTP is designed for situations where `HttpClient` alone isn't enough: high
 | HTTP/1.0 | ✅ | ✅ | ✅ | ✅ |
 | HTTP/1.1 | ✅ | ✅ | ✅ | ✅ |
 | HTTP/2 Multiplexing | ⚠️ Partial | ⚠️ Partial | ❌ | ✅ Full |
+| HTTP/3 (QUIC) | ⚠️ Partial | ❌ | ❌ | ✅ Full |
 | Automatic Retries | ❌ Polly needed | ❌ Polly needed | ❌ | ✅ Built-in |
 | HTTP Caching | ❌ | ❌ | ❌ | ✅ Built-in |
 | Cookie Management | ⚠️ Manual / CookieContainer | ⚠️ Manual | ⚠️ Manual | ✅ Automatic |
@@ -57,13 +58,14 @@ services.AddHttpClient("my-client")
         p.WaitAndRetryAsync(3, _ => TimeSpan.FromSeconds(1)));
 ```
 
-With TurboHTTP, retry is on by default for idempotent methods (GET, HEAD, PUT, DELETE). Configure or disable it per-client:
+With TurboHTTP, retry is built in for idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS, TRACE). Configure it per-client via the builder:
 
 ```csharp
-var client = factory.CreateClient(options =>
+builder.Services.AddTurboHttpClient("my-api", options =>
 {
-    options.RetryPolicy = RetryPolicy.Default with { MaxRetries = 5 };
-});
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRetry(new RetryPolicy { MaxRetries = 5 });
 ```
 
 No Polly dependency, no handler registration, no strategy boilerplate.
@@ -72,20 +74,22 @@ No Polly dependency, no handler registration, no strategy boilerplate.
 
 `HttpClient` has no built-in HTTP cache. You'd need a third-party library or write your own `DelegatingHandler`.
 
-TurboHTTP caches GET responses automatically — freshness evaluation, conditional requests (ETag/If-None-Match), and Vary header support included:
+TurboHTTP caches GET responses when you enable it via the builder — freshness evaluation, conditional requests (ETag/If-None-Match), and Vary header support included:
 
 ```csharp
-// Caching is on by default. To tune it:
-var client = factory.CreateClient(options =>
+// Enable caching with defaults
+builder.Services.AddTurboHttpClient("cached-api", options =>
 {
-    options.CachePolicy = CachePolicy.Default with { MaxEntries = 500 };
-});
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithCache(CachePolicy.Default);
 
-// To disable caching entirely:
-var client = factory.CreateClient(options =>
+// Tune cache size
+builder.Services.AddTurboHttpClient("small-cache", options =>
 {
-    options.CachePolicy = null;
-});
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithCache(new CachePolicy { MaxEntries = 500 });
 ```
 
 ### Typed Interfaces (Refit wins here)
@@ -126,5 +130,5 @@ await foreach (var response in reader.ReadAllAsync())
 | Simple REST calls, small scale | `HttpClient` |
 | Typed API client from interface | Refit |
 | Fluent URL building | Flurl |
-| High-throughput, HTTP/2, built-in caching + retry | **TurboHTTP** |
+| High-throughput, HTTP/2 & HTTP/3, built-in caching + retry | **TurboHTTP** |
 | Need Polly circuit-breaker patterns | `HttpClient` + Polly |

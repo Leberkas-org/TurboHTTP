@@ -4,7 +4,7 @@ layout: home
 hero:
   name: TurboHTTP
   text: High-Performance HTTP Client for .NET
-  tagline: Built on Akka.Streams — automatic retries, caching, cookies, and HTTP/2 multiplexing out of the box.
+  tagline: Built on Akka.Streams — automatic retries, caching, cookies, and HTTP/2 & HTTP/3 multiplexing out of the box.
   image:
     src: /logo/logo.png
     alt: TurboHTTP
@@ -21,8 +21,8 @@ hero:
 
 features:
   - icon: ⚡
-    title: HTTP/1.0, HTTP/1.1 & HTTP/2
-    details: Automatic version negotiation, HPACK compression, flow control, and multiplexed streams. One client handles all versions.
+    title: HTTP/1.0, HTTP/1.1, HTTP/2 & HTTP/3
+    details: Automatic version negotiation, HPACK/QPACK compression, flow control, and multiplexed streams over TCP and QUIC. One client handles all versions.
 
   - icon: 🔄
     title: Automatic Retries

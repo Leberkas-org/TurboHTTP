@@ -6,7 +6,7 @@ This guide shows how to migrate common `HttpClient` patterns to TurboHTTP. The A
 
 | HttpClient | TurboHTTP |
 |---|---|
-| `new HttpClient()` | `new TurboHttpClient(options, actorSystem)` |
+| `new HttpClient()` | `factory.CreateClient("name")` via DI |
 | `IHttpClientFactory` | `ITurboHttpClientFactory` |
 | `services.AddHttpClient()` | `services.AddTurboHttpClient()` |
 | `client.GetAsync(url)` | `client.SendAsync(new HttpRequestMessage(Get, url), ct)` |
@@ -28,12 +28,14 @@ var body = await response.Content.ReadAsStringAsync();
 **After (TurboHTTP):**
 
 ```csharp
-var actorSystem = ActorSystem.Create("turbo");
-await using var client = new TurboHttpClient(new TurboClientOptions
+// Registration (once, at startup)
+services.AddTurboHttpClient("my-api", options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-}, actorSystem);
+    options.BaseAddress = new Uri("https://api.example.com");
+});
 
+// Usage (in your service)
+var client = factory.CreateClient("my-api");
 var response = await client.SendAsync(
     new HttpRequestMessage(HttpMethod.Get, "/users/42"),
     CancellationToken.None);
@@ -41,7 +43,7 @@ var body = await response.Content.ReadAsStringAsync();
 ```
 
 Key differences:
-- `await using` instead of `using` (async disposal for connection cleanup)
+- Client is obtained from `ITurboHttpClientFactory`, not constructed directly
 - Always pass `CancellationToken` explicitly
 - No shorthand methods like `GetAsync` — use `SendAsync` with `HttpRequestMessage`
 
@@ -69,13 +71,15 @@ public class MyService(IHttpClientFactory factory)
 builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
 // In service:
 public class MyService(ITurboHttpClientFactory factory)
 {
     private readonly ITurboHttpClient _client = factory.CreateClient("my-api");
+
+    // DefaultRequestHeaders are set on the client instance, not on TurboClientOptions
+    // _client.DefaultRequestHeaders.Add("Accept", "application/json");
 }
 ```
 
@@ -202,11 +206,13 @@ client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 **After (TurboHTTP):**
 
 ```csharp
-var actorSystem = ActorSystem.Create("turbo");
-await using var client = new TurboHttpClient(new TurboClientOptions
+builder.Services.AddTurboHttpClient("my-api", options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-}, actorSystem);
+    options.BaseAddress = new Uri("https://api.example.com");
+});
+
+// ...
+var client = factory.CreateClient("my-api");
 client.DefaultRequestVersion = HttpVersion.Version20;
 ```
 

@@ -123,40 +123,23 @@ builder.Services.AddTurboHttpClient("full-featured", options =>
 .WithDecompression(true);                // gzip/deflate/brotli
 ```
 
-## Standalone Usage (Without DI)
-
-For scripts, tests, or applications without a DI container:
-
-```csharp
-var actorSystem = ActorSystem.Create("turbo");
-await using var client = new TurboHttpClient(new TurboClientOptions
-{
-    BaseAddress = new Uri("https://api.example.com"),
-    DefaultRequestVersion = HttpVersion.Version20,
-}, actorSystem);
-
-var response = await client.SendAsync(
-    new HttpRequestMessage(HttpMethod.Get, "/health"),
-    CancellationToken.None);
-```
-
-::: warning
-Always `await using` the client to ensure connections are properly cleaned up.
-:::
-
 ## Minimal Example
 
-A complete console application:
+A complete console application using the DI-based approach:
 
 ```csharp
-using TurboHTTP.Client;
-using Akka.Actor;
+using TurboHTTP;
+using Microsoft.Extensions.DependencyInjection;
 
-var actorSystem = ActorSystem.Create("turbo");
-await using var client = new TurboHttpClient(new TurboClientOptions
+var services = new ServiceCollection();
+services.AddTurboHttpClient(options =>
 {
-    BaseAddress = new Uri("https://jsonplaceholder.typicode.com"),
-}, actorSystem);
+    options.BaseAddress = new Uri("https://jsonplaceholder.typicode.com");
+});
+
+var provider = services.BuildServiceProvider();
+var factory = provider.GetRequiredService<ITurboHttpClientFactory>();
+using var client = factory.CreateClient();
 
 var request = new HttpRequestMessage(HttpMethod.Get, "/posts/1");
 var response = await client.SendAsync(request, CancellationToken.None);
@@ -164,6 +147,10 @@ var response = await client.SendAsync(request, CancellationToken.None);
 Console.WriteLine($"Status: {response.StatusCode}");
 Console.WriteLine(await response.Content.ReadAsStringAsync());
 ```
+
+::: warning
+Always dispose the client when done to ensure connections are properly cleaned up.
+:::
 
 ## Next Steps
 

@@ -75,29 +75,66 @@ options.BaseAddress = new Uri("https://api.example.com/v2/");
 |----------|------|---------|-------------|
 | `ConnectTimeout` | `TimeSpan` | `00:00:15` | Timeout for establishing a new TCP connection |
 | `PooledConnectionIdleTimeout` | `TimeSpan` | `00:01:30` | Time a connection may remain idle before eviction |
-| `MaxConnectionsPerServer` | `int` | `6` | Maximum concurrent HTTP/1.x connections per host |
-| `MaxPipelineDepth` | `int` | `16` | Maximum pipelined requests per HTTP/1.1 connection |
+| `PooledConnectionLifetime` | `TimeSpan` | `infinite` | Maximum lifetime of a pooled connection |
 | `MaxEndpointSubstreams` | `uint` | `256` | Maximum concurrently active endpoint substreams |
-
-`MaxConnectionsPerServer` mirrors the browser default. For workloads that require many parallel HTTP/1.1 requests, raise this value:
 
 ```csharp
 options.ConnectTimeout = TimeSpan.FromSeconds(5);
 options.PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2);
-options.MaxConnectionsPerServer = 12;
+options.PooledConnectionLifetime = TimeSpan.FromMinutes(10);
 ```
 
-### HTTP/2 Frame Size
+### HTTP/1.x Options
+
+Per-version connection and protocol settings are configured on nested sub-objects:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `MaxFrameSize` | `int` | `131072` (128 KiB) | Maximum HTTP/2 frame payload size in bytes |
-
-Increase for workloads with large response bodies to reduce frame fragmentation:
+| `Http1.MaxConnectionsPerServer` | `int` | `6` | Maximum concurrent HTTP/1.x connections per host |
+| `Http1.MaxPipelineDepth` | `int` | `16` | Maximum pipelined requests per HTTP/1.1 connection |
+| `Http1.MaxBatchWeight` | `int` | `65536` (64 KiB) | Max batch weight for request encoding |
+| `Http1.MaxResponseHeadersLength` | `int` | `64` (KB) | Max response header size |
+| `Http1.MaxReconnectAttempts` | `int` | `3` | Max reconnect attempts on connection drop |
 
 ```csharp
-options.MaxFrameSize = 512 * 1024; // 512 KiB
+options.Http1.MaxConnectionsPerServer = 12;  // raise for parallel HTTP/1.1
+options.Http1.MaxPipelineDepth = 32;
 ```
+
+### HTTP/2 Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `Http2.MaxConnectionsPerServer` | `int` | `6` | Maximum concurrent HTTP/2 connections per host |
+| `Http2.MaxConcurrentStreams` | `int` | `100` | Maximum concurrent streams per connection |
+| `Http2.MaxFrameSize` | `int` | `16384` (16 KiB) | Maximum HTTP/2 frame payload size |
+| `Http2.HeaderTableSize` | `int` | `4096` | HPACK dynamic table size |
+| `Http2.MaxBatchWeight` | `int` | `262144` (256 KiB) | Max batch weight for frame encoding |
+| `Http2.MaxReconnectAttempts` | `int` | `3` | Max reconnect attempts on connection drop |
+
+Increase frame size for workloads with large response bodies to reduce framing overhead:
+
+```csharp
+options.Http2.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB (default: 16 KiB)
+```
+
+### HTTP/3 Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `Http3.MaxConnectionsPerServer` | `int` | `4` | Maximum concurrent QUIC connections per host |
+| `Http3.QpackMaxTableCapacity` | `int` | `4096` | QPACK dynamic table size |
+| `Http3.QpackBlockedStreams` | `int` | `100` | Max streams blocked waiting for QPACK |
+| `Http3.MaxFieldSectionSize` | `int` | `65536` (64 KiB) | Max header block size |
+| `Http3.IdleTimeout` | `TimeSpan` | `00:00:30` | QUIC idle timeout |
+| `Http3.MaxReconnectAttempts` | `int` | `3` | Max reconnect attempts on connection drop |
+| `Http3.AllowEarlyData` | `bool` | `false` | Allow QUIC 0-RTT early data |
+| `Http3.AllowConnectionMigration` | `bool` | `true` | Allow QUIC connection migration |
+| `Http3.AllowServerPush` | `bool` | `false` | Allow server push via PUSH_PROMISE |
+| `Http3.MaxBatchWeight` | `int` | `262144` (256 KiB) | Max batch weight for frame encoding |
+| `Http3.EnableAltSvcDiscovery` | `bool` | `false` | Auto-discover HTTP/3 via Alt-Svc headers |
+
+See [HTTP/3 & QUIC guide](./http3) for QUIC-specific configuration and Alt-Svc discovery.
 
 ### TLS / HTTPS
 
@@ -236,7 +273,10 @@ builder.Services.AddTurboHttpClient(options =>
     options.BaseAddress = new Uri("https://api.example.com");
     options.ConnectTimeout = TimeSpan.FromSeconds(5);
     options.PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2);
-    options.MaxConnectionsPerServer = 10;
+
+    // Per-version tuning
+    options.Http1.MaxConnectionsPerServer = 10;
+    options.Http2.MaxConcurrentStreams = 200;
 })
 .WithRedirect()
 .WithRetry(RetryPolicy.Default)

@@ -20,7 +20,8 @@ The pool runs entirely in the background. Your code just calls `SendAsync` — c
 How connections are reused depends on the HTTP version:
 
 - **HTTP/1.1** — connections use keep-alive by default. After a response is received, the connection returns to the idle pool and is available for the next request.
-- **HTTP/2** — a single TCP connection carries multiple concurrent requests as independent streams. All in-flight requests to the same host share one connection.
+- **HTTP/2** — a single TCP connection carries multiple concurrent requests as independent streams. When a connection reaches its stream limit, additional connections are opened.
+- **HTTP/3** — similar to HTTP/2 but over QUIC instead of TCP. Supports connection migration and 0-RTT early data.
 - **HTTP/1.0** — connections are closed after each response. No reuse. Each request opens a new TCP connection.
 
 ## Idle Connection Eviction
@@ -39,12 +40,13 @@ Reconnect attempts use exponential backoff — each failed attempt waits progres
 
 ## Per-Host Concurrency Limits
 
-Each host has a configurable maximum number of simultaneous connections:
+Each host has a configurable maximum number of simultaneous connections, configured per protocol version:
 
-- **HTTP/1.1** — default limit is **6 connections per host**
-- **HTTP/2** — default is **1 multiplexed connection per host** (multiple concurrent requests share that single connection as independent streams)
+- **HTTP/1.x** — default limit is **6 connections per host** (`Http1.MaxConnectionsPerServer`)
+- **HTTP/2** — default is **6 connections per host** (`Http2.MaxConnectionsPerServer`), each carrying up to **100 concurrent streams** (`Http2.MaxConcurrentStreams`)
+- **HTTP/3** — default is **4 QUIC connections per host** (`Http3.MaxConnectionsPerServer`)
 
-These defaults are chosen conservatively to avoid overwhelming servers. Adjust them via `MaxConnectionsPerServer` in `TurboClientOptions` (see [Configuration](#configuration) below).
+These defaults are chosen conservatively to avoid overwhelming servers.
 
 ## Configuration
 
@@ -54,27 +56,32 @@ Connection pool behaviour is controlled via properties on `TurboClientOptions`:
 builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
-    options.MaxConnectionsPerServer = 10;        // max simultaneous connections (default: 6)
-    options.PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2); // evict idle connections after 2 min
+    options.PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2);
+    options.PooledConnectionLifetime = TimeSpan.FromMinutes(10);
+
+    // Per-version connection limits
+    options.Http1.MaxConnectionsPerServer = 10;
+    options.Http2.MaxConnectionsPerServer = 4;
+    options.Http3.MaxConnectionsPerServer = 2;
 });
 ```
 
 ### Common Tuning Scenarios
 
-**High-throughput API client** — increase connections per host:
+**High-throughput HTTP/1.1 client** — increase connections per host:
 
 ```csharp
-options.MaxConnectionsPerServer = 20;
+options.Http1.MaxConnectionsPerServer = 20;
 ```
 
 **Low-traffic background service** — reduce connections to release sockets promptly:
 
 ```csharp
-options.MaxConnectionsPerServer = 2;
+options.Http1.MaxConnectionsPerServer = 2;
 options.PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30);
 ```
 
-**HTTP/2 server** — a single multiplexed connection handles many concurrent streams. The default `MaxConnectionsPerServer = 6` is fine; TurboHTTP opens additional connections only when the existing one reaches its stream limit:
+**HTTP/2 server** — each connection multiplexes many concurrent streams. TurboHTTP opens additional connections when a connection reaches its stream limit:
 
 ```csharp
 var client = factory.CreateClient("http2-api");
@@ -82,15 +89,23 @@ client.DefaultRequestVersion = HttpVersion.Version20;
 client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 ```
 
+**HTTP/3 server** — QUIC connections with configurable idle timeout:
+
+```csharp
+options.Http3.MaxConnectionsPerServer = 4;
+options.Http3.IdleTimeout = TimeSpan.FromSeconds(60);
+```
+
 ## Pool Lifecycle
 
 The pool is created lazily when the first request to a host is made, and torn down when the `TurboHttpClient` is disposed. All idle connections are closed on disposal. In-flight requests complete before their connections are closed.
 
 ```csharp
-await using var client = new TurboHttpClient(options);
+var client = factory.CreateClient("my-api");
 
 // Pool for api.example.com created on first request
-var response = await client.SendAsync(request);
+var response = await client.SendAsync(request, ct);
 
 // Disposing client drains all pools and closes all connections
+client.Dispose();
 ```

@@ -7,9 +7,9 @@ TurboHTTP provides a simple, familiar interface for making HTTP requests.
 The standard way to send a request:
 
 ```csharp
-var client = new TurboHttpClient(options);
-var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/users/123");
-var response = await client.SendAsync(request);
+var client = factory.CreateClient("my-api");
+var request = new HttpRequestMessage(HttpMethod.Get, "/users/123");
+var response = await client.SendAsync(request, ct);
 
 Console.WriteLine(response.StatusCode);
 ```
@@ -27,7 +27,7 @@ All pipeline features (cookies, caching, retries, redirects) apply automatically
 For high-throughput scenarios where you're sending many requests and processing responses in a producer/consumer pattern:
 
 ```csharp
-var client = new TurboHttpClient(options);
+var client = factory.CreateClient("my-api");
 var writer = client.Requests;
 var reader = client.Responses;
 
@@ -36,7 +36,7 @@ _ = Task.Run(async () =>
 {
     for (int i = 0; i < 1000; i++)
     {
-        var req = new HttpRequestMessage(HttpMethod.Get, $"https://api.example.com/item/{i}");
+        var req = new HttpRequestMessage(HttpMethod.Get, $"/item/{i}");
         await writer.WriteAsync(req);
     }
     writer.TryComplete();
@@ -54,21 +54,20 @@ The channel API provides **backpressure** — if the producer sends too fast, `W
 
 ## Configuration
 
-All client options are set via `TurboClientOptions`:
+Transport options are set via `TurboClientOptions` at registration time. Request defaults like HTTP version and headers are set on the client instance:
 
 ```csharp
-var options = new TurboClientOptions
+// Register via DI
+services.AddTurboHttpClient("my-api", options =>
 {
-    BaseAddress = new Uri("https://api.example.com"),
-    DefaultRequestVersion = HttpVersion.Version20,  // Force HTTP/2
-    DefaultRequestHeaders = new Dictionary<string, string>
-    {
-        { "User-Agent", "MyApp/1.0" },
-        { "Accept", "application/json" }
-    }
-};
+    options.BaseAddress = new Uri("https://api.example.com");
+});
 
-var client = new TurboHttpClient(options);
+// Resolve and configure the client instance
+var client = factory.CreateClient("my-api");
+client.DefaultRequestVersion = HttpVersion.Version20;  // Force HTTP/2
+client.DefaultRequestHeaders.Add("User-Agent", "MyApp/1.0");
+client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 ```
 
 See [Configuration Guide](../guide/configuration) for full options.

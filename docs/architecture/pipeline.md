@@ -38,7 +38,7 @@ After bytes return from the network, the response passes back through the stages
 | 2 | Content Encoding (`ContentEncodingBidiStage`) | Transparently decompresses `gzip`, `deflate`, or Brotli response bodies |
 | 3 | Cache Storage (`CacheBidiStage`) | Saves cacheable responses so future matching requests can be served from memory |
 | 4 | Expect-Continue (`ExpectContinueBidiStage`) | Processes `100 Continue` responses and unblocks the request body when the server is ready |
-| 5 | Automatic Retry (`RetryBidiStage`) | Re-sends safe (idempotent) requests on transient errors or `503`/`429` responses; respects `Retry-After` delays |
+| 5 | Automatic Retry (`RetryBidiStage`) | Re-sends safe (idempotent) requests on transient errors, `408`, or `503` responses; respects `Retry-After` delays |
 | 6 | Cookie Storage (`CookieBidiStage`) | Reads `Set-Cookie` headers and stores cookies for future requests |
 | 7 | Redirect Following (`RedirectBidiStage`) | Follows `301`–`308` redirects automatically; rewrites the HTTP method where needed; detects loops and blocks HTTPS→HTTP downgrades |
 | 8 | Tracing (`TracingBidiStage`) | Closes the activity span, recording the final status code and any errors |

@@ -16,15 +16,14 @@ Yes. `ITurboHttpClient` is fully thread-safe. Multiple threads can call `SendAsy
 
 ### How do I disable a feature?
 
-Set the corresponding policy to `null`:
+Features are opt-in via the builder API. Simply don't call the corresponding builder method:
 
 ```csharp
-var client = new TurboHttpClient(new TurboClientOptions
+// No retries, no caching, no redirects — just register without builder extensions
+builder.Services.AddTurboHttpClient("bare", options =>
 {
-    RetryPolicy = null,      // no retries
-    CachePolicy = null,      // no caching
-    RedirectPolicy = null,   // no redirect following
-}, actorSystem);
+    options.BaseAddress = new Uri("https://api.example.com");
+});
 ```
 
 ### Does TurboHTTP support HTTPS?
@@ -38,10 +37,11 @@ options.ClientCertificates = new X509CertificateCollection { cert };
 
 ### What HTTP versions are supported?
 
-HTTP/1.0, HTTP/1.1, and HTTP/2. Set the version via:
+HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC). Set the version on the client:
 
 ```csharp
-options.DefaultRequestVersion = HttpVersion.Version20; // or Version11, Version10
+var client = factory.CreateClient("my-api");
+client.DefaultRequestVersion = HttpVersion.Version20; // or Version11, Version10, Version30
 ```
 
 Per-request overrides are also supported via `HttpRequestMessage.Version`.
@@ -67,20 +67,17 @@ Per-request overrides are also supported via `HttpRequestMessage.Version`.
 
 **Symptom:** `RedirectException` with `RedirectError.MaxRedirectsExceeded`.
 
-**Fix:** The server is returning a redirect loop. Either fix the server or increase the limit:
+**Fix:** The server is returning a redirect loop. Either fix the server or increase the redirect limit via the builder:
 
 ```csharp
-options.RedirectPolicy = RedirectPolicy.Default with { MaxRedirects = 20 };
-```
-
-To debug, disable redirects and inspect the responses manually:
-
-```csharp
-var client = factory.CreateClient(opts => opts with
+builder.Services.AddTurboHttpClient("my-api", options =>
 {
-    RedirectPolicy = null // handle redirects yourself
-});
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRedirect(new RedirectPolicy { MaxRedirects = 20 });
 ```
+
+To debug, remove the `.WithRedirect()` call entirely and inspect the redirect responses manually.
 
 ### HTTPS to HTTP Downgrade Blocked
 
@@ -91,7 +88,11 @@ var client = factory.CreateClient(opts => opts with
 **Fix (if the downgrade is intentional):**
 
 ```csharp
-options.RedirectPolicy = RedirectPolicy.Default with { AllowHttpsToHttpDowngrade = true };
+builder.Services.AddTurboHttpClient("my-api", options =>
+{
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithRedirect(new RedirectPolicy { AllowHttpsToHttpDowngrade = true });
 ```
 
 ### POST Requests Are Not Retried
@@ -113,9 +114,9 @@ The built-in `RetryPolicy` handles idempotent method detection and backoff autom
 ### High Memory Usage
 
 **Possible causes:**
-1. **Cache too large** — reduce `MaxEntries` or `MaxBodyBytes`:
+1. **Cache too large** — reduce `MaxEntries` or `MaxBodyBytes` when registering:
    ```csharp
-   options.CachePolicy = CachePolicy.Default with { MaxEntries = 100, MaxBodyBytes = 10 * 1024 * 1024 };
+   .WithCache(new CachePolicy { MaxEntries = 100, MaxBodyBytes = 10 * 1024 * 1024 })
    ```
 2. **Response bodies not disposed** — always dispose `HttpResponseMessage` when done:
    ```csharp
@@ -136,8 +137,9 @@ The built-in `RetryPolicy` handles idempotent method detection and backoff autom
 3. TLS ALPN negotiation failed — check server TLS configuration
 
 ```csharp
-options.DefaultRequestVersion = HttpVersion.Version20;
-options.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // graceful fallback
+var client = factory.CreateClient("my-api");
+client.DefaultRequestVersion = HttpVersion.Version20;
+client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // graceful fallback
 ```
 
 ### Channel Backpressure (WriteAsync Blocks)
@@ -148,9 +150,9 @@ options.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // grace
 
 **Fixes:**
 1. Use HTTP/2 for multiplexing (concurrent streams over one connection)
-2. Increase `MaxConnectionsPerHost` for HTTP/1.1:
+2. Increase `MaxConnectionsPerServer` for HTTP/1.1:
    ```csharp
-   options.ConnectionPolicy = ConnectionPolicy.Default with { MaxConnectionsPerHost = 16 };
+   options.Http1.MaxConnectionsPerServer = 16;
    ```
 3. Ensure consumer task is actively reading responses to unblock the producer
 
@@ -167,9 +169,9 @@ options.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // grace
    ```csharp
    request.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
    ```
-3. Reduce cache freshness:
+3. Reduce cache size when registering:
    ```csharp
-   options.CachePolicy = CachePolicy.Default with { MaxEntries = 100 };
+   .WithCache(new CachePolicy { MaxEntries = 100 })
    ```
 
 ---

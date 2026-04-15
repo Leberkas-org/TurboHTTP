@@ -31,7 +31,7 @@ TurboHTTP follows the same builder pattern as `Microsoft.Extensions.Http` — yo
 public interface ITurboHttpClientBuilder
 {
     string Name { get; }
-    IServiceCollection SerivceCollection { get; }
+    IServiceCollection Services { get; }
 }
 ```
 
@@ -41,9 +41,8 @@ Register named or typed clients via extension methods on `IServiceCollection`:
 // Named Client
 services.AddTurboHttpClient("myapi", options =>
 {
-    options.BaseAddress          = new Uri("https://api.example.com");
-    options.ConnectTimeout       = TimeSpan.FromSeconds(5);
-    options.DefaultRequestVersion = HttpVersion.Version20;
+    options.BaseAddress    = new Uri("https://api.example.com");
+    options.ConnectTimeout = TimeSpan.FromSeconds(5);
 });
 
 // Typed Client
@@ -55,8 +54,12 @@ services.AddTurboHttpClient<IGitHubClient, GitHubClient>(options =>
 
 The return value is `ITurboHttpClientBuilder` — all further options are registered as extension methods on it. The graph is not materialized here, but on the first `CreateClient(name)` call of the factory.
 
-> **Deprecated API:** `AddTurboHttpClient(services, configure)` is marked `[Obsolete]`
-> and will be removed in a future version. Use `services.AddTurboHttpClient(name, configure)` instead.
+HTTP version and default headers are set on the `ITurboHttpClient` instance, not on `TurboClientOptions`:
+
+```csharp
+var client = factory.CreateClient("myapi");
+client.DefaultRequestVersion = HttpVersion.Version20;
+```
 
 ---
 
@@ -83,9 +86,9 @@ services.AddTurboHttpClient("myapi", options => { ... })
 
 These methods only register their configuration in `IServiceCollection` (as `IOptions`/`IConfigureOptions`). The `TurboHttpClientFactory` reads all registered options at `CreateClient()` time and passes them to the engine.
 
-> **Note:** `TurboClientOptions.RedirectPolicy`, `RetryPolicy`, and `CachePolicy` are backward-compatible
-> and will be marked `[Obsolete]` in a future version. New code should use the
-> builder extensions (`.WithRedirect()`, `.WithRetry()`, `.WithCache()`) instead.
+> **Note:** Feature configuration (redirect, retry, cache, cookies) is done exclusively through the
+> builder extensions (`.WithRedirect()`, `.WithRetry()`, `.WithCache()`, `.WithCookies()`).
+> These are not properties on `TurboClientOptions`.
 
 ---
 
@@ -179,7 +182,6 @@ services.AddTurboHttpClient("payments", options =>
     {
         options.BaseAddress          = new Uri("https://api.payments.example.com");
         options.ConnectTimeout       = TimeSpan.FromSeconds(3);
-        options.DefaultRequestVersion = HttpVersion.Version20;
     })
     .WithRedirect()
     .WithRetry(new RetryPolicy(MaxRetries: 2))
@@ -216,7 +218,8 @@ public sealed class AuthHandler(ITokenProvider tokens) : TurboHandler
 | Connection parameters (timeouts, TLS, HTTP/2 frame size) | `TurboClientOptions` via `AddTurboHttpClient(name, options => ...)` |
 | Redirect / Retry / Cookie / Cache | `ITurboHttpClientBuilder` extensions (`.WithRedirect()` etc.) |
 | User handlers | `ITurboHttpClientBuilder` (`.AddHandler<T>()`) |
-| DefaultRequestHeaders / BaseAddress / Version | `TurboClientOptions` |
+| BaseAddress | `TurboClientOptions` |
+| DefaultRequestHeaders / DefaultRequestVersion | `ITurboHttpClient` (set on the client instance after creation) |
 
 ---
 
