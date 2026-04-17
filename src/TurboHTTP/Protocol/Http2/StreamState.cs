@@ -73,7 +73,7 @@ internal sealed class StreamState
         _headerLength = 0;
         _bodyLength = 0;
         _response = null;
-        _contentHeaders?.Clear();
+        _contentHeaders = null;
     }
 
     public (IMemoryOwner<byte>? Owner, int Length) TakeBodyOwnership()
@@ -87,6 +87,11 @@ internal sealed class StreamState
 
     public void AppendHeader(ReadOnlySpan<byte> data)
     {
+        if (data.IsEmpty)
+        {
+            return;
+        }
+
         EnsureHeaderCapacity(_headerLength + data.Length);
         data.CopyTo(_headerBuffer.Span[_headerLength..]);
         _headerLength += data.Length;
@@ -94,6 +99,11 @@ internal sealed class StreamState
 
     public void AppendBody(ReadOnlySpan<byte> data)
     {
+        if (data.IsEmpty)
+        {
+            return;
+        }
+
         EnsureBodyCapacity(_bodyLength + data.Length);
         data.CopyTo(_bodyBuffer.Span[_bodyLength..]);
         _bodyLength += data.Length;

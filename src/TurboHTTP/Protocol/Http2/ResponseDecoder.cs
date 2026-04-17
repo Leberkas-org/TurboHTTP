@@ -45,6 +45,7 @@ internal sealed class ResponseDecoder
         var totalHeaderSize = 0;
 
         var response = new HttpResponseMessage();
+        var hasStatus = false;
 
         foreach (var h in headers)
         {
@@ -77,6 +78,7 @@ internal sealed class ResponseDecoder
             if (h.Name == ":status")
             {
                 response.StatusCode = (HttpStatusCode)int.Parse(h.Value);
+                hasStatus = true;
             }
             else if (!h.Name.StartsWith(':'))
             {
@@ -87,6 +89,11 @@ internal sealed class ResponseDecoder
                     state.AddContentHeader(h.Name, h.Value);
                 }
             }
+        }
+
+        if (!hasStatus)
+        {
+            throw new FormatException($"RFC 9113 §6.3.1: Missing required :status pseudo-header on stream {streamId}.");
         }
 
         state.InitResponse(response);
