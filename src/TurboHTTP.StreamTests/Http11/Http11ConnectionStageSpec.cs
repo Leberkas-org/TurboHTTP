@@ -1,10 +1,11 @@
 using System.Net;
-using SysEncoding = System.Text.Encoding;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
+using SysEncoding = System.Text.Encoding;
 
 namespace TurboHTTP.StreamTests.Http11;
 

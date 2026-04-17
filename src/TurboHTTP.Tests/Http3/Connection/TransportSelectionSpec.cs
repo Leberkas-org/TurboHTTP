@@ -1,6 +1,5 @@
 using System.Net;
 using TurboHTTP.Internal;
-using TurboHTTP.Transport.Quic;
 using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Http3.Connection;

@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Akka.Streams.TestKit"/>
+        <PackageReference Include="Akka.TestKit.Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TurboHTTP\TurboHTTP.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="TurboHTTP.Tests"/>
+        <InternalsVisibleTo Include="TurboHTTP.StreamTests"/>
+        <InternalsVisibleTo Include="TurboHTTP.AcceptanceTests"/>
+    </ItemGroup>
+
+</Project>

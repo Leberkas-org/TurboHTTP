@@ -4,6 +4,7 @@ using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http11;
 

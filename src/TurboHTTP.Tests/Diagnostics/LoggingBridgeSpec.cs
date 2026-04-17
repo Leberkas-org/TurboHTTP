@@ -13,22 +13,8 @@ using TurboHTTP.Diagnostics;
 namespace TurboHTTP.Tests.Diagnostics;
 
 [CollectionDefinition("Logging", DisableParallelization = true)]
-public sealed class LoggingCollectionDefinition { }
+public sealed class LoggingCollectionDefinition;
 
-/// <summary>
-/// Verifies the two logging integration paths that a user would configure:
-/// <list type="number">
-///   <item>
-///     Akka → Microsoft.Extensions.Logging bridge: registering <see cref="ILoggerFactory"/> in DI
-///     before calling <see cref="TurboClientServiceCollectionExtensions.AddTurboHttpClient()"/>
-///     routes Akka actor log messages (from <c>ClientStreamOwnerActor</c>) through MEL.
-///   </item>
-///   <item>
-///     TurboTrace → MEL via <see cref="TurboTraceExtensions.AddTurboLoggerTracing"/>: pipeline
-///     stages emit structured trace events to <c>TurboHttp.Trace.*</c> loggers.
-///   </item>
-/// </list>
-/// </summary>
 [Collection("Logging")]
 public sealed class LoggingBridgeSpec : IAsyncLifetime
 {
@@ -59,6 +45,7 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
             }
             catch
             {
+                // ignored
             }
 
             _client.Dispose();
@@ -208,6 +195,7 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
         }
         catch (Exception)
         {
+            // ignored
         }
     }
 
@@ -300,5 +288,5 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
         }
     }
 
-    public sealed record LogEntry(string CategoryName, LogLevel Level, string Message);
+    private sealed record LogEntry(string CategoryName, LogLevel Level, string Message);
 }

@@ -6,6 +6,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
+using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Tcp;
 
@@ -23,7 +24,6 @@ namespace TurboHTTP.StreamTests.Streams;
 /// </remarks>
 public sealed class ConnectionStageSpec : StreamTestBase
 {
-
     /// <summary>
     /// Tracks <see cref="TcpConnectionManagerActor.Release"/> details for test assertions.
     /// Written on the actor thread; read on the test thread after a delay.
@@ -229,7 +229,9 @@ public sealed class ConnectionStageSpec : StreamTestBase
         Assert.Equal(0x01, outBuffer.Span[0]);
         outBuffer.Dispose();
 
-        var inBuf = NetworkBufferTestExtensions.FromArray([0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02]);
+        var inBuf = NetworkBufferTestExtensions.FromArray([
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02
+        ]);
         await inboundWriter.WriteAsync(inBuf, TestContext.Current.CancellationToken);
 
         await Task.Delay(300, TestContext.Current.CancellationToken);
@@ -315,7 +317,8 @@ public sealed class ConnectionStageSpec : StreamTestBase
     }
 
     [Fact(Timeout = 15_000)]
-    public async Task ConnectionStage_should_update_lease_max_concurrent_streams_when_max_concurrent_streams_item_received()
+    public async Task
+        ConnectionStage_should_update_lease_max_concurrent_streams_when_max_concurrent_streams_item_received()
     {
         var (stageFlow, _, lease, _, inboundWriter) = Build();
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
@@ -398,7 +401,8 @@ public sealed class ConnectionStageSpec : StreamTestBase
     }
 
     [Fact(Timeout = 15_000)]
-    public async Task ConnectionStage_should_emit_close_signal_and_release_lease_when_outbound_channel_closed_during_write()
+    public async Task
+        ConnectionStage_should_emit_close_signal_and_release_lease_when_outbound_channel_closed_during_write()
     {
         var state = new ClientState(Stream.Null, null, null);
         state.OutboundWriter.Complete();

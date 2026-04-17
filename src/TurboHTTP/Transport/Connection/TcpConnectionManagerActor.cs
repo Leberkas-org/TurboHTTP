@@ -59,6 +59,7 @@ internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     }
 
     private readonly Dictionary<RequestEndpoint, HostState> _hosts = new();
+    private readonly IConnectionFactory _factory;
     private readonly TimeSpan _idleTimeout;
     private readonly TimeSpan _connectionLifetime;
     private readonly int _maxConnectionsPerServer;
@@ -89,7 +90,13 @@ internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     }
 
     public TcpConnectionManagerActor(TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerServer = 6)
+        : this(DirectConnectionFactory.Instance, idleTimeout, connectionLifetime, maxConnectionsPerServer)
     {
+    }
+
+    public TcpConnectionManagerActor(IConnectionFactory factory, TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerServer = 6)
+    {
+        _factory = factory;
         _idleTimeout = idleTimeout;
         _connectionLifetime = connectionLifetime;
         _maxConnectionsPerServer = maxConnectionsPerServer;
@@ -403,7 +410,7 @@ internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     private void Establish(HostState host, Acquire msg)
     {
         host.Establishing++;
-        _ = DirectConnectionFactory
+        _ = _factory
             .EstablishAsync(msg.Options, msg.Endpoint, msg.Token)
             .PipeTo(Self,
                 success: lease => new Established(lease, msg),

@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 

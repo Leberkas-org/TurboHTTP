@@ -12,7 +12,7 @@ on:
 
 env:
   GLOBAL_JSON_PATH: './src/global.json'
-  PROJECT_PATH: './src/TurboHTTP.sln'
+  PROJECT_PATH: './src/TurboHTTP.slnx'
   PACKAGE_OUTPUT_DIRECTORY: './packages'
   TEST_OUTPUT_DIRECTORY: '${{ github.workspace }}/testresults'
   COVERAGE_REPORT_DIRECTORY: './coveragereport'
@@ -105,23 +105,15 @@ jobs:
 
       - name: Run tests
         working-directory: './src'
-        run: |
-          dotnet test \
-            --configuration Release \
-            --no-ansi \
-            --no-build \
-            --coverage \
-            --coverage-output-format cobertura \
-            --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }} \
-            TurboHTTP.Tests/TurboHTTP.Tests.csproj
-          dotnet test \
-            --configuration Release \
-            --no-ansi \
-            --no-build \
-            --coverage \
-            --coverage-output-format cobertura \
-            --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }} \
-            TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj
+        run: >
+          dotnet test 
+            --configuration Release 
+            --no-ansi 
+            --no-build 
+            --coverage 
+            --coverage-output-format cobertura 
+            --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }} 
+            --solution *.sln
 
       - name: Create NuGet package
         run: >

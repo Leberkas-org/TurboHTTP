@@ -65,6 +65,7 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     }
 
     private readonly Dictionary<RequestEndpoint, HostState> _hosts = new();
+    private readonly IQuicConnectionFactory _factory;
     private readonly TimeSpan _idleTimeout;
     private readonly TimeSpan _connectionLifetime;
     private readonly int _maxConnectionsPerHost;
@@ -95,7 +96,13 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     }
 
     public QuicConnectionManagerActor(TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerHost = 1)
+        : this(QuicConnectionFactory.Instance, idleTimeout, connectionLifetime, maxConnectionsPerHost)
     {
+    }
+
+    public QuicConnectionManagerActor(IQuicConnectionFactory factory, TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerHost = 1)
+    {
+        _factory = factory;
         _idleTimeout = idleTimeout;
         _connectionLifetime = connectionLifetime;
         _maxConnectionsPerHost = maxConnectionsPerHost;
@@ -361,7 +368,7 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     private void Establish(HostState host, Acquire msg)
     {
         host.Establishing++;
-        QuicConnectionFactory
+        _factory
             .EstablishAsync(msg.Options, msg.Endpoint, msg.Token)
             .PipeTo(Self,
                 success: lease => new Established(lease, msg),

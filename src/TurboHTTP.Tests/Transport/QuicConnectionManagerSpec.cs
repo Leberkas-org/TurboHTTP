@@ -1,7 +1,8 @@
 using System.Net;
 using System.Runtime.Versioning;
 using TurboHTTP.Internal;
-using TurboHTTP.Transport.Quic;
+using TurboHTTP.Protocol.Http3;
+using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
@@ -163,47 +164,108 @@ public sealed class QuicConnectionManagerSpec
         lease.Dispose();
     }
 
-    private sealed class FakeClientProvider(bool blockGetStream = false, byte[]? inboundBytes = null)
-        : IClientProvider
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task AcceptInboundStreamAsLeaseAsync_should_return_control_stream()
     {
-        private int _streamsOpened;
+        var controlVarint = new byte[1];
+        QuicVarInt.Encode((long)StreamType.Control, controlVarint);
 
-        public int StreamsOpened => _streamsOpened;
-        public EndPoint? RemoteEndPoint => new IPEndPoint(IPAddress.Loopback, 8443);
-        public bool SupportsMultipleStreams => true;
+        var provider = new FakeClientProvider(inboundBytes: controlVarint);
+        await using var handle = CreateHandle(provider);
 
-        public Task<Stream> GetStreamAsync(CancellationToken ct = default)
-        {
-            ct.ThrowIfCancellationRequested();
-            if (blockGetStream)
-            {
-                return Task.Delay(Timeout.Infinite, ct).ContinueWith<Stream>(_ =>
-                    throw new OperationCanceledException(ct), ct);
-            }
+        var result = await handle.AcceptInboundStreamAsLeaseAsync(TestContext.Current.CancellationToken);
 
-            Interlocked.Increment(ref _streamsOpened);
-            return Task.FromResult<Stream>(new MemoryStream());
-        }
+        Assert.NotNull(result);
+        Assert.Equal(Http3StreamType.Control, result.StreamType);
+        Assert.True(result.Lease.IsAlive);
 
-        public Task<Stream> GetUnidirectionalStreamAsync(CancellationToken ct = default)
-        {
-            ct.ThrowIfCancellationRequested();
-            Interlocked.Increment(ref _streamsOpened);
-            return Task.FromResult<Stream>(new MemoryStream());
-        }
+        result.Lease.Dispose();
+    }
 
-        public Task<Stream> AcceptInboundStreamAsync(CancellationToken ct = default)
-        {
-            if (inboundBytes is not null)
-            {
-                return Task.FromResult<Stream>(new MemoryStream(inboundBytes));
-            }
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task AcceptInboundStreamAsLeaseAsync_should_return_qpack_encoder_stream()
+    {
+        var varint = new byte[1];
+        QuicVarInt.Encode((long)StreamType.QpackEncoder, varint);
 
-            // Block until cancelled — simulates waiting for server-initiated streams
-            return Task.Delay(Timeout.Infinite, ct).ContinueWith<Stream>(_ =>
-                throw new OperationCanceledException(ct), ct);
-        }
+        var provider = new FakeClientProvider(inboundBytes: varint);
+        await using var handle = CreateHandle(provider);
 
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        var result = await handle.AcceptInboundStreamAsLeaseAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result);
+        Assert.Equal(Http3StreamType.QpackEncoder, result.StreamType);
+
+        result.Lease.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task AcceptInboundStreamAsLeaseAsync_should_return_qpack_decoder_stream()
+    {
+        var varint = new byte[1];
+        QuicVarInt.Encode((long)StreamType.QpackDecoder, varint);
+
+        var provider = new FakeClientProvider(inboundBytes: varint);
+        await using var handle = CreateHandle(provider);
+
+        var result = await handle.AcceptInboundStreamAsLeaseAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result);
+        Assert.Equal(Http3StreamType.QpackDecoder, result.StreamType);
+
+        result.Lease.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task AcceptInboundStreamAsLeaseAsync_should_return_null_for_empty_stream()
+    {
+        var provider = new FakeClientProvider(inboundBytes: []);
+        await using var handle = CreateHandle(provider);
+
+        var result = await handle.AcceptInboundStreamAsLeaseAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task AcceptInboundStreamAsLeaseAsync_should_return_null_when_cancelled()
+    {
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var result = await handle.AcceptInboundStreamAsLeaseAsync(cts.Token);
+
+        Assert.Null(result);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task OpenStreamAsLeaseAsync_should_throw_for_unknown_type()
+    {
+        var provider = new FakeClientProvider();
+        await using var handle = CreateHandle(provider);
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            handle.OpenStreamAsLeaseAsync(Http3StreamType.QpackDecoder, TestContext.Current.CancellationToken));
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task DisposeAsync_should_dispose_provider()
+    {
+        var provider = new FakeClientProvider();
+        var handle = CreateHandle(provider);
+
+        await handle.DisposeAsync();
+
+        Assert.True(provider.Disposed);
     }
 }

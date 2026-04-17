@@ -6,8 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka.Streams.TestKit" />
-        <PackageReference Include="Akka.TestKit.Xunit" />
         <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
         <PackageReference Include="xunit.v3.mtp-v2" />
     </ItemGroup>
@@ -17,7 +15,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\TurboHTTP.Tests.Shared\TurboHTTP.Tests.Shared.csproj" />
         <ProjectReference Include="..\TurboHTTP\TurboHTTP.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Shared\" />
     </ItemGroup>
 
 </Project>

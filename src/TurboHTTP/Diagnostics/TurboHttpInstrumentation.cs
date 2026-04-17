@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using TurboHTTP.Streams.Stages.Features;
 
 namespace TurboHTTP.Diagnostics;
 

@@ -1,6 +1,6 @@
 using System.Buffers;
-using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Http3.Qpack;
+using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Protocol.Http3;
 

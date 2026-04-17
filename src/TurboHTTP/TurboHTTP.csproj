@@ -37,8 +37,10 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>
-        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests"/>
         <InternalsVisibleTo Include="TurboHTTP.StreamTests"/>
+        <InternalsVisibleTo Include="TurboHTTP.AcceptanceTests"/>
+        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests"/>
+        <InternalsVisibleTo Include="TurboHTTP.Tests.Shared"/>
         <InternalsVisibleTo Include="TurboHTTP.Benchmarks"/>
     </ItemGroup>
 </Project>

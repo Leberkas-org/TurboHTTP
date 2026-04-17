@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
-using TurboHTTP.Transport.Connection;
 using TurboHTTP.Protocol.Http11;
+using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Internal;
 
@@ -85,7 +85,7 @@ public class NetworkBuffer : IInputItem, IOutputItem
 
     public ReadOnlySpan<byte> Span => Owner!.Memory.Span[..Length];
 
-    internal Memory<byte> FullMemory => Owner!.Memory;
+    public Memory<byte> FullMemory => Owner!.Memory;
 
     internal int Capacity => Owner?.Memory.Length ?? 0;
 

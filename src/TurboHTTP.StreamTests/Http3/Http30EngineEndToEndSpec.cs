@@ -5,6 +5,7 @@ using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http3;
 

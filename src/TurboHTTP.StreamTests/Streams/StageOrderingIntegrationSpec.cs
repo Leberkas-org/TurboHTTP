@@ -6,6 +6,7 @@ using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 

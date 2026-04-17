@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using TurboHTTP.Protocol.Http3;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http3;
 

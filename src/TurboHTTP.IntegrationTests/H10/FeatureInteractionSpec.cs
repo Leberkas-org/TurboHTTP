@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using TurboHTTP.IntegrationTests.Shared;
-using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Caching;
+using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.IntegrationTests.H10;
 

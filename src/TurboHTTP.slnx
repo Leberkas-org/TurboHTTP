@@ -20,6 +20,7 @@
   <Project Path="TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj" />
   <Project Path="TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj" />
   <Project Path="TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj" />
+  <Project Path="TurboHTTP.Tests.Shared/TurboHTTP.Tests.Shared.csproj" />
   <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
   <Project Path="TurboHTTP/TurboHTTP.csproj" />
 </Solution>

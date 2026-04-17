@@ -4,7 +4,6 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
-using TurboHTTP.Transport.Quic;
 using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Security;

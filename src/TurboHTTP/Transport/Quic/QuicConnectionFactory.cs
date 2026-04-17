@@ -1,6 +1,7 @@
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
+using TurboHTTP.Transport.Tcp;
 
 // QUIC APIs are platform-guarded; usage is gated at runtime via QuicOptions.
 #pragma warning disable CA1416
@@ -9,16 +10,18 @@ namespace TurboHTTP.Transport.Quic;
 
 /// <summary>
 /// Eagerly establishes a new QUIC connection and wraps it in a <see cref="QuicConnectionLease"/>.
-/// Mirrors <see cref="TurboHTTP.Transport.Connection.DirectConnectionFactory"/> for the QUIC path.
+/// Mirrors <see cref="DirectConnectionFactory"/> for the QUIC path.
 /// </summary>
-internal static class QuicConnectionFactory
+internal sealed class QuicConnectionFactory : IQuicConnectionFactory
 {
     /// <summary>
     /// Connects to <paramref name="endpoint"/> using <paramref name="options"/>,
     /// performs the TLS/QUIC handshake, and returns a ready-to-use
     /// <see cref="QuicConnectionLease"/>.
     /// </summary>
-    public static async Task<QuicConnectionLease> EstablishAsync(
+    public static readonly QuicConnectionFactory Instance = new();
+
+    public async Task<QuicConnectionLease> EstablishAsync(
         QuicOptions options, RequestEndpoint endpoint, CancellationToken ct = default)
     {
         var provider = new QuicClientProvider(options);

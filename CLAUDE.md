@@ -106,6 +106,27 @@ Prefer retrieval-led reasoning over pretraining for any .NET work.
 - Quality gates: slopwatch (after substantial code), crap-analysis (after test changes)
 - Specialist agents: dotnet-concurrency-specialist, dotnet-performance-analyst, akka-net-specialist
 
+## Sequential Thinking MCP (`mcp__sequential-thinking__sequentialthinking`)
+
+Use for multi-step reasoning where the full scope isn't clear upfront. The tool lets you think
+step-by-step with the ability to revise, branch, and extend as understanding deepens.
+
+**When to use:**
+- Complex debugging where the root cause isn't obvious
+- Architecture/design decisions with multiple trade-offs
+- RFC compliance analysis requiring cross-referencing multiple sections
+- Any problem where early assumptions may need revision
+
+**How it works:** Call the tool repeatedly, once per thought step. Each call takes:
+- `thought` — your current reasoning step (analysis, revision, hypothesis, verification)
+- `thoughtNumber` / `totalThoughts` — track position; adjust `totalThoughts` up/down as needed
+- `nextThoughtNeeded` — `true` to continue, `false` when done
+- `isRevision` + `revisesThought` — mark a step as reconsidering an earlier thought
+- `branchFromThought` + `branchId` — explore an alternative path without losing the main line
+
+**Pattern:** Analyze → Hypothesize → Verify → Conclude. Revise or branch whenever new
+information contradicts earlier steps. Don't force linear progression — backtrack freely.
+
 ## Roslyn Navigator — Required Before Commit
 
 For any C# modification: inspect affected types and references, verify no downstream breakage, ensure zero compile-time diagnostics.

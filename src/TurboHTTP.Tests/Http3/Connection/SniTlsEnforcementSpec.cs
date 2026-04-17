@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Security;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
-using TurboHTTP.Transport.Quic;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 

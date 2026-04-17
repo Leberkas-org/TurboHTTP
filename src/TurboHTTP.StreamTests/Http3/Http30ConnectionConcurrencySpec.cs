@@ -1,5 +1,4 @@
 using System.Net;
-using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
@@ -7,6 +6,7 @@ using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http3;
 

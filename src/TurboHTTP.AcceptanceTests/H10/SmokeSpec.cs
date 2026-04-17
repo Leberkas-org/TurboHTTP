@@ -1,0 +1,42 @@
+using System.Net;
+using System.Text;
+using Akka;
+using Akka.Streams.Dsl;
+using TurboHTTP.Internal;
+using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
+
+namespace TurboHTTP.AcceptanceTests.H10;
+
+public sealed class SmokeSpec : AcceptanceTestBase
+{
+    private static Http10Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC1945-4.1")]
+    public async Task SmokeTest_should_return_200_hello_world()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/hello")
+        {
+            Version = HttpVersion.Version10
+        };
+
+        const string body = "Hello World";
+        var raw = $"HTTP/1.0 200 OK\r\nContent-Length: {body.Length}\r\n\r\n{body}";
+        var responseBytes = Encoding.Latin1.GetBytes(raw);
+
+        var fake = new ScriptedFakeConnectionStage((_, _) => responseBytes);
+        var flow = Engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+
+        var tcs = new TaskCompletionSource<HttpResponseMessage>();
+        _ = Source.Single(request)
+            .Via(flow)
+            .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
+
+        var response = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var responseBody = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("Hello World", responseBody);
+    }
+}

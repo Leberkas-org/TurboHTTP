@@ -1,6 +1,6 @@
 using TurboHTTP.Internal;
-using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Protocol.Http11;
+using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages;
 

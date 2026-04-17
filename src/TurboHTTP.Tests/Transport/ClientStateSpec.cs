@@ -1,5 +1,7 @@
+using System.Buffers;
 using System.Threading.Channels;
 using TurboHTTP.Internal;
+using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;

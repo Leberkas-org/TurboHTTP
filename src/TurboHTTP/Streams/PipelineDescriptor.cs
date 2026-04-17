@@ -1,7 +1,7 @@
 using TurboHTTP.Protocol.AltSvc;
+using TurboHTTP.Protocol.Caching;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;
-using TurboHTTP.Protocol.Caching;
 
 namespace TurboHTTP.Streams;
 

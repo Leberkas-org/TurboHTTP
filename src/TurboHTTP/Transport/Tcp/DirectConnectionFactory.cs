@@ -11,8 +11,13 @@ namespace TurboHTTP.Transport.Tcp;
 /// spawns ByteMover tasks, and returns a <see cref="ConnectionLease"/> —
 /// all in a single async call with no actor involvement.
 /// </summary>
-internal static class DirectConnectionFactory
+internal sealed class DirectConnectionFactory : IConnectionFactory
 {
+    public static readonly DirectConnectionFactory Instance = new();
+
+    Task<ConnectionLease> IConnectionFactory.EstablishAsync(TcpOptions options, RequestEndpoint endpoint, CancellationToken ct)
+        => EstablishAsync(options, endpoint, ct);
+
     /// <summary>
     /// Establishes a new connection to the specified endpoint and returns a fully
     /// initialised <see cref="ConnectionLease"/> with running ByteMover pump tasks.

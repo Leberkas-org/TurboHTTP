@@ -3,6 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Streams.Stages.Features;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Cookies;
 
@@ -82,10 +83,12 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         {
             response.RequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUri);
         }
+
         if (setCookie is not null)
         {
             response.Headers.TryAddWithoutValidation("Set-Cookie", setCookie);
         }
+
         return response;
     }
 

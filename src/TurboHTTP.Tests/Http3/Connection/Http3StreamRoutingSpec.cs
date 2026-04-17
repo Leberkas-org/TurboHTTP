@@ -1,7 +1,6 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
-using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 

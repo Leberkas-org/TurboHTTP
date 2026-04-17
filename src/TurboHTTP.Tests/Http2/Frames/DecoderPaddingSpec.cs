@@ -1,5 +1,5 @@
-using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Protocol.Http2;
+using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 

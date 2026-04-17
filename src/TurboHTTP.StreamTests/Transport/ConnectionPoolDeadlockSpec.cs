@@ -1,9 +1,9 @@
 using System.Net;
-using System.Net.Sockets;
 using Akka.Actor;
 using TurboHTTP.Internal;
-using TurboHTTP.Transport.Quic;
+using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
+using TurboHTTP.Transport.Quic;
 
 namespace TurboHTTP.StreamTests.Transport;
 
@@ -14,91 +14,63 @@ namespace TurboHTTP.StreamTests.Transport;
 public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
 {
     private ActorSystem? _system;
-    private TcpListener? _listener;
-    private int _port;
-    private readonly List<TcpClient> _acceptedClients = [];
+    private InMemoryConnectionFactory _factory = null!;
 
     public ValueTask InitializeAsync()
     {
         _system = ActorSystem.Create("connection-deadlock-tests");
-        _listener = new TcpListener(IPAddress.Loopback, 0);
-        _listener.Start();
-        _port = ((IPEndPoint)_listener.LocalEndpoint).Port;
+        _factory = new InMemoryConnectionFactory();
         return ValueTask.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var client in _acceptedClients)
-        {
-            client.Dispose();
-        }
-
-        _listener?.Stop();
         if (_system is not null)
         {
             await _system.Terminate();
         }
     }
 
-    private TcpOptions CreateOptions() => new()
+    private static TcpOptions CreateOptions() => new()
     {
         Host = "127.0.0.1",
-        Port = _port
+        Port = 8080
     };
 
-    private RequestEndpoint CreateEndpoint(Version? version = null) => new()
+    private static RequestEndpoint CreateEndpoint(Version? version = null) => new()
     {
         Host = "127.0.0.1",
-        Port = (ushort)_port,
+        Port = 8080,
         Scheme = "http",
         Version = version ?? HttpVersion.Version11
     };
 
     private IActorRef CreateActor()
-        => _system!.ActorOf(Props.Create(() => new TcpConnectionManagerActor(TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan)));
-
-    private async Task AcceptConnectionsAsync(int count, CancellationToken ct)
-    {
-        for (var i = 0; i < count; i++)
-        {
-            var client = await _listener!.AcceptTcpClientAsync(ct);
-            _acceptedClients.Add(client);
-        }
-    }
+        => _system!.ActorOf(Props.Create(() =>
+            new TcpConnectionManagerActor(_factory, TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan)));
 
     [Fact(Timeout = 5000)]
     public async Task TcpConnectionManagerActor_should_free_slot_on_abrupt_close()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
-
-        var acceptTask = AcceptConnectionsAsync(2, cts.Token);
-
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: false));
 
-        var secondAcquire = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
-        var completed = await Task.WhenAny(secondAcquire, Task.Delay(TimeSpan.FromSeconds(1), cts.Token));
+        var secondAcquire = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var completed = await Task.WhenAny(secondAcquire, Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
 
         Assert.Same(secondAcquire, completed);
 
         var lease2 = await secondAcquire;
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: false));
-
-        await acceptTask;
     }
 
     [Fact(Timeout = 5000)]
     public async Task TcpConnectionManagerActor_should_respect_cancellation_token()
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(4));
-
-        var acceptTask = AcceptConnectionsAsync(6, cts.Token);
-
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
@@ -106,10 +78,8 @@ public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token));
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken));
         }
-
-        await acceptTask;
 
         using var shortCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>

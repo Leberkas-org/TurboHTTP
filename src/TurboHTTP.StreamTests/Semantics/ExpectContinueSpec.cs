@@ -4,6 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages.Features;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 

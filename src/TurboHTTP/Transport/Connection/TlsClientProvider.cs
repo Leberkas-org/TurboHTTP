@@ -98,7 +98,7 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
     /// Sends an HTTP CONNECT request through the proxy to establish a tunnel to the target host.
     /// RFC 9110 §9.3.6: the CONNECT method requests that the proxy establish a tunnel.
     /// </summary>
-    private static async Task EstablishConnectTunnelAsync(
+    internal static async Task EstablishConnectTunnelAsync(
         Stream proxyStream,
         string targetHost,
         int targetPort,

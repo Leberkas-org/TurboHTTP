@@ -1,7 +1,9 @@
+using System.Threading.Tasks.Sources;
+
 namespace TurboHTTP.Tests.Internal;
 
 /// <summary>
-/// Tests for <see cref="PendingRequest"/> — the pooled <see cref="IValueTaskSource{T}"/>
+/// Tests for <see cref="PendingRequest"/> — the pooled <see cref="IValueTaskSource"/>
 /// used by <see cref="TurboHttpClient"/>. Validates version-guarded completion,
 /// pool reuse safety, and concurrent cancellation semantics.
 /// </summary>

@@ -1,5 +1,6 @@
 using System.Net;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 using TextEncoding = System.Text.Encoding;
 
 namespace TurboHTTP.StreamTests.Http11;

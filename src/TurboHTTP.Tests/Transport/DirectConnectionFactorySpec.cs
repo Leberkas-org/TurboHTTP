@@ -2,8 +2,9 @@ using System.Net;
 using System.Net.Sockets;
 using Akka.Actor;
 using TurboHTTP.Internal;
-using TurboHTTP.Transport.Tcp;
+using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
+using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.Tests.Transport;
 

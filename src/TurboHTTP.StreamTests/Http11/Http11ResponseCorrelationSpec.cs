@@ -1,5 +1,6 @@
 using System.Net;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http11;
 
