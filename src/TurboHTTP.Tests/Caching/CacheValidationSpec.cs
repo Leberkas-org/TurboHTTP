@@ -226,4 +226,123 @@ public sealed class CacheValidationSpec
 
         Assert.False(freshened);
     }
+
+
+    [Trait("RFC", "RFC9111-4.3.4")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_not_merge_content_headers_when_304_has_none()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        entry.Response.Content.Headers.TryAddWithoutValidation("Content-Type", "text/html");
+        var notModified = new HttpResponseMessage(HttpStatusCode.NotModified);
+
+        var merged = CacheValidationRequestBuilder.MergeNotModifiedResponse(notModified, entry);
+
+        // Cached content headers should be preserved
+        var contentType = merged.Content.Headers.GetValues("Content-Type").FirstOrDefault();
+        Assert.Equal("text/html", contentType);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.1")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_preserve_version_when_building_conditional_request()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource")
+        {
+            Version = new Version(2, 0)
+        };
+
+        var conditional = CacheValidationRequestBuilder.BuildConditionalRequest(original, entry);
+
+        Assert.Equal(new Version(2, 0), conditional.Version);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.1")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_copy_content_when_building_conditional_request()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        var content = new StringContent("test body");
+        var original = new HttpRequestMessage(HttpMethod.Post, "http://example.com/resource")
+        {
+            Content = content
+        };
+
+        var conditional = CacheValidationRequestBuilder.BuildConditionalRequest(original, entry);
+
+        Assert.NotNull(conditional.Content);
+        Assert.Same(content, conditional.Content);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.5")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_not_freshen_when_response_status_not_304()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        var head200 = new HttpResponseMessage(HttpStatusCode.OK);
+        head200.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"v1\"");
+
+        var freshened = CacheValidationRequestBuilder.TryFreshenFromHead(head200, entry);
+
+        Assert.False(freshened);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.5")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_not_freshen_when_304_etag_null()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        var head304 = new HttpResponseMessage(HttpStatusCode.NotModified);
+        // No ETag header in response
+
+        var freshened = CacheValidationRequestBuilder.TryFreshenFromHead(head304, entry);
+
+        Assert.False(freshened);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.5")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_not_freshen_when_entry_etag_null()
+    {
+        var entry = MakeEntry(etag: null, lastModified: _baseTime);
+        var head304 = new HttpResponseMessage(HttpStatusCode.NotModified);
+        head304.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"v1\"");
+
+        var freshened = CacheValidationRequestBuilder.TryFreshenFromHead(head304, entry);
+
+        Assert.False(freshened);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.5")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_update_response_headers_when_freshening()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        entry.Response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=300");
+        var head304 = new HttpResponseMessage(HttpStatusCode.NotModified);
+        head304.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"v1\"");
+        head304.Headers.TryAddWithoutValidation("Cache-Control", "max-age=600");
+
+        var freshened = CacheValidationRequestBuilder.TryFreshenFromHead(head304, entry);
+
+        Assert.True(freshened);
+        var cacheControl = entry.Response.Headers.GetValues("Cache-Control").FirstOrDefault();
+        Assert.Equal("max-age=600", cacheControl);
+    }
+
+    [Trait("RFC", "RFC9111-4.3.5")]
+    [Fact(Timeout = 5000)]
+    public void CacheValidation_should_copy_request_headers_when_building_head_validation_request()
+    {
+        var entry = MakeEntry(etag: "\"v1\"");
+        var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
+        original.Headers.TryAddWithoutValidation("User-Agent", "TestClient");
+
+        var head = CacheValidationRequestBuilder.BuildHeadValidationRequest(original, entry);
+
+        Assert.True(head.Headers.Contains("User-Agent"));
+        var ua = head.Headers.GetValues("User-Agent").FirstOrDefault();
+        Assert.Equal("TestClient", ua);
+    }
 }

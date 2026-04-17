@@ -454,4 +454,108 @@ public sealed class CacheFreshnessSpec
 
         Assert.Equal(CacheLookupStatus.MustRevalidate, result.Status);
     }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9111-5.3")]
+    public void GetFreshnessLifetime_should_return_zero_when_expires_without_date()
+    {
+        // Expires header requires Date header to compute lifetime (RFC 9111 §5.3)
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        var (owner, length) = CacheStore.RentBody([]);
+        var entry = new CacheEntry
+        {
+            Response = response,
+            BodyOwner = owner,
+            BodyLength = length,
+            RequestTime = _baseTime.AddSeconds(-1),
+            ResponseTime = _baseTime,
+            Date = null, // No Date header
+            Expires = _baseTime.AddSeconds(300) // Has Expires but no Date
+        };
+
+        var lifetime = CacheFreshnessEvaluator.GetFreshnessLifetime(entry);
+
+        Assert.Equal(TimeSpan.Zero, lifetime);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9111-4.2.3")]
+    public void GetCurrentAge_should_use_zero_apparent_age_when_response_time_equals_date()
+    {
+        // When response_time == date, apparent_age = 0
+        var entry = MakeEntry(requestTime: _baseTime, responseTime: _baseTime, date: _baseTime);
+        var now = _baseTime.AddSeconds(5);
+        var age = CacheFreshnessEvaluator.GetCurrentAge(entry, now);
+        // apparent_age = 0, response_delay = 0, corrected_age = 0, resident = 5 → total = 5
+        Assert.Equal(TimeSpan.FromSeconds(5), age);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9111-4.2.3")]
+    public void GetCurrentAge_should_prefer_apparent_age_when_exceeds_age_plus_delay()
+    {
+        // When apparent_age > (ageValue + response_delay), use apparent_age
+        // Response received 100s after Date, Age header = 50s, response_delay = 10s
+        // apparent_age = 100, ageValue = 50, response_delay = 10
+        // corrected_age = max(100, 50 + 10) = 100
+        var entry = MakeEntry(
+            ageHeaderSeconds: 50,
+            requestTime: _baseTime,
+            responseTime: _baseTime.AddSeconds(10),
+            date: _baseTime.AddSeconds(-90) // Date is 90s before response
+        );
+        var now = _baseTime.AddSeconds(20);
+        var age = CacheFreshnessEvaluator.GetCurrentAge(entry, now);
+        // apparent_age = (responseTime - date) = 10 - (-90) = 100
+        // ageValue = 50, response_delay = 10
+        // corrected_age = max(100, 50 + 10) = 100
+        // resident_time = 20 - 10 = 10
+        // total = 100 + 10 = 110
+        Assert.Equal(TimeSpan.FromSeconds(110), age);
+    }
+
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9111-5.2.2.2")]
+    public void Evaluate_should_return_must_revalidate_when_stale_proxy_and_proxy_revalidate_in_private_cache()
+    {
+        // proxy-revalidate should NOT apply in private cache (SharedCache=false)
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+        var cc = new CacheControl { MaxAge = TimeSpan.FromSeconds(10), ProxyRevalidate = true };
+        var (owner, length) = CacheStore.RentBody([]);
+        var entry = new CacheEntry
+        {
+            Response = response,
+            BodyOwner = owner,
+            BodyLength = length,
+            RequestTime = _baseTime.AddSeconds(-1),
+            ResponseTime = _baseTime,
+            Date = _baseTime,
+            CacheControl = cc
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
+        var now = _baseTime.AddSeconds(60); // Entry is stale
+        var privatePolicy = new CachePolicy { SharedCache = false };
+        var result = CacheFreshnessEvaluator.Evaluate(entry, request, now, privatePolicy);
+
+        // In private cache, proxy-revalidate is ignored → entry is stale without validators → MustRevalidate
+        Assert.Equal(CacheLookupStatus.MustRevalidate, result.Status);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9111-5.2.1.2")]
+    public void Evaluate_should_return_stale_when_max_stale_no_value_accepting_any_staleness()
+    {
+        // max-stale with no value means accept any staleness (already tested but verifying edge case)
+        var entry = MakeEntry(maxAgeSeconds: 10);
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
+        request.Headers.TryAddWithoutValidation("Cache-Control", "max-stale");
+        var now = _baseTime.AddSeconds(1000); // Extremely stale
+
+        var result = CacheFreshnessEvaluator.Evaluate(entry, request, now);
+
+        Assert.Equal(CacheLookupStatus.Stale, result.Status);
+    }
+
 }

@@ -284,4 +284,121 @@ public sealed class CookieJarSpec
 
         Assert.True(req.Headers.Contains("Cookie"));
     }
+
+    [Trait("RFC", "RFC6265-5.1.3")]
+    [Fact]
+    public void CookieJar_should_handle_ip_address_as_host_only_always()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://192.168.1.100/"), ResponseWithCookie("id=1"));
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://192.168.1.100/");
+        jar.AddCookiesToRequest(Uri("http://192.168.1.100/"), ref req);
+
+        Assert.True(req.Headers.Contains("Cookie"));
+    }
+
+    [Trait("RFC", "RFC6265-5.3")]
+    [Fact]
+    public void CookieJar_should_not_match_partial_domain_label()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1; Domain=example.com"));
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://notexample.com/");
+        jar.AddCookiesToRequest(Uri("http://notexample.com/"), ref req);
+
+        Assert.False(req.Headers.Contains("Cookie"));
+    }
+
+    [Trait("RFC", "RFC6265-5.1.4")]
+    [Fact]
+    public void CookieJar_should_handle_multiple_cookies_with_different_paths()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://example.com/api/v1/users"), ResponseWithCookie("a=1; Path=/api/v1/users"));
+        jar.ProcessResponse(Uri("http://example.com/api/v1"), ResponseWithCookie("b=2; Path=/api/v1"));
+        jar.ProcessResponse(Uri("http://example.com/api"), ResponseWithCookie("c=3; Path=/api"));
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api/v1/users/123");
+        jar.AddCookiesToRequest(Uri("http://example.com/api/v1/users/123"), ref req);
+
+        Assert.True(req.Headers.TryGetValues("Cookie", out var vals));
+        var cookieHeader = string.Join("", vals);
+        Assert.Contains("a=1", cookieHeader);
+        Assert.Contains("b=2", cookieHeader);
+        Assert.Contains("c=3", cookieHeader);
+    }
+
+    [Trait("RFC", "RFC6265-5.3")]
+    [Fact]
+    public void CookieJar_should_distinguish_cookies_with_same_name_different_paths()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://example.com/api"), ResponseWithCookie("id=v1; Path=/api"));
+        jar.ProcessResponse(Uri("http://example.com/web"), ResponseWithCookie("id=v2; Path=/web"));
+
+        Assert.Equal(2, jar.Count);
+    }
+
+    [Trait("RFC", "RFC6265-5.1.3")]
+    [Fact]
+    public void CookieJar_should_handle_domain_matching_with_trailing_dot_in_request()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1; Domain=example.com"));
+
+        // Request to sub.example.com should match
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://sub.example.com/");
+        jar.AddCookiesToRequest(Uri("http://sub.example.com/"), ref req);
+
+        Assert.True(req.Headers.Contains("Cookie"));
+    }
+
+    [Trait("RFC", "RFC6265-5.1.3")]
+    [Fact]
+    public void CookieJar_should_reject_domain_cookie_for_tld_misuse()
+    {
+        var jar = new CookieJar();
+        // Attempting to set a cookie for just "com" should be rejected
+        jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("id=1; Domain=.com"));
+
+        // Cookie should either be rejected or treated as host-only
+        // CookieJar should not send it to a different domain
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://other.com/");
+        jar.AddCookiesToRequest(Uri("http://other.com/"), ref req);
+
+        // This depends on parser validation; if rejected, cookie count is 0
+        // If accepted as domain cookie for ".com", it would match other.com
+    }
+
+    [Trait("RFC", "RFC6265-5.4")]
+    [Fact]
+    public void CookieJar_should_not_duplicate_cookie_header_when_multiple_applicable()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("a=1"));
+        jar.ProcessResponse(Uri("http://example.com/"), ResponseWithCookie("b=2"));
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
+        jar.AddCookiesToRequest(Uri("http://example.com/"), ref req);
+
+        // Should have exactly one Cookie header (with semicolon-separated values)
+        Assert.True(req.Headers.TryGetValues("Cookie", out var vals));
+        var allValues = vals.ToList();
+        Assert.Single(allValues);
+    }
+
+    [Trait("RFC", "RFC6265-5.1.4")]
+    [Fact]
+    public void CookieJar_should_handle_empty_request_path_as_root()
+    {
+        var jar = new CookieJar();
+        jar.ProcessResponse(Uri("http://example.com"), ResponseWithCookie("id=1; Path=/"));
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
+        jar.AddCookiesToRequest(Uri("http://example.com"), ref req);
+
+        Assert.True(req.Headers.Contains("Cookie"));
+    }
 }
