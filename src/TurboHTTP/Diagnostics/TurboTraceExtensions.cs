@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace TurboHTTP.Diagnostics;
 
@@ -50,5 +52,15 @@ public static class TurboTraceExtensions
         TurboTrace.Configure(listener, categories, minimumLevel);
         services.AddSingleton(listener);
         return services;
+    }
+
+    public static MeterProviderBuilder AddTurboHttpMetrics(this MeterProviderBuilder builder)
+    {
+        return builder.AddMeter(TurboHttpMetrics.MeterName);
+    }
+
+    public static TracerProviderBuilder AddTurboHttpTracing(this TracerProviderBuilder builder)
+    {
+        return builder.AddSource(TurboHttpInstrumentation.SourceName);
     }
 }

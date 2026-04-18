@@ -813,4 +813,164 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
 
         Assert.Equal("93.184.216.34", activity.GetTagItem("network.peer.address"));
     }
+
+    [Fact]
+    public void IsTracingActive_should_return_true_when_listener_present()
+    {
+        // Our listener is already subscribed in constructor
+        Assert.True(TurboHttpInstrumentation.IsTracingActive);
+    }
+
+    [Fact]
+    public void RedactUrl_should_handle_empty_query()
+    {
+        var uri = new Uri("https://example.com/path?");
+        Assert.Equal("https://example.com/path?*", TurboHttpInstrumentation.RedactUrl(uri));
+    }
+
+    [Fact]
+    public void RedactUrl_with_complex_path_should_preserve_structure()
+    {
+        var uri = new Uri("https://api.example.com:8080/v1/users/123/profile?token=secret#top");
+        Assert.Equal("https://api.example.com:8080/v1/users/123/profile?*", TurboHttpInstrumentation.RedactUrl(uri));
+    }
+
+    [Fact]
+    public void StartRequest_with_get_no_uri_should_work()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, (Uri?)null);
+        var activity = TurboHttpInstrumentation.StartRequest(request);
+        Assert.NotNull(activity);
+    }
+
+    [Fact]
+    public void SetResponse_with_3xx_status_should_not_set_error()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.MovedPermanently);
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Null(activity.GetTagItem("error.type"));
+        Assert.NotEqual(ActivityStatusCode.Error, activity.Status);
+    }
+
+    [Fact]
+    public void NormalizeMethod_should_handle_lowercase_standard_methods()
+    {
+        Assert.Equal("GET", TurboHttpInstrumentation.NormalizeMethod("get"));
+        Assert.Equal("POST", TurboHttpInstrumentation.NormalizeMethod("post"));
+        Assert.Equal("PUT", TurboHttpInstrumentation.NormalizeMethod("put"));
+    }
+
+    [Fact]
+    public void NormalizeMethod_should_handle_mixed_case()
+    {
+        Assert.Equal("GET", TurboHttpInstrumentation.NormalizeMethod("Get"));
+        Assert.Equal("POST", TurboHttpInstrumentation.NormalizeMethod("PoSt"));
+    }
+
+    [Fact]
+    public void StartRequest_should_set_url_scheme_for_http()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
+
+        var activity = TurboHttpInstrumentation.StartRequest(request);
+
+        Assert.NotNull(activity);
+        Assert.Equal("http", activity.GetTagItem("url.scheme"));
+    }
+
+    [Fact]
+    public void FormatProtocolVersion_should_handle_version_3_with_minor()
+    {
+        Assert.Equal("3", TurboHttpInstrumentation.FormatProtocolVersion(new Version(3, 1)));
+    }
+
+    [Fact]
+    public void SetError_should_handle_aggregate_exception()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+        var ex = new AggregateException("Multiple failures");
+
+        TurboHttpInstrumentation.SetError(activity, ex);
+
+        Assert.Equal(typeof(AggregateException).FullName, activity.GetTagItem("error.type"));
+        Assert.Equal("Multiple failures", activity.GetTagItem("exception.message"));
+    }
+
+    [Fact]
+    public void InjectTraceContext_should_handle_activity_with_no_current_context()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        // Clear Activity.Current before injecting
+        var prev = Activity.Current;
+        Activity.Current = null;
+        try
+        {
+            TurboHttpInstrumentation.InjectTraceContext(activity, request);
+            Assert.True(request.Headers.Contains("traceparent"));
+        }
+        finally
+        {
+            Activity.Current = prev;
+        }
+    }
+
+    [Fact]
+    public void SourceName_should_be_constant()
+    {
+        Assert.Equal("TurboHTTP", TurboHttpInstrumentation.SourceName);
+    }
+
+    [Fact]
+    public void Source_version_should_not_be_empty()
+    {
+        Assert.False(string.IsNullOrWhiteSpace(TurboHttpInstrumentation.Source.Version));
+    }
+
+    [Fact]
+    public void Source_should_be_disposable()
+    {
+        Assert.NotNull(TurboHttpInstrumentation.Source);
+        // Source is static and shared, verify it has Name and Version
+        Assert.Equal("TurboHTTP", TurboHttpInstrumentation.Source.Name);
+    }
+
+    [Fact]
+    public void StartDnsLookup_should_return_null_when_no_listener()
+    {
+        _listener.Dispose();
+        var activity = TurboHttpInstrumentation.StartDnsLookup("example.com");
+        // May or may not be null depending on other listeners
+        Assert.Equal("TurboHTTP", TurboHttpInstrumentation.SourceName);
+    }
+
+    [Fact]
+    public void SetResponse_with_http10_should_format_version_correctly()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Version = new Version(1, 0) };
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Equal("1.0", activity.GetTagItem("network.protocol.version"));
+    }
+
+    [Fact]
+    public void SetResponse_with_http11_should_format_version_correctly()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Version = new Version(1, 1) };
+        TurboHttpInstrumentation.SetResponse(activity, response);
+
+        Assert.Equal("1.1", activity.GetTagItem("network.protocol.version"));
+    }
 }

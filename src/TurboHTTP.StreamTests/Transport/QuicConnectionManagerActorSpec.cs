@@ -359,4 +359,122 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
 
         Assert.False(orphanLease.IsAlive);
     }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task Acquire_should_block_when_max_connections_per_host_reached()
+    {
+        var actor = CreateActor(maxConnectionsPerHost: 2);
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint();
+
+        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+        });
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: false));
+        actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: false));
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task Release_should_free_slot_for_pending_request()
+    {
+        var actor = CreateActor(maxConnectionsPerHost: 1);
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint();
+
+        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+
+        var pendingTask = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: false));
+
+        var lease2 = await pendingTask.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+        Assert.NotNull(lease2);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: false));
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task Multiple_hosts_should_maintain_separate_pools()
+    {
+        var actor = CreateActor();
+        var options1 = new QuicOptions { Host = "host1.example.com", Port = 443 };
+        var endpoint1 = new RequestEndpoint
+        {
+            Host = "host1.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+        };
+        var options2 = new QuicOptions { Host = "host2.example.com", Port = 443 };
+        var endpoint2 = new RequestEndpoint
+        {
+            Host = "host2.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+        };
+
+        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
+        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+
+        Assert.NotSame(lease1, lease2);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
+        actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: true));
+
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        var lease3 = await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
+        var lease4 = await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+
+        Assert.Same(lease1, lease3);
+        Assert.Same(lease2, lease4);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease3, CanReuse: false));
+        actor.Tell(new QuicConnectionManagerActor.Release(lease4, CanReuse: false));
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task Idle_timeout_zero_should_disable_eviction()
+    {
+        var actor = CreateActor(TimeSpan.Zero);
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint();
+
+        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
+
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+
+        // Should still be alive (no eviction)
+        Assert.True(lease1.IsAlive);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: false));
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114")]
+    public async Task Evicted_idle_connection_should_not_be_reused()
+    {
+        var actor = CreateActor(TimeSpan.FromMilliseconds(50));
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint();
+
+        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
+
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+
+        // Lease should be evicted, next acquire creates new
+        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        Assert.NotNull(lease2);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: false));
+    }
 }

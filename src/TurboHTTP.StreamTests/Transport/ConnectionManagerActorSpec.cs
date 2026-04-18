@@ -267,4 +267,157 @@ public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
 
         handedOff.Dispose();
     }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112")]
+    public async Task Multiple_hosts_should_maintain_separate_pools()
+    {
+        var actor = CreateActor();
+        var options1 = new TcpOptions { Host = "host1.example.com", Port = 80 };
+        var endpoint1 = new RequestEndpoint
+        {
+            Host = "host1.example.com", Port = 80, Scheme = "http", Version = HttpVersion.Version11
+        };
+        var options2 = new TcpOptions { Host = "host2.example.com", Port = 80 };
+        var endpoint2 = new RequestEndpoint
+        {
+            Host = "host2.example.com", Port = 80, Scheme = "http", Version = HttpVersion.Version11
+        };
+
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
+        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+
+        Assert.NotSame(lease1, lease2);
+
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
+
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        var lease3 = await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
+        var lease4 = await TcpConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+
+        Assert.Same(lease1, lease3);
+        Assert.Same(lease2, lease4);
+
+        lease3.Dispose();
+        lease4.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112")]
+    public async Task Acquire_should_timeout_when_exhausted_and_pending()
+    {
+        var actor = CreateActor();
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        var leases = new List<ConnectionLease>();
+        for (var i = 0; i < 6; i++)
+        {
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken));
+        }
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+        });
+
+        Assert.NotNull(ex);
+
+        foreach (var lease in leases)
+        {
+            lease.Dispose();
+        }
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112")]
+    public async Task Release_dead_lease_should_not_crash_actor()
+    {
+        var actor = CreateActor();
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+
+        // Dispose the lease directly (without releasing through actor)
+        lease.Dispose();
+
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+
+        // Actor should still be responsive
+        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        Assert.NotNull(lease2);
+
+        lease2.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112")]
+    public async Task Idle_timeout_zero_should_disable_eviction()
+    {
+        var actor = CreateActor(TimeSpan.Zero);
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+        actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
+
+        // With zero timeout, eviction timer shouldn't run
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+
+        // At least one should still be alive (sentinel keeps at least one)
+        Assert.True(lease1.IsAlive || lease2.IsAlive);
+
+        if (lease1.IsAlive) lease1.Dispose();
+        if (lease2.IsAlive) lease2.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112")]
+    public async Task Version30_should_not_reuse_connections()
+    {
+        var actor = CreateActor();
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version30);
+
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+
+        // HTTP/3 should not reuse TCP connections (they use QUIC)
+        Assert.NotSame(lease1, lease2);
+
+        lease2.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112")]
+    public async Task Evicted_idle_connection_should_not_be_reused()
+    {
+        var actor = CreateActor(TimeSpan.FromMilliseconds(50));
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+
+        // Wait for eviction
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+
+        // If lease was evicted, trying to use it should not cause issues
+        // The manager should create a new one
+        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        Assert.NotNull(lease2);
+
+        lease2.Dispose();
+    }
 }

@@ -116,7 +116,10 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 
     protected override void PreStart()
     {
-        Timers.StartPeriodicTimer(EvictTimerKey, Evict.Instance, _idleTimeout, _idleTimeout);
+        if (_idleTimeout > TimeSpan.Zero)
+        {
+            Timers.StartPeriodicTimer(EvictTimerKey, Evict.Instance, _idleTimeout, _idleTimeout);
+        }
     }
 
     private void OnAcquire(Acquire msg)
