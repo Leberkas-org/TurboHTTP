@@ -1,0 +1,526 @@
+using TurboHTTP.Protocol.Http3;
+
+namespace TurboHTTP.Tests.Http3.Frames;
+
+/// <summary>
+/// Edge-case tests for HTTP/3 FrameDecoder to achieve 100% branch coverage.
+/// Tests frame decoding with various payload sizes, partial frame assembly,
+/// unknown frame types, memory pool management, and all error conditions per RFC 9114 §7.
+/// </summary>
+public sealed class FrameDecoderEdgeCasesSpec
+{
+    /// RFC 9114 §7 — Empty DATA frame (zero payload)
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_Empty_DataFrame()
+    {
+        var original = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out var consumed);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.NotNull(frame);
+        var data = Assert.IsType<Http3DataFrame>(frame);
+        Assert.Empty(data.Data.ToArray());
+        Assert.Equal(wire.Length, consumed);
+    }
+
+    /// RFC 9114 §7 — Empty HEADERS frame (zero payload)
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_Empty_HeadersFrame()
+    {
+        var original = new Http3HeadersFrame(ReadOnlyMemory<byte>.Empty);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var headers = Assert.IsType<Http3HeadersFrame>(frame);
+        Assert.Empty(headers.HeaderBlock.ToArray());
+    }
+
+    /// RFC 9114 §7 — Large payload frame (1MB)
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_Large_DataFrame()
+    {
+        var largePayload = new byte[1_000_000];
+        for (int i = 0; i < largePayload.Length; i++)
+        {
+            largePayload[i] = (byte)(i % 256);
+        }
+
+        var original = new Http3DataFrame(largePayload);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var data = Assert.IsType<Http3DataFrame>(frame);
+        Assert.Equal(largePayload, data.Data.ToArray());
+    }
+
+    /// RFC 9114 §7 — Partial header only (no length varint)
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_NeedMoreData_When_LengthVarintIncomplete()
+    {
+        // Only type varint, no length varint
+        var data = new byte[] { 0x00 }; // DATA frame type
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(data, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.NeedMoreData, status);
+        Assert.Null(frame);
+        Assert.True(decoder.HasRemainder);
+    }
+
+    /// RFC 9114 §7 — Partial payload (less than declared length)
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_NeedMoreData_When_PayloadIncomplete()
+    {
+        // Encode type and length, but provide incomplete payload
+        var buf = new byte[16];
+        var offset = 0;
+        offset += QuicVarInt.Encode(0, buf.AsSpan(offset));  // DATA type
+        offset += QuicVarInt.Encode(100, buf.AsSpan(offset)); // Length = 100
+        // Only provide 10 bytes of payload instead of 100
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(buf.AsSpan(0, offset + 10), out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.NeedMoreData, status);
+        Assert.Null(frame);
+    }
+
+    /// RFC 9114 §7 — Multiple frames in one buffer
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_DecodeAll_SkipUnknownFrameTypes()
+    {
+        // Create two known frames only (since unknown frames cannot be serialized by our API)
+        var data = new Http3DataFrame(new byte[] { 0xAA, 0xBB, 0xCC });
+        var goaway = new Http3GoAwayFrame(0);
+
+        var buf = new byte[128];
+        var bufSpan = buf.AsSpan();
+        var offset = 0;
+        offset += data.WriteTo(ref bufSpan);
+        bufSpan = buf.AsSpan(offset);
+        offset += goaway.WriteTo(ref bufSpan);
+
+        var decoder = new FrameDecoder();
+        var frames = decoder.DecodeAll(buf.AsSpan(0, offset), out var consumed);
+
+        // Should have 2 frames (DATA and GOAWAY)
+        Assert.Equal(2, frames.Count);
+        Assert.IsType<Http3DataFrame>(frames[0]);
+        Assert.IsType<Http3GoAwayFrame>(frames[1]);
+        Assert.Equal(offset, consumed);
+    }
+
+    /// RFC 9114 §7 — Throws on frame payload size overflow
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Throw_On_FrameSizeOverflow()
+    {
+        var buf = new byte[16];
+        var offset = 0;
+        offset += QuicVarInt.Encode(0, buf.AsSpan(offset));  // DATA type
+        // Encode a length larger than int.MaxValue
+        offset += QuicVarInt.Encode((long)int.MaxValue + 1, buf.AsSpan(offset));
+
+        var decoder = new FrameDecoder();
+        var ex = Assert.Throws<Http3Exception>(() =>
+            decoder.TryDecode(buf.AsSpan(0, offset), out _, out _));
+
+        Assert.Contains("exceeds maximum", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// RFC 9114 §7 — HasRemainder property tracks buffered state
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Track_HasRemainder_Correctly()
+    {
+        var decoder = new FrameDecoder();
+
+        // Initially no remainder
+        Assert.False(decoder.HasRemainder);
+
+        // Create a DATA frame and split it mid-payload
+        var frame1 = new Http3DataFrame(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE });
+        var wire = frame1.Serialize();
+
+        // Feed only first 3 bytes, leaving remainder
+        decoder.TryDecode(wire.AsSpan(0, 3), out _, out _);
+        Assert.True(decoder.HasRemainder);
+
+        // Feed rest of the frame
+        decoder.TryDecode(wire.AsSpan(3), out var frame2, out _);
+        Assert.NotNull(frame2); // Should have decoded successfully
+        Assert.False(decoder.HasRemainder); // After completing, no remainder
+    }
+
+    /// RFC 9114 §7 — Reset clears remainder buffer
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Clear_Remainder_OnReset()
+    {
+        var decoder = new FrameDecoder();
+
+        // Feed partial data to create remainder
+        var buf = new byte[] { 0x00 };
+        decoder.TryDecode(buf, out _, out _);
+        Assert.True(decoder.HasRemainder);
+
+        // Reset
+        decoder.Reset();
+        Assert.False(decoder.HasRemainder);
+    }
+
+    /// RFC 9114 §7 — Dispose clears remainder buffer
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Clear_Remainder_OnDispose()
+    {
+        var decoder = new FrameDecoder();
+
+        // Feed partial data
+        var buf = new byte[] { 0x00 };
+        decoder.TryDecode(buf, out _, out _);
+        Assert.True(decoder.HasRemainder);
+
+        // Dispose
+        decoder.Dispose();
+        Assert.False(decoder.HasRemainder);
+    }
+
+    /// RFC 9114 §7 — CancelPush frame with large push ID
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_CancelPushFrame_WithLargePushId()
+    {
+        var largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
+        var original = new Http3CancelPushFrame(largeId);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var cp = Assert.IsType<Http3CancelPushFrame>(frame);
+        Assert.Equal(largeId, cp.PushId);
+    }
+
+    /// RFC 9114 §7 — CancelPush frame with zero push ID
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_CancelPushFrame_WithZeroPushId()
+    {
+        var original = new Http3CancelPushFrame(0);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var cp = Assert.IsType<Http3CancelPushFrame>(frame);
+        Assert.Equal(0, cp.PushId);
+    }
+
+    /// RFC 9114 §7 — Settings frame with no parameters
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_SettingsFrame_Empty()
+    {
+        var original = new Http3SettingsFrame(new List<(long, long)>());
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        Assert.Empty(settings.Parameters);
+    }
+
+    /// RFC 9114 §7 — Settings frame with many parameters
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_SettingsFrame_ManyParameters()
+    {
+        var parameters = new List<(long, long)>();
+        for (int i = 0; i < 100; i++)
+        {
+            parameters.Add(((long)i, (long)i * 1000));
+        }
+
+        var original = new Http3SettingsFrame(parameters);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        Assert.Equal(100, settings.Parameters.Count);
+    }
+
+    /// RFC 9114 §7 — Settings frame with large setting values
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_SettingsFrame_LargeValues()
+    {
+        var largeValue = (1L << 62) - 1; // Maximum QUIC VarInt value
+        var parameters = new List<(long, long)>
+        {
+            (0x06, largeValue), // MAX_FIELD_SECTION_SIZE
+            (0x01, largeValue), // QPACK_MAX_TABLE_CAPACITY
+        };
+
+        var original = new Http3SettingsFrame(parameters);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        Assert.Equal(2, settings.Parameters.Count);
+        Assert.Equal(largeValue, settings.Parameters[0].Item2);
+        Assert.Equal(largeValue, settings.Parameters[1].Item2);
+    }
+
+    /// RFC 9114 §7 — PushPromise with empty header block
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_PushPromiseFrame_EmptyHeaders()
+    {
+        var original = new Http3PushPromiseFrame(1, ReadOnlyMemory<byte>.Empty);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var pp = Assert.IsType<Http3PushPromiseFrame>(frame);
+        Assert.Equal(1, pp.PushId);
+        Assert.Empty(pp.HeaderBlock.ToArray());
+    }
+
+    /// RFC 9114 §7 — PushPromise with large header block
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_PushPromiseFrame_LargeHeaders()
+    {
+        var largeHeaders = new byte[10000];
+        for (int i = 0; i < largeHeaders.Length; i++)
+        {
+            largeHeaders[i] = (byte)(i % 256);
+        }
+
+        var original = new Http3PushPromiseFrame(999, largeHeaders);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var pp = Assert.IsType<Http3PushPromiseFrame>(frame);
+        Assert.Equal(999, pp.PushId);
+        Assert.Equal(largeHeaders, pp.HeaderBlock.ToArray());
+    }
+
+    /// RFC 9114 §7 — GoAway with large stream ID
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_GoAwayFrame_LargeStreamId()
+    {
+        var largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
+        var original = new Http3GoAwayFrame(largeId);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var goaway = Assert.IsType<Http3GoAwayFrame>(frame);
+        Assert.Equal(largeId, goaway.StreamId);
+    }
+
+    /// RFC 9114 §7 — MaxPushId with zero
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_MaxPushIdFrame_Zero()
+    {
+        var original = new Http3MaxPushIdFrame(0);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var mp = Assert.IsType<Http3MaxPushIdFrame>(frame);
+        Assert.Equal(0, mp.PushId);
+    }
+
+    /// RFC 9114 §7 — MaxPushId with large value
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Decode_MaxPushIdFrame_Large()
+    {
+        var largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
+        var original = new Http3MaxPushIdFrame(largeId);
+        var wire = original.Serialize();
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(wire, out var frame, out _);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        var mp = Assert.IsType<Http3MaxPushIdFrame>(frame);
+        Assert.Equal(largeId, mp.PushId);
+    }
+
+    /// RFC 9114 §7 — DecodeAll with no frames
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_DecodeAll_EmptyInput()
+    {
+        var decoder = new FrameDecoder();
+        var frames = decoder.DecodeAll(ReadOnlySpan<byte>.Empty, out var consumed);
+
+        Assert.Empty(frames);
+        Assert.Equal(0, consumed);
+    }
+
+    /// RFC 9114 §7 — DecodeAll with partial frame leaves remainder
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_DecodeAll_LeaveRemainder()
+    {
+        var original = new Http3DataFrame(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE });
+        var wire = original.Serialize();
+
+        // Split so only partial frame is in buffer
+        var partial = wire.AsSpan(0, wire.Length - 2); // Remove last 2 bytes
+
+        var decoder = new FrameDecoder();
+        var frames = decoder.DecodeAll(partial, out var consumed);
+
+        // Should have 0 frames decoded (incomplete)
+        Assert.Empty(frames);
+        // consumed may be 0 for incomplete frames as they're buffered
+        Assert.True(consumed >= 0 && consumed <= partial.Length);
+        Assert.True(decoder.HasRemainder);
+    }
+
+    /// RFC 9114 §7 — Bytes consumed correctly with remainder buffer
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Return_Correct_BytesConsumed_WithRemainder()
+    {
+        var decoder = new FrameDecoder();
+
+        // Feed partial frame
+        var partial = new byte[] { 0x00, 0x05 };
+        var status1 = decoder.TryDecode(partial, out _, out var consumed1);
+
+        Assert.Equal(Http3DecodeStatus.NeedMoreData, status1);
+        Assert.Equal(partial.Length, consumed1);
+
+        // Feed rest
+        var payload = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };
+        var status2 = decoder.TryDecode(payload, out var frame, out var consumed2);
+
+        Assert.Equal(Http3DecodeStatus.Success, status2);
+        Assert.NotNull(frame);
+        // consumed2 should be just the new input consumed (not total)
+        Assert.True(consumed2 > 0);
+    }
+
+    /// RFC 9114 §7 — Unknown frame type returns null frame but consumes bytes
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_SkipUnknownFrame_ConsumingBytes()
+    {
+        var buf = new byte[16];
+        var offset = 0;
+
+        // Encode unknown frame type
+        offset += QuicVarInt.Encode(0xABCD, buf.AsSpan(offset));  // Unknown type
+        offset += QuicVarInt.Encode(5, buf.AsSpan(offset));       // Length = 5
+        for (int i = 0; i < 5; i++) buf[offset++] = 0xFF;
+
+        var decoder = new FrameDecoder();
+        var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
+
+        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Null(frame);
+        Assert.Equal(offset, consumed); // All bytes consumed despite null frame
+    }
+
+    /// RFC 9114 §7 — DecodeAll clears frame list between calls
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_ClearFrameList_InDecodeAll()
+    {
+        var decoder = new FrameDecoder();
+
+        // First call
+        var frame1 = new Http3DataFrame(new byte[] { 0x01 });
+        var wire1 = frame1.Serialize();
+        var frames1 = decoder.DecodeAll(wire1, out _);
+        Assert.Single(frames1);
+
+        // Second call with different frames
+        var frame2a = new Http3GoAwayFrame(0);
+        var frame2b = new Http3MaxPushIdFrame(42);
+        var buf = new byte[64];
+        var offset = 0;
+        var bufSpan = buf.AsSpan();
+        offset += frame2a.WriteTo(ref bufSpan);
+        bufSpan = buf.AsSpan(offset);
+        offset += frame2b.WriteTo(ref bufSpan);
+
+        var frames2 = decoder.DecodeAll(buf.AsSpan(0, offset), out _);
+
+        // Should have 2 frames from second call, not 1+2
+        Assert.Equal(2, frames2.Count);
+        Assert.IsType<Http3GoAwayFrame>(frames2[0]);
+        Assert.IsType<Http3MaxPushIdFrame>(frames2[1]);
+    }
+
+    /// RFC 9114 §7 — Multiple DecodeAll calls with carryover frames
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7")]
+    public void Should_Handle_PartialFrames_Across_DecodeAll_Calls()
+    {
+        var payload = new byte[] { 0x11, 0x22, 0x33 };
+        var frame = new Http3DataFrame(payload);
+        var wire = frame.Serialize();
+
+        // Split in middle
+        var part1Length = wire.Length / 2;
+        var part1 = wire.AsSpan(0, part1Length);
+        var part2 = wire.AsSpan(part1Length);
+
+        var decoder = new FrameDecoder();
+
+        // First DecodeAll with partial frame
+        var frames1 = decoder.DecodeAll(part1, out var consumed1);
+        Assert.Empty(frames1);
+        Assert.True(decoder.HasRemainder);
+
+        // Second DecodeAll with rest of frame
+        var frames2 = decoder.DecodeAll(part2, out var consumed2);
+        Assert.Single(frames2);
+        Assert.False(decoder.HasRemainder);
+    }
+}

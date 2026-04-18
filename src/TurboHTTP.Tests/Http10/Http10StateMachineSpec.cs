@@ -286,7 +286,7 @@ public sealed class Http10StateMachineSpec
 
         Assert.Single(ops.Responses);
         Assert.NotNull(ops.Responses[0].RequestMessage);
-        Assert.Equal(originalRequest.RequestUri, ops.Responses[0].RequestMessage.RequestUri);
+        Assert.Equal(originalRequest.RequestUri, ops.Responses[0].RequestMessage!.RequestUri);
     }
 
     [Fact(Timeout = 5000)]
@@ -867,7 +867,7 @@ public sealed class Http10StateMachineSpec
 
         Assert.Single(ops.Responses);
         Assert.NotNull(ops.Responses[0].RequestMessage);
-        Assert.Equal(request1.RequestUri, ops.Responses[0].RequestMessage.RequestUri);
+        Assert.Equal(request1.RequestUri, ops.Responses[0].RequestMessage!.RequestUri);
     }
 
     #endregion
