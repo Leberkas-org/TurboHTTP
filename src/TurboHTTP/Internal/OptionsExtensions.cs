@@ -42,7 +42,6 @@ internal static class OptionsExtensions
             options.MaxReconnectAttempts,
             options.AllowServerPush,
             options.AllowEarlyData,
-            options.AllowConnectionMigration,
-            options.MaxBatchWeight);
+            options.AllowConnectionMigration);
     }
 }

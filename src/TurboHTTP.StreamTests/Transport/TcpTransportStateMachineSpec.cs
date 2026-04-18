@@ -13,22 +13,6 @@ namespace TurboHTTP.StreamTests.Transport;
 
 public sealed class TcpTransportStateMachineSpec
 {
-    private sealed class MockTransportOperations : ITransportOperations
-    {
-        public List<IInputItem> PushedOutputs { get; } = [];
-        public int PullInputCount { get; private set; }
-        public int CompleteStageCount { get; private set; }
-        public List<(string Key, TimeSpan Delay)> ScheduledTimers { get; } = [];
-        public List<string> CancelledTimers { get; } = [];
-
-        public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
-        public void OnSignalPullInput() => PullInputCount++;
-        public void OnCompleteStage() => CompleteStageCount++;
-        public void OnScheduleTimer(string key, TimeSpan delay) => ScheduledTimers.Add((key, delay));
-        public void OnCancelTimer(string key) => CancelledTimers.Add(key);
-        public ILoggingAdapter Log { get; } = NoLogger.Instance;
-    }
-
     private static readonly RequestEndpoint TestEndpoint = new()
     {
         Scheme = "http",
@@ -426,7 +410,7 @@ public sealed class TcpTransportStateMachineSpec
     [Trait("RFC", "RFC9112")]
     public void HandleDownstreamFinish_should_cleanup_transport()
     {
-        var (sm, ops) = CreateStateMachine();
+        var (sm, _) = CreateStateMachine();
         var lease = CreateTestLease();
         sm.Dispatch(new LeaseAcquired(lease));
 

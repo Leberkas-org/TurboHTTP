@@ -3,18 +3,6 @@ using System.Buffers;
 namespace TurboHTTP.Protocol.Http3;
 
 /// <summary>
-/// Result of a frame decode attempt.
-/// </summary>
-public enum Http3DecodeStatus
-{
-    /// <summary>A complete frame was decoded.</summary>
-    Success,
-
-    /// <summary>Not enough data to decode a complete frame; feed more bytes.</summary>
-    NeedMoreData,
-}
-
-/// <summary>
 /// Stateful HTTP/3 frame decoder per RFC 9114 §7.
 /// Handles partial frames across QUIC stream boundaries by buffering
 /// incomplete data between calls to <see cref="TryDecode"/>.
@@ -39,13 +27,13 @@ internal sealed class FrameDecoder : IDisposable
 
     /// <summary>
     /// Attempts to decode one HTTP/3 frame from <paramref name="input"/>.
-    /// On <see cref="Http3DecodeStatus.Success"/>, <paramref name="frame"/> is set and
+    /// On <see cref="DecodeStatus.Success"/>, <paramref name="frame"/> is set and
     /// <paramref name="bytesConsumed"/> reflects the total bytes consumed from the
     /// combined remainder + input buffer.
-    /// On <see cref="Http3DecodeStatus.NeedMoreData"/>, the unconsumed data is buffered
+    /// On <see cref="DecodeStatus.NeedMoreData"/>, the unconsumed data is buffered
     /// internally for the next call.
     /// </summary>
-    public Http3DecodeStatus TryDecode(ReadOnlySpan<byte> input, out Http3Frame? frame, out int bytesConsumed)
+    public DecodeStatus TryDecode(ReadOnlySpan<byte> input, out Http3Frame? frame, out int bytesConsumed)
     {
         frame = null;
         bytesConsumed = 0;
@@ -77,7 +65,7 @@ internal sealed class FrameDecoder : IDisposable
         {
             var result = TryDecodeFrame(data, out frame, out var totalConsumed);
 
-            if (result == Http3DecodeStatus.NeedMoreData)
+            if (result == DecodeStatus.NeedMoreData)
             {
                 // Buffer unconsumed data for next call
                 if (data.Length > 0)
@@ -88,7 +76,7 @@ internal sealed class FrameDecoder : IDisposable
                 }
 
                 bytesConsumed = input.Length; // All input consumed (buffered)
-                return Http3DecodeStatus.NeedMoreData;
+                return DecodeStatus.NeedMoreData;
             }
 
             // Calculate how many bytes of the original input were consumed
@@ -114,7 +102,7 @@ internal sealed class FrameDecoder : IDisposable
                 bytesConsumed = totalConsumed;
             }
 
-            return Http3DecodeStatus.Success;
+            return DecodeStatus.Success;
         }
         finally
         {
@@ -136,7 +124,7 @@ internal sealed class FrameDecoder : IDisposable
         {
             var status = TryDecode(input[bytesConsumed..], out var frame, out var consumed);
 
-            if (status == Http3DecodeStatus.NeedMoreData)
+            if (status == DecodeStatus.NeedMoreData)
             {
                 break;
             }
@@ -173,7 +161,7 @@ internal sealed class FrameDecoder : IDisposable
     /// </summary>
     public bool HasRemainder => _remainderLength > 0;
 
-    private static Http3DecodeStatus TryDecodeFrame(
+    private static DecodeStatus TryDecodeFrame(
         ReadOnlySpan<byte> data,
         out Http3Frame? frame,
         out int totalConsumed)
@@ -184,13 +172,13 @@ internal sealed class FrameDecoder : IDisposable
         // Decode frame type (QUIC varint)
         if (!QuicVarInt.TryDecode(data, out var rawType, out var typeBytes))
         {
-            return Http3DecodeStatus.NeedMoreData;
+            return DecodeStatus.NeedMoreData;
         }
 
         // Decode frame length (QUIC varint)
         if (!QuicVarInt.TryDecode(data[typeBytes..], out var payloadLength, out var lengthBytes))
         {
-            return Http3DecodeStatus.NeedMoreData;
+            return DecodeStatus.NeedMoreData;
         }
 
         var headerSize = typeBytes + lengthBytes;
@@ -206,7 +194,7 @@ internal sealed class FrameDecoder : IDisposable
         // Need more data for the payload
         if (data.Length < frameSize)
         {
-            return Http3DecodeStatus.NeedMoreData;
+            return DecodeStatus.NeedMoreData;
         }
 
         var payload = data.Slice(headerSize, (int)payloadLength);
@@ -222,7 +210,7 @@ internal sealed class FrameDecoder : IDisposable
             // We still consumed the bytes, but we need to signal this differently.
             // Use a sentinel: return Success but with frame = null means "skipped unknown type".
             // The caller can check frame == null to detect this.
-            return Http3DecodeStatus.Success;
+            return DecodeStatus.Success;
         }
 
         var frameType = (FrameType)rawType;
@@ -239,7 +227,7 @@ internal sealed class FrameDecoder : IDisposable
             _ => null, // Should not happen given IsDefined check above
         };
 
-        return Http3DecodeStatus.Success;
+        return DecodeStatus.Success;
     }
 
     private static Http3DataFrame DecodeDataFrame(ReadOnlySpan<byte> payload)

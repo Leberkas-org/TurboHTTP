@@ -1,4 +1,5 @@
 using TurboHTTP.Internal;
+using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Protocol.Http11;
@@ -47,7 +48,7 @@ internal sealed class StateMachine
 
     /// <summary>Number of requests currently buffered or in-flight (used for discard logging).</summary>
     public int PendingRequestCount => IsReconnecting
-        ? (_reconnectBufferedQueue?.Count ?? 0)
+        ? _reconnectBufferedQueue?.Count ?? 0
         : _inFlightQueue.Count;
 
     /// <summary>Whether the state machine is currently in reconnect state.</summary>
@@ -399,6 +400,12 @@ internal sealed class StateMachine
             }
 
             _effectivePipelineDepth = 1;
+        }
+
+        var partialContentResult = PartialContentValidator.Validate(response);
+        if (!partialContentResult.IsValid)
+        {
+            _ops.OnWarning(partialContentResult.ErrorMessage!);
         }
 
         var endpoint = RequestEndpoint.FromRequest(response.RequestMessage!);

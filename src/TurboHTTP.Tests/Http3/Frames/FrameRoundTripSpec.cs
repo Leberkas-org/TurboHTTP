@@ -7,7 +7,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Data_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_data_frame()
     {
         var payload = new byte[] { 0xCA, 0xFE, 0xBA, 0xBE, 0xDE, 0xAD };
         var original = new Http3DataFrame(payload);
@@ -22,7 +22,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Headers_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_headers_frame()
     {
         var headerBlock = new byte[] { 0x00, 0x00, 0x82, 0x87, 0x44, 0x88, 0x62, 0xA1 };
         var original = new Http3HeadersFrame(headerBlock);
@@ -37,7 +37,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void CancelPush_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_cancel_push_frame()
     {
         var original = new Http3CancelPushFrame(16383);
 
@@ -51,7 +51,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Settings_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_settings_frame()
     {
         var parameters = new List<(long, long)>
         {
@@ -74,7 +74,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void PushPromise_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_push_promise_frame()
     {
         var headerBlock = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD };
         var original = new Http3PushPromiseFrame(42, headerBlock);
@@ -90,7 +90,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void GoAway_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_goaway_frame()
     {
         var original = new Http3GoAwayFrame(1_000_000);
 
@@ -104,7 +104,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void MaxPushId_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_max_push_id_frame()
     {
         var original = new Http3MaxPushIdFrame(63);
 
@@ -125,7 +125,7 @@ public sealed class FrameRoundTripSpec
     [InlineData(16383)]            // Max 2-byte varint
     [InlineData(16384)]            // Min 4-byte varint
     [InlineData(1_073_741_823)]    // Max 4-byte varint
-    public void Roundtrip_large_varint_values(long value)
+    public void FrameRoundTrip_should_preserve_large_varint_values(long value)
     {
         // CancelPush
         var cp = new Http3CancelPushFrame(value);
@@ -145,7 +145,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Empty_data_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_empty_data_frame()
     {
         var original = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
 
@@ -158,7 +158,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Empty_settings_frame_roundtrip()
+    public void FrameRoundTrip_should_preserve_empty_settings_frame()
     {
         var original = new Http3SettingsFrame(new List<(long, long)>());
 
@@ -171,7 +171,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Multiple_frames_roundtrip()
+    public void FrameRoundTrip_should_preserve_multiple_frames()
     {
         var frames = new Http3Frame[]
         {
@@ -232,7 +232,7 @@ public sealed class FrameRoundTripSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7")]
-    public void Re_encode_produces_identical_bytes()
+    public void FrameRoundTrip_should_produce_identical_bytes_when_re_encoded()
     {
         var frames = new Http3Frame[]
         {
@@ -269,7 +269,7 @@ public sealed class FrameRoundTripSpec
     {
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.NotNull(frame);
         return frame;
     }

@@ -2,9 +2,6 @@ using TurboHTTP.Protocol.AltSvc;
 
 namespace TurboHTTP.Tests.AltSvc;
 
-/// <summary>
-/// Tests for Alt-Svc per-host cache with TTL expiration.
-/// </summary>
 public sealed class AltSvcCacheSpec
 {
     private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);

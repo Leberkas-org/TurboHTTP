@@ -9,14 +9,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http3;
 
-/// <summary>
-/// RFC-tagged round-trip tests for the HTTP/3 engine per RFC 9114.
-/// Verifies end-to-end request encoding and response decoding through the full HTTP/3 protocol flow including QPACK.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Http30Engine"/>.
-/// RFC 9114 §3–§7: HTTP/3 connection setup, frame exchange, and HTTP message mapping.
-/// </remarks>
 public sealed class Http30EngineEndToEndSpec : EngineTestBase
 {
     private static Http30Engine Engine => new(new Http3Options().ToEngineOptions());

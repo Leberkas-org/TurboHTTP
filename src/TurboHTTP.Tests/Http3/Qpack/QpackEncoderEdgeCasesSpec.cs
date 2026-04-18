@@ -60,7 +60,7 @@ public sealed class QpackEncoderEdgeCasesSpec
         var encoder = new QpackEncoder(256);
 
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            encoder.Encode((IReadOnlyList<(string, string)>)null!));
+            encoder.Encode(null!));
 
         Assert.Equal("headers", ex.ParamName);
     }

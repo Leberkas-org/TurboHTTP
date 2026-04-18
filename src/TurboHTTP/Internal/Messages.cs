@@ -104,7 +104,7 @@ internal class NetworkBuffer : IInputItem, IOutputItem
 
         buf.Owner = owner;
         buf.Length = 0;
-        buf.Key = default;
+        buf.Key = RequestEndpoint.Default;
         return buf;
     }
 

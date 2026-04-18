@@ -849,7 +849,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.MovedPermanently);
+        var response = new HttpResponseMessage(HttpStatusCode.MovedPermanently);
         TurboHttpInstrumentation.SetResponse(activity, response);
 
         Assert.Null(activity.GetTagItem("error.type"));
@@ -956,7 +956,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Version = new Version(1, 0) };
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Version = new Version(1, 0) };
         TurboHttpInstrumentation.SetResponse(activity, response);
 
         Assert.Equal("1.0", activity.GetTagItem("network.protocol.version"));
@@ -968,7 +968,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Version = new Version(1, 1) };
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Version = new Version(1, 1) };
         TurboHttpInstrumentation.SetResponse(activity, response);
 
         Assert.Equal("1.1", activity.GetTagItem("network.protocol.version"));

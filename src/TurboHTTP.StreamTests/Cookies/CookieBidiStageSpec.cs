@@ -7,16 +7,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Cookies;
 
-/// <summary>
-/// RFC 6265 — CookieBidiStage request and response direction tests.
-/// Verifies that the request direction injects cookies from the jar and the response direction
-/// stores Set-Cookie headers into the jar.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="CookieBidiStage"/>.
-/// RFC 6265 §5.4: Cookie header construction (request path).
-/// RFC 6265 §5.2–§5.3: Set-Cookie storage (response path).
-/// </remarks>
 public sealed class CookieBidiStageSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
@@ -91,9 +81,6 @@ public sealed class CookieBidiStageSpec : StreamTestBase
 
         return response;
     }
-
-
-    // Request direction tests
 
     [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
@@ -185,9 +172,6 @@ public sealed class CookieBidiStageSpec : StreamTestBase
             Assert.Contains("token=xyz", cookieValue);
         }
     }
-
-
-    // Response direction tests
 
     [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
@@ -284,9 +268,6 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.Contains("a=1", cookieValue);
         Assert.Contains("b=2", cookieValue);
     }
-
-
-    // Bidirectional integration test
 
     [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]

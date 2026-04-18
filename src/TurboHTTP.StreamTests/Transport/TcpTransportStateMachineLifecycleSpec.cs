@@ -1,9 +1,6 @@
-using System.Buffers;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.Event;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Protocol.Http11;
@@ -14,22 +11,6 @@ namespace TurboHTTP.StreamTests.Transport;
 
 public sealed class TcpTransportStateMachineLifecycleSpec
 {
-    private sealed class MockTransportOperations : ITransportOperations
-    {
-        public List<IInputItem> PushedOutputs { get; } = [];
-        public int PullInputCount { get; private set; }
-        public int CompleteStageCount { get; private set; }
-        public List<(string Key, TimeSpan Delay)> ScheduledTimers { get; } = [];
-        public List<string> CancelledTimers { get; } = [];
-
-        public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
-        public void OnSignalPullInput() => PullInputCount++;
-        public void OnCompleteStage() => CompleteStageCount++;
-        public void OnScheduleTimer(string key, TimeSpan delay) => ScheduledTimers.Add((key, delay));
-        public void OnCancelTimer(string key) => CancelledTimers.Add(key);
-        public ILoggingAdapter Log { get; } = NoLogger.Instance;
-    }
-
     private static readonly RequestEndpoint TestEndpoint = new()
     {
         Scheme = "http",
@@ -44,12 +25,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
         Host = "example.com",
         Port = 8081,
         Version = HttpVersion.Version11
-    };
-
-    private static readonly TcpOptions TestTcpOptions = new()
-    {
-        Host = "localhost",
-        Port = 8080
     };
 
     private static (TcpTransportStateMachine Sm, MockTransportOperations Ops) CreateStateMachine()
@@ -119,8 +94,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
         var (sm, ops) = CreateStateMachine();
         var lease = CreateTestLease();
         sm.Dispatch(new LeaseAcquired(lease));
-
-        var pullBefore = ops.PullInputCount;
 
         var buffer = NetworkBufferTestExtensions.FromArray([1, 2, 3]);
         sm.HandlePush(buffer);
@@ -257,7 +230,7 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteFailed_should_mark_no_reuse()
     {
-        var (sm, ops) = CreateStateMachine();
+        var (sm, _) = CreateStateMachine();
         var lease = CreateTestLease();
         sm.Dispatch(new LeaseAcquired(lease));
 

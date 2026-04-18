@@ -7,11 +7,10 @@ namespace TurboHTTP.Protocol.Http2;
 internal sealed class StreamTracker
 {
     private readonly HashSet<int> _activeStreamIds = [];
-    private int _nextStreamId;
 
     public StreamTracker(int initialNextStreamId = 1, int maxConcurrentStreams = 100)
     {
-        _nextStreamId = initialNextStreamId;
+        NextStreamId = initialNextStreamId;
         MaxConcurrentStreams = maxConcurrentStreams;
     }
 
@@ -19,7 +18,7 @@ internal sealed class StreamTracker
     public int MaxConcurrentStreams { get; set; }
 
     /// <summary>Current next stream ID (for testing/reset visibility).</summary>
-    public int NextStreamId => _nextStreamId;
+    public int NextStreamId { get; private set; }
 
     /// <summary>
     /// Returns true if a new stream can be opened without exceeding the concurrency limit.
@@ -34,7 +33,7 @@ internal sealed class StreamTracker
     {
         _activeStreamIds.Clear();
         ActiveStreamCount = 0;
-        _nextStreamId = 1;
+        NextStreamId = 1;
     }
 
     /// <summary>
@@ -42,8 +41,8 @@ internal sealed class StreamTracker
     /// </summary>
     public int AllocateStreamId()
     {
-        var id = _nextStreamId;
-        _nextStreamId += 2;
+        var id = NextStreamId;
+        NextStreamId += 2;
         return id;
     }
 

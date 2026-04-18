@@ -183,7 +183,7 @@ public sealed class Http3SecuritySpec
         var serialized = settings.Serialize();
         var status = decoder.TryDecode(serialized, out var frame, out _);
 
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         var settingsFrame = Assert.IsType<Http3SettingsFrame>(frame);
         Assert.Equal(2, settingsFrame.Parameters.Count);
     }
@@ -209,7 +209,7 @@ public sealed class Http3SecuritySpec
         Array.Copy(payload, 0, frame, typeLen + lenLen, payload.Length);
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         var dataFrame = Assert.IsType<Http3DataFrame>(decoded);
         Assert.Equal(65536, dataFrame.Data.Length);
         dataFrame.Dispose();
@@ -267,7 +267,7 @@ public sealed class Http3SecuritySpec
         var serialized = goaway.Serialize();
 
         var status = decoder.TryDecode(serialized, out var frame, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         var decoded = Assert.IsType<Http3GoAwayFrame>(frame);
         Assert.Equal(42, decoded.StreamId);
     }

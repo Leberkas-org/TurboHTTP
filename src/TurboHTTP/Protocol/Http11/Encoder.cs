@@ -563,16 +563,14 @@ internal static class Encoder
     /// </summary>
     private static int WriteHex(ref Span<byte> buffer, int value)
     {
-        if (value < 0)
+        switch (value)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), "Value must be non-negative");
-        }
-
-        if (value == 0)
-        {
-            buffer[0] = (byte)'0';
-            buffer = buffer[1..];
-            return 1;
+            case < 0:
+                throw new ArgumentOutOfRangeException(nameof(value), "Value must be non-negative");
+            case 0:
+                buffer[0] = (byte)'0';
+                buffer = buffer[1..];
+                return 1;
         }
 
         // Write hex digits in reverse order directly into buffer, then reverse in-place

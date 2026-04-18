@@ -27,7 +27,7 @@ internal static class PartialContentValidator
         public string? ErrorMessage { get; init; }
 
         /// <summary>Whether validation was skipped (non-206 response).</summary>
-        public bool Skipped { get; init; }
+        public bool Skipped { get; private init; }
 
         internal static readonly ValidationResult SkippedResult = new()
         {

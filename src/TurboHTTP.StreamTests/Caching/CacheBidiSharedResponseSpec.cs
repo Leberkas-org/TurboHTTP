@@ -8,17 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Caching;
 
-/// <summary>
-/// Verifies that CacheBidiStage does not serve the same HttpResponseMessage reference
-/// across multiple cache hits, preventing shared mutable state.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="CacheBidiStage"/>.
-/// Bug: <c>HandleCacheHit</c> retrieves <c>result.Entry!.Response</c> — the same object
-/// stored in the <see cref="CacheEntry"/>. It then mutates <c>cachedResponse.RequestMessage</c>
-/// and injects an Age header. Every cache hit for the same URI shares and mutates
-/// the same <see cref="HttpResponseMessage"/> instance.
-/// </remarks>
 public sealed class CacheBidiSharedResponseSpec : StreamTestBase
 {
     [Fact(Timeout = 10_000)]

@@ -76,14 +76,14 @@ public sealed class Http3FrameFuzzSpec
         {
             using var decoder = new FrameDecoder();
             // Unknown frame types: use values not in Http3FrameType enum
-            var unknownType = (long)(rng.Next(0x0E, 0x100));
+            var unknownType = (long)rng.Next(0x0E, 0x100);
             var payload = new byte[rng.Next(0, 64)];
             rng.NextBytes(payload);
 
             var frame = BuildRawFrame(unknownType, payload);
             var status = decoder.TryDecode(frame, out var decoded, out _);
 
-            Assert.Equal(Http3DecodeStatus.Success, status);
+            Assert.Equal(DecodeStatus.Success, status);
             Assert.Null(decoded); // Unknown frames produce null (skipped)
         }
     }
@@ -100,7 +100,7 @@ public sealed class Http3FrameFuzzSpec
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
 
-        Assert.Equal(Http3DecodeStatus.NeedMoreData, status);
+        Assert.Equal(DecodeStatus.NeedMoreData, status);
         Assert.Null(decoded);
         Assert.True(decoder.HasRemainder);
     }
@@ -113,7 +113,7 @@ public sealed class Http3FrameFuzzSpec
 
         var status = decoder.TryDecode(ReadOnlySpan<byte>.Empty, out var frame, out var consumed);
 
-        Assert.Equal(Http3DecodeStatus.NeedMoreData, status);
+        Assert.Equal(DecodeStatus.NeedMoreData, status);
         Assert.Null(frame);
         Assert.Equal(0, consumed);
     }
@@ -143,7 +143,7 @@ public sealed class Http3FrameFuzzSpec
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
 
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         var dataFrame = Assert.IsType<Http3DataFrame>(decoded);
         Assert.Equal(5, dataFrame.Data.Length);
         dataFrame.Dispose();
@@ -241,7 +241,7 @@ public sealed class Http3FrameFuzzSpec
         // Valid DATA frame
         var validFrame = BuildRawFrame((long)FrameType.Data, [0x01, 0x02, 0x03]);
         var status = decoder.TryDecode(validFrame, out var frame, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.IsType<Http3DataFrame>(frame);
         ((Http3DataFrame)frame!).Dispose();
 
@@ -250,7 +250,7 @@ public sealed class Http3FrameFuzzSpec
         var goawayLen = QuicVarInt.Encode(4, goawayPayload);
         var goawayFrame = BuildRawFrame((long)FrameType.GoAway, goawayPayload[..goawayLen]);
         status = decoder.TryDecode(goawayFrame, out frame, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.IsType<Http3GoAwayFrame>(frame);
     }
 
@@ -263,7 +263,7 @@ public sealed class Http3FrameFuzzSpec
         var frame = BuildRawFrame((long)FrameType.Data, []);
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         var dataFrame = Assert.IsType<Http3DataFrame>(decoded);
         Assert.Equal(0, dataFrame.Data.Length);
         dataFrame.Dispose();
@@ -278,7 +278,7 @@ public sealed class Http3FrameFuzzSpec
         var frame = BuildRawFrame((long)FrameType.Headers, []);
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         var headersFrame = Assert.IsType<Http3HeadersFrame>(decoded);
         Assert.Equal(0, headersFrame.HeaderBlock.Length);
         headersFrame.Dispose();
@@ -325,11 +325,11 @@ public sealed class Http3FrameFuzzSpec
         var part2 = fullFrame[half..];
 
         var status1 = decoder.TryDecode(part1, out var frame1, out _);
-        Assert.Equal(Http3DecodeStatus.NeedMoreData, status1);
+        Assert.Equal(DecodeStatus.NeedMoreData, status1);
         Assert.Null(frame1);
 
         var status2 = decoder.TryDecode(part2, out var frame2, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status2);
+        Assert.Equal(DecodeStatus.Success, status2);
         var dataFrame = Assert.IsType<Http3DataFrame>(frame2);
         Assert.Equal(5, dataFrame.Data.Length);
         dataFrame.Dispose();

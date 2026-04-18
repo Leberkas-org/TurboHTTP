@@ -2,16 +2,16 @@ using TurboHTTP.Streams;
 
 namespace TurboHTTP.Tests.Hosting;
 
-public sealed class PipelineDescriptorTests
+public sealed class PipelineDescriptorSpec
 {
-    [Fact(DisplayName = "PipelineDescriptor.Empty has AutomaticDecompression true")]
-    public void Empty_HasAutomaticDecompressionTrue()
+    [Fact(Timeout = 5000)]
+    public void PipelineDescriptor_should_have_automatic_decompression_true()
     {
         Assert.True(PipelineDescriptor.Empty.AutomaticDecompression);
     }
 
-    [Fact(DisplayName = "PipelineDescriptor.Empty has null policies and empty middlewares")]
-    public void Empty_HasNullPoliciesAndEmptyHandlers()
+    [Fact(Timeout = 5000)]
+    public void PipelineDescriptor_should_have_null_policies_and_empty_handlers()
     {
         var empty = PipelineDescriptor.Empty;
 
@@ -23,8 +23,8 @@ public sealed class PipelineDescriptorTests
         Assert.Empty(empty.Handlers);
     }
 
-    [Fact(DisplayName = "AutomaticDecompression defaults to true when not specified")]
-    public void AutomaticDecompression_DefaultsToTrue()
+    [Fact(Timeout = 5000)]
+    public void PipelineDescriptor_should_default_automatic_decompression_to_true()
     {
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
@@ -39,8 +39,8 @@ public sealed class PipelineDescriptorTests
         Assert.True(descriptor.AutomaticDecompression);
     }
 
-    [Fact(DisplayName = "AutomaticDecompression can be set to false")]
-    public void AutomaticDecompression_CanBeSetToFalse()
+    [Fact(Timeout = 5000)]
+    public void PipelineDescriptor_should_allow_automatic_decompression_to_be_set_to_false()
     {
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
@@ -56,8 +56,8 @@ public sealed class PipelineDescriptorTests
         Assert.False(descriptor.AutomaticDecompression);
     }
 
-    [Fact(DisplayName = "PipelineDescriptor with expression creates copy with changed AutomaticDecompression")]
-    public void WithExpression_ChangesAutomaticDecompression()
+    [Fact(Timeout = 5000)]
+    public void PipelineDescriptor_should_change_automatic_decompression_with_expression()
     {
         var original = PipelineDescriptor.Empty;
         var modified = original with { AutomaticDecompression = false };
@@ -66,8 +66,8 @@ public sealed class PipelineDescriptorTests
         Assert.False(modified.AutomaticDecompression);
     }
 
-    [Fact(DisplayName = "PipelineDescriptor equality includes AutomaticDecompression")]
-    public void Equality_IncludesAutomaticDecompression()
+    [Fact(Timeout = 5000)]
+    public void PipelineDescriptor_should_include_automatic_decompression_in_equality()
     {
         var a = PipelineDescriptor.Empty with { AutomaticDecompression = true };
         var b = PipelineDescriptor.Empty with { AutomaticDecompression = false };

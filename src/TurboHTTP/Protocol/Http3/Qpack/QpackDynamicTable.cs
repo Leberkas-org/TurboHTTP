@@ -3,11 +3,6 @@ using System.Text;
 namespace TurboHTTP.Protocol.Http3.Qpack;
 
 /// <summary>
-/// Represents a QPACK header field entry stored in the dynamic table.
-/// </summary>
-public readonly record struct QpackEntry(string Name, string Value);
-
-/// <summary>
 /// RFC 9204 §3.2 — QPACK Dynamic Table.
 ///
 /// Unlike HPACK's relative indexing (newest = index 0), QPACK uses absolute indexing:

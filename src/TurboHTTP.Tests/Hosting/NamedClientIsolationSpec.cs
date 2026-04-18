@@ -4,7 +4,7 @@ using TurboHTTP.Protocol.Cookies;
 
 namespace TurboHTTP.Tests.Hosting;
 
-public sealed class NamedClientIsolationTests
+public sealed class NamedClientIsolationSpec
 {
     // Helpers
 
@@ -16,8 +16,8 @@ public sealed class NamedClientIsolationTests
 
     // Distinct descriptor instances per named client
 
-    [Fact(DisplayName = "Two named clients receive independent TurboClientDescriptor instances")]
-    public void TwoNamedClients_HaveIndependentDescriptorInstances()
+    [Fact(Timeout = 5000)]
+    public void NamedClientIsolation_should_have_independent_descriptor_instances()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("a");
@@ -34,8 +34,8 @@ public sealed class NamedClientIsolationTests
 
     // Cookie jar isolation — separate CookieJar per named client
 
-    [Fact(DisplayName = "Each named client with WithCookies(jar) gets its own CookieJar instance")]
-    public void TwoClientsWithCustomCookieJar_HaveSeparateJarInstances()
+    [Fact(Timeout = 5000)]
+    public void NamedClientIsolation_should_have_separate_jar_instances()
     {
         var jarA = new CookieJar();
         var jarB = new CookieJar();
@@ -52,8 +52,8 @@ public sealed class NamedClientIsolationTests
         Assert.NotSame(descriptorA.CustomCookieJar, descriptorB.CustomCookieJar);
     }
 
-    [Fact(DisplayName = "Configuring cookies on client 'a' does not set EnableCookies on client 'b'")]
-    public void WithCookies_OnClientA_DoesNotAffectClientB()
+    [Fact(Timeout = 5000)]
+    public void NamedClientIsolation_should_not_affect_other_clients_when_configuring_cookies()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("a").WithCookies();
@@ -69,8 +69,8 @@ public sealed class NamedClientIsolationTests
 
     // Mixed configuration — client with cookies, client without
 
-    [Fact(DisplayName = "Client with WithCookies and client without are independently configured")]
-    public void ClientWithCookies_AndClientWithout_AreIndependent()
+    [Fact(Timeout = 5000)]
+    public void NamedClientIsolation_should_be_independent_when_mixed_configuration()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("a").WithCookies();

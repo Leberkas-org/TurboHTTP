@@ -6,30 +6,9 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.StreamTests.Transport;
 
-/// <summary>
-/// Tests <see cref="TcpConnectionManagerActor"/> directly: version-aware acquire/release,
-/// idle reuse, per-host limits, idle eviction, and actor disposal.
-/// Uses <see cref="InMemoryConnectionFactory"/> — no sockets involved.
-/// </summary>
-public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
+public sealed class TcpConnectionManagerActorSpec : StreamTestBase
 {
-    private ActorSystem? _system;
-    private InMemoryConnectionFactory _factory = null!;
-
-    public ValueTask InitializeAsync()
-    {
-        _system = ActorSystem.Create("connection-manager-tests");
-        _factory = new InMemoryConnectionFactory();
-        return ValueTask.CompletedTask;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_system is not null)
-        {
-            await _system.Terminate();
-        }
-    }
+    private readonly InMemoryConnectionFactory _factory = new();
 
     private static TcpOptions CreateOptions() => new()
     {
@@ -46,7 +25,7 @@ public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
     };
 
     private IActorRef CreateActor(TimeSpan? idleTimeout = null)
-        => _system!.ActorOf(Props.Create(() =>
+        => Sys.ActorOf(Props.Create(() =>
             new TcpConnectionManagerActor(_factory, idleTimeout ?? TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan)));
 
     [Fact(Timeout = 5000)]
@@ -342,12 +321,10 @@ public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
 
         var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
-        // Dispose the lease directly (without releasing through actor)
         lease.Dispose();
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        // Actor should still be responsive
         var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         Assert.NotNull(lease2);
 
@@ -368,10 +345,8 @@ public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
-        // With zero timeout, eviction timer shouldn't run
         await Task.Delay(500, TestContext.Current.CancellationToken);
 
-        // At least one should still be alive (sentinel keeps at least one)
         Assert.True(lease1.IsAlive || lease2.IsAlive);
 
         if (lease1.IsAlive) lease1.Dispose();
@@ -393,7 +368,6 @@ public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
 
         var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
-        // HTTP/3 should not reuse TCP connections (they use QUIC)
         Assert.NotSame(lease1, lease2);
 
         lease2.Dispose();
@@ -410,11 +384,8 @@ public sealed class TcpConnectionManagerActorSpec : IAsyncLifetime
         var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
-        // Wait for eviction
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
-        // If lease was evicted, trying to use it should not cause issues
-        // The manager should create a new one
         var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
         Assert.NotNull(lease2);
 

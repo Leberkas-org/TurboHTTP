@@ -476,7 +476,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
         var largeData = new byte[1024 * 1024]; // 1 MB
-        for (int i = 0; i < largeData.Length; i++)
+        for (var i = 0; i < largeData.Length; i++)
         {
             largeData[i] = (byte)(i % 256);
         }
@@ -494,7 +494,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
-        for (int i = 0; i < 1000; i++)
+        for (var i = 0; i < 1000; i++)
         {
             var frame = new Http3DataFrame(new byte[] { (byte)(i % 256) });
             Assert.True(_decoder.AccumulateData(frame, state));
@@ -571,7 +571,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
         var largeData = new byte[1024 * 1024]; // 1 MB
-        for (int i = 0; i < largeData.Length; i++)
+        for (var i = 0; i < largeData.Length; i++)
         {
             largeData[i] = (byte)(i % 256);
         }
@@ -594,10 +594,10 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var totalSize = 10000;
         var chunkSize = 100;
 
-        for (int i = 0; i < totalSize; i += chunkSize)
+        for (var i = 0; i < totalSize; i += chunkSize)
         {
             var chunk = new byte[Math.Min(chunkSize, totalSize - i)];
-            for (int j = 0; j < chunk.Length; j++)
+            for (var j = 0; j < chunk.Length; j++)
             {
                 chunk[j] = (byte)((i + j) % 256);
             }

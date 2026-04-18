@@ -14,13 +14,13 @@ namespace TurboHTTP.Transport.Quic;
 /// </summary>
 internal sealed class QuicConnectionFactory : IQuicConnectionFactory
 {
+    public static readonly QuicConnectionFactory Instance = new();
+
     /// <summary>
     /// Connects to <paramref name="endpoint"/> using <paramref name="options"/>,
     /// performs the TLS/QUIC handshake, and returns a ready-to-use
     /// <see cref="QuicConnectionLease"/>.
     /// </summary>
-    public static readonly QuicConnectionFactory Instance = new();
-
     public async Task<QuicConnectionLease> EstablishAsync(
         QuicOptions options, RequestEndpoint endpoint, CancellationToken ct = default)
     {

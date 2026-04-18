@@ -45,8 +45,8 @@ internal sealed class QuicStreamRouter
     public StreamContextResult EnsureStreamContext(IOutputItem item, long streamId,
         bool hasConnection)
     {
-        if (streamId < 0 || _requestStreams.ContainsKey(streamId) ||
-            item.Key.Scheme is null || item.Key == RequestEndpoint.Default)
+        if (streamId < 0 || _requestStreams.ContainsKey(streamId) || string.IsNullOrEmpty(item.Key.Scheme) ||
+            item.Key == RequestEndpoint.Default)
         {
             return StreamContextResult.AlreadyExists;
         }

@@ -43,7 +43,7 @@ public sealed class TlsOptionsSpec
         original.Headers.TryAddWithoutValidation("Authorization", "Bearer secret-token");
         original.Headers.TryAddWithoutValidation("Accept", "application/json");
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("http://evil.com/steal");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -66,7 +66,7 @@ public sealed class TlsOptionsSpec
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/page");
         original.Headers.TryAddWithoutValidation("Cookie", "session=abc123");
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("https://example.com/other");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -86,7 +86,7 @@ public sealed class TlsOptionsSpec
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api");
         original.Headers.TryAddWithoutValidation("Authorization", "Basic dXNlcjpwYXNz");
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("http://example.com/api");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -104,7 +104,7 @@ public sealed class TlsOptionsSpec
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/old");
         original.Headers.TryAddWithoutValidation("Authorization", "Bearer keep-me");
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("https://example.com/new");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -122,7 +122,7 @@ public sealed class TlsOptionsSpec
         var original = new HttpRequestMessage(HttpMethod.Get, "https://trusted.com/api");
         original.Headers.TryAddWithoutValidation("Authorization", "Bearer secret");
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("https://other.com/api");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -139,7 +139,7 @@ public sealed class TlsOptionsSpec
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com:443/api");
         original.Headers.TryAddWithoutValidation("Authorization", "Bearer secret");
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("https://example.com:8443/api");
 
         var newRequest = handler.BuildRedirectRequest(original, response);

@@ -14,7 +14,7 @@ namespace TurboHTTP.Protocol.Http3;
 /// Calls back into <see cref="IStageOperations"/> for responses, outbound items, and warnings.
 /// Mirrors the HTTP/2 <see cref="Http2.StateMachine"/> pattern.
 /// <para>
-/// Per-stream state and response assembly is delegated to <see cref="Http3StreamManager"/>;
+/// Per-stream state and response assembly is delegated to <see cref="StreamManager"/>;
 /// QPACK instruction streams to <see cref="QpackStreamHandler"/>.
 /// </para>
 /// </summary>
@@ -40,7 +40,7 @@ internal sealed class StateMachine : IDisposable
     private readonly RequestEncoder _requestEncoder;
     private readonly ResponseDecoder _responseDecoder;
     private readonly QpackStreamHandler _qpackHandler;
-    private readonly Http3StreamManager _streamManager;
+    private readonly StreamManager _streamManager;
 
     // Reconnection
     private readonly List<Http3Frame> _reconnectBuffer = [];
@@ -90,7 +90,7 @@ internal sealed class StateMachine : IDisposable
         _requestEncoder = new RequestEncoder(TableSync);
         _responseDecoder = new ResponseDecoder(TableSync);
         _qpackHandler = new QpackStreamHandler(ops, _requestEncoder, _responseDecoder, TableSync);
-        _streamManager = new Http3StreamManager(ops, _responseDecoder, TableSync)
+        _streamManager = new StreamManager(ops, _responseDecoder, TableSync)
         {
             FlushDecoderInstructionsCallback = _ => FlushDecoderInstructions(),
             OnStreamClosedCallback = OnStreamClosed
@@ -188,8 +188,6 @@ internal sealed class StateMachine : IDisposable
                 return null;
 
             case Http3HeadersFrame:
-                return frame;
-
             default:
                 return frame;
         }
@@ -233,12 +231,7 @@ internal sealed class StateMachine : IDisposable
             return false;
         }
 
-        if (IsReconnecting)
-        {
-            return BufferForReconnect(request);
-        }
-
-        return EncodeAndEmit(request);
+        return IsReconnecting ? BufferForReconnect(request) : EncodeAndEmit(request);
     }
 
     /// <summary>
@@ -293,7 +286,7 @@ internal sealed class StateMachine : IDisposable
     /// <summary>
     /// Evaluates whether this connection can be reused for a request to a different origin.
     /// </summary>
-    public Http3ConnectionReuseDecision EvaluateConnectionReuse(
+    public ConnectionReuseDecision EvaluateConnectionReuse(
         string targetScheme,
         string targetHost,
         int targetPort,
@@ -301,8 +294,8 @@ internal sealed class StateMachine : IDisposable
     {
         var ep = Endpoint;
         return ConnectionReuseEvaluator.Evaluate(
-            ep.Scheme ?? "https",
-            ep.Host ?? string.Empty,
+            ep.Scheme,
+            ep.Host,
             ep.Port,
             targetScheme,
             targetHost,
@@ -517,7 +510,7 @@ internal sealed class StateMachine : IDisposable
         }
     }
 
-    private Http3Frame? HandlePushPromise(Http3PushPromiseFrame pushPromise)
+    private Http3PushPromiseFrame? HandlePushPromise(Http3PushPromiseFrame pushPromise)
     {
         if (!_options.AllowServerPush)
         {

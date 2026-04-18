@@ -11,23 +11,17 @@ using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.StreamTests.Http2;
-
-/// <summary>
-/// Round-trip tests for the HTTP/2 engine per RFC 9113.
-/// Verifies end-to-end request encoding and response decoding through the full HTTP/2 protocol flow including HPACK.
-/// </summary>
-[Trait("RFC", "RFC9113")]
 public sealed class Http2EngineEndToEndSpec : EngineTestBase
 {
     private static Http20Engine Engine => new(new Http2Options().ToEngineOptions());
 
     private readonly HpackEncoder _hpack = new(useHuffman: false);
+    private static readonly int[] Expected = [1, 3, 5];
 
     private ReadOnlyMemory<byte> EncodeResponseHeaders(params (string Name, string Value)[] headers)
         => _hpack.Encode(headers);
 
-    private static byte[] ServerSettings()
-        => new SettingsFrame([]).Serialize();
+    private static byte[] ServerSettings() => new SettingsFrame([]).Serialize();
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9113-8.1")]
@@ -131,9 +125,9 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         // Protocol engine must NOT decompress — raw compressed bytes preserved for feature layer
-        var body = await response.Content!.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         Assert.Equal(compressedBody, body);
-        Assert.Equal("gzip", response.Content!.Headers.GetValues("Content-Encoding").Single());
+        Assert.Equal("gzip", response.Content.Headers.GetValues("Content-Encoding").Single());
     }
 
     [Fact(Timeout = 10_000)]
@@ -202,7 +196,7 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
 
         // Stream IDs must be 1, 3, 5 (client-side odd IDs, ascending)
         var streamIds = outboundHeaders.Select(f => f.StreamId).OrderBy(id => id).ToList();
-        Assert.Equal(new[] { 1, 3, 5 }, streamIds);
+        Assert.Equal(Expected, streamIds);
     }
 
     [Fact(Timeout = 10_000)]

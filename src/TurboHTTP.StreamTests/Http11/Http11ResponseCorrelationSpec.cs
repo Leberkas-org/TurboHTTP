@@ -4,13 +4,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http11;
 
-/// <summary>
-/// Tests HTTP/1.1 response correlation via the full engine per RFC 9112.
-/// Verifies that RequestMessage is correctly set on each response when requests are sent through the pipeline.
-/// </summary>
-/// <remarks>
-/// RFC 9112 §9.3: HTTP/1.1 pipeline ordering ensuring request-response identity is preserved.
-/// </remarks>
 public sealed class Http11ResponseCorrelationSpec : EngineTestBase
 {
     private static readonly Func<byte[]> Ok200 = () => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();

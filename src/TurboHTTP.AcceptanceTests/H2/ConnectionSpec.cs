@@ -205,7 +205,7 @@ public sealed class ConnectionSpec : AcceptanceTestBase
         var postBody = await postResponse.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         Assert.Equal(postPayload, postBody);
 
-        var getPath = "/h2/echo-path?q=1";
+        const string getPath = "/h2/echo-path?q=1";
         var getRequest = new HttpRequestMessage(HttpMethod.Get, $"http://localhost{getPath}")
         {
             Version = HttpVersion.Version20

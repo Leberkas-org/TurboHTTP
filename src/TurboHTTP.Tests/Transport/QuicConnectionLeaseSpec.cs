@@ -5,6 +5,9 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
+// QUIC APIs are platform-guarded; usage is gated at runtime via QuicOptions.
+#pragma warning disable CA1416
+
 public sealed class QuicConnectionLeaseSpec
 {
     private static readonly RequestEndpoint TestEndpoint = new()

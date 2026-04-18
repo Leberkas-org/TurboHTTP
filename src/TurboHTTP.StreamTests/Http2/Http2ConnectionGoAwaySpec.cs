@@ -8,11 +8,6 @@ using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests GOAWAY frame handling in the HTTP/2 connection stage per RFC 9113.
-/// Verifies that a received GOAWAY causes the stage to stop accepting new streams and drain existing ones.
-/// </summary>
-[Trait("RFC", "RFC9113-6.8")]
 public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
 {
     private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
@@ -39,7 +34,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         var networkItems = await networkTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -93,7 +88,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
 

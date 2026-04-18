@@ -172,7 +172,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
         // Get initial state (activity recorded in constructor)
         var initialTimeout = state.TimeUntilExpiry();
 
-        System.Threading.Thread.Sleep(100);
+        Thread.Sleep(100);
 
         // Record new activity
         state.RecordActivity();
@@ -199,7 +199,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        System.Threading.Thread.Sleep(150);
+        Thread.Sleep(150);
 
         Assert.True(state.IsIdleTimeoutExpired());
     }
@@ -211,7 +211,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
         var state = new ConnectionState(TimeSpan.Zero);
 
         // Even after waiting, should never expire
-        System.Threading.Thread.Sleep(100);
+        Thread.Sleep(100);
 
         Assert.False(state.IsIdleTimeoutExpired());
     }
@@ -234,7 +234,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        System.Threading.Thread.Sleep(150);
+        Thread.Sleep(150);
 
         var remaining = state.TimeUntilExpiry();
 
@@ -302,7 +302,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        System.Threading.Thread.Sleep(150);
+        Thread.Sleep(150);
 
         // Expired before opening stream
         Assert.True(state.IsIdleTimeoutExpired());
@@ -361,7 +361,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30), maxPushCount: 10);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             state.RecordPush(); // Should not throw
         }
@@ -376,7 +376,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30), maxPushCount: 3);
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             state.RecordPush();
         }
@@ -512,7 +512,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        System.Threading.Thread.Sleep(150);
+        Thread.Sleep(150);
         Assert.True(state.IsIdleTimeoutExpired());
 
         state.Reset();

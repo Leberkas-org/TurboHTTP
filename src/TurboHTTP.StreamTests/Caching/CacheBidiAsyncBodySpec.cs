@@ -8,15 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Caching;
 
-/// <summary>
-/// RFC 9111 §3 — CacheBidiStage async body read path tests.
-/// Verifies that GetAsyncCallback keeps the stage scope alive during slow body reads,
-/// preventing GroupByHostKeyStage from completing the substream prematurely.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="CacheBidiStage"/>.
-/// RFC 9111 §3: Storing responses in a cache — async body read for cache storage.
-/// </remarks>
 public sealed class CacheBidiAsyncBodySpec : StreamTestBase
 {
     /// <summary>
@@ -76,7 +67,6 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
 
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
-
 
     [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]

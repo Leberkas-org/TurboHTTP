@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Threading.Channels;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
@@ -244,15 +243,8 @@ public sealed class ClientByteMoverSpec
         Assert.Equal(TlsCloseKind.AbruptClose, state.CloseKind);
     }
 
-    private sealed class CapturingStream : Stream
+    private sealed class CapturingStream(List<byte[]> writes) : Stream
     {
-        private readonly List<byte[]> _writes;
-
-        public CapturingStream(List<byte[]> writes)
-        {
-            _writes = writes;
-        }
-
         public override bool CanRead => false;
         public override bool CanSeek => false;
         public override bool CanWrite => true;
@@ -265,7 +257,7 @@ public sealed class ClientByteMoverSpec
 
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default)
         {
-            _writes.Add(buffer.ToArray());
+            writes.Add(buffer.ToArray());
             await Task.CompletedTask;
         }
 

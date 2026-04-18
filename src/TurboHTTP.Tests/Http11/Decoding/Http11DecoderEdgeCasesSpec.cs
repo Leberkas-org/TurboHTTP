@@ -1,5 +1,4 @@
 using System.Text;
-using TurboHTTP.Protocol;
 using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;

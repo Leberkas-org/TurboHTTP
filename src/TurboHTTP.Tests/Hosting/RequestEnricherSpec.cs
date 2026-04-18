@@ -12,7 +12,7 @@ namespace TurboHTTP.Tests.Hosting;
 /// Class under test: <see cref="RequestEnricher"/>.
 /// Validates base-address combination, version override, and header merge/skip-if-present semantics.
 /// </remarks>
-public sealed class RequestEnricherTests
+public sealed class RequestEnricherSpec
 {
     private static RequestEnricher CreateEnricher(
         Uri? baseAddress = null,
@@ -36,8 +36,8 @@ public sealed class RequestEnricherTests
         return (holder, holder.Headers);
     }
 
-    [Fact(Timeout = 5_000, DisplayName = "ENR-001: Null URI + BaseAddress → RequestUri becomes BaseAddress root")]
-    public void Should_SetRequestUriToBaseAddress_When_RequestUriIsNull()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_set_request_uri_to_base_address_when_request_uri_is_null()
     {
         var baseAddress = new Uri("http://a.test/");
         var enricher = CreateEnricher(baseAddress: baseAddress);
@@ -48,9 +48,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(baseAddress, result.RequestUri);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-002: Relative URI \"/ping\" + BaseAddress \"http://a.test\" → \"http://a.test/ping\"")]
-    public void Should_CombineRelativeUriWithBaseAddress_When_BaseAddressSet()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_combine_relative_uri_with_base_address_when_base_address_set()
     {
         var baseAddress = new Uri("http://a.test/");
         var enricher = CreateEnricher(baseAddress: baseAddress);
@@ -61,8 +60,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(new Uri("http://a.test/ping"), result.RequestUri);
     }
 
-    [Fact(Timeout = 5_000, DisplayName = "ENR-003: Absolute URI → RequestUri unchanged even when BaseAddress is set")]
-    public void Should_NotChangeAbsoluteUri_When_BaseAddressIsSet()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_not_change_absolute_uri_when_base_address_is_set()
     {
         var absoluteUri = new Uri("http://other.host/path");
         var enricher = CreateEnricher();
@@ -73,9 +72,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(absoluteUri, result.RequestUri);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-004: Null URI + null BaseAddress → throws InvalidOperationException")]
-    public void Should_Throw_When_UriAndBaseAddressAreNull()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_throw_when_uri_and_base_address_are_null()
     {
         var enricher = CreateEnricher();
 
@@ -84,9 +82,8 @@ public sealed class RequestEnricherTests
         Assert.Throws<InvalidOperationException>(() => enricher.Enrich(request));
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-005: Relative URI + null BaseAddress → throws InvalidOperationException")]
-    public void Should_Throw_When_RelativeUriAndBaseAddressIsNull()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_throw_when_relative_uri_and_base_address_is_null()
     {
         var enricher = CreateEnricher();
 
@@ -95,9 +92,8 @@ public sealed class RequestEnricherTests
         Assert.Throws<InvalidOperationException>(() => enricher.Enrich(request));
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-006: request.Version == 1.1 (default), defaultVersion == 2.0 → version becomes 2.0")]
-    public void Should_SetVersionTo20_When_RequestVersionIs11AndDefaultIs20()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_set_version_to_20_when_request_version_is_11_and_default_is_20()
     {
         var enricher = CreateEnricher(defaultVersion: HttpVersion.Version20);
 
@@ -110,9 +106,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(HttpVersion.Version20, result.Version);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-007: request.Version == 1.1 (default), defaultVersion == 1.1 → version unchanged")]
-    public void Should_NotChangeVersion_When_RequestVersionIs11AndDefaultIs11()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_not_change_version_when_request_version_is_11_and_default_is_11()
     {
         var enricher = CreateEnricher();
 
@@ -125,9 +120,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(HttpVersion.Version11, result.Version);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-008: request.Version explicitly set to 1.0 → unchanged regardless of defaultVersion")]
-    public void Should_NotOverrideVersion_When_ExplicitV10Set()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_not_override_version_when_explicit_v10_set()
     {
         var enricher = CreateEnricher();
 
@@ -140,9 +134,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(HttpVersion.Version10, result.Version);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-009: request.Version explicitly set to 2.0 → unchanged regardless of defaultVersion")]
-    public void Should_NotOverrideVersion_When_ExplicitV20Set()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_not_override_version_when_explicit_v20_set()
     {
         var enricher = CreateEnricher();
 
@@ -155,8 +148,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(HttpVersion.Version20, result.Version);
     }
 
-    [Fact(Timeout = 5_000, DisplayName = "ENR-010: DefaultRequestHeaders has X-Foo:bar → merged into request")]
-    public void Should_MergeDefaultHeader_When_DefaultRequestHeadersContainsXFoo()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_merge_default_header_when_default_request_headers_contains_x_foo()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -171,9 +164,8 @@ public sealed class RequestEnricherTests
         Assert.Contains("bar", result.Headers.GetValues("X-Foo"));
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-011: Request already has X-Foo:existing → not overridden; existing value kept")]
-    public void Should_PreserveExistingHeader_When_DefaultAndRequestHaveSameHeader()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_preserve_existing_header_when_default_and_request_have_same_header()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -190,8 +182,8 @@ public sealed class RequestEnricherTests
         Assert.Equal("existing", values[0]);
     }
 
-    [Fact(Timeout = 5_000, DisplayName = "ENR-012: DefaultRequestHeaders has two headers → both merged")]
-    public void Should_MergeBothHeaders_When_TwoDefaultHeadersPresent()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_merge_both_headers_when_two_default_headers_present()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -207,9 +199,8 @@ public sealed class RequestEnricherTests
         Assert.True(result.Headers.Contains("X-Two"));
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-013: DefaultRequestHeaders empty → no headers added; request unchanged")]
-    public void Should_AddNoHeaders_When_DefaultRequestHeadersEmpty()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_add_no_headers_when_default_request_headers_empty()
     {
         var enricher = CreateEnricher();
 
@@ -220,10 +211,8 @@ public sealed class RequestEnricherTests
         Assert.Empty(result.Headers);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName =
-            "ENR-014: Same header name, different casing in request vs defaults → treated as same; not doubled")]
-    public void Should_NotDoubleHeader_When_HeaderNameDiffersOnlyInCase()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_not_double_header_when_header_name_differs_only_in_case()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -240,10 +229,8 @@ public sealed class RequestEnricherTests
         Assert.Equal("existing", values[0]);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName =
-            "ENR-015: DefaultRequestHeaders has multiple values for one name → all values added as one entry")]
-    public void Should_AddAllValues_When_DefaultHeaderHasMultipleValues()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_add_all_values_when_default_header_has_multiple_values()
     {
         var (holder, defaultHeaders) = CreateDefaultHeaders();
         using var _ = holder;
@@ -260,9 +247,8 @@ public sealed class RequestEnricherTests
         Assert.Contains("b", values);
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-016: 3 requests in sequence → all 3 enriched independently, order preserved")]
-    public void Should_EnrichAllRequestsInOrder_When_ThreeRequestsInSequence()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_enrich_all_requests_in_order_when_three_requests_in_sequence()
     {
         var baseAddress = new Uri("http://a.test/");
         var (holder, defaultHeaders) = CreateDefaultHeaders();
@@ -295,9 +281,8 @@ public sealed class RequestEnricherTests
         }
     }
 
-    [Fact(Timeout = 5_000,
-        DisplayName = "ENR-031: Date header not auto-generated (RFC 9110 §6.6.1: clients SHOULD NOT send Date)")]
-    public void Should_NotAddDate_When_NoDateHeader()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_not_add_date_when_no_date_header()
     {
         var enricher = CreateEnricher();
 
@@ -307,8 +292,8 @@ public sealed class RequestEnricherTests
         Assert.False(result.Headers.Date.HasValue);
     }
 
-    [Fact(Timeout = 5_000, DisplayName = "ENR-032: Existing Date header preserved")]
-    public void Should_PreserveDate_When_AlreadyPresent()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_preserve_date_when_already_present()
     {
         var enricher = CreateEnricher();
 
@@ -321,8 +306,8 @@ public sealed class RequestEnricherTests
         Assert.Equal(existingDate, result.Headers.Date!.Value);
     }
 
-    [Fact(Timeout = 5_000, DisplayName = "ENR-033: Explicit Date header set by caller is preserved as-is")]
-    public void Should_PreserveExplicitDate_When_CallerSetsIt()
+    [Fact(Timeout = 5_000)]
+    public void RequestEnricher_should_preserve_explicit_date_when_caller_sets_it()
     {
         var enricher = CreateEnricher();
 

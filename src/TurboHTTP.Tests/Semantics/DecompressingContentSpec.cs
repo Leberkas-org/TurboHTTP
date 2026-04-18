@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Text;
 using TurboHTTP.Internal;
 using static System.Text.Encoding;
 
@@ -83,7 +82,7 @@ public sealed class DecompressingContentSpec
 
         using var content = new DecompressingContent(inner, "gzip");
         using var ms = new MemoryStream();
-        await content.CopyToAsync(ms);
+        await content.CopyToAsync(ms, TestContext.Current.CancellationToken);
 
         Assert.Equal(original, ms.ToArray());
     }
@@ -189,15 +188,9 @@ public sealed class DecompressingContentSpec
         return ms.ToArray();
     }
 
-    private sealed class GatedWriteStream : MemoryStream
+    private sealed class GatedWriteStream(SemaphoreSlim gate) : MemoryStream
     {
-        private readonly SemaphoreSlim _gate;
         private readonly TaskCompletionSource _writeStarted = new();
-
-        public GatedWriteStream(SemaphoreSlim gate)
-        {
-            _gate = gate;
-        }
 
         public byte[] WrittenBytes => ToArray();
 
@@ -206,7 +199,7 @@ public sealed class DecompressingContentSpec
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
             _writeStarted.TrySetResult();
-            await _gate.WaitAsync(cancellationToken);
+            await gate.WaitAsync(cancellationToken);
             await base.WriteAsync(buffer, cancellationToken);
         }
     }

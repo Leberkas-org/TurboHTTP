@@ -5,14 +5,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http10;
 
-/// <summary>
-/// RFC-tagged round-trip tests for the HTTP/1.0 engine per RFC 1945.
-/// Verifies end-to-end request encoding and response decoding through the full HTTP/1.0 protocol flow.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Http10Engine"/>.
-/// RFC 1945 §4.1: HTTP/1.0 full request/response message exchange.
-/// </remarks>
 public sealed class Http10EngineEndToEndSpec : EngineTestBase
 {
     private static Http10Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));

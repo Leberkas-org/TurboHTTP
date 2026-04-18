@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Security;
 using System.Runtime.Versioning;
 using TurboHTTP.Transport.Connection;
@@ -422,7 +421,7 @@ public sealed class QuicOptionsSpec
         };
 
         Assert.Equal("example.com", options.Host);
-        Assert.Equal((ushort)443, options.Port);
+        Assert.Equal(443, options.Port);
         Assert.Equal("sni.example.com", options.TargetHost);
         Assert.NotNull(options.ApplicationProtocols);
         Assert.Equal(TimeSpan.FromMinutes(5), options.IdleTimeout);

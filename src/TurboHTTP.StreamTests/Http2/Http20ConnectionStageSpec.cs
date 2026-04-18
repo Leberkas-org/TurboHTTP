@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -9,14 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests the unified HTTP/2 connection stage that consolidates encoding, decoding,
-/// multiplexing, and correlation into a single <see cref="Http20ConnectionStage"/>.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Http20ConnectionStage"/>.
-/// RFC 9113: HTTP/2 with stream multiplexing and SETTINGS handling.
-/// </remarks>
 public sealed class Http20ConnectionStageSpec : StreamTestBase
 {
     private static HttpRequestMessage MakeRequest(string path = "/")

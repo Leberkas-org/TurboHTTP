@@ -1,5 +1,3 @@
-using System.Net.Sockets;
-
 namespace TurboHTTP.Tests.Client;
 
 /// <summary>
@@ -35,12 +33,7 @@ internal sealed class TestTurboProtocolException : TurboProtocolException
 /// <summary>
 /// Concrete implementation for testing TurboTransportException.
 /// </summary>
-internal sealed class TestTurboTransportException : TurboTransportException
-{
-    public TestTurboTransportException(string message) : base(message)
-    {
-    }
-}
+internal sealed class TestTurboTransportException(string message) : TurboTransportException(message);
 
 public sealed class TurboHttpExceptionSpec
 {

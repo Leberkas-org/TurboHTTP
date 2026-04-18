@@ -9,11 +9,6 @@ using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests backpressure behaviour in the HTTP/2 connection stage per RFC 9113.
-/// Verifies that the stage correctly applies flow control and does not emit frames faster than the downstream can consume.
-/// </summary>
-[Trait("RFC", "RFC9113-5.2")]
 public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
 {
     private (

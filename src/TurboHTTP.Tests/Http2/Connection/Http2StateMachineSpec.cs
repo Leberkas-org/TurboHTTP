@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;

@@ -21,6 +21,7 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
     private static Http3EngineOptions DefaultOptions => new Http3Options().ToEngineOptions();
 
     private readonly QpackEncoder _qpack = new(maxTableCapacity: 0);
+    private static readonly string[] Expected = ["/alpha", "/beta", "/gamma"];
 
     private ReadOnlyMemory<byte> EncodeResponseHeaders(params (string Name, string Value)[] headers)
         => _qpack.Encode(headers);
@@ -52,7 +53,7 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
     /// <summary>
     /// Builds a settings frame as an <see cref="IInputItem"/> on the control stream.
     /// </summary>
-    private static IInputItem BuildControlSettings()
+    private static Http3NetworkBuffer BuildControlSettings()
     {
         var settingsBytes = new Http3SettingsFrame([]).Serialize();
         var buf = Http3NetworkBuffer.Rent(settingsBytes.Length);
@@ -109,14 +110,13 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
     /// Extracts stream IDs from outbound <see cref="Http3NetworkBuffer"/> items
     /// that carry request data (not control/QPACK streams).
     /// </summary>
-    private static IReadOnlyList<long> ExtractRequestStreamIds(IReadOnlyList<IOutputItem> items)
+    private static List<long> ExtractRequestStreamIds(IReadOnlyList<IOutputItem> items)
     {
         var seen = new HashSet<long>();
         var result = new List<long>();
         foreach (var item in items)
         {
-            if (item is Http3NetworkBuffer { StreamType: Http3StreamType.Request } tagged
-                && tagged.StreamId >= 0
+            if (item is Http3NetworkBuffer { StreamType: Http3StreamType.Request, StreamId: >= 0 } tagged
                 && seen.Add(tagged.StreamId))
             {
                 result.Add(tagged.StreamId);
@@ -129,7 +129,7 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
     /// <summary>
     /// Extracts <see cref="Http3EndOfRequestItem"/> stream IDs from outbound items.
     /// </summary>
-    private static IReadOnlyList<long> ExtractEndOfRequestStreamIds(IReadOnlyList<IOutputItem> items)
+    private static List<long> ExtractEndOfRequestStreamIds(IReadOnlyList<IOutputItem> items)
     {
         return items.OfType<Http3EndOfRequestItem>().Select(e => e.StreamId).ToList();
     }
@@ -224,6 +224,6 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
             .OrderBy(u => u)
             .ToList();
 
-        Assert.Equal(new[] { "/alpha", "/beta", "/gamma" }, responseUris);
+        Assert.Equal(Expected, responseUris);
     }
 }

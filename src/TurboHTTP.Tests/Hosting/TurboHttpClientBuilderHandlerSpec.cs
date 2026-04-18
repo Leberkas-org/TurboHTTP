@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace TurboHTTP.Tests.Hosting;
 
-public sealed class TurboHttpClientBuilderHandlerTests
+public sealed class TurboHttpClientBuilderHandlerSpec
 {
     // Test doubles
 
@@ -23,8 +23,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
 
     // AddHandler<T> — type registration
 
-    [Fact(DisplayName = "AddHandler<T>() adds typeof(T) to HandlerTypes")]
-    public void AddHandler_AddsTypeToHandlerTypes()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_add_type_to_handler_types()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").AddHandler<TestHandler>();
@@ -34,8 +34,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
         Assert.Contains(typeof(TestHandler), descriptor.HandlerTypes);
     }
 
-    [Fact(DisplayName = "AddHandler<T>() also appends one factory to HandlerFactories")]
-    public void AddHandler_AddsFactoryToHandlerFactories()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_add_factory_to_handler_factories()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").AddHandler<TestHandler>();
@@ -47,8 +47,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
 
     // AddHandler<T> — DI registration lifetime
 
-    [Fact(DisplayName = "AddHandler<T>() registers T as Transient in the service collection")]
-    public void AddHandler_RegistersTransientService()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_register_transient_service()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").AddHandler<TestHandler>();
@@ -60,8 +60,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
 
     // UseRequest — anonymous handler
 
-    [Fact(DisplayName = "UseRequest() adds one factory to HandlerFactories without touching HandlerTypes")]
-    public void UseRequest_AddsOneFactoryWithNoTypeEntry()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_add_one_factory_with_no_type_entry()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").UseRequest(req => req);
@@ -74,8 +74,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
 
     // FIFO ordering
 
-    [Fact(DisplayName = "Multiple AddHandler<T>() calls preserve FIFO order in HandlerTypes")]
-    public void AddHandler_PreservesFifoOrderInTypes()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_preserve_fifo_order_in_types()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test")
@@ -88,8 +88,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
         Assert.Equal(typeof(BetaHandler), descriptor.HandlerTypes[1]);
     }
 
-    [Fact(DisplayName = "Multiple AddHandler<T>() calls preserve FIFO order in HandlerFactories")]
-    public void AddHandler_PreservesFifoOrderInFactories()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_preserve_fifo_order_in_factories()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test")
@@ -106,8 +106,8 @@ public sealed class TurboHttpClientBuilderHandlerTests
 
     // Factory DI resolution
 
-    [Fact(DisplayName = "AddHandler<T>() factory resolves T from a real IServiceProvider")]
-    public void AddHandler_FactoryResolvesFromServiceProvider()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderHandler_should_resolve_from_service_provider()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").AddHandler<TestHandler>();

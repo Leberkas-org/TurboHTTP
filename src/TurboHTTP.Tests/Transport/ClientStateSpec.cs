@@ -144,10 +144,9 @@ public sealed class ClientStateSpec
     public void ClientState_should_allow_on_writes_complete_callback()
     {
         var stream = new MemoryStream();
-        var callbackExecuted = false;
         var state = new ClientState(stream, null, null)
         {
-            OnWritesComplete = () => { callbackExecuted = true; }
+            OnWritesComplete = () => { }
         };
 
         Assert.NotNull(state.OnWritesComplete);
@@ -163,7 +162,7 @@ public sealed class ClientStateSpec
         var state = new ClientState(stream, inbound, outbound);
 
         // Write multiple buffers
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             state.InboundWriter.TryWrite(NetworkBufferTestExtensions.FromArray([1, 2, 3]));
             state.OutboundWriter.TryWrite(NetworkBufferTestExtensions.FromArray([4, 5, 6]));

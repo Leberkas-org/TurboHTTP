@@ -301,10 +301,7 @@ internal sealed class Decoder
         a.Span.CopyTo(mergedOwner.Memory.Span);
         b.Span.CopyTo(mergedOwner.Memory.Span[a.Length..]);
 
-        if (oldOwner != null)
-        {
-            oldOwner.Dispose();
-        }
+        oldOwner?.Dispose();
 
         return mergedOwner.Memory[..size];
     }

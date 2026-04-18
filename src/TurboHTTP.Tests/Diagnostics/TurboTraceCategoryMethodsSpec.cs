@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using TurboHTTP.Diagnostics;
 
 namespace TurboHTTP.Tests.Diagnostics;

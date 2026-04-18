@@ -225,7 +225,7 @@ public sealed class HpackHeaderBlockPrimitiveSpec
         var decoded = decoder.Decode(block.Span);
 
         Assert.Equal(headers.Count, decoded.Count);
-        for (int i = 0; i < headers.Count; i++)
+        for (var i = 0; i < headers.Count; i++)
         {
             Assert.Equal(headers[i].Name, decoded[i].Name);
             Assert.Equal(headers[i].Value, decoded[i].Value);

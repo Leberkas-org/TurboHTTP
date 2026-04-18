@@ -1,6 +1,5 @@
 using System.Threading.Channels;
 using Akka.Actor;
-using Owner = TurboHTTP.Streams.Lifecycle.ClientStreamOwner;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
@@ -105,7 +104,7 @@ internal sealed class ClientStreamManager : IDisposable
         // Tell the Owner to create a stream instance. The instance will materialize
         // the Akka.Streams pipeline using our channels. Requests written to the channel
         // before materialization completes are buffered in the unbounded channel.
-        _owner.Tell(new Owner.CreateStreamInstance(
+        _owner.Tell(new ClientStreamOwner.CreateStreamInstance(
             clientOptions,
             requestOptionsFactory,
             descriptor,
@@ -125,14 +124,14 @@ internal sealed class ClientStreamManager : IDisposable
 
         // Signal the Owner to shut down gracefully. It waits for pending work
         // to drain (up to 5s), then stops the instance and itself.
-        _owner.GracefulStop(TimeSpan.FromSeconds(5), new Owner.Shutdown());
+        _owner.GracefulStop(TimeSpan.FromSeconds(5), new ClientStreamOwner.Shutdown());
     }
 
     /// <summary>
     /// Returns a <see cref="Task"/> that completes when the owner actor has fully stopped.
-    /// Sends a <see cref="Owner.Shutdown"/> message (harmlessly ignored if already shutting down)
+    /// Sends a <see cref="ClientStreamOwner.Shutdown"/> message (harmlessly ignored if already shutting down)
     /// and waits for actor termination up to <paramref name="timeout"/>.
     /// </summary>
     internal Task WhenTerminatedAsync(TimeSpan timeout)
-        => _owner.GracefulStop(timeout, new Owner.Shutdown());
+        => _owner.GracefulStop(timeout, new ClientStreamOwner.Shutdown());
 }

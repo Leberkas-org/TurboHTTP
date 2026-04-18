@@ -94,7 +94,8 @@ internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     {
     }
 
-    public TcpConnectionManagerActor(IConnectionFactory factory, TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerServer = 6)
+    public TcpConnectionManagerActor(IConnectionFactory factory, TimeSpan idleTimeout, TimeSpan connectionLifetime,
+        int maxConnectionsPerServer = 6)
     {
         _factory = factory;
         _idleTimeout = idleTimeout;

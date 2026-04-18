@@ -4,7 +4,6 @@ using Akka.Actor;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Quic;
-using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.StreamTests.Transport;
 
@@ -18,11 +17,11 @@ public sealed class QuicPumpManagerSpec
         Version = HttpVersion.Version30
     };
 
-    private static (ConnectionHandle Handle, ChannelReader<NetworkBuffer> InboundReader) CreateTestHandle()
+    private static ConnectionHandle CreateTestHandle()
     {
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
-        return (ConnectionHandle.CreateDirect(outbound.Writer, inbound.Reader, TestEndpoint), inbound.Reader);
+        return ConnectionHandle.CreateDirect(outbound.Writer, inbound.Reader, TestEndpoint);
     }
 
     [Fact(Timeout = 5000)]
@@ -30,7 +29,7 @@ public sealed class QuicPumpManagerSpec
     public void StartInboundPump_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
-        var (handle, _) = CreateTestHandle();
+        var handle = CreateTestHandle();
 
         // Should complete without throwing
         pumpMgr.StartInboundPump(handle, Http3StreamType.Request, TestEndpoint, connectionGen: 0, streamId: 1);
@@ -54,8 +53,8 @@ public sealed class QuicPumpManagerSpec
     public void StopAll_should_cancel_pumps()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
-        var (handle1, _) = CreateTestHandle();
-        var (handle2, _) = CreateTestHandle();
+        var handle1 = CreateTestHandle();
+        var handle2 = CreateTestHandle();
 
         pumpMgr.StartInboundPump(handle1, Http3StreamType.Request, TestEndpoint, connectionGen: 0, streamId: 1);
         pumpMgr.StartInboundPump(handle2, Http3StreamType.Request, TestEndpoint, connectionGen: 0, streamId: 2);
@@ -73,9 +72,9 @@ public sealed class QuicPumpManagerSpec
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
-            var (handle, _) = CreateTestHandle();
+            var handle = CreateTestHandle();
             pumpMgr.StartInboundPump(handle, Http3StreamType.Request, TestEndpoint, connectionGen: 0, streamId: i);
         }
 
@@ -88,7 +87,7 @@ public sealed class QuicPumpManagerSpec
     public void Control_stream_pump_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
-        var (handle, _) = CreateTestHandle();
+        var handle = CreateTestHandle();
 
         pumpMgr.StartInboundPump(handle, Http3StreamType.Control, TestEndpoint, connectionGen: 0);
 
@@ -100,7 +99,7 @@ public sealed class QuicPumpManagerSpec
     public void Encoder_stream_pump_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
-        var (handle, _) = CreateTestHandle();
+        var handle = CreateTestHandle();
 
         pumpMgr.StartInboundPump(handle, Http3StreamType.QpackEncoder, TestEndpoint, connectionGen: 0);
 
@@ -112,7 +111,7 @@ public sealed class QuicPumpManagerSpec
     public void StartInboundPump_without_stream_id_should_work()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
-        var (handle, _) = CreateTestHandle();
+        var handle = CreateTestHandle();
 
         // Default streamId = -1 for connection-level streams
         pumpMgr.StartInboundPump(handle, Http3StreamType.Control, TestEndpoint, connectionGen: 0);
@@ -125,7 +124,7 @@ public sealed class QuicPumpManagerSpec
     public void StopAll_can_be_called_multiple_times()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
-        var (handle, _) = CreateTestHandle();
+        var handle = CreateTestHandle();
 
         pumpMgr.StartInboundPump(handle, Http3StreamType.Request, TestEndpoint, connectionGen: 0, streamId: 1);
 

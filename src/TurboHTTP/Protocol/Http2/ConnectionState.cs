@@ -1,29 +1,6 @@
 namespace TurboHTTP.Protocol.Http2;
 
 /// <summary>
-/// Result of processing an inbound DATA frame through flow control.
-/// </summary>
-internal readonly struct FlowControlResult
-{
-    public bool Success { get; init; }
-    public bool IsConnectionViolation { get; init; }
-    public bool IsStreamViolation { get; init; }
-    public int ViolationStreamId { get; init; }
-    public WindowUpdateFrame? ConnectionWindowUpdate { get; init; }
-    public WindowUpdateFrame? StreamWindowUpdate { get; init; }
-}
-
-/// <summary>
-/// Result of processing a remote SETTINGS frame.
-/// </summary>
-internal readonly struct SettingsResult
-{
-    public int? MaxConcurrentStreamsChange { get; init; }
-    public int? InitialWindowSizeChange { get; init; }
-    public SettingsFrame? AckFrame { get; init; }
-}
-
-/// <summary>
 /// Connection-level RFC 9113 state: flow control (§6.9), SETTINGS (§6.5),
 /// PING (§6.7), GOAWAY (§6.8), and per-stream receive windows.
 /// Extracted from Http20ConnectionStage.Logic for independent testability.
@@ -43,11 +20,11 @@ internal sealed class ConnectionState
         InitialSendStreamWindow = initialStreamWindowSize;
         InitialRecvStreamWindow = initialStreamWindowSize;
 
-        const int MinWindowUpdateThreshold = 8_192;
-        const int MaxWindowUpdateThreshold = 262_144; // 256 KB
+        const int minWindowUpdateThreshold = 8_192;
+        const int maxWindowUpdateThreshold = 262_144; // 256 KB
         _windowUpdateThreshold = Math.Max(
-            MinWindowUpdateThreshold,
-            Math.Min(MaxWindowUpdateThreshold, initialConnectionWindowSize / 4));
+            minWindowUpdateThreshold,
+            Math.Min(maxWindowUpdateThreshold, initialConnectionWindowSize / 4));
     }
 
     public bool GoAwayReceived { get; private set; }

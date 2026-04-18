@@ -145,7 +145,7 @@ public sealed class QpackIntegerCodecEdgeCasesSpec
         // Craft data that triggers shift >= 62
         var data = new byte[20];
         data[0] = 0xFF; // Full prefix
-        for (int i = 1; i < 15; i++)
+        for (var i = 1; i < 15; i++)
         {
             data[i] = 0xFF; // Continuation bytes with high bit set
         }
@@ -167,7 +167,7 @@ public sealed class QpackIntegerCodecEdgeCasesSpec
         var data = new byte[20];
         data[0] = 0xFF; // Full prefix (255)
         // Add continuation bytes that accumulate to a very large value
-        for (int i = 1; i < 10; i++)
+        for (var i = 1; i < 10; i++)
         {
             data[i] = 0xFF; // Continuation with high bit
         }

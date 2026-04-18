@@ -21,7 +21,7 @@ namespace TurboHTTP.Tests.Shared;
 /// </remarks>
 public abstract class EngineTestBase : TestKit
 {
-    protected internal readonly IMaterializer Materializer;
+    protected readonly IMaterializer Materializer;
 
     protected EngineTestBase() : base(ActorSystem.Create("engine-test-" + Guid.NewGuid()))
     {

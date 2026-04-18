@@ -15,8 +15,7 @@ internal sealed record Http3EngineOptions(
     int MaxReconnectAttempts,
     bool AllowServerPush,
     bool AllowEarlyData,
-    bool AllowConnectionMigration,
-    long MaxBatchWeight);
+    bool AllowConnectionMigration);
 
 internal sealed class Http30Engine : IHttpProtocolEngine
 {
@@ -32,9 +31,6 @@ internal sealed class Http30Engine : IHttpProtocolEngine
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
             var connection = b.Add(new Http30ConnectionStage(_options));
-            var batchFlow = b.Add(new NetworkBufferBatchStage(_options.MaxBatchWeight));
-
-            b.From(connection.OutNetwork).Via(batchFlow);
 
             return new BidiShape<
                 HttpRequestMessage,
@@ -42,7 +38,7 @@ internal sealed class Http30Engine : IHttpProtocolEngine
                 IInputItem,
                 HttpResponseMessage>(
                 connection.InApp,
-                batchFlow.Outlet,
+                connection.OutNetwork,
                 connection.InServer,
                 connection.OutResponse);
         }));

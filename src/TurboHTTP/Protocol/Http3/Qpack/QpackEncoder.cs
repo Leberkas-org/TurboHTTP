@@ -410,7 +410,7 @@ internal sealed class QpackEncoder
                 "RFC 9204 §4.5.1.1 violation: Required Insert Count > 0 but MaxEntries is 0 (table capacity too small).");
         }
 
-        return (requiredInsertCount % (2 * maxEntries)) + 1;
+        return requiredInsertCount % (2 * maxEntries) + 1;
     }
 
     private void WriteHeaderField(string name, string value, HeaderEncodingEntry plan, int encodingBase,

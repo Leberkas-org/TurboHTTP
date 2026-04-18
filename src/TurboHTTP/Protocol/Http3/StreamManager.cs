@@ -1,5 +1,6 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3.Qpack;
+using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Protocol.Http3;
@@ -9,7 +10,7 @@ namespace TurboHTTP.Protocol.Http3;
 /// frame-decoder / stream-state pooling for an HTTP/3 connection.
 /// Extracted from <see cref="StateMachine"/> for single-responsibility.
 /// </summary>
-internal sealed class Http3StreamManager
+internal sealed class StreamManager
 {
     private const int MaxPoolSize = 16;
     private const int MaxDecoderPoolSize = 16;
@@ -31,7 +32,7 @@ internal sealed class Http3StreamManager
     /// <summary>Whether there are in-flight requests awaiting responses.</summary>
     public bool HasInFlightRequests => _correlationMap.Count > 0 || _streams.Count > 0;
 
-    public Http3StreamManager(IStageOperations ops, ResponseDecoder responseDecoder, QpackTableSync tableSync)
+    public StreamManager(IStageOperations ops, ResponseDecoder responseDecoder, QpackTableSync tableSync)
     {
         _ops = ops;
         _responseDecoder = responseDecoder;
@@ -250,6 +251,13 @@ internal sealed class Http3StreamManager
         }
 
         ResponseProduced = true;
+
+        var partialContentResult = PartialContentValidator.Validate(response);
+        if (!partialContentResult.IsValid)
+        {
+            _ops.OnWarning(partialContentResult.ErrorMessage!);
+        }
+
         _ops.OnResponse(response);
 
         ReturnStreamState(streamId);

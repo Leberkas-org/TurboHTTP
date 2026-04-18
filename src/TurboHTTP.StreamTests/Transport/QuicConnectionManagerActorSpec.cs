@@ -1,6 +1,5 @@
 using System.Net;
 using Akka.Actor;
-using Akka.TestKit.Xunit;
 using TurboHTTP.Internal;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
@@ -9,14 +8,9 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.StreamTests.Transport;
 
-public sealed class QuicConnectionManagerActorSpec : TestKit
+public sealed class QuicConnectionManagerActorSpec : StreamTestBase
 {
     private readonly InMemoryQuicConnectionFactory _factory = new();
-
-    public QuicConnectionManagerActorSpec()
-        : base(ActorSystem.Create("quic-connection-manager-tests"))
-    {
-    }
 
     private static QuicOptions CreateOptions() => new()
     {
@@ -48,7 +42,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -64,13 +59,17 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         lease1.MaxConcurrentStreams = 10;
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.Same(lease1, lease2);
 
@@ -85,7 +84,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
@@ -104,7 +104,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
@@ -120,7 +121,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: false));
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
@@ -136,10 +138,13 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         lease1.MaxConcurrentStreams = 10;
 
-        var pendingTask = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var pendingTask =
+            QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
 
@@ -157,7 +162,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: true));
 
         await Task.Delay(300, TestContext.Current.CancellationToken);
@@ -173,9 +179,15 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var lease3 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
+        var lease3 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: true));
@@ -196,7 +208,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
         await actor.GracefulStop(TimeSpan.FromSeconds(5));
 
@@ -211,9 +224,11 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
-        var pendingTask = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var pendingTask =
+            QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         await actor.GracefulStop(TimeSpan.FromSeconds(5));
 
@@ -230,7 +245,8 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
         using var cts = new CancellationTokenSource();
         var pendingTask = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
@@ -258,8 +274,12 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
             Host = "host2.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
         };
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
         Assert.Equal(endpoint1, lease1.Key);
@@ -277,9 +297,13 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
 
@@ -295,16 +319,21 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         lease.MaxConcurrentStreams = 2;
 
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: true));
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         Assert.Same(lease, lease2);
 
-        var lease3 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease3 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         Assert.Same(lease, lease3);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
@@ -325,12 +354,16 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: false));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
         Assert.True(lease2.IsAlive);
@@ -368,8 +401,12 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
@@ -389,9 +426,12 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
-        var pendingTask = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var pendingTask =
+            QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
 
@@ -419,8 +459,12 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
             Host = "host2.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
         };
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
 
@@ -429,8 +473,12 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease3 = await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
-        var lease4 = await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+        var lease3 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
+                TestContext.Current.CancellationToken);
+        var lease4 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options2, endpoint2,
+                TestContext.Current.CancellationToken);
 
         Assert.Same(lease1, lease3);
         Assert.Same(lease2, lease4);
@@ -447,7 +495,9 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(500, TestContext.Current.CancellationToken);
@@ -466,13 +516,17 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options = CreateOptions();
         var endpoint = CreateEndpoint();
 
-        var lease1 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
         // Lease should be evicted, next acquire creates new
-        var lease2 = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         Assert.NotNull(lease2);
 
         actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: false));

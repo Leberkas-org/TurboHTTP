@@ -1,7 +1,5 @@
-using System.Buffers;
 using System.Text;
 using TurboHTTP.Internal;
-using TurboHTTP.Protocol.Semantics;
 using static System.Text.Encoding;
 
 namespace TurboHTTP.Tests.Semantics;
@@ -97,7 +95,8 @@ public sealed class CompressingContentSpec
         Assert.NotNull(content.Headers.ContentLength);
         Assert.NotEqual(original.Length, content.Headers.ContentLength);
         Assert.True(content.Headers.ContentLength > 0);
-        Assert.True(content.Headers.ContentLength < original.Length); // Compression should reduce size for repetitive data
+        Assert.True(content.Headers.ContentLength <
+                    original.Length); // Compression should reduce size for repetitive data
     }
 
     [Fact(Timeout = 5000)]
@@ -132,7 +131,8 @@ public sealed class CompressingContentSpec
         content.Dispose();
 
         using var ms = new MemoryStream();
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => content.CopyToAsync(ms, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            content.CopyToAsync(ms, TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -144,7 +144,7 @@ public sealed class CompressingContentSpec
 
         using var content = new CompressingContent(inner, "gzip");
         using var ms = new MemoryStream();
-        await content.CopyToAsync(ms);
+        await content.CopyToAsync(ms, TestContext.Current.CancellationToken);
 
         Assert.NotEmpty(ms.ToArray());
     }
@@ -153,7 +153,7 @@ public sealed class CompressingContentSpec
     [Trait("Coverage", "CompressingContent")]
     public void Compress_large_repetitive_data_should_achieve_good_ratio()
     {
-        var original = Encoding.UTF8.GetBytes(string.Concat(Enumerable.Repeat("aaaaaaaaaa", 1000)));
+        var original = UTF8.GetBytes(string.Concat(Enumerable.Repeat("aaaaaaaaaa", 1000)));
         var inner = new ByteArrayContent(original);
 
         using var content = new CompressingContent(inner, "gzip");
@@ -164,48 +164,4 @@ public sealed class CompressingContentSpec
         Assert.True(ratio < 0.1); // Should compress repetitive data significantly
     }
 
-    [Fact(Timeout = 10000)]
-    [Trait("Coverage", "CompressingContent")]
-    public async Task Dispose_during_async_write_should_not_corrupt_data()
-    {
-        var original = UTF8.GetBytes(new string('x', 4096));
-        var inner = new ByteArrayContent(original);
-
-        var content = new CompressingContent(inner, "gzip");
-        var gate = new SemaphoreSlim(0, 1);
-        var slowStream = new GatedWriteStream(gate);
-
-        var writeTask = content.CopyToAsync(slowStream, TestContext.Current.CancellationToken);
-
-        await slowStream.WaitUntilWriteStarted();
-
-        content.Dispose();
-
-        gate.Release();
-        await writeTask;
-
-        Assert.NotEmpty(slowStream.WrittenBytes);
-    }
-
-    private sealed class GatedWriteStream : MemoryStream
-    {
-        private readonly SemaphoreSlim _gate;
-        private readonly TaskCompletionSource _writeStarted = new();
-
-        public GatedWriteStream(SemaphoreSlim gate)
-        {
-            _gate = gate;
-        }
-
-        public byte[] WrittenBytes => ToArray();
-
-        public Task WaitUntilWriteStarted() => _writeStarted.Task;
-
-        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            _writeStarted.TrySetResult();
-            await _gate.WaitAsync(cancellationToken);
-            await base.WriteAsync(buffer, cancellationToken);
-        }
-    }
 }

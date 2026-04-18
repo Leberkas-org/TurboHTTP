@@ -1,4 +1,3 @@
-using System;
 using System.Net;
 using System.Net.Security;
 using TurboHTTP.Internal;
@@ -349,8 +348,8 @@ public sealed class OptionsFactorySpec
     public void OptionsFactory_should_preserve_proxy_settings()
     {
         var endpoint = CreateHttpEndpoint();
-        var proxy = new System.Net.WebProxy("http://proxy.example.com:8080");
-        var credentials = new System.Net.NetworkCredential("user", "pass");
+        var proxy = new WebProxy("http://proxy.example.com:8080");
+        var credentials = new NetworkCredential("user", "pass");
         var clientOptions = new TurboClientOptions
         {
             UseProxy = true,

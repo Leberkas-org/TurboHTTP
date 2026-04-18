@@ -73,7 +73,7 @@ public sealed class DynamicTableSyncSpec
 
         var buf = new byte[256];
         headerBlock.Span.CopyTo(buf);
-        Span<byte> span = buf.AsSpan(headerBlock.Length);
+        var span = buf.AsSpan(headerBlock.Length);
         HpackEncoder.WriteInteger(512, prefixBits: 5, prefixFlags: 0x20, ref span);
         var totalWritten = buf.Length - span.Length;
 

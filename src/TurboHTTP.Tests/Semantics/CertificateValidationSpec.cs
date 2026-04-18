@@ -26,7 +26,7 @@ public sealed class CertificateValidationSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.3.4")]
-    public void DefaultOptions_Should_EnableValidation()
+    public void DefaultOptions_should_enable_validation()
     {
         var options = new TurboClientOptions();
 
@@ -49,7 +49,7 @@ public sealed class CertificateValidationSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.3.4")]
-    public void CustomCallback_Should_BeInvoked()
+    public void CustomCallback_should_be_invoked()
     {
         var callbackInvoked = false;
         RemoteCertificateValidationCallback customCallback = (_, _, _, errors) =>
@@ -73,7 +73,7 @@ public sealed class CertificateValidationSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.3.4")]
-    public void DangerousAcceptAny_Should_DisableValidation()
+    public void DangerousAcceptAny_should_disable_validation()
     {
         var customCallbackInvoked = false;
         var options = new TurboClientOptions
@@ -100,7 +100,7 @@ public sealed class CertificateValidationSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.3.4")]
-    public void EffectiveCallback_Should_PropagateToTlsOptions()
+    public void EffectiveCallback_should_propagate_to_tls_options()
     {
         var options = new TurboClientOptions
         {
@@ -119,7 +119,7 @@ public sealed class CertificateValidationSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.3.4")]
-    public void DefaultEffectiveCallback_Should_RejectInvalidCerts()
+    public void DefaultEffectiveCallback_should_reject_invalid_certs()
     {
         var options = new TurboClientOptions();
 
@@ -136,7 +136,7 @@ public sealed class CertificateValidationSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.3.4")]
-    public void HttpUri_Should_NotProduceTlsOptions()
+    public void HttpUri_should_not_produce_tls_options()
     {
         var options = new TurboClientOptions();
         var uri = new Uri("http://example.com/");

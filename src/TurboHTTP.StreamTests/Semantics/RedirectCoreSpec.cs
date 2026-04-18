@@ -141,7 +141,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-15.4")]
-    public async Task RequestDirection_Should_PassThrough_When_PolicyIsNull()
+    public async Task RequestDirection_should_pass_through_when_policy_is_null()
     {
         var stage = new RedirectBidiStage(null);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -154,7 +154,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-15.4")]
-    public async Task ResponseDirection_Should_PassThrough_When_PolicyIsNull()
+    public async Task ResponseDirection_should_pass_through_when_policy_is_null()
     {
         var stage = new RedirectBidiStage(null);
         var response = BuildRedirectResponse(HttpStatusCode.Found, "http://example.com/new");
@@ -169,7 +169,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-15.4")]
-    public async Task RequestDirection_Should_ForwardRequestUnchanged()
+    public async Task RequestDirection_should_forward_request_unchanged()
     {
         var stage = new RedirectBidiStage(new RedirectPolicy());
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -182,7 +182,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-15.4")]
-    public async Task RequestDirection_Should_ForwardMultipleRequestsInOrder()
+    public async Task RequestDirection_should_forward_multiple_requests_in_order()
     {
         var stage = new RedirectBidiStage(new RedirectPolicy());
         var req1 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
@@ -199,7 +199,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_200OK()
+    public void RedirectCore_should_forward_final_response_when_200_ok()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -217,7 +217,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_404()
+    public void RedirectCore_should_forward_final_response_when_404()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -233,7 +233,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_RequestMessageIsNull()
+    public void RedirectCore_should_forward_final_response_when_request_message_is_null()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -253,7 +253,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_EmitRedirectOnOut1_When_301()
+    public void RedirectCore_should_emit_redirect_on_out1_when_301()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -276,7 +276,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_EmitRedirectOnOut1_When_302()
+    public void RedirectCore_should_emit_redirect_on_out1_when_302()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -294,7 +294,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_RewriteMethodToGet_When_303()
+    public void RedirectCore_should_rewrite_method_to_get_when_303()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -313,7 +313,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_PreserveMethod_When_307()
+    public void RedirectCore_should_preserve_method_when_307()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -331,7 +331,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_PreserveMethod_When_308()
+    public void RedirectCore_should_preserve_method_when_308()
     {
         var request = new HttpRequestMessage(HttpMethod.Put, "http://example.com/resource");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -351,7 +351,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_CarryRedirectHandlerInOptions()
+    public void RedirectCore_should_carry_redirect_handler_in_options()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
         var stage = new RedirectBidiStage(new RedirectPolicy());

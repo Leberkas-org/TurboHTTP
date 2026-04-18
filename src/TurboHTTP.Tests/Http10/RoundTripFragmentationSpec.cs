@@ -112,7 +112,7 @@ public sealed class Http10RoundTripFragmentationSpec
         Assert.False(result1); // Should need body data
 
         // Send first half of body (only new data, not cumulative)
-        var midPoint = headerEndIndex + (bodyText.Length / 2);
+        var midPoint = headerEndIndex + bodyText.Length / 2;
         var fragment2 = bytes[headerEndIndex..midPoint];
         var result2 = decoder.TryDecode(fragment2, out var response2);
 

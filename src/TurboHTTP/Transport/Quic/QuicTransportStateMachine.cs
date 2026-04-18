@@ -352,7 +352,7 @@ internal sealed class QuicTransportStateMachine
         _encoderHandle = null;
     }
 
-    internal void CheckForConnectionMigration()
+    private void CheckForConnectionMigration()
     {
         var currentLocal = _currentConnectionLease?.Handle.LocalEndPoint;
         if (currentLocal is null || _lastLocalEndPoint is null)

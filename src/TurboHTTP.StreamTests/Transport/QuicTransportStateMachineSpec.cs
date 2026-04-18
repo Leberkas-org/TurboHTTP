@@ -1,5 +1,4 @@
 using System.Net;
-using System.Threading.Channels;
 using Akka.Actor;
 using Akka.Event;
 using TurboHTTP.Internal;
@@ -14,22 +13,6 @@ namespace TurboHTTP.StreamTests.Transport;
 
 public sealed class QuicTransportStateMachineSpec
 {
-    private sealed class MockTransportOperations : ITransportOperations
-    {
-        public List<IInputItem> PushedOutputs { get; } = [];
-        public int PullInputCount { get; set; }
-        public int CompleteStageCount { get; private set; }
-        public List<(string Key, TimeSpan Delay)> ScheduledTimers { get; } = [];
-        public List<string> CancelledTimers { get; } = [];
-
-        public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
-        public void OnSignalPullInput() => PullInputCount++;
-        public void OnCompleteStage() => CompleteStageCount++;
-        public void OnScheduleTimer(string key, TimeSpan delay) => ScheduledTimers.Add((key, delay));
-        public void OnCancelTimer(string key) => CancelledTimers.Add(key);
-        public ILoggingAdapter Log { get; } = NoLogger.Instance;
-    }
-
     private static readonly RequestEndpoint TestEndpoint = new()
     {
         Scheme = "https",
@@ -56,34 +39,6 @@ public sealed class QuicTransportStateMachineSpec
             allowConnectionMigration);
         return (sm, ops);
     }
-
-    private static QuicConnectionLease CreateTestQuicLease()
-    {
-        var provider = new FakeClientProvider();
-        var handle = new QuicConnectionHandle(provider, TestQuicOptions, TestEndpoint);
-        return new QuicConnectionLease(handle);
-    }
-
-    private static ConnectionLease CreateTestLease(RequestEndpoint? endpoint = null)
-    {
-        var key = endpoint ?? TestEndpoint;
-        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
-        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
-
-        var handle = ConnectionHandle.CreateDirect(
-            outbound.Writer,
-            inbound.Reader,
-            key);
-
-        var state = new ClientState(
-            Stream.Null,
-            inbound,
-            outbound);
-
-        return new ConnectionLease(handle, state);
-    }
-
-    // --- Dispatch: InboundData ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -112,8 +67,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.Empty(ops.PushedOutputs);
     }
 
-    // --- Dispatch: OutboundWriteDone ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void Dispatch_OutboundWriteDone_should_signal_pull_input()
@@ -125,8 +78,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.Equal(1, ops.PullInputCount);
     }
 
-    // --- Dispatch: OutboundWriteFailed ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void Dispatch_OutboundWriteFailed_should_push_quic_close_item()
@@ -137,8 +88,6 @@ public sealed class QuicTransportStateMachineSpec
 
         Assert.Contains(ops.PushedOutputs, item => item is QuicCloseItem { Kind: QuicCloseKind.WriteFailed });
     }
-
-    // --- Dispatch: AcquisitionFailed ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -172,8 +121,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.True(ops.PullInputCount > 0);
     }
 
-    // --- Dispatch: InboundComplete ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundComplete_clean_should_push_request_stream_complete()
@@ -198,8 +145,6 @@ public sealed class QuicTransportStateMachineSpec
             item => item is QuicCloseItem { Kind: QuicCloseKind.ConnectionFailure });
     }
 
-    // --- Dispatch: InboundPumpFailed ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundPumpFailed_should_treat_as_abrupt_close()
@@ -211,8 +156,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.Contains(ops.PushedOutputs,
             item => item is QuicCloseItem { Kind: QuicCloseKind.ConnectionFailure });
     }
-
-    // --- Dispatch: ConnectionMigrated ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-9")]
@@ -241,8 +184,6 @@ public sealed class QuicTransportStateMachineSpec
             item => item is QuicCloseItem { Kind: QuicCloseKind.MigrationDisallowed });
     }
 
-    // --- HandlePush: ConnectItem ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void HandlePush_ConnectItem_should_schedule_connect_timeout()
@@ -254,8 +195,6 @@ public sealed class QuicTransportStateMachineSpec
 
         Assert.Contains(ops.ScheduledTimers, t => t.Key == "connect-timeout");
     }
-
-    // --- HandlePush: Http3NetworkBuffer (tagged) ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -274,8 +213,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.True(ops.PullInputCount > 0);
     }
 
-    // --- HandlePush: NetworkBuffer (untagged) ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void HandlePush_untagged_buffer_should_signal_pull_when_no_streams()
@@ -290,8 +227,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.True(ops.PullInputCount > 0);
     }
 
-    // --- HandlePush: Http3EndOfRequestItem ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void HandlePush_EndOfRequest_should_signal_pull()
@@ -302,8 +237,6 @@ public sealed class QuicTransportStateMachineSpec
 
         Assert.True(ops.PullInputCount > 0);
     }
-
-    // --- HandlePush: ConnectionReuseItem ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -316,8 +249,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.Equal(1, ops.PullInputCount);
     }
 
-    // --- HandlePush: StreamAcquireItem ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void HandlePush_StreamAcquireItem_should_signal_pull()
@@ -328,8 +259,6 @@ public sealed class QuicTransportStateMachineSpec
 
         Assert.Equal(1, ops.PullInputCount);
     }
-
-    // --- HandlePush: MaxConcurrentStreamsItem ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -342,8 +271,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.Equal(1, ops.PullInputCount);
     }
 
-    // --- HandleUpstreamFinish ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void HandleUpstreamFinish_should_complete_stage()
@@ -354,8 +281,6 @@ public sealed class QuicTransportStateMachineSpec
 
         Assert.Equal(1, ops.CompleteStageCount);
     }
-
-    // --- OnTimer ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -387,8 +312,6 @@ public sealed class QuicTransportStateMachineSpec
         Assert.Equal(0, ops.PullInputCount);
     }
 
-    // --- PostStop ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void PostStop_should_cancel_connect_timer()
@@ -399,8 +322,6 @@ public sealed class QuicTransportStateMachineSpec
 
         Assert.Contains("connect-timeout", ops.CancelledTimers);
     }
-
-    // --- EarlyDataRejected ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]

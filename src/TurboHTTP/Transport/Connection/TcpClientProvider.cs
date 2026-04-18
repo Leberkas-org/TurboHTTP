@@ -19,8 +19,8 @@ internal class TcpClientProvider(TcpOptions options) : IClientProvider
         // Resolve proxy if configured
         var proxyUri = ResolveProxy(options);
 
-        var connectHost = proxyUri is not null ? proxyUri.Host : options.Host;
-        var connectPort = proxyUri is not null ? proxyUri.Port : options.Port;
+        var connectHost = proxyUri?.Host ?? options.Host;
+        var connectPort = proxyUri?.Port ?? options.Port;
 
         _socket = CreateSocket(options.SocketSendBufferSize, options.SocketReceiveBufferSize);
 
@@ -61,7 +61,7 @@ internal class TcpClientProvider(TcpOptions options) : IClientProvider
             throw;
         }
 
-        var networkType = addresses[0].AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6
+        var networkType = addresses[0].AddressFamily == AddressFamily.InterNetworkV6
             ? "ipv6"
             : "ipv4";
         var socketActivity = TurboHttpInstrumentation.StartSocketConnect(

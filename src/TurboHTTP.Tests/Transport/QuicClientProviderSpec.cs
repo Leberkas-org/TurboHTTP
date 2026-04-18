@@ -2,6 +2,9 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
+// QUIC APIs are platform-guarded; usage is gated at runtime via QuicOptions.
+#pragma warning disable CA1416
+
 /// <summary>
 /// Tests <see cref="QuicClientProvider"/> initialization, retry logic, and cleanup.
 /// Note: Actual QUIC connections are not tested here (requires network/platform support);
@@ -63,6 +66,8 @@ public sealed class QuicClientProviderSpec
         var options = new QuicOptions { Host = "example.com", Port = 443 };
         var provider = new QuicClientProvider(options);
 
+        Assert.NotNull(provider);
+
         // Verify type is sealed (platform support attributes only work on sealed classes)
         Assert.True(typeof(QuicClientProvider).IsSealed);
     }
@@ -78,8 +83,8 @@ public sealed class QuicClientProviderSpec
 
         var provider = new QuicClientProvider(options);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync(CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(CancellationToken.None));
 
         Assert.Contains("non-empty hostname", ex.Message);
 
@@ -91,14 +96,14 @@ public sealed class QuicClientProviderSpec
     {
         var options = new QuicOptions
         {
-            Host = null,
+            Host = null!,
             Port = 443
         };
 
         var provider = new QuicClientProvider(options);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetStreamAsync(CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(CancellationToken.None));
 
         Assert.Contains("non-empty hostname", ex.Message);
 
@@ -106,7 +111,7 @@ public sealed class QuicClientProviderSpec
     }
 
     [Fact(Timeout = 5000)]
-    public async Task QuicClientProvider_should_throw_early_data_rejected()
+    public void QuicClientProvider_should_throw_early_data_rejected()
     {
         // This test verifies the EarlyDataRejectedException type and message format
         var exception = new QuicClientProvider.EarlyDataRejectedException(
@@ -128,8 +133,8 @@ public sealed class QuicClientProviderSpec
         var provider = new QuicClientProvider(options);
 
         // First attempt to get a stream will fail during connection
-        var ex1 = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetUnidirectionalStreamAsync(CancellationToken.None));
+        var ex1 = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetUnidirectionalStreamAsync(CancellationToken.None));
 
         Assert.Contains("non-empty hostname", ex1.Message);
 
@@ -147,8 +152,8 @@ public sealed class QuicClientProviderSpec
 
         var provider = new QuicClientProvider(options);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.AcceptInboundStreamAsync(CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.AcceptInboundStreamAsync(CancellationToken.None));
 
         Assert.Contains("non-empty hostname", ex.Message);
 
@@ -170,6 +175,7 @@ public sealed class QuicClientProviderSpec
 
         var provider = new QuicClientProvider(options);
 
+        Assert.NotNull(provider);
         // Verify provider accepts these options (no error)
     }
 
@@ -180,10 +186,7 @@ public sealed class QuicClientProviderSpec
         {
             Host = "example.com",
             Port = 443,
-            ApplicationProtocols = new System.Collections.Generic.List<System.Net.Security.SslApplicationProtocol>
-            {
-                System.Net.Security.SslApplicationProtocol.Http3
-            }
+            ApplicationProtocols = [System.Net.Security.SslApplicationProtocol.Http3]
         };
         var provider = new QuicClientProvider(options);
 
@@ -208,10 +211,7 @@ public sealed class QuicClientProviderSpec
         {
             Host = "192.0.2.1", // TEST-NET-1: guaranteed not to route
             Port = 443,
-            ApplicationProtocols = new System.Collections.Generic.List<System.Net.Security.SslApplicationProtocol>
-            {
-                System.Net.Security.SslApplicationProtocol.Http3
-            }
+            ApplicationProtocols = [System.Net.Security.SslApplicationProtocol.Http3]
         };
 
         var provider = new QuicClientProvider(options);

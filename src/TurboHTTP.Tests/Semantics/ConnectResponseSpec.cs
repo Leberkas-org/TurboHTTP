@@ -17,7 +17,7 @@ public sealed class ConnectResponseSpec
 {
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Should_IgnoreContentLength_When_Connect200()
+    public async Task ConnectResponse_should_ignore_content_length_when_200()
     {
         using var decoder = new Decoder();
         // Server sends 200 with Content-Length: 100 but no body bytes follow
@@ -35,7 +35,7 @@ public sealed class ConnectResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Should_IgnoreTE_When_Connect200()
+    public async Task ConnectResponse_should_ignore_transfer_encoding_when_200()
     {
         using var decoder = new Decoder();
         // Server sends 200 with Transfer-Encoding: chunked but no body follows
@@ -52,7 +52,7 @@ public sealed class ConnectResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Should_ParseBody_When_Connect407()
+    public async Task ConnectResponse_should_parse_body_when_407()
     {
         using var decoder = new Decoder();
         var bodyText = "Proxy Authentication Required";
@@ -73,7 +73,7 @@ public sealed class ConnectResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Should_RespectCL_When_NonConnect200()
+    public async Task ConnectResponse_should_respect_content_length_when_non_connect_200()
     {
         // Verify that normal TryDecode still requires Content-Length body
         using var decoder = new Decoder();
@@ -94,7 +94,7 @@ public sealed class ConnectResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Should_ReturnEmptyBody_When_Connect200WithTrailingData()
+    public async Task ConnectResponse_should_return_empty_body_when_200_with_trailing_data()
     {
         using var decoder = new Decoder();
         // Even if tunnel data follows the 200, it should not be parsed as response body
@@ -110,7 +110,7 @@ public sealed class ConnectResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Http10_Should_IgnoreContentLength_When_Connect200()
+    public async Task Http10_should_ignore_content_length_when_connect_200()
     {
         var decoder = new Protocol.Http10.Decoder();
         var raw = "HTTP/1.0 200 Connection Established\r\nContent-Length: 100\r\n\r\n"u8.ToArray();
@@ -126,7 +126,7 @@ public sealed class ConnectResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
-    public async Task Http10_Should_ParseBody_When_Connect407()
+    public async Task Http10_should_parse_body_when_connect_407()
     {
         var decoder = new Protocol.Http10.Decoder();
         var bodyText = "Auth Required";

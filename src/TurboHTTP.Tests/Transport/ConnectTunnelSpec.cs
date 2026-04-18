@@ -159,18 +159,11 @@ public sealed class ConnectTunnelSpec
         await serverStream.FlushAsync();
     }
 
-    private sealed class SimpleProxy : IWebProxy
+    private sealed class SimpleProxy(ICredentials? credentials = null) : IWebProxy
     {
-        private readonly ICredentials? _credentials;
-
-        public SimpleProxy(ICredentials? credentials = null)
-        {
-            _credentials = credentials;
-        }
-
         public ICredentials? Credentials
         {
-            get => _credentials;
+            get => credentials;
             set { }
         }
 
@@ -180,17 +173,9 @@ public sealed class ConnectTunnelSpec
         public bool IsBypassed(Uri host) => false;
     }
 
-    private sealed class DuplexPipeStream : Stream
+    private sealed class DuplexPipeStream(PipeReader reader, PipeWriter writer) : Stream
     {
-        private readonly PipeReader _reader;
-        private readonly PipeWriter _writer;
         private bool _disposed;
-
-        public DuplexPipeStream(PipeReader reader, PipeWriter writer)
-        {
-            _reader = reader;
-            _writer = writer;
-        }
 
         public override bool CanRead => true;
         public override bool CanSeek => false;
@@ -209,7 +194,7 @@ public sealed class ConnectTunnelSpec
                 return 0;
             }
 
-            var result = await _reader.ReadAsync(ct);
+            var result = await reader.ReadAsync(ct);
             var sequence = result.Buffer;
 
             if (sequence.IsEmpty && result.IsCompleted)
@@ -220,18 +205,18 @@ public sealed class ConnectTunnelSpec
             var bytesToCopy = (int)Math.Min(buffer.Length, sequence.Length);
             var sliced = sequence.Slice(0, bytesToCopy);
             sliced.CopyTo(buffer.Span);
-            _reader.AdvanceTo(sliced.End);
+            reader.AdvanceTo(sliced.End);
             return bytesToCopy;
         }
 
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default)
         {
-            await _writer.WriteAsync(buffer, ct);
+            await writer.WriteAsync(buffer, ct);
         }
 
         public override async Task FlushAsync(CancellationToken ct)
         {
-            await _writer.FlushAsync(ct);
+            await writer.FlushAsync(ct);
         }
 
         protected override void Dispose(bool disposing)
@@ -239,8 +224,8 @@ public sealed class ConnectTunnelSpec
             if (!_disposed)
             {
                 _disposed = true;
-                _writer.Complete();
-                _reader.Complete();
+                writer.Complete();
+                reader.Complete();
             }
 
             base.Dispose(disposing);

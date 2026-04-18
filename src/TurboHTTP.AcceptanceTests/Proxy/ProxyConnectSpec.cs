@@ -41,7 +41,7 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
 
         var connectResponseConsumed = false;
         var tunnelFlow = Flow.Create<IOutputItem>()
-            .Select(item => item is StreamAcquireItem acquire ? (IOutputItem)ToConnectItem(acquire) : item)
+            .Select(item => item is StreamAcquireItem acquire ? ToConnectItem(acquire) : item)
             .Via(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake))
             .Where(item =>
             {

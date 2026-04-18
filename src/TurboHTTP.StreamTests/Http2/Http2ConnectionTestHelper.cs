@@ -3,11 +3,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Test helper for the combined Http20ConnectionStage.
-/// Serializes Http2Frame objects into NetworkBuffer (IInputItem) for InServer,
-/// and decodes NetworkBuffer (IOutputItem) back into Http2Frame for assertions.
-/// </summary>
 internal static class Http2ConnectionTestHelper
 {
     /// <summary>

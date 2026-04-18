@@ -121,7 +121,7 @@ internal sealed class ResponseDecoder
 
         var (bodyOwner, bodyLength) = state.TakeBodyOwnership();
         response.Content = bodyOwner is null
-            ? (state.HasContentHeaders ? new ByteArrayContent([]) : SharedEmptyContent)
+            ? state.HasContentHeaders ? new ByteArrayContent([]) : SharedEmptyContent
             : new PooledBodyContent(bodyOwner, bodyLength);
         state.ApplyContentHeadersTo(response.Content);
 

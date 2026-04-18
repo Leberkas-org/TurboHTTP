@@ -1,4 +1,3 @@
-using System.Net;
 using TurboHTTP.Protocol.Cookies;
 
 namespace TurboHTTP.Tests.Cookies;

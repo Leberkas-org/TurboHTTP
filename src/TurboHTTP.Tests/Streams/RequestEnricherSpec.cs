@@ -1,5 +1,4 @@
 using System.Net;
-using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Streams;
@@ -333,12 +332,8 @@ public sealed class RequestEnricherSpec
         Assert.True(result.Headers.Contains("If-Range"));
     }
 
-    private sealed class CredentialsProvider : ICredentials
+    private sealed class CredentialsProvider(NetworkCredential credential) : ICredentials
     {
-        private readonly NetworkCredential _credential;
-
-        public CredentialsProvider(NetworkCredential credential) => _credential = credential;
-
-        public NetworkCredential GetCredential(Uri uri, string authType) => _credential;
+        public NetworkCredential GetCredential(Uri uri, string authType) => credential;
     }
 }

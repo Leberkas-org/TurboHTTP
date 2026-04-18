@@ -103,6 +103,7 @@ internal static class HuffmanCodec
         {
             totalBits += HpackHuffmanTable[b].Bits;
         }
+
         return (totalBits + 7) / 8;
     }
 
@@ -139,7 +140,7 @@ internal static class HuffmanCodec
         return pos;
     }
 
-    private static readonly HuffmanNode _root = BuildTree();
+    private static readonly HuffmanNode Root = BuildTree();
 
     private static HuffmanNode BuildTree()
     {
@@ -161,7 +162,7 @@ internal static class HuffmanCodec
     /// </summary>
     public static int Decode(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var node = _root;
+        var node = Root;
         var pos = 0;
 
         var remainingBits = 0;
@@ -196,7 +197,7 @@ internal static class HuffmanCodec
                 }
 
                 output[pos++] = (byte)sym;
-                node = _root;
+                node = Root;
                 remainingBits = 0;
                 remainingValue = 0;
             }

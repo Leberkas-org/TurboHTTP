@@ -61,12 +61,7 @@ internal sealed class QuicClientProvider(QuicOptions options) : IClientProvider
     /// Thrown when the server rejects QUIC 0-RTT early data.
     /// The request should be re-sent after the full TLS handshake completes.
     /// </summary>
-    public sealed class EarlyDataRejectedException : Exception
-    {
-        public EarlyDataRejectedException(string message) : base(message)
-        {
-        }
-    }
+    public sealed class EarlyDataRejectedException(string message) : Exception(message);
 
     public async Task<Stream> GetUnidirectionalStreamAsync(CancellationToken ct = default)
     {

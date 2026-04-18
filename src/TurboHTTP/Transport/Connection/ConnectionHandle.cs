@@ -14,21 +14,18 @@ internal sealed record ConnectionHandle(
     RequestEndpoint Key,
     IActorRef ConnectionActor)
 {
-    private int _maxConcurrentStreams = 100;
-    private TlsCloseKind _closeKind;
+    public int MaxConcurrentStreams { get; private set; } = 100;
 
-    public int MaxConcurrentStreams => _maxConcurrentStreams;
-
-    public void UpdateMaxConcurrentStreams(int value) => _maxConcurrentStreams = value;
+    public void UpdateMaxConcurrentStreams(int value) => MaxConcurrentStreams = value;
 
     /// <summary>
     /// Indicates how the transport connection was closed.
     /// Set by <see cref="TurboHTTP.Transport.Connection.ClientByteMover"/> via <see cref="TurboHTTP.Transport.Connection.ClientState"/>
     /// and read by <see cref="TurboHTTP.Transport.Tcp.TcpConnectionStage"/> when the inbound pump completes.
     /// </summary>
-    public TlsCloseKind CloseKind => _closeKind;
+    public TlsCloseKind CloseKind { get; private set; }
 
-    public void SetCloseKind(TlsCloseKind value) => _closeKind = value;
+    public void SetCloseKind(TlsCloseKind value) => CloseKind = value;
 
     /// <summary>
     /// Creates a <see cref="ConnectionHandle"/> for the direct (non-actor) connection path.

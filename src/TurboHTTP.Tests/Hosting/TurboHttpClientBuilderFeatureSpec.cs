@@ -4,7 +4,7 @@ using TurboHTTP.Protocol.Cookies;
 
 namespace TurboHTTP.Tests.Hosting;
 
-public sealed class TurboHttpClientBuilderFeatureTests
+public sealed class TurboHttpClientBuilderFeatureSpec
 {
     private static TurboClientDescriptor GetDescriptor(IServiceCollection services, string name)
     {
@@ -12,8 +12,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         return sp.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>().Get(name);
     }
 
-    [Fact(DisplayName = "WithCookies() sets EnableCookies to true with no custom jar")]
-    public void WithCookies_NoJar_SetsEnableCookiesTrue()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_set_enable_cookies_true_when_no_jar()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithCookies();
@@ -24,8 +24,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.NotNull(descriptor.CustomCookieJar);
     }
 
-    [Fact(DisplayName = "WithCookies(jar) sets EnableCookies to true and assigns the custom jar")]
-    public void WithCookies_WithJar_SetsCustomCookieJar()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_set_custom_cookie_jar()
     {
         var jar = new CookieJar();
         var services = new ServiceCollection();
@@ -37,8 +37,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.Same(jar, descriptor.CustomCookieJar);
     }
 
-    [Fact(DisplayName = "WithCache(policy) assigns the cache policy to the descriptor")]
-    public void WithCache_AssignsCachePolicy()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_assign_cache_policy()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithCache(x => x.MaxEntries = 500);
@@ -48,8 +48,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.Equal(500, descriptor.CachePolicy?.MaxEntries);
     }
 
-    [Fact(DisplayName = "WithRetry(policy) assigns the retry policy to the descriptor")]
-    public void WithRetry_AssignsRetryPolicy()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_assign_retry_policy()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithRetry(x => x.MaxRetries = 5);
@@ -59,8 +59,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.Equal(5, descriptor.RetryPolicy?.MaxRetries);
     }
 
-    [Fact(DisplayName = "WithRedirect() sets a non-null default redirect policy")]
-    public void WithRedirect_NoPolicy_SetsDefaultPolicy()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_set_default_redirect_policy()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithRedirect();
@@ -70,8 +70,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.NotNull(descriptor.RedirectPolicy);
     }
 
-    [Fact(DisplayName = "WithRedirect(policy) assigns the provided redirect policy to the descriptor")]
-    public void WithRedirect_WithPolicy_AssignsRedirectPolicy()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_assign_redirect_policy()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithRedirect(x => x.MaxRedirects = 5);
@@ -81,8 +81,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.Equal(5, descriptor.RedirectPolicy?.MaxRedirects);
     }
 
-    [Fact(DisplayName = "Default descriptor has AutomaticDecompression true")]
-    public void Default_AutomaticDecompression_IsTrue()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_have_automatic_decompression_true()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test");
@@ -92,8 +92,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.True(descriptor.AutomaticDecompression);
     }
 
-    [Fact(DisplayName = "WithDecompression() sets AutomaticDecompression to true")]
-    public void WithDecompression_NoArg_SetsTrue()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_set_automatic_decompression_true()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithDecompression();
@@ -103,8 +103,8 @@ public sealed class TurboHttpClientBuilderFeatureTests
         Assert.True(descriptor.AutomaticDecompression);
     }
 
-    [Fact(DisplayName = "WithDecompression(false) sets AutomaticDecompression to false")]
-    public void WithDecompression_False_SetsFalse()
+    [Fact(Timeout = 5000)]
+    public void TurboHttpClientBuilderFeature_should_set_automatic_decompression_false()
     {
         var services = new ServiceCollection();
         services.AddTurboHttpClient("test").WithDecompression(false);

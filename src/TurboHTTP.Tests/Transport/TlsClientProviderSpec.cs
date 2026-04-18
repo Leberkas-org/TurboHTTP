@@ -1,6 +1,4 @@
 using System.Net;
-using System.Net.Security;
-using System.Security.Authentication;
 using System.Text;
 using TurboHTTP.Transport.Connection;
 
@@ -65,8 +63,8 @@ public sealed class TlsClientProviderSpec
         var options = new TlsOptions { Host = "example.com", Port = 443 };
         IClientProvider provider = new TlsClientProvider(options);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => provider.GetUnidirectionalStreamAsync(CancellationToken.None));
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            provider.GetUnidirectionalStreamAsync(CancellationToken.None));
     }
 
     [Fact(Timeout = 5000)]
@@ -75,8 +73,8 @@ public sealed class TlsClientProviderSpec
         var options = new TlsOptions { Host = "example.com", Port = 443 };
         IClientProvider provider = new TlsClientProvider(options);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => provider.AcceptInboundStreamAsync(CancellationToken.None));
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            provider.AcceptInboundStreamAsync(CancellationToken.None));
     }
 
     [Fact(Timeout = 5000)]
@@ -197,8 +195,8 @@ public sealed class TlsClientProviderSpec
             clientStream, "example.com", 443, proxy, null, TestContext.Current.CancellationToken);
 
         // Wait a tiny bit for request to be sent, then close
-        await Task.Delay(10);
-        serverStream.Dispose();
+        await Task.Delay(10, TestContext.Current.CancellationToken);
+        await serverStream.DisposeAsync();
 
         await Assert.ThrowsAsync<HttpRequestException>(() => tunnelTask);
     }
@@ -232,7 +230,7 @@ public sealed class TlsClientProviderSpec
         // Write a response larger than 4096 bytes without ending in \r\n\r\n
         var largeResponse = new string('X', 5000);
         await WriteResponseAsync(serverStream, largeResponse);
-        await serverStream.FlushAsync();
+        await serverStream.FlushAsync(TestContext.Current.CancellationToken);
 
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => tunnelTask);
         Assert.Contains("exceeded buffer size", ex.Message);
@@ -251,13 +249,14 @@ public sealed class TlsClientProviderSpec
         var requestTask = ReadRequestAsync(serverStream);
 
         // Send first part of response
-        await serverStream.WriteAsync(Encoding.ASCII.GetBytes("HTTP/1.1 200 "));
-        await serverStream.FlushAsync();
-        await Task.Delay(10);
+        await serverStream.WriteAsync("HTTP/1.1 200 "u8.ToArray(), TestContext.Current.CancellationToken);
+        await serverStream.FlushAsync(TestContext.Current.CancellationToken);
+        await Task.Delay(10, TestContext.Current.CancellationToken);
 
         // Send rest of response
-        await serverStream.WriteAsync(Encoding.ASCII.GetBytes("Connection Established\r\n\r\n"));
-        await serverStream.FlushAsync();
+        await serverStream.WriteAsync("Connection Established\r\n\r\n"u8.ToArray(),
+            TestContext.Current.CancellationToken);
+        await serverStream.FlushAsync(TestContext.Current.CancellationToken);
 
         await requestTask;
         await tunnelTask;
@@ -322,44 +321,29 @@ public sealed class TlsClientProviderSpec
         await serverStream.FlushAsync();
     }
 
-    private sealed class TestProxy : IWebProxy
+    private sealed class TestProxy(Uri? proxyUri, ICredentials? credentials = null) : IWebProxy
     {
-        private readonly Uri? _proxyUri;
-        private readonly ICredentials? _credentials;
-
-        public TestProxy(Uri? proxyUri, ICredentials? credentials = null)
-        {
-            _proxyUri = proxyUri;
-            _credentials = credentials;
-        }
-
         public ICredentials? Credentials
         {
-            get => _credentials;
+            get => credentials;
             set { }
         }
 
-        public Uri? GetProxy(Uri destination) => _proxyUri;
+        public Uri? GetProxy(Uri destination) => proxyUri;
 
         public bool IsBypassed(Uri host) => false;
     }
 
-    private sealed class DuplexPipeStream : Stream
+    private sealed class DuplexPipeStream(System.IO.Pipelines.PipeReader reader, System.IO.Pipelines.PipeWriter writer)
+        : Stream
     {
-        private readonly System.IO.Pipelines.PipeReader _reader;
-        private readonly System.IO.Pipelines.PipeWriter _writer;
         private bool _disposed;
-
-        public DuplexPipeStream(System.IO.Pipelines.PipeReader reader, System.IO.Pipelines.PipeWriter writer)
-        {
-            _reader = reader;
-            _writer = writer;
-        }
 
         public override bool CanRead => true;
         public override bool CanSeek => false;
         public override bool CanWrite => true;
         public override long Length => throw new NotSupportedException();
+
         public override long Position
         {
             get => throw new NotSupportedException();
@@ -373,7 +357,7 @@ public sealed class TlsClientProviderSpec
                 return 0;
             }
 
-            var result = await _reader.ReadAsync(ct);
+            var result = await reader.ReadAsync(ct);
             var sequence = result.Buffer;
 
             if (sequence.IsEmpty && result.IsCompleted)
@@ -389,18 +373,19 @@ public sealed class TlsClientProviderSpec
                 segment.Span.CopyTo(buffer.Span.Slice(offset));
                 offset += segment.Length;
             }
-            _reader.AdvanceTo(sliced.End);
+
+            reader.AdvanceTo(sliced.End);
             return bytesToCopy;
         }
 
         public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default)
         {
-            await _writer.WriteAsync(buffer, ct);
+            await writer.WriteAsync(buffer, ct);
         }
 
         public override async Task FlushAsync(CancellationToken ct)
         {
-            await _writer.FlushAsync(ct);
+            await writer.FlushAsync(ct);
         }
 
         protected override void Dispose(bool disposing)
@@ -408,8 +393,8 @@ public sealed class TlsClientProviderSpec
             if (!_disposed)
             {
                 _disposed = true;
-                _writer.Complete();
-                _reader.Complete();
+                writer.Complete();
+                reader.Complete();
             }
 
             base.Dispose(disposing);
@@ -417,7 +402,11 @@ public sealed class TlsClientProviderSpec
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override void Flush() { }
+
+        public override void Flush()
+        {
+        }
+
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
     }

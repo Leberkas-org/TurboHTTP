@@ -168,7 +168,7 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
         {
             if (!IsForbidden(h.Key))
             {
-                headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value)));
+                headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value.ToArray())));
             }
         }
 
@@ -179,7 +179,7 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
 
         foreach (var h in request.Content.Headers)
         {
-            headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value)));
+            headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value.ToArray())));
         }
     }
 
@@ -337,8 +337,8 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
                 case SettingsParameter.InitialWindowSize:
                 {
                     // RFC 9113 §6.9.2: Apply delta to all existing stream send windows
-                    var delta = (long)val - _initialSendStreamWindow;
-                    _initialSendStreamWindow = (long)val;
+                    var delta = val - _initialSendStreamWindow;
+                    _initialSendStreamWindow = val;
                     foreach (var streamId in _streamSendWindows.Keys)
                     {
                         _streamSendWindows[streamId] += delta;
@@ -406,7 +406,7 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
     /// <summary>
     /// Joins header values without allocating if there is only a single value (common case).
     /// </summary>
-    private static string JoinValues(IEnumerable<string> values)
+    private static string JoinValues(string[] values)
     {
         string? first = null;
         foreach (var v in values)

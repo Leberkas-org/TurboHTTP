@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
@@ -9,14 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http3;
 
-/// <summary>
-/// Tests the unified HTTP/3 connection stage that consolidates encoding, decoding,
-/// QUIC stream routing, and correlation into a single <see cref="Http30ConnectionStage"/>.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Http30ConnectionStage"/>.
-/// RFC 9114: HTTP/3 with QUIC transport and stream multiplexing.
-/// </remarks>
 public sealed class Http30ConnectionStageSpec : StreamTestBase
 {
     private static HttpRequestMessage MakeRequest(string path = "/")
@@ -26,16 +17,6 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
             Version = new Version(3, 0)
         };
     }
-
-    private static NetworkBuffer MakeResponseBuffer(string raw)
-    {
-        var bytes = Encoding.ASCII.GetBytes(raw);
-        var buf = NetworkBuffer.Rent(bytes.Length);
-        bytes.CopyTo(buf.FullMemory.Span);
-        buf.Length = bytes.Length;
-        return buf;
-    }
-
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9114-4")]
@@ -131,7 +112,6 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         // Should handle timeout gracefully (may emit keep-alive or close gracefully)
         Assert.True(true);
     }
-
 
 
     [Fact(Timeout = 10_000)]

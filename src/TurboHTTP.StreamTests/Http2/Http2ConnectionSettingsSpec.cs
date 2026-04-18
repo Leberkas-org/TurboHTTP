@@ -8,14 +8,10 @@ using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests SETTINGS frame handling in the HTTP/2 connection stage per RFC 9113.
-/// Verifies that SETTINGS frames are acknowledged and that advertised parameters are applied correctly.
-/// </summary>
-[Trait("RFC", "RFC9113-6.5")]
 public sealed class Http2ConnectionSettingsSpec : StreamTestBase
 {
-    private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunAsync(
+    private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound,
+        IReadOnlyList<IControlItem> Signals)> RunAsync(
         params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
@@ -39,7 +35,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         var networkItems = await networkTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -114,7 +110,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
 
@@ -128,8 +124,10 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     public async Task Http2ConnectionSettings_should_not_forward_settings_frame_to_out_response()
     {
         var settings = new SettingsFrame(
-            [(SettingsParameter.MaxFrameSize, 32768u),
-             (SettingsParameter.HeaderTableSize, 8192u)]);
+        [
+            (SettingsParameter.MaxFrameSize, 32768u),
+            (SettingsParameter.HeaderTableSize, 8192u)
+        ]);
 
         var (downstream, serverBound, _) = await RunAsync(settings);
 

@@ -110,7 +110,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task RequestDirection_Should_PassThrough()
+    public async Task RequestDirection_should_pass_through()
     {
         var stage = new ContentEncodingBidiStage();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -126,7 +126,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task RequestDirection_Should_PassThroughAll_ForMultipleRequests()
+    public async Task RequestDirection_should_pass_through_all_for_multiple_requests()
     {
         var stage = new ContentEncodingBidiStage();
         var req1 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
@@ -143,7 +143,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_PassThrough_When_NoContentEncoding()
+    public async Task ResponseDirection_should_pass_through_when_no_content_encoding()
     {
         var stage = new ContentEncodingBidiStage();
         var body = "hello world"u8.ToArray();
@@ -159,7 +159,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_PassThrough_When_Identity()
+    public async Task ResponseDirection_should_pass_through_when_identity()
     {
         var stage = new ContentEncodingBidiStage();
         var body = "hello world"u8.ToArray();
@@ -174,7 +174,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_Decompress_Gzip()
+    public async Task ResponseDirection_should_decompress_gzip()
     {
         var stage = new ContentEncodingBidiStage();
         var original = "gzip compressed response body"u8.ToArray();
@@ -190,7 +190,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_Decompress_XGzip()
+    public async Task ResponseDirection_should_decompress_x_gzip()
     {
         var stage = new ContentEncodingBidiStage();
         var original = "x-gzip content"u8.ToArray();
@@ -206,7 +206,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_Decompress_Deflate()
+    public async Task ResponseDirection_should_decompress_deflate()
     {
         var stage = new ContentEncodingBidiStage();
         var original = "deflate compressed data"u8.ToArray();
@@ -222,7 +222,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_Decompress_Brotli()
+    public async Task ResponseDirection_should_decompress_brotli()
     {
         var stage = new ContentEncodingBidiStage();
         var original = "brotli compressed response"u8.ToArray();
@@ -238,7 +238,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_RemoveContentEncodingHeader()
+    public async Task ResponseDirection_should_remove_content_encoding_header()
     {
         var stage = new ContentEncodingBidiStage();
         var original = "test body"u8.ToArray();
@@ -269,7 +269,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_PreserveContentType()
+    public async Task ResponseDirection_should_preserve_content_type()
     {
         var stage = new ContentEncodingBidiStage();
         var original = "{\"key\":\"value\"}"u8.ToArray();
@@ -289,7 +289,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
-    public async Task ResponseDirection_Should_DecompressAll_DifferentEncodings()
+    public async Task ResponseDirection_should_decompress_all_different_encodings()
     {
         var stage = new ContentEncodingBidiStage();
         var body1 = "first response"u8.ToArray();

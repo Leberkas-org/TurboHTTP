@@ -8,11 +8,6 @@ using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests HTTP/2 flow-control batching: initial window configuration and
-/// WINDOW_UPDATE accumulation with threshold flush per RFC 9113.
-/// </summary>
-[Trait("RFC", "RFC9113-6.9")]
 public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
 {
     // Default window is 65535 → threshold = max(16384, 65535/4) = 16384.
@@ -30,7 +25,8 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
                 (m1, m2) => (m1, m2),
                 (b, dsSink, nwSink) =>
                 {
-                    var stage = b.Add(new Http20ConnectionStage(new Http2Options { InitialConnectionWindowSize = initialWindowSize }.ToEngineOptions()));
+                    var stage = b.Add(new Http20ConnectionStage(
+                        new Http2Options { InitialConnectionWindowSize = initialWindowSize }.ToEngineOptions()));
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 
@@ -43,7 +39,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         var downstream = await downstreamTask.WaitAsync(
             TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -61,9 +57,9 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
         Assert.Equal(64 * 1024 * 1024, options.InitialConnectionWindowSize);
     }
 
-
     [Fact(Timeout = 5_000)]
-    public async Task Http2ConnectionFlowControlBatching_should_flush_stream_pending_on_stream_close_when_below_threshold()
+    public async Task
+        Http2ConnectionFlowControlBatching_should_flush_stream_pending_on_stream_close_when_below_threshold()
     {
         // 1024 bytes is well below the 16384 threshold → no immediate WINDOW_UPDATE.
         // On stream close the stream-level pending is flushed; connection-level is NOT.
@@ -80,7 +76,8 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
-    public async Task Http2ConnectionFlowControlBatching_should_send_both_window_updates_when_threshold_crossed_in_single_frame()
+    public async Task
+        Http2ConnectionFlowControlBatching_should_send_both_window_updates_when_threshold_crossed_in_single_frame()
     {
         // Exactly 16384 bytes crosses both connection and stream threshold at once.
         var data = new DataFrame(streamId: 1, data: new byte[DefaultThreshold], endStream: true);
@@ -95,7 +92,8 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
-    public async Task Http2ConnectionFlowControlBatching_should_send_single_batched_window_update_when_multiple_frames_accumulate_to_threshold()
+    public async Task
+        Http2ConnectionFlowControlBatching_should_send_single_batched_window_update_when_multiple_frames_accumulate_to_threshold()
     {
         // Two 8192-byte frames accumulate to 16384 → threshold crossed on second frame.
         var frame1 = new DataFrame(streamId: 1, data: new byte[8192], endStream: false);
@@ -120,7 +118,8 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
-    public async Task Http2ConnectionFlowControlBatching_should_batch_streams_independently_when_two_streams_send_data_below_threshold()
+    public async Task
+        Http2ConnectionFlowControlBatching_should_batch_streams_independently_when_two_streams_send_data_below_threshold()
     {
         // Stream 1: 16384 bytes → hits threshold on its own → stream WU(1) sent.
         // Stream 3: 8192 bytes → below threshold → stream WU(3) flushed only at close.

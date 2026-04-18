@@ -15,7 +15,7 @@ public sealed class UserinfoStrippingSpec
 {
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H2_Should_StripUserinfo_When_HttpUri()
+    public void H2_should_strip_userinfo_when_http_uri()
     {
         var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://user:pass@example.com/path");
@@ -31,7 +31,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H2_Should_StripUserinfo_When_HttpsUri()
+    public void H2_should_strip_userinfo_when_https_uri()
     {
         var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://user:pass@secure.example.com/");
@@ -46,7 +46,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H2_Should_PreservePort_When_UserinfoPresent()
+    public void H2_should_preserve_port_when_userinfo_present()
     {
         var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://u:p@host.example.com:8080/");
@@ -60,7 +60,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H2_Should_NotChange_When_NoUserinfo()
+    public void H2_should_not_change_when_no_userinfo()
     {
         var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com:443/resource");
@@ -76,7 +76,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H11_Should_StripUserinfo_When_AbsoluteForm()
+    public void H11_should_strip_userinfo_when_absolute_form()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://user:pass@example.com:8080/path?q=1");
         var result = EncodeHttp11Absolute(request);
@@ -89,7 +89,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H11_Should_NotContainUserinfo_When_OriginForm()
+    public void H11_should_not_contain_userinfo_when_origin_form()
     {
         // Origin-form only emits path+query, so userinfo in the URI never appears
         var request = new HttpRequestMessage(HttpMethod.Get, "http://user:pass@example.com/path?q=1");
@@ -103,7 +103,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H10_Should_StripUserinfo_When_AbsoluteForm()
+    public void Http10_should_strip_userinfo_when_absolute_form()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://user:pass@example.com:8080/path?q=1");
         var result = EncodeHttp10Absolute(request);
@@ -116,7 +116,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H10_Should_NotContainUserinfo_When_OriginForm()
+    public void Http10_should_not_contain_userinfo_when_origin_form()
     {
         // Origin-form only emits path+query, so userinfo in the URI never appears
         var request = new HttpRequestMessage(HttpMethod.Get, "http://user:pass@example.com/path?q=1");
@@ -129,7 +129,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void H10_Should_NotChange_When_NoUserinfo()
+    public void Http10_should_not_change_when_no_userinfo()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
         var result = EncodeHttp10Absolute(request);
@@ -140,7 +140,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void FormatAuthority_Should_ExcludeUserinfo()
+    public void FormatAuthority_should_exclude_userinfo()
     {
         var uri = new Uri("http://user:pass@example.com/path");
 
@@ -153,7 +153,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void FormatAuthority_Should_IncludePort()
+    public void FormatAuthority_should_include_port()
     {
         var uri = new Uri("http://user:pass@example.com:9090/path");
 
@@ -164,7 +164,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void FormatAuthority_Should_OmitDefaultPort()
+    public void FormatAuthority_should_omit_default_port()
     {
         var uriHttp = new Uri("http://example.com:80/path");
         var uriHttps = new Uri("https://example.com:443/path");
@@ -175,7 +175,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void FormatAuthority_Should_BracketIPv6()
+    public void FormatAuthority_should_bracket_ipv6()
     {
         var uri = new Uri("http://[::1]:8080/path");
 
@@ -186,7 +186,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void FormatAuthority_Should_BracketIPv6_DefaultPort()
+    public void FormatAuthority_should_bracket_ipv6_when_default_port()
     {
         var uri = new Uri("http://[::1]/path");
 
@@ -197,7 +197,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void StripUserInfo_Should_PreservePath()
+    public void StripUserInfo_should_preserve_path()
     {
         var uri = new Uri("http://user:pass@example.com:8080/path/to/resource?q=1&r=2#section");
 
@@ -214,7 +214,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void StripUserInfo_Should_NotChange_When_NoUserinfo()
+    public void StripUserInfo_should_not_change_when_no_userinfo()
     {
         var uri = new Uri("https://example.com/path?q=1#frag");
 
@@ -227,7 +227,7 @@ public sealed class UserinfoStrippingSpec
 
     [Fact]
     [Trait("RFC", "RFC9110-4.2.4")]
-    public void FormatAbsoluteWithoutUserInfo_Should_StripUserinfoAndFragment()
+    public void FormatAbsoluteWithoutUserInfo_should_strip_userinfo_and_fragment()
     {
         var uri = new Uri("http://user:pass@example.com:8080/path?q=1#frag");
 

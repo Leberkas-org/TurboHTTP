@@ -220,7 +220,7 @@ public sealed class HpackHeaderListSizeSpec
         var encoder = new HpackEncoder(useHuffman: false);
         var headersList = new List<(string Name, string Value)>();
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             headersList.Add(($"header-{i}", $"value-{i}"));
         }

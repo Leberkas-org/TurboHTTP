@@ -3,10 +3,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.Event;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
-using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Tcp;
 
@@ -14,22 +12,6 @@ namespace TurboHTTP.StreamTests.Transport;
 
 public sealed class TcpTransportStateMachineErrorSpec
 {
-    private sealed class MockTransportOperations : ITransportOperations
-    {
-        public List<IInputItem> PushedOutputs { get; } = [];
-        public int PullInputCount { get; private set; }
-        public int CompleteStageCount { get; private set; }
-        public List<(string Key, TimeSpan Delay)> ScheduledTimers { get; } = [];
-        public List<string> CancelledTimers { get; } = [];
-
-        public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
-        public void OnSignalPullInput() => PullInputCount++;
-        public void OnCompleteStage() => CompleteStageCount++;
-        public void OnScheduleTimer(string key, TimeSpan delay) => ScheduledTimers.Add((key, delay));
-        public void OnCancelTimer(string key) => CancelledTimers.Add(key);
-        public ILoggingAdapter Log { get; } = NoLogger.Instance;
-    }
-
     private static readonly RequestEndpoint TestEndpoint = new()
     {
         Scheme = "http",
@@ -202,7 +184,7 @@ public sealed class TcpTransportStateMachineErrorSpec
     [Trait("RFC", "RFC9112")]
     public void HandleDownstreamFinish_should_cleanup_and_null_lease()
     {
-        var (sm, ops) = CreateStateMachine();
+        var (sm, _) = CreateStateMachine();
         var lease = CreateTestLease();
         sm.Dispatch(new LeaseAcquired(lease));
 

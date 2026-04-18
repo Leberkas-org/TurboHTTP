@@ -184,7 +184,7 @@ public sealed class Http2StreamStateSpec
     {
         var state = new StreamState();
         var largeData = new byte[10000];
-        for (int i = 0; i < largeData.Length; i++)
+        for (var i = 0; i < largeData.Length; i++)
         {
             largeData[i] = (byte)(i % 256);
         }
@@ -223,7 +223,7 @@ public sealed class Http2StreamStateSpec
         state.AppendBody(data);
 
         // Verify AppendBody did not throw - body was accumulated
-        (IMemoryOwner<byte>? owner, int length) = state.TakeBodyOwnership();
+        (var owner, var length) = state.TakeBodyOwnership();
         Assert.NotNull(owner);
         Assert.Equal(3, length);
     }
@@ -246,7 +246,7 @@ public sealed class Http2StreamStateSpec
     {
         var state = new StreamState();
         var largeData = new byte[10000];
-        for (int i = 0; i < largeData.Length; i++)
+        for (var i = 0; i < largeData.Length; i++)
         {
             largeData[i] = (byte)(i % 256);
         }
@@ -289,7 +289,7 @@ public sealed class Http2StreamStateSpec
         var data = new byte[] { 1, 2, 3, 4, 5 };
         state.AppendBody(data);
 
-        (IMemoryOwner<byte>? owner, int length) = state.TakeBodyOwnership();
+        (var owner, var length) = state.TakeBodyOwnership();
 
         Assert.NotNull(owner);
         Assert.Equal(5, length);
@@ -301,7 +301,7 @@ public sealed class Http2StreamStateSpec
     {
         var state = new StreamState();
 
-        (IMemoryOwner<byte>? owner, int length) = state.TakeBodyOwnership();
+        (var owner, var length) = state.TakeBodyOwnership();
 
         Assert.Null(owner);
         Assert.Equal(0, length);
@@ -315,8 +315,8 @@ public sealed class Http2StreamStateSpec
         var data = new byte[] { 1, 2, 3 };
         state.AppendBody(data);
 
-        (IMemoryOwner<byte>? owner1, int length1) = state.TakeBodyOwnership();
-        (IMemoryOwner<byte>? owner2, int length2) = state.TakeBodyOwnership();
+        (var owner1, var length1) = state.TakeBodyOwnership();
+        (var owner2, var length2) = state.TakeBodyOwnership();
 
         Assert.NotNull(owner1);
         Assert.Equal(3, length1);
@@ -352,7 +352,7 @@ public sealed class Http2StreamStateSpec
 
         state.Reset();
 
-        (IMemoryOwner<byte>? owner, int length) = state.TakeBodyOwnership();
+        (var owner, var length) = state.TakeBodyOwnership();
         Assert.Null(owner);
         Assert.Equal(0, length);
     }
@@ -380,7 +380,7 @@ public sealed class Http2StreamStateSpec
         const int ChunkSize = 1000;
         const int NumChunks = 20;
 
-        for (int i = 0; i < NumChunks; i++)
+        for (var i = 0; i < NumChunks; i++)
         {
             var chunk = new byte[ChunkSize];
             Array.Fill(chunk, (byte)(i % 256));
@@ -435,7 +435,7 @@ public sealed class Http2StreamStateSpec
         var state = new StreamState();
         state.AppendBody(ReadOnlySpan<byte>.Empty);
 
-        (IMemoryOwner<byte>? owner, int length) = state.TakeBodyOwnership();
+        (var owner, var length) = state.TakeBodyOwnership();
         Assert.Null(owner);
         Assert.Equal(0, length);
     }
@@ -487,7 +487,7 @@ public sealed class Http2StreamStateSpec
         Assert.Equal(100, headerSpan.Length);
         Assert.All(headerSpan.ToArray(), b => Assert.Equal(1, b));
 
-        (IMemoryOwner<byte>? bodyOwner, int bodyLength) = state.TakeBodyOwnership();
+        (var bodyOwner, var bodyLength) = state.TakeBodyOwnership();
         Assert.Equal(200, bodyLength);
     }
 }

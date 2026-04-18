@@ -7,10 +7,10 @@ namespace TurboHTTP.Protocol.Semantics;
 internal sealed record RetryDecision
 {
     /// <summary>Whether the request should be retried.</summary>
-    public bool ShouldRetry { get; init; }
+    public bool ShouldRetry { get; private init; }
 
     /// <summary>Human-readable reason for the decision (for diagnostics and logging).</summary>
-    public string Reason { get; init; } = string.Empty;
+    public string Reason { get; private init; } = string.Empty;
 
     /// <summary>
     /// Delay before the next retry attempt, parsed from the <c>Retry-After</c> response header.
@@ -18,7 +18,7 @@ internal sealed record RetryDecision
     /// RFC 9110 §10.2.3 — Retry-After.
     /// Callers SHOULD wait this duration before re-sending when non-null.
     /// </summary>
-    public TimeSpan? RetryAfterDelay { get; init; }
+    public TimeSpan? RetryAfterDelay { get; private init; }
 
     /// <summary>Creates a retry decision (request should be retried).</summary>
     public static RetryDecision Retry(string reason, TimeSpan? retryAfterDelay = null)

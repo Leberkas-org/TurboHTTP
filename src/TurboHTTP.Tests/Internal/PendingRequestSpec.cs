@@ -30,7 +30,7 @@ public sealed class PendingRequestSpec
         var pr = PendingRequest.Rent();
         var version = pr.Version;
 
-        short staleVersion = (short)(version + 1);
+        var staleVersion = (short)(version + 1);
 
         Assert.False(pr.TrySetResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK), staleVersion));
 

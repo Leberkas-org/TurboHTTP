@@ -1,4 +1,3 @@
-using System.Net;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
 
@@ -92,7 +91,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     {
         var encoder = CreateEncoder();
         var largeBody = new byte[32768]; // Larger than initial 8192 buffer
-        for (int i = 0; i < largeBody.Length; i++)
+        for (var i = 0; i < largeBody.Length; i++)
         {
             largeBody[i] = (byte)(i % 256);
         }
@@ -115,7 +114,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         }
 
         // Total body should match
-        var totalBody = new System.Collections.Generic.List<byte>();
+        var totalBody = new List<byte>();
         for (var i = 1; i < frames.Count; i++)
         {
             var dataFrame = (Http3DataFrame)frames[i];
@@ -294,7 +293,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3")]
     public void ValidatePseudoHeaders_rejects_empty_header_list()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>();
+        var headers = new List<(string, string)>();
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Contains("Missing required pseudo-headers", ex.Message);
@@ -304,7 +303,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3")]
     public void ValidatePseudoHeaders_requires_method()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":path", "/"),
             (":scheme", "https"),
@@ -319,7 +318,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3")]
     public void ValidatePseudoHeaders_requires_path()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":scheme", "https"),
@@ -334,7 +333,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3")]
     public void ValidatePseudoHeaders_requires_scheme()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -349,7 +348,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3")]
     public void ValidatePseudoHeaders_requires_authority()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -364,7 +363,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3.1")]
     public void ValidatePseudoHeaders_rejects_duplicate_method()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -381,7 +380,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3.1")]
     public void ValidatePseudoHeaders_rejects_duplicate_path()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/path1"),
@@ -398,7 +397,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3.1")]
     public void ValidatePseudoHeaders_rejects_duplicate_scheme()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -415,7 +414,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3.1")]
     public void ValidatePseudoHeaders_rejects_duplicate_authority()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -432,7 +431,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3.1")]
     public void ValidatePseudoHeaders_rejects_unknown_pseudo_header()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -449,7 +448,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.3.1")]
     public void ValidatePseudoHeaders_rejects_pseudo_after_regular()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "GET"),
             (":path", "/"),
@@ -466,7 +465,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.4")]
     public void ValidatePseudoHeaders_connect_with_scheme_rejected()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "CONNECT"),
             (":authority", "example.com"),
@@ -481,7 +480,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.4")]
     public void ValidatePseudoHeaders_connect_with_path_rejected()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "CONNECT"),
             (":authority", "example.com"),
@@ -496,7 +495,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.4")]
     public void ValidatePseudoHeaders_connect_without_authority_rejected()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "CONNECT"),
         };
@@ -509,7 +508,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.4")]
     public void ValidatePseudoHeaders_connect_with_authority_accepted()
     {
-        var headers = new System.Collections.Generic.List<(string, string)>
+        var headers = new List<(string, string)>
         {
             (":method", "CONNECT"),
             (":authority", "example.com:8443"),

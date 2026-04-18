@@ -9,7 +9,7 @@ public static class ModuleInit
     {
         VerifyDiffPlex.Initialize();
         VerifierSettings.ScrubLinesContaining("[assembly: ReleaseDateAttribute(");
-        Verifier.UseProjectRelativeDirectory("verify");
+        UseProjectRelativeDirectory("verify");
         VerifierSettings.UniqueForRuntime();
         VerifierSettings.InitializePlugins();
     }

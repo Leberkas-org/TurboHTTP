@@ -259,7 +259,7 @@ public sealed class StaticTableSpec
     public void HpackEncoder_should_use_static_name_index_16_when_encoding_accept_encoding_with_custom_value()
     {
         var encoder = new HpackEncoder(useHuffman: false);
-        var encoded = encoder.Encode([(("accept-encoding", "br"))]);
+        var encoded = encoder.Encode([("accept-encoding", "br")]);
 
         Assert.True(encoded.Length > 1);
         Assert.Equal(0x50, encoded.Span[0]);

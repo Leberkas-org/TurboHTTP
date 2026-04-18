@@ -87,7 +87,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         var table = new QpackDynamicTable(256);
 
         // Insert multiple small entries
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             table.Insert($"header{i}", $"value{i}");
         }
@@ -148,7 +148,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(0, index1);
 
         // Insert entries to evict the first one
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             table.Insert($"new{i}", "x");
         }
@@ -198,7 +198,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         var original = table.Insert("old", "data");
 
         // Evict the original entry
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             table.Insert($"new{i}", "x");
         }
@@ -227,7 +227,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         var table = new QpackDynamicTable(256);
 
         // Insert entries
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             table.Insert($"header{i}", $"value{i}");
         }
@@ -248,7 +248,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
     {
         var table = new QpackDynamicTable(256);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             table.Insert($"header{i}", $"value{i}");
         }
@@ -269,7 +269,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
     {
         var table = new QpackDynamicTable(128);
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             table.Insert($"header{i}", $"value{i}");
         }
@@ -369,7 +369,7 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         var initialDropped = table.DroppedCount;
 
         // Evict first entry
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             table.Insert($"new{i}", "x");
         }
@@ -435,13 +435,13 @@ public sealed class QpackDynamicTableEdgeCasesSpec
 
         // Insert multiple entries
         var indices = new List<int>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             indices.Add(table.Insert($"header{i}", $"value{i}"));
         }
 
         // Verify we can retrieve each by absolute index
-        for (int i = 0; i < indices.Count; i++)
+        for (var i = 0; i < indices.Count; i++)
         {
             var entry = table.GetEntry(indices[i]);
             Assert.NotNull(entry);

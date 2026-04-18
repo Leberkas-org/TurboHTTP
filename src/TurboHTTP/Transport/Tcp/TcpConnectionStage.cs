@@ -18,8 +18,8 @@ internal interface ITransportOperations
 
 internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
-    internal IActorRef ConnectionManager { get; }
-    internal TurboClientOptions ClientOptions { get; }
+    private IActorRef ConnectionManager { get; }
+    private TurboClientOptions ClientOptions { get; }
 
     private readonly Inlet<IOutputItem> _in = new("TcpConnection.In");
     private readonly Outlet<IInputItem> _out = new("TcpConnection.Out");

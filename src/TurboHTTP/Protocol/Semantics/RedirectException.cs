@@ -35,11 +35,4 @@ internal sealed class RedirectException : TurboHttpException
     {
         Error = error;
     }
-
-    /// <inheritdoc />
-    public RedirectException(string message, RedirectError error, Exception innerException)
-        : base(message, innerException)
-    {
-        Error = error;
-    }
 }

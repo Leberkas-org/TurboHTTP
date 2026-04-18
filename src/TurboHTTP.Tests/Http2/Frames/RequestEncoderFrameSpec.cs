@@ -197,7 +197,7 @@ public sealed class Http2RequestEncoderFrameSpec
     public void Http2RequestEncoder_should_apply_server_settings_header_table_size()
     {
         var encoder = new RequestEncoder();
-        encoder.ApplyServerSettings([(SettingsParameter.HeaderTableSize, (uint)2048)]);
+        encoder.ApplyServerSettings([(SettingsParameter.HeaderTableSize, 2048)]);
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
         var frames = encoder.Encode(request, 1);
@@ -213,7 +213,7 @@ public sealed class Http2RequestEncoderFrameSpec
         var encoder = new RequestEncoder();
 
         // Apply new initial window size
-        encoder.ApplyServerSettings([(SettingsParameter.InitialWindowSize, (uint)32768)]);
+        encoder.ApplyServerSettings([(SettingsParameter.InitialWindowSize, 32768)]);
 
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/data")
         {

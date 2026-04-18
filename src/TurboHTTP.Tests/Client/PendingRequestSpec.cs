@@ -50,16 +50,6 @@ public sealed class PendingRequestSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void GetValueTask_ReturnsValueTask()
-    {
-        var pending = PendingRequest.Rent();
-
-        var task = pending.GetValueTask();
-
-        Assert.NotNull(task);
-    }
-
-    [Fact(Timeout = 5000)]
     public async Task GetValueTask_ReturnsAwaitableTask()
     {
         var pending = PendingRequest.Rent();
@@ -71,9 +61,9 @@ public sealed class PendingRequestSpec
         // Set result asynchronously
         _ = Task.Run(() =>
         {
-            System.Threading.Thread.Sleep(50);
+            Thread.Sleep(50);
             pending.TrySetResult(response, version);
-        });
+        }, TestContext.Current.CancellationToken);
 
         var result = await task;
 
@@ -160,7 +150,7 @@ public sealed class PendingRequestSpec
     {
         var pending = PendingRequest.Rent();
 
-        var result = pending.TrySetCanceled();
+        var result = pending.TrySetCanceled(TestContext.Current.CancellationToken);
 
         Assert.True(result);
     }
@@ -169,7 +159,7 @@ public sealed class PendingRequestSpec
     public void TrySetCanceled_WithCancellationToken_ReturnsTrue()
     {
         var pending = PendingRequest.Rent();
-        using var cts = new System.Threading.CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
 
         var result = pending.TrySetCanceled(cts.Token);
 
@@ -182,7 +172,7 @@ public sealed class PendingRequestSpec
         var pending = PendingRequest.Rent();
         var task = pending.GetValueTask();
 
-        pending.TrySetCanceled();
+        pending.TrySetCanceled(TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await task);
     }
@@ -238,40 +228,40 @@ public sealed class PendingRequestSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void OnCompleted_RegistersContinuation()
+    public async Task OnCompleted_RegistersContinuation()
     {
         var pending = PendingRequest.Rent();
         var version = pending.Version;
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
-        using var mre = new ManualResetEventSlim(false);
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         pending.OnCompleted(
-            _ => { mre.Set(); },
+            _ => { tcs.TrySetResult(); },
             null,
             version,
             ValueTaskSourceOnCompletedFlags.None);
 
         pending.TrySetResult(response, version);
 
-        Assert.True(mre.Wait(TimeSpan.FromSeconds(3)));
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(4), TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 5000)]
-    public void OnCompleted_WithUseSchedulingContext_RegistersCorrectly()
+    public async Task OnCompleted_WithUseSchedulingContext_RegistersCorrectly()
     {
         var pending = PendingRequest.Rent();
         var version = pending.Version;
-        using var mre = new ManualResetEventSlim(false);
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         pending.OnCompleted(
-            _ => { mre.Set(); },
+            _ => { tcs.TrySetResult(); },
             null,
             version,
             ValueTaskSourceOnCompletedFlags.UseSchedulingContext);
 
-        pending.TrySetCanceled();
+        pending.TrySetCanceled(TestContext.Current.CancellationToken);
 
-        Assert.True(mre.Wait(TimeSpan.FromSeconds(3)));
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(4), TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 5000)]
@@ -316,7 +306,7 @@ public sealed class PendingRequestSpec
         // task1 should never complete because we failed to set result with originalVersion
         var completed = await Task.WhenAny(
             Task.Run(async () => await task1),
-            Task.Delay(100));
+            Task.Delay(100, TestContext.Current.CancellationToken));
 
         Assert.NotSame(completed, Task.Run(async () => await task1));
     }

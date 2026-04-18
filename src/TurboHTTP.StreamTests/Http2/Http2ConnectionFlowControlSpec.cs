@@ -9,20 +9,16 @@ using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests HTTP/2 connection-level flow control in the connection stage per RFC 9113.
-/// Verifies that WINDOW_UPDATE frames are processed and that the connection window is correctly maintained.
-/// </summary>
-[Trait("RFC", "RFC9113-5.2")]
 public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
 {
     private Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
         params Http2Frame[] serverFrames)
         => RunFlowAsync(new Http20ConnectionStage(new Http2Options().ToEngineOptions()), serverFrames);
 
-    private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunFlowAsync(
-        Http20ConnectionStage connectionStage,
-        params Http2Frame[] serverFrames)
+    private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound)>
+        RunFlowAsync(
+            Http20ConnectionStage connectionStage,
+            params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
         var networkSink = Sink.Seq<IOutputItem>();
@@ -45,7 +41,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         var downstream = await downstreamTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         var networkItems = await networkTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -86,7 +82,8 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
     {
         // Explicit 65535-byte window → threshold = max(8192, 65535/4) = 16384.
         // Sending exactly 16384 bytes crosses the threshold in a single DATA frame.
-        var stage = new Http20ConnectionStage(new Http2Options { InitialConnectionWindowSize = 65535 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(
+            new Http2Options { InitialConnectionWindowSize = 65535 }.ToEngineOptions());
         var data = new DataFrame(streamId: 1, data: new byte[16384], endStream: true);
 
         var (_, serverBound) = await RunFlowAsync(stage, data);
@@ -121,7 +118,8 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
     {
         // Explicit 65535-byte window → threshold = 16384. Exactly 16384 bytes on a single
         // DATA frame crosses both the connection and stream thresholds simultaneously.
-        var stage = new Http20ConnectionStage(new Http2Options { InitialConnectionWindowSize = 65535 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(
+            new Http2Options { InitialConnectionWindowSize = 65535 }.ToEngineOptions());
         var data = new DataFrame(streamId: 3, data: new byte[16384], endStream: true);
 
         var (_, serverBound) = await RunFlowAsync(stage, data);
@@ -197,7 +195,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
 
@@ -223,7 +221,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 {
                     var stage = b.Add(new Http20ConnectionStage(new Http2Options().ToEngineOptions()));
                     var serverSource = b.Add(Source.Never<IInputItem>());
-                    var requestSource = b.Add(Source.Single<HttpRequestMessage>(request));
+                    var requestSource = b.Add(Source.Single(request));
 
                     b.From(serverSource).To(stage.InServer);
                     b.From(stage.OutResponse).To(dsSink);
@@ -234,7 +232,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 }));
 
         var mat = graph.Run(Materializer);
-        var (downstreamTask, networkTask) = (mat.Item1, mat.Item2);
+        var (downstreamTask, networkTask) = (mat.m1, mat.m2);
 
         await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
 
@@ -258,8 +256,9 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 {
                     var stage = b.Add(new Http20ConnectionStage(new Http2Options().ToEngineOptions()));
                     var serverSource = b.Add(Source.Never<IInputItem>());
-                    var requestSource = b.Add(Source.Single<HttpRequestMessage>(request));
-                    var ignoreSink = b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
+                    var requestSource = b.Add(Source.Single(request));
+                    var ignoreSink =
+                        b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
 
                     b.From(serverSource).To(stage.InServer);
                     b.From(stage.OutResponse).To(ignoreSink);
@@ -302,10 +301,11 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                                 .InitialDelay(TimeSpan.FromMilliseconds(500))));
 
                     var requestSource = b.Add(
-                        Source.Single<HttpRequestMessage>(request)
+                        Source.Single(request)
                             .InitialDelay(TimeSpan.FromMilliseconds(200)));
 
-                    var ignoreSink = b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
+                    var ignoreSink =
+                        b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
 
                     b.From(serverSource).To(stage.InServer);
                     b.From(stage.OutResponse).To(ignoreSink);
@@ -347,7 +347,8 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9113-6.9")]
-    public async Task Http2ConnectionFlowControl_should_not_forward_any_window_update_when_multiple_received_for_same_stream()
+    public async Task
+        Http2ConnectionFlowControl_should_not_forward_any_window_update_when_multiple_received_for_same_stream()
     {
         var wu1 = new WindowUpdateFrame(streamId: 3, increment: 1000);
         var wu2 = new WindowUpdateFrame(streamId: 3, increment: 2000);

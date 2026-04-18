@@ -153,7 +153,7 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         var policy = new CompressionPolicy { Encoding = "gzip", MinBodySizeBytes = 1000 };
         var stage = new ContentEncodingBidiStage(compressionPolicy: policy);
         var largeBody = new byte[2000];
-        for (int i = 0; i < largeBody.Length; i++)
+        for (var i = 0; i < largeBody.Length; i++)
         {
             largeBody[i] = (byte)(i % 256);
         }

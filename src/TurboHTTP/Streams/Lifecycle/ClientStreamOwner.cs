@@ -38,7 +38,7 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
     internal sealed record StreamInstanceFailed(Exception Reason, int AttemptNumber);
 
     internal sealed record Shutdown;
-    
+
     private static readonly TimeSpan[] RetryBackoffs =
     [
         TimeSpan.FromMilliseconds(100),
@@ -190,7 +190,9 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
                     }),
                     _materializer);
 
-            MonitorSinkCompletion(completionTask);
+            completionTask.PipeTo(Self, Self,
+                () => new StreamSinkCompleted(null),
+                ex => new StreamSinkCompleted(ex.GetBaseException()));
 
             _streamRunning = true;
             _log.Debug("Stream pipeline materialized successfully");
@@ -311,13 +313,6 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
             ShutdownTimeout.TotalSeconds);
         CleanupResources();
         Context.Stop(Self);
-    }
-
-    private void MonitorSinkCompletion(Task completionTask)
-    {
-        completionTask.PipeTo(Self, Self,
-            () => new StreamSinkCompleted(null),
-            ex => new StreamSinkCompleted(ex.GetBaseException()));
     }
 
     private void HandleStreamSinkCompleted(StreamSinkCompleted completed)

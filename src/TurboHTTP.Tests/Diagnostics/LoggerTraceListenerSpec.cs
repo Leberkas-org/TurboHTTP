@@ -220,20 +220,13 @@ public sealed class LoggerTraceListenerSpec : IDisposable
     }
 
 
-    private sealed class TestLoggerFactory : ILoggerFactory
+    private sealed class TestLoggerFactory(LogLevel enabledLevel = LogLevel.Trace) : ILoggerFactory
     {
-        private readonly LogLevel _enabledLevel;
-
         public Dictionary<string, TestLogger> CreatedLoggers { get; } = new();
-
-        public TestLoggerFactory(LogLevel enabledLevel = LogLevel.Trace)
-        {
-            _enabledLevel = enabledLevel;
-        }
 
         public ILogger CreateLogger(string categoryName)
         {
-            var logger = new TestLogger(_enabledLevel);
+            var logger = new TestLogger(enabledLevel);
             CreatedLoggers[categoryName] = logger;
             return logger;
         }
@@ -247,18 +240,11 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         }
     }
 
-    private sealed class TestLogger : ILogger
+    private sealed class TestLogger(LogLevel enabledLevel = LogLevel.Trace) : ILogger
     {
-        private readonly LogLevel _enabledLevel;
-
         public List<LogEntry> LogEntries { get; } = [];
 
-        public TestLogger(LogLevel enabledLevel = LogLevel.Trace)
-        {
-            _enabledLevel = enabledLevel;
-        }
-
-        public bool IsEnabled(LogLevel logLevel) => logLevel >= _enabledLevel;
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= enabledLevel;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
             Func<TState, Exception?, string> formatter)

@@ -7,29 +7,9 @@ using TurboHTTP.Transport.Quic;
 
 namespace TurboHTTP.StreamTests.Transport;
 
-/// <summary>
-/// Tests transport-level starvation scenarios for <see cref="TcpConnectionManagerActor"/>
-/// and <see cref="ClientByteMover"/> to catch deadlocks in isolation.
-/// </summary>
-public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
+public sealed class ConnectionPoolDeadlockSpec : StreamTestBase
 {
-    private ActorSystem? _system;
-    private InMemoryConnectionFactory _factory = null!;
-
-    public ValueTask InitializeAsync()
-    {
-        _system = ActorSystem.Create("connection-deadlock-tests");
-        _factory = new InMemoryConnectionFactory();
-        return ValueTask.CompletedTask;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_system is not null)
-        {
-            await _system.Terminate();
-        }
-    }
+    private readonly InMemoryConnectionFactory _factory = new();
 
     private static TcpOptions CreateOptions() => new()
     {
@@ -46,7 +26,7 @@ public sealed class ConnectionPoolDeadlockSpec : IAsyncLifetime
     };
 
     private IActorRef CreateActor()
-        => _system!.ActorOf(Props.Create(() =>
+        => Sys.ActorOf(Props.Create(() =>
             new TcpConnectionManagerActor(_factory, TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan)));
 
     [Fact(Timeout = 5000)]

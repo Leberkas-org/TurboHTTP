@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;

@@ -81,7 +81,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_MaxRedirectsExceeded()
+    public void RedirectChain_should_forward_final_response_when_max_redirects_exceeded()
     {
         var policy = new RedirectPolicy { MaxRedirects = 1 };
         var handler = new RedirectHandler(policy);
@@ -110,7 +110,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_RedirectLoopDetected()
+    public void RedirectChain_should_forward_final_response_when_redirect_loop_detected()
     {
         var handler = new RedirectHandler();
         // Prime the handler with a→b
@@ -137,7 +137,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_HttpsToHttpDowngrade()
+    public void RedirectChain_should_forward_final_response_when_https_to_http_downgrade()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -153,7 +153,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_ForwardFinalResponse_When_LocationHeaderMissing()
+    public void RedirectChain_should_forward_final_response_when_location_header_missing()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -172,7 +172,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_DeliverFinalResponse_AfterRedirectChain()
+    public void RedirectChain_should_deliver_final_response_after_redirect_chain()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -197,7 +197,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_DeliverFinalResponse_AfterTwoRedirects()
+    public void RedirectChain_should_deliver_final_response_after_two_redirects()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var stage = new RedirectBidiStage(new RedirectPolicy());
@@ -229,7 +229,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_StripAuthorizationHeader_When_CrossOriginRedirect()
+    public void RedirectChain_should_strip_authorization_header_when_cross_origin_redirect()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api");
         request.Headers.TryAddWithoutValidation("Authorization", "Bearer token123");
@@ -251,7 +251,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_PreserveHttp2Version_When_Redirecting()
+    public void RedirectChain_should_preserve_http2_version_when_redirecting()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page")
         {
@@ -273,7 +273,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_AbsorbRequestUpstreamFailure()
+    public void RedirectChain_should_absorb_request_upstream_failure()
     {
         var stage = new RedirectBidiStage(new RedirectPolicy());
 
@@ -306,7 +306,7 @@ public sealed class RedirectChainSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
-    public void Should_AbsorbResponseUpstreamFailure()
+    public void RedirectChain_should_absorb_response_upstream_failure()
     {
         var stage = new RedirectBidiStage(new RedirectPolicy());
 

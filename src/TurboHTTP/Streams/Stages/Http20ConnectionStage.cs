@@ -176,10 +176,6 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             for (var i = 0; i < frames.Count; i++)
             {
                 var frame = frames[i];
-                if (frame is UnknownFrame)
-                {
-                    continue;
-                }
 
                 TurboTrace.Protocol.Trace(this,
                     $"Frame received: {frame.Type} stream={frame.StreamId} length={frame.SerializedSize}");

@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using System.Net;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Semantics;

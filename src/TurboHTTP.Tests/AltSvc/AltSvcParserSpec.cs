@@ -2,9 +2,6 @@ using TurboHTTP.Protocol.AltSvc;
 
 namespace TurboHTTP.Tests.AltSvc;
 
-/// <summary>
-/// Tests for Alt-Svc header parsing per RFC 7838 §3.
-/// </summary>
 public sealed class AltSvcParserSpec
 {
     private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);

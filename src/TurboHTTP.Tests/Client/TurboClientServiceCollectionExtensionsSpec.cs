@@ -181,18 +181,6 @@ public sealed class TurboClientServiceCollectionExtensionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void TcsCorrelation_Key_IsNotNull()
-    {
-        Assert.NotNull(TcsCorrelation.Key);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void TcsCorrelation_VersionKey_IsNotNull()
-    {
-        Assert.NotNull(TcsCorrelation.VersionKey);
-    }
-
-    [Fact(Timeout = 5000)]
     public void TurboHttpClientName_RecordType_HasName()
     {
         var name = new TurboHttpClientName("test");
@@ -211,15 +199,9 @@ public sealed class TurboClientServiceCollectionExtensionsSpec
         Assert.NotEqual(name1, name3);
     }
 
-    private sealed class TestClient
-    {
-    }
+    private sealed class TestClient;
 
-    private interface ITestClient
-    {
-    }
+    private interface ITestClient;
 
-    private sealed class TestClientImpl : ITestClient
-    {
-    }
+    private sealed class TestClientImpl : ITestClient;
 }

@@ -142,7 +142,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public async Task RequestDirection_Should_PassThrough_When_PolicyIsNull()
+    public async Task RequestDirection_should_pass_through_when_policy_is_null()
     {
         var stage = new RetryBidiStage(null);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -155,7 +155,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public async Task ResponseDirection_Should_PassThrough_When_PolicyIsNull()
+    public async Task ResponseDirection_should_pass_through_when_policy_is_null()
     {
         var stage = new RetryBidiStage(null);
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable);
@@ -170,7 +170,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public async Task RequestDirection_Should_ForwardRequest()
+    public async Task RequestDirection_should_forward_request()
     {
         var stage = new RetryBidiStage(new RetryPolicy());
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -183,7 +183,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public async Task RequestDirection_Should_ForwardMultipleRequestsInOrder()
+    public async Task RequestDirection_should_forward_multiple_requests_in_order()
     {
         var stage = new RetryBidiStage(new RetryPolicy());
         var req1 = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
@@ -200,7 +200,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_ForwardFinalResponse_When_200OK()
+    public void RetryCore_should_forward_final_response_when_200_ok()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -218,7 +218,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_ForwardFinalResponse_When_404()
+    public void RetryCore_should_forward_final_response_when_404()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -234,7 +234,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_ForwardFinalResponse_When_PostReturns408()
+    public void RetryCore_should_forward_final_response_when_post_returns_408()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -250,7 +250,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_ForwardFinalResponse_When_RequestMessageIsNull()
+    public void RetryCore_should_forward_final_response_when_request_message_is_null()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -268,7 +268,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_EmitRetryOnOut1_When_GetReturns408()
+    public void RetryCore_should_emit_retry_on_out1_when_get_returns_408()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -291,7 +291,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_EmitRetryOnOut1_When_GetReturns503()
+    public void RetryCore_should_emit_retry_on_out1_when_get_returns_503()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -309,7 +309,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_IncrementAttemptCount_When_Retrying()
+    public void RetryCore_should_increment_attempt_count_when_retrying()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -327,7 +327,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_ForwardFinalResponse_When_RetryLimitReached()
+    public void RetryCore_should_forward_final_response_when_retry_limit_reached()
     {
         var policy = new RetryPolicy { MaxRetries = 1 };
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -352,7 +352,7 @@ public sealed class RetryCoreSpec : StreamTestBase
     [InlineData("DELETE")]
     [InlineData("HEAD")]
     [InlineData("OPTIONS")]
-    public void Should_RetryOn408_When_MethodIsIdempotent(string methodName)
+    public void RetryCore_should_retry_on_408_when_method_is_idempotent(string methodName)
     {
         var method = new HttpMethod(methodName);
         var request = new HttpRequestMessage(method, "http://example.com/");
@@ -371,7 +371,7 @@ public sealed class RetryCoreSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_ForwardOnOut2_When_PatchReturns503()
+    public void RetryCore_should_forward_on_out2_when_patch_returns_503()
     {
         var request = new HttpRequestMessage(HttpMethod.Patch, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -390,7 +390,7 @@ public sealed class RetryCoreSpec : StreamTestBase
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
-    public void Should_retry_exactly_MaxRetries_minus_one_times_then_forward_response(int maxRetries)
+    public void RetryCore_should_retry_exactly_max_retries_minus_one_times_then_forward_response(int maxRetries)
     {
         var policy = new RetryPolicy { MaxRetries = maxRetries };
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");

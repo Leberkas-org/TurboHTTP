@@ -1,10 +1,7 @@
 using System.Net;
-using System.Runtime.Versioning;
 using TurboHTTP.Internal;
-using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
-using TurboHTTP.Transport.Quic;
 
 #pragma warning disable CA1416
 
@@ -84,7 +81,7 @@ public sealed class QuicConnectionHandleSpec
         var provider = new FakeClientProvider();
         var handle = new QuicConnectionHandle(provider, TestOptions, TestEndpoint);
 
-        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.Request);
+        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.Request, TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -97,7 +94,7 @@ public sealed class QuicConnectionHandleSpec
         var provider = new FakeClientProvider();
         var handle = new QuicConnectionHandle(provider, TestOptions, TestEndpoint);
 
-        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.Control);
+        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.Control, TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -110,7 +107,8 @@ public sealed class QuicConnectionHandleSpec
         var provider = new FakeClientProvider();
         var handle = new QuicConnectionHandle(provider, TestOptions, TestEndpoint);
 
-        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.QpackEncoder);
+        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.QpackEncoder,
+            TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -124,8 +122,8 @@ public sealed class QuicConnectionHandleSpec
         var handle = new QuicConnectionHandle(provider, TestOptions, TestEndpoint);
 
         // QpackDecoder is receive-only, not supported for opening
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            async () => await handle.OpenStreamAsLeaseAsync(Http3StreamType.QpackDecoder, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await handle.OpenStreamAsLeaseAsync(Http3StreamType.QpackDecoder, TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -159,7 +157,7 @@ public sealed class QuicConnectionHandleSpec
         var provider = new FakeClientProvider();
         var handle = new QuicConnectionHandle(provider, TestOptions, TestEndpoint);
 
-        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.Request);
+        var lease = await handle.OpenStreamAsLeaseAsync(Http3StreamType.Request, TestContext.Current.CancellationToken);
 
         Assert.Equal(TestEndpoint, lease.Key);
     }
@@ -172,7 +170,7 @@ public sealed class QuicConnectionHandleSpec
         var handle = new QuicConnectionHandle(provider, TestOptions, TestEndpoint);
 
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         var result = await handle.AcceptInboundStreamAsLeaseAsync(cts.Token);
 

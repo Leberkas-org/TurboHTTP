@@ -12,7 +12,8 @@ namespace TurboHTTP.Tests.Http2.Frames;
 /// </remarks>
 public sealed class Http2FrameSpec
 {
-    [Fact(DisplayName = "RFC9113-4.1-FS-001: SETTINGS frame serializes to correct binary format")]
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     public void Http2Frame_should_serialize_to_correct_format_when_settings_frame_built()
     {
         var frame = new SettingsFrame(new List<(SettingsParameter, uint)>
@@ -34,7 +35,8 @@ public sealed class Http2FrameSpec
         Assert.Equal(0, bytes[8]);
     }
 
-    [Fact(DisplayName = "RFC9113-4.1-FS-002: SETTINGS ACK serializes to empty payload with ACK flag")]
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     public void Http2Frame_should_serialize_empty_payload_when_settings_ack_built()
     {
         var ack = SettingsFrame.SettingsAck();
@@ -42,7 +44,8 @@ public sealed class Http2FrameSpec
         Assert.Equal(0x01, ack[4]);
     }
 
-    [Fact(DisplayName = "RFC9113-4.1-FS-003: PING frame serializes to 8-byte payload")]
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     public void Http2Frame_should_serialize_8_byte_payload_when_ping_frame_built()
     {
         var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -52,7 +55,8 @@ public sealed class Http2FrameSpec
         Assert.Equal(6, frame[3]);
     }
 
-    [Fact(DisplayName = "RFC9113-4.1-FS-004: WINDOW_UPDATE frame serializes correct increment bytes")]
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     public void Http2Frame_should_serialize_correct_increment_when_window_update_frame_built()
     {
         var frame = new WindowUpdateFrame(0, 65535).Serialize();
@@ -64,7 +68,8 @@ public sealed class Http2FrameSpec
         Assert.Equal(0xFF, frame[12]);
     }
 
-    [Fact(DisplayName = "RFC9113-4.1-FS-005: DATA frame serializes with END_STREAM flag and correct type")]
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     public void Http2Frame_should_serialize_with_end_stream_flag_when_data_frame_built()
     {
         var data = new byte[] { 1, 2, 3 };
@@ -74,7 +79,8 @@ public sealed class Http2FrameSpec
         Assert.Equal((byte)FrameType.Data, frame[3]);
     }
 
-    [Fact(DisplayName = "RFC9113-4.1-FS-006: GOAWAY frame serializes with debug data")]
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     public void Http2Frame_should_serialize_with_debug_data_when_goaway_frame_built()
     {
         var debug = "test error"u8.ToArray();
@@ -82,7 +88,8 @@ public sealed class Http2FrameSpec
         Assert.Equal(27, frame.Length);
     }
 
-    [Theory(DisplayName = "RFC9113-4.1-FS-007: Negative stream ID must throw ArgumentOutOfRangeException")]
+    [Theory(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     [InlineData(-1)]
     [InlineData(-100)]
     [InlineData(int.MinValue)]
@@ -95,7 +102,8 @@ public sealed class Http2FrameSpec
         Assert.Throws<ArgumentOutOfRangeException>(() => new ContinuationFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
     }
 
-    [Theory(DisplayName = "RFC9113-4.1-FS-008: Zero and positive stream IDs must be accepted")]
+    [Theory(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-4.1")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(int.MaxValue)]

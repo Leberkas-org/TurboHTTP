@@ -108,7 +108,8 @@ internal sealed class TcpTransportStateMachine
         // handles its own acquisition in HandleConnectItem and running AutoConnect
         // first would start a duplicate acquire that races with the real one.
         if (_handle is null && _pendingConnect is null && item is not ConnectItem &&
-            item.Key.Scheme is not null && item.Key != RequestEndpoint.Default)
+            !string.IsNullOrEmpty(item.Key.Scheme) &&
+            item.Key != RequestEndpoint.Default)
         {
             AutoConnect(item.Key);
         }
@@ -452,11 +453,11 @@ internal sealed class TcpTransportStateMachine
             success: lease => new LeaseAcquired(lease),
             failure: ex => new AcquisitionFailed(ex.GetBaseException()));
 
-        const int DefaultConnectTimeoutSeconds = 10;
+        const int defaultConnectTimeoutSeconds = 10;
         var timeout = connect.Options.ConnectTimeout;
         if (timeout <= TimeSpan.Zero)
         {
-            timeout = TimeSpan.FromSeconds(DefaultConnectTimeoutSeconds);
+            timeout = TimeSpan.FromSeconds(defaultConnectTimeoutSeconds);
         }
 
         _ops.OnScheduleTimer(ConnectTimerKey, timeout);
@@ -515,9 +516,8 @@ internal sealed class TcpTransportStateMachine
         var reader = handle.InboundReader;
         var key = _currentKey;
         var gen = _connectionGen;
-        var self = _self;
 
-        _ = PumpAsync(reader, key, gen, ct, self);
+        _ = PumpAsync(reader, key, gen, ct, _self);
     }
 
     private static async Task PumpAsync(

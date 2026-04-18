@@ -77,7 +77,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
-    public async Task Should_ReleaseBody_When_100Continue()
+    public async Task ExpectContinue_should_release_body_when_100_continue()
     {
         var policy = new Expect100Policy { MinBodySizeBytes = 100 };
         var stage = new ExpectContinueBidiStage(policy);
@@ -99,7 +99,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
-    public async Task Should_Cancel_When_417ExpectationFailed()
+    public async Task ExpectContinue_should_cancel_when_417_expectation_failed()
     {
         var policy = new Expect100Policy { MinBodySizeBytes = 100 };
         var stage = new ExpectContinueBidiStage(policy);
@@ -119,7 +119,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
-    public async Task Should_PassThrough_When_NullPolicy()
+    public async Task ExpectContinue_should_pass_through_when_null_policy()
     {
         var stage = new ExpectContinueBidiStage(null);
 
@@ -136,7 +136,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
-    public async Task Should_AddExpectHeader_When_BodyExceedsThreshold()
+    public async Task ExpectContinue_should_add_expect_header_when_body_exceeds_threshold()
     {
         var policy = new Expect100Policy { MinBodySizeBytes = 100 };
         var stage = new ExpectContinueBidiStage(policy);
@@ -153,7 +153,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
-    public async Task Should_NotAddExpectHeader_When_BodyBelowThreshold()
+    public async Task ExpectContinue_should_not_add_expect_header_when_body_below_threshold()
     {
         var policy = new Expect100Policy { MinBodySizeBytes = 1024 };
         var stage = new ExpectContinueBidiStage(policy);
@@ -170,7 +170,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
-    public async Task Should_ForwardFinalResponse_When_NoExpectPending()
+    public async Task ExpectContinue_should_forward_final_response_when_no_expect_pending()
     {
         var policy = new Expect100Policy { MinBodySizeBytes = 1024 };
         var stage = new ExpectContinueBidiStage(policy);

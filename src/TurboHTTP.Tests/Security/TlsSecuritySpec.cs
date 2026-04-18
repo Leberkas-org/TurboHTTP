@@ -182,7 +182,7 @@ public sealed class TlsSecuritySpec
         var handler = new RedirectHandler(); // Default policy: AllowHttpsToHttpDowngrade = false
 
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure");
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("http://evil.com/steal");
 
         var ex = Assert.Throws<RedirectException>(() => handler.BuildRedirectRequest(original, response));
@@ -194,7 +194,7 @@ public sealed class TlsSecuritySpec
     {
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/page");
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.MovedPermanently);
+        var response = new HttpResponseMessage(HttpStatusCode.MovedPermanently);
         response.Headers.Location = new Uri("http://example.com/page");
 
         var ex = Assert.Throws<RedirectException>(() => handler.BuildRedirectRequest(original, response));
@@ -207,7 +207,7 @@ public sealed class TlsSecuritySpec
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Post, "https://example.com/api");
         original.Content = new ByteArrayContent("data"u8.ToArray());
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.TemporaryRedirect);
+        var response = new HttpResponseMessage(HttpStatusCode.TemporaryRedirect);
         response.Headers.Location = new Uri("http://example.com/api");
 
         var ex = Assert.Throws<RedirectException>(() => handler.BuildRedirectRequest(original, response));
@@ -219,7 +219,7 @@ public sealed class TlsSecuritySpec
     {
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.PermanentRedirect);
+        var response = new HttpResponseMessage(HttpStatusCode.PermanentRedirect);
         response.Headers.Location = new Uri("http://example.com/resource");
 
         var ex = Assert.Throws<RedirectException>(() => handler.BuildRedirectRequest(original, response));
@@ -231,7 +231,7 @@ public sealed class TlsSecuritySpec
     {
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/old");
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("https://example.com/new");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -244,7 +244,7 @@ public sealed class TlsSecuritySpec
     {
         var handler = new RedirectHandler();
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page");
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("https://example.com/page");
 
         var newRequest = handler.BuildRedirectRequest(original, response);
@@ -259,7 +259,7 @@ public sealed class TlsSecuritySpec
         var handler = new RedirectHandler(policy);
 
         var original = new HttpRequestMessage(HttpMethod.Get, "https://example.com/page");
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.Found);
+        var response = new HttpResponseMessage(HttpStatusCode.Found);
         response.Headers.Location = new Uri("http://example.com/page");
 
         var newRequest = handler.BuildRedirectRequest(original, response);

@@ -102,7 +102,7 @@ internal sealed class ConnectionState
             return false;
         }
 
-        return (DateTime.UtcNow - _lastActivity) >= _idleTimeout;
+        return DateTime.UtcNow - _lastActivity >= _idleTimeout;
     }
 
     public TimeSpan TimeUntilExpiry()

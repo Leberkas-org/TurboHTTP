@@ -1,33 +1,15 @@
 using System.Net;
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.Event;
 using TurboHTTP.Internal;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Quic;
-using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.StreamTests.Transport;
 
 public sealed class QuicStreamRouterSpec
 {
-    private sealed class MockTransportOperations : ITransportOperations
-    {
-        public List<IInputItem> PushedOutputs { get; } = [];
-        public int PullInputCount { get; private set; }
-        public int CompleteStageCount { get; private set; }
-        public List<(string Key, TimeSpan Delay)> ScheduledTimers { get; } = [];
-        public List<string> CancelledTimers { get; } = [];
-
-        public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
-        public void OnSignalPullInput() => PullInputCount++;
-        public void OnCompleteStage() => CompleteStageCount++;
-        public void OnScheduleTimer(string key, TimeSpan delay) => ScheduledTimers.Add((key, delay));
-        public void OnCancelTimer(string key) => CancelledTimers.Add(key);
-        public ILoggingAdapter Log { get; } = NoLogger.Instance;
-    }
-
     private static readonly RequestEndpoint TestEndpoint = new()
     {
         Scheme = "https",
@@ -43,7 +25,8 @@ public sealed class QuicStreamRouterSpec
         return (router, ops);
     }
 
-    private static (ConnectionHandle Handle, ChannelReader<NetworkBuffer> OutboundReader) CreateTestHandle(RequestEndpoint? endpoint = null)
+    private static (ConnectionHandle Handle, ChannelReader<NetworkBuffer> OutboundReader) CreateTestHandle(
+        RequestEndpoint? endpoint = null)
     {
         var key = endpoint ?? TestEndpoint;
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
@@ -118,7 +101,7 @@ public sealed class QuicStreamRouterSpec
     [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_write_to_handle_for_known_request_stream()
     {
-        var (router, ops) = CreateRouter();
+        var (router, _) = CreateRouter();
         var (handle, outboundReader) = CreateTestHandle();
         var ctx = router.GetOrCreateContext(1);
         ctx.Handle = handle;

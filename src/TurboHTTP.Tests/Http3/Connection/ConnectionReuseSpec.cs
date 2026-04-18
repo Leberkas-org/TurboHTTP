@@ -7,18 +7,10 @@ namespace TurboHTTP.Tests.Http3.Connection;
 public sealed class ConnectionReuseSpec : IDisposable
 {
 
-    private readonly X509Certificate2 _singleHostCert;
-    private readonly X509Certificate2 _wildcardCert;
-    private readonly X509Certificate2 _multiSanCert;
-    private readonly X509Certificate2 _cnOnlyCert;
-
-    public ConnectionReuseSpec()
-    {
-        _singleHostCert = CreateSelfSignedCert("example.com");
-        _wildcardCert = CreateSelfSignedCert("*.example.com");
-        _multiSanCert = CreateSelfSignedCert("alpha.example.com", "beta.example.com", "gamma.example.com");
-        _cnOnlyCert = CreateSelfSignedCertCnOnly("cn-only.example.com");
-    }
+    private readonly X509Certificate2 _singleHostCert = CreateSelfSignedCert("example.com");
+    private readonly X509Certificate2 _wildcardCert = CreateSelfSignedCert("*.example.com");
+    private readonly X509Certificate2 _multiSanCert = CreateSelfSignedCert("alpha.example.com", "beta.example.com", "gamma.example.com");
+    private readonly X509Certificate2 _cnOnlyCert = CreateSelfSignedCertCnOnly("cn-only.example.com");
 
     public void Dispose()
     {

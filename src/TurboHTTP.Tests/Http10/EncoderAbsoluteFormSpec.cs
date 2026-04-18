@@ -85,7 +85,7 @@ public sealed class Http10EncoderAbsoluteFormSpec
         var threw = false;
         try
         {
-            Span<byte> buffer = MakeBuffer();
+            var buffer = MakeBuffer();
             Encoder.Encode(request, ref buffer);
         }
         catch (ArgumentException)
@@ -104,7 +104,7 @@ public sealed class Http10EncoderAbsoluteFormSpec
         var threw = false;
         try
         {
-            Span<byte> buffer = MakeBuffer();
+            var buffer = MakeBuffer();
             Encoder.Encode(request, ref buffer);
         }
         catch (ArgumentException)
@@ -123,7 +123,7 @@ public sealed class Http10EncoderAbsoluteFormSpec
         var threw = false;
         try
         {
-            Span<byte> buffer = MakeBuffer();
+            var buffer = MakeBuffer();
             Encoder.Encode(request, ref buffer);
         }
         catch (ArgumentException)

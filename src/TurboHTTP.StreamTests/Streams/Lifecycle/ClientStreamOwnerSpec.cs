@@ -28,7 +28,8 @@ public sealed class ClientStreamOwnerSpec : TestKit
     private static ClientStreamOwner.CreateStreamInstance CreateStreamInstanceMessage()
     {
         var options = new TurboClientOptions { BaseAddress = new Uri("http://localhost") };
-        var factory = new Func<TurboRequestOptions>(() => throw new NotImplementedException("factory not used in tests"));
+        var factory =
+            new Func<TurboRequestOptions>(() => throw new NotImplementedException("factory not used in tests"));
         var desc = PipelineDescriptor.Empty;
 
         var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>(
@@ -49,7 +50,7 @@ public sealed class ClientStreamOwnerSpec : TestKit
     {
         var actor = CreateClientStreamOwner();
         Assert.NotNull(actor);
-        Assert.True(actor.Path.Name.StartsWith("$a"));
+        Assert.StartsWith("$a", actor.Path.Name);
     }
 
     [Fact(Timeout = 10_000)]
@@ -76,9 +77,9 @@ public sealed class ClientStreamOwnerSpec : TestKit
         // This test verifies the actor processes the message without crashing
         try
         {
-            probe.ExpectMsg<ClientStreamOwner.StreamInstanceCreated>(
-                TimeSpan.FromSeconds(5),
-                "Should receive StreamInstanceCreated after creating stream instance");
+            probe.ExpectMsg<ClientStreamOwner.StreamInstanceCreated>(TimeSpan.FromSeconds(5),
+                "Should receive StreamInstanceCreated after creating stream instance",
+                TestContext.Current.CancellationToken);
         }
         catch (Exception ex) when (ex is TimeoutException or ArgumentNullException)
         {
@@ -102,7 +103,7 @@ public sealed class ClientStreamOwnerSpec : TestKit
         probe.Send(actor, failureMessage);
 
         // Give the actor time to process and potentially retry
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         // Actor should still be responsive
         probe.Send(actor, new ClientStreamOwner.Shutdown());
@@ -121,7 +122,7 @@ public sealed class ClientStreamOwnerSpec : TestKit
             var failureMessage = new ClientStreamOwner.StreamInstanceFailed(
                 new InvalidOperationException($"Test failure {i}"), i);
             probe.Send(actor, failureMessage);
-            await Task.Delay(50);
+            await Task.Delay(50, TestContext.Current.CancellationToken);
         }
 
         // Actor should still respond to shutdown
@@ -148,9 +149,9 @@ public sealed class ClientStreamOwnerSpec : TestKit
         var probe = CreateTestProbe();
 
         probe.Send(actor, new ClientStreamOwner.Shutdown());
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         probe.Send(actor, new ClientStreamOwner.Shutdown());
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         // Actor should be stopped after first shutdown
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
@@ -166,7 +167,7 @@ public sealed class ClientStreamOwnerSpec : TestKit
         actor.Tell(new ClientStreamOwner.Shutdown());
 
         // Give time for any cleanup
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         // Should stop within timeout
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(5));
@@ -183,7 +184,7 @@ public sealed class ClientStreamOwnerSpec : TestKit
         probe.Send(actor, "unknown message");
 
         // Actor should still be alive and responsive
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         probe.Send(actor, new ClientStreamOwner.Shutdown());
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
@@ -199,15 +200,16 @@ public sealed class ClientStreamOwnerSpec : TestKit
         actor.Tell(PoisonPill.Instance);
 
         // Give time for poison pill to take effect
-        await Task.Delay(200);
+        await Task.Delay(200, TestContext.Current.CancellationToken);
 
         // Verify actor is dead
         try
         {
             var probe = CreateTestProbe();
             probe.Send(actor, "ping");
-            probe.ExpectMsg<string>(TimeSpan.FromMilliseconds(500), "Message should not be received - actor should be dead");
-            Assert.True(false, "Actor should be dead after PoisonPill");
+            probe.ExpectMsg<string>(TimeSpan.FromMilliseconds(500),
+                "Message should not be received - actor should be dead", TestContext.Current.CancellationToken);
+            Assert.Fail("Actor should be dead after PoisonPill");
         }
         catch
         {

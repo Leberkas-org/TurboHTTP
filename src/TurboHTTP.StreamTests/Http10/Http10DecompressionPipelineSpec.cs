@@ -10,23 +10,11 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http10;
 
-/// <summary>
-/// Verifies that the HTTP/1.0 engine pipeline correctly decompresses
-/// Content-Encoding responses when the <see cref="ContentEncodingBidiStage"/> is composed with the engine.
-/// </summary>
-/// <remarks>
-/// Pipeline under test: ContentEncodingBidiStage ∘ Http10Engine.
-/// RFC 9110 §8.4: Content-Encoding and transparent decompression.
-/// RFC 1945 §10.3: Content-Encoding entity-header in HTTP/1.0.
-/// </remarks>
 public sealed class Http10DecompressionPipelineSpec : EngineTestBase
 {
-    private static readonly Http10Engine Engine = new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static readonly Http10Engine Engine =
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
-    /// <summary>
-    /// Composes ContentEncodingBidiStage atop the Http10Engine so that responses
-    /// are automatically decompressed before reaching the caller.
-    /// </summary>
     private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
         CreateDecompressingEngine()
     {
@@ -41,6 +29,7 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -55,6 +44,7 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
         {
             headers.Append($"Content-Encoding: {contentEncoding}\r\n");
         }
+
         headers.Append("\r\n");
 
         var headerBytes = Encoding.Latin1.GetBytes(headers.ToString());
@@ -63,8 +53,6 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
         body.CopyTo(result, headerBytes.Length);
         return result;
     }
-
-    // gzip decompression
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC1945-10.3")]
@@ -131,8 +119,6 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
         Assert.Equal(original.Length, body.Length);
     }
 
-    // x-gzip decompression
-
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC1945-10.3")]
     public async Task Http10DecompressionPipeline_should_decompress_body_when_content_encoding_is_x_gzip()
@@ -175,8 +161,6 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
 
         Assert.False(response.Content.Headers.Contains("Content-Encoding"));
     }
-
-    // identity encoding (pass-through)
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC1945-10.3")]
@@ -223,8 +207,6 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Equal(expectedBody, body);
     }
-
-    // Content-Type preservation
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC1945-10.3")]

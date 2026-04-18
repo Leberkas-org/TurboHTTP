@@ -11,6 +11,8 @@ using Quic = TurboHTTP.Transport.Quic;
 
 namespace TurboHTTP.StreamTests.Transport;
 
+#pragma warning disable CA1416
+
 public sealed class QuicTransportStateMachineLifecycleSpec
 {
     private sealed class MockTransportOperations : ITransportOperations
@@ -82,8 +84,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         return new ConnectionLease(handle, state);
     }
 
-    // --- Connection Lifecycle: Connect to Typed Streams ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void ConnectionLeaseAcquired_should_set_current_connection_lease()
@@ -121,7 +121,7 @@ public sealed class QuicTransportStateMachineLifecycleSpec
 
         // Now dispatch RequestLeaseAcquired for a specific stream
         var lease = CreateTestLease();
-        sm.Dispatch(new Quic.RequestLeaseAcquired(lease, 1));
+        sm.Dispatch(new RequestLeaseAcquired(lease, 1));
 
         // Should have signaled pull or completed without error
         Assert.NotNull(ops);
@@ -159,8 +159,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
 
         Assert.True(ops.PullInputCount > 0);
     }
-
-    // --- Cleanup and Reconnect Scenarios ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -215,8 +213,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         Assert.Contains("connect-timeout", ops.CancelledTimers);
     }
 
-    // --- Early Data Rejection and Retry ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void EarlyDataRejected_should_requeue_to_first_stream()
@@ -238,8 +234,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
 
         Assert.True(ops.PullInputCount > 0);
     }
-
-    // --- Multiple Concurrent Streams ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
@@ -265,8 +259,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         Assert.True(ops.PullInputCount > 0);
     }
 
-    // --- Untagged Data Routing ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void Untagged_buffer_should_route_to_first_stream_with_handle()
@@ -291,8 +283,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         Assert.True(ops.PullInputCount > 0);
     }
 
-    // --- Error Handling: Acquisition Failures ---
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void AcquisitionFailed_without_pending_connect_should_noop()
@@ -316,8 +306,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         Assert.Contains(ops.PushedOutputs,
             item => item is QuicCloseItem { Kind: QuicCloseKind.ConnectionFailure });
     }
-
-    // --- Connection Migration Detection ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-9")]
@@ -347,8 +335,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         Assert.Contains(ops.PushedOutputs,
             item => item is QuicCloseItem { Kind: QuicCloseKind.WriteFailed });
     }
-
-    // --- Timer Expiry Handling ---
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]

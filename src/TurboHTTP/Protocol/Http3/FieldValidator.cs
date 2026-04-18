@@ -117,28 +117,23 @@ internal static class FieldValidator
     /// These characters could be used for response splitting or header injection
     /// when an intermediary translates between HTTP versions.
     /// </summary>
-    internal static void ValidateFieldValue(string name, string value)
+    private static void ValidateFieldValue(string name, string value)
     {
         for (var i = 0; i < value.Length; i++)
         {
             var c = value[i];
 
-            if (c == '\0')
+            switch (c)
             {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
-                    $"RFC 9114 §10.3: Field '{name}' value contains NUL (0x00) at position {i}");
-            }
-
-            if (c == '\r')
-            {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
-                    $"RFC 9114 §10.3: Field '{name}' value contains CR (0x0D) at position {i}");
-            }
-
-            if (c == '\n')
-            {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
-                    $"RFC 9114 §10.3: Field '{name}' value contains LF (0x0A) at position {i}");
+                case '\0':
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                        $"RFC 9114 §10.3: Field '{name}' value contains NUL (0x00) at position {i}");
+                case '\r':
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                        $"RFC 9114 §10.3: Field '{name}' value contains CR (0x0D) at position {i}");
+                case '\n':
+                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                        $"RFC 9114 §10.3: Field '{name}' value contains LF (0x0A) at position {i}");
             }
         }
     }

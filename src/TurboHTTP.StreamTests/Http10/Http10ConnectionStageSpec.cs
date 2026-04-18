@@ -9,14 +9,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http10;
 
-/// <summary>
-/// Tests the unified HTTP/1.0 connection stage that consolidates encoding, decoding,
-/// and correlation into a single <see cref="Http10ConnectionStage"/>.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Http10ConnectionStage"/>.
-/// RFC 1945: HTTP/1.0 request/response cycle with single in-flight request.
-/// </remarks>
 public sealed class Http10ConnectionStageSpec : StreamTestBase
 {
     private static HttpRequestMessage MakeRequest(string path = "/")

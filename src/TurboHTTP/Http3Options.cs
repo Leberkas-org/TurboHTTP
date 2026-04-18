@@ -75,14 +75,6 @@ public sealed class Http3Options
     public bool AllowServerPush { get; set; }
 
     /// <summary>
-    /// Maximum batch weight in bytes for HTTP/3 frame encoding.
-    /// Frames are accumulated into batches up to this weight before being serialized into a single buffer,
-    /// reducing allocations and memory copies under concurrent load. Higher values increase throughput
-    /// at the cost of latency variance. Default is 64 KiB. TurboHttp-specific.
-    /// </summary>
-    public long MaxBatchWeight { get; set; } = 262_144;
-
-    /// <summary>
     /// Whether to automatically discover HTTP/3 availability via Alt-Svc headers (RFC 7838)
     /// in HTTP/1.1 and HTTP/2 responses. When enabled, Alt-Svc directives advertising "h3"
     /// are cached per-host and subsequent requests to that host are upgraded to HTTP/3

@@ -21,7 +21,7 @@ public sealed class ExtensionToleranceSpec
     [InlineData(0x10)]  // Unassigned
     [InlineData(0xFF)]  // Arbitrary unknown
     [InlineData(0x1234)] // Large unknown type (multi-byte varint)
-    public void UnknownFrameType_IsIgnored_NotConnectionError(long unknownType)
+    public void FrameDecoder_should_ignore_unknown_frame_types(long unknownType)
     {
         var payload = new byte[] { 0xDE, 0xAD };
         var buf = new byte[32];
@@ -34,7 +34,7 @@ public sealed class ExtensionToleranceSpec
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
 
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.Null(frame); // Unknown type → skipped (null sentinel)
         Assert.Equal(offset, consumed);
     }
@@ -47,7 +47,7 @@ public sealed class ExtensionToleranceSpec
     [InlineData(10)]    // 0x1f*10+0x21 = 0x155
     [InlineData(100)]   // 0x1f*100+0x21 = 0xC55
     [InlineData(1000)]  // 0x1f*1000+0x21 = 0x7A39
-    public void GreaseFrameType_IsIgnored(int n)
+    public void FrameDecoder_should_ignore_grease_frame_types(int n)
     {
         var greaseType = 0x1fL * n + 0x21;
         var payload = new byte[] { 0x01, 0x02, 0x03 };
@@ -61,14 +61,14 @@ public sealed class ExtensionToleranceSpec
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
 
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.Null(frame);
         Assert.Equal(offset, consumed);
     }
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void UnknownFrameType_ZeroPayload_IsIgnored()
+    public void FrameDecoder_should_ignore_unknown_frame_type_with_zero_payload()
     {
         var buf = new byte[16];
         var offset = 0;
@@ -78,14 +78,14 @@ public sealed class ExtensionToleranceSpec
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
 
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.Null(frame);
         Assert.Equal(offset, consumed);
     }
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void DecodeAll_FiltersUnknownFrames()
+    public void FrameDecoder_should_filter_unknown_frames_in_decodeall()
     {
         // Build: DATA + unknown(0xFF) + GOAWAY
         var data = new Http3DataFrame(new byte[] { 0xCA, 0xFE });
@@ -122,7 +122,7 @@ public sealed class ExtensionToleranceSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void MultipleConsecutiveUnknownFrames_AllIgnored()
+    public void FrameDecoder_should_ignore_multiple_consecutive_unknown_frames()
     {
         var buf = new byte[64];
         var offset = 0;
@@ -150,7 +150,7 @@ public sealed class ExtensionToleranceSpec
     [InlineData(0x33)]    // Arbitrary unknown
     [InlineData(0xFF)]    // Arbitrary unknown
     [InlineData(0x1234)]  // Large unknown ID
-    public void UnknownSetting_IsIgnored_NotConnectionError(long unknownId)
+    public void Settings_should_ignore_unknown_setting_ids(long unknownId)
     {
         var settings = new Settings();
         settings.Set(unknownId, 42);
@@ -170,7 +170,7 @@ public sealed class ExtensionToleranceSpec
     [InlineData(1)]     // 0x40
     [InlineData(5)]     // 0xBA
     [InlineData(100)]   // 0xC55
-    public void GreaseSettingId_IsPreserved(int n)
+    public void Settings_should_preserve_grease_setting_ids(int n)
     {
         var greaseId = 0x1fL * n + 0x21;
 
@@ -186,7 +186,7 @@ public sealed class ExtensionToleranceSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void MixedKnownAndUnknownSettings_Coexist()
+    public void Settings_should_allow_mixed_known_and_unknown_settings()
     {
         var settings = new Settings();
         settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 8192);
@@ -213,7 +213,7 @@ public sealed class ExtensionToleranceSpec
     [InlineData(0x03)] // SETTINGS_MAX_CONCURRENT_STREAMS
     [InlineData(0x04)] // SETTINGS_INITIAL_WINDOW_SIZE
     [InlineData(0x05)] // SETTINGS_MAX_FRAME_SIZE
-    public void ReservedH2Settings_StillRejected(long reservedId)
+    public void Settings_should_still_reject_reserved_http2_setting_ids(long reservedId)
     {
         // Extension tolerance does NOT apply to specifically reserved HTTP/2 identifiers
         var settings = new Settings();
@@ -223,7 +223,7 @@ public sealed class ExtensionToleranceSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void PartialUnknownFrame_ReassemblesAcrossCalls()
+    public void FrameDecoder_should_reassemble_partial_unknown_frame()
     {
         var payload = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
         var buf = new byte[32];
@@ -241,18 +241,18 @@ public sealed class ExtensionToleranceSpec
         var decoder = new FrameDecoder();
 
         var status = decoder.TryDecode(part1, out var frame, out _);
-        Assert.Equal(Http3DecodeStatus.NeedMoreData, status);
+        Assert.Equal(DecodeStatus.NeedMoreData, status);
         Assert.True(decoder.HasRemainder);
 
         status = decoder.TryDecode(part2, out frame, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.Null(frame); // Still unknown → null
         Assert.False(decoder.HasRemainder);
     }
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void KnownFrameAfterUnknown_DecodedCorrectly()
+    public void FrameDecoder_should_decode_known_frame_after_unknown_frame()
     {
         // Unknown frame followed by DATA frame
         var buf = new byte[64];
@@ -273,12 +273,12 @@ public sealed class ExtensionToleranceSpec
 
         // First decode: unknown frame → null
         var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.Null(frame);
 
         // Second decode: DATA frame → valid
         status = decoder.TryDecode(buf.AsSpan(consumed, offset - consumed), out frame, out _);
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.NotNull(frame);
         var data = Assert.IsType<Http3DataFrame>(frame);
         Assert.Equal(new byte[] { 0xCA, 0xFE }, data.Data.ToArray());
@@ -286,7 +286,7 @@ public sealed class ExtensionToleranceSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-9")]
-    public void UnknownFrame_LargePayload_SkippedCorrectly()
+    public void FrameDecoder_should_skip_unknown_frame_with_large_payload()
     {
         var largePayload = new byte[1024];
         new Random(42).NextBytes(largePayload);
@@ -301,7 +301,7 @@ public sealed class ExtensionToleranceSpec
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
 
-        Assert.Equal(Http3DecodeStatus.Success, status);
+        Assert.Equal(DecodeStatus.Success, status);
         Assert.Null(frame);
         Assert.Equal(offset, consumed);
     }

@@ -81,7 +81,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_RetryImmediately_When_RetryAfterIsZero()
+    public void RetryTimer_should_retry_immediately_when_retry_after_is_zero()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy { RespectRetryAfter = true });
@@ -99,7 +99,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_DelayRetry_When_RetryAfterIsPositive()
+    public void RetryTimer_should_delay_retry_when_retry_after_is_positive()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy { RespectRetryAfter = true });
@@ -123,7 +123,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_PassFinalThrough_When_RetryTimerIsPending()
+    public void RetryTimer_should_pass_final_through_when_retry_timer_is_pending()
     {
         var requestA = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var requestB = new HttpRequestMessage(HttpMethod.Get, "http://example.com/b");
@@ -147,7 +147,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_PrioritizeRetry_OverNewRequest()
+    public void RetryTimer_should_prioritize_retry_over_new_request()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -195,7 +195,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_HaveIndependentRetryBudgets()
+    public void RetryTimer_should_have_independent_retry_budgets()
     {
         var policy = new RetryPolicy { MaxRetries = 2 };
         var requestA = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
@@ -230,7 +230,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_AbsorbRequestUpstreamFailure()
+    public void RetryTimer_should_absorb_request_upstream_failure()
     {
         var stage = new RetryBidiStage(new RetryPolicy());
 
@@ -263,7 +263,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_AbsorbResponseUpstreamFailure()
+    public void RetryTimer_should_absorb_response_upstream_failure()
     {
         var stage = new RetryBidiStage(new RetryPolicy());
 
@@ -298,7 +298,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_KeepOutRequestOpen_When_UpstreamFinishedAndRetryPending()
+    public void RetryTimer_should_keep_out_request_open_when_upstream_finished_and_retry_pending()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());
@@ -351,7 +351,7 @@ public sealed class RetryTimerSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public void Should_CompleteOutRequest_When_UpstreamFinishedAndNoRetryPending()
+    public void RetryTimer_should_complete_out_request_when_upstream_finished_and_no_retry_pending()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy());

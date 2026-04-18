@@ -222,7 +222,7 @@ public sealed class TcpClientProviderSpec
         }
 
         // Verify existing credentials were not replaced
-        Assert.Equal("existing", ((NetworkCredential)proxy.Credentials).UserName);
+        Assert.Equal("existing", ((NetworkCredential)proxy.Credentials!).UserName);
         await provider.DisposeAsync();
     }
 
@@ -304,30 +304,21 @@ public sealed class TcpClientProviderSpec
         await provider.DisposeAsync();
     }
 
-    private sealed class TestProxy : IWebProxy
+    private sealed class TestProxy(Uri? proxyUri, string? bypassedHost = null, ICredentials? credentials = null)
+        : IWebProxy
     {
-        private readonly Uri? _proxyUri;
-        private readonly string? _bypassedHost;
+        public ICredentials? Credentials { get; set; } = credentials;
 
-        public TestProxy(Uri? proxyUri, string? bypassedHost = null, ICredentials? credentials = null)
-        {
-            _proxyUri = proxyUri;
-            _bypassedHost = bypassedHost;
-            Credentials = credentials;
-        }
-
-        public ICredentials? Credentials { get; set; }
-
-        public Uri? GetProxy(Uri destination) => _proxyUri;
+        public Uri? GetProxy(Uri destination) => proxyUri;
 
         public bool IsBypassed(Uri host)
         {
-            if (_bypassedHost is null)
+            if (bypassedHost is null)
             {
                 return false;
             }
 
-            return host.Host == _bypassedHost;
+            return host.Host == bypassedHost;
         }
     }
 }

@@ -9,14 +9,6 @@ using SysEncoding = System.Text.Encoding;
 
 namespace TurboHTTP.StreamTests.Http11;
 
-/// <summary>
-/// Tests the unified HTTP/1.1 connection stage that consolidates encoding, decoding,
-/// correlation, and pipelining into a single <see cref="Http11ConnectionStage"/>.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Http11ConnectionStage"/>.
-/// RFC 9112: HTTP/1.1 request/response cycle with pipelining support.
-/// </remarks>
 public sealed class Http11ConnectionStageSpec : StreamTestBase
 {
     private static HttpRequestMessage MakeRequest(string path = "/")

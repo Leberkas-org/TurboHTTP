@@ -69,7 +69,7 @@ public sealed class QpackTableSyncEdgeCasesSpec
         var encoder = sync.Encoder;
 
         // Create and block first two streams with custom headers that will be inserted
-        for (int i = 0; i < 2; i++)
+        for (var i = 0; i < 2; i++)
         {
             var headers = new List<(string, string)> { ($"x-header-{i}", $"value-{i}") };
             var encoded = encoder.Encode(headers);
@@ -200,7 +200,7 @@ public sealed class QpackTableSyncEdgeCasesSpec
         var encoder = sync.Encoder;
 
         // Block multiple streams
-        for (int streamId = 0; streamId < 3; streamId++)
+        for (var streamId = 0; streamId < 3; streamId++)
         {
             var headers = new List<(string, string)> { ($"x-stream-{streamId}", $"val-{streamId}") };
             var encoded = encoder.Encode(headers);
@@ -270,7 +270,7 @@ public sealed class QpackTableSyncEdgeCasesSpec
         var encodedBlocks = new List<ReadOnlyMemory<byte>>();
         var allInstructions = new List<byte>();
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var headers = new List<(string, string)> { ($"x-stream-{i}", $"val-{i}") };
             var encoded = encoder.Encode(headers);
@@ -279,7 +279,7 @@ public sealed class QpackTableSyncEdgeCasesSpec
         }
 
         // Block all
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             sync.TryDecodeOrBlock(encodedBlocks[i], streamId: i);
         }
@@ -444,7 +444,7 @@ public sealed class QpackTableSyncEdgeCasesSpec
 
         Assert.Equal(0, sync.BlockedStreamCount);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var headers = new List<(string, string)> { ($"x-header-{i}", $"value-{i}") };
             var encoded = encoder.Encode(headers);
@@ -453,7 +453,7 @@ public sealed class QpackTableSyncEdgeCasesSpec
         }
 
         // Resolve some
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var headers = new List<(string, string)> { ($"x-header-{i}", $"value-{i}") };
             encoder.Encode(headers);

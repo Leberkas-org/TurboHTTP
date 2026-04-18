@@ -10,11 +10,6 @@ using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
 
 namespace TurboHTTP.StreamTests.Http2;
 
-/// <summary>
-/// Tests stream acquisition and signalling in the HTTP/2 connection stage per RFC 9113.
-/// Verifies that request frames are forwarded to the server and that stream-open signals are emitted correctly.
-/// </summary>
-[Trait("RFC", "RFC9113-5.1")]
 public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 {
     private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunWithRequestsAsync(
@@ -214,6 +209,6 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var maxStreamsSignal = signals.OfType<MaxConcurrentStreamsItem>().SingleOrDefault();
         Assert.Equal(128, maxStreamsSignal.MaxStreams);
-        Assert.Equal(default(RequestEndpoint), maxStreamsSignal.Key);
+        Assert.Equal(default, maxStreamsSignal.Key);
     }
 }

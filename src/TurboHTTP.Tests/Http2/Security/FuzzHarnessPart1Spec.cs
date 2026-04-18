@@ -104,7 +104,7 @@ public sealed class Http2FuzzHarnessPart1Spec
 
         for (var i = 0; i < 50; i++)
         {
-            var streamId = (rng.Next(1, 20) * 2) - 1; // Odd client stream IDs 1..39
+            var streamId = rng.Next(1, 20) * 2 - 1; // Odd client stream IDs 1..39
             var headersFrame = BuildHeadersFrame(streamId, Status200HpackBlock, endStream: false);
             AssertDecodeNeverCrashes(decoder, headersFrame);
 

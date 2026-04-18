@@ -390,7 +390,7 @@ public sealed class ConnectionLeaseSpec
         using var state = CreateState();
         var lease = new ConnectionLease(handle, state);
 
-        await Task.Delay(10);
+        await Task.Delay(10, TestContext.Current.CancellationToken);
         Assert.True(lease.IsExpired(TimeSpan.FromMilliseconds(1)));
     }
 
@@ -428,7 +428,7 @@ public sealed class ConnectionLeaseSpec
         using var state = CreateState();
         var lease = new ConnectionLease(handle, state);
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             lease.MarkBusy();
             Assert.Equal(i + 1, lease.ActiveStreams);
@@ -443,12 +443,12 @@ public sealed class ConnectionLeaseSpec
         using var state = CreateState();
         var lease = new ConnectionLease(handle, state);
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             lease.MarkBusy();
         }
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             lease.MarkIdle();
             Assert.Equal(4 - i, lease.ActiveStreams);
@@ -509,7 +509,7 @@ public sealed class ConnectionLeaseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("Coverage", "ConnectionLease")]
-    public void Token_should_allow_waiting_for_disposal()
+    public async Task Token_should_allow_waiting_for_disposal()
     {
         var handle = CreateHandle(HttpVersion.Version11);
         using var state = CreateState();
@@ -520,10 +520,10 @@ public sealed class ConnectionLeaseSpec
         {
             Thread.Sleep(100);
             lease.Dispose();
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.False(token.IsCancellationRequested);
-        disposeTask.Wait();
+        await disposeTask;
         Assert.True(token.IsCancellationRequested);
     }
 }

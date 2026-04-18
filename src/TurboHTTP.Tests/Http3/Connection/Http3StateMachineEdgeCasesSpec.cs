@@ -1,4 +1,3 @@
-using System.Buffers;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Streams;

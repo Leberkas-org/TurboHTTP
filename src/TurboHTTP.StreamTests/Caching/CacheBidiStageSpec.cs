@@ -9,18 +9,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Caching;
 
-/// <summary>
-/// RFC 9111 — CacheBidiStage request and response direction tests.
-/// Verifies that the request direction performs cache lookup (with short-circuit for hits)
-/// and the response direction stores cacheable responses, handles 304 merges, and invalidates
-/// on unsafe methods.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="CacheBidiStage"/>.
-/// RFC 9111 §4.2: Cache freshness evaluation.
-/// RFC 9111 §4.3: Conditional requests and 304 merging.
-/// RFC 9111 §4.4: Cache invalidation after unsafe methods.
-/// </remarks>
 public sealed class CacheBidiStageSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
@@ -186,9 +174,6 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         return response;
     }
 
-
-    // Request direction: pass-through tests
-
     [Trait("RFC", "RFC9111-4")]
     [Fact(Timeout = 10_000)]
     public async Task CacheBidiStage_should_pass_through_request_when_store_is_null()
@@ -266,9 +251,6 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Same(req2, result2);
     }
 
-
-    // Request direction: cache hit (short-circuit)
-
     [Trait("RFC", "RFC9111-4.2")]
     [Fact(Timeout = 10_000)]
     public async Task CacheBidiStage_should_short_circuit_when_cache_hit_fresh()
@@ -282,9 +264,6 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         // The request was NOT forwarded — it was a cache hit
         Assert.Empty(forwardedRequests);
     }
-
-
-    // Response direction tests
 
     [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
@@ -404,9 +383,6 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         var lookup = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data");
         Assert.Null(store.Get(lookup));
     }
-
-
-    // Bidirectional integration tests
 
     [Trait("RFC", "RFC9111-4")]
     [Fact(Timeout = 10_000)]

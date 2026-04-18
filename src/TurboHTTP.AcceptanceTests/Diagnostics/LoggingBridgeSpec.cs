@@ -65,11 +65,6 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// Builds a fully DI-wired client, mirroring a user's Program.cs / Startup setup.
-    /// Registers <see cref="ILoggerFactory"/> and <see cref="ActorSystem"/> as singletons
-    /// so that <see cref="ITurboHttpClientFactory"/> picks them up via normal DI resolution.
-    /// </summary>
     private ITurboHttpClient BuildClientViaUserDI(int serverPort, bool withTurboTrace = false)
     {
         _capture = new CapturingLoggerProvider();
@@ -128,11 +123,6 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
         return _client;
     }
 
-    /// <summary>
-    /// Starts a minimal in-process HTTP/1.1 server on a random loopback port.
-    /// Accepts connections and responds with HTTP/1.1 200 OK for each request.
-    /// No external server or Kestrel dependency required.
-    /// </summary>
     private int StartFakeTcpServer()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -261,9 +251,6 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
             e.Message.Contains("Connection opened:", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>
-    /// A simple <see cref="ILoggerProvider"/> that captures all log entries for assertion.
-    /// </summary>
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
         public ConcurrentBag<LogEntry> Entries { get; } = [];

@@ -10,7 +10,7 @@ public sealed class SettingsFrameSpec
     [InlineData(Http3SettingsIdentifier.QpackMaxTableCapacity, 0x01)]
     [InlineData(Http3SettingsIdentifier.MaxFieldSectionSize, 0x06)]
     [InlineData(Http3SettingsIdentifier.QpackBlockedStreams, 0x07)]
-    public void WellKnownSettingIds_HaveCorrectValues(long actual, long expected)
+    public void Settings_should_have_correct_values_for_well_known_ids(long actual, long expected)
     {
         Assert.Equal(expected, actual);
     }
@@ -21,7 +21,7 @@ public sealed class SettingsFrameSpec
     [InlineData(Http3SettingsIdentifier.ReservedH2MaxConcurrentStreams)]
     [InlineData(Http3SettingsIdentifier.ReservedH2InitialWindowSize)]
     [InlineData(Http3SettingsIdentifier.ReservedH2MaxFrameSize)]
-    public void ReservedH2Settings_AreDetected(long identifier)
+    public void Settings_should_detect_reserved_http2_settings(long identifier)
     {
         Assert.True(Http3SettingsIdentifier.IsReservedH2Setting(identifier));
     }
@@ -29,7 +29,7 @@ public sealed class SettingsFrameSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7.2.4")]
-    public void Settings_SerializeDeserialize_Roundtrip()
+    public void Settings_should_roundtrip_serialize_deserialize()
     {
         var settings = new Settings();
         settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 8192);
@@ -47,7 +47,7 @@ public sealed class SettingsFrameSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7.2.4")]
-    public void EmptySettings_SerializeToZeroBytes()
+    public void Settings_should_serialize_to_zero_bytes_when_empty()
     {
         var settings = new Settings();
         var payload = settings.Serialize();
@@ -60,7 +60,7 @@ public sealed class SettingsFrameSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7.2.4")]
-    public void UnknownSettings_PreservedThroughRoundTrip()
+    public void Settings_should_preserve_unknown_settings_through_roundtrip()
     {
         var settings = new Settings();
         settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 1024);
@@ -83,7 +83,7 @@ public sealed class SettingsFrameSpec
     [InlineData(0x03)] // SETTINGS_MAX_CONCURRENT_STREAMS
     [InlineData(0x04)] // SETTINGS_INITIAL_WINDOW_SIZE
     [InlineData(0x05)] // SETTINGS_MAX_FRAME_SIZE
-    public void Set_ReservedH2Identifier_Throws(long reservedId)
+    public void Settings_should_throw_when_setting_reserved_http2_identifier(long reservedId)
     {
         var settings = new Settings();
         var ex = Assert.Throws<Http3Exception>(() => settings.Set(reservedId, 0));
@@ -97,7 +97,7 @@ public sealed class SettingsFrameSpec
     [InlineData(0x03)]
     [InlineData(0x04)]
     [InlineData(0x05)]
-    public void Deserialize_ReservedH2Identifier_Throws(long reservedId)
+    public void Settings_should_throw_when_deserializing_reserved_http2_identifier(long reservedId)
     {
         var payload = BuildSingleSettingPayload(reservedId, 0);
         var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(payload));
@@ -107,7 +107,7 @@ public sealed class SettingsFrameSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7.2.4")]
-    public void Deserialize_DuplicateIdentifier_Throws()
+    public void Settings_should_throw_when_deserializing_duplicate_identifier()
     {
         var payload = BuildDuplicatePayload();
         var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(payload));
@@ -142,7 +142,7 @@ public sealed class SettingsFrameSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7.2.4")]
-    public void AbsentSettings_ReturnDefaults()
+    public void Settings_should_return_defaults_when_absent()
     {
         var settings = new Settings();
         Assert.Null(settings.MaxFieldSectionSize);
@@ -154,7 +154,7 @@ public sealed class SettingsFrameSpec
 
     [Fact]
     [Trait("RFC", "RFC9114-7.2.4")]
-    public void ToFrame_CreatesValidFrame()
+    public void Settings_should_create_valid_frame_via_toframe()
     {
         var settings = new Settings();
         settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 16384);

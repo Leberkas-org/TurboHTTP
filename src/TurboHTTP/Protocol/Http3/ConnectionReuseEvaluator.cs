@@ -32,8 +32,8 @@ internal static class ConnectionReuseEvaluator
     /// True if the server has sent a GOAWAY frame on this connection.
     /// RFC 9114 §5.2: after GOAWAY, no new requests should be sent.
     /// </param>
-    /// <returns>A <see cref="Http3ConnectionReuseDecision"/> indicating whether reuse is allowed.</returns>
-    public static Http3ConnectionReuseDecision Evaluate(
+    /// <returns>A <see cref="ConnectionReuseDecision"/> indicating whether reuse is allowed.</returns>
+    public static ConnectionReuseDecision Evaluate(
         string connectionScheme,
         string connectionHost,
         int connectionPort,
@@ -46,7 +46,7 @@ internal static class ConnectionReuseEvaluator
         // RFC 9114 §5.2: After receiving GOAWAY, clients MUST NOT send new requests.
         if (isGoingAway)
         {
-            return Http3ConnectionReuseDecision.NewConnection(
+            return ConnectionReuseDecision.NewConnection(
                 "RFC 9114 §5.2: Server sent GOAWAY; new requests must use a new connection.");
         }
 
@@ -55,7 +55,7 @@ internal static class ConnectionReuseEvaluator
         if (IsSameOrigin(connectionScheme, connectionHost, connectionPort,
                 targetScheme, targetHost, targetPort))
         {
-            return Http3ConnectionReuseDecision.Reuse(
+            return ConnectionReuseDecision.Reuse(
                 "RFC 9114 §3.3: Same origin — connection reuse permitted.");
         }
 
@@ -63,7 +63,7 @@ internal static class ConnectionReuseEvaluator
         // is valid for the target hostname.
         if (serverCertificate is null)
         {
-            return Http3ConnectionReuseDecision.NewConnection(
+            return ConnectionReuseDecision.NewConnection(
                 "RFC 9114 §3.3: No server certificate available; cannot verify target hostname coverage.");
         }
 
@@ -71,23 +71,23 @@ internal static class ConnectionReuseEvaluator
         // A QUIC connection to port 443 cannot serve requests to port 8443.
         if (!string.Equals(connectionScheme, targetScheme, StringComparison.OrdinalIgnoreCase))
         {
-            return Http3ConnectionReuseDecision.NewConnection(
+            return ConnectionReuseDecision.NewConnection(
                 "RFC 9114 §3.3: Scheme mismatch — connection reuse not permitted.");
         }
 
         if (connectionPort != targetPort)
         {
-            return Http3ConnectionReuseDecision.NewConnection(
+            return ConnectionReuseDecision.NewConnection(
                 "RFC 9114 §3.3: Port mismatch — connection reuse not permitted.");
         }
 
         if (!CoversHostname(serverCertificate, targetHost))
         {
-            return Http3ConnectionReuseDecision.NewConnection(
+            return ConnectionReuseDecision.NewConnection(
                 "RFC 9114 §3.3: Server certificate does not cover target hostname; new connection required.");
         }
 
-        return Http3ConnectionReuseDecision.Reuse(
+        return ConnectionReuseDecision.Reuse(
             $"RFC 9114 §3.3: Certificate covers '{targetHost}' — cross-origin connection reuse permitted.");
     }
 
@@ -126,7 +126,7 @@ internal static class ConnectionReuseEvaluator
         return cn is not null && MatchesHostname(cn, hostname);
     }
 
-    internal static List<string> GetSubjectAlternativeNames(X509Certificate2 certificate)
+    private static List<string> GetSubjectAlternativeNames(X509Certificate2 certificate)
     {
         var result = new List<string>();
 
@@ -167,7 +167,7 @@ internal static class ConnectionReuseEvaluator
         return result;
     }
 
-    internal static string? GetCommonName(X509Certificate2 certificate)
+    private static string? GetCommonName(X509Certificate2 certificate)
     {
         var subject = certificate.Subject;
         const string cnPrefix = "CN=";
@@ -215,7 +215,7 @@ internal static class ConnectionReuseEvaluator
 /// <summary>
 /// Result of evaluating whether an HTTP/3 connection can be reused.
 /// </summary>
-public sealed record Http3ConnectionReuseDecision
+internal sealed record ConnectionReuseDecision
 {
     /// <summary>Whether the existing connection can be reused for the new request.</summary>
     public bool CanReuse { get; private init; }
@@ -224,10 +224,10 @@ public sealed record Http3ConnectionReuseDecision
     public string Reason { get; private init; } = string.Empty;
 
     /// <summary>Creates a reuse-allowed decision.</summary>
-    public static Http3ConnectionReuseDecision Reuse(string reason) =>
+    public static ConnectionReuseDecision Reuse(string reason) =>
         new() { CanReuse = true, Reason = reason };
 
     /// <summary>Creates a new-connection-required decision.</summary>
-    public static Http3ConnectionReuseDecision NewConnection(string reason) =>
+    public static ConnectionReuseDecision NewConnection(string reason) =>
         new() { CanReuse = false, Reason = reason };
 }

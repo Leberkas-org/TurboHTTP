@@ -4,14 +4,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http11;
 
-/// <summary>
-/// Tests HTTP/1.1 connection management behaviour via the full engine per RFC 9112.
-/// Verifies that Connection: close, keep-alive, and version downgrade semantics are correctly handled.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="TestHttp11Decoder"/> and connection management logic.
-/// RFC 9112 §9.6: HTTP/1.1 connection option handling and persistent connection negotiation.
-/// </remarks>
 public sealed class Http11KeepAliveCloseSpec : EngineTestBase
 {
     private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));

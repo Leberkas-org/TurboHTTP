@@ -1,47 +1,22 @@
-using System.Net.Http;
-using System.Threading.Channels;
-using Akka.Actor;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Lifecycle;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams.Lifecycle;
 
-/// <summary>
-/// Tests <see cref="ClientStreamManager"/>: channel lifecycle, owner actor coordination,
-/// resource cleanup, and graceful shutdown.
-/// </summary>
-/// <remarks>
-/// ClientStreamManager wraps the ClientStreamOwner actor and manages the request/response
-/// channels that serve as the boundary between the client API and the Akka.Streams pipeline.
-/// </remarks>
-public sealed class ClientStreamManagerSpec : IAsyncLifetime
+public sealed class ClientStreamManagerSpec : StreamTestBase
 {
-    private ActorSystem? _system;
-
-    public ValueTask InitializeAsync()
-    {
-        _system = ActorSystem.Create("client-stream-manager-tests");
-        return ValueTask.CompletedTask;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_system is not null)
-        {
-            await _system.Terminate();
-        }
-    }
-
     private ClientStreamManager CreateStreamManager(
         TurboClientOptions? clientOptions = null,
         Func<TurboRequestOptions>? requestOptionsFactory = null,
         PipelineDescriptor? pipeline = null)
     {
         var options = clientOptions ?? new TurboClientOptions { BaseAddress = new Uri("http://localhost") };
-        var factory = requestOptionsFactory ?? new Func<TurboRequestOptions>(() => throw new NotImplementedException("factory not used in tests"));
+        var factory = requestOptionsFactory ??
+                      (() => throw new NotImplementedException("factory not used in tests"));
         var desc = pipeline ?? PipelineDescriptor.Empty;
 
-        return new ClientStreamManager(options, factory, _system!, desc);
+        return new ClientStreamManager(options, factory, Sys, desc);
     }
 
     [Fact(Timeout = 10_000)]
@@ -73,68 +48,54 @@ public sealed class ClientStreamManagerSpec : IAsyncLifetime
         var manager = CreateStreamManager();
         Assert.NotNull(manager.Responses);
 
-        // Channel should be readable (even if no responses are written)
         var reader = manager.Responses;
         Assert.NotNull(reader);
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task ClientStreamManager_should_dispose_without_error()
+    public void ClientStreamManager_should_dispose_without_error()
     {
         var manager = CreateStreamManager();
         manager.Dispose();
 
-        // After dispose, channels should be completed
-        await Task.Delay(100);
-
-        // Attempting to write should return false (channel completed)
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
         var written = manager.Requests.TryWrite(request);
         Assert.False(written, "Should not be able to write after dispose");
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task ClientStreamManager_should_handle_multiple_dispose_calls()
+    public void ClientStreamManager_should_handle_multiple_dispose_calls()
     {
         var manager = CreateStreamManager();
 
         manager.Dispose();
-        manager.Dispose();  // Should be idempotent
+        manager.Dispose();
         manager.Dispose();
 
-        // No exception should be thrown
-        await Task.Delay(100);
         Assert.True(true);
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task ClientStreamManager_should_complete_channels_on_dispose()
+    public void ClientStreamManager_should_complete_channels_on_dispose()
     {
         var manager = CreateStreamManager();
 
-        // Write some data before dispose
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
         manager.Requests.TryWrite(request);
 
         manager.Dispose();
 
-        await Task.Delay(100);
-
-        // Channels should be completed
         var completedRequests = manager.Requests.TryComplete();
         Assert.False(completedRequests, "Request channel should already be completed");
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task ClientStreamManager_should_allow_reading_response_channel_after_disposal()
+    public void ClientStreamManager_should_allow_reading_response_channel_after_disposal()
     {
         var manager = CreateStreamManager();
 
         manager.Dispose();
 
-        await Task.Delay(100);
-
-        // Reader should still be accessible (even if channel is completed)
         var reader = manager.Responses;
         Assert.NotNull(reader);
     }
@@ -146,11 +107,9 @@ public sealed class ClientStreamManagerSpec : IAsyncLifetime
 
         var terminateTask = manager.WhenTerminatedAsync(TimeSpan.FromSeconds(5));
 
-        // Dispose to trigger shutdown
         manager.Dispose();
 
-        // Should complete within timeout
-        await terminateTask.WaitAsync(TimeSpan.FromSeconds(6));
+        await terminateTask.WaitAsync(TimeSpan.FromSeconds(6), TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000)]
@@ -158,16 +117,14 @@ public sealed class ClientStreamManagerSpec : IAsyncLifetime
     {
         var manager = CreateStreamManager();
 
-        // Dispose completes the channels
         manager.Dispose();
 
-        // Trying to complete them again should be safe
         var requestsCompleted = manager.Requests.TryComplete();
         Assert.False(requestsCompleted);
     }
 
     [Fact(Timeout = 15_000)]
-    public async Task ClientStreamManager_should_allow_configuration_before_disposal()
+    public void ClientStreamManager_should_allow_configuration_before_disposal()
     {
         var clientOpts = new TurboClientOptions
         {
@@ -176,7 +133,6 @@ public sealed class ClientStreamManagerSpec : IAsyncLifetime
 
         var manager = CreateStreamManager(clientOptions: clientOpts);
 
-        // Should be fully functional before disposal
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/test")
         {
             Version = new Version(1, 1)
@@ -184,17 +140,14 @@ public sealed class ClientStreamManagerSpec : IAsyncLifetime
         Assert.True(manager.Requests.TryWrite(request));
 
         manager.Dispose();
-        await Task.Delay(100);
     }
 
     [Fact(Timeout = 10_000)]
     public void ClientStreamManager_should_create_owner_actor_synchronously()
     {
-        // Verify that creating the manager doesn't block or throw
         var manager = CreateStreamManager();
         Assert.NotNull(manager);
 
-        // Owner actor should be created and running
         Assert.NotNull(manager.Requests);
         Assert.NotNull(manager.Responses);
 
@@ -208,34 +161,29 @@ public sealed class ClientStreamManagerSpec : IAsyncLifetime
 
         manager.Dispose();
 
-        // Rapid termination request
         var terminateTask = manager.WhenTerminatedAsync(TimeSpan.FromSeconds(2));
 
         try
         {
-            await terminateTask.WaitAsync(TimeSpan.FromSeconds(3));
+            await terminateTask.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
         }
         catch (TimeoutException)
         {
-            Assert.True(false, "Should have terminated within timeout");
+            Assert.Fail("Should have terminated within timeout");
         }
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task ClientStreamManager_should_maintain_channel_semantics_on_disposal()
+    public void ClientStreamManager_should_maintain_channel_semantics_on_disposal()
     {
         var manager = CreateStreamManager();
 
-        // Write a request before disposal
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
         var written = manager.Requests.TryWrite(request);
         Assert.True(written);
 
         manager.Dispose();
 
-        await Task.Delay(100);
-
-        // Request channel should be completed
         Assert.False(manager.Requests.TryComplete());
     }
 }

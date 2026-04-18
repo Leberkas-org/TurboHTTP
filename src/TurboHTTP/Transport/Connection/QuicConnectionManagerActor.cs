@@ -29,7 +29,7 @@ namespace TurboHTTP.Transport.Connection;
 [SupportedOSPlatform("windows")]
 internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 {
-    internal sealed record Acquire(
+    private sealed record Acquire(
         QuicOptions Options,
         RequestEndpoint Endpoint,
         TaskCompletionSource<QuicConnectionLease> Tcs,
@@ -46,22 +46,16 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         public static readonly Evict Instance = new();
     }
 
-    private sealed class HostState
+    private sealed class HostState(RequestEndpoint endpoint, int maxConnectionsPerHost)
     {
-        public readonly RequestEndpoint Endpoint;
-        public readonly int MaxConnections;
+        public readonly RequestEndpoint Endpoint = endpoint;
+        public readonly int MaxConnections = maxConnectionsPerHost;
 
         public readonly List<QuicConnectionLease> Leases = [];
 
         public readonly Queue<Acquire> Pending = new();
 
         public int Establishing;
-
-        public HostState(RequestEndpoint endpoint, int maxConnectionsPerHost)
-        {
-            Endpoint = endpoint;
-            MaxConnections = maxConnectionsPerHost;
-        }
     }
 
     private readonly Dictionary<RequestEndpoint, HostState> _hosts = new();
@@ -100,7 +94,8 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     {
     }
 
-    public QuicConnectionManagerActor(IQuicConnectionFactory factory, TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerHost = 1)
+    public QuicConnectionManagerActor(IQuicConnectionFactory factory, TimeSpan idleTimeout, TimeSpan connectionLifetime,
+        int maxConnectionsPerHost = 1)
     {
         _factory = factory;
         _idleTimeout = idleTimeout;
@@ -288,7 +283,8 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         {
             // Evict dead leases, idle-expired leases, or lifetime-expired leases
             var idle = lease.ActiveStreams == 0;
-            if (!lease.IsAlive || (idle && now - lease.LastActivity > _idleTimeout) || (idle && lease.IsExpired(_connectionLifetime)))
+            if (!lease.IsAlive || (idle && now - lease.LastActivity > _idleTimeout) ||
+                (idle && lease.IsExpired(_connectionLifetime)))
             {
                 toEvict.Add(lease);
             }
@@ -393,6 +389,7 @@ internal sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
                     {
                         return;
                     }
+
                     lease.MarkIdle(); // cancelled — try next pending
                 }
 

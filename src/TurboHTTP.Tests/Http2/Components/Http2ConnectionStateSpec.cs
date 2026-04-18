@@ -438,7 +438,7 @@ public sealed class Http2ConnectionStateSpec
         state.OnInboundData(streamId: 2, dataLength: Chunk);
         state.OnInboundData(streamId: 3, dataLength: Chunk);
 
-        Assert.Equal(65535 - (Chunk * 3), state.RecvConnectionWindow);
+        Assert.Equal(65535 - Chunk * 3, state.RecvConnectionWindow);
     }
 
     [Fact(Timeout = 5000)]

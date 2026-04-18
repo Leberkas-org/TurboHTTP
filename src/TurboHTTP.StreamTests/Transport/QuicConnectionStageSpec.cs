@@ -1,23 +1,10 @@
-using System.Net;
 using Akka.Actor;
-using Akka.Streams;
-using Akka.Streams.Stage;
-using Akka.Streams.TestKit;
-using TurboHTTP.Internal;
 using TurboHTTP.Transport.Quic;
 
 namespace TurboHTTP.StreamTests.Transport;
 
 public sealed class QuicConnectionStageSpec
 {
-    private static readonly RequestEndpoint TestEndpoint = new()
-    {
-        Scheme = "https",
-        Host = "localhost",
-        Port = 443,
-        Version = HttpVersion.Version30
-    };
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114")]
     public void Stage_should_create_successfully()
@@ -61,7 +48,7 @@ public sealed class QuicConnectionStageSpec
     [Trait("RFC", "RFC9114")]
     public void Stage_should_support_multiple_instantiation()
     {
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var stage = new QuicConnectionStage(
                 ActorRefs.Nobody,
@@ -95,7 +82,7 @@ public sealed class QuicConnectionStageSpec
             new TurboClientOptions());
 
         var shape = stage.Shape;
-        Assert.Same(shape, stage.Shape);  // Shape should be consistent
+        Assert.Same(shape, stage.Shape); // Shape should be consistent
     }
 
     [Fact(Timeout = 5000)]

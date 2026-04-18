@@ -1,6 +1,7 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Protocol.Http2.Hpack;
+using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages;
 
@@ -97,7 +98,7 @@ internal sealed class StateMachine
     }
 
     /// <summary>
-    /// Processes a single decoded HTTP/2 frame. Calls <see cref="IHttp2StageOperations"/>
+    /// Processes a single decoded HTTP/2 frame. Calls <see cref="IStageOperations"/>
     /// for responses, signals, and warnings. Sets <see cref="ResponseProduced"/> if a response was generated.
     /// Returns false if a flow control violation occurred (caller should stop processing remaining frames).
     /// </summary>
@@ -554,6 +555,12 @@ internal sealed class StateMachine
             response.RequestMessage = req;
         }
 
+        var partialContentResult = PartialContentValidator.Validate(response);
+        if (!partialContentResult.IsValid)
+        {
+            _ops.OnWarning(partialContentResult.ErrorMessage!);
+        }
+
         ResponseProduced = true;
         _ops.OnResponse(response);
 
@@ -579,6 +586,12 @@ internal sealed class StateMachine
         if (_correlationMap.Remove(streamId, out var req))
         {
             response.RequestMessage = req;
+        }
+
+        var partialContentResult = PartialContentValidator.Validate(response);
+        if (!partialContentResult.IsValid)
+        {
+            _ops.OnWarning(partialContentResult.ErrorMessage!);
         }
 
         ResponseProduced = true;

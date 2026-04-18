@@ -36,8 +36,8 @@ internal sealed class StateMachine
 
     /// <summary>Number of requests currently buffered or in-flight (used for discard logging).</summary>
     public int PendingRequestCount => _reconnecting
-        ? (_reconnectBufferedRequest is not null ? 1 : 0)
-        : (_inFlightRequest is not null ? 1 : 0);
+        ? _reconnectBufferedRequest is not null ? 1 : 0
+        : _inFlightRequest is not null ? 1 : 0;
 
     /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }

@@ -283,7 +283,8 @@ public sealed class TurboClientOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void EffectiveServerCertificateValidationCallback_WhenDangerousAcceptAnyServerCertificateFalse_ReturnsCustomCallback()
+    public void
+        EffectiveServerCertificateValidationCallback_WhenDangerousAcceptAnyServerCertificateFalse_ReturnsCustomCallback()
     {
         var options = new TurboClientOptions();
         RemoteCertificateValidationCallback? customCallback = (_, _, _, _) => false;
@@ -297,7 +298,8 @@ public sealed class TurboClientOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void EffectiveServerCertificateValidationCallback_WhenDangerousAcceptAnyServerCertificateTrue_ReturnsAlwaysTrue()
+    public void
+        EffectiveServerCertificateValidationCallback_WhenDangerousAcceptAnyServerCertificateTrue_ReturnsAlwaysTrue()
     {
         var options = new TurboClientOptions();
         options.ServerCertificateValidationCallback = (_, _, _, _) => false;
@@ -307,12 +309,13 @@ public sealed class TurboClientOptionsSpec
 
         Assert.NotNull(effective);
         // The returned callback should always return true regardless of input
-        var result = effective.Invoke(null, null, null, System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors);
+        var result = effective.Invoke(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors);
         Assert.True(result);
     }
 
     [Fact(Timeout = 5000)]
-    public void EffectiveServerCertificateValidationCallback_WhenDangerousAcceptAnyServerCertificateTrue_IgnoresServerCertificateValidationCallback()
+    public void
+        EffectiveServerCertificateValidationCallback_WhenDangerousAcceptAnyServerCertificateTrue_IgnoresServerCertificateValidationCallback()
     {
         var options = new TurboClientOptions();
         var callbackCalled = false;
@@ -324,7 +327,7 @@ public sealed class TurboClientOptionsSpec
         options.DangerousAcceptAnyServerCertificate = true;
 
         var effective = options.EffectiveServerCertificateValidationCallback;
-        _ = effective?.Invoke(null, null, null, System.Net.Security.SslPolicyErrors.None);
+        _ = effective?.Invoke(null!, null, null, SslPolicyErrors.None);
 
         Assert.False(callbackCalled);
     }
@@ -339,8 +342,8 @@ public sealed class TurboClientOptionsSpec
 
         Assert.NotNull(effective);
         // Default callback returns true only when no policy errors
-        var resultValid = effective!.Invoke(null, null, null, System.Net.Security.SslPolicyErrors.None);
-        var resultInvalid = effective.Invoke(null, null, null, System.Net.Security.SslPolicyErrors.RemoteCertificateNameMismatch);
+        var resultValid = effective!.Invoke(null!, null, null, SslPolicyErrors.None);
+        var resultInvalid = effective.Invoke(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch);
 
         Assert.True(resultValid);
         Assert.False(resultInvalid);
@@ -349,15 +352,18 @@ public sealed class TurboClientOptionsSpec
     [Fact(Timeout = 5000)]
     public void EffectiveServerCertificateValidationCallback_TogglingDangerous_SwitchesCallback()
     {
-        var options = new TurboClientOptions();
-        options.ServerCertificateValidationCallback = (_, _, _, _) => false;
+        var options = new TurboClientOptions
+        {
+            ServerCertificateValidationCallback = (_, _, _, _) => false
+        };
 
         var effectiveWhenSafe = options.EffectiveServerCertificateValidationCallback;
         options.DangerousAcceptAnyServerCertificate = true;
         var effectiveWhenDangerous = options.EffectiveServerCertificateValidationCallback;
 
-        var safeResult = effectiveWhenSafe?.Invoke(null, null, null, System.Net.Security.SslPolicyErrors.None);
-        var dangerousResult = effectiveWhenDangerous?.Invoke(null, null, null, System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors);
+        var safeResult = effectiveWhenSafe?.Invoke(null!, null, null, SslPolicyErrors.None);
+        var dangerousResult =
+            effectiveWhenDangerous?.Invoke(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors);
 
         Assert.False(safeResult);
         Assert.True(dangerousResult);

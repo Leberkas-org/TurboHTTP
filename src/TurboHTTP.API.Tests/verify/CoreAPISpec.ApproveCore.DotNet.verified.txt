@@ -60,7 +60,6 @@ namespace TurboHTTP
         public bool AllowServerPush { get; set; }
         public bool EnableAltSvcDiscovery { get; set; }
         public System.TimeSpan IdleTimeout { get; set; }
-        public long MaxBatchWeight { get; set; }
         public int MaxConnectionsPerServer { get; set; }
         public int MaxFieldSectionSize { get; set; }
         public int MaxReconnectAttempts { get; set; }
@@ -222,6 +221,8 @@ namespace TurboHTTP.Diagnostics
     }
     public static class TurboTraceExtensions
     {
+        public static OpenTelemetry.Metrics.MeterProviderBuilder AddTurboHttpMetrics(this OpenTelemetry.Metrics.MeterProviderBuilder builder) { }
+        public static OpenTelemetry.Trace.TracerProviderBuilder AddTurboHttpTracing(this OpenTelemetry.Trace.TracerProviderBuilder builder) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.TurboTraceCategory categories = 1023, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.ITurboTraceListener listener, TurboHTTP.Diagnostics.TurboTraceCategory categories = 1023, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
     }
@@ -284,90 +285,5 @@ namespace TurboHTTP.Protocol.Cookies
     {
         void AddCookiesToRequest(System.Uri requestUri, ref System.Net.Http.HttpRequestMessage request);
         void ProcessResponse(System.Uri requestUri, System.Net.Http.HttpResponseMessage response);
-    }
-}
-namespace TurboHTTP.Protocol.Http2.Hpack
-{
-    public static class HpackStaticTable
-    {
-        public const int StaticCount = 61;
-        [System.Runtime.CompilerServices.TupleElementNames(new string[] {
-                "Name",
-                "Value"})]
-        public static readonly System.ValueTuple<string, string>[] Entries;
-    }
-}
-namespace TurboHTTP.Protocol.Http3
-{
-    public sealed class Http3ConnectionReuseDecision : System.IEquatable<TurboHTTP.Protocol.Http3.Http3ConnectionReuseDecision>
-    {
-        public Http3ConnectionReuseDecision() { }
-        public bool CanReuse { get; }
-        public string Reason { get; }
-        public static TurboHTTP.Protocol.Http3.Http3ConnectionReuseDecision NewConnection(string reason) { }
-        public static TurboHTTP.Protocol.Http3.Http3ConnectionReuseDecision Reuse(string reason) { }
-    }
-    public enum Http3DecodeStatus
-    {
-        Success = 0,
-        NeedMoreData = 1,
-    }
-}
-namespace TurboHTTP.Protocol.Http3.Qpack
-{
-    public sealed class DecoderInstruction
-    {
-        public DecoderInstruction() { }
-        public int IntValue { get; init; }
-        public TurboHTTP.Protocol.Http3.Qpack.DecoderInstructionType Type { get; init; }
-    }
-    public enum DecoderInstructionType
-    {
-        SectionAcknowledgment = 0,
-        StreamCancellation = 1,
-        InsertCountIncrement = 2,
-    }
-    public sealed class EncoderInstruction
-    {
-        public EncoderInstruction() { }
-        public int IntValue { get; init; }
-        public bool IsStatic { get; init; }
-        public byte[] Name { get; init; }
-        public int NameIndex { get; init; }
-        public string NameString { get; }
-        public TurboHTTP.Protocol.Http3.Qpack.EncoderInstructionType Type { get; init; }
-        public byte[] Value { get; init; }
-        public string ValueString { get; }
-    }
-    public enum EncoderInstructionType
-    {
-        SetDynamicTableCapacity = 0,
-        InsertWithNameReference = 1,
-        InsertWithLiteralName = 2,
-        Duplicate = 3,
-    }
-    public sealed class QpackDecodeResult
-    {
-        [System.Runtime.CompilerServices.TupleElementNames(new string[] {
-                "Name",
-                "Value"})]
-        public System.Collections.Generic.IReadOnlyList<System.ValueTuple<string, string>>? Headers { get; }
-        public bool IsBlocked { get; }
-        public int RequiredInsertCount { get; }
-        public static TurboHTTP.Protocol.Http3.Qpack.QpackDecodeResult Blocked(int requiredInsertCount) { }
-        public static TurboHTTP.Protocol.Http3.Qpack.QpackDecodeResult Success([System.Runtime.CompilerServices.TupleElementNames(new string[] {
-                "Name",
-                "Value"})] System.Collections.Generic.IReadOnlyList<System.ValueTuple<string, string>> headers) { }
-    }
-    public enum QpackDecodeStatus
-    {
-        Success = 0,
-        NeedMoreData = 1,
-    }
-    public readonly struct QpackEntry : System.IEquatable<TurboHTTP.Protocol.Http3.Qpack.QpackEntry>
-    {
-        public QpackEntry(string Name, string Value) { }
-        public string Name { get; init; }
-        public string Value { get; init; }
     }
 }
