@@ -11,8 +11,8 @@ This guide shows how to migrate common `HttpClient` patterns to TurboHTTP. The A
 | `services.AddHttpClient()` | `services.AddTurboHttpClient()` |
 | `client.GetAsync(url)` | `client.SendAsync(new HttpRequestMessage(Get, url), ct)` |
 | `DelegatingHandler` | `TurboHandler` (stream-compatible) |
-| Polly retry policies | Built-in `RetryPolicy` |
-| No caching | Built-in `CachePolicy` |
+| Polly retry policies | Built-in `.WithRetry()` |
+| No caching | Built-in `.WithCache()` |
 | `CookieContainer` (manual) | `CookieJar` (automatic) |
 
 ## Basic Request
@@ -103,7 +103,7 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(RetryPolicy.Default); // 3 retries, respects Retry-After
+.WithRetry(); // 3 retries, respects Retry-After
 ```
 
 No Polly dependency needed. TurboHTTP automatically:
@@ -244,8 +244,8 @@ By switching to TurboHTTP, these features work out of the box without additional
 
 | Feature | HttpClient Approach | TurboHTTP |
 |---|---|---|
-| Retries | Polly + DelegatingHandler | Built-in `RetryPolicy` |
-| Caching | Custom DelegatingHandler or nothing | Built-in `CachePolicy` |
+| Retries | Polly + DelegatingHandler | Built-in `.WithRetry()` |
+| Caching | Custom DelegatingHandler or nothing | Built-in `.WithCache()` |
 | Cookies | Manual CookieContainer setup | Automatic `CookieJar` |
 | Decompression | `AutomaticDecompression` flag | Automatic (gzip, deflate, brotli) |
 | Connection pooling | SocketsHttpHandler (opaque) | Actor-based, per-host, configurable |
@@ -277,8 +277,8 @@ builder.Services.AddTurboHttpClient("new-api", options =>
 {
     options.BaseAddress = new Uri("https://new.api.com");
 })
-.WithRetry(RetryPolicy.Default)
-.WithCache(CachePolicy.Default);
+.WithRetry()
+.WithCache();
 ```
 
 Migrate service by service, starting with the ones that benefit most from retries, caching, or HTTP/2 multiplexing.

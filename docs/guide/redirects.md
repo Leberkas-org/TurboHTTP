@@ -86,10 +86,10 @@ builder.Services.AddTurboHttpClient("strict", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRedirect(new RedirectPolicy
+.WithRedirect(redirect =>
 {
-    MaxRedirects = 5,
-    AllowHttpsToHttpDowngrade = false,  // default
+    redirect.MaxRedirects = 5;
+    redirect.AllowHttpsToHttpDowngrade = false;  // default
 });
 ```
 

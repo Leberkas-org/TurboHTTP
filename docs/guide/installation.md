@@ -67,14 +67,14 @@ builder.Services.AddTurboHttpClient("public-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(CachePolicy.Default);
+.WithCache();
 
 // Internal service — aggressive retries
 builder.Services.AddTurboHttpClient("internal", options =>
 {
     options.BaseAddress = new Uri("http://internal-service:8080");
 })
-.WithRetry(new RetryPolicy { MaxRetries = 5 });
+.WithRetry(retry => { retry.MaxRetries = 5; });
 ```
 
 Resolve by name:
@@ -102,7 +102,7 @@ builder.Services.AddTurboHttpClient<OrderService>(options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(RetryPolicy.Default);
+.WithRetry();
 ```
 
 The DI container injects `ITurboHttpClient` into `OrderService` automatically.
@@ -116,11 +116,11 @@ builder.Services.AddTurboHttpClient("full-featured", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRedirect()                          // follow redirects (default policy)
-.WithRetry(RetryPolicy.Default)          // automatic retries
-.WithCookies()                           // automatic cookie management
-.WithCache(CachePolicy.Default)          // HTTP caching
-.WithDecompression(true);                // gzip/deflate/brotli
+.WithRedirect()              // follow redirects (default settings)
+.WithRetry()                 // automatic retries
+.WithCookies()               // automatic cookie management
+.WithCache()                 // HTTP caching
+.WithDecompression(true);    // gzip/deflate/brotli
 ```
 
 ## Minimal Example

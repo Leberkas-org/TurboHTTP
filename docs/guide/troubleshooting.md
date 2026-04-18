@@ -74,7 +74,7 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRedirect(new RedirectPolicy { MaxRedirects = 20 });
+.WithRedirect(redirect => { redirect.MaxRedirects = 20; });
 ```
 
 To debug, remove the `.WithRedirect()` call entirely and inspect the redirect responses manually.
@@ -92,7 +92,7 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRedirect(new RedirectPolicy { AllowHttpsToHttpDowngrade = true });
+.WithRedirect(redirect => { redirect.AllowHttpsToHttpDowngrade = true; });
 ```
 
 ### POST Requests Are Not Retried
@@ -106,17 +106,17 @@ builder.Services.AddTurboHttpClient("my-client", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(new RetryPolicy { MaxRetries = 3 });
+.WithRetry(retry => { retry.MaxRetries = 3; });
 ```
 
-The built-in `RetryPolicy` handles idempotent method detection and backoff automatically.
+The built-in retry handles idempotent method detection and backoff automatically.
 
 ### High Memory Usage
 
 **Possible causes:**
 1. **Cache too large** — reduce `MaxEntries` or `MaxBodyBytes` when registering:
    ```csharp
-   .WithCache(new CachePolicy { MaxEntries = 100, MaxBodyBytes = 10 * 1024 * 1024 })
+   .WithCache(c => { c.MaxEntries = 100; c.MaxBodyBytes = 10 * 1024 * 1024; })
    ```
 2. **Response bodies not disposed** — always dispose `HttpResponseMessage` when done:
    ```csharp
@@ -171,7 +171,7 @@ client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower; // gracef
    ```
 3. Reduce cache size when registering:
    ```csharp
-   .WithCache(new CachePolicy { MaxEntries = 100 })
+   .WithCache(c => { c.MaxEntries = 100; })
    ```
 
 ---

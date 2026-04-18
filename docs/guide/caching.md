@@ -6,17 +6,17 @@ Caching is disabled by default. Enable it by calling `.WithCache()` on the build
 
 ## What Gets Cached
 
-TurboHTTP caches **GET responses** that the server declares as cacheable. A response is stored when:
+TurboHTTP caches **GET and HEAD responses** that the server declares as cacheable. A response is stored when:
 
-- The request method is `GET`
-- The response status indicates success or a permanent redirect:
-  - **Successful responses:** `200 OK`, `204 No Content`, `206 Partial Content`
-  - **Modified by intermediary:** `203 Non-Authoritative Information`
-  - **Permanent redirect:** `301 Moved Permanently`
+- The request method is `GET` or `HEAD`
+- The response has a cacheable status code:
+  - **Success:** `200 OK`, `203 Non-Authoritative Information`, `204 No Content`
+  - **Permanent redirects:** `300 Multiple Choices`, `301 Moved Permanently`, `308 Permanent Redirect`
+  - **Definitive errors:** `404 Not Found`, `405 Method Not Allowed`, `410 Gone`, `414 URI Too Long`, `501 Not Implemented`
 - The response does **not** include `Cache-Control: no-store` or `Cache-Control: private`
 - At least one freshness indicator is present (`max-age`, `s-maxage`, `Expires`, or a heuristic lifetime can be calculated)
 
-Responses to `POST`, `PUT`, `DELETE`, and all other methods are **never cached**.
+Responses to `POST`, `PUT`, `DELETE`, and all other methods are **never cached**. `206 Partial Content` is not cached because TurboHTTP does not reassemble partial content ranges.
 
 ## How Long a Response Is Cached
 
@@ -109,7 +109,7 @@ builder.Services.AddTurboHttpClient(options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(CachePolicy.Default);
+.WithCache();
 ```
 
 Customise the cache size or behaviour:
@@ -119,10 +119,10 @@ builder.Services.AddTurboHttpClient("api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(new CachePolicy
+.WithCache(cache =>
 {
-    MaxEntries = 500,             // maximum number of cached responses (default: 1000)
-    MaxBodyBytes = 512 * 1024,    // maximum body size to cache, in bytes (default: 50 MiB)
+    cache.MaxEntries = 500;             // maximum number of cached responses (default: 1000)
+    cache.MaxBodyBytes = 512 * 1024;    // maximum body size to cache, in bytes (default: 50 MiB)
 });
 ```
 
@@ -154,7 +154,7 @@ request.Headers.CacheControl = new CacheControlHeaderValue
 By default each named client gets its own `CacheStore`. To share a single store across multiple named clients — for example, to deduplicate in-flight requests across services — create a `CacheStore` once and pass it directly:
 
 ```csharp
-var sharedStore = new CacheStore(CachePolicy.Default);
+var sharedStore = new CacheStore();
 
 builder.Services.AddTurboHttpClient("client-a", options =>
 {

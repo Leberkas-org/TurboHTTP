@@ -65,7 +65,7 @@ builder.Services.AddTurboHttpClient("my-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(new RetryPolicy { MaxRetries = 5 });
+.WithRetry(retry => { retry.MaxRetries = 5; });
 ```
 
 No Polly dependency, no handler registration, no strategy boilerplate.
@@ -82,14 +82,14 @@ builder.Services.AddTurboHttpClient("cached-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(CachePolicy.Default);
+.WithCache();
 
 // Tune cache size
 builder.Services.AddTurboHttpClient("small-cache", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(new CachePolicy { MaxEntries = 500 });
+.WithCache(cache => { cache.MaxEntries = 500; });
 ```
 
 ### Typed Interfaces (Refit wins here)

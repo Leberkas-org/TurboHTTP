@@ -70,18 +70,18 @@ Analogous to `AddStandardResilienceHandler()` / `ConfigurePrimaryHttpMessageHand
 ```csharp
 services.AddTurboHttpClient("myapi", options => { ... })
     // Redirect is off by default, opt-in
-    .WithRedirect()                                  // Default policy: max 10, no HTTPS→HTTP downgrade
-    .WithRedirect(new RedirectPolicy(MaxRedirects: 20))
+    .WithRedirect()                                  // Default: max 10 hops, no HTTPS→HTTP downgrade
+    .WithRedirect(r => { r.MaxRedirects = 20; })
 
     // Cookies: off by default, opt-in
     .WithCookies()                                   // Shared CookieJar for this client
     .WithCookies(existingJar)                        // Bring your own CookieJar instance
 
     // Cache: off by default, opt-in
-    .WithCache(new CachePolicy(MaxEntries: 1000))
+    .WithCache(c => { c.MaxEntries = 1000; })
 
     // Retry: off by default, opt-in (like HttpClient — Polly does the same)
-    .WithRetry(new RetryPolicy(MaxRetries: 3));
+    .WithRetry(r => { r.MaxRetries = 3; });
 ```
 
 These methods only register their configuration in `IServiceCollection` (as `IOptions`/`IConfigureOptions`). The `TurboHttpClientFactory` reads all registered options at `CreateClient()` time and passes them to the engine.
@@ -198,7 +198,7 @@ services.AddTurboHttpClient("payments", options =>
         options.ConnectTimeout       = TimeSpan.FromSeconds(3);
     })
     .WithRedirect()
-    .WithRetry(new RetryPolicy(MaxRetries: 2))
+    .WithRetry(r => { r.MaxRetries = 2; })
     .AddHandler<AuthHandler>()          // registers AuthHandler as Transient
     .AddHandler<ObservabilityHandler>(); // registers ObservabilityHandler as Transient
 

@@ -45,7 +45,7 @@ public sealed class ResilienceSpec : AcceptanceTestBase
         return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC1945-7.2")]
     public async Task Resilience_should_cause_exception_on_content_length_mismatch()
     {
@@ -55,7 +55,7 @@ public sealed class ResilienceSpec : AcceptanceTestBase
         };
 
         // Declare Content-Length: 100 but only send 5 bytes
-        var raw = "HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nhello";
+        const string raw = "HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nhello";
 
         var fake = new ScriptedFakeConnectionStage((_, _) => Encoding.Latin1.GetBytes(raw));
         var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));

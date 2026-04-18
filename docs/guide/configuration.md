@@ -39,7 +39,7 @@ builder.Services.AddTurboHttpClient("public-api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithCache(CachePolicy.Default)
+.WithCache()
 .WithRedirect();
 
 // Internal service — aggressive retries
@@ -47,7 +47,7 @@ builder.Services.AddTurboHttpClient("internal", options =>
 {
     options.BaseAddress = new Uri("http://internal-service:8080");
 })
-.WithRetry(new RetryPolicy { MaxRetries = 5 });
+.WithRetry(retry => { retry.MaxRetries = 5; });
 ```
 
 ```csharp
@@ -169,10 +169,10 @@ builder.Services.AddTurboHttpClient("full-featured", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRedirect()              // follow redirects (default policy)
-.WithRetry(RetryPolicy.Default)   // automatic retries
+.WithRedirect()              // follow redirects (default settings)
+.WithRetry()                 // automatic retries
 .WithCookies()               // automatic cookie management
-.WithCache(CachePolicy.Default)   // HTTP caching
+.WithCache()                 // HTTP caching
 .WithDecompression()         // gzip/deflate/brotli response decompression
 .WithRequestCompression()    // gzip request body compression
 .WithExpectContinue();       // Expect: 100-continue for large POST bodies
@@ -181,11 +181,11 @@ builder.Services.AddTurboHttpClient("full-featured", options =>
 ### Redirect following
 
 ```csharp
-.WithRedirect()                                          // default: max 10 redirects
-.WithRedirect(new RedirectPolicy { MaxRedirects = 3 })   // custom limit
+.WithRedirect()                                                          // default: max 10 redirects
+.WithRedirect(r => { r.MaxRedirects = 3; })                              // custom limit
 ```
 
-**`RedirectPolicy` properties:**
+**`RedirectOptions` properties:**
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -197,11 +197,11 @@ See [Redirects guide](./redirects) for method rewriting and security behaviours.
 ### Automatic retries
 
 ```csharp
-.WithRetry(RetryPolicy.Default)                                         // max 3 retries
-.WithRetry(new RetryPolicy { MaxRetries = 5, RespectRetryAfter = false })
+.WithRetry()                                                              // max 3 retries
+.WithRetry(r => { r.MaxRetries = 5; r.RespectRetryAfter = false; })
 ```
 
-**`RetryPolicy` properties:**
+**`RetryOptions` properties:**
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -213,20 +213,20 @@ See [Automatic Retries guide](./retries) for which methods and status codes trig
 ### HTTP caching
 
 ```csharp
-.WithCache(CachePolicy.Default)
-.WithCache(new CachePolicy { MaxEntries = 200, MaxBodyBytes = 5 * 1024 * 1024 })
+.WithCache()
+.WithCache(c => { c.MaxEntries = 200; c.MaxBodyBytes = 5 * 1024 * 1024; })
 ```
 
 To share a single store across multiple named clients, pass a `CacheStore` directly:
 
 ```csharp
-var sharedStore = new CacheStore(CachePolicy.Default);
+var sharedStore = new CacheStore();
 
 builder.Services.AddTurboHttpClient("client-a", options => { ... }).WithCache(sharedStore);
 builder.Services.AddTurboHttpClient("client-b", options => { ... }).WithCache(sharedStore);
 ```
 
-**`CachePolicy` properties:**
+**`CacheOptions` properties:**
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -255,11 +255,11 @@ See [Cookies guide](./cookies) for session and domain handling.
 ### Request compression and Expect: 100-continue
 
 ```csharp
-.WithRequestCompression()                                   // gzip bodies >= 1 KiB
-.WithRequestCompression(new CompressionPolicy { Encoding = "br", MinBodySizeBytes = 4096 })
+.WithRequestCompression()                                                              // gzip bodies >= 1 KiB
+.WithRequestCompression(c => { c.Encoding = "br"; c.MinBodySizeBytes = 4096; })
 
-.WithExpectContinue()                                       // Expect: 100-continue for bodies >= 1 KiB
-.WithExpectContinue(new Expect100Policy { MinBodySizeBytes = 8192 })
+.WithExpectContinue()                                                                  // Expect: 100-continue for bodies >= 1 KiB
+.WithExpectContinue(e => { e.MinBodySizeBytes = 8192; })
 ```
 
 See [Content Encoding guide](./content-encoding) for details.
@@ -279,8 +279,8 @@ builder.Services.AddTurboHttpClient(options =>
     options.Http2.MaxConcurrentStreams = 200;
 })
 .WithRedirect()
-.WithRetry(RetryPolicy.Default)
+.WithRetry()
 .WithCookies()
-.WithCache(CachePolicy.Default)
+.WithCache()
 .WithDecompression();
 ```

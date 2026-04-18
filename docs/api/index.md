@@ -279,101 +279,106 @@ See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing configuration a
 
 ---
 
-## Policy Types
+## Feature Options
 
-Policies configure optional features and are applied via the builder API, not through `TurboClientOptions`. See [Configuration guide](/guide/configuration) for builder usage.
+Feature options configure optional features and are applied via the builder API, not through `TurboClientOptions`. All `With*` methods accept an optional configuration delegate; calling them without arguments enables the feature with its defaults. See [Configuration guide](/guide/configuration) for builder usage.
 
-### RedirectPolicy
+### RedirectOptions
 
 ```csharp
-public sealed record RedirectPolicy
+public sealed class RedirectOptions
 {
-    public static readonly RedirectPolicy Default; // MaxRedirects = 10
-    public int MaxRedirects { get; init; }         // Default: 10
-    public bool AllowHttpsToHttpDowngrade { get; init; } // Default: false
+    public int MaxRedirects { get; set; }              // Default: 10
+    public bool AllowHttpsToHttpDowngrade { get; set; } // Default: false
 }
 ```
 
 ```csharp
-// Custom redirect limit
-builder.Services.AddTurboHttpClient("api", ...).WithRedirect(new RedirectPolicy { MaxRedirects = 3 });
+// Follow redirects with defaults
+builder.Services.AddTurboHttpClient("api", ...).WithRedirect();
+
+// Custom limit
+builder.Services.AddTurboHttpClient("api", ...).WithRedirect(r => { r.MaxRedirects = 3; });
 
 // Disable redirect following (default — no .WithRedirect() call)
 ```
 
 See [Redirects guide](/guide/redirects) for method rewriting and security details.
 
-### RetryPolicy
+### RetryOptions
 
 ```csharp
-public sealed record RetryPolicy
+public sealed class RetryOptions
 {
-    public static readonly RetryPolicy Default; // MaxRetries = 3, RespectRetryAfter = true
-    public int MaxRetries { get; init; }         // Default: 3
-    public bool RespectRetryAfter { get; init; } // Default: true
+    public int MaxRetries { get; set; }         // Default: 3
+    public bool RespectRetryAfter { get; set; } // Default: true
 }
 ```
 
 ```csharp
+// Default retries (3 attempts)
+builder.Services.AddTurboHttpClient("api", ...).WithRetry();
+
 // Aggressive retry
 builder.Services.AddTurboHttpClient("api", ...)
-    .WithRetry(new RetryPolicy { MaxRetries = 5, RespectRetryAfter = false });
+    .WithRetry(r => { r.MaxRetries = 5; r.RespectRetryAfter = false; });
 ```
 
 See [Automatic Retries guide](/guide/retries) for which methods and status codes are retried.
 
-### CachePolicy
+### CacheOptions
 
 ```csharp
-public sealed record CachePolicy
+public sealed class CacheOptions
 {
-    public static CachePolicy Default { get; }  // MaxEntries = 1000, MaxBodyBytes = 50 MiB
-    public int MaxEntries { get; init; }         // Default: 1000
-    public long MaxBodyBytes { get; init; }      // Default: 52_428_800 (50 MiB)
-    public bool SharedCache { get; init; }       // Default: false (private cache)
+    public int MaxEntries { get; set; }     // Default: 1000
+    public long MaxBodyBytes { get; set; }  // Default: 52_428_800 (50 MiB)
+    public bool SharedCache { get; set; }   // Default: false (private cache)
 }
 ```
 
 ```csharp
 // Enable caching with defaults
-builder.Services.AddTurboHttpClient("api", ...).WithCache(CachePolicy.Default);
+builder.Services.AddTurboHttpClient("api", ...).WithCache();
 
 // Smaller cache for constrained environments
 builder.Services.AddTurboHttpClient("api", ...)
-    .WithCache(new CachePolicy { MaxEntries = 100, MaxBodyBytes = 5 * 1024 * 1024 });
+    .WithCache(c => { c.MaxEntries = 100; c.MaxBodyBytes = 5 * 1024 * 1024; });
+
+// Custom store shared across clients
+var sharedStore = new CacheStore();
+builder.Services.AddTurboHttpClient("api", ...).WithCache(sharedStore);
 ```
 
 See [HTTP Caching guide](/guide/caching) for freshness rules and conditional requests.
 
-### CompressionPolicy
+### CompressionOptions
 
 ```csharp
-public sealed record CompressionPolicy
+public sealed class CompressionOptions
 {
-    public static readonly CompressionPolicy Default; // Encoding = "gzip", MinBodySizeBytes = 1024
-    public string Encoding { get; init; }             // Default: "gzip"
-    public long MinBodySizeBytes { get; init; }       // Default: 1024
+    public string Encoding { get; set; }         // Default: "gzip"
+    public long MinBodySizeBytes { get; set; }   // Default: 1024
 }
 ```
 
 ```csharp
 builder.Services.AddTurboHttpClient("api", ...)
-    .WithRequestCompression(new CompressionPolicy { Encoding = "br", MinBodySizeBytes = 4096 });
+    .WithRequestCompression(c => { c.Encoding = "br"; c.MinBodySizeBytes = 4096; });
 ```
 
-### Expect100Policy
+### Expect100Options
 
 ```csharp
-public sealed record Expect100Policy
+public sealed class Expect100Options
 {
-    public static readonly Expect100Policy Default; // MinBodySizeBytes = 1024
-    public long MinBodySizeBytes { get; init; }     // Default: 1024
+    public long MinBodySizeBytes { get; set; } // Default: 1024
 }
 ```
 
 ```csharp
 builder.Services.AddTurboHttpClient("api", ...)
-    .WithExpectContinue(new Expect100Policy { MinBodySizeBytes = 8192 });
+    .WithExpectContinue(e => { e.MinBodySizeBytes = 8192; });
 ```
 
 See [Content Encoding guide](/guide/content-encoding) for request compression and Expect: 100-continue.

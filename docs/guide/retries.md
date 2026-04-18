@@ -56,17 +56,17 @@ builder.Services.AddTurboHttpClient(options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(RetryPolicy.Default);
+.WithRetry();
 
-// Custom retry policy
+// Custom retry settings
 builder.Services.AddTurboHttpClient("api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(new RetryPolicy
+.WithRetry(retry =>
 {
-    MaxRetries = 5,          // retry up to 5 times (default: 3)
-    RespectRetryAfter = true // honour Retry-After header (default: true)
+    retry.MaxRetries = 5;          // retry up to 5 times (default: 3)
+    retry.RespectRetryAfter = true; // honour Retry-After header (default: true)
 });
 ```
 
@@ -77,7 +77,7 @@ The following situations are **never retried**, regardless of the method or stat
 - **Request body is a stream that cannot be rewound** — if the request body has been partially sent (e.g. a streaming upload), TurboHTTP cannot restart it from the beginning, so retrying would send an incomplete body.
 - **Non-idempotent methods** — `POST`, `PATCH`, and `CONNECT` are never retried because repeating the request could create duplicate records or have unintended side effects.
 - **Retry limit reached** — once `MaxRetries` attempts have been made, the last failure is returned to the caller.
-- **`RetryPolicy` is null** — retries are disabled entirely.
+- **`.WithRetry()` not called** — retries are disabled entirely.
 
 ## Zero-Configuration Retries
 
@@ -88,7 +88,7 @@ builder.Services.AddTurboHttpClient(options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
 })
-.WithRetry(RetryPolicy.Default);
+.WithRetry();
 ```
 
-`RetryPolicy.Default` retries up to 3 times and honours `Retry-After` delays from the server.
+`.WithRetry()` with no arguments retries up to 3 times and honours `Retry-After` delays from the server.
