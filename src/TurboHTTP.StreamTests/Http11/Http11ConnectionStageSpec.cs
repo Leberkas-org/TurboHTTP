@@ -392,4 +392,152 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         // HTTP/1.1 default is keep-alive (RFC 9112)
         Assert.True(connectionReuse.Decision.CanReuse);
     }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9112-7")]
+    public async Task Http11ConnectionStage_should_handle_100_continue_response()
+    {
+        var stage = new Http11ConnectionStage();
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            var app = b.Add(Source.FromPublisher(appProbe));
+            var server = b.Add(Source.FromPublisher(serverProbe));
+            var netSink = b.Add(Sink.FromSubscriber(networkSub));
+            var resSink = b.Add(Sink.FromSubscriber(responseSub));
+
+            b.From(app).To(s.InApp);
+            b.From(server).To(s.InServer);
+            b.From(s.OutNetwork).To(netSink);
+            b.From(s.OutResponse).To(resSink);
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSubscription.Request(20);
+        resSubscription.Request(10);
+
+        appSubscription.SendNext(MakeRequest("/upload"));
+
+        // Consume StreamAcquire + NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
+        // Send 100 Continue (informational, not final)
+        serverSubscription.SendNext(MakeResponseBuffer("HTTP/1.1 100 Continue\r\n\r\n"));
+
+        // Continue response should be processed internally (not emitted downstream typically)
+        // Send final response after 100 Continue
+        serverSubscription.SendNext(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nSuccess"));
+
+        var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9112-6")]
+    public async Task Http11ConnectionStage_should_handle_connection_close_header()
+    {
+        var stage = new Http11ConnectionStage();
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            var app = b.Add(Source.FromPublisher(appProbe));
+            var server = b.Add(Source.FromPublisher(serverProbe));
+            var netSink = b.Add(Sink.FromSubscriber(networkSub));
+            var resSink = b.Add(Sink.FromSubscriber(responseSub));
+
+            b.From(app).To(s.InApp);
+            b.From(server).To(s.InServer);
+            b.From(s.OutNetwork).To(netSink);
+            b.From(s.OutResponse).To(resSink);
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSubscription.Request(10);
+        resSubscription.Request(10);
+
+        appSubscription.SendNext(MakeRequest("/close"));
+
+        // Consume StreamAcquire + NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
+        // Server sends Connection: close header
+        serverSubscription.SendNext(MakeResponseBuffer(
+            "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\nOK"));
+
+        var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // ConnectionReuseItem should indicate cannot reuse
+        var reuseItem = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        var connectionReuse = Assert.IsType<ConnectionReuseItem>(reuseItem);
+        Assert.False(connectionReuse.Decision.CanReuse);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9112-6")]
+    public async Task Http11ConnectionStage_should_complete_when_app_upstream_finishes_and_no_inflight()
+    {
+        var stage = new Http11ConnectionStage();
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            var app = b.Add(Source.FromPublisher(appProbe));
+            var server = b.Add(Source.FromPublisher(serverProbe));
+            var netSink = b.Add(Sink.FromSubscriber(networkSub));
+            var resSink = b.Add(Sink.FromSubscriber(responseSub));
+
+            b.From(app).To(s.InApp);
+            b.From(server).To(s.InServer);
+            b.From(s.OutNetwork).To(netSink);
+            b.From(s.OutResponse).To(resSink);
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSubscription.Request(10);
+        resSubscription.Request(10);
+
+        // Complete app upstream without sending request
+        appSubscription.SendComplete();
+
+        // Stage should complete
+        await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
+    }
 }

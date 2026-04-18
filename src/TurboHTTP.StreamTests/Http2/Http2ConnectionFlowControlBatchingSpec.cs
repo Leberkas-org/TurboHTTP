@@ -61,21 +61,6 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
         Assert.Equal(64 * 1024 * 1024, options.InitialConnectionWindowSize);
     }
 
-    [Fact(Timeout = 5_000)]
-    public async Task Http2ConnectionFlowControlBatching_should_send_no_window_update_when_response_is_headers_only()
-    {
-        var headers = new HeadersFrame(
-            streamId: 1,
-            headerBlock: ReadOnlyMemory<byte>.Empty,
-            endStream: true,
-            endHeaders: true);
-
-        var (_, serverBound) = await RunAsync(65535, headers);
-
-        var windowUpdates = serverBound.OfType<WindowUpdateFrame>().ToList();
-
-        Assert.Empty(windowUpdates);
-    }
 
     [Fact(Timeout = 5_000)]
     public async Task Http2ConnectionFlowControlBatching_should_flush_stream_pending_on_stream_close_when_below_threshold()

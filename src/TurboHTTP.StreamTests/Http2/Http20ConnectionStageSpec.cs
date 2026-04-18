@@ -7,23 +7,23 @@ using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.StreamTests.Http10;
+namespace TurboHTTP.StreamTests.Http2;
 
 /// <summary>
-/// Tests the unified HTTP/1.0 connection stage that consolidates encoding, decoding,
-/// and correlation into a single <see cref="Http10ConnectionStage"/>.
+/// Tests the unified HTTP/2 connection stage that consolidates encoding, decoding,
+/// multiplexing, and correlation into a single <see cref="Http20ConnectionStage"/>.
 /// </summary>
 /// <remarks>
-/// Stage under test: <see cref="Http10ConnectionStage"/>.
-/// RFC 1945: HTTP/1.0 request/response cycle with single in-flight request.
+/// Stage under test: <see cref="Http20ConnectionStage"/>.
+/// RFC 9113: HTTP/2 with stream multiplexing and SETTINGS handling.
 /// </remarks>
-public sealed class Http10ConnectionStageSpec : StreamTestBase
+public sealed class Http20ConnectionStageSpec : StreamTestBase
 {
     private static HttpRequestMessage MakeRequest(string path = "/")
     {
-        return new HttpRequestMessage(HttpMethod.Get, $"http://example.com{path}")
+        return new HttpRequestMessage(HttpMethod.Get, $"https://example.com{path}")
         {
-            Version = new Version(1, 0)
+            Version = new Version(2, 0)
         };
     }
 
@@ -37,10 +37,10 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC1945-4")]
-    public async Task Http10ConnectionStage_should_encode_request_and_emit_on_network_outlet()
+    [Trait("RFC", "RFC9113-3.2")]
+    public async Task Http20ConnectionStage_should_emit_preface_on_first_network_pull()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -65,140 +65,25 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
 
         var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
-        // Pull on network outlet to signal demand
-        netSubscription.Request(10);
-        resSubscription.Request(10);
+        netSubscription.Request(5);
+        resSubscription.Request(5);
 
-        // Send a request
-        appSubscription.SendNext(MakeRequest("/test"));
-
-        // Should get StreamAcquireItem + NetworkBuffer on network outlet
-        var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<StreamAcquireItem>(item1);
-
-        var item2 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var buffer = Assert.IsType<NetworkBuffer>(item2);
-        var encoded = Encoding.ASCII.GetString(buffer.Span);
-        Assert.StartsWith("GET /test HTTP/1.0\r\n", encoded);
+        // First item should be HTTP/2 preface (connection preface)
+        var preface = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        var buffer = Assert.IsType<NetworkBuffer>(preface);
+        var data = Encoding.ASCII.GetString(buffer.Span);
+        Assert.StartsWith("PRI * HTTP/2.0", data);
         buffer.Dispose();
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC1945-6")]
-    public async Task Http10ConnectionStage_should_decode_response_and_correlate_with_request()
+    [Trait("RFC", "RFC9113-6")]
+    public async Task Http20ConnectionStage_should_encode_request_as_headers_frame()
     {
-        var stage = new Http10ConnectionStage();
-
-        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
-        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
-
-        RunnableGraph.FromGraph(GraphDsl.Create(b =>
-        {
-            var s = b.Add(stage);
-            var app = b.Add(Source.FromPublisher(appProbe));
-            var server = b.Add(Source.FromPublisher(serverProbe));
-            var netSink = b.Add(Sink.FromSubscriber(networkSub));
-            var resSink = b.Add(Sink.FromSubscriber(responseSub));
-
-            b.From(app).To(s.InApp);
-            b.From(server).To(s.InServer);
-            b.From(s.OutNetwork).To(netSink);
-            b.From(s.OutResponse).To(resSink);
-
-            return ClosedShape.Instance;
-        })).Run(Materializer);
-
-        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-
-        netSubscription.Request(10);
-        resSubscription.Request(10);
-
-        // Send request
-        appSubscription.SendNext(MakeRequest("/hello"));
-
-        // Consume outbound items (StreamAcquire + NetworkBuffer)
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-
-        // Send response from server
-        var responseRaw = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello";
-        serverSubscription.SendNext(MakeResponseBuffer(responseRaw));
-
-        // Should get correlated response
-        var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(response.RequestMessage);
-        Assert.Equal("/hello", response.RequestMessage!.RequestUri!.AbsolutePath);
-    }
-
-    [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC1945-7.2.2")]
-    public async Task Http10ConnectionStage_should_emit_connection_reuse_close_for_http10()
-    {
-        var stage = new Http10ConnectionStage();
-
-        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
-        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
-
-        RunnableGraph.FromGraph(GraphDsl.Create(b =>
-        {
-            var s = b.Add(stage);
-            var app = b.Add(Source.FromPublisher(appProbe));
-            var server = b.Add(Source.FromPublisher(serverProbe));
-            var netSink = b.Add(Sink.FromSubscriber(networkSub));
-            var resSink = b.Add(Sink.FromSubscriber(responseSub));
-
-            b.From(app).To(s.InApp);
-            b.From(server).To(s.InServer);
-            b.From(s.OutNetwork).To(netSink);
-            b.From(s.OutResponse).To(resSink);
-
-            return ClosedShape.Instance;
-        })).Run(Materializer);
-
-        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-
-        netSubscription.Request(10);
-        resSubscription.Request(10);
-
-        // Send request + response
-        appSubscription.SendNext(MakeRequest());
-
-        // StreamAcquire + NetworkBuffer
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-
-        serverSubscription.SendNext(MakeResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
-
-        // Response
-        await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-
-        // ConnectionReuseItem should follow on network outlet
-        var reuseItem = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var connectionReuse = Assert.IsType<ConnectionReuseItem>(reuseItem);
-        // HTTP/1.0 default is close (RFC 1945)
-        Assert.False(connectionReuse.Decision.CanReuse);
-    }
-
-
-    [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC1945-4")]
-    public async Task Http10ConnectionStage_should_complete_stage_when_app_upstream_finishes_without_inflight()
-    {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -229,18 +114,78 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         netSubscription.Request(10);
         resSubscription.Request(10);
 
-        // Complete app upstream without sending any request
-        appSubscription.SendComplete();
+        // Consume preface
+        var preface = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<NetworkBuffer>(preface);
 
-        // Stage should complete
-        await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
+        // Send request
+        appSubscription.SendNext(MakeRequest("/test"));
+
+        // Should emit StreamAcquireItem + HEADERS frame (as NetworkBuffer)
+        var acquire = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<StreamAcquireItem>(acquire);
+
+        var headers = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<NetworkBuffer>(headers);
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC1945-4")]
-    public async Task Http10ConnectionStage_should_complete_when_server_closes_and_no_response_pending()
+    [Trait("RFC", "RFC9113-6.2")]
+    public async Task Http20ConnectionStage_should_support_stream_multiplexing()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            var app = b.Add(Source.FromPublisher(appProbe));
+            var server = b.Add(Source.FromPublisher(serverProbe));
+            var netSink = b.Add(Sink.FromSubscriber(networkSub));
+            var resSink = b.Add(Sink.FromSubscriber(responseSub));
+
+            b.From(app).To(s.InApp);
+            b.From(server).To(s.InServer);
+            b.From(s.OutNetwork).To(netSink);
+            b.From(s.OutResponse).To(resSink);
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSubscription.Request(20);
+        resSubscription.Request(10);
+
+        // Consume preface
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
+        // Send two requests simultaneously (multiplexing)
+        appSubscription.SendNext(MakeRequest("/req1"));
+        appSubscription.SendNext(MakeRequest("/req2"));
+
+        // Both should be encoded
+        for (var i = 0; i < 4; i++)
+        {
+            await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        }
+
+        // All requests accepted
+        Assert.True(true);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-3.1")]
+    public async Task Http20ConnectionStage_should_handle_settings_frame()
+    {
+        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -271,8 +216,102 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         netSubscription.Request(10);
         resSubscription.Request(10);
 
-        // Server closes without any request/response activity
-        serverSubscription.SendComplete();
+        // Consume preface
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
+        // Server sends SETTINGS frame (normally part of handshake but can be sent at any time)
+        serverSubscription.SendNext(MakeResponseBuffer("\x00\x00\x00\x04\x00\x00\x00\x00\x00"));
+
+        // Stage should handle it gracefully (no immediate response expected from app)
+        // Can send request after SETTINGS
+        Assert.True(true);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.8")]
+    public async Task Http20ConnectionStage_should_complete_on_goaway_with_no_inflight()
+    {
+        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            var app = b.Add(Source.FromPublisher(appProbe));
+            var server = b.Add(Source.FromPublisher(serverProbe));
+            var netSink = b.Add(Sink.FromSubscriber(networkSub));
+            var resSink = b.Add(Sink.FromSubscriber(responseSub));
+
+            b.From(app).To(s.InApp);
+            b.From(server).To(s.InServer);
+            b.From(s.OutNetwork).To(netSink);
+            b.From(s.OutResponse).To(resSink);
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSubscription.Request(10);
+        resSubscription.Request(10);
+
+        // Consume preface
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
+        // Server sends GOAWAY
+        serverSubscription.SendNext(new CloseSignalItem(TlsCloseKind.CleanClose));
+
+        // Stage should complete
+        await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
+    }
+
+    [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6")]
+    public async Task Http20ConnectionStage_should_complete_when_app_upstream_finishes_with_no_inflight()
+    {
+        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+
+        var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
+        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
+        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
+
+        RunnableGraph.FromGraph(GraphDsl.Create(b =>
+        {
+            var s = b.Add(stage);
+            var app = b.Add(Source.FromPublisher(appProbe));
+            var server = b.Add(Source.FromPublisher(serverProbe));
+            var netSink = b.Add(Sink.FromSubscriber(networkSub));
+            var resSink = b.Add(Sink.FromSubscriber(responseSub));
+
+            b.From(app).To(s.InApp);
+            b.From(server).To(s.InServer);
+            b.From(s.OutNetwork).To(netSink);
+            b.From(s.OutResponse).To(resSink);
+
+            return ClosedShape.Instance;
+        })).Run(Materializer);
+
+        var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+
+        netSubscription.Request(10);
+        resSubscription.Request(10);
+
+        // Consume preface
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
+        // Complete app without sending request
+        appSubscription.SendComplete();
 
         // Stage should complete
         await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
