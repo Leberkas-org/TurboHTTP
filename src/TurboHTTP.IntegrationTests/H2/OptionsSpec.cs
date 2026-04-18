@@ -3,11 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.H2;
 
-/// <summary>
-/// Integration tests for TurboClientOptions wiring in HTTP/2 (h2c).
-/// Verifies Credentials, PreAuthenticate, and PooledConnectionLifetime
-/// through the pipeline.
-/// </summary>
 [Collection("H2")]
 [Obsolete("Replaced by StreamTests.Acceptance.H2.OptionsSpec")]
 public sealed class OptionsSpec

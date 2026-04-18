@@ -5,7 +5,6 @@ namespace TurboHTTP.AcceptanceTests.H3;
 
 public sealed class ConnectionSpec : AcceptanceTestBase
 {
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public async Task Sequential_requests_should_reuse_same_connection()
@@ -21,7 +20,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data("Hello World")
             .Build();
 
-        var (response1, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request1, controlFrames, responseFrames);
+        var (response1, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request1, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
         var body1 = await response1.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -32,7 +32,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             Version = HttpVersion.Version30
         };
 
-        var (response2, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request2, controlFrames, responseFrames);
+        var (response2, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request2, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
         var body2 = await response2.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -56,7 +57,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
                 .Data("pong")
                 .Build();
 
-            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                responseFrames);
             return response;
         }).ToArray();
 
@@ -92,7 +94,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)payload)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -115,7 +118,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data("Hello World")
             .Build();
 
-        var (response1, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request1, controlFrames, responseFrames1);
+        var (response1, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request1, controlFrames, responseFrames1);
         Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
         Assert.Equal("Hello World", await response1.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
@@ -130,6 +134,7 @@ public sealed class ConnectionSpec : AcceptanceTestBase
         {
             manyHeaders.Add(($"x-custom-{i:D3}", $"value-{i:D3}"));
         }
+
         manyHeaders.Add(("content-length", "12"));
 
         var responseFrames2 = new H3ResponseBuilder()
@@ -137,7 +142,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data("many-headers")
             .Build();
 
-        var (response2, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request2, controlFrames, responseFrames2);
+        var (response2, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request2, controlFrames, responseFrames2);
         Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
         Assert.True(response2.Headers.TryGetValues("X-Custom-000", out _));
 
@@ -155,7 +161,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)largeBody)
             .Build();
 
-        var (response3, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request3, controlFrames, responseFrames3);
+        var (response3, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request3, controlFrames, responseFrames3);
         Assert.Equal(HttpStatusCode.OK, response3.StatusCode);
         var largeResponseBody = await response3.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         Assert.Equal(8 * 1024, largeResponseBody.Length);
@@ -178,7 +185,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)postPayload)
             .Build();
 
-        var (postResponse, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), postRequest, controlFrames, postResponseFrames);
+        var (postResponse, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), postRequest, controlFrames,
+            postResponseFrames);
         Assert.Equal(HttpStatusCode.OK, postResponse.StatusCode);
         var postBody = await postResponse.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         Assert.Equal(postPayload, postBody);
@@ -193,7 +201,8 @@ public sealed class ConnectionSpec : AcceptanceTestBase
             .Data("h3-ok")
             .Build();
 
-        var (getResponse, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), getRequest, controlFrames, getResponseFrames);
+        var (getResponse, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), getRequest, controlFrames,
+            getResponseFrames);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var getBody = await getResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Equal("h3-ok", getBody);

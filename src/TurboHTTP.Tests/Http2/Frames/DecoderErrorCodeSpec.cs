@@ -2,14 +2,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP/2 error code decoding from GOAWAY and RST_STREAM frames per RFC 9113 §7.
-/// Verifies all error codes are correctly decoded and mapped.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §7: Error codes for connection errors, stream errors, and frame validation.
-/// </remarks>
 public sealed class Http2DecoderErrorCodeSpec
 {
     [Theory(Timeout = 5000)]

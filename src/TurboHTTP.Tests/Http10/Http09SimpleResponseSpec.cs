@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/0.9 Simple-Response compatibility per RFC 1945 �3.1.
-/// HTTP/1.0 clients must understand any valid response in the format of HTTP/0.9.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 �3.1: Simple-Response has no status-line � just body until connection close.
-/// </remarks>
 public sealed class Http09SimpleResponseSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -19,7 +11,7 @@ public sealed class Http09SimpleResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945")]
-    public void Http09SimpleResponseSpec_should_parseashttp09()
+    public void Http09SimpleResponseSpec_should_parse_as_http09()
     {
         var decoder = new Decoder();
         var body = "<html>Hello</html>";
@@ -40,7 +32,7 @@ public sealed class Http09SimpleResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945")]
-    public void Http09SimpleResponseSpec_should_haveemptyheaders()
+    public void Http09SimpleResponseSpec_should_have_empty_headers()
     {
         var decoder = new Decoder();
         var data = Bytes("some body content");
@@ -56,7 +48,7 @@ public sealed class Http09SimpleResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945")]
-    public async Task Http09SimpleResponseSpec_should_readbodyuntileof()
+    public async Task Http09SimpleResponseSpec_should_read_body_until_eof()
     {
         var decoder = new Decoder();
         var chunk1 = Bytes("Hello ");
@@ -76,7 +68,7 @@ public sealed class Http09SimpleResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945")]
-    public async Task Http09SimpleResponseSpec_should_parsenormally()
+    public async Task Http09SimpleResponseSpec_should_parse_normally()
     {
         var decoder = new Decoder();
         var raw = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello";
@@ -96,14 +88,14 @@ public sealed class Http09SimpleResponseSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945")]
-    public void Http09SimpleResponseSpec_should_handleempty()
+    public void Http09SimpleResponseSpec_should_handle_empty()
     {
         var decoder = new Decoder();
 
         // Feed empty data then signal EOF
         decoder.TryDecode(ReadOnlyMemory<byte>.Empty, out _);
         // No data at all � signal EOF directly
-        var result = decoder.TryDecodeEof(out var response);
+        var result = decoder.TryDecodeEof(out _);
 
         // No data was ever received, so nothing to decode
         Assert.False(result);

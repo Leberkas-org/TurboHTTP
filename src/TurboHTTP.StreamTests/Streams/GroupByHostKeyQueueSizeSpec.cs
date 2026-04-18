@@ -8,14 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests queue-size limits of the GroupByHostKey subflow used to multiplex connections per host.
-/// Verifies default and configurable buffer limits and back-pressure under burst load.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="GroupByRequestEndpointStage{T}"/>.
-/// Validates that per-host subflow queues respect capacity constraints.
-/// </remarks>
 public sealed class GroupByHostKeyQueueSizeSpec : StreamTestBase
 {
     private static HttpRequestMessage Req(string url)
@@ -119,7 +111,7 @@ public sealed class GroupByHostKeyQueueSizeSpec : StreamTestBase
         Assert.All(hostCounts.Values, count => Assert.Equal(20, count));
     }
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public void GroupByHostKeyQueueSize_should_have_flow_shape_when_group_by_host_key_stage_created()
     {
         var stage = new GroupByRequestEndpointStage<HttpRequestMessage>(RequestEndpoint.FromRequest);
@@ -130,7 +122,8 @@ public sealed class GroupByHostKeyQueueSizeSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task GroupByHostKeyQueueSize_should_default_queue_size_to_64_when_extension_method_called_without_queue_size_param()
+    public async Task
+        GroupByHostKeyQueueSize_should_default_queue_size_to_64_when_extension_method_called_without_queue_size_param()
     {
         // Verify the pipeline works with the default (no explicit queueSize parameter).
         // This confirms the default of 64 is applied.

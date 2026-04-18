@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests round-trip encoding and decoding of no-body responses per RFC 9112 §6.3.
-/// Verifies that 1xx, 204, and 304 responses produce empty bodies end-to-end.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §6.3: Body not allowed for 1xx, 204 No Content, and 304 Not Modified responses.
-/// </remarks>
 public sealed class Http11RoundTripNoBodySpec
 {
     private static ReadOnlyMemory<byte> BuildResponse(int status, string reason, string body,
@@ -43,7 +35,7 @@ public sealed class Http11RoundTripNoBodySpec
         return result;
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11RoundTrip_should_return_304_no_body_when_not_modified_with_etag_round_trip()
     {

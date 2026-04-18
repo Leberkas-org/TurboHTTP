@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests HTTP/1.1 security limits and protections per RFC 9112.
-/// Verifies header count limits, request smuggling defenses, and oversized field rejection.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §11: Security considerations — limits on header count and field sizes prevent DoS.
-/// </remarks>
 public sealed class Http11SecuritySpec
 {
     [Fact(Timeout = 5000)]
@@ -196,10 +188,6 @@ public sealed class Http11SecuritySpec
         Assert.Single(responses);
     }
 
-    /// <summary>
-    /// Build a response with <paramref name="extraCount"/> extra X-Header-N headers
-    /// plus one Content-Length header. Total header fields = extraCount + 1.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithNHeaders(int extraCount)
     {
         var sb = new StringBuilder();
@@ -214,12 +202,6 @@ public sealed class Http11SecuritySpec
         return Encoding.ASCII.GetBytes(sb.ToString());
     }
 
-    /// <summary>
-    /// Build a response whose header section occupies exactly <paramref name="headerEnd"/> bytes
-    /// before the CRLFCRLF terminator (i.e., FindCrlfCrlf returns headerEnd).
-    /// Structure: "HTTP/1.1 200 OK\r\n" (17 B) + "X-Padding: " (11 B) + padding + "\r\n" (2 B)
-    /// headerEnd = 17 + 11 + paddingLength = 28 + paddingLength → paddingLength = headerEnd - 28.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithHeaderBlockPosition(int headerEnd)
     {
         var paddingLength = headerEnd - 28;
@@ -228,9 +210,6 @@ public sealed class Http11SecuritySpec
         return Encoding.ASCII.GetBytes(raw);
     }
 
-    /// <summary>
-    /// Build a response with a single header value of <paramref name="valueLength"/> bytes.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithLargeHeaderValue(int valueLength)
     {
         var value = new string('x', valueLength);
@@ -238,9 +217,6 @@ public sealed class Http11SecuritySpec
         return Encoding.ASCII.GetBytes(raw);
     }
 
-    /// <summary>
-    /// Build a fully valid response with exactly <paramref name="bodySize"/> bytes of body.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithBodySize(int bodySize)
     {
         var body = new string('B', bodySize);
@@ -248,20 +224,12 @@ public sealed class Http11SecuritySpec
         return Encoding.ASCII.GetBytes(raw);
     }
 
-    /// <summary>
-    /// Build a response that declares Content-Length = <paramref name="contentLength"/>
-    /// but contains no body bytes. Used to test that the limit check fires on the
-    /// Content-Length value alone (before reading body bytes).
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithContentLengthOnly(int contentLength)
     {
         var raw = $"HTTP/1.1 200 OK\r\nContent-Length: {contentLength}\r\n\r\n";
         return Encoding.ASCII.GetBytes(raw);
     }
 
-    /// <summary>
-    /// Build a response that has both Transfer-Encoding: chunked and Content-Length headers.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithTeAndCl()
     {
         const string response =
@@ -273,11 +241,6 @@ public sealed class Http11SecuritySpec
         return Encoding.ASCII.GetBytes(response);
     }
 
-    /// <summary>
-    /// Build a response where a header value contains a bare CR (0x0D) character.
-    /// The HTTP/1.1 parser extracts the value as a string containing '\r',
-    /// which is invalid per RFC 9112 §5.5.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithBareCrInHeaderValue()
     {
         // Manually build bytes to embed a bare \r inside a header value.
@@ -293,9 +256,6 @@ public sealed class Http11SecuritySpec
         return bytes;
     }
 
-    /// <summary>
-    /// Build a response where a header value contains a NUL (0x00) byte.
-    /// </summary>
     private static ReadOnlyMemory<byte> BuildResponseWithNulInHeaderValue()
     {
         var prefix = "HTTP/1.1 200 OK\r\nX-Foo: hello"u8.ToArray();

@@ -26,7 +26,6 @@ public sealed class FakeProxyStageSpec : EngineTestBase
     };
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task FakeProxy_should_respond_with_200_connection_established_when_connect_item_arrives()
     {
         var requestBytes = Encoding.Latin1.GetBytes("GET /hello HTTP/1.1\r\nHost: target.example.com\r\n\r\n");
@@ -71,7 +70,6 @@ public sealed class FakeProxyStageSpec : EngineTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task FakeProxy_should_expose_tunneled_request_bytes_via_channel()
     {
         var requestBytes = Encoding.Latin1.GetBytes("GET /inspect HTTP/1.1\r\nHost: target.example.com\r\n\r\n");
@@ -110,7 +108,6 @@ public sealed class FakeProxyStageSpec : EngineTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task FakeProxy_should_abort_stream_when_factory_returns_null_after_tunnel()
     {
         var firstRequest = Encoding.Latin1.GetBytes("GET /first HTTP/1.1\r\nHost: target.example.com\r\n\r\n");

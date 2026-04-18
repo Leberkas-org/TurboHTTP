@@ -4,15 +4,6 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for <see cref="ContentEncoding"/> per RFC 9110 §8.4.
-/// Verifies support detection and decompressor/compressor creation for
-/// gzip, x-gzip, deflate, br (Brotli), and identity encodings.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="ContentEncoding"/>.
-/// RFC 9110 §8.4: Content-Encoding decompression and compression.
-/// </remarks>
 public sealed class ContentEncodingSpec
 {
     private static byte[] MakeTestData(int size = 256)
@@ -22,6 +13,7 @@ public sealed class ContentEncodingSpec
         {
             data[i] = (byte)(i % 256);
         }
+
         return data;
     }
 
@@ -32,38 +24,35 @@ public sealed class ContentEncodingSpec
         return ms.ToArray();
     }
 
-
-    // ─── IsSupported Tests ───
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_null_encoding()
     {
         Assert.True(ContentEncoding.IsSupported(null));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_empty_encoding()
     {
         Assert.True(ContentEncoding.IsSupported(""));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_whitespace_only_encoding()
     {
         Assert.True(ContentEncoding.IsSupported("   "));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_identity_encoding()
     {
         Assert.True(ContentEncoding.IsSupported("identity"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_identity_case_insensitive()
     {
@@ -72,14 +61,14 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("iDeNtItY"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_gzip()
     {
         Assert.True(ContentEncoding.IsSupported("gzip"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_gzip_case_insensitive()
     {
@@ -87,14 +76,14 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("Gzip"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_x_gzip()
     {
         Assert.True(ContentEncoding.IsSupported("x-gzip"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_x_gzip_case_insensitive()
     {
@@ -102,14 +91,14 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("X-Gzip"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_deflate()
     {
         Assert.True(ContentEncoding.IsSupported("deflate"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_deflate_case_insensitive()
     {
@@ -117,14 +106,14 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("Deflate"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_brotli()
     {
         Assert.True(ContentEncoding.IsSupported("br"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_brotli_case_insensitive()
     {
@@ -132,7 +121,7 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("Br"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_reject_unsupported_encoding()
     {
@@ -141,7 +130,7 @@ public sealed class ContentEncodingSpec
         Assert.False(ContentEncoding.IsSupported("xyz"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_support_stacked_encodings_all_supported()
     {
@@ -150,7 +139,7 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("gzip, br, deflate"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_reject_stacked_encodings_with_unsupported()
     {
@@ -159,7 +148,7 @@ public sealed class ContentEncodingSpec
         Assert.False(ContentEncoding.IsSupported("gzip, unknown, deflate"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_handle_stacked_with_identity()
     {
@@ -167,7 +156,7 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("identity, deflate"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_handle_whitespace_in_stacked_encodings()
     {
@@ -176,7 +165,7 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("  gzip  ,  deflate  "));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_handle_empty_token_in_stacked()
     {
@@ -184,10 +173,7 @@ public sealed class ContentEncodingSpec
         Assert.True(ContentEncoding.IsSupported("gzip,,deflate"));
     }
 
-
-    // ─── CreateDecompressor Tests ───
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     [InlineData("gzip")]
     [InlineData("x-gzip")]
@@ -210,7 +196,7 @@ public sealed class ContentEncodingSpec
         Assert.Equal(data, decompressed);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     [InlineData("GZIP")]
     [InlineData("X-GZIP")]
@@ -218,7 +204,7 @@ public sealed class ContentEncodingSpec
     [InlineData("BR")]
     public void ContentEncoding_should_create_decompressor_case_insensitive(string encoding)
     {
-        var data = MakeTestData(256);
+        var data = MakeTestData();
 
         using var compressed = new MemoryStream();
         using (var compressor = ContentEncoding.CreateCompressor(compressed, encoding.ToLowerInvariant()))
@@ -233,7 +219,7 @@ public sealed class ContentEncodingSpec
         Assert.Equal(data, decompressed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_throw_when_creating_decompressor_for_unknown_encoding()
     {
@@ -245,7 +231,7 @@ public sealed class ContentEncodingSpec
         Assert.Contains("Unknown Content-Encoding", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_throw_when_creating_decompressor_for_compress()
     {
@@ -257,10 +243,7 @@ public sealed class ContentEncodingSpec
         Assert.Contains("Unknown Content-Encoding", ex.Message);
     }
 
-
-    // ─── CreateCompressor Tests ───
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     [InlineData("gzip")]
     [InlineData("x-gzip")]
@@ -280,7 +263,7 @@ public sealed class ContentEncodingSpec
         Assert.NotEmpty(compressed.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_throw_when_creating_compressor_for_unknown_encoding()
     {
@@ -292,11 +275,11 @@ public sealed class ContentEncodingSpec
         Assert.Contains("Unknown Content-Encoding", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_leave_stream_open_on_compressor()
     {
-        var data = MakeTestData(256);
+        var data = MakeTestData();
         using var baseStream = new MemoryStream();
 
         using (var compressor = ContentEncoding.CreateCompressor(baseStream, "gzip"))
@@ -308,7 +291,7 @@ public sealed class ContentEncodingSpec
         Assert.True(baseStream.CanWrite);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_handle_empty_data_compression()
     {
@@ -324,14 +307,11 @@ public sealed class ContentEncodingSpec
         Assert.True(result.Length >= 0); // GZip may or may not output bytes for empty input
     }
 
-
-    // ─── CreateCodecStream Tests ───
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_create_codec_stream_for_gzip_decompress()
     {
-        var data = MakeTestData(256);
+        var data = MakeTestData();
 
         using var compressed = new MemoryStream();
         using (var codec = ContentEncoding.CreateCodecStream(compressed, "gzip", CompressionMode.Compress, true))
@@ -346,14 +326,14 @@ public sealed class ContentEncodingSpec
         Assert.Equal(data, result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_respect_leave_open_flag_on_decompress()
     {
         using var compressed = new MemoryStream([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
         // Create decompressor with leaveOpen=false (default)
-        using (var decompressor = ContentEncoding.CreateCodecStream(compressed, "gzip", CompressionMode.Decompress))
+        using (ContentEncoding.CreateCodecStream(compressed, "gzip", CompressionMode.Decompress))
         {
             // Decompressor should close the underlying stream when disposed
         }
@@ -362,14 +342,15 @@ public sealed class ContentEncodingSpec
         Assert.False(compressed.CanRead);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_respect_leave_open_flag_on_compress()
     {
         using var output = new MemoryStream();
 
         // Create compressor with leaveOpen=true
-        using (var compressor = ContentEncoding.CreateCodecStream(output, "gzip", CompressionMode.Compress, leaveOpen: true))
+        using (var compressor =
+               ContentEncoding.CreateCodecStream(output, "gzip", CompressionMode.Compress, leaveOpen: true))
         {
             compressor.Write(MakeTestData(128));
         }
@@ -378,7 +359,7 @@ public sealed class ContentEncodingSpec
         Assert.True(output.CanWrite);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_throw_when_codec_stream_unknown_encoding()
     {
@@ -390,11 +371,11 @@ public sealed class ContentEncodingSpec
         Assert.Contains("Unknown Content-Encoding", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void ContentEncoding_should_handle_x_gzip_as_gzip_equivalent()
     {
-        var data = MakeTestData(256);
+        var data = MakeTestData();
 
         // Compress with gzip
         using var compressed = new MemoryStream();
@@ -411,7 +392,7 @@ public sealed class ContentEncodingSpec
         Assert.Equal(data, result);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     [InlineData("gzip")]
     [InlineData("x-gzip")]

@@ -7,13 +7,9 @@ using Encoder = TurboHTTP.Protocol.Http11.Encoder;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for RFC 9110 §4.2.4 — "A sender MUST NOT generate the userinfo subcomponent."
-/// Verifies that Http2RequestEncoder strips userinfo from the :authority pseudo-header.
-/// </summary>
 public sealed class UserinfoStrippingSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_should_strip_userinfo_when_http_uri()
     {
@@ -29,7 +25,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_should_strip_userinfo_when_https_uri()
     {
@@ -44,7 +40,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_should_preserve_port_when_userinfo_present()
     {
@@ -58,7 +54,7 @@ public sealed class UserinfoStrippingSpec
         Assert.Equal("host.example.com:8080", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H2_should_not_change_when_no_userinfo()
     {
@@ -74,7 +70,7 @@ public sealed class UserinfoStrippingSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H11_should_strip_userinfo_when_absolute_form()
     {
@@ -87,7 +83,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void H11_should_not_contain_userinfo_when_origin_form()
     {
@@ -101,7 +97,7 @@ public sealed class UserinfoStrippingSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void Http10_should_strip_userinfo_when_absolute_form()
     {
@@ -114,7 +110,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void Http10_should_not_contain_userinfo_when_origin_form()
     {
@@ -127,7 +123,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void Http10_should_not_change_when_no_userinfo()
     {
@@ -138,7 +134,7 @@ public sealed class UserinfoStrippingSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void FormatAuthority_should_exclude_userinfo()
     {
@@ -151,7 +147,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void FormatAuthority_should_include_port()
     {
@@ -162,7 +158,7 @@ public sealed class UserinfoStrippingSpec
         Assert.Equal("example.com:9090", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void FormatAuthority_should_omit_default_port()
     {
@@ -173,7 +169,7 @@ public sealed class UserinfoStrippingSpec
         Assert.Equal("example.com", UriSanitizer.FormatAuthority(uriHttps));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void FormatAuthority_should_bracket_ipv6()
     {
@@ -184,7 +180,7 @@ public sealed class UserinfoStrippingSpec
         Assert.Equal("[::1]:8080", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void FormatAuthority_should_bracket_ipv6_when_default_port()
     {
@@ -195,7 +191,7 @@ public sealed class UserinfoStrippingSpec
         Assert.Equal("[::1]", authority);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void StripUserInfo_should_preserve_path()
     {
@@ -212,7 +208,7 @@ public sealed class UserinfoStrippingSpec
         Assert.DoesNotContain("@", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void StripUserInfo_should_not_change_when_no_userinfo()
     {
@@ -225,7 +221,7 @@ public sealed class UserinfoStrippingSpec
         Assert.Contains("#frag", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.2.4")]
     public void FormatAbsoluteWithoutUserInfo_should_strip_userinfo_and_fragment()
     {

@@ -57,7 +57,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_AcquisitionFailed_with_socket_exception_should_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -72,7 +71,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_AcquisitionFailed_cancelled_without_pending_connect_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();
@@ -87,7 +85,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteFailed_should_push_abrupt_close()
     {
         var (sm, ops) = CreateStateMachine();
@@ -102,7 +99,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundPumpFailed_should_push_abrupt_close()
     {
         var (sm, ops) = CreateStateMachine();
@@ -117,7 +113,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void OnTimer_connect_timeout_should_cancel_timer_and_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -133,7 +128,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_AcquisitionFailed_with_timeout_exception_should_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -148,7 +142,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundBatch_stale_gen_should_return_to_pool()
     {
         var (sm, ops) = CreateStateMachine();
@@ -166,7 +159,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundComplete_stale_gen_should_not_push_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -181,7 +173,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleDownstreamFinish_should_cleanup_and_null_lease()
     {
         var (sm, _) = CreateStateMachine();
@@ -194,7 +185,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteFailed_with_aggregate_exception_should_extract_base()
     {
         var (sm, ops) = CreateStateMachine();
@@ -211,7 +201,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleUpstreamFinish_then_Dispatch_InboundComplete_should_complete_immediately()
     {
         var (sm, ops) = CreateStateMachine();
@@ -230,7 +219,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void PostStop_with_pending_writes_should_dispose_all()
     {
         var (sm, ops) = CreateStateMachine();
@@ -251,7 +239,6 @@ public sealed class TcpTransportStateMachineErrorSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_multiple_events_in_sequence_should_maintain_state()
     {
         var (sm, ops) = CreateStateMachine();

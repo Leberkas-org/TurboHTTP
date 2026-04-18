@@ -52,7 +52,8 @@ public sealed class PooledBodyContentSpec
         content.Dispose();
 
         using var ms = new MemoryStream();
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => content.CopyToAsync(ms, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            content.CopyToAsync(ms, TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -72,5 +73,4 @@ public sealed class PooledBodyContentSpec
 
         Assert.Equal(42, content.Headers.ContentLength);
     }
-
 }

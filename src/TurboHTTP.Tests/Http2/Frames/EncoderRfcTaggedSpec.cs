@@ -3,14 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests RFC-specific encoder behaviors covering connection setup, HPACK compression, and frame semantics per RFC 9113.
-/// Verifies correct stream state transitions and flag combinations.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RequestEncoder"/>.
-/// RFC 9113 §5: Stream states and transitions for request encoding.
-/// </remarks>
 public sealed class Http2EncoderRfcTaggedSpec
 {
     [Fact(Timeout = 5000)]
@@ -69,7 +61,6 @@ public sealed class Http2EncoderRfcTaggedSpec
         var headerBlock = encoder.EncodeToHpackBlock(request);
 
         Assert.NotEmpty(headerBlock.ToArray());
-        // HPACK-encoded headers are typically smaller than raw headers
     }
 
     [Fact(Timeout = 5000)]
@@ -153,7 +144,6 @@ public sealed class Http2EncoderRfcTaggedSpec
         var frames = encoder.Encode(request, 1);
 
         Assert.NotEmpty(frames);
-        // Frames should respect default flow control window (65535 bytes)
     }
 
     [Fact(Timeout = 5000)]

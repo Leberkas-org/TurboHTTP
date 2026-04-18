@@ -189,7 +189,7 @@ public sealed class TurboHttpClientBuilderExtensionsSpec
     public void WithDecompression_True_SetsTrue()
     {
         var services = new ServiceCollection();
-        services.AddTurboHttpClient("test").WithDecompression(true);
+        services.AddTurboHttpClient("test").WithDecompression();
 
         var descriptor = GetDescriptor(services, "test");
 

@@ -28,7 +28,8 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
         return Encoding.Latin1.GetBytes(sb.ToString());
     }
 
-    private async Task<HttpResponseMessage> SendExpectAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendExpectAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = CreateExpectContinueEngine().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));

@@ -9,22 +9,10 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Core tests for the retry bidirectional stage per RFC 9110.
-/// Covers pass-through, request direction, non-retryable responses, and immediate retry.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="RetryBidiStage"/>.
-/// RFC 9110 §9.2: Idempotency, safe methods, and retry semantics.
-/// </remarks>
 public sealed class RetryCoreSpec : StreamTestBase
 {
     private static readonly HttpRequestOptionsKey<int> AttemptCountKey = new("TurboHTTP.RetryAttemptCount");
 
-    /// <summary>
-    /// Runs requests through the request direction (In1→Out1) of the BidiStage.
-    /// The response direction is wired to empty source / ignored sink.
-    /// </summary>
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
         RetryBidiStage stage,
         params HttpRequestMessage[] requests)
@@ -51,10 +39,6 @@ public sealed class RetryCoreSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Runs responses through the response direction (In2→Out2) of the BidiStage.
-    /// The request direction is wired to empty source / ignored sink.
-    /// </summary>
     private Task<IImmutableList<HttpResponseMessage>> RunResponseAsync(
         RetryBidiStage stage,
         params HttpResponseMessage[] responses)
@@ -79,11 +63,6 @@ public sealed class RetryCoreSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Materialises a <see cref="RetryBidiStage"/> with manual subscriber probes on both outlets
-    /// and a manual publisher probe on the response inlet. The request inlet receives the given
-    /// requests concatenated with Source.Never to prevent premature completion.
-    /// </summary>
     private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
         TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
         Action<HttpResponseMessage> pushResponse,
@@ -138,13 +117,11 @@ public sealed class RetryCoreSpec : StreamTestBase
         return response;
     }
 
-    // Pass-through tests (null policy)
-
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
     public async Task RequestDirection_should_pass_through_when_policy_is_null()
     {
-        var stage = new RetryBidiStage(null);
+        var stage = new RetryBidiStage();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var results = await RunRequestAsync(stage, request);
@@ -157,7 +134,7 @@ public sealed class RetryCoreSpec : StreamTestBase
     [Trait("RFC", "RFC9110-9.2")]
     public async Task ResponseDirection_should_pass_through_when_policy_is_null()
     {
-        var stage = new RetryBidiStage(null);
+        var stage = new RetryBidiStage();
         var response = BuildResponse(HttpStatusCode.ServiceUnavailable);
 
         var results = await RunResponseAsync(stage, response);
@@ -165,8 +142,6 @@ public sealed class RetryCoreSpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.Same(response, result);
     }
-
-    // Request direction tests
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
@@ -195,8 +170,6 @@ public sealed class RetryCoreSpec : StreamTestBase
         Assert.Same(req1, results[0]);
         Assert.Same(req2, results[1]);
     }
-
-    // Response direction: non-retryable
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
@@ -263,8 +236,6 @@ public sealed class RetryCoreSpec : StreamTestBase
 
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
-
-    // Response direction: retryable (immediate)
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
@@ -343,8 +314,6 @@ public sealed class RetryCoreSpec : StreamTestBase
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
         reqOut.ExpectNoMsg(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
     }
-
-    // Idempotent method coverage
 
     [Theory]
     [Trait("RFC", "RFC9110-9.2")]

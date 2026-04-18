@@ -10,9 +10,6 @@ using ActivitySource = System.Diagnostics.ActivitySource;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Verifies that TracingBidiStage stops in-flight Activity spans on stage teardown.
-/// </summary>
 public sealed class TracingActivityLeakSpec : StreamTestBase
 {
     [Fact(Timeout = 10_000)]

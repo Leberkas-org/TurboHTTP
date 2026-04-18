@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests HTTP/1.1 response body decoding per RFC 9112 §6.
-/// Verifies Content-Length–delimited body extraction and partial data buffering.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §6: Message body length — determined by Content-Length or Transfer-Encoding.
-/// </remarks>
 public sealed class Http11DecoderBodySpec
 {
     private readonly Decoder _decoder = new();
@@ -87,7 +79,6 @@ public sealed class Http11DecoderBodySpec
     [Trait("RFC", "RFC9112-6")]
     public void Http11Decoder_should_reject_when_transfer_encoding_and_content_length_conflict()
     {
-        // RFC 9112 §6.3 / Security: TE+CL combination is rejected to prevent HTTP smuggling.
         const string chunkedBody = "5\r\nHello\r\n0\r\n\r\n";
         var raw = BuildRaw(200, "OK", chunkedBody,
             ("Transfer-Encoding", "chunked"),
@@ -136,7 +127,7 @@ public sealed class Http11DecoderBodySpec
     public async Task Http11Decoder_should_decode_correctly_when_large_body_10_mb()
     {
         // Create 10 MB body
-        var bodySize = 10 * 1024 * 1024;
+        const int bodySize = 10 * 1024 * 1024;
         var largeBody = new byte[bodySize];
         for (var i = 0; i < bodySize; i++)
         {

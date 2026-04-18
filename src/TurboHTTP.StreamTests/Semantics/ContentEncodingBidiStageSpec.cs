@@ -8,15 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Tests for the ContentEncodingBidiStage covering request compression and response decompression.
-/// Verifies RFC 9110 §8.4 — Content-Encoding header handling and automatic compression/decompression.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="ContentEncodingBidiStage"/>.
-/// RFC 9110 §8.4: Content-Encoding header and transparent decompression of response bodies.
-/// Tests request direction compression with various policies and response direction decompression.
-/// </remarks>
 public sealed class ContentEncodingBidiStageSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
@@ -67,8 +58,6 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    // Compression helper methods
-
     private static byte[] GzipCompress(byte[] data)
     {
         using var output = new MemoryStream();
@@ -76,6 +65,7 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -86,6 +76,7 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         {
             deflate.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -96,6 +87,7 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         {
             br.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -106,10 +98,9 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         {
             content.Headers.TryAddWithoutValidation("Content-Encoding", contentEncoding);
         }
+
         return new HttpResponseMessage { Content = content };
     }
-
-    // Request direction tests (compression)
 
     [Trait("RFC", "RFC9110-8.4")]
     [Fact(Timeout = 5000)]
@@ -291,8 +282,6 @@ public sealed class ContentEncodingBidiStageSpec : StreamTestBase
         Assert.True(result.Content?.Headers.Contains("X-Custom-Header") ?? false);
         Assert.True(result.Content?.Headers.Contains("Content-Encoding") ?? false);
     }
-
-    // Response direction tests (decompression)
 
     [Trait("RFC", "RFC9110-8.4")]
     [Fact(Timeout = 5000)]

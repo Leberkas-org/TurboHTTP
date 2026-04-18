@@ -35,7 +35,6 @@ public sealed class ProxyRelaySpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_relay_plain_http_request()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/hello")
@@ -52,7 +51,6 @@ public sealed class ProxyRelaySpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_relay_multiple_requests_on_same_connection()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/hello")
@@ -67,7 +65,6 @@ public sealed class ProxyRelaySpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_bypass_for_plain_http_when_use_proxy_false()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/hello")

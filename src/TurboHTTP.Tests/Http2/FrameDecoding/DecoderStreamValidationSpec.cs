@@ -1,19 +1,10 @@
-using TurboHTTP.Protocol.Http2;
+﻿using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.FrameDecoding;
 
-/// <summary>
-/// Tests HEADERS frame stream validation and multi-frame header block reassembly per RFC 9113 §5 and §6.2.
-/// Verifies END_HEADERS continuations and stream ID constraints.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.2: When END_HEADERS is not set, the HEADERS frame must be followed by CONTINUATION frames on the same stream.
-/// </remarks>
 public sealed class DecoderStreamValidationSpec
 {
-
     private static byte[] MakeBlock(params (string Name, string Value)[] headers)
     {
         var enc = new HpackEncoder(useHuffman: false);
@@ -34,7 +25,6 @@ public sealed class DecoderStreamValidationSpec
         return result;
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
     public void Http2FrameDecoder_should_set_end_headers_true_when_end_headers_flag_set()
@@ -49,7 +39,6 @@ public sealed class DecoderStreamValidationSpec
         var hf = Assert.IsType<HeadersFrame>(frames[0]);
         Assert.True(hf.EndHeaders);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
@@ -66,14 +55,14 @@ public sealed class DecoderStreamValidationSpec
         Assert.False(hf.EndHeaders);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
     public void Http2FrameDecoder_should_set_end_headers_true_when_continuation_end_headers_flag_set()
     {
         var block = MakeBlock((":status", "200"));
         var split = block.Length / 2;
-        var headersBytes = new HeadersFrame(1, block.AsMemory()[..split], endStream: true, endHeaders: false).Serialize();
+        var headersBytes =
+            new HeadersFrame(1, block.AsMemory()[..split], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[split..], endHeaders: true).Serialize();
 
         var decoder = new FrameDecoder();
@@ -83,7 +72,6 @@ public sealed class DecoderStreamValidationSpec
         var cf = Assert.IsType<ContinuationFrame>(frames[1]);
         Assert.True(cf.EndHeaders);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
@@ -100,7 +88,6 @@ public sealed class DecoderStreamValidationSpec
         var cf = Assert.IsType<ContinuationFrame>(frames[1]);
         Assert.False(cf.EndHeaders);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
@@ -122,7 +109,6 @@ public sealed class DecoderStreamValidationSpec
         Assert.Contains(headers, h => h is { Name: "content-type", Value: "text/plain" });
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
     public void Http2FrameDecoder_should_return_fragment_bytes_when_continuation_frame_decoded()
@@ -143,7 +129,6 @@ public sealed class DecoderStreamValidationSpec
         Assert.Equal(part2, cf.HeaderBlockFragment.ToArray());
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
     public void Http2FrameDecoder_should_contain_all_headers_when_block_split_across_frames()
@@ -155,7 +140,8 @@ public sealed class DecoderStreamValidationSpec
             ("cache-control", "no-cache"));
 
         var half = block.Length / 2;
-        var headersBytes = new HeadersFrame(1, block.AsMemory()[..half], endStream: true, endHeaders: false).Serialize();
+        var headersBytes =
+            new HeadersFrame(1, block.AsMemory()[..half], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[half..], endHeaders: true).Serialize();
 
         var decoder = new FrameDecoder();
@@ -179,7 +165,6 @@ public sealed class DecoderStreamValidationSpec
         Assert.Contains(headers, h => h is { Name: "cache-control", Value: "no-cache" });
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.3")]
     public void Http2FrameDecoder_should_decode_hpack_fragment_correctly_when_headers_frame_round_tripped()
@@ -188,7 +173,7 @@ public sealed class DecoderStreamValidationSpec
         var block = enc.Encode([(":status", "204"), ("content-length", "0")]);
         var headersFrame = new HeadersFrame(1, block, endStream: true, endHeaders: true);
 
-        // Serialize → decode frame bytes → decode HPACK.
+        // Serialize â†’ decode frame bytes â†’ decode HPACK.
         var bytes = headersFrame.Serialize();
         var decoder = new FrameDecoder();
         var decoded = decoder.Decode(bytes);

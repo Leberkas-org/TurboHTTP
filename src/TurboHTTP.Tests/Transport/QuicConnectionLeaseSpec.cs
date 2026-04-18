@@ -3,10 +3,9 @@ using TurboHTTP.Internal;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 
-namespace TurboHTTP.Tests.Transport;
-
-// QUIC APIs are platform-guarded; usage is gated at runtime via QuicOptions.
 #pragma warning disable CA1416
+
+namespace TurboHTTP.Tests.Transport;
 
 public sealed class QuicConnectionLeaseSpec
 {
@@ -28,7 +27,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void New_lease_should_be_alive_and_reusable()
     {
         using var lease = CreateLease();
@@ -40,7 +38,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void MarkBusy_should_increment_active_streams()
     {
         using var lease = CreateLease();
@@ -51,7 +48,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void MarkIdle_should_decrement_active_streams()
     {
         using var lease = CreateLease();
@@ -63,7 +59,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void CanAcceptStream_should_respect_max_concurrent_streams()
     {
         using var lease = CreateLease();
@@ -77,7 +72,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void MarkNoReuse_should_prevent_further_reuse()
     {
         using var lease = CreateLease();
@@ -89,7 +83,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void IsExpired_should_return_false_within_lifetime()
     {
         using var lease = CreateLease();
@@ -98,7 +91,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void IsExpired_should_return_false_for_infinite_lifetime()
     {
         using var lease = CreateLease();
@@ -107,7 +99,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispose_should_mark_not_alive()
     {
         var lease = CreateLease();
@@ -119,7 +110,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispose_should_be_idempotent()
     {
         var lease = CreateLease();
@@ -131,7 +121,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void LastActivity_should_update_on_mark_busy()
     {
         using var lease = CreateLease();
@@ -144,7 +133,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Key_should_match_handle_endpoint()
     {
         using var lease = CreateLease();
@@ -153,7 +141,6 @@ public sealed class QuicConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void MaxConcurrentStreams_should_default_to_1()
     {
         using var lease = CreateLease();

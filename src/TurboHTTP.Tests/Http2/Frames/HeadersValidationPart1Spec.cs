@@ -3,14 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP/2 response pseudo-header validation per RFC 9113 §8.1.2.2.
-/// Verifies :status pseudo-header presence, value format, and position in header list.
-/// </summary>
-/// <remarks>
-/// RFC 9113 §8.1.2.2: Response pseudo-headers consist of a single :status header (required).
-/// Semantic validation is performed at the header-list level, not by the frame decoder.
-/// </remarks>
 public sealed class Http2HeadersValidationPart1Spec
 {
     [Fact(Timeout = 5000)]
@@ -161,8 +153,7 @@ public sealed class Http2HeadersValidationPart1Spec
     {
         if (headers.Count == 0)
         {
-            throw new Http2Exception("Response must contain :status pseudo-header.",
-                Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+            throw new Http2Exception("Response must contain :status pseudo-header.");
         }
 
         var seenRegular = false;
@@ -175,16 +166,14 @@ public sealed class Http2HeadersValidationPart1Spec
                 if (seenRegular)
                 {
                     throw new Http2Exception(
-                        $"Pseudo-header '{h.Name}' must not appear after regular header.",
-                        Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+                        $"Pseudo-header '{h.Name}' must not appear after regular header.");
                 }
 
                 if (h.Name == ":status")
                 {
                     if (seenStatus)
                     {
-                        throw new Http2Exception("Duplicate :status pseudo-header.",
-                            Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+                        throw new Http2Exception("Duplicate :status pseudo-header.");
                     }
 
                     seenStatus = true;
@@ -192,14 +181,12 @@ public sealed class Http2HeadersValidationPart1Spec
                 else if (IsRequestPseudoHeader(h.Name))
                 {
                     throw new Http2Exception(
-                        $"Request pseudo-header '{h.Name}' is not valid in a response.",
-                        Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+                        $"Request pseudo-header '{h.Name}' is not valid in a response.");
                 }
                 else
                 {
                     throw new Http2Exception(
-                        $"Unknown pseudo-header '{h.Name}' in response.",
-                        Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+                        $"Unknown pseudo-header '{h.Name}' in response.");
                 }
             }
             else
@@ -209,16 +196,14 @@ public sealed class Http2HeadersValidationPart1Spec
                 if (IsForbiddenConnectionHeader(h.Name))
                 {
                     throw new Http2Exception(
-                        $"Header '{h.Name}' is forbidden in HTTP/2.",
-                        Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+                        $"Header '{h.Name}' is forbidden in HTTP/2.");
                 }
             }
         }
 
         if (!seenStatus)
         {
-            throw new Http2Exception("Response is missing required :status pseudo-header.",
-                Http2ErrorCode.ProtocolError, Http2ErrorScope.Connection);
+            throw new Http2Exception("Response is missing required :status pseudo-header.");
         }
     }
 

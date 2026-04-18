@@ -3,14 +3,8 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Tests for QuicClientProvider reentrant multi-stream support
-/// and IClientProvider.SupportsMultipleStreams property.
-/// </summary>
 public sealed class QuicMultiStreamSpec
 {
-    // SupportsMultipleStreams property tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3")]
     public void TcpClientProvider_SupportsMultipleStreams_ReturnsFalse()
@@ -46,8 +40,6 @@ public sealed class QuicMultiStreamSpec
         Assert.False(provider.SupportsMultipleStreams);
     }
 
-    // QuicClientProvider reentrant connection tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3")]
     public async Task QuicClientProvider_ThrowsOnEmptyHost()
@@ -55,7 +47,8 @@ public sealed class QuicMultiStreamSpec
 #pragma warning disable CA1416
         var provider = new QuicClientProvider(new QuicOptions { Host = "", Port = 443 });
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetStreamAsync(TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(TestContext.Current.CancellationToken));
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
     }
@@ -67,7 +60,8 @@ public sealed class QuicMultiStreamSpec
 #pragma warning disable CA1416
         var provider = new QuicClientProvider(new QuicOptions { Host = null!, Port = 443 });
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetStreamAsync(TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(TestContext.Current.CancellationToken));
 #pragma warning restore CA1416
         Assert.Contains("SNI", ex.Message);
     }
@@ -81,8 +75,6 @@ public sealed class QuicMultiStreamSpec
         Assert.Null(provider.RemoteEndPoint);
 #pragma warning restore CA1416
     }
-
-    // Concurrent connection establishment tests (using testable seam)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3")]
@@ -154,16 +146,11 @@ public sealed class QuicMultiStreamSpec
     {
         var provider = new FakeReentrantProvider(streamCount: 10, failStreamOpen: true);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetStreamAsync(TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(TestContext.Current.CancellationToken));
         Assert.Contains("no longer usable", ex.Message);
     }
 
-    // Test doubles
-
-    /// <summary>
-    /// Minimal IClientProvider that does NOT override SupportsMultipleStreams,
-    /// verifying the default interface implementation returns false.
-    /// </summary>
     private sealed class MinimalClientProvider : IClientProvider
     {
         public EndPoint? RemoteEndPoint => null;
@@ -171,7 +158,7 @@ public sealed class QuicMultiStreamSpec
         public Task<Stream> GetStreamAsync(CancellationToken ct = default) =>
             Task.FromResult<Stream>(new MemoryStream());
 
-        public void Close()
+        public static void Close()
         {
         }
 
@@ -182,10 +169,6 @@ public sealed class QuicMultiStreamSpec
         }
     }
 
-    /// <summary>
-    /// Fake reentrant provider that mimics QuicClientProvider's connection-reuse pattern
-    /// for testing multi-stream, thread-safety, and reconnection behavior without real QUIC.
-    /// </summary>
     private sealed class FakeReentrantProvider : IClientProvider
     {
         private readonly TimeSpan _connectDelay;

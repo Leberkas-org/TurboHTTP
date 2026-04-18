@@ -2,10 +2,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Edge case and error path tests for HpackDecoder covering the remaining 13% coverage gap.
-/// Tests validation logic, error conditions, and boundary cases per RFC 7541.
-/// </summary>
 public sealed class HpackDecoderEdgeCasesSpec
 {
     [Fact(Timeout = 5000)]
@@ -62,18 +58,6 @@ public sealed class HpackDecoderEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-5.2")]
-    public void HpackDecoder_should_reject_negative_string_length()
-    {
-        var decoder = new HpackDecoder();
-
-        // String literal with malformed negative length encoding (shouldn't occur in practice,
-        // but the ReadInteger path could theoretically produce it via overflow checks)
-        // This is implicitly covered by ReadInteger overflow checks
-        // For now, skip this as it's hard to trigger without modifying ReadInteger
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-5.2")]
     public void HpackDecoder_should_reject_string_length_exceeding_max()
     {
         var decoder = new HpackDecoder();
@@ -114,7 +98,7 @@ public sealed class HpackDecoderEdgeCasesSpec
 
         // Literal with incremental indexing (01xxxxxx), name index 0 (new name),
         // empty name string (length 0, then empty data), then value
-        var bytes = new byte[] { 0x40, 0x00, 0x00 }; // 01000000 (name idx 0), name length 0, value length 0
+        var bytes = "@\0\0"u8.ToArray(); // 01000000 (name idx 0), name length 0, value length 0
 
         var ex = Assert.Throws<HpackException>(() => decoder.Decode(bytes));
         Assert.Contains("Empty header name", ex.Message);
@@ -131,8 +115,8 @@ public sealed class HpackDecoderEdgeCasesSpec
         // Pattern: 1xxxxxxx (prefix 7 bits), then continuation bytes
         var bytes = new byte[]
         {
-            0xFF,  // prefix bits all 1 (127), need continuation
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01  // Many continuation bytes
+            0xFF, // prefix bits all 1 (127), need continuation
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01 // Many continuation bytes
         };
 
         var ex = Assert.Throws<HpackException>(() => decoder.Decode(bytes));
@@ -260,11 +244,11 @@ public sealed class HpackDecoderEdgeCasesSpec
         // Never indexed pattern: 0001xxxx, name index 0, then name and value strings
         var bytes = new byte[]
         {
-            0x10,  // 0001xxxx pattern, index 0
-            0x0A,  // name length 10
+            0x10, // 0001xxxx pattern, index 0
+            0x0A, // name length 10
             (byte)'a', (byte)'u', (byte)'t', (byte)'h', (byte)'o',
             (byte)'r', (byte)'i', (byte)'z', (byte)'a', (byte)'t',
-            0x06,  // value length 6
+            0x06, // value length 6
             (byte)'s', (byte)'e', (byte)'c', (byte)'r', (byte)'e', (byte)'t'
         };
 
@@ -284,10 +268,10 @@ public sealed class HpackDecoderEdgeCasesSpec
         // Encode a never-indexed header
         var bytes = new byte[]
         {
-            0x10,  // 0001xxxx pattern, index 0 (new name)
-            0x04,  // name length
+            0x10, // 0001xxxx pattern, index 0 (new name)
+            0x04, // name length
             (byte)'t', (byte)'e', (byte)'s', (byte)'t',
-            0x05,  // value length
+            0x05, // value length
             (byte)'v', (byte)'a', (byte)'l', (byte)'u', (byte)'e'
         };
 
@@ -467,7 +451,7 @@ public sealed class HpackDecoderEdgeCasesSpec
     {
         var decoder = new HpackDecoder();
 
-        var bytes = new byte[] { };
+        var bytes = Array.Empty<byte>();
         var decoded = decoder.Decode(bytes);
 
         Assert.Empty(decoded);

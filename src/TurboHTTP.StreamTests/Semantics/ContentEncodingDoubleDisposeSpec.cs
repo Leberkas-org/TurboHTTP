@@ -7,16 +7,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Verifies that ContentEncodingBidiStage handles decompression errors without
-/// double-disposing the pooled memory owner.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="ContentEncodingBidiStage"/>.
-/// Bug: In the buffered decompression path, the catch block disposes <c>owner</c> and
-/// returns, but the finally block also disposes <c>owner</c> — a double dispose.
-/// This test exercises the error path with corrupt gzip data as a regression guard.
-/// </remarks>
 public sealed class ContentEncodingDoubleDisposeSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpResponseMessage>> RunResponseAsync(

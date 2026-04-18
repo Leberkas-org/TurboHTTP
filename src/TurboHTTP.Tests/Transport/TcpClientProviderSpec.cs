@@ -4,9 +4,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="TcpClientProvider"/> socket creation, proxy resolution, and cleanup logic.
-/// </summary>
 public sealed class TcpClientProviderSpec
 {
     [Fact(Timeout = 5000)]

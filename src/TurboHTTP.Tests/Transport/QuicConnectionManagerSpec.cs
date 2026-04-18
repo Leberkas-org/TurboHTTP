@@ -1,18 +1,12 @@
-using System.Runtime.Versioning;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 
+#pragma warning disable CA1416
+
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="QuicConnectionHandle"/> — per-connection stream-opening,
-/// inbound-stream acceptance, and provider disposal.
-/// </summary>
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
 public sealed class QuicConnectionManagerSpec
 {
     private static readonly RequestEndpoint TestEndpoint = new()
@@ -164,7 +158,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task AcceptInboundStreamAsLeaseAsync_should_return_control_stream()
     {
         var controlVarint = new byte[1];
@@ -183,7 +176,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task AcceptInboundStreamAsLeaseAsync_should_return_qpack_encoder_stream()
     {
         var varint = new byte[1];
@@ -201,7 +193,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task AcceptInboundStreamAsLeaseAsync_should_return_qpack_decoder_stream()
     {
         var varint = new byte[1];
@@ -219,7 +210,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task AcceptInboundStreamAsLeaseAsync_should_return_null_for_empty_stream()
     {
         var provider = new FakeClientProvider(inboundBytes: []);
@@ -231,7 +221,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task AcceptInboundStreamAsLeaseAsync_should_return_null_when_cancelled()
     {
         var provider = new FakeClientProvider();
@@ -246,7 +235,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task OpenStreamAsLeaseAsync_should_throw_for_unknown_type()
     {
         var provider = new FakeClientProvider();
@@ -257,7 +245,6 @@ public sealed class QuicConnectionManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task DisposeAsync_should_dispose_provider()
     {
         var provider = new FakeClientProvider();

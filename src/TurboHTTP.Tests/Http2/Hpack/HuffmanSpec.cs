@@ -25,7 +25,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_encode_and_decode_simple_string()
     {
-        var original = "www.example.com";
+        const string original = "www.example.com";
         var encoded = Encode(original);
         var decoded = Decode(encoded);
 
@@ -36,7 +36,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_produce_shorter_output_for_typical_headers()
     {
-        var original = "www.example.com";
+        const string original = "www.example.com";
         var encoded = Encode(original);
 
         Assert.True(encoded.Length < original.Length,
@@ -47,7 +47,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-Appendix-B")]
     public void HuffmanCodec_should_match_appendix_b_example()
     {
-        var original = "www.example.com";
+        const string original = "www.example.com";
         var encoded = Encode(original);
 
         // Appendix B example expects specific byte sequence
@@ -99,7 +99,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_handle_empty_string()
     {
-        var original = "";
+        const string original = "";
         var encoded = Encode(original);
         var decoded = Decode(encoded);
 
@@ -110,7 +110,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_handle_single_character()
     {
-        var original = "a";
+        const string original = "a";
         var encoded = Encode(original);
         var decoded = Decode(encoded);
 
@@ -175,7 +175,7 @@ public sealed class HuffmanSpec
     [InlineData(255)]
     public void HuffmanCodec_should_encode_all_byte_values(byte value)
     {
-        var data = new byte[] { value };
+        var data = new[] { value };
         var encBuf = new byte[HuffmanCodec.GetMaxEncodedLength(data.Length)];
         var encLen = HuffmanCodec.Encode(data, encBuf);
         var decBuf = new byte[HuffmanCodec.GetMaxDecodedLength(encLen)];
@@ -226,7 +226,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-Appendix-B")]
     public void HuffmanCodec_should_compress_realistic_http_header()
     {
-        var original = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+        const string original = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
         var encoded = Encode(original);
 
         Assert.True(encoded.Length < original.Length,
@@ -237,7 +237,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_encode_with_h_bit_set()
     {
-        var original = "test-value";
+        const string original = "test-value";
         var encoded = Encode(original);
 
         // When used in HPACK strings, H-bit is set in length prefix
@@ -248,7 +248,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-Appendix-B")]
     public void HuffmanCodec_should_match_known_compression_ratio()
     {
-        var original = "www.example.com";
+        const string original = "www.example.com";
         var encoded = Encode(original);
 
         // Original: 15 bytes, Expected compressed: 10 bytes per Appendix B
@@ -259,7 +259,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_handle_special_characters()
     {
-        var specialChars = "!@#$%^&*()_+-=[]{}|;:',.<>?/~`";
+        const string specialChars = "!@#$%^&*()_+-=[]{}|;:',.<>?/~`";
         var encoded = Encode(specialChars);
         var decoded = Decode(encoded);
 
@@ -270,7 +270,7 @@ public sealed class HuffmanSpec
     [Trait("RFC", "RFC7541-5.2")]
     public void HuffmanCodec_should_handle_spaces_and_newlines()
     {
-        var original = "multiple   spaces";
+        const string original = "multiple   spaces";
         var encoded = Encode(original);
         var decoded = Decode(encoded);
 

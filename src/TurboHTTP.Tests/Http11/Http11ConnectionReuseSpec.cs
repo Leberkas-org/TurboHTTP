@@ -3,14 +3,6 @@ using TurboHTTP.Protocol.Http11;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests connection reuse evaluation logic per RFC 9112 §9.
-/// Verifies keep-alive/close decisions based on HTTP version and Connection header.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="ConnectionReuseEvaluator"/>.
-/// RFC 9112 §9: Connection persistence — HTTP/1.1 persistent by default; HTTP/1.0 not.
-/// </remarks>
 public sealed class Http11ConnectionReuseSpec
 {
     [Fact(Timeout = 5000)]

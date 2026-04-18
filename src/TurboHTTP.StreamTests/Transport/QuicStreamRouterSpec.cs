@@ -35,7 +35,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EnsureStreamContext_should_return_NeedsConnection_when_no_connection()
     {
         var (router, _) = CreateRouter();
@@ -51,7 +50,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EnsureStreamContext_should_return_OpenNewStream_when_connected()
     {
         var (router, _) = CreateRouter();
@@ -67,7 +65,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EnsureStreamContext_should_return_AlreadyExists_for_known_stream_id()
     {
         var (router, _) = CreateRouter();
@@ -83,7 +80,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EnsureStreamContext_should_return_AlreadyExists_for_negative_stream_id()
     {
         var (router, _) = CreateRouter();
@@ -98,7 +94,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_write_to_handle_for_known_request_stream()
     {
         var (router, _) = CreateRouter();
@@ -117,7 +112,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_enqueue_when_handle_not_ready()
     {
         var (router, ops) = CreateRouter();
@@ -135,7 +129,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_route_control_to_pending_queue_when_no_handle()
     {
         var (router, ops) = CreateRouter();
@@ -152,7 +145,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_write_control_to_handle_when_available()
     {
         var (router, _) = CreateRouter();
@@ -168,7 +160,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteUntaggedData_should_write_to_first_stream_with_handle()
     {
         var (router, _) = CreateRouter();
@@ -184,7 +175,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteUntaggedData_should_enqueue_when_no_handle_on_first_stream()
     {
         var (router, ops) = CreateRouter();
@@ -199,7 +189,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteUntaggedData_should_drop_when_no_request_streams()
     {
         var (router, ops) = CreateRouter();
@@ -211,7 +200,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandleEndOfRequest_should_complete_outbound_writer()
     {
         var (router, ops) = CreateRouter();
@@ -225,7 +213,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandleEndOfRequest_should_mark_pending_when_no_handle()
     {
         var (router, ops) = CreateRouter();
@@ -238,7 +225,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void DequeueNextPendingStreamId_should_return_oldest_first()
     {
         var (router, _) = CreateRouter();
@@ -258,7 +244,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void DrainPendingStreamIds_should_return_all_and_clear()
     {
         var (router, _) = CreateRouter();
@@ -277,7 +262,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void FlushPendingWrites_should_drain_queue_to_handle()
     {
         var (router, _) = CreateRouter();
@@ -296,7 +280,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void FlushPendingWrites_should_complete_writer_when_end_of_request_pending()
     {
         var (router, _) = CreateRouter();
@@ -312,7 +295,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void FlushAllReadyStreams_should_process_all_streams_with_handles()
     {
         var (router, _) = CreateRouter();
@@ -334,7 +316,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RequeueEarlyData_should_enqueue_to_first_stream()
     {
         var (router, ops) = CreateRouter();
@@ -348,7 +329,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RemoveStream_should_cleanup_context()
     {
         var (router, _) = CreateRouter();
@@ -362,7 +342,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Clear_should_remove_all_streams_and_pending_ids()
     {
         var (router, _) = CreateRouter();
@@ -381,7 +360,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void DisposePendingWrites_should_drain_all_queues()
     {
         var (router, _) = CreateRouter();
@@ -399,7 +377,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void GetOrCreateContext_should_create_new_when_missing()
     {
         var (router, _) = CreateRouter();
@@ -411,7 +388,6 @@ public sealed class QuicStreamRouterSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void GetOrCreateContext_should_return_existing_when_present()
     {
         var (router, _) = CreateRouter();

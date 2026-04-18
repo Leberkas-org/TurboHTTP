@@ -10,7 +10,8 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class SmokeSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3")]

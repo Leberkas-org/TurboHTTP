@@ -3,20 +3,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// RFC 9110 §15.4 — Redirect loop detection and depth limit tests.
-/// Covers redirect loop detection with URI normalization (case-insensitive scheme/host,
-/// case-sensitive path), max redirect depth enforcement, query string/fragment handling,
-/// and relative URL resolution.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RedirectHandler"/>.
-/// These tests verify FR-6: redirect chains that revisit the same URL or exceed max depth are rejected.
-/// </remarks>
 public sealed class RedirectLoopDetectionSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_SelfRedirect()
     {
@@ -31,7 +20,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Contains("RFC 9110 §15.4: Redirect loop detected.", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_TwoStepCycle()
     {
@@ -50,7 +39,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_ThreeStepRevisit()
     {
@@ -73,8 +62,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_AllowExactly5Redirects_When_UsingDefaultPolicy()
     {
@@ -90,7 +78,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(5, handler.RedirectCount);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowMaxDepth_When_SixthRedirectWithDefaultPolicy()
     {
@@ -114,7 +102,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Contains("10", ex.Message);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     [InlineData(1)]
     [InlineData(3)]
@@ -143,7 +131,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.MaxRedirectsExceeded, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_EnforceMaxDepth_When_AllUrlsDiffer()
     {
@@ -166,8 +154,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.MaxRedirectsExceeded, ex.Error);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_TreatQueryStringVariationsAsDifferent()
     {
@@ -181,7 +168,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal("http://example.com/page?v=2", redirected.RequestUri?.AbsoluteUri);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotDetectLoop_When_QueryStringsDiffer()
     {
@@ -198,7 +185,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.NotNull(redirected);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_SameQueryStringRevisited()
     {
@@ -217,7 +204,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_IgnoreFragments_When_ComparingUrls()
     {
@@ -238,8 +225,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_SchemesCaseDiffers()
     {
@@ -259,7 +245,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_HostCaseDiffers()
     {
@@ -279,7 +265,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotDetectLoop_When_PathCaseDiffers()
     {
@@ -294,7 +280,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal("http://example.com/page", redirected.RequestUri?.AbsoluteUri);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_MixedCaseHostSamePath()
     {
@@ -315,8 +301,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_RedirectResolvesToVisitedUrl()
     {
@@ -336,7 +321,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_FollowRedirect_When_AbsoluteUrlIsNew()
     {
@@ -349,8 +334,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal("http://example.com/b", redirected.RequestUri?.AbsoluteUri);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ClearState_When_Reset()
     {
@@ -373,8 +357,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(1, handler.RedirectCount);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_TreatDifferentPortsAsDifferentUrls()
     {
@@ -388,7 +371,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal("http://example.com:9090/page", redirected.RequestUri?.AbsoluteUri);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_DefaultPortExplicitlySpecified()
     {
@@ -408,8 +391,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_IncludeTargetUri_InLoopErrorMessage()
     {
@@ -424,7 +406,7 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Contains("example.com/page", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_IncludeLimit_InMaxDepthErrorMessage()
     {
@@ -446,7 +428,6 @@ public sealed class RedirectLoopDetectionSpec
         Assert.Contains("RFC 9110 §15.4: Maximum redirect limit of", ex.Message);
         Assert.Contains("3", ex.Message);
     }
-
 
     private static HttpResponseMessage BuildRedirect(HttpStatusCode statusCode, string location)
     {

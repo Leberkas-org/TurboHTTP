@@ -3,17 +3,9 @@ using System.Text;
 
 namespace TurboHTTP.Tests.Http11.Encoder;
 
-/// <summary>
-/// Tests header field serialization per RFC 9112 §5.
-/// Verifies name/value formatting, ordering, and folding rules.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Encoder"/>.
-/// RFC 9112 §5: Header fields — field-name ":" OWS field-value OWS CRLF.
-/// </remarks>
 public sealed class Http11EncoderHeaderSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_format_header_when_custom_header()
     {
@@ -25,7 +17,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("X-Custom: test-value\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_omit_spurious_whitespace_when_encoding_header()
     {
@@ -38,7 +30,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.DoesNotContain("X-Test:  value", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_preserve_casing_when_encoding_header_name()
     {
@@ -48,7 +40,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("X-Custom-Header: value\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_throw_when_nul_byte_in_header_value()
     {
@@ -63,7 +55,7 @@ public sealed class Http11EncoderHeaderSpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_preserve_charset_parameter_when_content_type()
     {
@@ -76,7 +68,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("Content-Type: text/html; charset=utf-8\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_include_all_headers_when_multiple_custom_headers()
     {
@@ -95,7 +87,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("X-Third: value3\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_encode_accept_encoding_when_gzip_deflate()
     {
@@ -105,7 +97,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("Accept-Encoding: gzip, deflate\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_preserve_authorization_when_bearer_token()
     {
@@ -117,7 +109,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_set_authorization_header_when_bearer_token()
     {
@@ -129,7 +121,7 @@ public sealed class Http11EncoderHeaderSpec
         Assert.Contains("Authorization: Bearer my-secret-token\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-2.2")]
     public void Http11Encoder_should_not_contain_bare_cr_when_encoded()
     {

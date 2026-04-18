@@ -8,13 +8,10 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.Shared;
 
-/// <summary>
-/// Verifies <see cref="ScriptedFakeConnectionStage"/> infrastructure:
-/// multi-response sequencing and error injection via the response factory.
-/// </summary>
 public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
 {
-    private static Http10Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http10Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_route_responses_by_request_index()
@@ -234,10 +231,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
 
         _ = Source.From(requests)
             .Via(flow)
-            .RunWith(Sink.ForEach<HttpResponseMessage>(res =>
-            {
-                results.Add(res);
-            }), Materializer)
+            .RunWith(Sink.ForEach<HttpResponseMessage>(res => { results.Add(res); }), Materializer)
             .ContinueWith(_ => completionTcs.TrySetResult());
 
         await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -247,13 +241,12 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         Assert.Equal("ok", await results[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    [Trait("RFC", "TASK-002-004")]
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_suppress_response_when_behaviorStack_overrides_factory_with_error()
     {
         // BehaviorStack overrides the factory; PushConstant(null) → ConnectionAbort path → no response delivered
-        var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>(
-            _ => Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"));
+        var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>(_ =>
+            Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"));
         stack.PushConstant(null);
 
         var fake = new ScriptedFakeConnectionStage(
@@ -282,12 +275,11 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         Assert.Empty(results);
     }
 
-    [Trait("RFC", "TASK-002-004")]
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_fail_first_request_then_succeed_when_behaviorStack_pushes_once_error()
     {
-        var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>(
-            (t) => Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 7\r\n\r\nsuccess"));
+        var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>((t) =>
+            Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 7\r\n\r\nsuccess"));
         stack.PushOnce(_ => null); // first request → null = abort
 
         var fake = new ScriptedFakeConnectionStage(
@@ -310,7 +302,10 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             .RunWith(Sink.ForEach<HttpResponseMessage>(res =>
             {
                 results.Add(res);
-                if (results.Count == 1) { completionTcs.TrySetResult(); }
+                if (results.Count == 1)
+                {
+                    completionTcs.TrySetResult();
+                }
             }), Materializer)
             .ContinueWith(_ => completionTcs.TrySetResult());
 
@@ -320,7 +315,6 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         Assert.Empty(results);
     }
 
-    [Trait("RFC", "TASK-002-004")]
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_record_WriteAttempt_and_ResponseDelivered_in_activityLog()
     {
@@ -359,7 +353,6 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         Assert.True(deliveries[0].ByteCount > 0);
     }
 
-    [Trait("RFC", "TASK-002-004")]
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_record_ConnectionAbort_in_activityLog_when_factory_returns_null()
     {

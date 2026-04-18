@@ -4,14 +4,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests pseudo-header validation and encoding per RFC 9113 §8.1.2.1.
-/// Verifies that :method, :path, :scheme, and :authority are correctly populated and validated.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RequestEncoder"/>.
-/// RFC 9113 §8.1.2.1: Request pseudo-headers must include :method; :path, :scheme, and :authority are required for absolute URIs.
-/// </remarks>
 public sealed class Http2EncoderPseudoHeaderSpec
 {
     [Theory(Timeout = 5000)]

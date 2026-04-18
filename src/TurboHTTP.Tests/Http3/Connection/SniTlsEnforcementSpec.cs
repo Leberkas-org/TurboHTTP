@@ -5,11 +5,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// RFC 9114 §3.2 — Clients MUST include the SNI extension in the TLS handshake
-/// for HTTP/3 QUIC connections. These tests verify that the SNI hostname is properly
-/// propagated and that missing SNI is rejected.
-/// </summary>
 public sealed class SniTlsEnforcementSpec
 {
     private static RequestEndpoint ToEndpoint(Uri uri, Version version)
@@ -119,7 +114,7 @@ public sealed class SniTlsEnforcementSpec
         Assert.True(callbackInvoked);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     [InlineData("https://example.com/", "example.com")]
     [InlineData("https://sub.domain.example.com/", "sub.domain.example.com")]

@@ -17,7 +17,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_return_true_when_h3_entry_cached()
     {
         var cache = new AltSvcCache();
@@ -29,7 +29,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_return_false_when_no_entries_cached()
     {
         var cache = new AltSvcCache();
@@ -38,7 +38,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_return_false_when_only_h2_cached()
     {
         var cache = new AltSvcCache();
@@ -48,7 +48,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_return_false_when_entry_expired()
     {
         var cache = new AltSvcCache();
@@ -59,7 +59,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_evict_when_all_entries_expired()
     {
         var cache = new AltSvcCache();
@@ -72,7 +72,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_return_true_when_h3_among_multiple_entries()
     {
         var cache = new AltSvcCache();
@@ -84,7 +84,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void Clear_should_remove_entries_for_host()
     {
         var cache = new AltSvcCache();
@@ -98,7 +98,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void ClearAll_should_remove_all_entries()
     {
         var cache = new AltSvcCache();
@@ -111,7 +111,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void Store_should_replace_existing_entries()
     {
         var cache = new AltSvcCache();
@@ -119,11 +119,11 @@ public sealed class AltSvcCacheSpec
         cache.Store("example.com", [CreateH3Entry(port: 8443)]);
 
         Assert.True(cache.TryGetHttp3("example.com", out var entry, FixedNow));
-        Assert.Equal(8443, entry!.Port);
+        Assert.Equal(8443, entry.Port);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void Store_should_ignore_empty_host()
     {
         var cache = new AltSvcCache();
@@ -133,7 +133,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void Store_should_ignore_empty_entries()
     {
         var cache = new AltSvcCache();
@@ -143,7 +143,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_be_case_insensitive_on_host()
     {
         var cache = new AltSvcCache();
@@ -153,19 +153,19 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_return_entry_with_custom_host_and_port()
     {
         var cache = new AltSvcCache();
         cache.Store("example.com", [CreateH3Entry(host: "alt.example.com", port: 8443)]);
 
         Assert.True(cache.TryGetHttp3("example.com", out var entry, FixedNow));
-        Assert.Equal("alt.example.com", entry!.Host);
+        Assert.Equal("alt.example.com", entry.Host);
         Assert.Equal(8443, entry.Port);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void TryGetHttp3_should_not_evict_fresh_list_stored_concurrently()
     {
         // Validates the compare-and-remove fix: when all entries expire and eviction
@@ -192,7 +192,7 @@ public sealed class AltSvcCacheSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public async Task TryGetHttp3_should_survive_concurrent_store_and_eviction_under_contention()
     {
         // Stress test: multiple threads racing Store (fresh) vs TryGetHttp3 (expired time)

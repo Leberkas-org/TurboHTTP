@@ -10,10 +10,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Engine integration tests verifying the full pipeline wires correctly.
-/// Complements <see cref="StageOrderingSpec"/> (SORD-001 to SORD-010).
-/// </summary>
 public sealed class StageOrderingIntegrationSpec : EngineTestBase
 {
     private static Flow<IOutputItem, IInputItem, NotUsed> Http11Flow(Func<byte[]> responseFactory)
@@ -52,7 +48,8 @@ public sealed class StageOrderingIntegrationSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task StageOrderingIntegration_should_complete_request_when_full_pipeline_with_cookie_injection_before_cache_lookup()
+    public async Task
+        StageOrderingIntegration_should_complete_request_when_full_pipeline_with_cookie_injection_before_cache_lookup()
     {
         // Full engine pipeline: send a GET request to a domain with cookies in jar.
         // The response should arrive successfully, proving the pipeline wired correctly
@@ -84,7 +81,8 @@ public sealed class StageOrderingIntegrationSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task StageOrderingIntegration_should_reach_post_processing_when_full_pipeline_response_from_engine_island()
+    public async Task
+        StageOrderingIntegration_should_reach_post_processing_when_full_pipeline_response_from_engine_island()
     {
         // Verify that the full pipeline successfully processes a response through the engine
         // and BidiFlow chain. No features needed — empty descriptor proves the bare pipeline wires correctly.
@@ -108,7 +106,8 @@ public sealed class StageOrderingIntegrationSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task StageOrderingIntegration_should_deliver_decompressed_body_to_client_when_full_pipeline_with_gzip_response()
+    public async Task
+        StageOrderingIntegration_should_deliver_decompressed_body_to_client_when_full_pipeline_with_gzip_response()
     {
         // Full engine pipeline with gzip response: ContentEncodingBidiStage decompresses
         // before the response enters the outer BidiFlow layers.
@@ -143,7 +142,8 @@ public sealed class StageOrderingIntegrationSpec : EngineTestBase
     }
 
     [Fact(Timeout = 15_000)]
-    public async Task StageOrderingIntegration_should_produce_new_request_after_redirect_when_full_pipeline_with_301_response()
+    public async Task
+        StageOrderingIntegration_should_produce_new_request_after_redirect_when_full_pipeline_with_301_response()
     {
         // First request → 301 redirect, second request (from redirect) → 200 OK.
         // This proves the redirect internal feedback loop works through the BidiFlow chain.
@@ -188,7 +188,8 @@ public sealed class StageOrderingIntegrationSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task StageOrderingIntegration_should_pass_through_full_post_processing_chain_when_response_is_non_retryable()
+    public async Task
+        StageOrderingIntegration_should_pass_through_full_post_processing_chain_when_response_is_non_retryable()
     {
         // A 200 OK response is not retryable and not a redirect.
         // It passes through all BidiStages in the response direction to the final output.

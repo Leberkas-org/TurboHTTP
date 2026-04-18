@@ -11,14 +11,6 @@ using ActivitySource = System.Diagnostics.ActivitySource;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Tests for the TracingBidiStage covering activity lifecycle, metrics emission,
-/// request/response correlation, and error handling.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="TracingBidiStage"/>.
-/// Verifies: root activity creation, status code recording, error propagation, metrics.
-/// </remarks>
 public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
 {
     private readonly ActivityListener _listener;
@@ -45,6 +37,7 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
                 activity.Stop();
             }
         }
+
         base.Dispose();
     }
 
@@ -119,8 +112,6 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    // Request direction tests
-
     [Fact(Timeout = 5000)]
     public async Task TracingBidiStage_should_pass_through_request()
     {
@@ -178,8 +169,6 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
         Assert.NotNull(act2);
     }
 
-    // Response direction tests
-
     [Fact(Timeout = 5000)]
     public async Task TracingBidiStage_should_pass_through_response()
     {
@@ -229,7 +218,7 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
 
         var responses = new[]
         {
-            MakeResponse(HttpStatusCode.OK),
+            MakeResponse(),
             MakeResponse(HttpStatusCode.Created),
             MakeResponse(HttpStatusCode.BadRequest),
             MakeResponse(HttpStatusCode.InternalServerError),
@@ -285,8 +274,6 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
         Assert.Equal(3, results.Count);
     }
 
-    // Upstream failure tests
-
     [Fact(Timeout = 5000)]
     public async Task TracingBidiStage_should_handle_request_upstream_failure()
     {
@@ -313,8 +300,6 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await RunnableGraph.FromGraph(graph).Run(Materializer));
     }
-
-    // Helper methods
 
     private static HttpResponseMessage MakeResponse(
         HttpStatusCode statusCode = HttpStatusCode.OK,

@@ -7,7 +7,8 @@ namespace TurboHTTP.AcceptanceTests.H10;
 public sealed class RequestFormatSpec : AcceptanceTestBase
 {
     private static byte[] BuildResponse(string body) =>
-        Encoding.Latin1.GetBytes($"HTTP/1.0 200 OK\r\nContent-Length: {Encoding.Latin1.GetByteCount(body)}\r\n\r\n{body}");
+        Encoding.Latin1.GetBytes(
+            $"HTTP/1.0 200 OK\r\nContent-Length: {Encoding.Latin1.GetByteCount(body)}\r\n\r\n{body}");
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5.1")]

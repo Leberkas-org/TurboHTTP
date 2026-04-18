@@ -24,6 +24,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             payload[i] = (byte)('A' + i % 26);
         }
+
         return payload;
     }
 
@@ -34,6 +35,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -44,6 +46,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             deflate.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -54,6 +57,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             brotli.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -75,7 +79,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)compressed)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -104,7 +109,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)compressed)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -133,7 +139,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)compressed)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -161,7 +168,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)payload)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -191,7 +199,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)compressed)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -221,7 +230,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)compressed)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -250,7 +260,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)payload)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateDecompressingEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);

@@ -2,25 +2,18 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Tests RFC 7541 Appendix C examples (C.2, C.3, C.4, C.5, C.6) covering request/response encoding
-/// and decoding with dynamic table state management. Tests verify both plain and Huffman-encoded
-/// representations, as well as correct table entry insertion and indexing.
-/// </summary>
 public sealed class HpackAppendixCSpec
 {
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-C.2")]
     public void HpackDecoder_should_decode_first_request_when_decoding_appendix_c2_1_without_huffman()
     {
-        // C.2.1: :method GET, :scheme http, :path /, :authority www.example.com
-        // After decoding, dynamic table has [62] :authority: www.example.com
         var encoded = new byte[]
         {
-            0x82,                   // indexed :method: GET (static 2)
-            0x86,                   // indexed :scheme: http (static 6)
-            0x84,                   // indexed :path: / (static 4)
-            0x41, 0x0F,             // literal incr., nameIdx=1 (:authority), H=0, len=15
+            0x82, // indexed :method: GET (static 2)
+            0x86, // indexed :scheme: http (static 6)
+            0x84, // indexed :path: / (static 4)
+            0x41, 0x0F, // literal incr., nameIdx=1 (:authority), H=0, len=15
             (byte)'w', (byte)'w', (byte)'w', (byte)'.', (byte)'e', (byte)'x', (byte)'a', (byte)'m',
             (byte)'p', (byte)'l', (byte)'e', (byte)'.', (byte)'c', (byte)'o', (byte)'m',
         };
@@ -28,21 +21,22 @@ public sealed class HpackAppendixCSpec
         var headers = decoder.Decode(encoded);
 
         Assert.Equal(4, headers.Count);
-        Assert.Equal(":method",    headers[0].Name); Assert.Equal("GET",             headers[0].Value);
-        Assert.Equal(":scheme",    headers[1].Name); Assert.Equal("http",            headers[1].Value);
-        Assert.Equal(":path",      headers[2].Name); Assert.Equal("/",               headers[2].Value);
-        Assert.Equal(":authority", headers[3].Name); Assert.Equal("www.example.com", headers[3].Value);
+        Assert.Equal(":method", headers[0].Name);
+        Assert.Equal("GET", headers[0].Value);
+        Assert.Equal(":scheme", headers[1].Name);
+        Assert.Equal("http", headers[1].Value);
+        Assert.Equal(":path", headers[2].Name);
+        Assert.Equal("/", headers[2].Value);
+        Assert.Equal(":authority", headers[3].Name);
+        Assert.Equal("www.example.com", headers[3].Value);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-C.2")]
     public void HpackDecoder_should_reference_dynamic_table_when_decoding_appendix_c2_2_second_request()
     {
-        // C.2.2: same as C.2.1 plus cache-control: no-cache
-        // :authority from dynamic[62], cache-control literal incr.
         var decoder = new HpackDecoder();
 
-        // First: populate dynamic table with C.2.1
         decoder.Decode([
             0x82, 0x86, 0x84,
             0x41, 0x0F,
@@ -50,35 +44,36 @@ public sealed class HpackAppendixCSpec
             (byte)'p', (byte)'l', (byte)'e', (byte)'.', (byte)'c', (byte)'o', (byte)'m'
         ]);
 
-        // C.2.2 encoded: dynamic[62] for :authority, then cache-control: no-cache literal
         var encoded = new byte[]
         {
-            0x82,                   // :method: GET
-            0x86,                   // :scheme: http
-            0x84,                   // :path: /
-            0xBE,                   // indexed dynamic[62] = :authority: www.example.com
-            0x58,                   // literal incr., nameIdx=24 (cache-control)
+            0x82, // :method: GET
+            0x86, // :scheme: http
+            0x84, // :path: /
+            0xBE, // indexed dynamic[62] = :authority: www.example.com
+            0x58, // literal incr., nameIdx=24 (cache-control)
             0x08, (byte)'n', (byte)'o', (byte)'-', (byte)'c', (byte)'a', (byte)'c', (byte)'h', (byte)'e',
         };
         var headers = decoder.Decode(encoded);
 
         Assert.Equal(5, headers.Count);
-        Assert.Equal(":method",       headers[0].Name); Assert.Equal("GET",             headers[0].Value);
-        Assert.Equal(":scheme",       headers[1].Name); Assert.Equal("http",            headers[1].Value);
-        Assert.Equal(":path",         headers[2].Name); Assert.Equal("/",               headers[2].Value);
-        Assert.Equal(":authority",    headers[3].Name); Assert.Equal("www.example.com", headers[3].Value);
-        Assert.Equal("cache-control", headers[4].Name); Assert.Equal("no-cache",        headers[4].Value);
+        Assert.Equal(":method", headers[0].Name);
+        Assert.Equal("GET", headers[0].Value);
+        Assert.Equal(":scheme", headers[1].Name);
+        Assert.Equal("http", headers[1].Value);
+        Assert.Equal(":path", headers[2].Name);
+        Assert.Equal("/", headers[2].Value);
+        Assert.Equal(":authority", headers[3].Name);
+        Assert.Equal("www.example.com", headers[3].Value);
+        Assert.Equal("cache-control", headers[4].Name);
+        Assert.Equal("no-cache", headers[4].Value);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-C.2")]
     public void HpackDecoder_should_have_correct_table_state_when_decoding_appendix_c2_3_third_request()
     {
-        // C.2.3: :method GET, :scheme https, :path /index.html,
-        //        :authority www.example.com (dynamic[63]), custom-key: custom-value
         var decoder = new HpackDecoder();
 
-        // Populate via C.2.1
         decoder.Decode([
             0x82, 0x86, 0x84,
             0x41, 0x0F,
@@ -86,37 +81,39 @@ public sealed class HpackAppendixCSpec
             (byte)'p', (byte)'l', (byte)'e', (byte)'.', (byte)'c', (byte)'o', (byte)'m'
         ]);
 
-        // Populate via C.2.2 (adds cache-control: no-cache to dynamic table)
         decoder.Decode([
             0x82, 0x86, 0x84, 0xBE,
             0x58,
             0x08, (byte)'n', (byte)'o', (byte)'-', (byte)'c', (byte)'a', (byte)'c', (byte)'h', (byte)'e'
         ]);
 
-        // C.2.3: after C.2.2 table is [62]=cache-control:no-cache, [63]=:authority:www.example.com
-        // :authority at absolute 63 → 0xBF
         var encoded = new byte[]
         {
-            0x82,                   // :method: GET
-            0x87,                   // :scheme: https (static 7)
-            0x85,                   // :path: /index.html (static 5)
-            0xBF,                   // indexed dynamic[63] = :authority: www.example.com
-            0x40,                   // literal incr., nameIdx=0 (new name)
-            0x0A,                   // H=0, len=10, "custom-key"
+            0x82, // :method: GET
+            0x87, // :scheme: https (static 7)
+            0x85, // :path: /index.html (static 5)
+            0xBF, // indexed dynamic[63] = :authority: www.example.com
+            0x40, // literal incr., nameIdx=0 (new name)
+            0x0A, // H=0, len=10, "custom-key"
             (byte)'c', (byte)'u', (byte)'s', (byte)'t', (byte)'o', (byte)'m', (byte)'-',
             (byte)'k', (byte)'e', (byte)'y',
-            0x0C,                   // H=0, len=12, "custom-value"
+            0x0C, // H=0, len=12, "custom-value"
             (byte)'c', (byte)'u', (byte)'s', (byte)'t', (byte)'o', (byte)'m', (byte)'-',
             (byte)'v', (byte)'a', (byte)'l', (byte)'u', (byte)'e',
         };
         var headers = decoder.Decode(encoded);
 
         Assert.Equal(5, headers.Count);
-        Assert.Equal(":method",    headers[0].Name); Assert.Equal("GET",             headers[0].Value);
-        Assert.Equal(":scheme",    headers[1].Name); Assert.Equal("https",           headers[1].Value);
-        Assert.Equal(":path",      headers[2].Name); Assert.Equal("/index.html",     headers[2].Value);
-        Assert.Equal(":authority", headers[3].Name); Assert.Equal("www.example.com", headers[3].Value);
-        Assert.Equal("custom-key", headers[4].Name); Assert.Equal("custom-value",    headers[4].Value);
+        Assert.Equal(":method", headers[0].Name);
+        Assert.Equal("GET", headers[0].Value);
+        Assert.Equal(":scheme", headers[1].Name);
+        Assert.Equal("https", headers[1].Value);
+        Assert.Equal(":path", headers[2].Name);
+        Assert.Equal("/index.html", headers[2].Value);
+        Assert.Equal(":authority", headers[3].Name);
+        Assert.Equal("www.example.com", headers[3].Value);
+        Assert.Equal("custom-key", headers[4].Name);
+        Assert.Equal("custom-value", headers[4].Value);
     }
 
     [Fact(Timeout = 5000)]
@@ -125,7 +122,6 @@ public sealed class HpackAppendixCSpec
     {
         var decoder = new HpackDecoder();
 
-        // C.3.1: :method GET, :scheme http, :path /, :authority www.example.com (Huffman)
         var req1 = new byte[]
         {
             0x82, 0x86, 0x84,
@@ -137,41 +133,42 @@ public sealed class HpackAppendixCSpec
         Assert.Equal(":authority", d1[3].Name);
         Assert.Equal("www.example.com", d1[3].Value);
 
-        // C.3.2: adds cache-control: no-cache (Huffman), :authority from dynamic[62]
         var req2 = new byte[]
         {
             0x82, 0x86, 0x84,
-            0xBE,                                               // :authority from dynamic
+            0xBE, // :authority from dynamic
             0x58, 0x86,
-            0xA8, 0xEB, 0x10, 0x64, 0x9C, 0xBF,               // "no-cache" Huffman
+            0xA8, 0xEB, 0x10, 0x64, 0x9C, 0xBF, // "no-cache" Huffman
         };
         var d2 = decoder.Decode(req2);
         Assert.Equal(5, d2.Count);
         Assert.Equal("cache-control", d2[4].Name);
         Assert.Equal("no-cache", d2[4].Value);
 
-        // C.3.3: :scheme https, :path /index.html, :authority from dynamic[63], custom-key/value
         var req3 = new byte[]
         {
             0x82, 0x87, 0x85,
-            0xBF,                                                             // :authority from [63]
+            0xBF, // :authority from [63]
             0x40,
-            0x88, 0x25, 0xA8, 0x49, 0xE9, 0x5B, 0xA9, 0x7D, 0x7F,          // "custom-key" Huffman
-            0x89, 0x25, 0xA8, 0x49, 0xE9, 0x5B, 0xB8, 0xE8, 0xB4, 0xBF,    // "custom-value" Huffman
+            0x88, 0x25, 0xA8, 0x49, 0xE9, 0x5B, 0xA9, 0x7D, 0x7F, // "custom-key" Huffman
+            0x89, 0x25, 0xA8, 0x49, 0xE9, 0x5B, 0xB8, 0xE8, 0xB4, 0xBF, // "custom-value" Huffman
         };
         var d3 = decoder.Decode(req3);
         Assert.Equal(5, d3.Count);
-        Assert.Equal(":scheme",    d3[1].Name); Assert.Equal("https",         d3[1].Value);
-        Assert.Equal(":path",      d3[2].Name); Assert.Equal("/index.html",   d3[2].Value);
-        Assert.Equal(":authority", d3[3].Name); Assert.Equal("www.example.com", d3[3].Value);
-        Assert.Equal("custom-key", d3[4].Name); Assert.Equal("custom-value",  d3[4].Value);
+        Assert.Equal(":scheme", d3[1].Name);
+        Assert.Equal("https", d3[1].Value);
+        Assert.Equal(":path", d3[2].Name);
+        Assert.Equal("/index.html", d3[2].Value);
+        Assert.Equal(":authority", d3[3].Name);
+        Assert.Equal("www.example.com", d3[3].Value);
+        Assert.Equal("custom-key", d3[4].Name);
+        Assert.Equal("custom-value", d3[4].Value);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-C.4")]
     public void HpackDecoder_should_decode_first_response_when_decoding_appendix_c4_1_without_huffman()
     {
-        // C.4.1: :status 302, cache-control private, date Mon..., location https://...
         var encoded = new byte[]
         {
             // :status: 302 — literal incr., nameIdx=8 (:status), value "302"
@@ -196,10 +193,14 @@ public sealed class HpackAppendixCSpec
         var headers = decoder.Decode(encoded);
 
         Assert.Equal(4, headers.Count);
-        Assert.Equal(":status",       headers[0].Name); Assert.Equal("302",                           headers[0].Value);
-        Assert.Equal("cache-control", headers[1].Name); Assert.Equal("private",                       headers[1].Value);
-        Assert.Equal("date",          headers[2].Name); Assert.Equal("Mon, 21 Oct 2013 20:13:21 GMT", headers[2].Value);
-        Assert.Equal("location",      headers[3].Name); Assert.Equal("https://www.example.com",       headers[3].Value);
+        Assert.Equal(":status", headers[0].Name);
+        Assert.Equal("302", headers[0].Value);
+        Assert.Equal("cache-control", headers[1].Name);
+        Assert.Equal("private", headers[1].Value);
+        Assert.Equal("date", headers[2].Name);
+        Assert.Equal("Mon, 21 Oct 2013 20:13:21 GMT", headers[2].Value);
+        Assert.Equal("location", headers[3].Name);
+        Assert.Equal("https://www.example.com", headers[3].Value);
     }
 
     [Fact(Timeout = 5000)]
@@ -208,7 +209,6 @@ public sealed class HpackAppendixCSpec
     {
         var decoder = new HpackDecoder();
 
-        // Populate dynamic table via C.4.1 (adds 4 entries at [62..65])
         decoder.Decode([
             0x48, 0x03, (byte)'3', (byte)'0', (byte)'2',
             0x58, 0x07, (byte)'p', (byte)'r', (byte)'i', (byte)'v', (byte)'a', (byte)'t', (byte)'e',
@@ -223,36 +223,35 @@ public sealed class HpackAppendixCSpec
             (byte)'p', (byte)'l', (byte)'e', (byte)'.', (byte)'c', (byte)'o', (byte)'m'
         ]);
 
-        // C.4.2: :status 307 (literal), then indexed [65], [64], [63] for the reused entries
         // After adding :status:307, table is [62]:status:307, [63]:location, [64]:date, [65]:cache-control, [66]:status:302
         var encoded = new byte[]
         {
             0x48, 0x03, (byte)'3', (byte)'0', (byte)'7', // :status: 307 (literal incr.)
-            0xC1,                                          // indexed abs[65] = cache-control: private
-            0xC0,                                          // indexed abs[64] = date: Mon...
-            0xBF,                                          // indexed abs[63] = location: https://...
+            0xC1, // indexed abs[65] = cache-control: private
+            0xC0, // indexed abs[64] = date: Mon...
+            0xBF, // indexed abs[63] = location: https://...
         };
 
         var headers = decoder.Decode(encoded);
 
         Assert.Equal(4, headers.Count);
-        Assert.Equal(":status",       headers[0].Name); Assert.Equal("307",                           headers[0].Value);
-        Assert.Equal("cache-control", headers[1].Name); Assert.Equal("private",                       headers[1].Value);
-        Assert.Equal("date",          headers[2].Name); Assert.Equal("Mon, 21 Oct 2013 20:13:21 GMT", headers[2].Value);
-        Assert.Equal("location",      headers[3].Name); Assert.Equal("https://www.example.com",       headers[3].Value);
+        Assert.Equal(":status", headers[0].Name);
+        Assert.Equal("307", headers[0].Value);
+        Assert.Equal("cache-control", headers[1].Name);
+        Assert.Equal("private", headers[1].Value);
+        Assert.Equal("date", headers[2].Name);
+        Assert.Equal("Mon, 21 Oct 2013 20:13:21 GMT", headers[2].Value);
+        Assert.Equal("location", headers[3].Name);
+        Assert.Equal("https://www.example.com", headers[3].Value);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-C.4")]
     public void HpackDecoder_should_have_correct_table_state_after_c4_2_when_decoding_appendix_c4_3()
     {
-        // Use encoder/decoder round-trip for C.4.3 which includes set-cookie (NeverIndexed)
-        // The key property: after C.4.1 and C.4.2, the dynamic table state is verified;
-        // then the C.4.3 headers decode correctly.
         var encoder = new HpackEncoder(useHuffman: false);
         var decoder = new HpackDecoder();
 
-        // Encode and decode C.4.1 and C.4.2 first to align table state
         var enc41 = encoder.Encode(new List<(string, string)>
         {
             (":status", "302"), ("cache-control", "private"),
@@ -267,7 +266,6 @@ public sealed class HpackAppendixCSpec
         });
         decoder.Decode(enc42.Span);
 
-        // C.4.3 headers
         var c43Headers = new List<(string, string)>
         {
             (":status", "200"), ("cache-control", "private"),
@@ -278,12 +276,18 @@ public sealed class HpackAppendixCSpec
         var headers = decoder.Decode(enc43.Span);
 
         Assert.Equal(6, headers.Count);
-        Assert.Equal(":status",          headers[0].Name); Assert.Equal("200",                                 headers[0].Value);
-        Assert.Equal("cache-control",    headers[1].Name); Assert.Equal("private",                             headers[1].Value);
-        Assert.Equal("date",             headers[2].Name); Assert.Equal("Mon, 21 Oct 2013 20:13:22 GMT",       headers[2].Value);
-        Assert.Equal("location",         headers[3].Name); Assert.Equal("https://www.example.com",             headers[3].Value);
-        Assert.Equal("content-encoding", headers[4].Name); Assert.Equal("gzip",                                headers[4].Value);
-        Assert.Equal("set-cookie",       headers[5].Name); Assert.Equal("foo=ASDJKHQKBZXOQWEOPIUAXQWJKHZXCWLKJ", headers[5].Value);
+        Assert.Equal(":status", headers[0].Name);
+        Assert.Equal("200", headers[0].Value);
+        Assert.Equal("cache-control", headers[1].Name);
+        Assert.Equal("private", headers[1].Value);
+        Assert.Equal("date", headers[2].Name);
+        Assert.Equal("Mon, 21 Oct 2013 20:13:22 GMT", headers[2].Value);
+        Assert.Equal("location", headers[3].Name);
+        Assert.Equal("https://www.example.com", headers[3].Value);
+        Assert.Equal("content-encoding", headers[4].Name);
+        Assert.Equal("gzip", headers[4].Value);
+        Assert.Equal("set-cookie", headers[5].Name);
+        Assert.Equal("foo=ASDJKHQKBZXOQWEOPIUAXQWJKHZXCWLKJ", headers[5].Value);
     }
 
     [Fact(Timeout = 5000)]
@@ -389,42 +393,51 @@ public sealed class HpackAppendixCSpec
         // Dynamic table after: [62] :authority: www.example.com
         var req1 = new byte[]
         {
-            0x82,                   // indexed :method: GET  (static 2)
-            0x86,                   // indexed :scheme: http (static 6)
-            0x84,                   // indexed :path: /      (static 4)
-            0x41,                   // literal incr. indexing, name = static[1] (:authority)
-            0x8c,                   // H=1 (Huffman), length=12
+            0x82, // indexed :method: GET  (static 2)
+            0x86, // indexed :scheme: http (static 6)
+            0x84, // indexed :path: /      (static 4)
+            0x41, // literal incr. indexing, name = static[1] (:authority)
+            0x8c, // H=1 (Huffman), length=12
             0xf1, 0xe3, 0xc2, 0xe5, 0xf2, 0x3a, 0x6b, 0xa0, 0xab, 0x90, 0xf4, 0xff, // "www.example.com"
         };
 
         var d1 = decoder.Decode(req1);
         Assert.Equal(4, d1.Count);
-        Assert.Equal(":method",    d1[0].Name); Assert.Equal("GET",             d1[0].Value);
-        Assert.Equal(":scheme",    d1[1].Name); Assert.Equal("http",            d1[1].Value);
-        Assert.Equal(":path",      d1[2].Name); Assert.Equal("/",               d1[2].Value);
-        Assert.Equal(":authority", d1[3].Name); Assert.Equal("www.example.com", d1[3].Value);
+        Assert.Equal(":method", d1[0].Name);
+        Assert.Equal("GET", d1[0].Value);
+        Assert.Equal(":scheme", d1[1].Name);
+        Assert.Equal("http", d1[1].Value);
+        Assert.Equal(":path", d1[2].Name);
+        Assert.Equal("/", d1[2].Value);
+        Assert.Equal(":authority", d1[3].Name);
+        Assert.Equal("www.example.com", d1[3].Value);
 
         // :method: GET, :scheme: http, :path: /, :authority: www.example.com (dynamic),
         // cache-control: no-cache
         // Dynamic table after: [62] cache-control: no-cache, [63] :authority: www.example.com
         var req2 = new byte[]
         {
-            0x82,                               // indexed :method: GET  (static 2)
-            0x86,                               // indexed :scheme: http (static 6)
-            0x84,                               // indexed :path: /      (static 4)
-            0xbe,                               // indexed dynamic[62] → :authority: www.example.com
-            0x58,                               // literal incr. indexing, name = static[24] (cache-control)
-            0x86,                               // H=1, length=6
+            0x82, // indexed :method: GET  (static 2)
+            0x86, // indexed :scheme: http (static 6)
+            0x84, // indexed :path: /      (static 4)
+            0xbe, // indexed dynamic[62] → :authority: www.example.com
+            0x58, // literal incr. indexing, name = static[24] (cache-control)
+            0x86, // H=1, length=6
             0xa8, 0xeb, 0x10, 0x64, 0x9c, 0xbf // "no-cache"
         };
 
         var d2 = decoder.Decode(req2);
         Assert.Equal(5, d2.Count);
-        Assert.Equal(":method",       d2[0].Name); Assert.Equal("GET",             d2[0].Value);
-        Assert.Equal(":scheme",       d2[1].Name); Assert.Equal("http",            d2[1].Value);
-        Assert.Equal(":path",         d2[2].Name); Assert.Equal("/",               d2[2].Value);
-        Assert.Equal(":authority",    d2[3].Name); Assert.Equal("www.example.com", d2[3].Value);
-        Assert.Equal("cache-control", d2[4].Name); Assert.Equal("no-cache",        d2[4].Value);
+        Assert.Equal(":method", d2[0].Name);
+        Assert.Equal("GET", d2[0].Value);
+        Assert.Equal(":scheme", d2[1].Name);
+        Assert.Equal("http", d2[1].Value);
+        Assert.Equal(":path", d2[2].Name);
+        Assert.Equal("/", d2[2].Value);
+        Assert.Equal(":authority", d2[3].Name);
+        Assert.Equal("www.example.com", d2[3].Value);
+        Assert.Equal("cache-control", d2[4].Name);
+        Assert.Equal("no-cache", d2[4].Value);
 
         // :method: GET, :scheme: https, :path: /index.html,
         // :authority: www.example.com (dynamic[63]), custom-key: custom-value
@@ -432,23 +445,28 @@ public sealed class HpackAppendixCSpec
         //                      [64] :authority: www.example.com
         var req3 = new byte[]
         {
-            0x82,                                                             // :method: GET
-            0x87,                                                             // :scheme: https (static 7)
-            0x85,                                                             // :path: /index.html (static 5)
-            0xbf,                                                             // dynamic[63] → :authority: www.example.com
-            0x40,                                                             // literal incr. indexing, new literal name
-            0x88,                                                             // H=1, length=8
-            0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xa9, 0x7d, 0x7f,                 // "custom-key"
-            0x89,                                                             // H=1, length=9
-            0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xb8, 0xe8, 0xb4, 0xbf            // "custom-value"
+            0x82, // :method: GET
+            0x87, // :scheme: https (static 7)
+            0x85, // :path: /index.html (static 5)
+            0xbf, // dynamic[63] → :authority: www.example.com
+            0x40, // literal incr. indexing, new literal name
+            0x88, // H=1, length=8
+            0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xa9, 0x7d, 0x7f, // "custom-key"
+            0x89, // H=1, length=9
+            0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xb8, 0xe8, 0xb4, 0xbf // "custom-value"
         };
 
         var d3 = decoder.Decode(req3);
         Assert.Equal(5, d3.Count);
-        Assert.Equal(":method",    d3[0].Name); Assert.Equal("GET",             d3[0].Value);
-        Assert.Equal(":scheme",    d3[1].Name); Assert.Equal("https",           d3[1].Value);
-        Assert.Equal(":path",      d3[2].Name); Assert.Equal("/index.html",     d3[2].Value);
-        Assert.Equal(":authority", d3[3].Name); Assert.Equal("www.example.com", d3[3].Value);
-        Assert.Equal("custom-key", d3[4].Name); Assert.Equal("custom-value",    d3[4].Value);
+        Assert.Equal(":method", d3[0].Name);
+        Assert.Equal("GET", d3[0].Value);
+        Assert.Equal(":scheme", d3[1].Name);
+        Assert.Equal("https", d3[1].Value);
+        Assert.Equal(":path", d3[2].Name);
+        Assert.Equal("/index.html", d3[2].Value);
+        Assert.Equal(":authority", d3[3].Name);
+        Assert.Equal("www.example.com", d3[3].Value);
+        Assert.Equal("custom-key", d3[4].Name);
+        Assert.Equal("custom-value", d3[4].Value);
     }
 }

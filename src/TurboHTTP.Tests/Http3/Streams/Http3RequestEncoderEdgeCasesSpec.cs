@@ -3,11 +3,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Streams;
 
-/// <summary>
-/// Covers remaining edge cases and branches in HTTP/3 RequestEncoder (RFC 9114).
-/// Tests body handling, validation logic, CONNECT requests, and error conditions.
-/// </summary>
-[Trait("RFC", "RFC9114-4")]
 public sealed class Http3RequestEncoderEdgeCasesSpec
 {
     private static RequestEncoder CreateEncoder()
@@ -527,7 +522,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
 
         var (owner, length) = encoder.EncodeToQpackBlock(request);
 
-        Assert.NotNull(owner as object);
+        Assert.NotNull(owner);
         Assert.True(length > 0);
         owner.Dispose();
     }
@@ -635,7 +630,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/path");
         request.Headers.Add("x-custom", "value");
 
-        var frames = encoder.Encode(request);
+        encoder.Encode(request);
 
         // EncoderInstructions may be empty or non-empty depending on dynamic table usage
         var instructions = encoder.EncoderInstructions;

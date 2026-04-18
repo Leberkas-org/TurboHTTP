@@ -2,34 +2,12 @@ using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
-/// <summary>
-/// Comprehensive unit tests for HTTP/2 StateMachine per RFC 9113.
-/// Covers request encoding, frame processing, response assembly, window updates, PING, GOAWAY, and lifecycle.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="StateMachine"/>.
-/// Tests are organized by method: TryBuildPreface, DecodeServerData, ProcessFrame variants,
-/// EncodeRequest, window/flow control, PING/GOAWAY, stream lifecycle, and resource cleanup.
-/// </remarks>
 public sealed class Http2StateMachineSpec
 {
-    private sealed class FakeOps : IStageOperations
-    {
-        public List<HttpResponseMessage> Responses { get; } = [];
-        public List<IOutputItem> Outbound { get; } = [];
-        public List<string> Warnings { get; } = [];
-        public bool ReconnectFailed { get; private set; }
-
-        public void OnResponse(HttpResponseMessage r) => Responses.Add(r);
-        public void OnOutbound(IOutputItem item) => Outbound.Add(item);
-        public void OnWarning(string msg) => Warnings.Add(msg);
-        public void OnReconnectFailed() => ReconnectFailed = true;
-    }
-
     private static Http2EngineOptions MakeConfig(int maxReconnect = 3, int maxConcurrentStreams = 100) =>
         new(
             MaxConnectionsPerServer: 6,
@@ -50,19 +28,11 @@ public sealed class Http2StateMachineSpec
     private static HttpRequestMessage MakePost(string path = "/", HttpContent? content = null) =>
         new(HttpMethod.Post, $"https://example.com{path}") { Content = content };
 
-    private static HttpRequestMessage MakePut(string path = "/", HttpContent? content = null) =>
-        new(HttpMethod.Put, $"https://example.com{path}") { Content = content };
-
     private static HttpRequestMessage MakeDelete(string path = "/") =>
         new(HttpMethod.Delete, $"https://example.com{path}");
 
-    private static HttpRequestMessage MakeHead(string path = "/") =>
-        new(HttpMethod.Head, $"https://example.com{path}");
-
-    private static HttpRequestMessage MakeOptions(string path = "/") =>
-        new(HttpMethod.Options, $"https://example.com{path}");
-
-    private static HeadersFrame MakeResponseHeaders(int streamId, string statusCode = "200", bool endStream = true, bool endHeaders = true)
+    private static HeadersFrame MakeResponseHeaders(int streamId, string statusCode = "200", bool endStream = true,
+        bool endHeaders = true)
     {
         var encoder = new HpackEncoder();
         var hpack = encoder.Encode([
@@ -75,7 +45,6 @@ public sealed class Http2StateMachineSpec
     private static DataFrame MakeData(int streamId, byte[] data, bool endStream = true)
         => new(streamId, data, endStream);
 
-    // TryBuildPreface tests
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-3.4")]
     public void StateMachine_TryBuildPreface_should_return_preface_on_first_call()
@@ -126,7 +95,6 @@ public sealed class Http2StateMachineSpec
         Assert.Null(preface);
     }
 
-    // EncodeRequest tests
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.3")]
     public void StateMachine_EncodeRequest_should_emit_headers_and_acquire_frames()
@@ -156,7 +124,6 @@ public sealed class Http2StateMachineSpec
         // Simulate GOAWAY
         var goaway = new GoAwayFrame(0, Http2ErrorCode.NoError);
         sm.ProcessFrame(goaway);
-        var warningCountAfterGoAway = ops.Warnings.Count;
         ops.Warnings.Clear();
 
         var result = sm.EncodeRequest(MakeGet());
@@ -211,7 +178,7 @@ public sealed class Http2StateMachineSpec
         var result = sm.EncodeRequest(req);
 
         Assert.True(result);
-        var acquire = Assert.Single(ops.Outbound.OfType<StreamAcquireItem>());
+        Assert.Single(ops.Outbound.OfType<StreamAcquireItem>());
         Assert.True(ops.Outbound.Count > 0);
     }
 
@@ -232,7 +199,6 @@ public sealed class Http2StateMachineSpec
         Assert.Equal(3, acquires);
     }
 
-    // DecodeServerData tests
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4")]
     public void StateMachine_DecodeServerData_should_decode_frames_and_return_list()
@@ -252,7 +218,6 @@ public sealed class Http2StateMachineSpec
         Assert.IsType<SettingsFrame>(frames[0]);
     }
 
-    // ProcessFrame tests — Settings
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
     public void StateMachine_ProcessFrame_should_handle_settings_frame()
@@ -301,7 +266,6 @@ public sealed class Http2StateMachineSpec
         Assert.NotEmpty(ops.Outbound.OfType<MaxConcurrentStreamsItem>());
     }
 
-    // ProcessFrame tests — Data
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
     public void StateMachine_ProcessFrame_should_return_true_for_valid_data_frame()
@@ -315,7 +279,7 @@ public sealed class Http2StateMachineSpec
         ops.Outbound.Clear();
 
         // Then send response headers
-        var headers = MakeResponseHeaders(1, "200", endStream: false);
+        var headers = MakeResponseHeaders(1, endStream: false);
         var result = sm.ProcessFrame(headers);
         Assert.True(result);
 
@@ -337,7 +301,7 @@ public sealed class Http2StateMachineSpec
 
         sm.EncodeRequest(MakeGet());
 
-        var headers = MakeResponseHeaders(1, "200", endStream: false);
+        var headers = MakeResponseHeaders(1, endStream: false);
         sm.ProcessFrame(headers);
 
         Assert.False(sm.ResponseProduced);
@@ -348,7 +312,6 @@ public sealed class Http2StateMachineSpec
         Assert.True(sm.ResponseProduced);
     }
 
-    // ProcessFrame tests — Headers
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.2")]
     public void StateMachine_ProcessFrame_should_handle_headers_frame_with_endstream()
@@ -360,7 +323,7 @@ public sealed class Http2StateMachineSpec
         sm.EncodeRequest(MakeGet());
         ops.Outbound.Clear();
 
-        var headers = MakeResponseHeaders(1, "200", endStream: true);
+        var headers = MakeResponseHeaders(1);
         sm.ProcessFrame(headers);
 
         Assert.Single(ops.Responses);
@@ -422,7 +385,6 @@ public sealed class Http2StateMachineSpec
         Assert.Single(ops.Responses);
     }
 
-    // ProcessFrame tests — RstStream
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.3")]
     public void StateMachine_ProcessFrame_should_handle_rst_stream_frame()
@@ -439,7 +401,6 @@ public sealed class Http2StateMachineSpec
         Assert.True(result);
     }
 
-    // ProcessFrame tests — WindowUpdate
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
     public void StateMachine_ProcessFrame_should_handle_window_update_on_connection()
@@ -472,7 +433,6 @@ public sealed class Http2StateMachineSpec
         Assert.True(result);
     }
 
-    // ProcessFrame tests — Ping
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
     public void StateMachine_ProcessFrame_should_respond_to_ping_with_ack()
@@ -505,7 +465,6 @@ public sealed class Http2StateMachineSpec
         Assert.Empty(ops.Outbound);
     }
 
-    // ProcessFrame tests — GoAway
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void StateMachine_ProcessFrame_should_handle_goaway_frame()
@@ -538,7 +497,6 @@ public sealed class Http2StateMachineSpec
         Assert.Single(ops.Outbound.OfType<ReconnectItem>());
     }
 
-    // Window update edge cases
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
     public void StateMachine_ProcessFrame_should_return_false_when_connection_flow_control_violated()
@@ -581,7 +539,6 @@ public sealed class Http2StateMachineSpec
         Assert.Single(ops.Outbound.OfType<ConnectionReuseItem>());
     }
 
-    // Response assembly and correlation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
     public void StateMachine_ProcessFrame_should_correlate_request_with_response()
@@ -594,7 +551,7 @@ public sealed class Http2StateMachineSpec
         sm.EncodeRequest(req);
         ops.Outbound.Clear();
 
-        var headers = MakeResponseHeaders(1, "200", endStream: true);
+        var headers = MakeResponseHeaders(1);
         sm.ProcessFrame(headers);
 
         var response = Assert.Single(ops.Responses);
@@ -615,17 +572,16 @@ public sealed class Http2StateMachineSpec
         ops.Outbound.Clear();
 
         // Response for stream 3 arrives first
-        var headers3 = MakeResponseHeaders(3, "200", endStream: true);
+        var headers3 = MakeResponseHeaders(3);
         sm.ProcessFrame(headers3);
 
         // Response for stream 1 arrives second
-        var headers1 = MakeResponseHeaders(1, "200", endStream: true);
+        var headers1 = MakeResponseHeaders(1);
         sm.ProcessFrame(headers1);
 
         Assert.Equal(2, ops.Responses.Count);
     }
 
-    // Stream state management
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
     public void StateMachine_ProcessFrame_should_clean_up_stream_state_after_response()
@@ -636,7 +592,7 @@ public sealed class Http2StateMachineSpec
 
         sm.EncodeRequest(MakeGet());
 
-        var headers = MakeResponseHeaders(1, "200", endStream: true);
+        var headers = MakeResponseHeaders(1);
         sm.ProcessFrame(headers);
 
         // Stream should be closed and state returned to pool
@@ -671,7 +627,7 @@ public sealed class Http2StateMachineSpec
         Assert.False(sm.CanAcceptRequest);
 
         // Close first stream with headers (headers-only response)
-        var headers1 = MakeResponseHeaders(1, "200", endStream: true);
+        var headers1 = MakeResponseHeaders(1);
         sm.ProcessFrame(headers1);
 
         // Close with empty data frame to trigger stream closure
@@ -682,7 +638,6 @@ public sealed class Http2StateMachineSpec
         Assert.True(sm.CanAcceptRequest);
     }
 
-    // Idempotency and retry logic
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.1")]
     public void StateMachine_OnConnectionLost_should_replay_idempotent_methods_below_lastStreamId()
@@ -691,7 +646,7 @@ public sealed class Http2StateMachineSpec
         var sm = new StateMachine(MakeConfig(), ops);
         sm.TryBuildPreface();
 
-        sm.EncodeRequest(MakeGet("/a"));  // idempotent
+        sm.EncodeRequest(MakeGet("/a")); // idempotent
         sm.EncodeRequest(MakeDelete("/b")); // idempotent
         ops.Outbound.Clear();
 
@@ -717,7 +672,6 @@ public sealed class Http2StateMachineSpec
         Assert.Single(ops.Warnings);
     }
 
-    // Reconnect state tests
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void StateMachine_IsReconnecting_should_be_true_after_connection_lost()
@@ -839,7 +793,6 @@ public sealed class Http2StateMachineSpec
         Assert.True(ops.ReconnectFailed);
     }
 
-    // Response status codes
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
     public void StateMachine_ProcessFrame_should_decode_1xx_status_codes()
@@ -869,7 +822,7 @@ public sealed class Http2StateMachineSpec
         sm.EncodeRequest(MakeGet());
         ops.Outbound.Clear();
 
-        var headers = MakeResponseHeaders(1, "200", endStream: true);
+        var headers = MakeResponseHeaders(1);
         sm.ProcessFrame(headers);
 
         var response = Assert.Single(ops.Responses);
@@ -912,7 +865,6 @@ public sealed class Http2StateMachineSpec
         Assert.Equal(500, (int)response.StatusCode);
     }
 
-    // Response properties
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
     public void StateMachine_ProcessFrame_should_preserve_response_headers()
@@ -938,7 +890,6 @@ public sealed class Http2StateMachineSpec
         Assert.True(response.Content?.Headers.ContentType is not null);
     }
 
-    // Endpoint tracking
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-3.1")]
     public void StateMachine_Endpoint_should_be_initialized_default()
@@ -964,7 +915,6 @@ public sealed class Http2StateMachineSpec
         Assert.Equal("example.com", sm.Endpoint.Host);
     }
 
-    // InFlight tracking
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
     public void StateMachine_HasInFlightRequests_should_be_true_when_requests_pending()
@@ -987,13 +937,12 @@ public sealed class Http2StateMachineSpec
         sm.TryBuildPreface();
 
         sm.EncodeRequest(MakeGet());
-        var headers = MakeResponseHeaders(1, "200", endStream: true);
+        var headers = MakeResponseHeaders(1);
         sm.ProcessFrame(headers);
 
         Assert.False(sm.HasInFlightRequests);
     }
 
-    // Continuation frame error handling
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.10")]
     public void StateMachine_ProcessFrame_should_warn_when_continuation_for_unknown_stream()
@@ -1024,7 +973,6 @@ public sealed class Http2StateMachineSpec
         Assert.Single(ops.Warnings);
     }
 
-    // Body accumulation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.2")]
     public void StateMachine_ProcessFrame_should_accumulate_response_body_across_multiple_frames()
@@ -1036,7 +984,7 @@ public sealed class Http2StateMachineSpec
         sm.EncodeRequest(MakeGet());
         ops.Outbound.Clear();
 
-        var headers = MakeResponseHeaders(1, "200", endStream: false);
+        var headers = MakeResponseHeaders(1, endStream: false);
         sm.ProcessFrame(headers);
 
         var data1 = MakeData(1, [1, 2, 3], endStream: false);
@@ -1046,7 +994,7 @@ public sealed class Http2StateMachineSpec
         sm.ProcessFrame(data2);
 
         var response = Assert.Single(ops.Responses);
-        var body = response.Content?.ReadAsStream(TestContext.Current.CancellationToken);
+        var body = response.Content.ReadAsStream(TestContext.Current.CancellationToken);
         Assert.NotNull(body);
     }
 }

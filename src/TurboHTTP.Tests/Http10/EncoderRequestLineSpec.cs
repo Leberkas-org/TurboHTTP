@@ -3,14 +3,6 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 request-line serialization per RFC 1945 §5.1.
-/// Verifies that method, request URI, and HTTP-version are correctly encoded.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Encoder"/>.
-/// RFC 1945 §5.1: Request-Line — Method SP Request-URI SP HTTP-Version CRLF.
-/// </remarks>
 public sealed class Http10EncoderRequestLineSpec
 {
     private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];
@@ -22,7 +14,7 @@ public sealed class Http10EncoderRequestLineSpec
         return Encoding.ASCII.GetString(buffer[..written]);
     }
 
-    private static (string requestLine, string[] headerLines, byte[] body) ParseRaw(HttpRequestMessage request,
+    private static string ParseRaw(HttpRequestMessage request,
         int bufferSize = 8192)
     {
         var buffer = MakeBuffer(bufferSize);
@@ -31,13 +23,11 @@ public sealed class Http10EncoderRequestLineSpec
 
         var separatorIndex = raw.IndexOf("\r\n\r\n", StringComparison.Ordinal);
         var headerSection = raw[..separatorIndex];
-        var bodyString = raw[(separatorIndex + 4)..];
 
         var lines = headerSection.Split("\r\n");
         var requestLine = lines[0];
-        var headerLines = lines[1..];
 
-        return (requestLine, headerLines, Encoding.ASCII.GetBytes(bodyString));
+        return requestLine;
     }
 
     [Fact(Timeout = 5000)]
@@ -45,7 +35,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_contain_one_space_between_parts()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         var parts = requestLine.Split(' ');
         Assert.Equal(3, parts.Length);
@@ -56,7 +46,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_use_http10_protocol()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.EndsWith("HTTP/1.0", requestLine);
     }
@@ -76,7 +66,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_include_query_in_uri()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?q=hello&page=2");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal("GET /search?q=hello&page=2 HTTP/1.0", requestLine);
     }
@@ -86,7 +76,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_use_forward_slash_when_path_is_root()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal("GET / HTTP/1.0", requestLine);
     }
@@ -96,7 +86,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_preserve_deep_path()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a/b/c/d");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal("GET /a/b/c/d HTTP/1.0", requestLine);
     }
@@ -106,7 +96,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_use_http10_version()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/path");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal("GET /path HTTP/1.0", requestLine);
     }
@@ -116,7 +106,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_preserve_path_and_query()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/api/data?key=val&x=1");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal("GET /api/data?key=val&x=1 HTTP/1.0", requestLine);
     }
@@ -136,6 +126,7 @@ public sealed class Http10EncoderRequestLineSpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 
@@ -160,7 +151,8 @@ public sealed class Http10EncoderRequestLineSpec
     [InlineData("HEAD", "/resource")]
     [InlineData("OPTIONS", "/res")]
     [InlineData("TRACE", "/res")]
-    public void Http10EncoderRequestLine_should_produce_correct_request_line_when_using_http_method(string method, string path)
+    public void Http10EncoderRequestLine_should_produce_correct_request_line_when_using_http_method(string method,
+        string path)
     {
         var request = new HttpRequestMessage(new HttpMethod(method), $"http://example.com{path}");
         if (method is "POST" or "PUT" or "PATCH")
@@ -168,7 +160,7 @@ public sealed class Http10EncoderRequestLineSpec
             request.Content = new StringContent("body");
         }
 
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal($"{method} {path} HTTP/1.0", requestLine);
     }
@@ -178,7 +170,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_normalize_to_slash_when_path_is_missing()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Equal("GET / HTTP/1.0", requestLine);
     }
@@ -188,7 +180,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_preserve_query_string()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/?a=1&b=2&c=3");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Contains("?a=1&b=2&c=3", requestLine);
     }
@@ -199,7 +191,7 @@ public sealed class Http10EncoderRequestLineSpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get,
             new Uri("http://example.com/path%20with%20spaces"));
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.Contains("%20", requestLine);
         Assert.DoesNotContain("%2520", requestLine);
@@ -210,7 +202,7 @@ public sealed class Http10EncoderRequestLineSpec
     public void Http10EncoderRequestLine_should_strip_fragment_when_uri_contains_fragment()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page#section");
-        var (requestLine, _, _) = ParseRaw(request);
+        var requestLine = ParseRaw(request);
 
         Assert.DoesNotContain("#", requestLine);
         Assert.DoesNotContain("section", requestLine);

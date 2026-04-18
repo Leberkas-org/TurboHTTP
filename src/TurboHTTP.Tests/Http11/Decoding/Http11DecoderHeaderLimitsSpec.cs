@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests HTTP/1.1 decoder header size limits (security: DoS protection).
-/// Verifies that oversized individual headers, total header blocks, and header counts are rejected.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §5: Header field limits prevent memory exhaustion from oversized or excessive headers.
-/// </remarks>
 public sealed class Http11DecoderHeaderLimitsSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -20,7 +12,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
     private static string BuildRawResponse(string statusLine, string headers, string body = "")
         => $"{statusLine}\r\n{headers}\r\n\r\n{body}";
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_use_default_max_header_size_when_no_config_provided()
     {
@@ -34,7 +26,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_use_default_max_total_header_size_when_no_config_provided()
     {
@@ -54,7 +46,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_use_default_max_header_count_when_no_config_provided()
     {
@@ -68,7 +60,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_header_too_large_when_single_header_exceeds_limit()
     {
@@ -83,7 +75,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Contains("100", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_when_single_header_exactly_at_limit()
     {
@@ -98,7 +90,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_header_too_large_when_one_byte_over_limit()
     {
@@ -111,7 +103,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.HeaderTooLarge, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_when_multiple_small_headers_within_limit()
     {
@@ -125,7 +117,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_total_headers_too_large_when_total_exceeds_limit()
     {
@@ -144,7 +136,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_when_total_headers_exactly_at_limit()
     {
@@ -159,7 +151,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_total_headers_too_large_when_one_byte_over_total()
     {
@@ -171,7 +163,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_too_many_headers_when_count_exceeds_limit()
     {
@@ -182,7 +174,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_when_header_count_exactly_at_limit()
     {
@@ -195,7 +187,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_too_many_headers_when_one_over_count_limit()
     {
@@ -207,7 +199,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Contains("10", ex.Message); // limit value in message
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_reject_at_custom_limit_when_max_header_size_overridden()
     {
@@ -219,7 +211,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.HeaderTooLarge, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_reject_at_custom_total_limit_when_max_total_header_size_overridden()
     {
@@ -236,7 +228,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_reject_at_custom_count_limit_when_max_header_count_overridden()
     {
@@ -247,7 +239,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_obsolete_folding_when_folded_header_detected()
     {
@@ -258,7 +250,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.ObsoleteFoldingDetected, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_obsolete_folding_when_tab_folded_header_detected()
     {
@@ -269,7 +261,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.ObsoleteFoldingDetected, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_chunked_body_when_body_larger_than_header_limit()
     {
@@ -285,7 +277,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_content_length_body_when_body_larger_than_header_limit()
     {
@@ -299,7 +291,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_include_header_name_when_single_header_too_large()
     {
@@ -313,7 +305,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Contains("30", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_have_descriptive_message_when_total_headers_too_large()
     {
@@ -327,7 +319,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Contains("Total header size", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_include_count_when_too_many_headers()
     {
@@ -339,7 +331,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Contains("3", ex.Message); // limit value
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_work_with_defaults_when_no_parameters_provided()
     {
@@ -353,7 +345,7 @@ public sealed class Http11DecoderHeaderLimitsSpec
         Assert.Single(responses);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_header_too_large_when_connect_response_header_exceeds_limit()
     {

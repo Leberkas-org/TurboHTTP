@@ -21,7 +21,8 @@ public sealed class SmokeSpec : AcceptanceTestBase
             .Data("Hello World")
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -45,7 +46,8 @@ public sealed class SmokeSpec : AcceptanceTestBase
             .Data(payload)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -109,11 +111,12 @@ public sealed class SmokeSpec : AcceptanceTestBase
             .Headers(200, [("x-smoke-test", "h3-value"), ("content-length", "0")], endStream: true)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(response.Headers.TryGetValues("X-Smoke-Test", out var values));
-        Assert.Equal("h3-value", values!.Single());
+        Assert.Equal("h3-value", values.Single());
     }
 
     private async Task AssertStatusCodeAsync(int expectedCode)
@@ -128,7 +131,8 @@ public sealed class SmokeSpec : AcceptanceTestBase
             .Headers(expectedCode, endStream: true)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal((HttpStatusCode)expectedCode, response.StatusCode);
     }

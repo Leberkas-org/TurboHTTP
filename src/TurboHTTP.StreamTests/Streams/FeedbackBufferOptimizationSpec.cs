@@ -8,14 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests the feedback buffer optimization that prevents backpressure stalls in the engine's post-processing path.
-/// Verifies that the feedback loop does not block forward progress when responses arrive faster than they are consumed.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Engine"/>.
-/// Validates back-pressure resilience through the response post-processing feedback arc.
-/// </remarks>
 public sealed class FeedbackBufferOptimizationSpec : EngineTestBase
 {
     private static Flow<IOutputItem, IInputItem, NotUsed> SequentialFlow(params byte[][] responses)

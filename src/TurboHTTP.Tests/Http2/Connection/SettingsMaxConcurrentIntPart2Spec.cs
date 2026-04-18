@@ -3,19 +3,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
-/// <summary>
-/// Tests SETTINGS_MAX_CONCURRENT_STREAMS enforcement per RFC 9113 §6.5.2.
-/// Verifies stream creation limits and correct error signalling when the limit is exceeded.
-/// Part 2: Integration tests (MCS-INT-012 through MCS-INT-025).
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.5.2: SETTINGS_MAX_CONCURRENT_STREAMS limits the number of simultaneously open streams on a connection.
-/// </remarks>
 public sealed class Http2SettingsMaxConcurrentIntPart2Spec
 {
-    // Helpers
-
     private static byte[] MakeResponseHeadersBytes(int streamId, bool endStream = false, bool endHeaders = true)
     {
         var hpack = new HpackEncoder(useHuffman: false);
@@ -42,10 +31,6 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
         return result;
     }
 
-    /// <summary>
-    /// RFC 9113 §6.5.2: Extracts MAX_CONCURRENT_STREAMS parameter from a decoded SETTINGS frame.
-    /// Returns the current limit (int.MaxValue if not set).
-    /// </summary>
     private static int ExtractMaxConcurrentStreams(SettingsFrame frame, int currentLimit)
     {
         foreach (var (param, value) in frame.Parameters)
@@ -59,10 +44,6 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
         return currentLimit;
     }
 
-    /// <summary>
-    /// RFC 9113 §5.1.2 / §6.5.2: Opening a stream when active count >= max is a REFUSED_STREAM error.
-    /// Enforces the MAX_CONCURRENT_STREAMS limit on new stream creation.
-    /// </summary>
     private static void EnforceMaxConcurrentStreams(int activeCount, int maxConcurrent, int streamId)
     {
         if (maxConcurrent != int.MaxValue && activeCount >= maxConcurrent)
@@ -75,9 +56,6 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
         }
     }
 
-    /// <summary>
-    /// Tracks stream state transitions: HEADERS opens, END_STREAM/DATA+END_STREAM/RST_STREAM close.
-    /// </summary>
     private static void TrackStreamState(
         Http2Frame frame,
         HashSet<int> openStreams,
@@ -114,8 +92,6 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
                 break;
         }
     }
-
-    // MCS-INT: Integration Tests (§5.1.2 / §6.5.2) — Part 2
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5.2")]
@@ -329,7 +305,7 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
     public void Http2FrameDecoder_should_not_modify_limit_when_settings_ack_received()
     {
         var decoder = new FrameDecoder();
-        var currentLimit = 5;
+        const int currentLimit = 5;
 
         // Process SETTINGS ACK (has no parameters)
         var frames = decoder.Decode(SettingsFrame.SettingsAck());
@@ -346,11 +322,11 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
     {
         var decoder = new FrameDecoder();
         var settings = new SettingsFrame(
-            [
-                (SettingsParameter.InitialWindowSize, 32768u),
-                (SettingsParameter.MaxConcurrentStreams, 7u),
-                (SettingsParameter.MaxFrameSize, 32768u),
-            ]);
+        [
+            (SettingsParameter.InitialWindowSize, 32768u),
+            (SettingsParameter.MaxConcurrentStreams, 7u),
+            (SettingsParameter.MaxFrameSize, 32768u),
+        ]);
 
         var frames = decoder.Decode(settings.Serialize());
         var frame = Assert.IsType<SettingsFrame>(frames[0]);
@@ -363,8 +339,8 @@ public sealed class Http2SettingsMaxConcurrentIntPart2Spec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_reference_rfc_in_message_when_concurrent_stream_limit_exceeded()
     {
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceMaxConcurrentStreams(activeCount: 1, maxConcurrent: 1, streamId: 3));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            EnforceMaxConcurrentStreams(activeCount: 1, maxConcurrent: 1, streamId: 3));
 
         Assert.Contains("6.5.2", ex.Message);
     }

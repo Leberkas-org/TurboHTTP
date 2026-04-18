@@ -83,7 +83,7 @@ public sealed class RedirectSpec
         Assert.Equal("Hello World", body);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(5)]

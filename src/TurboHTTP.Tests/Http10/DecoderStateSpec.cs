@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 decoder state lifecycle per RFC 1945.
-/// Verifies Reset() clears internal state and the decoder is reusable across connections.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945: Decoder must be resettable between sequential connections.
-/// </remarks>
 public sealed class Http10DecoderStateSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -28,7 +20,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_returntrue()
+    public void Http10DecoderStateSpec_should_return_true()
     {
         // HTTP/0.9 response: no headers — entire buffer is body, delimited by EOF (RFC 1945 §2.1)
         var decoder = new Decoder();
@@ -43,7 +35,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_returnfalse()
+    public void Http10DecoderStateSpec_should_return_false()
     {
         var decoder = new Decoder();
 
@@ -55,7 +47,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_returnfalse_2()
+    public void Http10DecoderStateSpec_should_return_false_2()
     {
         var decoder = new Decoder();
         var incomplete = Bytes("HTTP/1.0 200");
@@ -69,7 +61,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_clearremainder()
+    public void Http10DecoderStateSpec_should_clear_remainder()
     {
         // HTTP/0.9 response: first TryDecodeEof clears buffered body; second call returns false
         var decoder = new Decoder();
@@ -97,7 +89,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_clearbuffereddata()
+    public void Http10DecoderStateSpec_should_clear_buffered_data()
     {
         var decoder = new Decoder();
         var partial = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nincomplete");
@@ -112,7 +104,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_decodenewresponse()
+    public void Http10DecoderStateSpec_should_decode_new_response()
     {
         var decoder = new Decoder();
         var partial = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nincomplete");
@@ -129,7 +121,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_notthrow()
+    public void Http10DecoderStateSpec_should_not_throw()
     {
         var decoder = new Decoder();
 
@@ -145,7 +137,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_returnfalse_3()
+    public void Http10DecoderStateSpec_should_return_false_3()
     {
         var decoder = new Decoder();
 
@@ -157,7 +149,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_preservestate()
+    public void Http10DecoderStateSpec_should_preserve_state()
     {
         var decoder = new Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nX-Header: value\r\nContent-Length: 5\r\n\r\nHello");
@@ -179,7 +171,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_bereusable()
+    public void Http10DecoderStateSpec_should_be_reusable()
     {
         var decoder = new Decoder();
 
@@ -198,7 +190,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_beidempotent()
+    public void Http10DecoderStateSpec_should_be_idempotent()
     {
         var decoder = new Decoder();
         var partial = Bytes("HTTP/1.0 200");
@@ -217,7 +209,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_maintainstate()
+    public void Http10DecoderStateSpec_should_maintain_state()
     {
         var decoder = new Decoder();
         var full = Bytes("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nHello");
@@ -241,7 +233,7 @@ public sealed class Http10DecoderStateSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4")]
-    public void Http10DecoderStateSpec_should_handleeof()
+    public void Http10DecoderStateSpec_should_handle_eof()
     {
         var decoder = new Decoder();
         var complete = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");

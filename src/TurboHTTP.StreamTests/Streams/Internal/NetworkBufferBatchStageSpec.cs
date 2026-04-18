@@ -6,18 +6,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams.Internal;
 
-/// <summary>
-/// Tests <see cref="NetworkBufferBatchStage"/> batching behavior, flush semantics,
-/// and control-item ordering.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="NetworkBufferBatchStage"/>.
-/// Key behaviors: buffer batching up to maxWeight, control-item flush, overflow handling.
-/// </remarks>
 public sealed class NetworkBufferBatchStageSpec : StreamTestBase
 {
-    // Helpers
-
     private static NetworkBuffer CreateBuffer(int size, byte fill = (byte)'X')
     {
         var buf = NetworkBuffer.Rent(size);
@@ -29,7 +19,9 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
     private sealed class ControlItem : IOutputItem
     {
         public string Name { get; }
-        public RequestEndpoint Key { get; } = new() { Host = "test", Port = 80, Scheme = "http", Version = new Version(1, 1) };
+
+        public RequestEndpoint Key { get; } = new()
+            { Host = "test", Port = 80, Scheme = "http", Version = new Version(1, 1) };
 
         public ControlItem(string name = "Control")
         {
@@ -72,8 +64,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         return (collected, didComplete);
     }
 
-    // NBBS-001: Single buffer with immediate downstream demand pushes immediately
-
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_push_buffer_immediately_when_downstream_demands()
     {
@@ -89,9 +79,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         Assert.Single(collected);
         Assert.Same(buf, collected[0]);
     }
-
-
-    // NBBS-003: Control item flushes accumulated buffer before emission
 
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_flush_buffer_before_control_item()
@@ -111,8 +98,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         Assert.Same(ctrl, collected[1]);
     }
 
-    // NBBS-004: Overflow splits batches when adding would exceed maxWeight
-
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_emit_batch_when_next_buffer_overflows()
     {
@@ -130,8 +115,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         // First item should be a buffer (either buf1 merged/alone or buf2)
         Assert.IsType<NetworkBuffer>(collected[0]);
     }
-
-    // NBBS-005: Multiple control items preserve ordering
 
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_preserve_control_item_order()
@@ -153,8 +136,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         Assert.Same(ctrl3, collected[2]);
     }
 
-    // NBBS-006: Upstream completion flushes remaining buffer
-
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_emit_remaining_buffer_on_upstream_finish()
     {
@@ -171,8 +152,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         Assert.IsType<NetworkBuffer>(collected[0]);
     }
 
-    // NBBS-007: Empty stream completes immediately
-
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_complete_immediately_on_empty_stream()
     {
@@ -186,8 +165,6 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         Assert.True(success);
         Assert.Empty(collected);
     }
-
-    // NBBS-008: Control + buffer + control preserves order and flushes correctly
 
     [Fact(Timeout = 5000)]
     public async Task NetworkBufferBatch_should_handle_mixed_control_and_buffers()
@@ -208,5 +185,4 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         Assert.IsType<NetworkBuffer>(collected[1]);
         Assert.Same(ctrl2, collected[2]);
     }
-
 }

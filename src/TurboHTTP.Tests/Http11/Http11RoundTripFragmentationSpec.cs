@@ -3,14 +3,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests round-trip encoding and decoding across TCP fragment boundaries per RFC 9112 §6.
-/// Verifies that responses split at arbitrary byte positions are correctly reassembled.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §6: Decoders must handle arbitrary TCP fragmentation of response streams.
-/// </remarks>
 public sealed class Http11RoundTripFragmentationSpec
 {
     [Fact(Timeout = 5000)]

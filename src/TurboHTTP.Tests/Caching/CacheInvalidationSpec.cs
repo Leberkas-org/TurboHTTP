@@ -3,15 +3,6 @@ using TurboHTTP.Protocol.Caching;
 
 namespace TurboHTTP.Tests.Caching;
 
-/// <summary>
-/// RFC 9111 §4.4 — Cache invalidation tests.
-/// Verifies that unsafe methods with successful responses invalidate stored
-/// entries for the request URI, Location, and Content-Location headers.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="CacheStore"/>.
-/// RFC 9111 §4.4: A cache must invalidate stored responses for unsafe request methods.
-/// </remarks>
 public sealed class CacheInvalidationSpec
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
@@ -72,7 +63,7 @@ public sealed class CacheInvalidationSpec
     [Fact]
     public void CacheInvalidation_should_not_invalidate_when_cross_origin_location()
     {
-        var store = CreateStoreWithEntry("http://example.com/resource");
+        var store = CreateStoreWithEntry();
 
         var requestUri = new Uri("http://example.com/action");
         var locationUri = new Uri("http://other-host.com/resource");
@@ -87,7 +78,7 @@ public sealed class CacheInvalidationSpec
     [Fact]
     public void CacheInvalidation_should_not_invalidate_when_safe_method()
     {
-        var store = CreateStoreWithEntry("http://example.com/resource");
+        var store = CreateStoreWithEntry();
 
         // GET is a safe method — no invalidation should happen
         var entry = store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource"));
@@ -99,7 +90,7 @@ public sealed class CacheInvalidationSpec
     [Fact]
     public void CacheInvalidation_should_not_invalidate_when_error_response()
     {
-        var store = CreateStoreWithEntry("http://example.com/resource");
+        var store = CreateStoreWithEntry();
 
         // A POST returning 500 should NOT trigger invalidation
         var entry = store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource"));

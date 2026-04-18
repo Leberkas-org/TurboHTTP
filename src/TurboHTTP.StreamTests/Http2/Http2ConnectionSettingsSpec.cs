@@ -44,6 +44,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.5")]
     public async Task Http2ConnectionSettings_should_send_ack_when_server_settings_received()
     {
         var settings = new SettingsFrame(
@@ -58,6 +59,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.5")]
     public async Task Http2ConnectionSettings_should_not_trigger_another_ack_when_settings_ack_received()
     {
         var settingsAck = new SettingsFrame([], isAck: true);
@@ -69,6 +71,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.5")]
     public async Task Http2ConnectionSettings_should_update_stream_window_when_initial_window_size_setting_received()
     {
         var settings = new SettingsFrame(
@@ -85,6 +88,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.5")]
     public async Task Http2ConnectionSettings_should_survive_when_inbound_data_exceeds_stream_window()
     {
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
@@ -121,6 +125,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.5")]
     public async Task Http2ConnectionSettings_should_not_forward_settings_frame_to_out_response()
     {
         var settings = new SettingsFrame(
@@ -138,6 +143,7 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.5")]
     public async Task Http2ConnectionSettings_should_produce_one_ack_per_settings_frame_when_multiple_received()
     {
         var settings1 = new SettingsFrame(

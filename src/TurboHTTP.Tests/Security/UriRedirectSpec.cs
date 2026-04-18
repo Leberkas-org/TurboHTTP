@@ -1,23 +1,10 @@
 using System.Net;
 using System.Text;
-using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Semantics;
 using Encoder = TurboHTTP.Protocol.Http11.Encoder;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Tests backslash normalization, oversized URI handling, userinfo stripping in redirect
-/// locations, IPv6 authority formatting, and HTTPS→HTTP downgrade protection. Companion to
-/// <see cref="UriSecuritySpec"/> which covers path traversal, fragment, userinfo, unicode,
-/// double-encoding, and null byte injection (sections 1–6).
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="UriSanitizer"/>, <see cref="RedirectHandler"/>,
-/// <see cref="Protocol.Http10.Encoder"/>, <see cref="Protocol.Http11.Encoder"/>, <see cref="RequestEncoder"/>.
-/// Attack vectors: backslash path traversal, long URI DoS, credential injection via Location,
-/// IPv6 authority confusion, HTTPS→HTTP downgrade.
-/// </remarks>
 public sealed class UriRedirectSpec
 {
     private static string EncodeHttp11(HttpRequestMessage request, bool absoluteForm = false, int bufferSize = 16384)
@@ -36,12 +23,11 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void Uri_should_normalize_backslash_when_path_contains_backslash()
     {
         // Attack: Backslash path traversal on Windows (e.g., ..\..\etc\passwd)
         // .NET Uri normalizes backslashes to forward slashes on Windows
-        var uriString = "https://example.com/api\\..\\sensitive";
+        const string uriString = "https://example.com/api\\..\\sensitive";
 
         // On Windows, Uri may normalize backslashes — test the actual behavior
         if (OperatingSystem.IsWindows())
@@ -53,7 +39,6 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void Http11Encoder_should_encode_extremely_long_uri_when_uri_exceeds_standard_size()
     {
         // Attack: Resource exhaustion via extremely long URIs
@@ -63,7 +48,7 @@ public sealed class UriRedirectSpec
         var request = new HttpRequestMessage(HttpMethod.Get, longUri);
 
         // Use a larger buffer to accommodate the long URI
-        var bufferSize = 32768; // 32 KB
+        const int bufferSize = 32768; // 32 KB
         var buffer = new Memory<byte>(new byte[bufferSize]);
         var span = buffer.Span;
 
@@ -75,7 +60,6 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void Http11Encoder_should_encode_long_query_string_when_query_parameters_very_large()
     {
         // Attack: Query string DoS via extremely long parameter values
@@ -84,7 +68,7 @@ public sealed class UriRedirectSpec
 
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
 
-        var bufferSize = 32768;
+        const int bufferSize = 32768;
         var buffer = new Memory<byte>(new byte[bufferSize]);
         var span = buffer.Span;
 
@@ -95,7 +79,6 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void RedirectHandler_should_strip_userinfo_in_location_when_location_contains_credentials()
     {
         // Attack: Location header with embedded credentials
@@ -117,7 +100,6 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void UriSanitizer_should_bracket_ipv6_address_when_format_authority_with_ipv6()
     {
         // Legitimate: IPv6 addresses must be bracketed per RFC 9110 §2.7.1
@@ -131,7 +113,6 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void UriSanitizer_should_include_port_with_ipv6_when_non_default_port()
     {
         var uri = new Uri("https://[::1]:8443/admin");
@@ -144,7 +125,6 @@ public sealed class UriRedirectSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void RedirectHandler_should_reject_https_to_http_downgrade_when_default_policy_applied()
     {
         // Attack: Redirect from HTTPS to HTTP (downgrade attack)
@@ -153,16 +133,12 @@ public sealed class UriRedirectSpec
 
         var handler = new RedirectHandler(RedirectPolicy.Default);
 
-        var ex = Assert.Throws<RedirectException>(() =>
-        {
-            handler.BuildRedirectRequest(original, response);
-        });
+        var ex = Assert.Throws<RedirectException>(() => { handler.BuildRedirectRequest(original, response); });
 
         Assert.Equal(RedirectError.ProtocolDowngrade, ex.Error);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110")]
     public void RedirectHandler_should_allow_https_to_http_downgrade_when_policy_allows()
     {
         // Legitimate case: Allow downgrade if explicitly configured

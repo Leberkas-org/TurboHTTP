@@ -1,16 +1,16 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-[Trait("RFC", "RFC9114-4.1")]
 public sealed class Http3StreamRoutingSpec
 {
-    private readonly TestOps _ops = new();
+    private readonly FakeOps _ops = new();
     private readonly QpackTableSync _tableSync = new();
 
-    private StateMachine CreateMachine(TestOps? ops = null)
+    private StateMachine CreateMachine(FakeOps? ops = null)
     {
         return new StateMachine(
             new Http3Options().ToEngineOptions(),
@@ -22,10 +22,6 @@ public sealed class Http3StreamRoutingSpec
         return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
 
-    /// <summary>
-    /// Builds a serialized NetworkBuffer containing a HEADERS frame followed by a DATA frame.
-    /// The DATA frame carries <paramref name="bodySize"/> bytes filled with <paramref name="fillByte"/>.
-    /// </summary>
     private NetworkBuffer BuildResponseBuffer(byte fillByte, int bodySize)
     {
         var headersFrame = EncodeHeaders((":status", "200"));
@@ -42,10 +38,7 @@ public sealed class Http3StreamRoutingSpec
         return buf;
     }
 
-    /// <summary>
-    /// Builds a serialized NetworkBuffer containing only a DATA frame.
-    /// </summary>
-    private NetworkBuffer BuildDataBuffer(byte fillByte, int bodySize)
+    private static NetworkBuffer BuildDataBuffer(byte fillByte, int bodySize)
     {
         var body = new byte[bodySize];
         Array.Fill(body, fillByte);

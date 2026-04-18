@@ -3,10 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Tests HPACK dynamic table insertion, eviction, and size tracking per RFC 7541 §4.
-/// Verifies FIFO ordering and correct eviction when the maximum size is reached.
-/// </summary>
 public sealed class DynamicTableSpec
 {
     [Fact(Timeout = 5000)]
@@ -82,7 +78,7 @@ public sealed class DynamicTableSpec
     public void HpackDynamicTable_should_count_size_as_utf8_bytes_when_name_contains_multibyte_characters()
     {
         var table = new HpackDynamicTable();
-        var name = "café";
+        const string name = "café";
         var expected = Encoding.UTF8.GetByteCount(name) + 0 + 32;
         table.Add(name, string.Empty);
         Assert.Equal(expected, table.CurrentSize);
@@ -93,7 +89,7 @@ public sealed class DynamicTableSpec
     public void HpackDynamicTable_should_count_size_as_utf8_bytes_when_value_contains_multibyte_characters()
     {
         var table = new HpackDynamicTable();
-        var value = "héllo";
+        const string value = "héllo";
         var expected = 1 + Encoding.UTF8.GetByteCount(value) + 32;
         table.Add("x", value);
         Assert.Equal(expected, table.CurrentSize);

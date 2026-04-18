@@ -62,7 +62,7 @@ public sealed class Http10EngineEndToEndSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC1945-6.1")]
+    [Trait("RFC", "RFC1945-6")]
     public async Task Http10EngineEndToEnd_should_set_correct_status_code_and_reason_phrase_when_404_response()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/missing")

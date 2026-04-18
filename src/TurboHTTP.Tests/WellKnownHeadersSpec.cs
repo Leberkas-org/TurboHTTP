@@ -2,10 +2,6 @@ using TurboHTTP.Protocol;
 
 namespace TurboHTTP.Tests;
 
-/// <summary>
-/// Tests for <see cref="WellKnownHeaders"/>.
-/// Covers header name/value interning and ASCII utilities.
-/// </summary>
 public sealed class WellKnownHeadersSpec
 {
     [Fact(Timeout = 5000)]

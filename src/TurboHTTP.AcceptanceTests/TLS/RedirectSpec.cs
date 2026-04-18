@@ -285,6 +285,7 @@ public sealed class RedirectSpec : AcceptanceTestBase
                 {
                     return new HttpResponseMessage(HttpStatusCode.OK);
                 }
+
                 return new HttpResponseMessage(HttpStatusCode.Unauthorized);
             });
 

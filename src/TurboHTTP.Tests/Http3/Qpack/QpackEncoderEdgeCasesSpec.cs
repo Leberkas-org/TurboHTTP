@@ -2,13 +2,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Edge-case tests for QPACK Encoder to achieve 100% branch coverage.
-/// Tests encoder instruction handling, sensitive headers, and encoding paths.
-/// </summary>
 public sealed class QpackEncoderEdgeCasesSpec
 {
-    /// RFC 9204 §4.5 — Encoder initialization with zero capacity disables dynamic table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Create_Encoder_With_Zero_Capacity()
@@ -17,7 +12,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.DynamicTable.Capacity);
     }
 
-    /// RFC 9204 §4.5 — Encoder initialization with large capacity
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Create_Encoder_With_Large_Capacity()
@@ -26,7 +20,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(65536, encoder.DynamicTable.Capacity);
     }
 
-    /// RFC 9204 §4.5 — Encoder throws on negative capacity
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Throw_On_Negative_Capacity()
@@ -37,13 +30,12 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal("maxTableCapacity", ex.ParamName);
     }
 
-    /// RFC 9204 §4.5 — Encode empty header list
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Encode_Empty_HeaderList()
     {
         var encoder = new QpackEncoder(256);
-        var headers = new (string, string)[0];
+        var headers = Array.Empty<(string, string)>();
 
         var encoded = encoder.Encode(headers);
 
@@ -52,7 +44,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(2, encoded.Length); // Minimum: RIC + Base
     }
 
-    /// RFC 9204 §4.5 — Encode throws on null headers
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Throw_On_Null_Headers()
@@ -65,7 +56,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal("headers", ex.ParamName);
     }
 
-    /// RFC 9204 §7.1 — Encode throws on empty header name
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_Throw_On_Empty_Header_Name()
@@ -79,7 +69,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Contains("empty header name", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// RFC 9204 §7.1 — Sensitive headers (authorization) are never indexed
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_Handle_Sensitive_Authorization_Header()
@@ -94,7 +83,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.DynamicTable.InsertCount);
     }
 
-    /// RFC 9204 §7.1 — Sensitive headers (cookie) are never indexed
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_Handle_Sensitive_Cookie_Header()
@@ -108,7 +96,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.DynamicTable.InsertCount);
     }
 
-    /// RFC 9204 §7.1 — Sensitive headers (set-cookie) are never indexed
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_Handle_Sensitive_SetCookie_Header()
@@ -122,7 +109,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.DynamicTable.InsertCount);
     }
 
-    /// RFC 9204 §7.1 — Sensitive headers (proxy-authorization) are never indexed
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_Handle_Sensitive_ProxyAuthorization_Header()
@@ -136,7 +122,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.DynamicTable.InsertCount);
     }
 
-    /// RFC 9204 §4.4.1 — Track section records pending Required Insert Count
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.1")]
     public void Should_Track_Section_With_NonZero_RIC()
@@ -151,7 +136,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.4 — ApplyDecoderInstruction throws on null
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4")]
     public void Should_Throw_On_Null_DecoderInstruction()
@@ -164,7 +148,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal("instruction", ex.ParamName);
     }
 
-    /// RFC 9204 §4.5 — Encoder instructions generated when inserting into dynamic table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Generate_EncoderInstructions_When_Inserting()
@@ -180,7 +163,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.NotEmpty(instructions.ToArray());
     }
 
-    /// RFC 9204 §4.5 — Encode with overload returning span
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Encode_With_Span_Overload()
@@ -195,7 +177,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.True(output.Length < 1024); // Span should be sliced
     }
 
-    /// RFC 9204 §4.5 — Multiple consecutive encodes reset instruction buffer
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Reset_Instructions_Between_Encodes()
@@ -213,7 +194,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.NotEmpty(encoded2.ToArray());
     }
 
-    /// RFC 9204 §4.5 — Encode with no dynamic table (capacity=0)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Encode_With_Disabled_DynamicTable()
@@ -227,7 +207,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.DynamicTable.InsertCount);
     }
 
-    /// RFC 9204 §4.5 — Known Received Count starts at zero
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Have_Zero_KnownReceivedCount_Initially()
@@ -236,7 +215,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.4.2 — Track section with zero RIC is ignored
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.2")]
     public void Should_Ignore_Track_Section_With_Zero_RIC()
@@ -249,7 +227,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.Equal(0, encoder.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.5 — Encode multiple headers in single block
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Encode_Multiple_Headers()
@@ -271,7 +248,6 @@ public sealed class QpackEncoderEdgeCasesSpec
         Assert.True(encoded.Length > 0);
     }
 
-    /// RFC 9204 §4.5 — Encode with custom headers (not in static table)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_Encode_Custom_Header()

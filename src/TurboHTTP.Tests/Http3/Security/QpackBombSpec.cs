@@ -2,11 +2,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Security;
 
-/// <summary>
-/// Tests QPACK resistance to resource exhaustion attacks per RFC 9204.
-/// Covers oversized dynamic table updates, large integer-encoded fields,
-/// rapid table churn, and instruction flooding.
-/// </summary>
 public sealed class QpackBombSpec
 {
     [Fact(Timeout = 5000)]
@@ -122,8 +117,7 @@ public sealed class QpackBombSpec
         };
 
         var pos = 0;
-        var ex = Assert.Throws<QpackException>(
-            () => QpackIntegerCodec.Decode(malicious, ref pos, 8));
+        var ex = Assert.Throws<QpackException>(() => QpackIntegerCodec.Decode(malicious, ref pos, 8));
         Assert.Contains("overflow", ex.Message.ToLowerInvariant());
     }
 
@@ -138,11 +132,11 @@ public sealed class QpackBombSpec
         {
             malicious[i] = 0x80; // continuation bit set, value 0
         }
+
         malicious[19] = 0x00; // stop bit
 
         var pos = 0;
-        var ex = Assert.Throws<QpackException>(
-            () => QpackIntegerCodec.Decode(malicious, ref pos, 8));
+        var ex = Assert.Throws<QpackException>(() => QpackIntegerCodec.Decode(malicious, ref pos, 8));
         Assert.Contains("overflow", ex.Message.ToLowerInvariant());
     }
 
@@ -154,12 +148,11 @@ public sealed class QpackBombSpec
         var malicious = new byte[]
         {
             0xFF, // prefix full
-            0x80  // continuation bit set, no final byte
+            0x80 // continuation bit set, no final byte
         };
 
         var pos = 0;
-        var ex = Assert.Throws<QpackException>(
-            () => QpackIntegerCodec.Decode(malicious, ref pos, 8));
+        var ex = Assert.Throws<QpackException>(() => QpackIntegerCodec.Decode(malicious, ref pos, 8));
         Assert.Contains("truncated", ex.Message.ToLowerInvariant());
     }
 

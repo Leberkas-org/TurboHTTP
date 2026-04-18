@@ -5,9 +5,6 @@ namespace TurboHTTP.StreamTests.Http2;
 
 internal static class Http2ConnectionTestHelper
 {
-    /// <summary>
-    /// Serialize one or more Http2Frame objects into a single NetworkBuffer.
-    /// </summary>
     public static IInputItem FramesToInput(params Http2Frame[] frames)
     {
         var totalSize = 0;
@@ -27,9 +24,6 @@ internal static class Http2ConnectionTestHelper
         return buf;
     }
 
-    /// <summary>
-    /// Convert a sequence of Http2Frame into IInputItem sequence (one NetworkBuffer per frame).
-    /// </summary>
     public static IEnumerable<IInputItem> FramesToInputs(IEnumerable<Http2Frame> frames)
     {
         foreach (var f in frames)
@@ -38,12 +32,6 @@ internal static class Http2ConnectionTestHelper
         }
     }
 
-    /// <summary>
-    /// Decode all Http2Frame objects from IOutputItem results.
-    /// Filters out IControlItem signals and only processes NetworkBuffer items.
-    /// When <paramref name="skipPreface"/> is true, the first NetworkBuffer (connection preface)
-    /// is skipped — use this when testing protocol responses from the combined stage.
-    /// </summary>
     public static IReadOnlyList<Http2Frame> DecodeFrames(IEnumerable<IOutputItem> items, bool skipPreface = false)
     {
         var decoder = new FrameDecoder();
@@ -67,9 +55,6 @@ internal static class Http2ConnectionTestHelper
         return result;
     }
 
-    /// <summary>
-    /// Extract only IControlItem signals from IOutputItem results.
-    /// </summary>
     public static IReadOnlyList<IControlItem> ExtractSignals(IEnumerable<IOutputItem> items)
     {
         var result = new List<IControlItem>();

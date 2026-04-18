@@ -3,15 +3,6 @@ using TurboHTTP.Protocol.Caching;
 
 namespace TurboHTTP.Tests.Caching;
 
-/// <summary>
-/// RFC 9111 §3 — HTTP cache store tests.
-/// Covers cacheable/uncacheable response classification, LRU eviction,
-/// Vary header matching, and thread-safety of the in-memory cache.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="CacheStore"/>.
-/// RFC 9111 §3: A cache must store and retrieve responses keyed by request URI and Vary headers.
-/// </remarks>
 public sealed class CacheStoreSpec
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);

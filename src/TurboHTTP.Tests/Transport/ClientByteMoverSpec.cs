@@ -4,11 +4,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="ClientByteMover"/> buffer lifecycle for both <see cref="ClientByteMover.MoveStreamToChannel"/>
-/// and <see cref="ClientByteMover.MoveChannelToStream"/>. Verifies proper buffer handling, coalescing logic,
-/// and error paths.
-/// </summary>
 public sealed class ClientByteMoverSpec
 {
     [Fact(Timeout = 5000)]
@@ -249,6 +244,7 @@ public sealed class ClientByteMoverSpec
         public override bool CanSeek => false;
         public override bool CanWrite => true;
         public override long Length => throw new NotSupportedException();
+
         public override long Position
         {
             get => throw new NotSupportedException();
@@ -263,7 +259,11 @@ public sealed class ClientByteMoverSpec
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override void Flush() { }
+
+        public override void Flush()
+        {
+        }
+
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
     }
@@ -274,6 +274,7 @@ public sealed class ClientByteMoverSpec
         public override bool CanSeek => false;
         public override bool CanWrite => true;
         public override long Length => throw new NotSupportedException();
+
         public override long Position
         {
             get => throw new NotSupportedException();
@@ -292,7 +293,11 @@ public sealed class ClientByteMoverSpec
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override void Flush() { }
+
+        public override void Flush()
+        {
+        }
+
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
     }

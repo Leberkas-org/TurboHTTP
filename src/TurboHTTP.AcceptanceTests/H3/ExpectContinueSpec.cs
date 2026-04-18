@@ -35,7 +35,8 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
             .Data(body)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateExpectContinueEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateExpectContinueEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var responseBody = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -59,7 +60,8 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
             .Data(body)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateExpectContinueEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateExpectContinueEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var responseBody = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -82,7 +84,8 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
             .Headers(417, endStream: true)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateExpectContinueEngine(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateExpectContinueEngine(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.ExpectationFailed, response.StatusCode);
     }

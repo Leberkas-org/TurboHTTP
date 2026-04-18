@@ -3,15 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.H3;
 
-/// <summary>
-/// Integration tests for QUIC MAX_STREAMS enforcement over a real HTTP/3 connection.
-/// The server advertises its stream limits via QUIC transport parameters.
-/// The client must respect this limit and queue excess requests until active streams complete.
-/// </summary>
-/// <remarks>
-/// RFC 9000 §4.6: An endpoint MUST NOT exceed the limit set by its peer.
-/// RFC 9114 §6.1: Uses QUIC stream limits rather than HTTP-level MAX_CONCURRENT_STREAMS.
-/// </remarks>
 [Collection("H3")]
 [Trait("Category", "Http3")]
 [Obsolete("Replaced by StreamTests.Acceptance.H3.MaxStreamConcurrencySpec")]

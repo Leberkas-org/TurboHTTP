@@ -3,16 +3,6 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// RFC 9110 §15.4 — Redirect security edge-case tests (RS-017 to RS-030).
-/// Covers URL normalization in loop comparison (query strings, fragments,
-/// host/scheme case, port normalization), multi-hop chain success,
-/// downgrade-before-loop priority, reset behavior, and default policy values.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RedirectHandler"/>.
-/// These tests verify FR-5 (HTTPS→HTTP downgrade) and FR-6 (loop/depth) edge cases.
-/// </remarks>
 public sealed class RedirectSecurityEdgeCaseSpec
 {
     [Fact(Timeout = 5000)]

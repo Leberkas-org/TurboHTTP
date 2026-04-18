@@ -1,29 +1,12 @@
 using System.Net;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http10;
-using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Comprehensive tests for HTTP/1.0 StateMachine covering all branches:
-/// request encoding, response decoding, close signals, EOF handling, and orphaned requests.
-/// </summary>
 public sealed class Http10StateMachineSpec
 {
-    private sealed class FakeOps : IStageOperations
-    {
-        public List<HttpResponseMessage> Responses { get; } = [];
-        public List<IOutputItem> Outbound { get; } = [];
-        public List<string> Warnings { get; } = [];
-        public bool ReconnectFailed { get; private set; }
-
-        public void OnResponse(HttpResponseMessage response) => Responses.Add(response);
-        public void OnOutbound(IOutputItem item) => Outbound.Add(item);
-        public void OnWarning(string message) => Warnings.Add(message);
-        public void OnReconnectFailed() => ReconnectFailed = true;
-    }
-
     private static HttpRequestMessage MakeRequest(string uri = "http://example.com/", HttpContent? content = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -31,6 +14,7 @@ public sealed class Http10StateMachineSpec
         {
             request.Content = content;
         }
+
         return request;
     }
 
@@ -42,8 +26,6 @@ public sealed class Http10StateMachineSpec
         buffer.Length = bytes.Length;
         return buffer;
     }
-
-    #region EncodeRequest Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
@@ -66,7 +48,7 @@ public sealed class Http10StateMachineSpec
         var ops = new FakeOps();
         var sm = new StateMachine(ops);
 
-        var firstEndpoint = RequestEndpoint.FromRequest(MakeRequest("http://example.com:8080/"));
+        RequestEndpoint.FromRequest(MakeRequest("http://example.com:8080/"));
         sm.EncodeRequest(MakeRequest("http://example.com:8080/"));
         var capturedEndpoint = sm.Endpoint;
 
@@ -139,7 +121,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_calculate_buffer_size_based_on_content_length()
     {
         var ops = new FakeOps();
-        var minBufferSize = 1024;
+        const int minBufferSize = 1024;
         var sm = new StateMachine(ops, minBufferSize: minBufferSize);
 
         var content = new StringContent("hello world");
@@ -158,7 +140,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_respect_min_buffer_size()
     {
         var ops = new FakeOps();
-        var minBufferSize = 2048;
+        const int minBufferSize = 2048;
         var sm = new StateMachine(ops, minBufferSize: minBufferSize);
 
         sm.EncodeRequest(MakeRequest()); // Minimal request
@@ -203,10 +185,6 @@ public sealed class Http10StateMachineSpec
         var text = System.Text.Encoding.ASCII.GetString(buffer.Span);
         Assert.Contains("HEAD / HTTP/1.0", text);
     }
-
-    #endregion
-
-    #region DecodeServerData Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
@@ -376,10 +354,6 @@ public sealed class Http10StateMachineSpec
         Assert.True(ops.Responses.Count >= 0); // Behavior depends on decoder buffering
     }
 
-    #endregion
-
-    #region HandleCloseSignal Tests (via DecodeServerData)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
     public void DecodeServerData_should_throw_on_abrupt_close_with_content_length_mismatch()
@@ -492,10 +466,6 @@ public sealed class Http10StateMachineSpec
         Assert.Empty(ops.Responses);
     }
 
-    #endregion
-
-    #region TryDecodeEof Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
     public void TryDecodeEof_should_decode_eof_response_when_no_content_length()
@@ -569,10 +539,6 @@ public sealed class Http10StateMachineSpec
         Assert.Single(ops.Responses);
     }
 
-    #endregion
-
-    #region HandleOrphanedRequest Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
     public void HandleOrphanedRequest_should_warn_when_request_in_flight()
@@ -611,10 +577,6 @@ public sealed class Http10StateMachineSpec
         Assert.Empty(ops.Warnings);
     }
 
-    #endregion
-
-    #region MarkClosed Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
     public void MarkClosed_should_prevent_new_requests()
@@ -640,10 +602,6 @@ public sealed class Http10StateMachineSpec
 
         Assert.False(sm.CanAcceptRequest); // Now closed
     }
-
-    #endregion
-
-    #region State Property Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
@@ -708,10 +666,6 @@ public sealed class Http10StateMachineSpec
         Assert.False(sm.HasInFlightRequest);
     }
 
-    #endregion
-
-    #region Cleanup Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
     public void Cleanup_should_clear_in_flight_request()
@@ -746,10 +700,6 @@ public sealed class Http10StateMachineSpec
 
         Assert.Single(ops.Responses);
     }
-
-    #endregion
-
-    #region Integration Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945")]
@@ -814,7 +764,9 @@ public sealed class Http10StateMachineSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops);
-        sm.EncodeRequest(MakeRequest(HttpMethod.Delete.ToString() == "DELETE" ? "http://example.com/" : "http://example.com/"));
+        sm.EncodeRequest(MakeRequest(HttpMethod.Delete.ToString() == "DELETE"
+            ? "http://example.com/"
+            : "http://example.com/"));
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 204 No Content\r\n\r\n");
         sm.DecodeServerData(responseBuffer);
@@ -870,5 +822,4 @@ public sealed class Http10StateMachineSpec
         Assert.Equal(request1.RequestUri, ops.Responses[0].RequestMessage!.RequestUri);
     }
 
-    #endregion
 }

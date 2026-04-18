@@ -1,24 +1,11 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
-using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http11;
 
 public sealed class Http11StateMachineReconnectSpec
 {
-    private sealed class FakeOps : IStageOperations
-    {
-        public List<HttpResponseMessage> Responses { get; } = [];
-        public List<IOutputItem> Outbound { get; } = [];
-        public List<string> Warnings { get; } = [];
-        public bool ReconnectFailed { get; private set; }
-
-        public void OnResponse(HttpResponseMessage response) => Responses.Add(response);
-        public void OnOutbound(IOutputItem item) => Outbound.Add(item);
-        public void OnWarning(string message) => Warnings.Add(message);
-        public void OnReconnectFailed() => ReconnectFailed = true;
-    }
-
     private static HttpRequestMessage MakeRequest(string path = "/") =>
         new(HttpMethod.Get, $"http://example.com{path}")
         {

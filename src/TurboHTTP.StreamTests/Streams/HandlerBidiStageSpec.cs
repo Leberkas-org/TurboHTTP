@@ -7,13 +7,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests the <see cref="HandlerBidiStage"/> covering both request and response directions,
-/// handler chaining via <c>Atop</c>, and stream completion.
-/// </summary>
 public sealed class HandlerBidiStageSpec : StreamTestBase
 {
-    /// <summary>Handler that adds a custom header to requests.</summary>
     private sealed class RequestHeaderHandler : TurboHandler
     {
         private readonly string _name;
@@ -32,7 +27,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         }
     }
 
-    /// <summary>Handler that adds a custom header to responses.</summary>
     private sealed class ResponseHeaderHandler : TurboHandler
     {
         private readonly string _name;
@@ -99,9 +93,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Runs requests through a composed BidiFlow (multiple stages chained via Atop).
-    /// </summary>
     private Task<IImmutableList<HttpRequestMessage>> RunRequestThroughComposedAsync(
         BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed> bidi,
         params HttpRequestMessage[] requests)
@@ -126,9 +117,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Runs responses through a composed BidiFlow (multiple stages chained via Atop).
-    /// </summary>
     private Task<IImmutableList<HttpResponseMessage>> RunResponseThroughComposedAsync(
         BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed> bidi,
         params HttpResponseMessage[] responses)
@@ -160,10 +148,9 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         {
             response.RequestMessage = originalRequest;
         }
+
         return response;
     }
-
-    // Sync request transformation
 
     [Fact(Timeout = 10_000)]
     public async Task HandlerBidiStage_should_inject_header_when_sync_request_transformation_applied()
@@ -179,8 +166,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         Assert.Equal("abc", result.Headers.GetValues("X-Trace").Single());
     }
 
-    // Sync response transformation
-
     [Fact(Timeout = 10_000)]
     public async Task HandlerBidiStage_should_inject_header_when_sync_response_transformation_applied()
     {
@@ -195,8 +180,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         Assert.True(result.Headers.Contains("X-Resp"));
         Assert.Equal("injected", result.Headers.GetValues("X-Resp").Single());
     }
-
-    // Original request access in response direction
 
     [Fact(Timeout = 10_000)]
     public async Task HandlerBidiStage_should_receive_original_request_in_response_direction()
@@ -217,7 +200,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         Assert.True(captured.Headers.Contains("X-OriginalMarker"));
     }
 
-    /// <summary>Handler that captures the original request passed to ProcessResponse.</summary>
     private sealed class CapturingResponseHandler : TurboHandler
     {
         private readonly TaskCompletionSource<HttpRequestMessage> _tcs;
@@ -230,8 +212,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
             return response;
         }
     }
-
-    // Multiple HandlerBidiStages via Atop
 
     [Fact(Timeout = 10_000)]
     public async Task HandlerBidiStage_should_apply_cumulative_request_headers_when_composed_atop()
@@ -269,8 +249,6 @@ public sealed class HandlerBidiStageSpec : StreamTestBase
         Assert.Equal("r1", result.Headers.GetValues("X-RFirst").Single());
         Assert.Equal("r2", result.Headers.GetValues("X-RSecond").Single());
     }
-
-    // Multiple requests/responses with completion
 
     [Fact(Timeout = 10_000)]
     public async Task HandlerBidiStage_should_flow_through_with_completion_when_multiple_requests_sent()

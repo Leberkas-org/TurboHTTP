@@ -2,12 +2,6 @@ using System.Collections.Concurrent;
 
 namespace TurboHTTP.Tests.Internal;
 
-/// <summary>
-/// Tests for the CancellationTokenSource pool pattern used in <see cref="TurboHttpClient.SendAsync"/>.
-/// Validates the Interlocked-based pool counter that replaced the racy
-/// <c>ConcurrentStack.Count</c> check-then-push pattern.
-/// The pool cap (64) ensures bounded memory even under high concurrency.
-/// </summary>
 public sealed class CtsPoolSpec
 {
     private const int PoolCap = 64;
@@ -38,7 +32,7 @@ public sealed class CtsPoolSpec
         Assert.Same(cts, reused);
         Assert.Equal(0, poolCount);
 
-        reused!.Dispose();
+        reused.Dispose();
     }
 
     [Fact(Timeout = 5000)]

@@ -2,15 +2,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK encode→decode roundtrip per RFC 9204 §4.5.
-/// Verifies that header lists survive encoding and decoding with all name-value
-/// pairs preserved across static-only, dynamic table, and sensitive (NEVERINDEX) paths.
-/// </summary>
 public sealed class QpackRoundTripSpec
 {
-
-    /// RFC 9204 §4.5.2 — Static-only headers roundtrip through encode→decode
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_RoundTrip_StaticOnly()
@@ -37,7 +30,6 @@ public sealed class QpackRoundTripSpec
         }
     }
 
-    /// RFC 9204 §4.5.2 — Mixed static indexed and static name-ref literals roundtrip
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_RoundTrip_StaticIndexedAndLiteral()
@@ -65,8 +57,6 @@ public sealed class QpackRoundTripSpec
         }
     }
 
-
-    /// RFC 9204 §4.5.2 — Dynamic table entries roundtrip with synchronised tables
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_RoundTrip_DynamicTableEntries()
@@ -95,7 +85,6 @@ public sealed class QpackRoundTripSpec
         }
     }
 
-    /// RFC 9204 §4.5.2 — Second encode reuses dynamic table entries from first encode
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_RoundTrip_RepeatedHeadersReuseDynamicTable()
@@ -129,8 +118,6 @@ public sealed class QpackRoundTripSpec
         }
     }
 
-
-    /// RFC 9204 §7.1 — Sensitive headers (Authorization, Cookie) roundtrip as NEVERINDEX
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_RoundTrip_SensitiveHeaders()
@@ -163,7 +150,6 @@ public sealed class QpackRoundTripSpec
         Assert.Equal(0, encoder.DynamicTable.Count);
     }
 
-    /// RFC 9204 §7.1 — Mixed sensitive and non-sensitive headers roundtrip
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_RoundTrip_MixedSensitiveAndNormal()
@@ -194,8 +180,6 @@ public sealed class QpackRoundTripSpec
         }
     }
 
-
-    /// RFC 9204 §4.5 — Large header list with all representation types roundtrips
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_RoundTrip_LargeHeaderList()
@@ -205,16 +189,16 @@ public sealed class QpackRoundTripSpec
 
         var headers = new List<(string, string)>
         {
-            (":method", "POST"),                              // static indexed
-            (":path", "/api/v1/submit"),                      // literal with static name
-            (":scheme", "https"),                              // static indexed
-            ("content-type", "application/json"),              // static indexed or literal
-            ("accept-encoding", "gzip, deflate, br"),         // literal with static name
-            ("x-forwarded-for", "10.0.0.1"),                  // dynamic insert
-            ("x-correlation-id", "corr-98765"),               // dynamic insert
-            ("authorization", "Bearer secret-token"),         // NEVERINDEX
-            ("user-agent", "TurboHttp/1.0"),                  // literal with static name
-            ("x-custom-flag", "enabled"),                     // dynamic insert
+            (":method", "POST"), // static indexed
+            (":path", "/api/v1/submit"), // literal with static name
+            (":scheme", "https"), // static indexed
+            ("content-type", "application/json"), // static indexed or literal
+            ("accept-encoding", "gzip, deflate, br"), // literal with static name
+            ("x-forwarded-for", "10.0.0.1"), // dynamic insert
+            ("x-correlation-id", "corr-98765"), // dynamic insert
+            ("authorization", "Bearer secret-token"), // NEVERINDEX
+            ("user-agent", "TurboHttp/1.0"), // literal with static name
+            ("x-custom-flag", "enabled"), // dynamic insert
         };
 
         var encoded = encoder.Encode(headers);
@@ -230,7 +214,6 @@ public sealed class QpackRoundTripSpec
         }
     }
 
-    /// RFC 9204 §4.5 — Empty header list roundtrips
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_RoundTrip_EmptyHeaderList()
@@ -245,11 +228,6 @@ public sealed class QpackRoundTripSpec
         Assert.Empty(decoded);
     }
 
-
-    /// <summary>
-    /// Synchronises the decoder's dynamic table with the encoder's by replaying
-    /// the encoder instructions through the instruction decoder and applying inserts.
-    /// </summary>
     private static void SyncDynamicTable(QpackEncoder encoder, QpackDecoder decoder)
     {
         var instructions = encoder.EncoderInstructions;

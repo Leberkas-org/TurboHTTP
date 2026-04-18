@@ -4,28 +4,16 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.FlowControl;
 
-/// <summary>
-/// Tests decoder defenses against resource-exhaustion attacks such as SETTINGS floods.
-/// Part 2: HPACK table, stream exhaustion, empty DATA flood protection.
-/// Verifies that flood protection thresholds produce Http2Exception with appropriate error codes.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §10.5: Implementations should limit the rate at which control frames can be received to protect against floods.
-/// </remarks>
 public sealed class ResourceExhaustionPart2Spec
 {
-
     private static void EnforceEmptyDataFloodThreshold(int count, int threshold = 10000)
     {
         if (count > threshold)
         {
             throw new Http2Exception(
-                $"RFC 9113 security: Excessive zero-length DATA frames ({count}) — possible empty DATA flood.",
-                Http2ErrorCode.ProtocolError);
+                $"RFC 9113 security: Excessive zero-length DATA frames ({count}) — possible empty DATA flood.");
         }
     }
-
 
     private static byte[] BuildRawFrame(byte frameType, byte flags, int streamId, byte[] payload)
     {
@@ -52,10 +40,9 @@ public sealed class ResourceExhaustionPart2Spec
     private static void AppendHpackString(List<byte> output, string s)
     {
         var bytes = System.Text.Encoding.ASCII.GetBytes(s);
-        output.Add((byte)bytes.Length);  // not Huffman-encoded, MSB=0
+        output.Add((byte)bytes.Length); // not Huffman-encoded, MSB=0
         output.AddRange(bytes);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC7541-6.3")]
@@ -71,16 +58,18 @@ public sealed class ResourceExhaustionPart2Spec
         for (var i = 0; i < 6; i++)
         {
             var name = $"x-hdr-{i:D3}";
-            var value = "v";
+            const string value = "v";
             AppendLiteralIncrementalHeader(blocks, name, value);
         }
 
         // Also prepend a :status 200 (indexed, index 8) so ValidateResponseHeaders passes.
-        var fullBlock = new List<byte>();
-        fullBlock.Add(0x88);  // indexed :status 200
+        var fullBlock = new List<byte>
+        {
+            0x88 // indexed :status 200
+        };
         fullBlock.AddRange(blocks);
 
-        hpack.Decode([..fullBlock]);  // must not throw; eviction must have maintained bounds
+        hpack.Decode([..fullBlock]); // must not throw; eviction must have maintained bounds
     }
 
     [Fact(Timeout = 5000)]
@@ -90,13 +79,13 @@ public sealed class ResourceExhaustionPart2Spec
         var hpack = new HpackDecoder();
 
         // Add one header via literal-with-indexing.
-        var block1 = new byte[] { 0x88 };  // indexed :status 200 — no dynamic table entry
+        var block1 = new byte[] { 0x88 }; // indexed :status 200 — no dynamic table entry
         hpack.Decode(block1);
 
         // Table size update to 0: DTS=0 prefix is 0x20 (first byte of header block).
         // RFC 7541 §6.3: Size update must appear at start of a header block.
-        var blockWithUpdate = new byte[] { 0x20, 0x88 };  // DTS=0 then indexed :status 200
-        hpack.Decode(blockWithUpdate);  // must not throw; table is now empty
+        var blockWithUpdate = new byte[] { 0x20, 0x88 }; // DTS=0 then indexed :status 200
+        hpack.Decode(blockWithUpdate); // must not throw; table is now empty
     }
 
     [Fact(Timeout = 5000)]
@@ -107,12 +96,11 @@ public sealed class ResourceExhaustionPart2Spec
         hpack.SetMaxAllowedTableSize(0);
 
         // A header block with a table-size update to 0 is valid. Decode :status 200.
-        var block = new byte[] { 0x20, 0x88 };  // DTS=0, indexed :status 200
+        var block = new byte[] { 0x20, 0x88 }; // DTS=0, indexed :status 200
         var headers = hpack.Decode(block);
         Assert.Single(headers);
         Assert.Equal(":status", headers[0].Name);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
@@ -124,8 +112,8 @@ public sealed class ResourceExhaustionPart2Spec
         // Decode 10001 HEADERS+END_STREAM frames on distinct stream IDs
         for (var i = 0; i < 10001; i++)
         {
-            var streamId = 2 * i + 1;  // odd stream IDs: 1, 3, ..., 20001
-            var frame = BuildRawFrame(0x1, 0x5, streamId, [0x88]);  // END_HEADERS | END_STREAM
+            var streamId = 2 * i + 1; // odd stream IDs: 1, 3, ..., 20001
+            var frame = BuildRawFrame(0x1, 0x5, streamId, [0x88]); // END_HEADERS | END_STREAM
             var frames = decoder.Decode(frame);
 
             foreach (var f in frames)
@@ -140,7 +128,6 @@ public sealed class ResourceExhaustionPart2Spec
         // Verify we tracked all closed streams
         Assert.Equal(10001, closedStreamIds.Count);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.1")]
@@ -214,5 +201,4 @@ public sealed class ResourceExhaustionPart2Spec
         EnforceEmptyDataFloodThreshold(emptyDataCount); // must not throw
         Assert.Equal(10000, emptyDataCount);
     }
-
 }

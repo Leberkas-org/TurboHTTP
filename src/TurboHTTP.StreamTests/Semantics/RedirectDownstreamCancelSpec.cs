@@ -8,16 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Verifies that RedirectBidiStage does not crash when Out1 is cancelled before
-/// a redirect response arrives.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="RedirectBidiStage"/>.
-/// Bug: <c>onDownstreamFinish</c> for Out1 does not reset <c>_requestDemand</c>.
-/// When a redirect response arrives, <c>TryEmitRedirect</c> sees <c>_requestDemand == true</c>
-/// and pushes on the closed outlet, causing an <see cref="IllegalStateException"/>.
-/// </remarks>
 public sealed class RedirectDownstreamCancelSpec : StreamTestBase
 {
     [Fact(Timeout = 10_000)]

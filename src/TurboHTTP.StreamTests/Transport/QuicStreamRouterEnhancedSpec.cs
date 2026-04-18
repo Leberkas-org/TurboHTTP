@@ -35,7 +35,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_route_encoder_to_pending_when_no_handle()
     {
         var (router, ops) = CreateRouter();
@@ -52,7 +51,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_should_write_encoder_to_handle_when_available()
     {
         var (router, _) = CreateRouter();
@@ -69,7 +67,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void FlushAllReadyStreams_should_skip_streams_without_handles()
     {
         var (router, _) = CreateRouter();
@@ -91,7 +88,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void FlushPendingWrites_should_preserve_order()
     {
         var (router, _) = CreateRouter();
@@ -116,7 +112,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandleEndOfRequest_with_pending_writes_should_mark_and_signal()
     {
         var (router, ops) = CreateRouter();
@@ -130,7 +125,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandleEndOfRequest_unknown_stream_should_signal_only()
     {
         var (router, ops) = CreateRouter();
@@ -141,7 +135,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RequeueEarlyData_should_find_first_stream()
     {
         var (router, ops) = CreateRouter();
@@ -159,7 +152,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RequeueEarlyData_without_streams_should_signal_only()
     {
         var (router, ops) = CreateRouter();
@@ -171,7 +163,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RemoveStream_should_not_affect_other_streams()
     {
         var (router, _) = CreateRouter();
@@ -187,7 +178,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Clear_should_clean_all_state()
     {
         var (router, _) = CreateRouter();
@@ -210,7 +200,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void DisposePendingWrites_should_dispose_all_buffers()
     {
         var (router, _) = CreateRouter();
@@ -230,7 +219,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EnsureStreamContext_should_reject_default_endpoint()
     {
         var (router, _) = CreateRouter();
@@ -246,7 +234,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EnsureStreamContext_should_reject_null_scheme()
     {
         var (router, _) = CreateRouter();
@@ -263,7 +250,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Pending_streams_should_queue_when_no_connection()
     {
         var (router, _) = CreateRouter();
@@ -286,7 +272,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void DrainPendingStreamIds_should_empty_queue()
     {
         var (router, _) = CreateRouter();
@@ -306,7 +291,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteTaggedItem_request_with_wrong_stream_id_should_handle_gracefully()
     {
         var (router, _) = CreateRouter();
@@ -327,7 +311,6 @@ public sealed class QuicStreamRouterEnhancedSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RouteUntaggedData_with_multiple_streams_should_pick_first_ready()
     {
         var (router, _) = CreateRouter();

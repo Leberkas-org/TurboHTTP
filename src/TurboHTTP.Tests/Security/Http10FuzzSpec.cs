@@ -4,17 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Fuzzes the HTTP/1.0 response decoder with random byte sequences to find crashes,
-/// infinite loops, and uncontrolled memory allocation. Uses deterministic seeds for
-/// reproducible failures.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// Each test uses seeded <see cref="Random"/> so failures are reproducible.
-/// Invariant: TryDecode/TryDecodeEof must either return a valid result or throw
-/// <see cref="HttpDecoderException"/> — never an unhandled crash.
-/// </remarks>
 public sealed class Http10FuzzSpec
 {
     private const int IterationsPerSeed = 100;
@@ -75,7 +64,6 @@ public sealed class Http10FuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -109,7 +97,6 @@ public sealed class Http10FuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -148,7 +135,6 @@ public sealed class Http10FuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -189,7 +175,6 @@ public sealed class Http10FuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -233,7 +218,6 @@ public sealed class Http10FuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -276,7 +260,6 @@ public sealed class Http10FuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -307,7 +290,7 @@ public sealed class Http10FuzzSpec
             AssertDecodeEofNeverCrashes(decoder);
 
             decoder.Reset();
-            var probe = Encoding.ASCII.GetBytes("HTTP/1.0 200 OK\r\n\r\n");
+            var probe = "HTTP/1.0 200 OK\r\n\r\n"u8.ToArray();
             AssertDecodeNeverCrashes(decoder, probe);
 
             var allocated = GC.GetAllocatedBytesForCurrentThread() - allocBefore;

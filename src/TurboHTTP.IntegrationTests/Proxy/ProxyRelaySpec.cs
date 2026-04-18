@@ -3,11 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Proxy;
 
-/// <summary>
-/// Integration tests for plain HTTP relay through a proxy.
-/// Verifies that UseProxy and Proxy work correctly when TurboHTTP
-/// routes plain HTTP/1.1 requests through a forward proxy.
-/// </summary>
 [Collection("Proxy")]
 [Obsolete("Replaced by StreamTests.Acceptance.Proxy.ProxyRelaySpec")]
 public sealed class ProxyRelaySpec : IAsyncLifetime

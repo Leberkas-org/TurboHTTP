@@ -2,11 +2,6 @@ using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Internal;
 
-/// <summary>
-/// Tests for <see cref="NetworkBuffer"/> pool size enforcement under concurrency.
-/// Validates the Interlocked-based pool counter that replaced the racy
-/// <c>ConcurrentStack.Count</c> check-then-push pattern.
-/// </summary>
 public sealed class NetworkBufferPoolSpec
 {
     [Fact(Timeout = 5000)]

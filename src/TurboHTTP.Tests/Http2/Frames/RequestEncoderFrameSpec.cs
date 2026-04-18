@@ -3,14 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP request serialization to HTTP/2 frames per RFC 9113 §8.1.
-/// Verifies frame types, flags, stream IDs, and HPACK-encoded pseudo-headers.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RequestEncoder"/>.
-/// RFC 9113 §8.1: GET requests produce a HEADERS frame with END_STREAM; POST requests with a body produce HEADERS + DATA.
-/// </remarks>
 public sealed class Http2RequestEncoderFrameSpec
 {
     [Fact(Timeout = 5000)]
@@ -404,7 +396,7 @@ public sealed class Http2RequestEncoderFrameSpec
     {
         var encoder = new RequestEncoder();
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/");
-        request.Content = new ByteArrayContent(Array.Empty<byte>());
+        request.Content = new ByteArrayContent([]);
 
         var frames = encoder.Encode(request, 1);
 

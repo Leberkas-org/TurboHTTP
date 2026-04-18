@@ -3,9 +3,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="TcpOptions"/> configuration properties and default values.
-/// </summary>
 public sealed class TcpOptionsSpec
 {
     [Fact(Timeout = 5000)]
@@ -214,7 +211,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_support_localhost()
     {
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
@@ -223,7 +219,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_support_ip_address()
     {
         var options = new TcpOptions { Host = "127.0.0.1", Port = 80 };
@@ -232,7 +227,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_support_high_port_numbers()
     {
         var options = new TcpOptions { Host = "example.com", Port = 65535 };
@@ -241,7 +235,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_support_port_zero()
     {
         var options = new TcpOptions { Host = "example.com", Port = 0 };
@@ -250,7 +243,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_allow_very_large_buffer_sizes()
     {
         var options = new TcpOptions
@@ -266,7 +258,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_allow_very_short_connect_timeout()
     {
         var timeout = TimeSpan.FromMilliseconds(1);
@@ -281,7 +272,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_should_allow_very_long_connect_timeout()
     {
         var timeout = TimeSpan.FromHours(24);
@@ -296,7 +286,6 @@ public sealed class TcpOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TcpOptions")]
     public void TcpOptions_hash_code_should_be_consistent()
     {
         var options = new TcpOptions { Host = "example.com", Port = 80 };

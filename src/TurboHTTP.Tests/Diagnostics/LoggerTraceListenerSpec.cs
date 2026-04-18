@@ -15,7 +15,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         TurboTrace.Disable();
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Constructor_should_create_logger_per_category()
     {
         _ = new LoggerTraceListener(_factory);
@@ -23,7 +23,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(10, _factory.CreatedLoggers.Count);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Write_should_call_logger_with_correct_level()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -38,7 +38,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(LogLevel.Warning, logger.LogEntries[0].Level);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InfoLevel_should_map_to_information()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -53,7 +53,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(LogLevel.Information, logger.LogEntries[0].Level);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void DebugLevel_should_map_to_debug()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -67,7 +67,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(LogLevel.Debug, logger.LogEntries[0].Level);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void WarningLevel_should_map_to_warning()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -81,7 +81,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(LogLevel.Warning, logger.LogEntries[0].Level);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ErrorLevel_should_map_to_error()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -95,7 +95,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(LogLevel.Error, logger.LogEntries[0].Level);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void TraceLevel_should_map_to_trace()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -109,7 +109,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Equal(LogLevel.Trace, logger.LogEntries[0].Level);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void IsEnabled_should_respect_minimum_level()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Warning);
@@ -120,7 +120,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.True(listener.IsEnabled(TurboTraceLevel.Error, TurboTraceCategory.Protocol));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void IsEnabled_should_respect_category_filter()
     {
         var listener = new LoggerTraceListener(_factory, TurboTraceCategory.Protocol);
@@ -129,7 +129,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.False(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Connection));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Write_should_include_source_type_and_hash()
     {
         var listener = new LoggerTraceListener(_factory, minimumLevel: TurboTraceLevel.Trace);
@@ -145,7 +145,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Contains("1A2B3C4D", entry.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Write_should_skip_format_when_logger_disabled()
     {
         var factory = new TestLoggerFactory(enabledLevel: LogLevel.Error);
@@ -160,13 +160,13 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.Empty(logger.LogEntries);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void NullFactory_should_throw_argument_null_exception()
     {
         Assert.Throws<ArgumentNullException>(() => new LoggerTraceListener(null!));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void LoggerNames_should_follow_pattern()
     {
         _ = new LoggerTraceListener(_factory);
@@ -191,7 +191,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void CombinedCategoryFilter_should_work()
     {
         var listener = new LoggerTraceListener(
@@ -204,12 +204,12 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         Assert.False(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Cache));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void DiExtension_should_register_singleton_and_configure()
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddTurboLoggerTracing(TurboTraceCategory.Protocol, TurboTraceLevel.Debug);
+        services.AddTurboLoggerTracing(TurboTraceCategory.Protocol);
 
         var provider = services.BuildServiceProvider();
         var listener = provider.GetRequiredService<ITurboTraceListener>();

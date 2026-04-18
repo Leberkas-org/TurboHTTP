@@ -8,12 +8,6 @@ using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Tests for QUIC connection migration support (RFC 9000 §9).
-/// When a mobile client changes networks (Wi-Fi → cellular), the QUIC connection's
-/// local address changes. Migration-allowed connections continue transparently;
-/// migration-disallowed connections close and reconnect.
-/// </summary>
 public sealed class QuicConnectionMigrationSpec
 {
     [Fact(Timeout = 5000)]
@@ -104,9 +98,6 @@ public sealed class QuicConnectionMigrationSpec
         Assert.Equal(QuicCloseKind.MigrationDisallowed, closeItem.Kind);
     }
 
-    /// <summary>
-    /// Minimal stub for <see cref="ITransportOperations"/> that records pushed outputs.
-    /// </summary>
     private sealed class StubTransportOperations : ITransportOperations
     {
         public List<IInputItem> PushedOutputs { get; } = [];
@@ -114,9 +105,19 @@ public sealed class QuicConnectionMigrationSpec
 
         public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
         public void OnSignalPullInput() => PullCount++;
-        public void OnCompleteStage() { }
-        public void OnScheduleTimer(string key, TimeSpan delay) { }
-        public void OnCancelTimer(string key) { }
+
+        public void OnCompleteStage()
+        {
+        }
+
+        public void OnScheduleTimer(string key, TimeSpan delay)
+        {
+        }
+
+        public void OnCancelTimer(string key)
+        {
+        }
+
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
     }
 }

@@ -10,9 +10,11 @@ namespace TurboHTTP.AcceptanceTests.H11;
 
 public sealed class EdgeCaseSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
-    private static byte[] BuildResponse(byte[] body, HttpStatusCode status = HttpStatusCode.OK, string? extraHeaders = null)
+    private static byte[] BuildResponse(byte[] body, HttpStatusCode status = HttpStatusCode.OK,
+        string? extraHeaders = null)
     {
         var sb = new StringBuilder();
         sb.Append($"HTTP/1.1 {(int)status} {status}\r\n");
@@ -21,6 +23,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         {
             sb.Append(extraHeaders);
         }
+
         sb.Append("\r\n");
 
         var headerBytes = Encoding.Latin1.GetBytes(sb.ToString());
@@ -30,7 +33,8 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         return result;
     }
 
-    private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK, string? extraHeaders = null)
+    private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK,
+        string? extraHeaders = null)
     {
         return BuildResponse(Encoding.Latin1.GetBytes(body), status, extraHeaders);
     }
@@ -49,11 +53,13 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         {
             sb.Append(trailerHeaders);
         }
+
         sb.Append("\r\n");
         return Encoding.Latin1.GetBytes(sb.ToString());
     }
 
-    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = Engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
@@ -106,6 +112,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
             sb.Append(new string('B', 1024));
             sb.Append("\r\n");
         }
+
         sb.Append("0\r\n\r\n");
 
         var responseBytes = Encoding.Latin1.GetBytes(sb.ToString());

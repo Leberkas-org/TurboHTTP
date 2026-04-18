@@ -3,18 +3,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP/2 frame header parsing per RFC 9113 §4.1 — Part 2.
-/// Covers stream ID rules, payload size validation, flags, and frame ordering.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §4.1: The frame header is 9 bytes — length(24) + type(8) + flags(8) + stream(31).
-/// </remarks>
 public sealed class Http2FrameParsingPart2Spec
 {
-    // Stream ID Rules (RFC 7540 §4.1, §6.5, §6.7, §6.8)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_throw_protocol_error_when_settings_on_non_zero_stream()
@@ -87,8 +77,6 @@ public sealed class Http2FrameParsingPart2Spec
         Assert.NotEmpty(frames);
         Assert.IsType<WindowUpdateFrame>(frames[0]);
     }
-
-    // Frame-Specific Payload Size Validation (RFC 7540 §6.4/§6.5/§6.7/§6.9)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
@@ -209,8 +197,6 @@ public sealed class Http2FrameParsingPart2Spec
         Assert.True(ex.IsConnectionError);
     }
 
-    // Unknown Flags Are Silently Ignored (RFC 7540 §4.1)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4.1")]
     public void Http2FrameDecoder_should_ignore_unknown_flag_bits_when_settings_frame_has_unknown_flags()
@@ -258,8 +244,6 @@ public sealed class Http2FrameParsingPart2Spec
         Assert.Equal(5, goAwayFrame.LastStreamId);
         Assert.Equal(Http2ErrorCode.NoError, goAwayFrame.ErrorCode);
     }
-
-    // Invalid Frame in Stream State (RFC 7540 §5.1)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]

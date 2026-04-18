@@ -12,8 +12,9 @@ namespace TurboHTTP.StreamTests.Http2;
 
 public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 {
-    private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunWithRequestsAsync(
-        params (HttpRequestMessage, int)[] requestTuples)
+    private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)>
+        RunWithRequestsAsync(
+            params (HttpRequestMessage, int)[] requestTuples)
     {
         var networkSink = Sink.Seq<IOutputItem>();
 
@@ -31,7 +32,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
                             .InitialDelay(TimeSpan.FromMilliseconds(200)));
 
                     var requestSource = b.Add(Source.From(requestTuples).Select(r => r.Item1));
-                    var downstreamSink = b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
+                    var downstreamSink =
+                        b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
 
                     b.From(serverSource).To(stage.InServer);
                     b.From(stage.OutResponse).To(downstreamSink);
@@ -48,8 +50,9 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
         return (DecodeFrames(networkItems, skipPreface: true), ExtractSignals(networkItems));
     }
 
-    private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunWithServerAndRequestsAsync(
-        Http2Frame[] serverFrames, (HttpRequestMessage, int)[] requestTuples, int delayMs = 200)
+    private async Task<(IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)>
+        RunWithServerAndRequestsAsync(
+            Http2Frame[] serverFrames, (HttpRequestMessage, int)[] requestTuples, int delayMs = 200)
     {
         var networkSink = Sink.Seq<IOutputItem>();
 
@@ -64,7 +67,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
                         Source.From(requestTuples)
                             .Select(r => r.Item1)
                             .InitialDelay(TimeSpan.FromMilliseconds(delayMs)));
-                    var downstreamSink = b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
+                    var downstreamSink =
+                        b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
 
                     b.From(serverSource).To(stage.InServer);
                     b.From(stage.OutResponse).To(downstreamSink);
@@ -175,7 +179,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public async Task Http2ConnectionStreamAcquire_should_set_endpoint_key_in_max_concurrent_streams_item_after_headers()
+    public async Task
+        Http2ConnectionStreamAcquire_should_set_endpoint_key_in_max_concurrent_streams_item_after_headers()
     {
         var requestTuple = (new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
@@ -197,7 +202,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public async Task Http2ConnectionStreamAcquire_should_use_default_key_in_max_concurrent_streams_item_before_endpoint_capture()
+    public async Task
+        Http2ConnectionStreamAcquire_should_use_default_key_in_max_concurrent_streams_item_before_endpoint_capture()
     {
         var settingsFrame = new SettingsFrame(
             [(SettingsParameter.MaxConcurrentStreams, 128)]);

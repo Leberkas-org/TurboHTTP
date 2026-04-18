@@ -3,17 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.H2;
 
-/// <summary>
-/// Integration tests for MAX_CONCURRENT_STREAMS enforcement over a real HTTP/2 connection.
-/// Uses the shared Kestrel server with H2 h2c endpoint. Kestrel advertises its default
-/// MAX_CONCURRENT_STREAMS (100) via SETTINGS. The client must respect this limit.
-/// These tests verify that multiple concurrent requests complete successfully through
-/// the limiter stage when sent to a real server.
-/// </summary>
-/// <remarks>
-/// RFC 9113 §5.1.2: An endpoint MUST NOT exceed the limit set by its peer.
-/// The client reads MAX_CONCURRENT_STREAMS from the server's SETTINGS frame and enforces it.
-/// </remarks>
 [Collection("H2")]
 [Obsolete("Replaced by StreamTests.Acceptance.H2.MaxConcurrentStreamsSpec")]
 public sealed class MaxConcurrentStreamsSpec : IAsyncLifetime

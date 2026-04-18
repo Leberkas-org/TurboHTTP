@@ -3,19 +3,11 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 entity body serialization per RFC 1945 §7.
-/// Verifies that request bodies are appended after the header section.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Encoder"/>.
-/// RFC 1945 §7: Entity body transmitted with HTTP requests.
-/// </remarks>
 public sealed class Http10EncoderBodySpec
 {
     private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];
 
-    private static (string requestLine, string[] headerLines, byte[] body) ParseRaw(HttpRequestMessage request,
+    private static (string[] headerLines, byte[] body) ParseRaw(HttpRequestMessage request,
         int bufferSize = 8192)
     {
         var buffer = MakeBuffer(bufferSize);
@@ -27,10 +19,9 @@ public sealed class Http10EncoderBodySpec
         var bodyString = raw[(separatorIndex + 4)..];
 
         var lines = headerSection.Split("\r\n");
-        var requestLine = lines[0];
         var headerLines = lines[1..];
 
-        return (requestLine, headerLines, Encoding.ASCII.GetBytes(bodyString));
+        return (headerLines, Encoding.ASCII.GetBytes(bodyString));
     }
 
     private static string Encode(HttpRequestMessage request, int bufferSize = 8192)
@@ -49,6 +40,7 @@ public sealed class Http10EncoderBodySpec
                 return i;
             }
         }
+
         return -1;
     }
 
@@ -62,7 +54,7 @@ public sealed class Http10EncoderBodySpec
             Content = new StringContent(bodyText, Encoding.ASCII)
         };
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var (headerLines, _) = ParseRaw(request);
 
         var contentLength = headerLines
             .Single(h => h.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase));
@@ -79,7 +71,7 @@ public sealed class Http10EncoderBodySpec
             Content = new StringContent(bodyText, Encoding.ASCII, "text/plain")
         };
 
-        var (_, _, body) = ParseRaw(request);
+        var (_, body) = ParseRaw(request);
 
         Assert.Equal(bodyText, Encoding.ASCII.GetString(body));
     }
@@ -90,7 +82,7 @@ public sealed class Http10EncoderBodySpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var (headerLines, _) = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase));
     }
@@ -101,7 +93,7 @@ public sealed class Http10EncoderBodySpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var (headerLines, _) = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Content-Type:", StringComparison.OrdinalIgnoreCase));
     }
@@ -116,7 +108,7 @@ public sealed class Http10EncoderBodySpec
             Content = new ByteArrayContent(bodyBytes)
         };
 
-        var buffer = MakeBuffer(8192);
+        var buffer = MakeBuffer();
         var written = Encoder.Encode(request, ref buffer);
         var raw = buffer[..written];
 
@@ -136,7 +128,7 @@ public sealed class Http10EncoderBodySpec
             Content = new ByteArrayContent([])
         };
 
-        var (_, headerLines, body) = ParseRaw(request);
+        var (headerLines, body) = ParseRaw(request);
 
         // POST with an empty body must emit Content-Length: 0 so that HTTP/1.0 servers
         // do not wait for body data until connection-close (RFC 1945 §7.2).
@@ -195,7 +187,7 @@ public sealed class Http10EncoderBodySpec
             Content = new StringContent("Hello!", Encoding.ASCII)
         };
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var (headerLines, _) = ParseRaw(request);
 
         var cl = headerLines.Single(h => h.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("Content-Length: 6", cl);
@@ -206,7 +198,7 @@ public sealed class Http10EncoderBodySpec
     public void Http10EncoderBody_should_omit_content_length_when_get_has_no_body()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var (_, headerLines, _) = ParseRaw(request);
+        var (headerLines, _) = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines,
             h => h.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase));
@@ -258,7 +250,7 @@ public sealed class Http10EncoderBodySpec
     [Trait("RFC", "RFC1945-7")]
     public void Http10EncoderBody_should_not_truncate_body_when_body_contains_null_bytes()
     {
-        var bodyBytes = new byte[] { 0x41, 0x00, 0x42, 0x00, 0x00, 0x43 };
+        var bodyBytes = "A\0B\0\0C"u8.ToArray();
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
         {
             Content = new ByteArrayContent(bodyBytes)

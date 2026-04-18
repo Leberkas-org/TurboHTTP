@@ -1,28 +1,11 @@
 using System.Text;
 using TurboHTTP.Protocol.Http2.Hpack;
-using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Tests HPACK and QPACK resistance to resource exhaustion attacks.
-/// Verifies dynamic table size limits, compression bomb protection, Huffman decoder
-/// safety, eviction correctness, index boundary enforcement, and QPACK-specific
-/// blocked stream and instruction flooding protections.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="HpackDecoder"/>, <see cref="HpackEncoder"/>,
-/// <see cref="HpackDynamicTable"/>, <see cref="QpackDecoder"/>, <see cref="QpackEncoder"/>,
-/// <see cref="QpackDynamicTable"/>.
-/// Attack vectors: HPACK bomb, dynamic table exhaustion, Huffman amplification,
-/// out-of-bounds indexing, QPACK instruction flooding, blocked stream starvation.
-/// </remarks>
 public sealed class HpackBombSpec
 {
-    // HPACK Dynamic Table Size Update — Bounded Memory
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_bound_dynamic_table_memory_when_size_update_to_maximum()
     {
         // Attack: Peer sends SETTINGS_HEADER_TABLE_SIZE=65535, then floods with entries
@@ -62,8 +45,7 @@ public sealed class HpackBombSpec
         // didn't OOM and decoding succeeded proves bounded memory)
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_reject_table_size_update_when_exceeds_settings()
     {
         // Attack: Peer sends a table size update larger than SETTINGS_HEADER_TABLE_SIZE
@@ -80,8 +62,7 @@ public sealed class HpackBombSpec
         Assert.Contains("§4.2", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDynamicTable_should_evict_all_entries_when_table_size_set_to_zero()
     {
         // Attacker: oscillate table size between large and 0 to churn memory
@@ -103,10 +84,7 @@ public sealed class HpackBombSpec
         Assert.Equal(0, table.CurrentSize);
     }
 
-    // HPACK Bomb — Compressed Input Expanding to Huge Headers
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_enforce_header_list_size_limit_when_hpack_bomb_via_indexed_references()
     {
         // Attack: Attacker inserts one large entry via incremental indexing, then
@@ -118,7 +96,7 @@ public sealed class HpackBombSpec
         // Step 1: Insert a header with a large value into the dynamic table
         // Literal with incremental indexing: 0x40 | 0 (new name), name, value
         var largeValue = new string('X', 200);
-        var nameBytes = Encoding.UTF8.GetBytes("x-bomb");
+        var nameBytes = "x-bomb"u8.ToArray();
         var valueBytes = Encoding.UTF8.GetBytes(largeValue);
 
         var block = new byte[512];
@@ -161,8 +139,7 @@ public sealed class HpackBombSpec
         Assert.Contains("MAX_HEADER_LIST_SIZE", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_enforce_string_length_limit_when_hpack_bomb_via_oversized_string()
     {
         // Attack: Crafted HPACK block with a string literal claiming 100KB length
@@ -191,8 +168,7 @@ public sealed class HpackBombSpec
         Assert.Contains("§5.2", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_enforce_header_list_size_limit_when_many_small_headers()
     {
         // Attack: Many tiny headers that individually pass but cumulatively exceed limits.
@@ -222,10 +198,7 @@ public sealed class HpackBombSpec
         Assert.Contains("MAX_HEADER_LIST_SIZE", ex.Message);
     }
 
-    // Huffman Decoding of Adversarial Input — No Infinite Loop, Bounded Output
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_accept_huffman_encoded_header_when_within_string_length_limit()
     {
         // Legitimate: Huffman-encoded string that decodes to reasonable size
@@ -244,8 +217,7 @@ public sealed class HpackBombSpec
         Assert.Equal("application/json", decoded[0].Value);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_throw_on_invalid_huffman_padding_when_decoding_adversarial_input()
     {
         // Attack: Malformed Huffman data with invalid EOS padding should not
@@ -269,8 +241,7 @@ public sealed class HpackBombSpec
         Assert.ThrowsAny<Exception>(() => decoder.Decode(malicious));
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_enforce_string_length_limit_when_huffman_claims_large_expansion()
     {
         // Attack: Huffman-encoded string whose declared wire length is within limits
@@ -324,10 +295,7 @@ public sealed class HpackBombSpec
         }
     }
 
-    // HPACK Dynamic Table Eviction — >100 Entries
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDynamicTable_should_correctly_evict_when_more_than_100_entries_inserted()
     {
         // Attack: Flood the dynamic table with many entries to exhaust memory.
@@ -356,8 +324,7 @@ public sealed class HpackBombSpec
         Assert.Equal("h199", lastEntry.Value.Name);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDynamicTable_should_not_grow_memory_when_rapid_fill_evict_cycles()
     {
         // Attack: Repeatedly fill and clear table to trigger GC pressure / memory leak
@@ -385,8 +352,7 @@ public sealed class HpackBombSpec
         Assert.Equal(0, table.Count);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDynamicTable_should_clear_table_without_inserting_when_entry_size_larger_than_max_size()
     {
         // Attack: Single entry larger than table size should not corrupt table state
@@ -405,10 +371,7 @@ public sealed class HpackBombSpec
         Assert.Equal(0, table.CurrentSize);
     }
 
-    // HPACK Out-of-Bounds Index → HpackException
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_throw_hpack_exception_when_indexed_header_references_index_zero()
     {
         // Attack: Index 0 is reserved and must never be used (RFC 7541 §2.3.3)
@@ -421,8 +384,7 @@ public sealed class HpackBombSpec
         Assert.Contains("§2.3.3", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_throw_hpack_exception_when_index_exceeds_table_size()
     {
         // Attack: Reference index 200 when only static table (61) exists
@@ -438,8 +400,7 @@ public sealed class HpackBombSpec
         Assert.Contains("out of range", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_throw_hpack_exception_when_integer_overflow()
     {
         // Attack: Craft an integer with continuation bytes that would overflow int.MaxValue
@@ -458,10 +419,7 @@ public sealed class HpackBombSpec
         Assert.Contains("overflow", ex.Message.ToLowerInvariant());
     }
 
-    // Zero-Length Header Name via HPACK → Rejected
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_throw_hpack_exception_when_empty_header_name_literal()
     {
         // Attack: Literal header with zero-length name — RFC 7541 §7.2 violation
@@ -479,8 +437,7 @@ public sealed class HpackBombSpec
         Assert.Contains("§7.2", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackEncoder_should_throw_hpack_exception_when_encoder_receives_empty_name()
     {
         // Verify encoder also rejects empty names
@@ -490,16 +447,20 @@ public sealed class HpackBombSpec
         Span<byte> span = buf;
 
         HpackException? caught = null;
-        try { encoder.Encode(headers, ref span); }
-        catch (HpackException e) { caught = e; }
+        try
+        {
+            encoder.Encode(headers, ref span);
+        }
+        catch (HpackException e)
+        {
+            caught = e;
+        }
+
         Assert.NotNull(caught);
-        Assert.Contains("§7.2", caught!.Message);
+        Assert.Contains("§7.2", caught.Message);
     }
 
-    // HPACK Table Size Update Protocol Violations
-
-    [Fact]
-    [Trait("RFC", "RFC7541")]
+    [Fact(Timeout = 5000)]
     public void HpackDecoder_should_throw_hpack_exception_when_table_size_update_after_header_field()
     {
         // Attack: Sending a table size update mid-block to manipulate table state

@@ -60,7 +60,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         if (appProbe != null)
         {
             var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-            var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+            await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
             netSubscription.Request(10);
             resSubscription.Request(10);

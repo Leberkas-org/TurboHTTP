@@ -3,19 +3,8 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// RFC 9110 §15.4 — Redirect handler core tests (RH-001 to RH-023).
-/// Covers IsRedirect detection, method rewriting for 303/307/308/301/302,
-/// Location URI resolution, max redirect enforcement, loop detection,
-/// and missing Location header handling.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RedirectHandler"/>.
-/// RFC 9110 §15.4: Redirect responses require method rewriting and loop detection.
-/// </remarks>
 public sealed class RedirectHandlerSpec
 {
-
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     [InlineData(301)]
@@ -42,7 +31,6 @@ public sealed class RedirectHandlerSpec
         var response = new HttpResponseMessage((HttpStatusCode)statusCode);
         Assert.False(RedirectHandler.IsRedirect(response));
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
@@ -90,7 +78,6 @@ public sealed class RedirectHandlerSpec
 
         Assert.Equal(HttpMethod.Get, redirected.Method);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
@@ -149,7 +136,6 @@ public sealed class RedirectHandlerSpec
         Assert.Equal(HttpMethod.Delete, redirected.Method);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public async Task Should_PreservePostMethodAndBody_When_308PermanentRedirect()
@@ -193,7 +179,6 @@ public sealed class RedirectHandlerSpec
         Assert.Equal(expectedBytes, actualBytes);
         Assert.Equal("text/plain", redirected.Content.Headers.ContentType!.MediaType);
     }
-
 
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
@@ -244,7 +229,6 @@ public sealed class RedirectHandlerSpec
         Assert.Equal(HttpMethod.Head, redirected.Method);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_UseAbsoluteLocation_When_LocationIsAbsolute()
@@ -284,7 +268,6 @@ public sealed class RedirectHandlerSpec
         Assert.NotNull(redirected.RequestUri);
         Assert.Equal("example.com", redirected.RequestUri.Host);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
@@ -347,7 +330,6 @@ public sealed class RedirectHandlerSpec
         Assert.Equal(2, handler.RedirectCount);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowRedirectException_When_DirectRedirectLoop()
@@ -381,7 +363,6 @@ public sealed class RedirectHandlerSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowRedirectException_When_LocationHeaderMissing()
@@ -409,7 +390,6 @@ public sealed class RedirectHandlerSpec
         Assert.Equal(HttpMethod.Get, redirected.Method);
         Assert.Null(redirected.Content);
     }
-
 
     private static HttpResponseMessage BuildRedirect(HttpStatusCode statusCode, string location)
     {

@@ -3,17 +3,9 @@ using System.Text;
 
 namespace TurboHTTP.Tests.Http11.Encoder;
 
-/// <summary>
-/// Tests message body and Content-Length encoding per RFC 9112 §6.
-/// Verifies Content-Length presence, chunked framing, and bodyless request handling.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Encoder"/>.
-/// RFC 9112 §6: Message body — determined by Content-Length or Transfer-Encoding.
-/// </remarks>
 public sealed class Http11EncoderBodySpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_omit_content_length_when_bodyless_get()
     {
@@ -22,7 +14,7 @@ public sealed class Http11EncoderBodySpec
         Assert.DoesNotContain("Content-Length:", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_set_content_length_when_post_with_body()
     {
@@ -35,7 +27,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("Content-Length:", result);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     [InlineData("POST")]
     [InlineData("PUT")]
@@ -51,7 +43,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("Content-Length: 5\r\n", result);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     [InlineData("GET")]
     [InlineData("HEAD")]
@@ -63,7 +55,7 @@ public sealed class Http11EncoderBodySpec
         Assert.DoesNotContain("Content-Length:", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_separate_headers_from_body_when_empty_line()
     {
@@ -78,7 +70,7 @@ public sealed class Http11EncoderBodySpec
         Assert.StartsWith("body content", result[(separatorIdx + 4)..]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_preserve_binary_body_when_null_bytes()
     {
@@ -110,7 +102,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Equal(binaryData, body);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_encode_chunked_when_transfer_encoding_chunked()
     {
@@ -141,7 +133,7 @@ public sealed class Http11EncoderBodySpec
         Assert.StartsWith("b\r\nHello World\r\n", bodyPart);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_terminate_with_zero_chunk_when_chunked_body()
     {
@@ -163,7 +155,7 @@ public sealed class Http11EncoderBodySpec
         Assert.EndsWith("0\r\n\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_omit_content_length_when_chunked_transfer_encoding()
     {
@@ -186,7 +178,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("Transfer-Encoding: chunked\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_end_with_blank_line_when_get_request()
     {
@@ -195,7 +187,7 @@ public sealed class Http11EncoderBodySpec
         Assert.EndsWith("\r\n\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_set_content_type_and_length_when_post_json_body()
     {
@@ -212,7 +204,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains($"Content-Length: {Encoding.UTF8.GetByteCount(json)}", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_place_body_after_blank_line_when_post_json_body()
     {
@@ -229,7 +221,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Equal(json, result[(separatorIdx + 4)..]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_throw_when_buffer_too_small_for_body()
     {
@@ -246,7 +238,7 @@ public sealed class Http11EncoderBodySpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_throw_when_buffer_too_small_for_headers()
     {
@@ -259,7 +251,7 @@ public sealed class Http11EncoderBodySpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_auto_chunk_when_content_length_unknown()
     {
@@ -277,7 +269,7 @@ public sealed class Http11EncoderBodySpec
         Assert.DoesNotContain("Content-Length:", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_format_chunk_size_in_hex()
     {
@@ -303,7 +295,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("0\r\n\r\n", result); // Final chunk
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_handle_empty_body_with_chunked()
     {
@@ -321,7 +313,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("0\r\n\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Encoder_should_preserve_content_type_with_chunked()
     {
@@ -339,7 +331,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("Transfer-Encoding: chunked\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_preserve_charset_in_content_type()
     {
@@ -355,7 +347,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Contains("Content-Type: text/plain; charset=utf-8", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_handle_post_without_explicit_body()
     {

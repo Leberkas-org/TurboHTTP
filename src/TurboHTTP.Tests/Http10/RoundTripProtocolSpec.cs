@@ -5,18 +5,8 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Round-trip protocol conformance tests for HTTP/1.0 per RFC 1945.
-/// Verifies version strings, header blocks, and protocol-level edge cases.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http10.Encoder"/>, <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945: HTTP/1.0 protocol conformance — version, request/response structure.
-/// </remarks>
 public sealed class Http10RoundTripProtocolSpec
 {
-    private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];
-
     private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)
     {
         var arr = new byte[65536];
@@ -39,7 +29,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_encodehttp10version()
+    public void Http10RoundTripProtocolSpec_should_encode_http10version()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -52,7 +42,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_formatrequestlinecorrectly()
+    public void Http10RoundTripProtocolSpec_should_format_request_line_correctly()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
         request.Content = new StringContent("test");
@@ -66,7 +56,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_usecrlflineendings()
+    public void Http10RoundTripProtocolSpec_should_use_crlf_line_endings()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -78,7 +68,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_decodethreedigitstatuscode()
+    public void Http10RoundTripProtocolSpec_should_decode_three_digit_status_code()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -91,7 +81,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_resetdecoderstate()
+    public void Http10RoundTripProtocolSpec_should_reset_decoder_state()
     {
         var decoder = new Decoder();
 
@@ -113,7 +103,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_maintainindependentdecoderstates()
+    public void Http10RoundTripProtocolSpec_should_maintain_independent_decoder_states()
     {
         var decoder1 = new Decoder();
         var decoder2 = new Decoder();
@@ -130,7 +120,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_preservecustomreasonphrase()
+    public void Http10RoundTripProtocolSpec_should_preserve_custom_reason_phrase()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 Everything is fine", "Content-Length: 0");
@@ -142,7 +132,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_handlecaseinsensitiveheaders()
+    public void Http10RoundTripProtocolSpec_should_handle_case_insensitive_headers()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -157,7 +147,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_producedeterministicencoding()
+    public void Http10RoundTripProtocolSpec_should_produce_deterministic_encoding()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/test");
         request.Headers.Add("X-Custom", "value");
@@ -173,7 +163,7 @@ public sealed class Http10RoundTripProtocolSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-1")]
-    public void Http10RoundTripProtocolSpec_should_includecontentlength()
+    public void Http10RoundTripProtocolSpec_should_include_content_length()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")
         {

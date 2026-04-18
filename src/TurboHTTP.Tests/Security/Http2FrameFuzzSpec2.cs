@@ -3,17 +3,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Fuzzes the HTTP/2 frame parser with adversarial inputs targeting oversized frames,
-/// rapid valid/invalid alternation, unknown SETTINGS parameters, and WINDOW_UPDATE
-/// violations. Companion to <see cref="Http2FrameFuzzSpec"/> which covers categories 1–6.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// Each test uses seeded <see cref="Random"/> so failures are reproducible.
-/// Invariant: Decode must either return valid frames or throw
-/// <see cref="Http2Exception"/> — never an unhandled crash.
-/// </remarks>
 public sealed class Http2FrameFuzzSpec2
 {
     private const int IterationsPerSeed = 100;
@@ -52,6 +41,7 @@ public sealed class Http2FrameFuzzSpec2
             BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), parameters[i].id);
             BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), parameters[i].value);
         }
+
         return BuildRawFrame(0x04, 0x00, 0, payload);
     }
 

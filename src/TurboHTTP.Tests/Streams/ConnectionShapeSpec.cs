@@ -1,20 +1,12 @@
-using System.Collections.Immutable;
 using Akka.Streams;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Streams;
 
-/// <summary>
-/// Tests for ConnectionShape, a custom 4-port shape for HTTP connection stages.
-/// </summary>
-/// <remarks>
-/// Type under test: <see cref="ConnectionShape"/>.
-/// Akka.Streams: Custom shapes define the ports and structure of GraphStages.
-/// </remarks>
 public sealed class ConnectionShapeSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_initialize_with_correct_ports()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -30,7 +22,7 @@ public sealed class ConnectionShapeSpec
         Assert.Equal(outNetwork, shape.OutNetwork);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_report_correct_inlets()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -46,7 +38,7 @@ public sealed class ConnectionShapeSpec
         Assert.Contains(inApp, inlets);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_report_correct_outlets()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -62,7 +54,7 @@ public sealed class ConnectionShapeSpec
         Assert.Contains(outNetwork, outlets);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_create_deep_copy()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -88,7 +80,7 @@ public sealed class ConnectionShapeSpec
         Assert.Equal(shape.OutNetwork.Name, copiedShape.OutNetwork.Name);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_copy_from_ports()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -98,10 +90,10 @@ public sealed class ConnectionShapeSpec
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
-        var newInlets = new Inlet[] { inServer.CarbonCopy(), inApp.CarbonCopy() };
-        var newOutlets = new Outlet[] { outResponse.CarbonCopy(), outNetwork.CarbonCopy() };
+        var newInlets = new[] { inServer.CarbonCopy(), inApp.CarbonCopy() };
+        var newOutlets = new[] { outResponse.CarbonCopy(), outNetwork.CarbonCopy() };
 
-        var copiedShape = shape.CopyFromPorts(newInlets.ToImmutableArray(), newOutlets.ToImmutableArray());
+        var copiedShape = shape.CopyFromPorts([..newInlets], [..newOutlets]);
 
         Assert.IsType<ConnectionShape>(copiedShape);
         var result = (ConnectionShape)copiedShape;
@@ -110,7 +102,7 @@ public sealed class ConnectionShapeSpec
         Assert.Equal(2, result.Outlets.Length);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_maintain_port_order_in_inlets()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -125,7 +117,7 @@ public sealed class ConnectionShapeSpec
         Assert.Equal(inApp, shape.Inlets[1]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_maintain_port_order_in_outlets()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -140,7 +132,7 @@ public sealed class ConnectionShapeSpec
         Assert.Equal(outNetwork, shape.Outlets[1]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_should_implement_shape_interface()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -153,7 +145,7 @@ public sealed class ConnectionShapeSpec
         Assert.IsAssignableFrom<Shape>(shape);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_deep_copy_should_create_independent_instances()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -173,7 +165,7 @@ public sealed class ConnectionShapeSpec
         Assert.NotSame(copied2.OutResponse, copied3.OutResponse);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionShape_copy_from_ports_should_preserve_port_types()
     {
         var inServer = new Inlet<IInputItem>("InServer");
@@ -183,10 +175,10 @@ public sealed class ConnectionShapeSpec
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
-        var newInlets = new Inlet[] { inServer.CarbonCopy(), inApp.CarbonCopy() };
-        var newOutlets = new Outlet[] { outResponse.CarbonCopy(), outNetwork.CarbonCopy() };
+        var newInlets = new[] { inServer.CarbonCopy(), inApp.CarbonCopy() };
+        var newOutlets = new[] { outResponse.CarbonCopy(), outNetwork.CarbonCopy() };
 
-        var copiedShape = shape.CopyFromPorts(newInlets.ToImmutableArray(), newOutlets.ToImmutableArray());
+        var copiedShape = shape.CopyFromPorts([..newInlets], [..newOutlets]);
         var result = (ConnectionShape)copiedShape;
 
         Assert.IsType<Inlet<IInputItem>>(result.InServer);

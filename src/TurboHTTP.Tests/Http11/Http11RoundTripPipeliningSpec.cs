@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests HTTP/1.1 request pipelining round-trips per RFC 9112 §9.3.
-/// Verifies that multiple consecutive requests and responses are correctly correlated.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §9.3: Pipelining — responses MUST be sent in the same order as requests.
-/// </remarks>
 public sealed class Http11RoundTripPipeliningSpec
 {
     private static ReadOnlyMemory<byte> BuildResponse(int status, string reason, string body,
@@ -98,7 +90,7 @@ public sealed class Http11RoundTripPipeliningSpec
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11RoundTrip_should_preserve_status_codes_when_mixed_status_pipelined()
     {
@@ -195,7 +187,7 @@ public sealed class Http11RoundTripPipeliningSpec
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11RoundTrip_should_return_connection_close_when_response_has_connection_close_header()
     {

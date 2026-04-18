@@ -17,7 +17,7 @@ public sealed class TransportSelectionSpec
         };
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_ProduceQuicOptions_When_Http3Version()
     {
@@ -31,7 +31,7 @@ public sealed class TransportSelectionSpec
         Assert.Equal(443, quicOptions.Port);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_ProduceTcpOptions_When_Http11Version()
     {
@@ -45,7 +45,7 @@ public sealed class TransportSelectionSpec
         Assert.IsNotType<QuicOptions>(result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_ProduceTlsOptions_When_Http11AndHttps()
     {
@@ -57,7 +57,7 @@ public sealed class TransportSelectionSpec
         Assert.IsType<TlsOptions>(result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_PropagateCertCallback_When_Http3()
     {
@@ -73,7 +73,7 @@ public sealed class TransportSelectionSpec
         Assert.NotNull(quicOptions.ServerCertificateValidationCallback);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_FallBackToScheme_When_NullVersion()
     {
@@ -89,7 +89,7 @@ public sealed class TransportSelectionSpec
         Assert.IsNotType<QuicOptions>(httpsResult);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_ProduceQuicOptions_When_Http3EvenWithHttpScheme()
     {
@@ -102,7 +102,7 @@ public sealed class TransportSelectionSpec
         Assert.Equal(4433, quicOptions.Port);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_CreateQuicProvider_When_QuicOptions()
     {

@@ -33,7 +33,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_create_request_activity()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/path");
@@ -45,7 +45,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityKind.Client, activity.Kind);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_set_method_tag()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "https://example.com/api");
@@ -56,7 +56,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("POST", activity.GetTagItem("http.request.method"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_set_url_full_tag()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/path?q=1");
@@ -67,7 +67,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("https://example.com/path?*", activity.GetTagItem("url.full"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_set_server_tags()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com:8443/resource");
@@ -79,7 +79,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(8443, activity.GetTagItem("server.port"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_should_set_status_code_tag()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -92,7 +92,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRedirect_should_create_redirect_activity()
     {
         var uri = new Uri("https://example.com/new-location");
@@ -104,7 +104,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityKind.Client, activity.Kind);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRedirect_should_set_tags()
     {
         var uri = new Uri("https://example.com/redirected");
@@ -132,7 +132,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(statusCode, activity.GetTagItem("http.response.status_code"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MultipleRedirectHops_should_produce_separate_activities()
     {
         _activities.Clear();
@@ -154,7 +154,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("https://c.com/3", redirectActivities[2].GetTagItem("url.full"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedirectSpans_should_parent_under_root_activity()
     {
         _activities.Clear();
@@ -178,7 +178,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         rootActivity.Stop();
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRetry_should_create_retry_activity()
     {
         var activity = TurboHttpInstrumentation.StartRetry(1);
@@ -188,7 +188,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityKind.Client, activity.Kind);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRetry_should_set_resend_count_tag()
     {
         var activity = TurboHttpInstrumentation.StartRetry(3);
@@ -209,7 +209,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(attempt, activity.GetTagItem("http.resend_count"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MultipleRetryAttempts_should_produce_separate_activities()
     {
         _activities.Clear();
@@ -228,7 +228,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(2, retryActivities[1].GetTagItem("http.resend_count"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RetrySpans_should_parent_under_root_activity()
     {
         _activities.Clear();
@@ -248,7 +248,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         rootActivity.Stop();
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartCacheLookup_should_create_cache_lookup_activity()
     {
         var uri = new Uri("https://example.com/cached");
@@ -260,7 +260,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityKind.Client, activity.Kind);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartCacheLookup_should_set_url_tag()
     {
         var uri = new Uri("https://example.com/resource");
@@ -271,7 +271,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("https://example.com/resource", activity.GetTagItem("url.full"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void CacheLookup_hit_should_set_tag()
     {
         var uri = new Uri("https://example.com/cached");
@@ -283,7 +283,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(true, activity.GetTagItem("cache.hit"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void CacheLookup_miss_should_set_tag()
     {
         var uri = new Uri("https://example.com/uncached");
@@ -295,7 +295,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(false, activity.GetTagItem("cache.hit"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_should_set_otel_status_code()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/fail");
@@ -306,7 +306,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("ERROR", activity.GetTagItem("otel.status_code"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_should_set_exception_type()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/fail");
@@ -317,7 +317,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(typeof(HttpRequestException).FullName, activity.GetTagItem("exception.type"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_should_set_exception_message()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/fail");
@@ -328,7 +328,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("Pipeline broken", activity.GetTagItem("exception.message"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_should_set_activity_status()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/fail");
@@ -340,7 +340,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("Request timed out", activity.StatusDescription);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_on_root_activity_should_set_all_attributes()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/error");
@@ -356,21 +356,21 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityStatusCode.Error, activity.Status);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_return_null_when_no_listener()
     {
         // Dispose our listener so there are none active
         _listener.Dispose();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
-        var activity = TurboHttpInstrumentation.StartRequest(request);
+        TurboHttpInstrumentation.StartRequest(request);
 
         // Activity may or may not be null depending on other test listeners,
         // but verify our source name is correct
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.SourceName);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RequestActivityKey_should_store_activity_in_request_options()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -383,7 +383,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Same(activity, retrieved);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void FullLifecycle_with_redirect_and_retry()
     {
         _activities.Clear();
@@ -438,7 +438,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(200, rootActivity.GetTagItem("http.response.status_code"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void FullLifecycle_with_error()
     {
         _activities.Clear();
@@ -460,7 +460,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.True(rootActivity.IsStopped);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InjectTraceContext_should_add_traceparent_header()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
@@ -476,7 +476,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Contains(activity.SpanId.ToString(), traceparent);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InjectTraceContext_should_add_tracestate_when_present()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
@@ -489,7 +489,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("vendor1=value1", request.Headers.GetValues("tracestate").Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InjectTraceContext_should_not_add_tracestate_when_absent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
@@ -500,7 +500,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.False(request.Headers.Contains("tracestate"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InjectTraceContext_should_propagate_recorded_flag()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
@@ -513,7 +513,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.EndsWith("-01", traceparent);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InjectTraceContext_should_not_overwrite_existing_traceparent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
@@ -527,41 +527,41 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Contains("00-11111111111111111111111111111111-2222222222222222-01", values);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ActivitySource_should_have_correct_name()
     {
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.Source.Name);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ActivitySource_should_have_version()
     {
         Assert.False(string.IsNullOrEmpty(TurboHttpInstrumentation.Source.Version));
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedactUrl_should_replace_query_with_asterisk()
     {
         var uri = new Uri("https://example.com/path?secret=abc&token=xyz");
         Assert.Equal("https://example.com/path?*", TurboHttpInstrumentation.RedactUrl(uri));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedactUrl_should_preserve_url_without_query()
     {
         var uri = new Uri("https://example.com/path");
         Assert.Equal("https://example.com/path", TurboHttpInstrumentation.RedactUrl(uri));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedactUrl_should_strip_fragment()
     {
         var uri = new Uri("https://example.com/path#section");
         Assert.Equal("https://example.com/path", TurboHttpInstrumentation.RedactUrl(uri));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedactUrl_should_strip_fragment_and_redact_query()
     {
         var uri = new Uri("https://example.com/path?q=1#frag");
@@ -592,7 +592,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("_OTHER", TurboHttpInstrumentation.NormalizeMethod(method));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_set_method_original_for_nonstandard()
     {
         var request = new HttpRequestMessage(new HttpMethod("PURGE"), "https://example.com/cache");
@@ -604,7 +604,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("PURGE", activity.GetTagItem("http.request.method_original"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_not_set_method_original_for_standard()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -626,7 +626,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(expected, TurboHttpInstrumentation.FormatProtocolVersion(new Version(major, minor)));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_set_url_scheme_tag()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -637,7 +637,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("https", activity.GetTagItem("url.scheme"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_should_set_protocol_version_tag()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -649,7 +649,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("2", activity.GetTagItem("network.protocol.version"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_should_set_error_type_for_4xx()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -662,7 +662,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityStatusCode.Error, activity.Status);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_should_set_error_type_for_5xx()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -675,7 +675,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(ActivityStatusCode.Error, activity.Status);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_should_not_set_error_for_2xx()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -688,7 +688,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.NotEqual(ActivityStatusCode.Error, activity.Status);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_should_set_error_type_tag()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -699,7 +699,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(typeof(HttpRequestException).FullName, activity.GetTagItem("error.type"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartDnsLookup_should_create_activity()
     {
         var activity = TurboHttpInstrumentation.StartDnsLookup("example.com");
@@ -709,7 +709,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("example.com", activity.GetTagItem("dns.question.name"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartSocketConnect_should_create_activity()
     {
         var activity = TurboHttpInstrumentation.StartSocketConnect("93.184.216.34", 443);
@@ -721,7 +721,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("tcp", activity.GetTagItem("network.transport"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartSocketConnect_should_set_network_type_when_provided()
     {
         var activity = TurboHttpInstrumentation.StartSocketConnect("93.184.216.34", 443, "tcp", "ipv4");
@@ -730,7 +730,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("ipv4", activity.GetTagItem("network.type"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartSocketConnect_should_omit_network_type_when_null()
     {
         var activity = TurboHttpInstrumentation.StartSocketConnect("93.184.216.34", 443);
@@ -739,7 +739,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Null(activity.GetTagItem("network.type"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartTlsHandshake_should_create_activity()
     {
         var activity = TurboHttpInstrumentation.StartTlsHandshake("example.com");
@@ -749,7 +749,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("example.com", activity.GetTagItem("server.address"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartWaitForConnection_should_create_activity()
     {
         var activity = TurboHttpInstrumentation.StartWaitForConnection("example.com", 443);
@@ -760,7 +760,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(443, activity.GetTagItem("server.port"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartConnect_should_create_activity()
     {
         var activity = TurboHttpInstrumentation.StartConnect(new Uri("https://example.com:8443/"));
@@ -771,7 +771,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(8443, activity.GetTagItem("server.port"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartConnect_should_set_url_scheme()
     {
         var activity = TurboHttpInstrumentation.StartConnect(new Uri("https://example.com/"));
@@ -780,7 +780,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("https", activity.GetTagItem("url.scheme"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetTlsInfo_should_set_protocol_tags()
     {
         var activity = TurboHttpInstrumentation.StartTlsHandshake("example.com");
@@ -792,7 +792,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("1.3", activity.GetTagItem("tls.protocol.version"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetDnsAnswers_should_set_answers_tag()
     {
         var activity = TurboHttpInstrumentation.StartDnsLookup("example.com");
@@ -803,7 +803,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(new[] { "93.184.216.34", "2606:2800:220:1::" }, activity.GetTagItem("dns.answers"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetNetworkPeerAddress_should_set_tag()
     {
         var activity = TurboHttpInstrumentation.StartConnect(new Uri("https://example.com/"));
@@ -814,28 +814,28 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("93.184.216.34", activity.GetTagItem("network.peer.address"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void IsTracingActive_should_return_true_when_listener_present()
     {
         // Our listener is already subscribed in constructor
         Assert.True(TurboHttpInstrumentation.IsTracingActive);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedactUrl_should_handle_empty_query()
     {
         var uri = new Uri("https://example.com/path?");
         Assert.Equal("https://example.com/path?*", TurboHttpInstrumentation.RedactUrl(uri));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RedactUrl_with_complex_path_should_preserve_structure()
     {
         var uri = new Uri("https://api.example.com:8080/v1/users/123/profile?token=secret#top");
         Assert.Equal("https://api.example.com:8080/v1/users/123/profile?*", TurboHttpInstrumentation.RedactUrl(uri));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_with_get_no_uri_should_work()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, (Uri?)null);
@@ -843,7 +843,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.NotNull(activity);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_with_3xx_status_should_not_set_error()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -856,7 +856,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.NotEqual(ActivityStatusCode.Error, activity.Status);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void NormalizeMethod_should_handle_lowercase_standard_methods()
     {
         Assert.Equal("GET", TurboHttpInstrumentation.NormalizeMethod("get"));
@@ -864,14 +864,14 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("PUT", TurboHttpInstrumentation.NormalizeMethod("put"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void NormalizeMethod_should_handle_mixed_case()
     {
         Assert.Equal("GET", TurboHttpInstrumentation.NormalizeMethod("Get"));
         Assert.Equal("POST", TurboHttpInstrumentation.NormalizeMethod("PoSt"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartRequest_should_set_url_scheme_for_http()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
@@ -882,13 +882,13 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("http", activity.GetTagItem("url.scheme"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void FormatProtocolVersion_should_handle_version_3_with_minor()
     {
         Assert.Equal("3", TurboHttpInstrumentation.FormatProtocolVersion(new Version(3, 1)));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetError_should_handle_aggregate_exception()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -901,7 +901,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("Multiple failures", activity.GetTagItem("exception.message"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void InjectTraceContext_should_handle_activity_with_no_current_context()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -921,19 +921,19 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SourceName_should_be_constant()
     {
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.SourceName);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Source_version_should_not_be_empty()
     {
         Assert.False(string.IsNullOrWhiteSpace(TurboHttpInstrumentation.Source.Version));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Source_should_be_disposable()
     {
         Assert.NotNull(TurboHttpInstrumentation.Source);
@@ -941,16 +941,16 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.Source.Name);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void StartDnsLookup_should_return_null_when_no_listener()
     {
         _listener.Dispose();
-        var activity = TurboHttpInstrumentation.StartDnsLookup("example.com");
+        TurboHttpInstrumentation.StartDnsLookup("example.com");
         // May or may not be null depending on other listeners
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.SourceName);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_with_http10_should_format_version_correctly()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -962,7 +962,7 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal("1.0", activity.GetTagItem("network.protocol.version"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SetResponse_with_http11_should_format_version_correctly()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");

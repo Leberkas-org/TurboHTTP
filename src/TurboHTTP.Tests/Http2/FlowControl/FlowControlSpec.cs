@@ -2,18 +2,8 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.FlowControl;
 
-/// <summary>
-/// Tests HTTP/2 flow control and WINDOW_UPDATE frame decoding per RFC 9113 §6.9.
-/// Covers both connection-level (stream 0) and stream-level window update semantics.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.9: WINDOW_UPDATE frames carry a 31-bit increment and apply to stream 0 (connection) or a specific stream.
-/// </remarks>
 public sealed class FlowControlSpec
 {
-    // FC-WU-001..006: WINDOW_UPDATE Decoding — Connection Level (Stream 0)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_have_correct_stream_id_when_window_update_on_stream_0()
@@ -98,8 +88,6 @@ public sealed class FlowControlSpec
         var frame = Assert.IsType<WindowUpdateFrame>(frames[0]);
         Assert.Equal(0x7FFFFFFF, frame.Increment);
     }
-
-    // FC-WU-007..012: WINDOW_UPDATE Decoding — Stream Level (Stream N)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
@@ -194,8 +182,6 @@ public sealed class FlowControlSpec
         Assert.Equal(0x7FFFFFFF, frame.Increment);
     }
 
-    // FC-WU-013..016: Reserved bit handling and increment values
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_strip_reserved_high_bit_when_window_update_decoded()
@@ -204,8 +190,8 @@ public sealed class FlowControlSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x04, // length = 4
-            0x08,             // WINDOW_UPDATE
-            0x00,             // flags
+            0x08, // WINDOW_UPDATE
+            0x00, // flags
             0x00, 0x00, 0x00, 0x01, // stream = 1
             0x80, 0x00, 0x00, 0x01, // increment with high bit set → stripped to 1
         };
@@ -275,8 +261,8 @@ public sealed class FlowControlSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x04, // length = 4
-            0x08,             // WINDOW_UPDATE
-            0x00,             // flags
+            0x08, // WINDOW_UPDATE
+            0x00, // flags
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x00, 0x00, 0x00, // increment = 0 — MUST be > 0
         };
@@ -293,8 +279,8 @@ public sealed class FlowControlSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x04, // length = 4
-            0x08,             // WINDOW_UPDATE
-            0x00,             // flags
+            0x08, // WINDOW_UPDATE
+            0x00, // flags
             0x00, 0x00, 0x00, 0x01, // stream = 1
             0x00, 0x00, 0x00, 0x00, // increment = 0 — MUST be > 0
         };
@@ -311,8 +297,8 @@ public sealed class FlowControlSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x03, // length = 3 (must be 4)
-            0x08,             // WINDOW_UPDATE
-            0x00,             // flags
+            0x08, // WINDOW_UPDATE
+            0x00, // flags
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x00, 0x01, // only 3 payload bytes
         };
@@ -321,8 +307,6 @@ public sealed class FlowControlSpec
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
-
-    // FC-DF-001..007: DATA Frame Decoding
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
@@ -420,7 +404,10 @@ public sealed class FlowControlSpec
     public void Http2FrameDecoder_should_decode_correctly_when_data_frame_has_large_payload()
     {
         var data = new byte[16384]; // 16 KB
-        for (var i = 0; i < data.Length; i++) { data[i] = (byte)(i & 0xFF); }
+        for (var i = 0; i < data.Length; i++)
+        {
+            data[i] = (byte)(i & 0xFF);
+        }
 
         var bytes = new DataFrame(1, data).Serialize();
         var decoder = new FrameDecoder();

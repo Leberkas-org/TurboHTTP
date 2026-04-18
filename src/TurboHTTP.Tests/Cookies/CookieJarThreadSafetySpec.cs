@@ -4,15 +4,6 @@ using TurboHTTP.Protocol.Cookies;
 
 namespace TurboHTTP.Tests.Cookies;
 
-/// <summary>
-/// RFC 6265 — CookieJar thread-safety tests.
-/// Verifies that concurrent access from CookieBidiStage (request and response directions)
-/// doesn't corrupt cookie state.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="CookieJar"/>.
-/// RFC 6265 §5.3: Cookie storage model — must remain consistent under concurrent reads and writes.
-/// </remarks>
 public sealed class CookieJarThreadSafetySpec
 {
     private static Uri Uri(string url) => new(url);
@@ -24,9 +15,8 @@ public sealed class CookieJarThreadSafetySpec
         return response;
     }
 
-
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_not_throw_when_concurrent_process_response()
     {
         var jar = new CookieJar();
@@ -51,8 +41,8 @@ public sealed class CookieJarThreadSafetySpec
         Assert.Empty(exceptions);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_not_throw_when_concurrent_add_cookies_to_request()
     {
         var jar = new CookieJar();
@@ -85,8 +75,8 @@ public sealed class CookieJarThreadSafetySpec
         Assert.Empty(exceptions);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_not_throw_or_corrupt_when_concurrent_read_and_write()
     {
         var jar = new CookieJar();
@@ -135,8 +125,8 @@ public sealed class CookieJarThreadSafetySpec
         Assert.True(jar.Count > 0, "Cookie jar should contain cookies after concurrent operations");
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_not_throw_when_concurrent_clear_and_process_response()
     {
         var jar = new CookieJar();
@@ -173,9 +163,8 @@ public sealed class CookieJarThreadSafetySpec
         Assert.Empty(exceptions);
     }
 
-
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_return_correct_cookies_when_concurrent_injection_under_contention()
     {
         var jar = new CookieJar();
@@ -218,8 +207,8 @@ public sealed class CookieJarThreadSafetySpec
         Assert.Empty(incorrectResults);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_replace_correctly_when_concurrent_storage_under_contention()
     {
         var jar = new CookieJar();
@@ -245,8 +234,8 @@ public sealed class CookieJarThreadSafetySpec
         Assert.StartsWith("session=value", header);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieJar_should_be_consistent_when_concurrent_count_and_modification()
     {
         var jar = new CookieJar();

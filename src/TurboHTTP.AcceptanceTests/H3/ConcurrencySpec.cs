@@ -23,7 +23,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
                 .Data("pong")
                 .Build();
 
-            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                responseFrames);
             return response;
         }).ToArray();
 
@@ -50,7 +51,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
                 .Data("Hello World")
                 .Build();
 
-            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                responseFrames);
             return response;
         }).ToArray();
 
@@ -83,7 +85,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
     [Trait("RFC", "RFC9114-4.1")]
     public async Task Concurrent_requests_to_different_endpoints_should_succeed()
     {
-        var endpoints = new[] { "/hello", "/ping", "/h3/settings", "/hello", "/ping", "/h3/settings", "/hello", "/ping" };
+        var endpoints = new[]
+            { "/hello", "/ping", "/h3/settings", "/hello", "/ping", "/h3/settings", "/hello", "/ping" };
         var tasks = endpoints.Select(path => SendSimpleAsync(HttpMethod.Get, path, "ok")).ToArray();
 
         var responses = await Task.WhenAll(tasks);
@@ -114,7 +117,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
                     .Data((ReadOnlyMemory<byte>)payload)
                     .Build();
 
-                var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+                var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                    responseFrames);
                 return response;
             }).ToArray();
 
@@ -138,7 +142,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
             .Data(responseBody)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
         return response;
     }
 
@@ -156,7 +161,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)payload)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
         return response;
     }
 
@@ -174,7 +180,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
             .Data(body)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
         return response;
     }
 }

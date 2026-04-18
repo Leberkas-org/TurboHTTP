@@ -3,16 +3,6 @@ using TurboHTTP.Protocol.Cookies;
 
 namespace TurboHTTP.Tests.Cookies;
 
-/// <summary>
-/// RFC 6265 — Cookie management tests.
-/// Covers: Set-Cookie parsing, domain matching, path matching, host-only cookies,
-/// Secure/HttpOnly attributes, Expires/Max-Age handling, SameSite, multiple cookies,
-/// cookie replacement, expiry/deletion, and AddCookiesToRequest filtering.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="CookieJar"/>.
-/// RFC 6265 §5: Cookie processing model — storage, retrieval, and attribute enforcement.
-/// </remarks>
 public sealed class CookieJarSpec
 {
     private static Uri Uri(string url) => new(url);
@@ -24,9 +14,8 @@ public sealed class CookieJarSpec
         return response;
     }
 
-
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_store_cookie_when_basic_name_value_cookie()
     {
         var jar = new CookieJar();
@@ -34,8 +23,8 @@ public sealed class CookieJarSpec
         Assert.Equal(1, jar.Count);
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_add_cookie_value_to_request_when_cookie_matches()
     {
         var jar = new CookieJar();
@@ -48,8 +37,8 @@ public sealed class CookieJarSpec
         Assert.Contains("token=xyz", string.Join("", values));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_ignore_cookie_when_no_equals_sign()
     {
         var jar = new CookieJar();
@@ -57,8 +46,8 @@ public sealed class CookieJarSpec
         Assert.Equal(0, jar.Count);
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_ignore_cookie_when_name_is_empty()
     {
         var jar = new CookieJar();
@@ -66,8 +55,8 @@ public sealed class CookieJarSpec
         Assert.Equal(0, jar.Count);
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_process_all_cookies_when_multiple_set_cookie_headers()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -81,9 +70,8 @@ public sealed class CookieJarSpec
         Assert.Equal(3, jar.Count);
     }
 
-
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_match_exact_host_only_when_host_only_cookie()
     {
         var jar = new CookieJar();
@@ -95,8 +83,8 @@ public sealed class CookieJarSpec
         Assert.False(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_match_same_host_when_host_only_cookie()
     {
         var jar = new CookieJar();
@@ -108,8 +96,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_match_subdomain_when_domain_cookie()
     {
         var jar = new CookieJar();
@@ -121,8 +109,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_not_match_unrelated_host_when_domain_cookie()
     {
         var jar = new CookieJar();
@@ -134,8 +122,8 @@ public sealed class CookieJarSpec
         Assert.False(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_strip_leading_dot_when_domain_cookie_has_leading_dot()
     {
         var jar = new CookieJar();
@@ -148,9 +136,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
-
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_match_sub_path_when_path_cookie()
     {
         var jar = new CookieJar();
@@ -162,8 +149,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_not_match_partial_label_when_path_cookie()
     {
         var jar = new CookieJar();
@@ -175,8 +162,8 @@ public sealed class CookieJarSpec
         Assert.False(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_match_all_paths_when_path_is_root()
     {
         var jar = new CookieJar();
@@ -188,8 +175,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_match_sub_path_when_path_has_trailing_slash()
     {
         var jar = new CookieJar();
@@ -201,8 +188,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_compute_default_path_when_no_cookie_path()
     {
         var jar = new CookieJar();
@@ -216,9 +203,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
-
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_not_send_cookie_when_secure_cookie_and_http_scheme()
     {
         var jar = new CookieJar();
@@ -230,8 +216,8 @@ public sealed class CookieJarSpec
         Assert.False(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_send_cookie_when_secure_cookie_and_https_scheme()
     {
         var jar = new CookieJar();
@@ -243,8 +229,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_send_cookie_when_non_secure_cookie_and_http_scheme()
     {
         var jar = new CookieJar();
@@ -256,9 +242,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
-
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_store_cookie_when_http_only_attribute()
     {
         var jar = new CookieJar();
@@ -272,8 +257,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_store_and_send_cookie_when_non_http_only_cookie()
     {
         var jar = new CookieJar();
@@ -285,8 +270,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_handle_ip_address_as_host_only_always()
     {
         var jar = new CookieJar();
@@ -298,8 +283,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_not_match_partial_domain_label()
     {
         var jar = new CookieJar();
@@ -311,8 +296,8 @@ public sealed class CookieJarSpec
         Assert.False(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_handle_multiple_cookies_with_different_paths()
     {
         var jar = new CookieJar();
@@ -330,8 +315,8 @@ public sealed class CookieJarSpec
         Assert.Contains("c=3", cookieHeader);
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.3")]
-    [Fact]
     public void CookieJar_should_distinguish_cookies_with_same_name_different_paths()
     {
         var jar = new CookieJar();
@@ -341,8 +326,8 @@ public sealed class CookieJarSpec
         Assert.Equal(2, jar.Count);
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_handle_domain_matching_with_trailing_dot_in_request()
     {
         var jar = new CookieJar();
@@ -355,8 +340,8 @@ public sealed class CookieJarSpec
         Assert.True(req.Headers.Contains("Cookie"));
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.3")]
-    [Fact]
     public void CookieJar_should_reject_domain_cookie_for_tld_misuse()
     {
         var jar = new CookieJar();
@@ -372,8 +357,8 @@ public sealed class CookieJarSpec
         // If accepted as domain cookie for ".com", it would match other.com
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.4")]
-    [Fact]
     public void CookieJar_should_not_duplicate_cookie_header_when_multiple_applicable()
     {
         var jar = new CookieJar();
@@ -389,8 +374,8 @@ public sealed class CookieJarSpec
         Assert.Single(allValues);
     }
 
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC6265-5.1.4")]
-    [Fact]
     public void CookieJar_should_handle_empty_request_path_as_root()
     {
         var jar = new CookieJar();

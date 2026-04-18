@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Threading.Channels;
 using TurboHTTP.Internal;
 using TurboHTTP.Tests.Shared;
@@ -6,10 +5,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="ClientState.Dispose"/> — verifies that pending
-/// <see cref="IMemoryOwner{T}"/> items in both channels are disposed during cleanup.
-/// </summary>
 public sealed class ClientStateSpec
 {
     [Fact(Timeout = 5000)]
@@ -55,7 +50,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_create_bidirectional_channels_by_default()
     {
         var stream = new MemoryStream();
@@ -68,7 +62,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_accept_explicit_channels()
     {
         var stream = new MemoryStream();
@@ -83,7 +76,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_have_working_channels()
     {
         var stream = new MemoryStream();
@@ -99,7 +91,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_handle_bidirectional_channels()
     {
         var stream = new MemoryStream();
@@ -117,7 +108,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_expose_stream_property()
     {
         var stream = new MemoryStream();
@@ -127,7 +117,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_set_close_kind()
     {
         var stream = new MemoryStream();
@@ -140,7 +129,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_allow_on_writes_complete_callback()
     {
         var stream = new MemoryStream();
@@ -153,7 +141,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_drain_both_channels_on_dispose()
     {
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
@@ -176,7 +163,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_complete_writer_on_dispose()
     {
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
@@ -192,7 +178,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_dispose_stream_on_dispose()
     {
         var stream = new MemoryStream();
@@ -204,7 +189,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ClientState")]
     public void ClientState_should_handle_double_dispose()
     {
         var stream = new MemoryStream();

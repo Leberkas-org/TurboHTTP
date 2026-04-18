@@ -9,21 +9,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Core tests for the redirect bidirectional stage per RFC 9110 §15.4.
-/// Covers pass-through, request direction, non-redirect responses, redirect codes,
-/// and RedirectHandler per-chain tracking.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="RedirectBidiStage"/>.
-/// RFC 9110 §15.4: Redirect status codes, method preservation rules, loop detection, max-redirect enforcement.
-/// </remarks>
 public sealed class RedirectCoreSpec : StreamTestBase
 {
-    /// <summary>
-    /// Runs requests through the request direction (In1→Out1) of the BidiStage.
-    /// The response direction is wired to empty source / ignored sink.
-    /// </summary>
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
         RedirectBidiStage stage,
         params HttpRequestMessage[] requests)
@@ -50,10 +37,6 @@ public sealed class RedirectCoreSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Runs responses through the response direction (In2→Out2) of the BidiStage.
-    /// The request direction is wired to empty source / ignored sink.
-    /// </summary>
     private Task<IImmutableList<HttpResponseMessage>> RunResponseAsync(
         RedirectBidiStage stage,
         params HttpResponseMessage[] responses)
@@ -78,15 +61,9 @@ public sealed class RedirectCoreSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Materialises a <see cref="RedirectBidiStage"/> with manual subscriber probes on both outlets
-    /// and a manual publisher probe on the response inlet. The request inlet receives the given
-    /// requests concatenated with Source.Never to prevent premature completion.
-    /// </summary>
     private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
         TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
-        Action<HttpResponseMessage> pushResponse,
-        Action completeResponse) RunManual(
+        Action<HttpResponseMessage> pushResponse) RunManual(
             RedirectBidiStage stage,
             int requestOutDemand,
             int responseOutDemand,
@@ -117,7 +94,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
         reqOutSub.Request(requestOutDemand);
         respOutSub.Request(responseOutDemand);
 
-        return (requestOutProbe, responseOutProbe, responseSub.SendNext, responseSub.SendComplete);
+        return (requestOutProbe, responseOutProbe, responseSub.SendNext);
     }
 
     private static HttpResponseMessage BuildRedirectResponse(
@@ -128,7 +105,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
         var response = new HttpResponseMessage(statusCode);
         response.Headers.TryAddWithoutValidation("Location", location);
         response.RequestMessage = requestMessage
-            ?? new HttpRequestMessage(HttpMethod.Get, "http://example.com/origin");
+                                  ?? new HttpRequestMessage(HttpMethod.Get, "http://example.com/origin");
         return response;
     }
 
@@ -137,13 +114,11 @@ public sealed class RedirectCoreSpec : StreamTestBase
         request.Options.Set(RedirectBidiStage.RedirectHandlerKey, handler);
     }
 
-    // Pass-through tests (null policy)
-
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-15.4")]
     public async Task RequestDirection_should_pass_through_when_policy_is_null()
     {
-        var stage = new RedirectBidiStage(null);
+        var stage = new RedirectBidiStage();
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var results = await RunRequestAsync(stage, request);
@@ -156,7 +131,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
     [Trait("RFC", "RFC9110-15.4")]
     public async Task ResponseDirection_should_pass_through_when_policy_is_null()
     {
-        var stage = new RedirectBidiStage(null);
+        var stage = new RedirectBidiStage();
         var response = BuildRedirectResponse(HttpStatusCode.Found, "http://example.com/new");
 
         var results = await RunResponseAsync(stage, response);
@@ -164,8 +139,6 @@ public sealed class RedirectCoreSpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.Same(response, result);
     }
-
-    // Request direction tests
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-15.4")]
@@ -195,15 +168,13 @@ public sealed class RedirectCoreSpec : StreamTestBase
         Assert.Same(req2, results[1]);
     }
 
-    // Response direction: non-redirect
-
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectCore_should_forward_final_response_when_200_ok()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         // Consume the forwarded request
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
@@ -221,7 +192,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -237,7 +208,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -249,15 +220,13 @@ public sealed class RedirectCoreSpec : StreamTestBase
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    // Response direction: redirect
-
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectCore_should_emit_redirect_on_out1_when_301()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         // Original request forwarded
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
@@ -280,7 +249,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
 
@@ -298,7 +267,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
 
@@ -317,7 +286,7 @@ public sealed class RedirectCoreSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
 
@@ -335,11 +304,12 @@ public sealed class RedirectCoreSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Put, "http://example.com/resource");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
 
-        var response = BuildRedirectResponse(HttpStatusCode.PermanentRedirect, "http://example.com/resource/v2", request);
+        var response =
+            BuildRedirectResponse(HttpStatusCode.PermanentRedirect, "http://example.com/resource/v2", request);
         pushResp(response);
 
         var redirectReq = reqOut.ExpectNext(TestContext.Current.CancellationToken);
@@ -347,15 +317,13 @@ public sealed class RedirectCoreSpec : StreamTestBase
         respOut.ExpectNoMsg(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
     }
 
-    // RedirectHandler per request chain in Options
-
     [Fact]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectCore_should_carry_redirect_handler_in_options()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/old");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, _, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, _, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 

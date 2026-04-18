@@ -1,8 +1,5 @@
 namespace TurboHTTP.Tests.Client;
 
-/// <summary>
-/// Concrete implementation for testing TurboHttpException.
-/// </summary>
 internal sealed class TestTurboHttpException : TurboHttpException
 {
     public TestTurboHttpException(string message) : base(message)
@@ -15,9 +12,6 @@ internal sealed class TestTurboHttpException : TurboHttpException
     }
 }
 
-/// <summary>
-/// Concrete implementation for testing TurboProtocolException.
-/// </summary>
 internal sealed class TestTurboProtocolException : TurboProtocolException
 {
     public TestTurboProtocolException(string message) : base(message)
@@ -30,9 +24,6 @@ internal sealed class TestTurboProtocolException : TurboProtocolException
     }
 }
 
-/// <summary>
-/// Concrete implementation for testing TurboTransportException.
-/// </summary>
 internal sealed class TestTurboTransportException(string message) : TurboTransportException(message);
 
 public sealed class TurboHttpExceptionSpec
@@ -123,7 +114,7 @@ public sealed class TurboHttpExceptionSpec
     [Fact(Timeout = 5000)]
     public void TurboHttpException_CanBeCaughtAsException()
     {
-        Exception? caughtException = null;
+        Exception? caughtException;
 
         try
         {
@@ -141,7 +132,7 @@ public sealed class TurboHttpExceptionSpec
     [Fact(Timeout = 5000)]
     public void TurboProtocolException_CanBeCaughtAsTurboHttpException()
     {
-        TurboHttpException? caughtException = null;
+        TurboHttpException? caughtException;
 
         try
         {

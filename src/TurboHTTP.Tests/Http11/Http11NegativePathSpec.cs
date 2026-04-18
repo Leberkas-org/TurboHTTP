@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests rejection of malformed HTTP/1.1 responses per RFC 9112.
-/// Verifies that invalid status lines, headers, and versions produce appropriate errors.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §4: Malformed status-line or unsupported HTTP-version must be rejected.
-/// </remarks>
 public sealed class Http11NegativePathSpec
 {
     [Fact(Timeout = 5000)]

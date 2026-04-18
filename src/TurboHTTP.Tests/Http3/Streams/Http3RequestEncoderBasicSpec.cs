@@ -4,15 +4,9 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Streams;
 
-/// <summary>
-/// RFC 9114 §4.1, §4.3.1 — Http3RequestEncoder basic encoding tests.
-/// Covers frame structure, pseudo-header construction, QPACK block encoding, and
-/// dynamic table behaviour for GET/POST/PUT/DELETE requests.
-/// </summary>
 public sealed class Http3RequestEncoderBasicSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Get_request_produces_single_headers_frame()
     {
@@ -25,7 +19,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.IsType<Http3HeadersFrame>(frames[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Post_with_body_produces_headers_and_data()
     {
@@ -42,7 +36,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.IsType<Http3DataFrame>(frames[1]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Post_with_empty_body_produces_headers_only()
     {
@@ -58,7 +52,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.IsType<Http3HeadersFrame>(frames[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Data_frame_contains_exact_body()
     {
@@ -75,7 +69,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Equal(body, dataFrame.Data.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Delete_without_body_produces_single_headers()
     {
@@ -89,7 +83,7 @@ public sealed class Http3RequestEncoderBasicSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void All_four_pseudo_headers_present()
     {
@@ -107,7 +101,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "example.com" });
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     [InlineData("GET")]
     [InlineData("POST")]
@@ -129,7 +123,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h.Name == ":method" && h.Value == method);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Path_includes_query_string()
     {
@@ -144,7 +138,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/search?q=test&page=2" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Path_without_query_string()
     {
@@ -159,7 +153,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/resource" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Scheme_is_https()
     {
@@ -174,7 +168,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":scheme", Value: "https" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Scheme_is_http()
     {
@@ -189,7 +183,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":scheme", Value: "http" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Authority_includes_non_default_port()
     {
@@ -204,7 +198,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "example.com:8443" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Authority_omits_default_https_port()
     {
@@ -219,7 +213,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "example.com" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Pseudo_headers_appear_first()
     {
@@ -249,8 +243,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.True(lastPseudoIdx < firstRegularIdx, "Pseudo-headers must precede regular headers");
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Headers_frame_contains_qpack_block()
     {
@@ -263,7 +256,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.True(headersFrame.HeaderBlock.Length > 0, "QPACK header block must not be empty");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Qpack_header_block_decodable()
     {
@@ -278,7 +271,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.True(headers.Count >= 4, "Should have at least 4 pseudo-headers");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Dynamic_table_emits_encoder_instructions()
     {
@@ -292,7 +285,7 @@ public sealed class Http3RequestEncoderBasicSpec
             "Encoder should emit instructions when dynamic table is enabled");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Static_table_only_emits_no_instructions()
     {
@@ -304,7 +297,7 @@ public sealed class Http3RequestEncoderBasicSpec
         Assert.Equal(0, encoder.EncoderInstructions.Length);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void EncodeToQpackBlock_returns_raw_block()
     {

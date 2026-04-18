@@ -6,10 +6,12 @@ namespace TurboHTTP.Tests.Http3.Connection;
 
 public sealed class ConnectionReuseSpec : IDisposable
 {
-
     private readonly X509Certificate2 _singleHostCert = CreateSelfSignedCert("example.com");
     private readonly X509Certificate2 _wildcardCert = CreateSelfSignedCert("*.example.com");
-    private readonly X509Certificate2 _multiSanCert = CreateSelfSignedCert("alpha.example.com", "beta.example.com", "gamma.example.com");
+
+    private readonly X509Certificate2 _multiSanCert =
+        CreateSelfSignedCert("alpha.example.com", "beta.example.com", "gamma.example.com");
+
     private readonly X509Certificate2 _cnOnlyCert = CreateSelfSignedCertCnOnly("cn-only.example.com");
 
     public void Dispose()
@@ -20,9 +22,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         _cnOnlyCert.Dispose();
     }
 
-    // §3.3 — Same-origin connection reuse
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_AllowReuse_When_SameOrigin()
     {
@@ -35,7 +35,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Contains("Same origin", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_AllowReuse_When_SameOriginDifferentCase()
     {
@@ -47,7 +47,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.True(decision.CanReuse);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_RequireNewConnection_When_DifferentPort()
     {
@@ -59,7 +59,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.False(decision.CanReuse);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_RequireNewConnection_When_DifferentScheme()
     {
@@ -71,9 +71,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.False(decision.CanReuse);
     }
 
-    // §3.3 — Cross-origin coalescing with certificate validation
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_AllowReuse_When_CertCoversTargetHost()
     {
@@ -86,7 +84,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Contains("cross-origin", decision.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_RequireNewConnection_When_CertDoesNotCoverTarget()
     {
@@ -99,7 +97,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Contains("does not cover", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_AllowReuse_When_WildcardCertCoversTarget()
     {
@@ -111,7 +109,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.True(decision.CanReuse);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_RequireNewConnection_When_WildcardDoesNotCoverSubSubdomain()
     {
@@ -123,7 +121,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.False(decision.CanReuse);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_RequireNewConnection_When_NoCertificate()
     {
@@ -136,9 +134,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Contains("No server certificate", decision.Reason);
     }
 
-    // §5.2 — GOAWAY prevents reuse
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-5.2")]
     public void Should_RequireNewConnection_When_GoAwayReceived()
     {
@@ -152,9 +148,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Contains("GOAWAY", decision.Reason);
     }
 
-    // Certificate validator — hostname matching
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     [InlineData("example.com", true)]
     [InlineData("EXAMPLE.COM", true)]
@@ -164,7 +158,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Equal(expected, ConnectionReuseEvaluator.CoversHostname(_singleHostCert, hostname));
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     [InlineData("foo.example.com", true)]
     [InlineData("bar.example.com", true)]
@@ -175,7 +169,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Equal(expected, ConnectionReuseEvaluator.CoversHostname(_wildcardCert, hostname));
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     [InlineData("alpha.example.com", true)]
     [InlineData("beta.example.com", true)]
@@ -186,7 +180,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.Equal(expected, ConnectionReuseEvaluator.CoversHostname(_multiSanCert, hostname));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_FallbackToCn_When_NoSanExists()
     {
@@ -194,7 +188,7 @@ public sealed class ConnectionReuseSpec : IDisposable
         Assert.False(ConnectionReuseEvaluator.CoversHostname(_cnOnlyCert, "other.example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Should_Throw_When_CertIsNull()
     {
@@ -202,7 +196,7 @@ public sealed class ConnectionReuseSpec : IDisposable
             ConnectionReuseEvaluator.CoversHostname(null!, "example.com"));
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     [InlineData("")]
     [InlineData("  ")]
@@ -212,9 +206,7 @@ public sealed class ConnectionReuseSpec : IDisposable
             ConnectionReuseEvaluator.CoversHostname(_singleHostCert, hostname));
     }
 
-    // Internal matcher — edge cases
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     [InlineData("*.com", "example.com", true)]
     [InlineData("*.example.com", "example.com", false)]
@@ -225,7 +217,6 @@ public sealed class ConnectionReuseSpec : IDisposable
     {
         Assert.Equal(expected, ConnectionReuseEvaluator.MatchesHostname(certName, hostname));
     }
-
 
     private static X509Certificate2 CreateSelfSignedCert(params string[] sanNames)
     {

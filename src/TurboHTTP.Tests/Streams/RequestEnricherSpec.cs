@@ -3,13 +3,6 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Streams;
 
-/// <summary>
-/// Tests for RequestEnricher, which enriches HTTP requests with defaults and validation.
-/// </summary>
-/// <remarks>
-/// Type under test: <see cref="RequestEnricher"/>.
-/// RFC 9110: HTTP Semantics request construction and validation.
-/// </remarks>
 public sealed class RequestEnricherSpec
 {
     private static TurboRequestOptions DefaultOptions
@@ -30,8 +23,7 @@ public sealed class RequestEnricherSpec
         }
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_resolve_relative_uri_using_base_address()
     {
         var msg = new HttpRequestMessage();
@@ -53,8 +45,7 @@ public sealed class RequestEnricherSpec
         Assert.Equal("https://example.com:8443/api/users", result.RequestUri.ToString());
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_throw_when_uri_relative_and_no_base_address()
     {
         var msg = new HttpRequestMessage();
@@ -75,8 +66,7 @@ public sealed class RequestEnricherSpec
         Assert.Contains("BaseAddress", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_throw_when_uri_null_and_no_base_address()
     {
         var msg = new HttpRequestMessage();
@@ -98,8 +88,7 @@ public sealed class RequestEnricherSpec
         Assert.Contains("BaseAddress", ex.Message);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_preserve_absolute_uri()
     {
         var options = DefaultOptions;
@@ -111,8 +100,7 @@ public sealed class RequestEnricherSpec
         Assert.Equal("https://other.com/path", result.RequestUri!.ToString());
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_override_version_when_still_default()
     {
         var msg = new HttpRequestMessage();
@@ -136,8 +124,7 @@ public sealed class RequestEnricherSpec
         Assert.Equal(new Version(2, 0), result.Version);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_not_override_explicitly_set_version()
     {
         var msg = new HttpRequestMessage();
@@ -162,8 +149,7 @@ public sealed class RequestEnricherSpec
         Assert.Equal(new Version(1, 0), result.Version);
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_add_missing_default_headers()
     {
         var msg = new HttpRequestMessage();
@@ -187,8 +173,7 @@ public sealed class RequestEnricherSpec
         Assert.True(result.Headers.Contains("Accept"));
     }
 
-    [Fact]
-    [Trait("RFC", "RFC9110-5")]
+    [Fact(Timeout = 5000)]
     public void RequestEnricher_should_not_override_existing_default_headers()
     {
         var msg = new HttpRequestMessage();
@@ -213,7 +198,7 @@ public sealed class RequestEnricherSpec
         Assert.Equal("Custom", userAgent);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-11.6.1")]
     public void RequestEnricher_should_inject_basic_auth_when_pre_authenticate_enabled()
     {
@@ -240,7 +225,7 @@ public sealed class RequestEnricherSpec
         Assert.True(!string.IsNullOrEmpty(result.Headers.Authorization.Parameter));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-11.6.1")]
     public void RequestEnricher_should_not_inject_auth_when_pre_authenticate_disabled()
     {
@@ -265,7 +250,7 @@ public sealed class RequestEnricherSpec
         Assert.Null(result.Headers.Authorization);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.5")]
     public void RequestEnricher_should_remove_referer_on_https_to_http_downgrade()
     {
@@ -283,7 +268,7 @@ public sealed class RequestEnricherSpec
         Assert.False(result.Headers.Contains("Referer"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.5")]
     public void RequestEnricher_should_strip_fragment_from_referer()
     {
@@ -299,7 +284,7 @@ public sealed class RequestEnricherSpec
         Assert.DoesNotContain("#", refererValue);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.5")]
     public void RequestEnricher_should_strip_userinfo_from_referer()
     {
@@ -315,7 +300,7 @@ public sealed class RequestEnricherSpec
         Assert.DoesNotContain("user:pass", refererValue);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void RequestEnricher_should_validate_if_range()
     {

@@ -10,20 +10,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests;
 
-/// <summary>
-/// Verifies the two logging integration paths that a user would configure:
-/// <list type="number">
-///   <item>
-///     Akka → Microsoft.Extensions.Logging bridge: registering <see cref="ILoggerFactory"/> in DI
-///     before calling <see cref="TurboClientServiceCollectionExtensions.AddTurboHttpClient()"/>
-///     routes Akka actor log messages (from <c>ClientStreamOwnerActor</c>) through MEL.
-///   </item>
-///   <item>
-///     TurboTrace → MEL via <see cref="TurboTraceExtensions.AddTurboLoggerTracing"/>: pipeline
-///     stages emit structured trace events to <c>TurboHttp.Trace.*</c> loggers.
-///   </item>
-/// </list>
-/// </summary>
 [Obsolete("Migrated to TurboHTTP.Tests.Diagnostics.LoggingBridgeSpec — kept for reference only.")]
 [Collection("Logging")]
 public sealed class LoggingBridgeSpec : IAsyncLifetime
@@ -74,11 +60,6 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
         }
     }
 
-    /// <summary>
-    /// Builds a fully DI-wired client, mirroring a user's Program.cs / Startup setup.
-    /// Registers <see cref="ILoggerFactory"/> and <see cref="ActorSystem"/> as singletons
-    /// so that <see cref="ITurboHttpClientFactory"/> picks them up via normal DI resolution.
-    /// </summary>
     private ITurboHttpClient BuildClientViaUserDI(bool withTurboTrace = false)
     {
         _capture = new CapturingLoggerProvider();
@@ -196,9 +177,6 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
             e.Message.Contains("Connection opened:", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>
-    /// A simple <see cref="ILoggerProvider"/> that captures all log entries for assertion.
-    /// </summary>
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
         public ConcurrentBag<LogEntry> Entries { get; } = [];

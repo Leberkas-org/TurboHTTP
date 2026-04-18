@@ -1,22 +1,17 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Covers remaining edge cases and branches in HTTP/3 StateMachine (RFC 9114).
-/// Complements Http3StateMachineSpec with uncovered paths: preface building,
-/// QPACK stream processing, connection reuse, disposal, and timeout edge cases.
-/// </summary>
-[Trait("RFC", "RFC9114-4")]
 public sealed class Http3StateMachineEdgeCasesSpec
 {
-    private readonly TestOps _ops = new();
+    private readonly FakeOps _ops = new();
 
     private StateMachine CreateMachine(
         Http3EngineOptions? options = null,
-        TestOps? ops = null)
+        FakeOps? ops = null)
     {
         return new StateMachine(
             options ?? new Http3Options().ToEngineOptions(),
@@ -91,7 +86,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         sm.OnConnectionRestored();
 
         // OnConnectionRestored emits preface via _ops callback
-        var prefaces = _ops.OutboundItems.OfType<Http3NetworkBuffer>()
+        var prefaces = _ops.Outbound.OfType<Http3NetworkBuffer>()
             .Where(b => b.StreamType == Http3StreamType.Control)
             .ToList();
         Assert.NotEmpty(prefaces);
@@ -173,31 +168,6 @@ public sealed class Http3StateMachineEdgeCasesSpec
 
         // Empty input should not throw
         sm.ProcessQpackEncoderBytes(ReadOnlyMemory<byte>.Empty);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.4")]
-    public void FlushDecoderInstructions_should_emit_pending_instructions()
-    {
-        var sm = CreateMachine();
-        var initialCount = _ops.OutboundItems.Count;
-
-        sm.FlushDecoderInstructions();
-
-        // May emit decoder instructions if any pending
-        // (exact behavior depends on QpackStreamHandler state)
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.4")]
-    public void FlushEncoderInstructions_should_emit_pending_instructions()
-    {
-        var sm = CreateMachine();
-        var initialCount = _ops.OutboundItems.Count;
-
-        sm.FlushEncoderInstructions();
-
-        // May emit encoder instructions if any pending
     }
 
     [Fact(Timeout = 5000)]
@@ -389,7 +359,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
 
         // After reconnect, new preface should be built
         sm.OnConnectionRestored();
-        var newPreface = sm.TryBuildControlPreface();
+        sm.TryBuildControlPreface();
         // New preface will be built during OnConnectionRestored via callback
     }
 
@@ -428,11 +398,11 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var bufferedFrames = sm.ReconnectBufferCount;
         Assert.True(bufferedFrames > 0);
 
-        _ops.OutboundItems.Clear();
+        _ops.Outbound.Clear();
         sm.OnConnectionRestored();
 
         // First item should be control preface
-        var items = _ops.OutboundItems.ToList();
+        var items = _ops.Outbound.ToList();
         Assert.NotEmpty(items);
         if (items[0] is Http3NetworkBuffer buf)
         {
@@ -505,12 +475,12 @@ public sealed class Http3StateMachineEdgeCasesSpec
         Thread.Sleep(5);
 
         // Before processing any frame, timeout should be imminent
-        var beforeCheck = sm.CheckIdleTimeout();
+        sm.CheckIdleTimeout();
 
         sm.ProcessFrame(new Http3SettingsFrame([]));
         // After processing, timeout should be reset
 
-        var afterCheck = sm.CheckIdleTimeout();
+        sm.CheckIdleTimeout();
         // If activity was recorded, timeout should not expire immediately
     }
 

@@ -3,13 +3,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK string literal encoding/decoding per RFC 9204 §4.1.2.
-/// Covers plain strings, Huffman-encoded strings, and empty strings.
-/// </summary>
 public sealed class QpackStringCodecSpec
 {
-    /// RFC 9204 §4.1.2 — Plain string roundtrip
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     [InlineData("hello")]
@@ -31,7 +26,6 @@ public sealed class QpackStringCodecSpec
         Assert.Equal(written, pos);
     }
 
-    /// RFC 9204 §4.1.2 — Huffman-encoded string roundtrip
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     [InlineData("www.example.com")]
@@ -56,7 +50,6 @@ public sealed class QpackStringCodecSpec
         Assert.Equal(written, pos);
     }
 
-    /// RFC 9204 §4.1.2 — Empty string encoding and decoding
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     public void Should_HandleEmptyString()
@@ -75,12 +68,11 @@ public sealed class QpackStringCodecSpec
         Assert.Equal(1, pos);
     }
 
-    /// RFC 9204 §4.1.2 — Auto-selects Huffman when shorter
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     public void Should_AutoSelectHuffman_When_Shorter()
     {
-        var value = Encoding.ASCII.GetBytes("www.example.com");
+        var value = "www.example.com"u8.ToArray();
         Span<byte> autoBuffer = new byte[256];
         Span<byte> plainBuffer = new byte[256];
         var autoSpan = autoBuffer;
@@ -99,14 +91,13 @@ public sealed class QpackStringCodecSpec
         Assert.Equal(value, decoded);
     }
 
-    /// RFC 9204 §4.1.2 — Decode rejects truncated string data
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     public void Should_ThrowQpackException_When_StringTruncated()
     {
         Span<byte> buffer = new byte[256];
         var span = buffer;
-        var written = QpackStringCodec.Encode(Encoding.ASCII.GetBytes("hello"), 7, 0x00, useHuffman: false, ref span);
+        QpackStringCodec.Encode("hello"u8, 7, 0x00, useHuffman: false, ref span);
 
         // Truncate: keep length byte but remove some string data
         var truncated = buffer[..3].ToArray();
@@ -115,7 +106,6 @@ public sealed class QpackStringCodecSpec
         Assert.Throws<QpackException>(() => QpackStringCodec.Decode(truncated, ref pos, 7));
     }
 
-    /// RFC 9204 §4.1.2 — Decode rejects empty input
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     public void Should_ThrowQpackException_When_InputEmpty()

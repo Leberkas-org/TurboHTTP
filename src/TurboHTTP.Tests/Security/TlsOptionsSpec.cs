@@ -8,17 +8,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Tests sensitive header stripping on scheme downgrade / cross-origin redirects, and
-/// TLS options propagation through the options pipeline. Companion to
-/// <see cref="TlsSecuritySpec"/> which covers certificate validation and redirect protection.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="TurboClientOptions"/>, <see cref="OptionsFactory"/>,
-/// <see cref="RedirectHandler"/>, <see cref="RedirectPolicy"/>.
-/// Attack vectors: credential leakage on cross-origin or scheme-change redirect,
-/// TLS option misconfiguration.
-/// </remarks>
 public sealed class TlsOptionsSpec
 {
     private static RequestEndpoint ToEndpoint(Uri uri, Version? version = null)

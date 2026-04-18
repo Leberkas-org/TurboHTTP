@@ -2,17 +2,10 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK integer encoding/decoding per RFC 9204 §4.1.1.
-/// The integer representation is identical to HPACK (RFC 7541 §5.1)
-/// but exposed as a standalone codec for QPACK use.
-/// </summary>
 public sealed class QpackIntegerCodecSpec
 {
-    // Maximum bytes a QPACK integer can occupy (1 prefix + ceil(31/7) continuation = 6 bytes max for int.MaxValue)
     private const int MaxEncodedSize = 16;
 
-    /// RFC 9204 §4.1.1 — Value fits in 5-bit prefix (single byte)
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     [InlineData(0, 5, 0x00)]
@@ -28,7 +21,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Equal((byte)(prefixFlags | value), buf[0]);
     }
 
-    /// RFC 9204 §4.1.1 — Value fits in 6-bit prefix (single byte)
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     [InlineData(0, 6, 0x40)]
@@ -43,7 +35,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Equal((byte)(prefixFlags | value), buf[0]);
     }
 
-    /// RFC 9204 §4.1.1 — Value fits in 7-bit prefix (single byte)
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     [InlineData(0, 7, 0x80)]
@@ -58,7 +49,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Equal((byte)(prefixFlags | value), buf[0]);
     }
 
-    /// RFC 9204 §4.1.1 — Value fits in 8-bit prefix (single byte)
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     [InlineData(0, 8, 0x00)]
@@ -73,7 +63,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Equal((byte)(prefixFlags | value), buf[0]);
     }
 
-    /// RFC 9204 §4.1.1 — Multi-byte encoding when value exceeds prefix capacity
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     [InlineData(31, 5, 0x00)]
@@ -95,7 +84,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Equal(mask, buf[0] & mask);
     }
 
-    /// RFC 9204 §4.1.1 — Roundtrip encode/decode preserves value for all prefix lengths
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     [InlineData(0, 5, 0x00)]
@@ -129,7 +117,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Equal(written, pos);
     }
 
-    /// RFC 9204 §4.1.1 — Decode rejects truncated multi-byte integers
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     public void Should_ThrowQpackException_When_IntegerTruncated()
@@ -137,7 +124,7 @@ public sealed class QpackIntegerCodecSpec
         // Encode a multi-byte value, then truncate
         var buf = new byte[MaxEncodedSize];
         var span = buf.AsSpan();
-        var written = QpackIntegerCodec.Encode(1337, 5, 0x00, ref span);
+        QpackIntegerCodec.Encode(1337, 5, 0x00, ref span);
 
         // Take only first 2 bytes (truncated)
         var truncated = buf[..2];
@@ -146,7 +133,6 @@ public sealed class QpackIntegerCodecSpec
         Assert.Throws<QpackException>(() => QpackIntegerCodec.Decode(truncated, ref pos, 5));
     }
 
-    /// RFC 9204 §4.1.1 — Decode rejects empty input
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.1")]
     public void Should_ThrowQpackException_When_InputEmpty()

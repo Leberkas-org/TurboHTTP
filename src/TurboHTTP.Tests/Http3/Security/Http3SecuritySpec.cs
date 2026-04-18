@@ -3,11 +3,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Security;
 
-/// <summary>
-/// Security-focused tests for HTTP/3 per RFC 9114 §10 and RFC 9204 §7.
-/// Covers header compression ratio attacks, SETTINGS bombs, control stream
-/// starvation, and resource exhaustion scenarios.
-/// </summary>
 public sealed class Http3SecuritySpec
 {
     [Fact(Timeout = 5000)]
@@ -39,7 +34,8 @@ public sealed class Http3SecuritySpec
     public void Settings_should_reject_all_reserved_h2_identifiers_in_deserialization()
     {
         // RFC 9114 §7.2.4.1: Identifiers 0x02-0x05 are reserved HTTP/2 settings
-        long[] reserved = [
+        long[] reserved =
+        [
             Http3SettingsIdentifier.ReservedH2EnablePush,
             Http3SettingsIdentifier.ReservedH2MaxConcurrentStreams,
             Http3SettingsIdentifier.ReservedH2InitialWindowSize,
@@ -52,8 +48,7 @@ public sealed class Http3SecuritySpec
             var offset = QuicVarInt.Encode(id, buf);
             offset += QuicVarInt.Encode(0, buf.AsSpan(offset));
 
-            var ex = Assert.Throws<Http3Exception>(
-                () => Settings.Deserialize(buf[..offset]));
+            var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(buf[..offset]));
             Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
             Assert.Contains("reserved", ex.Message.ToLowerInvariant());
         }
@@ -122,8 +117,7 @@ public sealed class Http3SecuritySpec
             (Http3SettingsIdentifier.ReservedH2EnablePush, 1),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => Http3SettingsIdentifier.RejectForbiddenH2Settings(parameters));
+        var ex = Assert.Throws<Http3Exception>(() => Http3SettingsIdentifier.RejectForbiddenH2Settings(parameters));
         Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
     }
 
@@ -150,7 +144,7 @@ public sealed class Http3SecuritySpec
         var decoder = new QpackDecoder(maxTableCapacity: 4096, maxBlockedStreams: 100);
 
         // Minimal valid header block: RIC=0, DeltaBase=0
-        var block = new byte[] { 0x00, 0x00 };
+        var block = "\0\0"u8.ToArray();
 
         var result = decoder.Decode(block);
         Assert.Empty(result);
@@ -222,7 +216,7 @@ public sealed class Http3SecuritySpec
         using var decoder = new FrameDecoder();
 
         // Build 1000 unknown-type frames in a single buffer
-        var singleFrame = new byte[] { 0x21, 0x00 }; // type=0x21 (unknown), length=0
+        var singleFrame = "!\0"u8.ToArray(); // type=0x21 (unknown), length=0
         var all = new byte[singleFrame.Length * 1000];
         for (var i = 0; i < 1000; i++)
         {
@@ -276,8 +270,7 @@ public sealed class Http3SecuritySpec
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_reject_value_exceeding_max()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => QuicVarInt.Encode(QuicVarInt.MaxValue + 1, new byte[8]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => QuicVarInt.Encode(QuicVarInt.MaxValue + 1, new byte[8]));
     }
 
     [Fact(Timeout = 5000)]

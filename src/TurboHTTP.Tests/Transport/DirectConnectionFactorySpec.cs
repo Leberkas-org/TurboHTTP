@@ -8,10 +8,6 @@ using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="DirectConnectionFactory"/> establishing connections,
-/// handling cancellation, connection errors, and disposal cleanup.
-/// </summary>
 public sealed class DirectConnectionFactorySpec : IAsyncLifetime
 {
     private TcpListener? _listener;

@@ -19,13 +19,13 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         _listener.Dispose();
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void EventSource_should_have_correct_name()
     {
         Assert.Equal("TurboHTTP", TurboHttpEventSource.Instance.Name);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RequestStart_should_emit_event()
     {
         TurboHttpEventSource.Instance.RequestStart("GET", "https://example.com/");
@@ -35,7 +35,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.Equal("GET", evt.Payload?[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RequestStop_should_emit_event()
     {
         TurboHttpEventSource.Instance.RequestStop("GET", 200, 42.5);
@@ -45,7 +45,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.Equal(200, evt.Payload?[1]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RequestFailed_should_emit_event()
     {
         TurboHttpEventSource.Instance.RequestFailed("GET", "https://example.com/", "HttpRequestException");
@@ -55,7 +55,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.Equal("HttpRequestException", evt.Payload?[2]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionStart_should_emit_event()
     {
         TurboHttpEventSource.Instance.ConnectionStart("example.com", 443);
@@ -65,7 +65,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.Equal("example.com", evt.Payload?[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ConnectionStop_should_emit_event()
     {
         TurboHttpEventSource.Instance.ConnectionStop("example.com", 443, 1234.5);
@@ -74,7 +74,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.NotNull(evt);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void DnsLookupStart_should_emit_event()
     {
         TurboHttpEventSource.Instance.DnsLookupStart("example.com");
@@ -84,7 +84,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.Equal("example.com", evt.Payload?[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void DnsLookupStop_should_emit_event()
     {
         TurboHttpEventSource.Instance.DnsLookupStop("example.com", 5.2);
@@ -93,7 +93,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.NotNull(evt);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void TlsHandshakeStart_should_emit_event()
     {
         TurboHttpEventSource.Instance.TlsHandshakeStart("example.com");
@@ -102,7 +102,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.NotNull(evt);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void TlsHandshakeStop_should_emit_event()
     {
         TurboHttpEventSource.Instance.TlsHandshakeStop("example.com", 15.3);
@@ -111,7 +111,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.NotNull(evt);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Redirect_should_emit_event()
     {
         TurboHttpEventSource.Instance.Redirect(301, "https://example.com/new");
@@ -120,7 +120,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.NotNull(evt);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void RetryAttempt_should_emit_event()
     {
         TurboHttpEventSource.Instance.RetryAttempt(2);
@@ -130,7 +130,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.Equal(2, evt.Payload?[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void CacheHit_should_emit_event()
     {
         TurboHttpEventSource.Instance.CacheHit("https://example.com/cached");
@@ -139,7 +139,7 @@ public sealed class TurboHttpEventSourceSpec : IDisposable
         Assert.NotNull(evt);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void CacheMiss_should_emit_event()
     {
         TurboHttpEventSource.Instance.CacheMiss("https://example.com/uncached");

@@ -5,12 +5,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for RFC 9110 §4.3.4 — certificate validation callbacks on <see cref="TurboClientOptions"/>.
-/// Verifies that the default options enforce certificate validation, custom callbacks are
-/// propagated through <see cref="OptionsFactory"/>, and <see cref="TurboClientOptions.DangerousAcceptAnyServerCertificate"/>
-/// overrides validation.
-/// </summary>
 public sealed class CertificateValidationSpec
 {
     private static RequestEndpoint ToEndpoint(Uri uri)
@@ -24,7 +18,7 @@ public sealed class CertificateValidationSpec
         };
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.3.4")]
     public void DefaultOptions_should_enable_validation()
     {
@@ -38,16 +32,19 @@ public sealed class CertificateValidationSpec
         Assert.True(options.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.None));
 
         // Certificate with name mismatch rejected
-        Assert.False(options.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch));
+        Assert.False(options.ServerCertificateValidationCallback!(null!, null, null,
+            SslPolicyErrors.RemoteCertificateNameMismatch));
 
         // Certificate with chain error rejected
-        Assert.False(options.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors));
+        Assert.False(options.ServerCertificateValidationCallback!(null!, null, null,
+            SslPolicyErrors.RemoteCertificateChainErrors));
 
         // Certificate not available rejected
-        Assert.False(options.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.RemoteCertificateNotAvailable));
+        Assert.False(options.ServerCertificateValidationCallback!(null!, null, null,
+            SslPolicyErrors.RemoteCertificateNotAvailable));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.3.4")]
     public void CustomCallback_should_be_invoked()
     {
@@ -67,11 +64,11 @@ public sealed class CertificateValidationSpec
         var effective = options.EffectiveServerCertificateValidationCallback;
         Assert.NotNull(effective);
 
-        effective!(null!, null, null, SslPolicyErrors.None);
+        effective(null!, null, null, SslPolicyErrors.None);
         Assert.True(callbackInvoked);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.3.4")]
     public void DangerousAcceptAny_should_disable_validation()
     {
@@ -90,15 +87,15 @@ public sealed class CertificateValidationSpec
         Assert.NotNull(effective);
 
         // Should accept any certificate regardless of errors
-        Assert.True(effective!(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch));
-        Assert.True(effective!(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors));
-        Assert.True(effective!(null!, null, null, SslPolicyErrors.RemoteCertificateNotAvailable));
+        Assert.True(effective(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch));
+        Assert.True(effective(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors));
+        Assert.True(effective(null!, null, null, SslPolicyErrors.RemoteCertificateNotAvailable));
 
         // Custom callback should NOT have been invoked — DangerousAcceptAny takes precedence
         Assert.False(customCallbackInvoked);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.3.4")]
     public void EffectiveCallback_should_propagate_to_tls_options()
     {
@@ -114,10 +111,11 @@ public sealed class CertificateValidationSpec
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
 
         // DangerousAcceptAny was set, so TlsOptions callback should accept anything
-        Assert.True(tlsOptions.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch));
+        Assert.True(tlsOptions.ServerCertificateValidationCallback!(null!, null, null,
+            SslPolicyErrors.RemoteCertificateNameMismatch));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.3.4")]
     public void DefaultEffectiveCallback_should_reject_invalid_certs()
     {
@@ -131,10 +129,11 @@ public sealed class CertificateValidationSpec
 
         // Default should accept only SslPolicyErrors.None
         Assert.True(tlsOptions.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.None));
-        Assert.False(tlsOptions.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch));
+        Assert.False(tlsOptions.ServerCertificateValidationCallback!(null!, null, null,
+            SslPolicyErrors.RemoteCertificateNameMismatch));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-4.3.4")]
     public void HttpUri_should_not_produce_tls_options()
     {

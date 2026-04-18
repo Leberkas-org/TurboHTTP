@@ -25,7 +25,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void StartInboundPump_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -38,7 +37,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void StartInboundAcceptLoop_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -49,7 +47,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void StopAll_should_cancel_pumps()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -67,7 +64,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Multiple_pumps_can_be_started()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -83,7 +79,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Control_stream_pump_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -95,7 +90,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Encoder_stream_pump_should_not_throw()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -107,7 +101,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void StartInboundPump_without_stream_id_should_work()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);
@@ -120,7 +113,6 @@ public sealed class QuicPumpManagerSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void StopAll_can_be_called_multiple_times()
     {
         var pumpMgr = new QuicPumpManager(ActorRefs.Nobody);

@@ -4,19 +4,11 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests HTTP/1.1 response header field parsing per RFC 9112 §5.
-/// Verifies header name/value extraction, multi-value handling, and OWS trimming.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §5: Header fields — field-name ":" OWS field-value OWS CRLF.
-/// </remarks>
 public sealed class Http11DecoderHeaderSpec
 {
     private readonly Decoder _decoder = new();
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_preserve_headers_when_custom_headers_present()
     {
@@ -33,7 +25,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("no-store", cache.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_throw_http_decoder_exception_when_header_without_colon()
     {
@@ -45,7 +37,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_parse_header_field_when_standard_format()
     {
@@ -57,7 +49,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("text/plain", responses[0].Content.Headers.ContentType?.MediaType);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_trim_ows_when_header_value_has_whitespace()
     {
@@ -70,7 +62,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("bar", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_header_when_empty_value()
     {
@@ -83,7 +75,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_preserve_headers_when_multiple_same_name()
     {
@@ -99,7 +91,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Contains("application/json", list);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_reject_obs_fold_when_http11()
     {
@@ -108,7 +100,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Throws<HttpDecoderException>(() => _decoder.TryDecode(raw, out _));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_error_when_header_without_colon()
     {
@@ -118,7 +110,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal(HttpDecoderError.InvalidHeader, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_lookup_case_insensitively_when_header_name()
     {
@@ -131,7 +123,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("example.com", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_tab_when_in_header_value()
     {
@@ -144,7 +136,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("before\ttab\tafter", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_parse_header_value_when_quoted_string()
     {
@@ -157,7 +149,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("\"quoted value\"", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_parse_parameters_when_content_type_header()
     {
@@ -170,7 +162,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("utf-8", responses[0].Content.Headers.ContentType?.CharSet);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_trim_ows_when_header_decoded()
     {
@@ -184,7 +176,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("bar", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_accept_empty_value_when_header_decoded()
     {
@@ -198,7 +190,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_match_case_insensitively_when_header_name_decoded()
     {
@@ -213,7 +205,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Equal("example.com", values.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_preserve_multiple_values_when_same_header_name()
     {
@@ -231,7 +223,7 @@ public sealed class Http11DecoderHeaderSpec
         Assert.Contains("application/json", list);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Decoder_should_reject_obs_fold_when_http11_header()
     {

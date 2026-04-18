@@ -1,20 +1,10 @@
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
 using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.FlowControl;
 
-/// <summary>
-/// Tests decoder correctness under high-concurrency and high-volume frame sequences per RFC 9113 §5.
-/// Part 1: Sequential stream handling with 1000+ streams per connection.
-/// Verifies stream multiplexing with many parallel streams processed sequentially through the decoder.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §5.1.1: Stream identifiers are assigned sequentially by the client; concurrent streams are multiplexed on a single connection.
-/// </remarks>
 public sealed class HighConcurrencyPart1Spec
 {
-
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
         var frame = new byte[9 + payload.Length];
@@ -45,7 +35,6 @@ public sealed class HighConcurrencyPart1Spec
 
         return BuildRawFrame(0x4, ack ? (byte)0x1 : (byte)0x0, 0, payload);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]

@@ -103,6 +103,7 @@ public sealed class RetrySpec : AcceptanceTestBase
                 {
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
+
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("success")

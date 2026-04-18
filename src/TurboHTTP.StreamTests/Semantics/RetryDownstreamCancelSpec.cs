@@ -8,21 +8,11 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Verifies that RetryBidiStage does not crash when Out1 is cancelled while a
-/// Retry-After timer is pending.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="RetryBidiStage"/>.
-/// Bug: <c>onDownstreamFinish</c> for Out1 does not reset <c>_requestDemand</c>.
-/// When the timer fires, <c>TryEmitRetry</c> sees <c>_requestDemand == true</c>
-/// and pushes on the closed outlet, causing an <see cref="IllegalStateException"/>.
-/// </remarks>
 public sealed class RetryDownstreamCancelSpec : StreamTestBase
 {
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-9.2")]
-    public async Task RetryBidiStage_should_not_crash_when_Out1_cancelled_before_timer_fires()
+    public void RetryBidiStage_should_not_crash_when_Out1_cancelled_before_timer_fires()
     {
         var stage = new RetryBidiStage(new RetryPolicy { RespectRetryAfter = true });
 

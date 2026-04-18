@@ -3,14 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP/2 encoder baseline behaviors per RFC 9113 §3.
-/// Verifies connection preface, frame production, and basic request encoding.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RequestEncoder"/>.
-/// RFC 9113 §3: HTTP/2 connection preface consists of a client preface string and SETTINGS frame.
-/// </remarks>
 public sealed class Http2EncoderBaselineSpec
 {
     [Fact(Timeout = 5000)]

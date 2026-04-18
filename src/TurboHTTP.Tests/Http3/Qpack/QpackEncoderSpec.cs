@@ -3,16 +3,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK header block encoder per RFC 9204 §4.5.
-/// Covers static table indexed headers, dynamic table insert + reference,
-/// literal headers, NEVERINDEX for sensitive headers, Required Insert Count
-/// prefix, Huffman encoding support, and encoder instruction emission.
-/// </summary>
 public sealed class QpackEncoderSpec
 {
-
-    /// RFC 9204 §4.5.2 — Static table exact match produces indexed representation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_EncodeStaticIndexed_When_ExactMatch()
@@ -35,7 +27,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0xC0 | 17, data[2]); // 0xD1
     }
 
-    /// RFC 9204 §4.5.2 — Multiple static-only headers
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_EncodeMultipleStaticIndexed()
@@ -43,9 +34,9 @@ public sealed class QpackEncoderSpec
         var encoder = new QpackEncoder(maxTableCapacity: 0);
         var headers = new List<(string, string)>
         {
-            (":method", "GET"),     // index 17
-            (":path", "/"),         // index 1
-            (":scheme", "https"),   // index 23
+            (":method", "GET"), // index 17
+            (":path", "/"), // index 1
+            (":scheme", "https"), // index 23
         };
 
         Span<byte> buf = new byte[8192];
@@ -59,12 +50,10 @@ public sealed class QpackEncoderSpec
 
         // Three static indexed entries
         Assert.Equal(0xC0 | 17, data[2]); // :method GET
-        Assert.Equal(0xC0 | 1, data[3]);  // :path /
+        Assert.Equal(0xC0 | 1, data[3]); // :path /
         Assert.Equal(0xC0 | 23, data[4]); // :scheme https
     }
 
-
-    /// RFC 9204 §4.5.2 — New header inserted into dynamic table and referenced
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_InsertAndReference_When_DynamicTableEnabled()
@@ -98,7 +87,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0x80, data[2]);
     }
 
-    /// RFC 9204 §4.5.2 — Second encode reuses existing dynamic table entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_ReuseDynamicEntry_When_AlreadyInserted()
@@ -122,8 +110,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0, encoder.EncoderInstructions.Length);
     }
 
-
-    /// RFC 9204 §4.5.6 — Literal without name reference when table is disabled
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.6")]
     public void Should_EncodeLiteral_When_NoTableMatch()
@@ -145,8 +131,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0x20, data[2] & 0x30); // N=0 confirmed
     }
 
-
-    /// RFC 9204 §7.1 — Authorization header uses never-indexed representation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_NeverIndex_When_SensitiveHeader()
@@ -174,7 +158,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0x7F, data[2]); // 0x70 | 0x0F (max prefix)
     }
 
-    /// RFC 9204 §7.1 — Cookie header uses never-indexed representation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_NeverIndex_When_CookieHeader()
@@ -199,8 +182,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0x75, data[2]); // 0x70 | 5
     }
 
-
-    /// RFC 9204 §4.5.1.1 — Required Insert Count encoding
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.1")]
     public void Should_EncodeRequiredInsertCount_When_DynamicRefsExist()
@@ -232,8 +213,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0x00, data[1]);
     }
 
-
-    /// RFC 9204 §4.1.2 — Huffman encoding is applied when shorter
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     public void Should_UseHuffman_When_Shorter()
@@ -250,8 +229,6 @@ public sealed class QpackEncoderSpec
         Assert.True(n > 2); // prefix + at least one header
     }
 
-
-    /// RFC 9204 §4.3 — Encoder instructions emitted when inserting with static name ref
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_EmitEncoderInstructions_When_InsertingWithStaticNameRef()
@@ -279,8 +256,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal("/api/v1", Encoding.UTF8.GetString(instruction.Value));
     }
 
-
-    /// RFC 9204 §4.5.4 — Literal with static table name reference (non-sensitive)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.4")]
     public void Should_EncodeLiteralWithStaticName_When_DynamicTableFull()
@@ -308,8 +283,6 @@ public sealed class QpackEncoderSpec
         Assert.Equal(0x51, data[2]); // 0x50 | 1
     }
 
-
-    /// RFC 9204 — Empty header name is rejected
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204")]
     public void Should_Throw_When_EmptyHeaderName()

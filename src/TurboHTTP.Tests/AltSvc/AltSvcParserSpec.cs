@@ -164,7 +164,7 @@ public sealed class AltSvcParserSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void AltSvcEntry_should_report_valid_when_not_expired()
     {
         var entry = new AltSvcEntry("h3", "", 443, 3600, false, FixedNow.AddSeconds(3600));
@@ -174,7 +174,7 @@ public sealed class AltSvcParserSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7838-3")]
+    [Trait("RFC", "RFC7838-5")]
     public void AltSvcEntry_should_report_invalid_when_expired()
     {
         var entry = new AltSvcEntry("h3", "", 443, 3600, false, FixedNow.AddSeconds(3600));

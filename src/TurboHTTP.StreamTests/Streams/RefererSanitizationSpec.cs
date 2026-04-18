@@ -3,12 +3,6 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests Referer header sanitization in <see cref="RequestEnricher"/> per RFC 9110 §10.5:
-/// - Fragment MUST NOT be included
-/// - Userinfo MUST NOT be included
-/// - Referer MUST NOT be sent in unsecured HTTP if referring page was from secure protocol
-/// </summary>
 public sealed class RefererSanitizationSpec
 {
     private static RequestEnricher CreateEnricher()

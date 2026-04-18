@@ -6,7 +6,8 @@ namespace TurboHTTP.StreamTests.Http11;
 
 public sealed class Http11KeepAliveCloseSpec : EngineTestBase
 {
-    private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9112-9.6")]

@@ -10,10 +10,6 @@ namespace TurboHTTP.StreamTests.Caching;
 
 public sealed class CacheBidiAsyncBodySpec : StreamTestBase
 {
-    /// <summary>
-    /// Custom HttpContent that delays body delivery via a TaskCompletionSource,
-    /// forcing the CacheBidiStage into the async body read path.
-    /// </summary>
     private sealed class DelayedContent : HttpContent
     {
         private readonly TaskCompletionSource<byte[]> _tcs = new();
@@ -68,8 +64,8 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_push_response_immediately_while_body_read_is_pending()
     {
         var store = new CacheStore();
@@ -108,8 +104,8 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
         Assert.Equal("slow body data", System.Text.Encoding.UTF8.GetString(entry.Body.Span));
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_store_in_cache_after_async_body_completes()
     {
         var store = new CacheStore();

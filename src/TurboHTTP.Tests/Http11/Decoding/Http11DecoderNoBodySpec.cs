@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests no-body response decoding per RFC 9112 §6.3.
-/// Verifies that 1xx, 204, and 304 responses are decoded with empty bodies.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §6.3: Body not allowed for 1xx, 204 No Content, and 304 Not Modified responses.
-/// </remarks>
 public sealed class Http11DecoderNoBodySpec
 {
     private readonly Decoder _decoder = new();
@@ -67,7 +59,7 @@ public sealed class Http11DecoderNoBodySpec
         // The decoder should parse the headers but not expect body bytes.
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 1234\r\n\r\n"u8.ToArray();
 
-        var decoded = _decoder.TryDecode(raw, out var responses);
+        var decoded = _decoder.TryDecode(raw, out _);
 
         // For a HEAD response, the decoder would see Content-Length but no body.
         // However, the decoder doesn't know it's a HEAD response (that's request-side info).

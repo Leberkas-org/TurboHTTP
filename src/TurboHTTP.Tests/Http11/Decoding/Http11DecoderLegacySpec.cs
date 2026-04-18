@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests legacy date format and header parsing per RFC 9112.
-/// Verifies backward-compatible parsing of obsolete IMF-fixdate and other legacy formats.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112: Legacy compatibility — decoders must accept IMF-fixdate and obsolete header forms.
-/// </remarks>
 public sealed class Http11DecoderLegacySpec
 {
     private readonly Decoder _decoder = new();

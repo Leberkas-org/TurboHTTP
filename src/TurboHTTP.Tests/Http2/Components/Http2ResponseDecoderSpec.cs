@@ -4,12 +4,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Components;
 
-/// <summary>
-/// Unit tests for ResponseDecoder RFC 9113 header decoding and response assembly.
-/// Covers HPACK decoding, pseudo-header processing, and content header tracking.
-/// Note: Tests use minimal HpackEncoder.Encode calls to avoid encoding exceptions.
-/// Full HPACK integration is tested in Hpack/* test suites.
-/// </summary>
 public sealed class Http2ResponseDecoderSpec
 {
     [Fact(Timeout = 5000)]
@@ -25,7 +19,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.OK, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -57,7 +51,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.Continue, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.Continue, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -73,7 +67,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.Created, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -89,7 +83,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.NoContent, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -105,7 +99,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.NotModified, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -121,7 +115,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.BadRequest, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -137,7 +131,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.Unauthorized, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -153,7 +147,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.Forbidden, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -169,7 +163,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.NotFound, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -185,7 +179,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.InternalServerError, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -201,7 +195,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.BadGateway, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -217,7 +211,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response!.StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -233,8 +227,8 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.DoesNotContain(":method", response!.Headers.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
-        Assert.DoesNotContain(":path", response!.Headers.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(":method", response.Headers.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(":path", response.Headers.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact(Timeout = 5000)]
@@ -279,7 +273,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.NotNull(response!.Content);
+        Assert.NotNull(response.Content);
     }
 
     [Fact(Timeout = 5000)]
@@ -327,11 +321,15 @@ public sealed class Http2ResponseDecoderSpec
     public void ResetHpack_should_create_new_decoder()
     {
         var decoder = new ResponseDecoder(new HpackDecoder());
-        var initialDecoder = typeof(ResponseDecoder).GetField("_hpack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(decoder);
+        var initialDecoder = typeof(ResponseDecoder)
+            .GetField("_hpack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.GetValue(decoder);
 
         decoder.ResetHpack();
 
-        var newDecoder = typeof(ResponseDecoder).GetField("_hpack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(decoder);
+        var newDecoder = typeof(ResponseDecoder)
+            .GetField("_hpack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.GetValue(decoder);
         Assert.NotSame(initialDecoder, newDecoder);
     }
 
@@ -368,7 +366,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.Equal((HttpStatusCode)418, response!.StatusCode);
+        Assert.Equal((HttpStatusCode)418, response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -435,7 +433,7 @@ public sealed class Http2ResponseDecoderSpec
             var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
             Assert.NotNull(response);
-            Assert.Equal((HttpStatusCode)int.Parse(status), response!.StatusCode);
+            Assert.Equal((HttpStatusCode)int.Parse(status), response.StatusCode);
         }
     }
 
@@ -452,7 +450,7 @@ public sealed class Http2ResponseDecoderSpec
         var response = decoder.DecodeHeaders(streamId: 1, endStream: true, state);
 
         Assert.NotNull(response);
-        Assert.NotNull(response!.Content);
+        Assert.NotNull(response.Content);
     }
 
     [Fact(Timeout = 5000)]

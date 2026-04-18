@@ -58,7 +58,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_LeaseAcquired_should_signal_pull_input()
     {
         var (sm, ops) = CreateStateMachine();
@@ -71,7 +70,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_LeaseAcquired_with_pending_writes_should_flush()
     {
         var (sm, ops) = CreateStateMachine();
@@ -88,7 +86,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundBatch_should_push_output_items()
     {
         var (sm, ops) = CreateStateMachine();
@@ -105,7 +102,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundBatch_stale_gen_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();
@@ -122,7 +118,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteDone_should_pull_next()
     {
         var (sm, ops) = CreateStateMachine();
@@ -136,7 +131,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteFailed_should_push_close_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -150,7 +144,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_AcquisitionFailed_should_push_close_signal_and_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -166,7 +159,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_AcquisitionFailed_cancelled_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();
@@ -182,7 +174,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_ConnectItem_should_schedule_connect_timeout()
     {
         var (sm, ops) = CreateStateMachine();
@@ -193,7 +184,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_NetworkBuffer_without_handle_should_buffer_and_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -208,7 +198,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_ConnectionReuseItem_canReuse_true_should_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -224,7 +213,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_ConnectionReuseItem_canReuse_false_should_teardown_and_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -240,7 +228,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_StreamAcquireItem_should_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -254,7 +241,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_MaxConcurrentStreamsItem_should_update_lease_and_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -269,7 +255,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleUpstreamFinish_without_handle_should_complete_stage()
     {
         var (sm, ops) = CreateStateMachine();
@@ -280,7 +265,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleUpstreamFinish_with_idle_handle_should_complete_stage()
     {
         var (sm, ops) = CreateStateMachine();
@@ -293,7 +277,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleUpstreamFinish_with_pending_responses_should_defer_complete()
     {
         var (sm, ops) = CreateStateMachine();
@@ -312,7 +295,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void OnTimer_connect_timeout_should_push_close_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -325,7 +307,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void OnTimer_unknown_key_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();
@@ -337,7 +318,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundComplete_should_push_close_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -351,7 +331,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundComplete_stale_gen_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();
@@ -365,7 +344,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundComplete_with_upstream_finished_should_complete_stage()
     {
         var (sm, ops) = CreateStateMachine();
@@ -382,7 +360,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundPumpFailed_should_push_close_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -396,7 +373,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void PostStop_should_cancel_connect_timer()
     {
         var (sm, ops) = CreateStateMachine();
@@ -407,7 +383,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleDownstreamFinish_should_cleanup_transport()
     {
         var (sm, _) = CreateStateMachine();
@@ -420,7 +395,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void AutoConnect_should_trigger_on_first_data_item()
     {
         var (sm, ops) = CreateStateMachine();
@@ -433,7 +407,6 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Multiple_StreamAcquire_then_Reuse_should_complete_all()
     {
         var (sm, ops) = CreateStateMachine();

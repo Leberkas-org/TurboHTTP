@@ -2,11 +2,6 @@ using TurboHTTP.Protocol.Http3;
 
 namespace TurboHTTP.Tests.Http3.Security;
 
-/// <summary>
-/// Fuzz tests for HTTP/3 field validation per RFC 9114 §4.2, §4.3, §10.3.
-/// Covers invalid pseudo-headers, duplicate :method, uppercase names,
-/// CR/LF injection, and intermediary encapsulation attacks.
-/// </summary>
 public sealed class Http3FieldValidationFuzzSpec
 {
     [Fact(Timeout = 5000)]
@@ -238,8 +233,7 @@ public sealed class Http3FieldValidationFuzzSpec
             (":status", "304"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => FieldValidator.ValidateResponsePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
@@ -258,8 +252,7 @@ public sealed class Http3FieldValidationFuzzSpec
                 (pseudo, "value"),
             };
 
-            var ex = Assert.Throws<Http3Exception>(
-                () => FieldValidator.ValidateResponsePseudoHeaders(headers));
+            var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
             Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         }
     }
@@ -275,8 +268,7 @@ public sealed class Http3FieldValidationFuzzSpec
             (":status", "304"), // pseudo after regular — forbidden
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => FieldValidator.ValidateResponsePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 

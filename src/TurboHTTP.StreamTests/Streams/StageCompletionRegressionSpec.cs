@@ -5,14 +5,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Regression tests for stage completion propagation fixes (Feature 030).
-/// Each test verifies that an upstream failure terminates the downstream outlet
-/// within the timeout — a hang indicates the bug has been reintroduced.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="TracingBidiStage"/>.
-/// </remarks>
 public sealed class StageCompletionRegressionSpec : StreamTestBase
 {
     [Fact(Timeout = 5000)]

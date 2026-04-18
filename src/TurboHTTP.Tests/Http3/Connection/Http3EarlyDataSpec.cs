@@ -3,16 +3,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Tests for QUIC 0-RTT early data support in HTTP/3.
-/// RFC 9114 §A.1 — only idempotent methods may be sent as early data.
-/// </summary>
 public sealed class Http3EarlyDataSpec
 {
-    /// <summary>
-    /// Applies the same early data tagging logic as <c>Http30Request2FrameStage</c>:
-    /// when allowEarlyData is true and the method is idempotent, tag HEADERS frames.
-    /// </summary>
     private static readonly HashSet<HttpMethod> IdempotentMethods =
     [
         HttpMethod.Get,

@@ -3,64 +3,35 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Security;
 
-/// <summary>
-/// Tests security-sensitive decoder behaviors including CONTINUATION flood detection per RFC 9113 §10.
-/// Verifies that implementation-defined safety limits are enforced.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §10: HTTP/2 connections are susceptible to amplification attacks; implementations must enforce resource limits.
-/// </remarks>
 public sealed class Http2SecuritySpec
 {
-    // Helpers — RFC-mandated validators that the decoder delegates to the caller
-
-    /// <summary>
-    /// RFC 9113 §6.10 + security best practice: Excessive CONTINUATION frames
-    /// indicate a possible CONTINUATION flood attack. Threshold default: 1000 frames.
-    /// </summary>
     private static void EnforceContinuationFloodThreshold(int continuationCount, int threshold = 1000)
     {
         if (continuationCount >= threshold)
         {
             throw new Http2Exception(
-                $"RFC 9113 security: Excessive CONTINUATION frames ({continuationCount}) — possible CONTINUATION flood.",
-                Http2ErrorCode.ProtocolError);
+                $"RFC 9113 security: Excessive CONTINUATION frames ({continuationCount}) — possible CONTINUATION flood.");
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §5.1 + §6.4 + CVE-2023-44487: Rapid RST_STREAM cycling can exhaust
-    /// server resources. Threshold default: 100 RST_STREAM frames per connection window.
-    /// </summary>
     private static void EnforceRstFloodThreshold(int rstCount, int threshold = 100)
     {
         if (rstCount > threshold)
         {
             throw new Http2Exception(
-                "RFC 9113 security: Rapid RST_STREAM cycling — possible CVE-2023-44487 attack.",
-                Http2ErrorCode.ProtocolError);
+                "RFC 9113 security: Rapid RST_STREAM cycling — possible CVE-2023-44487 attack.");
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.1 + security best practice: Excessive zero-length DATA frames
-    /// indicate a possible empty DATA flood attack. Threshold default: 10000 frames.
-    /// </summary>
     private static void EnforceEmptyDataFloodThreshold(int emptyDataCount, int threshold = 10000)
     {
         if (emptyDataCount > threshold)
         {
             throw new Http2Exception(
-                "RFC 9113 security: Excessive zero-length DATA frames — possible resource exhaustion.",
-                Http2ErrorCode.ProtocolError);
+                "RFC 9113 security: Excessive zero-length DATA frames — possible resource exhaustion.");
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH MUST be 0 or 1.
-    /// Any other value is a connection error (PROTOCOL_ERROR).
-    /// </summary>
     private static void EnforceEnablePush(IReadOnlyList<(SettingsParameter, uint)> parameters)
     {
         foreach (var (key, value) in parameters)
@@ -68,16 +39,11 @@ public sealed class Http2SecuritySpec
             if (key == SettingsParameter.EnablePush && value > 1)
             {
                 throw new Http2Exception(
-                    $"RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH value {value} is invalid; must be 0 or 1.",
-                    Http2ErrorCode.ProtocolError);
+                    $"RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH value {value} is invalid; must be 0 or 1.");
             }
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.5.2: SETTINGS_INITIAL_WINDOW_SIZE MUST NOT exceed 2^31−1 (0x7FFFFFFF).
-    /// Any larger value is a connection error (FLOW_CONTROL_ERROR).
-    /// </summary>
     private static void EnforceInitialWindowSize(IReadOnlyList<(SettingsParameter, uint)> parameters)
     {
         foreach (var (key, value) in parameters)
@@ -91,10 +57,7 @@ public sealed class Http2SecuritySpec
         }
     }
 
-    // SEC-001..003: CONTINUATION Flood (RFC 9113 §6.10)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.10")]
     public void Http2FrameDecoder_should_detect_continuation_flood_when_explicit_enforcement_applied()
     {
         var decoder = new FrameDecoder();
@@ -128,7 +91,7 @@ public sealed class Http2SecuritySpec
         // The 1000th CONTINUATION frame exceeds the threshold and must be rejected
         // by explicit enforcement.
         var continuation1000 = BuildRawFrame(frameType: 0x9, flags: 0x0, streamId: 1, []);
-        var framesToCheck = decoder.Decode(continuation1000);
+        decoder.Decode(continuation1000);
         continuationCount++; // Add the 1000th frame
 
         var ex = Assert.Throws<Http2Exception>(() =>
@@ -136,17 +99,14 @@ public sealed class Http2SecuritySpec
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // SEC-002: Rapid RST_STREAM Protection (RFC 9113 §5.1, §6.4 + CVE-2023-44487)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_detect_rst_flood_when_explicit_enforcement_applied()
     {
         var decoder = new FrameDecoder();
 
         // Send 100 RST_STREAM frames on distinct stream IDs — decoder accepts all.
         // RST_STREAM payload: 4 bytes error code (NO_ERROR = 0x0).
-        var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+        var errorCode = "\0\0\0\0"u8.ToArray();
 
         var rstCount = 0;
         for (var i = 0; i < 100; i++) // 100 frames on stream IDs 1, 3, 5, ..., 199
@@ -172,10 +132,7 @@ public sealed class Http2SecuritySpec
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // SEC-003: Empty DATA Frame Flood (RFC 9113 §6.1)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.1")]
     public void Http2FrameDecoder_should_detect_empty_data_flood_when_explicit_enforcement_applied()
     {
         var decoder = new FrameDecoder();
@@ -202,10 +159,7 @@ public sealed class Http2SecuritySpec
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
 
-    // SEC-004..005: SETTINGS Parameter Validation (RFC 9113 §6.5.2)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_detect_invalid_enable_push_when_settings_enforcement_applied()
     {
         var decoder = new FrameDecoder();
@@ -227,7 +181,6 @@ public sealed class Http2SecuritySpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_detect_initial_window_size_overflow_when_settings_enforcement_applied()
     {
         var decoder = new FrameDecoder();
@@ -248,10 +201,7 @@ public sealed class Http2SecuritySpec
         Assert.Equal(Http2ErrorCode.FlowControlError, ex.ErrorCode);
     }
 
-    // SEC-006: Unknown SETTINGS Parameter (RFC 9113 §5.5)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_silently_decode_unknown_parameter_when_settings_received()
     {
         var decoder = new FrameDecoder();
@@ -274,11 +224,6 @@ public sealed class Http2SecuritySpec
         Assert.Equal(42u, unknownEntry.Item2);
     }
 
-    // Helpers
-
-    /// <summary>
-    /// Build a raw HTTP/2 frame with a 9-byte header + payload.
-    /// </summary>
     private static byte[] BuildRawFrame(byte frameType, byte flags, int streamId, byte[] payload)
     {
         var frame = new byte[9 + payload.Length];

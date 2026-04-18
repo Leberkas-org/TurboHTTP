@@ -2,22 +2,8 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
-/// <summary>
-/// Tests SETTINGS frame parameter validation per RFC 9113 §6.5.
-/// Verifies that out-of-range parameter values are rejected with PROTOCOL_ERROR.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH must be 0 or 1; SETTINGS_INITIAL_WINDOW_SIZE must not exceed 2^31-1.
-/// </remarks>
 public sealed class Http2SettingsSpec
 {
-    // Helpers — RFC-mandated validators that the decoder delegates to the caller
-
-    /// <summary>
-    /// RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH MUST be 0 or 1.
-    /// Any other value is a connection error (PROTOCOL_ERROR).
-    /// </summary>
     private static void EnforceEnablePush(IReadOnlyList<(SettingsParameter, uint)> parameters)
     {
         foreach (var (key, value) in parameters)
@@ -25,16 +11,11 @@ public sealed class Http2SettingsSpec
             if (key == SettingsParameter.EnablePush && value > 1)
             {
                 throw new Http2Exception(
-                    $"RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH value {value} is invalid; must be 0 or 1.",
-                    Http2ErrorCode.ProtocolError);
+                    $"RFC 9113 §6.5.2: SETTINGS_ENABLE_PUSH value {value} is invalid; must be 0 or 1.");
             }
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.5.2: SETTINGS_INITIAL_WINDOW_SIZE MUST NOT exceed 2^31−1 (0x7FFFFFFF).
-    /// Any larger value is a connection error (FLOW_CONTROL_ERROR).
-    /// </summary>
     private static void EnforceInitialWindowSize(IReadOnlyList<(SettingsParameter, uint)> parameters)
     {
         foreach (var (key, value) in parameters)
@@ -47,8 +28,6 @@ public sealed class Http2SettingsSpec
             }
         }
     }
-
-    // SS-001..003: ACK flag and stream-0 constraint (RFC 9113 §6.5)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
@@ -85,8 +64,8 @@ public sealed class Http2SettingsSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x00, // length = 0
-            0x04,             // SETTINGS
-            0x00,             // flags = 0
+            0x04, // SETTINGS
+            0x00, // flags = 0
             0x00, 0x00, 0x00, 0x01, // stream = 1 — MUST be 0
         };
         var decoder = new FrameDecoder();
@@ -94,8 +73,6 @@ public sealed class Http2SettingsSpec
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
-
-    // SS-004..005: Frame-size errors (RFC 9113 §6.5)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
@@ -105,8 +82,8 @@ public sealed class Http2SettingsSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x06, // length = 6
-            0x04,             // SETTINGS
-            0x01,             // ACK flag
+            0x04, // SETTINGS
+            0x01, // ACK flag
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x05, 0x00, 0x00, 0x40, 0x00, // MaxFrameSize=16384
         };
@@ -124,8 +101,8 @@ public sealed class Http2SettingsSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x07, // length = 7
-            0x04,             // SETTINGS
-            0x00,             // flags = 0
+            0x04, // SETTINGS
+            0x00, // flags = 0
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x00, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, // 7 bytes
         };
@@ -134,8 +111,6 @@ public sealed class Http2SettingsSpec
         Assert.Equal(Http2ErrorCode.FrameSizeError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
     }
-
-    // SS-006..009: MAX_FRAME_SIZE range [16384, 16777215] (RFC 9113 §6.5.2)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
@@ -184,8 +159,6 @@ public sealed class Http2SettingsSpec
         var frame = Assert.IsType<SettingsFrame>(frames[0]);
         Assert.Contains(frame.Parameters, p => p is { Item1: SettingsParameter.MaxFrameSize, Item2: 16777215u });
     }
-
-    // SS-010..013: ENABLE_PUSH validation (RFC 9113 §6.5.2)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
@@ -247,8 +220,6 @@ public sealed class Http2SettingsSpec
         Assert.True(ex.IsConnectionError);
     }
 
-    // SS-014..016: INITIAL_WINDOW_SIZE overflow (RFC 9113 §6.5.2)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_be_flow_control_error_when_initial_window_size_overflows()
@@ -295,8 +266,6 @@ public sealed class Http2SettingsSpec
         Assert.True(ex.IsConnectionError);
     }
 
-    // SS-017..020: Parameter parsing and round-trip (RFC 9113 §6.5)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_decode_with_no_parameters_when_settings_has_empty_payload()
@@ -304,8 +273,8 @@ public sealed class Http2SettingsSpec
         var emptySettings = new byte[]
         {
             0x00, 0x00, 0x00, // length = 0
-            0x04,             // SETTINGS
-            0x00,             // flags = 0 (no ACK)
+            0x04, // SETTINGS
+            0x00, // flags = 0 (no ACK)
             0x00, 0x00, 0x00, 0x00, // stream = 0
         };
         var decoder = new FrameDecoder();
@@ -345,10 +314,10 @@ public sealed class Http2SettingsSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x06, // length = 6
-            0x04,             // SETTINGS
-            0x00,             // flags = 0
+            0x04, // SETTINGS
+            0x00, // flags = 0
             0x00, 0x00, 0x00, 0x00, // stream = 0
-            0xFF, 0xFF,       // unknown parameter = 0xFFFF
+            0xFF, 0xFF, // unknown parameter = 0xFFFF
             0x00, 0x00, 0x00, 0x2A, // value = 42
         };
         var decoder = new FrameDecoder();

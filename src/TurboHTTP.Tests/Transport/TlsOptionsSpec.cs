@@ -6,10 +6,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="TlsOptions"/> configuration properties, inheritance from <see cref="TcpOptions"/>,
-/// and TLS-specific settings.
-/// </summary>
 public sealed class TlsOptionsSpec
 {
     [Fact(Timeout = 5000)]
@@ -162,7 +158,7 @@ public sealed class TlsOptionsSpec
     [Fact(Timeout = 5000)]
     public void TlsOptions_should_allow_custom_server_certificate_validation_callback()
     {
-        RemoteCertificateValidationCallback callback = (s, c, ch, e) => true;
+        RemoteCertificateValidationCallback callback = (_, _, _, _) => true;
         var options = new TlsOptions
         {
             Host = "example.com",
@@ -266,7 +262,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_should_support_http2_alpn()
     {
         var protocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http2 };
@@ -282,7 +277,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_should_support_http11_alpn()
     {
         var protocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http11 };
@@ -297,7 +291,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_should_support_http3_alpn()
     {
         var protocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http3 };
@@ -312,7 +305,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_should_support_multiple_alpn_protocols()
     {
         var protocols = new List<SslApplicationProtocol>
@@ -331,7 +323,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_should_support_tls12_protocol()
     {
         var options = new TlsOptions
@@ -345,7 +336,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_should_support_tls13_protocol()
     {
         var options = new TlsOptions
@@ -359,7 +349,6 @@ public sealed class TlsOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "TlsOptions")]
     public void TlsOptions_hash_code_should_be_consistent()
     {
         var options = new TlsOptions { Host = "example.com", Port = 443 };

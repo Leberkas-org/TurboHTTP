@@ -4,15 +4,9 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Streams;
 
-/// <summary>
-/// RFC 9114 §4.1, §4.2, §4.3.1 — Http3RequestEncoder advanced encoding tests.
-/// Covers custom/content headers, header name casing, forbidden header filtering,
-/// null guards, ValidatePseudoHeaders overload, stateful encoding, and edge cases.
-/// </summary>
 public sealed class Http3RequestEncoderAdvancedSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Custom_headers_included()
     {
@@ -30,7 +24,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.Contains(headers, h => h is { Name: "x-request-id", Value: "abc-123" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Content_headers_included()
     {
@@ -48,7 +42,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.Contains(headers, h => h.Name == "content-type" && h.Value.Contains("application/json"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Header_names_lowercased()
     {
@@ -66,7 +60,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.2")]
     [InlineData("connection")]
     [InlineData("transfer-encoding")]
@@ -87,7 +81,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.DoesNotContain(headers, h => h.Name == forbiddenHeader);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.2")]
     public void Non_forbidden_headers_preserved()
     {
@@ -105,8 +99,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.Contains(headers, h => h is { Name: "accept", Value: "*/*" });
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Null_request_throws()
     {
@@ -114,7 +107,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.Throws<ArgumentNullException>(() => encoder.Encode(null!));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Null_uri_throws()
     {
@@ -123,7 +116,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.Throws<ArgumentNullException>(() => encoder.Encode(request));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Validate_rejects_duplicate_method()
     {
@@ -136,13 +129,12 @@ public sealed class Http3RequestEncoderAdvancedSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Validate_rejects_missing_pseudo_headers()
     {
@@ -152,13 +144,12 @@ public sealed class Http3RequestEncoderAdvancedSpec
             // missing :path, :scheme, :authority
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Missing", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Validate_rejects_unknown_pseudo_header()
     {
@@ -171,13 +162,12 @@ public sealed class Http3RequestEncoderAdvancedSpec
             (":unknown", "value"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Validate_rejects_pseudo_after_regular()
     {
@@ -190,14 +180,12 @@ public sealed class Http3RequestEncoderAdvancedSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular", ex.Message);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Encoder_is_stateful_across_requests()
     {
@@ -220,7 +208,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
             "Second request should benefit from QPACK state (same or smaller header block)");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void Large_body_encoded()
     {
@@ -240,8 +228,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.Equal(body, dataFrame.Data.ToArray());
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Root_path_encoded()
     {

@@ -4,18 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Fuzzes the HTTP/1.1 response decoder with adversarial body framing inputs to find
-/// crashes, infinite loops, and uncontrolled memory allocation. Covers mixed
-/// Transfer-Encoding/Content-Length conflicts, extremely large Content-Length claims,
-/// Connection: close trailing data, and fragmented delivery.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// Each test uses seeded <see cref="Random"/> so failures are reproducible.
-/// Invariant: TryDecode/TryDecodeEof must either return a valid result or throw
-/// <see cref="HttpDecoderException"/> — never an unhandled crash.
-/// </remarks>
 public sealed class Http11FuzzBodySpec
 {
     private const int IterationsPerSeed = 100;
@@ -108,7 +96,6 @@ public sealed class Http11FuzzBodySpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -158,7 +145,6 @@ public sealed class Http11FuzzBodySpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -215,7 +201,6 @@ public sealed class Http11FuzzBodySpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -259,7 +244,6 @@ public sealed class Http11FuzzBodySpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -334,7 +318,7 @@ public sealed class Http11FuzzBodySpec
             AssertDecodeEofNeverCrashes(decoder);
 
             decoder.Reset();
-            var probe = Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+            var probe = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
             AssertDecodeNeverCrashes(decoder, probe);
 
             var allocated = GC.GetAllocatedBytesForCurrentThread() - allocBefore;

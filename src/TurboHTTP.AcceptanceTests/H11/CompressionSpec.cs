@@ -12,7 +12,8 @@ namespace TurboHTTP.AcceptanceTests.H11;
 
 public sealed class CompressionSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
     private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
         CreateDecompressingEngine()
@@ -28,6 +29,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             payload[i] = (byte)('A' + i % 26);
         }
+
         return payload;
     }
 
@@ -38,6 +40,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -48,6 +51,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             deflate.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -58,6 +62,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             brotli.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -70,6 +75,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             sb.Append($"Content-Encoding: {contentEncoding}\r\n");
         }
+
         sb.Append("\r\n");
 
         var headerBytes = Encoding.Latin1.GetBytes(sb.ToString());
@@ -79,7 +85,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         return result;
     }
 
-    private async Task<HttpResponseMessage> SendDecompressingAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendDecompressingAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = CreateDecompressingEngine().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));

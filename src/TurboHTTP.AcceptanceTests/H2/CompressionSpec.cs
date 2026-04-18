@@ -24,6 +24,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             payload[i] = (byte)('A' + i % 26);
         }
+
         return payload;
     }
 
@@ -34,6 +35,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -44,6 +46,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             deflate.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -54,6 +57,7 @@ public sealed class CompressionSpec : AcceptanceTestBase
         {
             brotli.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -72,7 +76,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "gzip"), ("content-length", compressed.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "gzip"), ("content-length", compressed.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)compressed)
             .Build();
 
@@ -102,7 +107,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "deflate"), ("content-length", compressed.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "deflate"), ("content-length", compressed.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)compressed)
             .Build();
 
@@ -132,7 +138,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "br"), ("content-length", compressed.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "br"), ("content-length", compressed.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)compressed)
             .Build();
 
@@ -161,7 +168,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "identity"), ("content-length", payload.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "identity"), ("content-length", payload.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)payload)
             .Build();
 
@@ -192,7 +200,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "gzip"), ("content-length", compressed.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "gzip"), ("content-length", compressed.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)compressed)
             .Build();
 
@@ -223,7 +232,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "br"), ("content-length", compressed.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "br"), ("content-length", compressed.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)compressed)
             .Build();
 

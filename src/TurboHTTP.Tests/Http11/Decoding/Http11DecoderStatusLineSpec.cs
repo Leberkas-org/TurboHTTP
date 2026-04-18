@@ -5,14 +5,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests HTTP/1.1 response status-line parsing per RFC 9112 §4.
-/// Verifies that HTTP-version, status-code, and reason-phrase are correctly decoded.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §4: Status-Line — HTTP-Version SP Status-Code SP Reason-Phrase CRLF.
-/// </remarks>
 public sealed class Http11DecoderStatusLineSpec
 {
     private readonly Decoder _decoder = new();
@@ -41,7 +33,8 @@ public sealed class Http11DecoderStatusLineSpec
     [InlineData(400, "Bad Request", HttpStatusCode.BadRequest)]
     [InlineData(404, "Not Found", HttpStatusCode.NotFound)]
     [InlineData(500, "Internal Server Error", HttpStatusCode.InternalServerError)]
-    public void Http11Decoder_should_parse_correctly_when_known_status_code(int code, string reason, HttpStatusCode expected)
+    public void Http11Decoder_should_parse_correctly_when_known_status_code(int code, string reason,
+        HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -60,7 +53,8 @@ public sealed class Http11DecoderStatusLineSpec
     [InlineData(205, "Reset Content", HttpStatusCode.ResetContent)]
     [InlineData(206, "Partial Content", HttpStatusCode.PartialContent)]
     [InlineData(207, "Multi-Status", (HttpStatusCode)207)]
-    public void Http11Decoder_should_parse_correctly_when_2xx_status_code(int code, string reason, HttpStatusCode expected)
+    public void Http11Decoder_should_parse_correctly_when_2xx_status_code(int code, string reason,
+        HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -78,7 +72,8 @@ public sealed class Http11DecoderStatusLineSpec
     [InlineData(304, "Not Modified", HttpStatusCode.NotModified)]
     [InlineData(307, "Temporary Redirect", HttpStatusCode.TemporaryRedirect)]
     [InlineData(308, "Permanent Redirect", HttpStatusCode.PermanentRedirect)]
-    public void Http11Decoder_should_parse_correctly_when_3xx_status_code(int code, string reason, HttpStatusCode expected)
+    public void Http11Decoder_should_parse_correctly_when_3xx_status_code(int code, string reason,
+        HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -101,7 +96,8 @@ public sealed class Http11DecoderStatusLineSpec
     [InlineData(415, "Unsupported Media Type", HttpStatusCode.UnsupportedMediaType)]
     [InlineData(422, "Unprocessable Entity", (HttpStatusCode)422)]
     [InlineData(429, "Too Many Requests", (HttpStatusCode)429)]
-    public void Http11Decoder_should_parse_correctly_when_4xx_status_code(int code, string reason, HttpStatusCode expected)
+    public void Http11Decoder_should_parse_correctly_when_4xx_status_code(int code, string reason,
+        HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -117,7 +113,8 @@ public sealed class Http11DecoderStatusLineSpec
     [InlineData(502, "Bad Gateway", HttpStatusCode.BadGateway)]
     [InlineData(503, "Service Unavailable", HttpStatusCode.ServiceUnavailable)]
     [InlineData(504, "Gateway Timeout", HttpStatusCode.GatewayTimeout)]
-    public void Http11Decoder_should_parse_correctly_when_5xx_status_code(int code, string reason, HttpStatusCode expected)
+    public void Http11Decoder_should_parse_correctly_when_5xx_status_code(int code, string reason,
+        HttpStatusCode expected)
     {
         var raw = BuildResponse(code, reason, "", ("Content-Length", "0"));
         _decoder.TryDecode(raw, out var responses);
@@ -152,12 +149,12 @@ public sealed class Http11DecoderStatusLineSpec
     [InlineData(103, "Early Hints")]
     public void Http11Decoder_should_parse_with_no_body_when_1xx_code(int code, string reason)
     {
-        var raw1xx = Encoding.ASCII.GetBytes($"HTTP/1.1 {code} {reason}\r\n\r\n");
+        var raw1Xx = Encoding.ASCII.GetBytes($"HTTP/1.1 {code} {reason}\r\n\r\n");
         var raw200 = BuildResponse(200, "OK", "data", ("Content-Length", "4"));
 
-        var combined = new byte[raw1xx.Length + raw200.Length];
-        raw1xx.CopyTo(combined, 0);
-        raw200.Span.CopyTo(combined.AsSpan(raw1xx.Length));
+        var combined = new byte[raw1Xx.Length + raw200.Length];
+        raw1Xx.CopyTo(combined, 0);
+        raw200.Span.CopyTo(combined.AsSpan(raw1Xx.Length));
 
         var decoded = _decoder.TryDecode(combined, out var responses);
 

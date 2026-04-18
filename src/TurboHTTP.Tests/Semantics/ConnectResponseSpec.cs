@@ -4,15 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests CONNECT response body handling per RFC 9110 §9.3.6.
-/// A successful (2xx) CONNECT response has no body — the connection transitions
-/// to a tunnel. Content-Length and Transfer-Encoding MUST be ignored.
-/// Non-2xx responses (e.g. 407) are decoded with normal body handling.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Decoder"/> and <see cref="Protocol.Http10.Decoder"/>.
-/// </remarks>
 public sealed class ConnectResponseSpec
 {
     [Fact(Timeout = 5000)]

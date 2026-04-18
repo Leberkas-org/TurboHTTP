@@ -6,23 +6,11 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests the host-key subflow grouping used to multiplex multiple requests onto per-host connections.
-/// Verifies that requests are partitioned by host key and each subflow completes independently.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="GroupByRequestEndpointStage{T}"/>.
-/// Validates subflow isolation, completion propagation, and back-pressure per host partition.
-/// </remarks>
 public sealed class HostKeySubFlowSpec : StreamTestBase
 {
     private static HttpRequestMessage Req(string url)
         => new(HttpMethod.Get, url);
 
-    /// <summary>
-    /// Builds a flow that groups by host, applies <paramref name="configure"/>
-    /// to the SubFlow, then merges substreams back into a single flow.
-    /// </summary>
     private static Flow<HttpRequestMessage, TOut, NotUsed> BuildFlow<TOut>(
         Func<
             SubFlow<HttpRequestMessage, NotUsed, Sink<HttpRequestMessage, NotUsed>>,
@@ -47,7 +35,8 @@ public sealed class HostKeySubFlowSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task HostKeySubFlow_should_pass_all_elements_through_when_group_by_host_key_and_merge_substreams_applied()
+    public async Task
+        HostKeySubFlow_should_pass_all_elements_through_when_group_by_host_key_and_merge_substreams_applied()
     {
         var requests = new[]
         {
@@ -101,8 +90,7 @@ public sealed class HostKeySubFlowSpec : StreamTestBase
         };
 
         // Keep only requests whose path starts with /api
-        var flow = BuildFlow<HttpRequestMessage>(
-            sf => sf.Where(r => r.RequestUri!.AbsolutePath.StartsWith("/api")));
+        var flow = BuildFlow<HttpRequestMessage>(sf => sf.Where(r => r.RequestUri!.AbsolutePath.StartsWith("/api")));
 
         var results = await RunAsync(flow, requests);
 
@@ -148,7 +136,7 @@ public sealed class HostKeySubFlowSpec : StreamTestBase
         // Extract path, then keep only those starting with /api
         var flow = BuildFlow<string>(sf =>
             sf.Select(r => r.RequestUri!.AbsolutePath)
-              .Where(path => path.StartsWith("/api")));
+                .Where(path => path.StartsWith("/api")));
 
         var results = await RunAsync(flow, requests);
 

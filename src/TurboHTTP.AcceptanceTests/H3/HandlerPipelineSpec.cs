@@ -55,6 +55,7 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
                 r.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
         }
+
         return r;
     }
 
@@ -65,6 +66,7 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -304,6 +306,7 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
         {
             payload[i] = (byte)('A' + i % 26);
         }
+
         var compressed = GzipCompress(payload);
 
         var map = new ResponseMap()
@@ -350,10 +353,12 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
                         r.Headers.TryAddWithoutValidation(header.Key, header.Value);
                     }
                 }
+
                 if (req.Headers.TryGetValues("Cookie", out var cookieVals))
                 {
                     r.Headers.TryAddWithoutValidation("X-Received-Cookie", string.Join("; ", cookieVals));
                 }
+
                 return r;
             });
 

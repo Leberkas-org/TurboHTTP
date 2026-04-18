@@ -28,8 +28,7 @@ public sealed class OptionsSpec : AcceptanceTestBase
         var fake = ResponseMapFake.Create(map);
         var flow = Flow.Create<HttpRequestMessage>()
             .Select(enricher.Enrich)
-            .Via(fake.Join(Flow.FromFunction<HttpRequestMessage, HttpResponseMessage>(
-                _ => new HttpResponseMessage())));
+            .Via(fake.Join(Flow.FromFunction<HttpRequestMessage, HttpResponseMessage>(_ => new HttpResponseMessage())));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -46,6 +45,7 @@ public sealed class OptionsSpec : AcceptanceTestBase
             {
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
+
             return new HttpResponseMessage(HttpStatusCode.Unauthorized);
         })
         .On("/auth/echo", req =>
@@ -54,9 +54,11 @@ public sealed class OptionsSpec : AcceptanceTestBase
             {
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent($"{req.Headers.Authorization.Scheme} {req.Headers.Authorization.Parameter}")
+                    Content = new StringContent(
+                        $"{req.Headers.Authorization.Scheme} {req.Headers.Authorization.Parameter}")
                 };
             }
+
             return new HttpResponseMessage(HttpStatusCode.Unauthorized);
         });
 

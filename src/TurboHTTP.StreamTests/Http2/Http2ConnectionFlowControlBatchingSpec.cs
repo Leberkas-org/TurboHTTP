@@ -10,7 +10,6 @@ namespace TurboHTTP.StreamTests.Http2;
 
 public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
 {
-    // Default window is 65535 → threshold = max(16384, 65535/4) = 16384.
     private const int DefaultThreshold = 16384;
 
     private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
@@ -58,6 +57,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
+    [Trait("RFC", "RFC9113-6.9")]
     public async Task
         Http2ConnectionFlowControlBatching_should_flush_stream_pending_on_stream_close_when_below_threshold()
     {
@@ -76,6 +76,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
+    [Trait("RFC", "RFC9113-6.9")]
     public async Task
         Http2ConnectionFlowControlBatching_should_send_both_window_updates_when_threshold_crossed_in_single_frame()
     {
@@ -92,6 +93,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
+    [Trait("RFC", "RFC9113-6.9")]
     public async Task
         Http2ConnectionFlowControlBatching_should_send_single_batched_window_update_when_multiple_frames_accumulate_to_threshold()
     {
@@ -118,6 +120,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5_000)]
+    [Trait("RFC", "RFC9113-6.9")]
     public async Task
         Http2ConnectionFlowControlBatching_should_batch_streams_independently_when_two_streams_send_data_below_threshold()
     {

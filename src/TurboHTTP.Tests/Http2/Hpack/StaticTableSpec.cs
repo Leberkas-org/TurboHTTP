@@ -2,10 +2,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Tests the HPACK static table definition per RFC 7541 Appendix A.
-/// Verifies table size, reserved index 0, and correctness of all 61 static entries.
-/// </summary>
 public sealed class StaticTableSpec
 {
     [Fact(Timeout = 5000)]

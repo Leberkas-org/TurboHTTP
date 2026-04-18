@@ -3,17 +3,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Fuzzes the HTTP/2 frame parser with malformed and adversarial inputs to find crashes,
-/// infinite loops, and uncontrolled memory allocation. Uses deterministic seeds for
-/// reproducible failures.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// Each test uses seeded <see cref="Random"/> so failures are reproducible.
-/// Invariant: Decode must either return valid frames or throw
-/// <see cref="Http2Exception"/> — never an unhandled crash.
-/// </remarks>
 public sealed class Http2FrameFuzzSpec
 {
     private const int IterationsPerSeed = 100;
@@ -56,32 +45,7 @@ public sealed class Http2FrameFuzzSpec
         return header;
     }
 
-    private static byte[] BuildSettingsFrame(params (ushort id, uint value)[] parameters)
-    {
-        var payload = new byte[parameters.Length * 6];
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), parameters[i].id);
-            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), parameters[i].value);
-        }
-        return BuildRawFrame(0x04, 0x00, 0, payload);
-    }
-
-    private static byte[] BuildWindowUpdateFrame(int streamId, uint rawValue)
-    {
-        var payload = new byte[4];
-        BinaryPrimitives.WriteUInt32BigEndian(payload, rawValue);
-        return BuildRawFrame(0x08, 0x00, streamId, payload);
-    }
-
-    private static byte[] BuildHeadersFrame(int streamId, byte[] headerBlock, bool endHeaders = true)
-    {
-        var flags = (byte)(endHeaders ? 0x04 : 0x00);
-        return BuildRawFrame(0x01, flags, streamId, headerBlock);
-    }
-
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -114,7 +78,6 @@ public sealed class Http2FrameFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -156,7 +119,6 @@ public sealed class Http2FrameFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -200,7 +162,6 @@ public sealed class Http2FrameFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -243,7 +204,6 @@ public sealed class Http2FrameFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -282,7 +242,6 @@ public sealed class Http2FrameFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]

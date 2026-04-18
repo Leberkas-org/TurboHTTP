@@ -4,8 +4,7 @@ namespace TurboHTTP.Tests.Http3.Connection;
 
 public sealed class QuicVarIntSpec
 {
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(0, new byte[] { 0x00 })]
     [InlineData(1, new byte[] { 0x01 })]
@@ -20,7 +19,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(expected, buf[..written].ToArray());
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(new byte[] { 0x00 }, 0)]
     [InlineData(new byte[] { 0x01 }, 1)]
@@ -36,7 +35,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(64, new byte[] { 0x40, 0x40 })]
     [InlineData(494, new byte[] { 0x41, 0xEE })]
@@ -50,7 +49,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(expected, buf[..written].ToArray());
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(new byte[] { 0x40, 0x40 }, 64)]
     [InlineData(new byte[] { 0x41, 0xEE }, 494)]
@@ -65,7 +64,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(16384, new byte[] { 0x80, 0x00, 0x40, 0x00 })]
     [InlineData(494878333, new byte[] { 0x9D, 0x7F, 0x3E, 0x7D })]
@@ -79,7 +78,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(expected, buf[..written].ToArray());
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(new byte[] { 0x80, 0x00, 0x40, 0x00 }, 16384)]
     [InlineData(new byte[] { 0x9D, 0x7F, 0x3E, 0x7D }, 494878333)]
@@ -94,7 +93,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(1073741824, new byte[] { 0xC0, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00 })]
     [InlineData(151288809941952652, new byte[] { 0xC2, 0x19, 0x7C, 0x5E, 0xFF, 0x14, 0xE8, 0x8C })]
@@ -107,7 +106,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(expected, buf[..written].ToArray());
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(new byte[] { 0xC0, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00 }, 1073741824)]
     [InlineData(new byte[] { 0xC2, 0x19, 0x7C, 0x5E, 0xFF, 0x14, 0xE8, 0x8C }, 151288809941952652)]
@@ -120,7 +119,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(8, consumed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_encode_8_bytes_when_max_value()
     {
@@ -134,7 +133,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(0)]
     [InlineData(1)]
@@ -157,7 +156,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(written, consumed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_preserve_max_value_when_roundtrip()
     {
@@ -172,7 +171,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     [InlineData(0, 1)]
     [InlineData(63, 1)]
@@ -187,7 +186,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_throw_when_value_exceeds_max()
     {
@@ -195,7 +194,7 @@ public sealed class QuicVarIntSpec
         Assert.Throws<ArgumentOutOfRangeException>(() => QuicVarInt.Encode(QuicVarInt.MaxValue + 1, buf));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_throw_when_negative_value()
     {
@@ -203,7 +202,7 @@ public sealed class QuicVarIntSpec
         Assert.Throws<ArgumentOutOfRangeException>(() => QuicVarInt.Encode(-1, buf));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_return_false_when_empty_input()
     {
@@ -211,7 +210,7 @@ public sealed class QuicVarIntSpec
         Assert.False(ok);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_return_false_when_truncated_2_byte()
     {
@@ -219,7 +218,7 @@ public sealed class QuicVarIntSpec
         Assert.False(ok);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_return_false_when_truncated_4_byte()
     {
@@ -227,7 +226,7 @@ public sealed class QuicVarIntSpec
         Assert.False(ok);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_return_false_when_truncated_8_byte()
     {
@@ -235,14 +234,14 @@ public sealed class QuicVarIntSpec
         Assert.False(ok);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_throw_when_decode_insufficient_data()
     {
         Assert.Throws<ArgumentException>(() => QuicVarInt.Decode([], out _));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-16")]
     public void QuicVarInt_should_throw_when_destination_too_small()
     {
@@ -251,7 +250,7 @@ public sealed class QuicVarIntSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-A.1")]
     public void QuicVarInt_should_match_rfc_example_when_value_37()
     {
@@ -260,7 +259,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(0x25, buf[0]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-A.1")]
     public void QuicVarInt_should_match_rfc_example_when_value_15293()
     {
@@ -270,7 +269,7 @@ public sealed class QuicVarIntSpec
         Assert.Equal(new byte[] { 0x7B, 0xBD }, buf[..2].ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-A.1")]
     public void QuicVarInt_should_match_rfc_example_when_value_494878333()
     {

@@ -51,11 +51,6 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         Assert.IsType<QueueOfferResult.Enqueued>(result);
     }
 
-    /// <summary>
-    /// Expects one outbound item from the network probe. With the merged output,
-    /// each request produces a NetworkBuffer (containing the HeadersFrame) and a
-    /// StreamAcquireItem signal — both come through OutNetwork.
-    /// </summary>
     private static void ExpectRequestOutput(TestSubscriber.ManualProbe<IOutputItem> networkProbe,
         int expectedItems = 2)
     {
@@ -77,10 +72,6 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         }
     }
 
-    /// <summary>
-    /// Drains the connection preface (a single NetworkBuffer containing SETTINGS + WINDOW_UPDATE)
-    /// that the combined stage emits on the first OutNetwork pull.
-    /// </summary>
     private static void DrainPreface(TestSubscriber.ManualProbe<IOutputItem> networkProbe)
     {
         var preface = networkProbe.ExpectNext(TestContext.Current.CancellationToken);

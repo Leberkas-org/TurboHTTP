@@ -4,14 +4,9 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.Shared;
 
-/// <summary>
-/// Verifies that <see cref="H3ResponseBuilder"/> produces valid HTTP/3 frame sequences
-/// decodable by <see cref="FrameDecoder"/>.
-/// </summary>
 public sealed class H3ResponseBuilderSpec
 {
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.1")]
     public void Build_should_produce_valid_settings_headers_data_sequence()
     {
         var bytes = new H3ResponseBuilder()
@@ -46,7 +41,6 @@ public sealed class H3ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.4")]
     public void Build_should_produce_valid_empty_settings()
     {
         var bytes = new H3ResponseBuilder()
@@ -63,7 +57,6 @@ public sealed class H3ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.6")]
     public void Build_should_produce_valid_goaway_frame()
     {
         var bytes = new H3ResponseBuilder()
@@ -80,7 +73,6 @@ public sealed class H3ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.2")]
     public void Build_should_produce_headers_only_response()
     {
         var bytes = new H3ResponseBuilder()
@@ -102,7 +94,6 @@ public sealed class H3ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.7")]
     public void Build_should_produce_valid_max_push_id_frame()
     {
         var bytes = new H3ResponseBuilder()
@@ -119,7 +110,6 @@ public sealed class H3ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.1")]
     public void Build_should_produce_byte_exact_round_trip_through_decoder()
     {
         var builder = new H3ResponseBuilder();
@@ -142,7 +132,6 @@ public sealed class H3ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-7.2.3")]
     public void Build_should_produce_valid_cancel_push_frame()
     {
         var bytes = new H3ResponseBuilder()

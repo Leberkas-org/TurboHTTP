@@ -1,17 +1,10 @@
-using System.Buffers;
 using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Components;
 
-/// <summary>
-/// Unit tests for StreamState per-stream header and body buffer management.
-/// Covers MemoryPool-based buffer growth, header/body accumulation, response initialization,
-/// and content header tracking for HTTP/2 streams.
-/// </summary>
 public sealed class Http2StreamStateSpec
 {
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void StreamState_should_initialize_with_no_response()
     {
         var state = new StreamState();
@@ -20,7 +13,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void StreamState_should_initialize_with_no_content_headers()
     {
         var state = new StreamState();
@@ -29,7 +21,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void InitResponse_should_store_response()
     {
         var state = new StreamState();
@@ -41,7 +32,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void GetResponse_should_return_initialized_response()
     {
         var state = new StreamState();
@@ -54,7 +44,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void GetResponse_should_throw_when_no_response_initialized()
     {
         var state = new StreamState();
@@ -63,7 +52,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void GetOrCreateResponse_should_return_existing_response()
     {
         var state = new StreamState();
@@ -76,7 +64,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void GetOrCreateResponse_should_create_response_if_none_exists()
     {
         var state = new StreamState();
@@ -88,7 +75,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void GetOrCreateResponse_should_return_same_instance_on_multiple_calls()
     {
         var state = new StreamState();
@@ -100,7 +86,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void AddContentHeader_should_store_header()
     {
         var state = new StreamState();
@@ -111,7 +96,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void AddContentHeader_should_accumulate_multiple_headers()
     {
         var state = new StreamState();
@@ -123,13 +107,12 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void ApplyContentHeadersTo_should_apply_stored_headers()
     {
         var state = new StreamState();
         state.AddContentHeader("content-type", "application/json");
         state.AddContentHeader("content-length", "256");
-        var content = new ByteArrayContent(Array.Empty<byte>());
+        var content = new ByteArrayContent([]);
 
         state.ApplyContentHeadersTo(content);
 
@@ -138,17 +121,15 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void ApplyContentHeadersTo_should_not_throw_when_no_content_headers()
     {
         var state = new StreamState();
-        var content = new ByteArrayContent(Array.Empty<byte>());
+        var content = new ByteArrayContent([]);
 
         state.ApplyContentHeadersTo(content);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendHeader_should_allocate_buffer_on_first_call()
     {
         var state = new StreamState();
@@ -162,7 +143,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendHeader_should_accumulate_multiple_calls()
     {
         var state = new StreamState();
@@ -179,7 +159,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendHeader_should_grow_buffer_when_capacity_exceeded()
     {
         var state = new StreamState();
@@ -197,7 +176,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendHeader_should_copy_existing_data_on_reallocation()
     {
         var state = new StreamState();
@@ -214,7 +192,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendBody_should_allocate_buffer_on_first_call()
     {
         var state = new StreamState();
@@ -223,13 +200,12 @@ public sealed class Http2StreamStateSpec
         state.AppendBody(data);
 
         // Verify AppendBody did not throw - body was accumulated
-        (var owner, var length) = state.TakeBodyOwnership();
+        var (owner, length) = state.TakeBodyOwnership();
         Assert.NotNull(owner);
         Assert.Equal(3, length);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendBody_should_accumulate_multiple_calls()
     {
         var state = new StreamState();
@@ -241,7 +217,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void AppendBody_should_grow_buffer_when_capacity_exceeded()
     {
         var state = new StreamState();
@@ -255,7 +230,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void GetHeaderSpan_should_return_correct_slice()
     {
         var state = new StreamState();
@@ -271,7 +245,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
     public void GetHeaderSpan_should_return_empty_when_no_data_appended()
     {
         var state = new StreamState();
@@ -282,41 +255,38 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void TakeBodyOwnership_should_return_owner_and_length()
     {
         var state = new StreamState();
         var data = new byte[] { 1, 2, 3, 4, 5 };
         state.AppendBody(data);
 
-        (var owner, var length) = state.TakeBodyOwnership();
+        var (owner, length) = state.TakeBodyOwnership();
 
         Assert.NotNull(owner);
         Assert.Equal(5, length);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void TakeBodyOwnership_should_return_null_when_no_body()
     {
         var state = new StreamState();
 
-        (var owner, var length) = state.TakeBodyOwnership();
+        var (owner, length) = state.TakeBodyOwnership();
 
         Assert.Null(owner);
         Assert.Equal(0, length);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void TakeBodyOwnership_should_clear_internal_state()
     {
         var state = new StreamState();
         var data = new byte[] { 1, 2, 3 };
         state.AppendBody(data);
 
-        (var owner1, var length1) = state.TakeBodyOwnership();
-        (var owner2, var length2) = state.TakeBodyOwnership();
+        var (owner1, length1) = state.TakeBodyOwnership();
+        var (owner2, length2) = state.TakeBodyOwnership();
 
         Assert.NotNull(owner1);
         Assert.Equal(3, length1);
@@ -325,14 +295,13 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void Reset_should_clear_all_state()
     {
         var state = new StreamState();
         var response = new HttpResponseMessage();
         state.InitResponse(response);
-        state.AppendHeader(new byte[] { 1, 2, 3 });
-        state.AppendBody(new byte[] { 4, 5, 6 });
+        state.AppendHeader([1, 2, 3]);
+        state.AppendBody([4, 5, 6]);
         state.AddContentHeader("content-type", "text/plain");
 
         state.Reset();
@@ -343,7 +312,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void Reset_should_dispose_owned_buffers()
     {
         var state = new StreamState();
@@ -352,17 +320,16 @@ public sealed class Http2StreamStateSpec
 
         state.Reset();
 
-        (var owner, var length) = state.TakeBodyOwnership();
+        var (owner, length) = state.TakeBodyOwnership();
         Assert.Null(owner);
         Assert.Equal(0, length);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void Reset_should_allow_reuse()
     {
         var state = new StreamState();
-        state.AppendHeader(new byte[] { 1, 2 });
+        state.AppendHeader([1, 2]);
         state.Reset();
 
         var newData = new byte[] { 3, 4, 5 };
@@ -373,30 +340,28 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void Multiple_appends_should_handle_large_accumulation()
     {
         var state = new StreamState();
-        const int ChunkSize = 1000;
-        const int NumChunks = 20;
+        const int chunkSize = 1000;
+        const int numChunks = 20;
 
-        for (var i = 0; i < NumChunks; i++)
+        for (var i = 0; i < numChunks; i++)
         {
-            var chunk = new byte[ChunkSize];
+            var chunk = new byte[chunkSize];
             Array.Fill(chunk, (byte)(i % 256));
             state.AppendHeader(chunk);
         }
 
         var span = state.GetHeaderSpan();
-        Assert.Equal(ChunkSize * NumChunks, span.Length);
+        Assert.Equal(chunkSize * numChunks, span.Length);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void ContentHeaders_should_not_interfere_with_buffers()
     {
         var state = new StreamState();
-        state.AppendHeader(new byte[] { 1, 2, 3 });
+        state.AppendHeader([1, 2, 3]);
         state.AddContentHeader("content-type", "text/html");
 
         var span = state.GetHeaderSpan();
@@ -404,7 +369,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void GetOrCreateResponse_should_create_once_and_reuse()
     {
         var state = new StreamState();
@@ -418,7 +382,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void AppendHeader_with_empty_span_should_not_allocate()
     {
         var state = new StreamState();
@@ -429,19 +392,17 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void AppendBody_with_empty_span_should_not_allocate()
     {
         var state = new StreamState();
         state.AppendBody(ReadOnlySpan<byte>.Empty);
 
-        (var owner, var length) = state.TakeBodyOwnership();
+        var (owner, length) = state.TakeBodyOwnership();
         Assert.Null(owner);
         Assert.Equal(0, length);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void Reset_clear_content_headers_list()
     {
         var state = new StreamState();
@@ -454,14 +415,13 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void ApplyContentHeadersTo_multiple_headers()
     {
         var state = new StreamState();
         state.AddContentHeader("content-type", "application/json");
         state.AddContentHeader("content-length", "512");
         state.AddContentHeader("content-encoding", "gzip");
-        var content = new ByteArrayContent(Array.Empty<byte>());
+        var content = new ByteArrayContent([]);
 
         state.ApplyContentHeadersTo(content);
 
@@ -471,7 +431,6 @@ public sealed class Http2StreamStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
     public void Header_and_body_buffers_should_be_independent()
     {
         var state = new StreamState();
@@ -487,7 +446,7 @@ public sealed class Http2StreamStateSpec
         Assert.Equal(100, headerSpan.Length);
         Assert.All(headerSpan.ToArray(), b => Assert.Equal(1, b));
 
-        (var bodyOwner, var bodyLength) = state.TakeBodyOwnership();
+        var (_, bodyLength) = state.TakeBodyOwnership();
         Assert.Equal(200, bodyLength);
     }
 }

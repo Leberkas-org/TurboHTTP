@@ -2,9 +2,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Tests dynamic table size updates (§6.3), encoder table size changes, and encoder/decoder synchronization (§7.1).
-/// </summary>
 public sealed class DynamicTableSyncSpec
 {
     [Fact(Timeout = 5000)]
@@ -173,7 +170,7 @@ public sealed class DynamicTableSyncSpec
         var encoder = new HpackEncoder(useHuffman: false);
         encoder.AcknowledgeTableSizeChange(512);
 
-        var firstBlock = encoder.Encode(new List<(string, string)> { (":method", "GET") });
+        encoder.Encode(new List<(string, string)> { (":method", "GET") });
         var secondBlock = encoder.Encode(new List<(string, string)> { (":method", "GET") });
 
         var secondFirstByte = secondBlock.Span[0];
@@ -229,11 +226,11 @@ public sealed class DynamicTableSyncSpec
 
         var allHeaders = new List<(string, string)>
         {
-            (":method",    "GET"),
-            (":path",      "/api/data"),
-            (":scheme",    "https"),
+            (":method", "GET"),
+            (":path", "/api/data"),
+            (":scheme", "https"),
             (":authority", "example.com"),
-            ("accept",     "application/json"),
+            ("accept", "application/json"),
             ("x-trace-id", "abc-123"),
         };
 
@@ -284,7 +281,7 @@ public sealed class DynamicTableSyncSpec
 
         var headers = new List<HpackHeader>
         {
-            new HpackHeader("authorization", "Bearer token123", NeverIndex: true),
+            new("authorization", "Bearer token123", NeverIndex: true),
         };
 
         var buf = new byte[256];

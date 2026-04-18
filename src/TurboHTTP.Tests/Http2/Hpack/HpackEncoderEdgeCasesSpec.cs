@@ -2,10 +2,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Gap-fill tests for HpackEncoder covering uncovered branches and edge cases.
-/// Targets: error paths, boundary conditions, dynamic table operations, Huffman encoding edge cases.
-/// </summary>
 public sealed class HpackEncoderEdgeCasesSpec
 {
     [Fact(Timeout = 5000)]
@@ -202,7 +198,7 @@ public sealed class HpackEncoderEdgeCasesSpec
 
         // Create a string where Huffman encoding is NOT beneficial
         // (though in practice Huffman usually saves space)
-        var shortValue = "a";
+        const string shortValue = "a";
         var headers = new List<(string, string)> { ("x", shortValue) };
 
         var encoded = encoder.Encode(headers);

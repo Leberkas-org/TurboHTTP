@@ -8,15 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// RFC 7838 — AltSvcBidiStage request and response direction tests.
-/// Verifies that the request direction upgrades to HTTP/3 when a valid Alt-Svc entry exists,
-/// and the response direction parses and caches Alt-Svc headers.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="AltSvcBidiStage"/>.
-/// RFC 7838: Alt-Svc header parsing, protocol negotiation, cache management.
-/// </remarks>
 public sealed class AltSvcBidiStageSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
@@ -67,8 +58,6 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    // Request direction tests
-
     [Trait("RFC", "RFC7838")]
     [Fact(Timeout = 5000)]
     public async Task AltSvcBidiStage_should_pass_through_request_when_no_http3_cached()
@@ -89,10 +78,7 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
     public async Task AltSvcBidiStage_should_upgrade_to_http3_when_cached()
     {
         var cache = new AltSvcCache();
-        cache.Store("example.com", new List<AltSvcEntry>
-        {
-            new AltSvcEntry("h3", "", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))
-        });
+        cache.Store("example.com", [new AltSvcEntry("h3", "", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))]);
 
         var stage = new AltSvcBidiStage(cache);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -111,10 +97,7 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
     public async Task AltSvcBidiStage_should_update_port_when_cached_with_different_port()
     {
         var cache = new AltSvcCache();
-        cache.Store("example.com", new List<AltSvcEntry>
-        {
-            new AltSvcEntry("h3", "", 8443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))
-        });
+        cache.Store("example.com", [new AltSvcEntry("h3", "", 8443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))]);
 
         var stage = new AltSvcBidiStage(cache);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:80/")
@@ -134,10 +117,8 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
     public async Task AltSvcBidiStage_should_update_host_when_cached_with_different_host()
     {
         var cache = new AltSvcCache();
-        cache.Store("example.com", new List<AltSvcEntry>
-        {
-            new AltSvcEntry("h3", "alt.example.com", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))
-        });
+        cache.Store("example.com",
+            [new AltSvcEntry("h3", "alt.example.com", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))]);
 
         var stage = new AltSvcBidiStage(cache);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")
@@ -151,8 +132,6 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
         Assert.Equal(HttpVersion.Version30, result.Version);
         Assert.Equal("alt.example.com", result.RequestUri!.Host);
     }
-
-    // Response direction tests
 
     [Trait("RFC", "RFC7838")]
     [Fact(Timeout = 5000)]
@@ -192,10 +171,7 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
     public async Task AltSvcBidiStage_should_clear_cache_when_alt_svc_clear()
     {
         var cache = new AltSvcCache();
-        cache.Store("example.com", new List<AltSvcEntry>
-        {
-            new AltSvcEntry("h3", "", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))
-        });
+        cache.Store("example.com", [new AltSvcEntry("h3", "", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))]);
 
         Assert.True(cache.TryGetHttp3("example.com", out _));
 
@@ -230,10 +206,7 @@ public sealed class AltSvcBidiStageSpec : StreamTestBase
     public async Task AltSvcBidiStage_should_not_upgrade_if_already_http3()
     {
         var cache = new AltSvcCache();
-        cache.Store("example.com", new List<AltSvcEntry>
-        {
-            new AltSvcEntry("h3", "", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))
-        });
+        cache.Store("example.com", [new AltSvcEntry("h3", "", 443, 86400, false, DateTimeOffset.UtcNow.AddHours(1))]);
 
         var stage = new AltSvcBidiStage(cache);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/")

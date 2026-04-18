@@ -22,7 +22,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
         => new Http3SettingsFrame([]).Serialize();
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC9114-ENG-001")]
+    [Trait("RFC", "RFC9114-4.1")]
     public async Task Http30Engine_should_return_200_response_when_get_request_round_trips_with_settings_and_headers()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/hello")
@@ -44,7 +44,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC9114-ENG-002")]
+    [Trait("RFC", "RFC9114-4.1")]
     public async Task Http30Engine_should_emit_headers_and_data_frames_when_post_request_with_body_encoded()
     {
         const string payload = "field=value";
@@ -69,7 +69,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC9114-ENG-003")]
+    [Trait("RFC", "RFC9114-4.1")]
     public async Task Http30Engine_should_preserve_raw_compressed_body_when_content_encoding_is_gzip()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/data")
@@ -108,13 +108,13 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content!.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         // Engine preserves raw compressed bytes — decompression is handled by feature layer
         Assert.Equal(compressedBody, body);
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC9114-ENG-004")]
+    [Trait("RFC", "RFC9114-6.2.1")]
     public async Task Http30Engine_should_emit_settings_frame_when_engine_starts()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/settings-test")
@@ -136,7 +136,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    [Trait("RFC", "RFC9114-ENG-005")]
+    [Trait("RFC", "RFC9114-4.1")]
     public async Task Http30Engine_should_preserve_body_content_when_response_has_body()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/body-test")
@@ -161,7 +161,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content!.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         Assert.Equal(expectedBody, body);
     }
 }

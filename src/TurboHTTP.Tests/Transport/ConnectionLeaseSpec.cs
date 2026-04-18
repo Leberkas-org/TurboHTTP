@@ -6,10 +6,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="ConnectionLease"/> lifecycle management, state transitions,
-/// stream tracking, and disposal behavior.
-/// </summary>
 public sealed class ConnectionLeaseSpec
 {
     private static ConnectionHandle CreateHandle(Version version)
@@ -361,7 +357,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void IsExpired_should_return_false_for_infinite_lifetime()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -372,7 +367,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void IsExpired_should_return_false_for_recent_connection()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -383,7 +377,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public async Task IsExpired_should_return_true_for_very_short_lifetime()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -395,7 +388,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void LastActivity_should_be_set_on_construction()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -408,7 +400,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void HasAvailableSlot_should_return_false_when_not_alive()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -421,7 +412,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void Mark_busy_multiple_times_should_increment_correctly()
     {
         var handle = CreateHandle(HttpVersion.Version20);
@@ -436,7 +426,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void Mark_idle_multiple_times_should_decrement_correctly()
     {
         var handle = CreateHandle(HttpVersion.Version20);
@@ -456,7 +445,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void Mark_no_reuse_should_prevent_slots()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -470,7 +458,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void Update_max_concurrent_streams_to_zero_should_prevent_slots()
     {
         var handle = CreateHandle(HttpVersion.Version20);
@@ -483,7 +470,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void Idempotent_double_dispose_should_not_emit_metrics_twice()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -497,7 +483,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public void State_property_should_return_provided_state()
     {
         var handle = CreateHandle(HttpVersion.Version11);
@@ -508,7 +493,6 @@ public sealed class ConnectionLeaseSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionLease")]
     public async Task Token_should_allow_waiting_for_disposal()
     {
         var handle = CreateHandle(HttpVersion.Version11);

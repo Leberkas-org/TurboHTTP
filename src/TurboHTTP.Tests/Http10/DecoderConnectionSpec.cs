@@ -3,14 +3,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 response decoding on connection close per RFC 1945.
-/// Verifies TryDecodeEof behaviour and state reset between connections.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945: HTTP/1.0 uses connection-close to delimit response bodies.
-/// </remarks>
 public sealed class Http10DecoderConnectionSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -27,7 +19,7 @@ public sealed class Http10DecoderConnectionSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10DecoderConnectionSpec_should_defaulttoclose()
+    public void Http10DecoderConnectionSpec_should_default_to_close()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -41,7 +33,7 @@ public sealed class Http10DecoderConnectionSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10DecoderConnectionSpec_should_recognizekeepalive()
+    public void Http10DecoderConnectionSpec_should_recognize_keepalive()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -55,7 +47,7 @@ public sealed class Http10DecoderConnectionSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10DecoderConnectionSpec_should_parsekeepaliveparams()
+    public void Http10DecoderConnectionSpec_should_parse_keepalive_params()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -71,7 +63,7 @@ public sealed class Http10DecoderConnectionSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10DecoderConnectionSpec_should_signalclose()
+    public void Http10DecoderConnectionSpec_should_signal_close()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -85,7 +77,7 @@ public sealed class Http10DecoderConnectionSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10DecoderConnectionSpec_should_notdefaulttokeepalive()
+    public void Http10DecoderConnectionSpec_should_not_default_to_keepalive()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");

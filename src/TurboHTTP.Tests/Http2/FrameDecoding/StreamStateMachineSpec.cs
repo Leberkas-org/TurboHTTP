@@ -3,18 +3,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.FrameDecoding;
 
-/// <summary>
-/// Tests HTTP/2 stream state machine transitions per RFC 9113 §5.1.
-/// Verifies that HEADERS, DATA, and RST_STREAM frames drive stream state correctly.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §5.1: Streams progress through idle, open, half-closed, and closed states.
-/// </remarks>
 public sealed class StreamStateMachineSpec
 {
-    // Helpers
-
     private static byte[] MakeHeadersBytes(int streamId, bool endStream = false, string status = "200")
     {
         var hpack = new HpackEncoder(useHuffman: false);
@@ -38,36 +28,24 @@ public sealed class StreamStateMachineSpec
         return result;
     }
 
-    /// <summary>
-    /// RFC 9113 §5.1: Any non-connection frame received on stream 0 is a PROTOCOL_ERROR.
-    /// The decoder does not enforce stream identifiers — callers must apply this rule.
-    /// </summary>
     private static void EnforceNonZeroStreamId(Http2Frame frame, FrameType frameType)
     {
         if (frame.StreamId == 0)
         {
             throw new Http2Exception(
-                $"RFC 9113 §5.1: {frameType} frame on stream 0 is a connection error (PROTOCOL_ERROR).",
-                Http2ErrorCode.ProtocolError);
+                $"RFC 9113 §5.1: {frameType} frame on stream 0 is a connection error (PROTOCOL_ERROR).");
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §5.1: DATA received on an idle stream (no prior HEADERS) is a PROTOCOL_ERROR.
-    /// </summary>
     private static void EnforceStreamOpen(int streamId, HashSet<int> openStreams)
     {
         if (!openStreams.Contains(streamId))
         {
             throw new Http2Exception(
-                $"RFC 9113 §5.1: DATA on idle stream {streamId} is a connection error (PROTOCOL_ERROR).",
-                Http2ErrorCode.ProtocolError);
+                $"RFC 9113 §5.1: DATA on idle stream {streamId} is a connection error (PROTOCOL_ERROR).");
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.1: DATA received on a closed stream is a STREAM_CLOSED stream error.
-    /// </summary>
     private static void EnforceStreamNotClosed(int streamId, HashSet<int> closedStreams)
     {
         if (closedStreams.Contains(streamId))
@@ -79,8 +57,6 @@ public sealed class StreamStateMachineSpec
                 streamId);
         }
     }
-
-    // SS-001..004: Frame decoding — Idle→Open, Open→Closed
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
@@ -94,7 +70,6 @@ public sealed class StreamStateMachineSpec
         Assert.Equal(1, frame.StreamId);
         Assert.False(frame.EndStream);
         Assert.True(frame.EndHeaders);
-        // RFC §5.1: receiving HEADERS without END_STREAM transitions stream 1 from Idle to Open.
     }
 
     [Fact(Timeout = 5000)]
@@ -108,7 +83,6 @@ public sealed class StreamStateMachineSpec
         var frame = Assert.IsType<HeadersFrame>(frames[0]);
         Assert.Equal(1, frame.StreamId);
         Assert.True(frame.EndStream);
-        // RFC §5.1: HEADERS+END_STREAM transitions stream directly from Idle to Closed.
     }
 
     [Fact(Timeout = 5000)]
@@ -124,7 +98,6 @@ public sealed class StreamStateMachineSpec
         Assert.Equal(1, frame.StreamId);
         Assert.True(frame.EndStream);
         Assert.Equal(payload, frame.Data.ToArray());
-        // RFC §5.1: DATA+END_STREAM transitions stream from Open to Closed.
     }
 
     [Fact(Timeout = 5000)]
@@ -138,10 +111,7 @@ public sealed class StreamStateMachineSpec
         var frame = Assert.IsType<DataFrame>(frames[0]);
         Assert.Equal(1, frame.StreamId);
         Assert.False(frame.EndStream);
-        // RFC §5.1: stream remains in Open state — more DATA frames expected.
     }
-
-    // SS-005..007: RST_STREAM and multi-frame sequences
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
@@ -154,7 +124,6 @@ public sealed class StreamStateMachineSpec
         var frame = Assert.IsType<RstStreamFrame>(frames[0]);
         Assert.Equal(1, frame.StreamId);
         Assert.Equal(Http2ErrorCode.Cancel, frame.ErrorCode);
-        // RFC §6.4: RST_STREAM transitions any non-Idle stream to Closed.
     }
 
     [Fact(Timeout = 5000)]
@@ -193,8 +162,6 @@ public sealed class StreamStateMachineSpec
         Assert.Equal(3, frames[1].StreamId);
     }
 
-    // SS-008: HPACK integration
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_by_hpack_decoder_when_headers_has_hpack_fragment()
@@ -215,8 +182,6 @@ public sealed class StreamStateMachineSpec
         Assert.Contains(headers, h => h is { Name: ":status", Value: "204" });
         Assert.Contains(headers, h => h is { Name: "content-type", Value: "text/plain" });
     }
-
-    // SS-009..010: Stream 0 PROTOCOL_ERROR (RFC 9113 §5.1)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
@@ -243,8 +208,8 @@ public sealed class StreamStateMachineSpec
         var rawFrame = new byte[]
         {
             0x00, 0x00, 0x04, // length = 4
-            0x00,             // DATA
-            0x00,             // no flags
+            0x00, // DATA
+            0x00, // no flags
             0x00, 0x00, 0x00, 0x00, // stream = 0
             0x01, 0x02, 0x03, 0x04, // payload
         };
@@ -253,8 +218,6 @@ public sealed class StreamStateMachineSpec
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(rawFrame));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
-
-    // SS-011..012: Idle/closed stream DATA errors (RFC 9113 §5.1 / §6.1)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]

@@ -2,14 +2,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for RFC 9110 §13.1.5 — If-Range header validation.
-/// Verifies that <see cref="IfRangeValidator"/> enforces correct usage of If-Range
-/// with Range headers, strong entity-tags, and HTTP-dates.
-/// </summary>
 public sealed class IfRangeValidatorSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void Should_Throw_When_IfRangeWithoutRange()
     {
@@ -20,7 +15,7 @@ public sealed class IfRangeValidatorSpec
         Assert.Contains("Range header", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void Should_Throw_When_IfRangeWithWeakETag()
     {
@@ -32,7 +27,7 @@ public sealed class IfRangeValidatorSpec
         Assert.Contains("weak entity-tag", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void Should_Throw_When_IfRangeDateAndETagAvailable()
     {
@@ -45,7 +40,7 @@ public sealed class IfRangeValidatorSpec
         Assert.Contains("strong entity-tag", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void Should_NotThrow_When_StrongETagAndRange()
     {
@@ -57,7 +52,7 @@ public sealed class IfRangeValidatorSpec
         Assert.Null(exception);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void Should_NotThrow_When_DateAndNoETag()
     {
@@ -69,7 +64,7 @@ public sealed class IfRangeValidatorSpec
         Assert.Null(exception);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-13.1.5")]
     public void Should_NotThrow_When_NoIfRange()
     {

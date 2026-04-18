@@ -4,17 +4,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests 206 Partial Content response validation per RFC 9110 §15.3.7.
-/// A 206 response MUST contain a Content-Range header (single part) or use
-/// multipart/byteranges content type (multiple parts). Non-206 responses skip validation.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="PartialContentValidator"/>.
-/// </remarks>
 public sealed class PartialContentSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3.7")]
     public void Should_BeValid_When_ContentRangePresent()
     {
@@ -30,7 +22,7 @@ public sealed class PartialContentSpec
         Assert.Null(result.ErrorMessage);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3.7")]
     public void Should_BeInvalid_When_NoContentRange()
     {
@@ -45,7 +37,7 @@ public sealed class PartialContentSpec
         Assert.Contains("Content-Range", result.ErrorMessage);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3.7")]
     public void Should_Detect_When_MultipartByteranges()
     {
@@ -64,7 +56,7 @@ public sealed class PartialContentSpec
         Assert.Null(result.ErrorMessage);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3.7")]
     public void Should_Skip_When_Not206()
     {
@@ -79,7 +71,7 @@ public sealed class PartialContentSpec
         Assert.Null(result.ErrorMessage);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3.7")]
     public void Should_Skip_When_304NotModified()
     {
@@ -92,7 +84,7 @@ public sealed class PartialContentSpec
         Assert.True(result.Skipped);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.3.7")]
     public void Should_DetectMultipart_When_BothContentRangeAndMultipart()
     {

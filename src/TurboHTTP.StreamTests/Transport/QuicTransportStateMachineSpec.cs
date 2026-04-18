@@ -41,7 +41,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundData_should_push_output_when_gen_matches()
     {
         var (sm, ops) = CreateStateMachine();
@@ -55,7 +54,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundData_should_ignore_stale_generation()
     {
         var (sm, ops) = CreateStateMachine();
@@ -68,7 +66,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_OutboundWriteDone_should_signal_pull_input()
     {
         var (sm, ops) = CreateStateMachine();
@@ -79,7 +76,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_OutboundWriteFailed_should_push_quic_close_item()
     {
         var (sm, ops) = CreateStateMachine();
@@ -90,7 +86,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_AcquisitionFailed_should_cancel_connect_timer()
     {
         var (sm, ops) = CreateStateMachine();
@@ -105,7 +100,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_AcquisitionFailed_should_push_close_and_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -122,7 +116,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundComplete_clean_should_push_request_stream_complete()
     {
         var (sm, ops) = CreateStateMachine();
@@ -134,7 +127,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundComplete_abrupt_should_push_connection_failure()
     {
         var (sm, ops) = CreateStateMachine();
@@ -146,7 +138,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_InboundPumpFailed_should_treat_as_abrupt_close()
     {
         var (sm, ops) = CreateStateMachine();
@@ -158,7 +149,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9000-9")]
     public void Dispatch_ConnectionMigrated_should_allow_when_migration_enabled()
     {
         var (sm, ops) = CreateStateMachine(allowConnectionMigration: true);
@@ -171,7 +161,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9000-9")]
     public void Dispatch_ConnectionMigrated_should_push_close_when_migration_disabled()
     {
         var (sm, ops) = CreateStateMachine(allowConnectionMigration: false);
@@ -185,7 +174,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_ConnectItem_should_schedule_connect_timeout()
     {
         var (sm, ops) = CreateStateMachine();
@@ -197,7 +185,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_tagged_buffer_should_signal_pull_when_no_connection()
     {
         var (sm, ops) = CreateStateMachine();
@@ -214,7 +201,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_untagged_buffer_should_signal_pull_when_no_streams()
     {
         var (sm, ops) = CreateStateMachine();
@@ -228,7 +214,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_EndOfRequest_should_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -239,7 +224,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_ConnectionReuseItem_should_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -250,7 +234,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_StreamAcquireItem_should_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -261,7 +244,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandlePush_MaxConcurrentStreamsItem_should_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -272,7 +254,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandleUpstreamFinish_should_complete_stage()
     {
         var (sm, ops) = CreateStateMachine();
@@ -283,7 +264,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void OnTimer_connect_timeout_should_push_acquisition_failed_close()
     {
         var (sm, ops) = CreateStateMachine();
@@ -301,7 +281,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void OnTimer_unknown_key_should_be_noop()
     {
         var (sm, ops) = CreateStateMachine();
@@ -313,7 +292,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void PostStop_should_cancel_connect_timer()
     {
         var (sm, ops) = CreateStateMachine();
@@ -324,7 +302,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Dispatch_EarlyDataRejected_should_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();

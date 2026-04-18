@@ -2,14 +2,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests SETTINGS frame encoding and stream parameter validation per RFC 9113 §6.5.
-/// Verifies stream ID rules, parameter encoding, and flow control window management.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RequestEncoder"/>, <see cref="SettingsFrame"/>.
-/// RFC 9113 §6.5: SETTINGS frames carry pairs of parameter identifiers and values.
-/// </remarks>
 public sealed class Http2EncoderStreamSettingsSpec
 {
     [Fact(Timeout = 5000)]

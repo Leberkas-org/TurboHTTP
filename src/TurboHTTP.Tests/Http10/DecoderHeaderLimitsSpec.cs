@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 decoder header size limits (security: DoS protection).
-/// Verifies that oversized individual headers and total header blocks are rejected.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// Security: Prevents memory exhaustion via oversized headers.
-/// </remarks>
 public sealed class Http10DecoderHeaderLimitsSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -23,7 +15,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_usedefaultmaxheadersize()
+    public void Http10DecoderHeaderLimitsSpec_should_use_default_max_header_size()
     {
         var decoder = new Decoder();
         // A header just under 16KB should be accepted
@@ -38,7 +30,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_usedefaultmaxtotalheadersize()
+    public void Http10DecoderHeaderLimitsSpec_should_use_default_max_total_header_size()
     {
         var decoder = new Decoder();
         // Build headers totalling just under 64KB
@@ -48,6 +40,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
         {
             sb.Append($"X-Hdr-{i:D3}: {headerValue}\r\n");
         }
+
         sb.Append("Content-Length: 0");
         var raw = BuildRawResponse("HTTP/1.0 200 OK", sb.ToString());
 
@@ -57,10 +50,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.NotNull(response);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwheadertoolarge()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_header_too_large()
     {
         var decoder = new Decoder(maxHeaderSize: 100);
         var bigValue = new string('X', 200);
@@ -91,7 +83,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwheadertoolarge_2()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_header_too_large_2()
     {
         const int limit = 50;
         var value = new string('V', limit - 1 - 2 + 1); // one byte over
@@ -116,10 +108,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.NotNull(response);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwtotalheaderstoolarge()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_total_headers_too_large()
     {
         var decoder = new Decoder(maxHeaderSize: 1000, maxTotalHeaderSize: 200);
         var sb = new StringBuilder();
@@ -128,6 +119,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
         {
             sb.Append($"X-Hdr-{i:D2}: value-{i:D2}\r\n");
         }
+
         sb.Append("Content-Length: 0");
         var raw = BuildRawResponse("HTTP/1.0 200 OK", sb.ToString());
 
@@ -153,7 +145,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwtotalheaderstoolarge_2()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_total_headers_too_large_2()
     {
         // "X: V" = 4 bytes, "Y: WW" = 5 bytes, total = 9 > 8
         var decoder = new Decoder(maxHeaderSize: 100, maxTotalHeaderSize: 8);
@@ -163,10 +155,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_rejectatcustomlimit()
+    public void Http10DecoderHeaderLimitsSpec_should_reject_at_custom_limit()
     {
         var decoder = new Decoder(maxHeaderSize: 20);
         var raw = BuildRawResponse("HTTP/1.0 200 OK",
@@ -178,7 +169,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_rejectatcustomtotallimit()
+    public void Http10DecoderHeaderLimitsSpec_should_reject_at_custom_total_limit()
     {
         var decoder = new Decoder(maxHeaderSize: 500, maxTotalHeaderSize: 50);
         var sb = new StringBuilder();
@@ -186,6 +177,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
         {
             sb.Append($"X-H{i}: value-padding-{i:D4}\r\n");
         }
+
         sb.Append("Content-Length: 0");
         var raw = BuildRawResponse("HTTP/1.0 200 OK", sb.ToString());
 
@@ -193,14 +185,14 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.TotalHeadersTooLarge, ex.DecodeError);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwheadertoolarge_3()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_header_too_large_3()
     {
         var decoder = new Decoder(maxHeaderSize: 30);
         // "X-Folded: part1" = 15 bytes, after fold "X-Folded: part1 continued-text" > 30
-        const string raw = "HTTP/1.0 200 OK\r\nX-Folded: part1\r\n continued-text-that-is-long\r\nContent-Length: 0\r\n\r\n";
+        const string raw =
+            "HTTP/1.0 200 OK\r\nX-Folded: part1\r\n continued-text-that-is-long\r\nContent-Length: 0\r\n\r\n";
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(Bytes(raw), out _));
         Assert.Equal(HttpDecoderError.HeaderTooLarge, ex.DecodeError);
@@ -209,11 +201,12 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwtotalheaderstoolarge_3()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_total_headers_too_large_3()
     {
         var decoder = new Decoder(maxHeaderSize: 500, maxTotalHeaderSize: 40);
         // "X-A: val" = 8 bytes; "X-Folded: part1" = 15 bytes + fold adds more
-        const string raw = "HTTP/1.0 200 OK\r\nX-A: value-a\r\nX-Folded: part1\r\n continuation-that-pushes-total-over\r\nContent-Length: 0\r\n\r\n";
+        const string raw =
+            "HTTP/1.0 200 OK\r\nX-A: value-a\r\nX-Folded: part1\r\n continuation-that-pushes-total-over\r\nContent-Length: 0\r\n\r\n";
 
         var ex = Assert.Throws<HttpDecoderException>(() => decoder.TryDecode(Bytes(raw), out _));
         Assert.True(
@@ -221,10 +214,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
             $"Expected HeaderTooLarge or TotalHeadersTooLarge, got {ex.DecodeError}");
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_includeheadername()
+    public void Http10DecoderHeaderLimitsSpec_should_include_header_name()
     {
         var decoder = new Decoder(maxHeaderSize: 30);
         var raw = BuildRawResponse("HTTP/1.0 200 OK",
@@ -238,7 +230,7 @@ public sealed class Http10DecoderHeaderLimitsSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_includetotalsize()
+    public void Http10DecoderHeaderLimitsSpec_should_include_total_size()
     {
         var decoder = new Decoder(maxHeaderSize: 1000, maxTotalHeaderSize: 30);
         var raw = BuildRawResponse("HTTP/1.0 200 OK",
@@ -249,10 +241,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.Contains("30", ex.Message);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwheadertoolarge_4()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_header_too_large_4()
     {
         var decoder = new Decoder(maxHeaderSize: 20);
         var bigValue = new string('Z', 50);
@@ -266,10 +257,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.HeaderTooLarge, ex.DecodeError);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_throwheadertoolarge_5()
+    public void Http10DecoderHeaderLimitsSpec_should_throw_header_too_large_5()
     {
         var decoder = new Decoder(maxHeaderSize: 20);
         var bigValue = new string('C', 50);
@@ -280,10 +270,9 @@ public sealed class Http10DecoderHeaderLimitsSpec
         Assert.Equal(HttpDecoderError.HeaderTooLarge, ex.DecodeError);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderLimitsSpec_should_workwithdefaults()
+    public void Http10DecoderHeaderLimitsSpec_should_work_with_defaults()
     {
         var decoder = new Decoder();
         var raw = BuildRawResponse("HTTP/1.0 200 OK",

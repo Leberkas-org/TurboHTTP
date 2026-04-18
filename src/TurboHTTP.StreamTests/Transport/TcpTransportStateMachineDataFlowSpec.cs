@@ -57,7 +57,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundBatch_multiple_items_should_push_all()
     {
         var (sm, ops) = CreateStateMachine();
@@ -76,7 +75,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_multiple_buffers_without_handle_should_queue_all()
     {
         var (sm, ops) = CreateStateMachine();
@@ -95,7 +93,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_FlushNextCompleted_should_process_next_pending_write()
     {
         var (sm, ops) = CreateStateMachine();
@@ -116,7 +113,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_FlushNextCompleted_with_no_pending_should_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -131,7 +127,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_buffer_before_handle_then_acquire_should_flush()
     {
         var (sm, ops) = CreateStateMachine();
@@ -153,7 +148,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteFailed_after_acquire_should_stop_pump()
     {
         var (sm, ops) = CreateStateMachine();
@@ -166,7 +160,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundPumpFailed_should_trigger_close_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -180,7 +173,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_buffer_after_disconnect_should_be_queued()
     {
         var (sm, ops) = CreateStateMachine();
@@ -196,7 +188,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void PostStop_should_dispose_pending_writes()
     {
         var (sm, ops) = CreateStateMachine();
@@ -215,7 +206,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_multiple_acquire_items_should_track_pending()
     {
         var (sm, ops) = CreateStateMachine();
@@ -241,7 +231,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteDone_should_eventually_flush_pending()
     {
         var (sm, ops) = CreateStateMachine();

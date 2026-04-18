@@ -154,7 +154,7 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
 
         var netSub = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var resSub = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var appSub = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var serverSub = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
         netSub.Request(20);

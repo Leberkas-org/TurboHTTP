@@ -7,10 +7,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.Shared;
 
-/// <summary>
-/// Verifies <see cref="ResponseMapFake"/> infrastructure:
-/// static mapping, dynamic mapping, unmapped path 404, and header manipulation.
-/// </summary>
 public sealed class ResponseMapFakeSpec : TestKit
 {
     private readonly IMaterializer _materializer;
@@ -140,8 +136,8 @@ public sealed class ResponseMapFakeSpec : TestKit
 
         // Join with a dummy flow that echoes a placeholder response.
         // ResponseMapFake discards these — responses come from the map.
-        var flow = bidi.Join(Flow.FromFunction<HttpRequestMessage, HttpResponseMessage>(
-            _ => new HttpResponseMessage()));
+        var flow = bidi.Join(
+            Flow.FromFunction<HttpRequestMessage, HttpResponseMessage>(_ => new HttpResponseMessage()));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -157,8 +153,8 @@ public sealed class ResponseMapFakeSpec : TestKit
     {
         var bidi = ResponseMapFake.Create(map);
 
-        var flow = bidi.Join(Flow.FromFunction<HttpRequestMessage, HttpResponseMessage>(
-            _ => new HttpResponseMessage()));
+        var flow = bidi.Join(
+            Flow.FromFunction<HttpRequestMessage, HttpResponseMessage>(_ => new HttpResponseMessage()));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();

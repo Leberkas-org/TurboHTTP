@@ -26,7 +26,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10000)]
-    [Trait("RFC", "RFC1945-8")]
+    [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_reconnect_and_replay_request_on_connection_drop()
     {
         var stage = new Http10ConnectionStage(maxReconnectAttempts: 3);
@@ -87,7 +87,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10000)]
-    [Trait("RFC", "RFC1945-8")]
+    [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_complete_stage_when_max_reconnect_attempts_exceeded()
     {
         var stage = new Http10ConnectionStage(maxReconnectAttempts: 1);
@@ -132,7 +132,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10000)]
-    [Trait("RFC", "RFC1945-8")]
+    [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_not_reconnect_when_no_inflight_request_on_close()
     {
         var stage = new Http10ConnectionStage(maxReconnectAttempts: 3);
@@ -154,7 +154,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
 
         var netSub = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var resSub = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var appSub = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var serverSub = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
         netSub.Request(20);

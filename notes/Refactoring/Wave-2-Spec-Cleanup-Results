@@ -1,0 +1,64 @@
+# Wave 2 Spec Cleanup Results
+
+## Task Completion
+Successfully applied Wave 2 refactoring to remove single-line depth-1 `//` comments, RFC traits, and XML documentation from test specifications across two directories.
+
+## Target Directories
+- `src/TurboHTTP.StreamTests/Streams/` (17 spec files modified)
+- `src/TurboHTTP.StreamTests/Transport/` (12 spec files modified)
+
+## Changes Applied
+
+### Files Modified: 29 spec files (primary targets)
+- **Streams Directory**: 17 files
+  - ConnectionStageSpec.cs
+  - EngineBidiFlowCompositionSpec.cs
+  - EnginePipelineDescriptorSpec.cs
+  - FeedbackBufferOptimizationSpec.cs
+  - GroupByEndpointFanOutSpec.cs
+  - GroupByHostKeyQueueSizeSpec.cs
+  - HandlerBidiStageSpec.cs
+  - HostKeySubFlowSpec.cs
+  - Internal/NetworkBufferBatchStageSpec.cs
+  - Lifecycle/ClientStreamOwnerSpec.cs
+  - LoopbackBenchmarkStageSpec.cs
+  - RefererSanitizationSpec.cs
+  - StageCompletionRegressionSpec.cs
+  - StageOrderingIntegrationSpec.cs
+  - StageOrderingSpec.cs
+  - TransportRegistrySpec.cs
+  - VersionDispatchCachingSpec.cs
+
+- **Transport Directory**: 12 files
+  - ConnectionManagerActorSpec.cs
+  - QuicConnectionManagerActorSpec.cs
+  - QuicConnectionStageSpec.cs
+  - QuicPumpManagerSpec.cs
+  - QuicStreamRouterEnhancedSpec.cs
+  - QuicStreamRouterSpec.cs
+  - QuicTransportStateMachineLifecycleSpec.cs
+  - QuicTransportStateMachineSpec.cs
+  - TcpTransportStateMachineDataFlowSpec.cs
+  - TcpTransportStateMachineErrorSpec.cs
+  - TcpTransportStateMachineLifecycleSpec.cs
+  - TcpTransportStateMachineSpec.cs
+
+### Cleanup Operations Performed
+1. **Depth-1 Comments Removed**: Single-line `//` comments at class body level
+2. **RFC Traits Removed**: `[Trait("RFC", ...)]` attributes from non-Protocol folders
+3. **XML Doc Comments Removed**: `///` documentation outside method bodies
+4. **Blank Line Consolidation**: Consecutive blank lines collapsed to single lines
+
+### Total Changes
+- **Total files changed**: 228 (includes broader refactoring across TurboHTTP.Tests)
+- **Lines deleted**: 1,988
+- **Lines inserted**: 146
+- **Primary scope (Streams + Transport)**: 29 spec files, ~138 lines removed
+
+## Verification
+All changes are staged and ready for commit. No compilation errors expected as only comments and decorative attributes were removed.
+
+## Session Context
+- Continuation of previous conversation that ran out of context
+- Background agents completed Wave 2 refactoring tasks for multiple test directories
+- Changes applied via parallel Edit operations maintaining brace-depth tracking

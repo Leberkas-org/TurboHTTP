@@ -4,10 +4,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="TlsClientProvider"/> TLS handshake setup, CONNECT tunnel integration,
-/// and cleanup logic. Does not require actual TLS connections.
-/// </summary>
 public sealed class TlsClientProviderSpec
 {
     [Fact(Timeout = 5000)]
@@ -162,7 +158,7 @@ public sealed class TlsClientProviderSpec
         await WriteResponseAsync(serverStream, "HTTP/1.1 200 OK\r\n\r\n");
         await tunnelTask;
 
-        var expectedEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("user:pass"));
+        var expectedEncoded = Convert.ToBase64String("user:pass"u8.ToArray());
         Assert.Contains($"Proxy-Authorization: Basic {expectedEncoded}", request);
     }
 
@@ -181,7 +177,7 @@ public sealed class TlsClientProviderSpec
         await WriteResponseAsync(serverStream, "HTTP/1.1 200 OK\r\n\r\n");
         await tunnelTask;
 
-        var expectedEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("default:default"));
+        var expectedEncoded = Convert.ToBase64String("default:default"u8.ToArray());
         Assert.Contains($"Proxy-Authorization: Basic {expectedEncoded}", request);
     }
 

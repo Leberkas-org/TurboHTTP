@@ -3,14 +3,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests HTTP/1.1 decoder edge cases and error handling.
-/// Verifies proper handling of EOF, invalid responses, and boundary conditions.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §9: Connection close handling and error recovery.
-/// </remarks>
 public sealed class Http11DecoderEdgeCasesSpec
 {
     private readonly Decoder _decoder = new();
@@ -21,7 +13,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     {
         // RFC 9112 §9.8: Response with no Content-Length/Transfer-Encoding header
         // has no body; TryDecode completes immediately with empty body
-        var raw = "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
+        const string raw = "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecode(bytes.AsMemory(), out var responses);
@@ -46,7 +38,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-9")]
     public void Http11Decoder_should_return_false_when_eof_with_incomplete_headers()
     {
-        var raw = "HTTP/1.1 200 OK\r\nContent-Length: 10";
+        const string raw = "HTTP/1.1 200 OK\r\nContent-Length: 10";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         _decoder.TryDecode(bytes, out _);
@@ -60,7 +52,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-9")]
     public void Http11Decoder_should_return_false_when_eof_with_chunked_encoding_incomplete()
     {
-        var raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n";
+        const string raw = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         _decoder.TryDecode(bytes, out _);
@@ -74,7 +66,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-9")]
     public void Http11Decoder_should_return_false_when_eof_with_content_length_not_satisfied()
     {
-        var raw = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nShort";
+        const string raw = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nShort";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         _decoder.TryDecode(bytes, out _);
@@ -88,7 +80,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-9")]
     public void Http11Decoder_should_skip_1xx_informational_responses()
     {
-        var raw = "HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
+        const string raw = "HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecode(bytes, out var responses);
@@ -102,7 +94,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112")]
     public void Http11Decoder_should_handle_multiple_1xx_responses_before_final()
     {
-        var raw = "HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 103 Early Hints\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+        const string raw = "HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 103 Early Hints\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecode(bytes, out var responses);
@@ -116,7 +108,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-6.3")]
     public void Http11Decoder_should_handle_remainder_flushing()
     {
-        var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHelloExtra";
+        const string raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHelloExtra";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         _decoder.TryDecode(bytes, out _);
@@ -137,8 +129,8 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Fact(Timeout = 5000)]
     public void Http11Decoder_should_reset_state_for_reuse()
     {
-        var raw1 = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nAB";
-        var raw2 = "HTTP/1.1 201 Created\r\nContent-Length: 2\r\n\r\nXY";
+        const string raw1 = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nAB";
+        const string raw2 = "HTTP/1.1 201 Created\r\nContent-Length: 2\r\n\r\nXY";
 
         _decoder.TryDecode(Encoding.ASCII.GetBytes(raw1), out var responses1);
         _decoder.Reset();
@@ -179,7 +171,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-6.3")]
     public void Http11Decoder_should_handle_head_request_with_content_length()
     {
-        var raw = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\n";
+        const string raw = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecodeHead(bytes, out var responses);
@@ -195,7 +187,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9112-6.3")]
     public void Http11Decoder_should_ignore_body_in_head_response()
     {
-        var raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
+        const string raw = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecodeHead(bytes, out var responses);
@@ -210,7 +202,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Decoder_should_handle_connect_2xx_with_content_length()
     {
-        var raw = "HTTP/1.1 200 Connection Established\r\nContent-Length: 100\r\n\r\n";
+        const string raw = "HTTP/1.1 200 Connection Established\r\nContent-Length: 100\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecodeConnect(bytes, out var responses);
@@ -224,7 +216,7 @@ public sealed class Http11DecoderEdgeCasesSpec
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Decoder_should_handle_connect_3xx_with_body()
     {
-        var raw = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com\r\nContent-Length: 5\r\n\r\nProxy";
+        const string raw = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com\r\nContent-Length: 5\r\n\r\nProxy";
         var bytes = Encoding.ASCII.GetBytes(raw);
 
         var decoded = _decoder.TryDecodeConnect(bytes, out var responses);

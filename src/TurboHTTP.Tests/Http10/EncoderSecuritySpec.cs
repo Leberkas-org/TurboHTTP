@@ -2,14 +2,6 @@ using TurboHTTP.Protocol.Http10;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 header-injection protection per RFC 1945 §12.
-/// Verifies that CR, LF, and CRLF sequences in header values are rejected.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Encoder"/>.
-/// RFC 1945 §12: Security considerations — header injection prevention.
-/// </remarks>
 public sealed class Http10EncoderSecuritySpec
 {
     [Fact(Timeout = 5000)]
@@ -29,6 +21,7 @@ public sealed class Http10EncoderSecuritySpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 
@@ -49,6 +42,7 @@ public sealed class Http10EncoderSecuritySpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 
@@ -69,6 +63,7 @@ public sealed class Http10EncoderSecuritySpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 
@@ -131,6 +126,7 @@ public sealed class Http10EncoderSecuritySpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 
@@ -154,6 +150,7 @@ public sealed class Http10EncoderSecuritySpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 
@@ -189,13 +186,14 @@ public sealed class Http10EncoderSecuritySpec
         var threw = false;
         try
         {
-            Span<byte> buffer = new byte[0];
+            Span<byte> buffer = [];
             Encoder.Encode(request, ref buffer);
         }
         catch (InvalidOperationException)
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 }

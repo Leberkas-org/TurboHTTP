@@ -10,7 +10,8 @@ namespace TurboHTTP.StreamTests.Http2;
 
 public sealed class Http2ConnectionPingSpec : StreamTestBase
 {
-    private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound, IReadOnlyList<IControlItem> Signals)> RunAsync(
+    private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound,
+        IReadOnlyList<IControlItem> Signals)> RunAsync(
         params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
@@ -43,6 +44,7 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.7")]
     public async Task Http2ConnectionPing_should_send_ack_response_when_ping_without_ack_received()
     {
         var ping = new PingFrame(new byte[8], isAck: false);
@@ -55,6 +57,7 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.7")]
     public async Task Http2ConnectionPing_should_echo_identical_payload_in_ping_ack()
     {
         var payload = new byte[] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
@@ -68,6 +71,7 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.7")]
     public async Task Http2ConnectionPing_should_not_trigger_response_when_ping_with_ack_received()
     {
         var pingAck = new PingFrame(new byte[8], isAck: true);
@@ -78,6 +82,7 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.7")]
     public async Task Http2ConnectionPing_should_send_ping_response_on_stream_zero()
     {
         var ping = new PingFrame(new byte[] { 0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8 }, isAck: false);

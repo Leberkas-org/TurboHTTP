@@ -3,18 +3,8 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Round-trip tests for HTTP/1.0 request methods per RFC 1945 §5.1.1.
-/// Encodes with Http10Encoder and decodes with Http10Decoder; verifies method is preserved.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http10.Encoder"/>, <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 §5.1.1: Method token (GET, HEAD, POST, and extension methods).
-/// </remarks>
 public sealed class Http10RoundTripMethodSpec
 {
-    private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];
-
     private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)
     {
         var arr = new byte[65536];
@@ -23,24 +13,9 @@ public sealed class Http10RoundTripMethodSpec
         return (arr[..written], written);
     }
 
-    private static ReadOnlyMemory<byte> BuildResponse(int status, string reason, string body = "",
-        params (string Name, string Value)[] headers)
-    {
-        var sb = new StringBuilder();
-        sb.Append($"HTTP/1.0 {status} {reason}\r\n");
-        foreach (var (name, value) in headers)
-        {
-            sb.Append($"{name}: {value}\r\n");
-        }
-
-        sb.Append("\r\n");
-        sb.Append(body);
-        return Encoding.ASCII.GetBytes(sb.ToString());
-    }
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservegetmethod()
+    public void Http10RoundTripMethodSpec_should_preserve_get_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -51,7 +26,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservepostmethod()
+    public void Http10RoundTripMethodSpec_should_preserve_post_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/submit")
         {
@@ -65,7 +40,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preserveputmethod()
+    public void Http10RoundTripMethodSpec_should_preserve_put_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Put, "http://example.com/resource")
         {
@@ -79,7 +54,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservedeletemethod()
+    public void Http10RoundTripMethodSpec_should_preserve_delete_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, "http://example.com/resource");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -90,7 +65,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservepatchmethod()
+    public void Http10RoundTripMethodSpec_should_preserve_patch_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Patch, "http://example.com/resource")
         {
@@ -104,7 +79,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preserveoptionsmethod()
+    public void Http10RoundTripMethodSpec_should_preserve_options_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, "http://example.com/");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -115,7 +90,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preserveheadmethod()
+    public void Http10RoundTripMethodSpec_should_preserve_head_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Head, "http://example.com/resource");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -126,7 +101,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservequerystring()
+    public void Http10RoundTripMethodSpec_should_preserve_query_string()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/search?q=test&page=1");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -137,7 +112,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservepostbody()
+    public void Http10RoundTripMethodSpec_should_preserve_post_body()
     {
         var bodyContent = "field1=value1&field2=value2";
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/form")
@@ -153,7 +128,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservemethodsconsistently()
+    public void Http10RoundTripMethodSpec_should_preserve_methods_consistently()
     {
         var methods = new[] { HttpMethod.Get, HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete };
         var methodNames = new[] { "GET", "POST", "PUT", "DELETE" };
@@ -173,7 +148,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preservetracemethod()
+    public void Http10RoundTripMethodSpec_should_preserve_trace_method()
     {
         var request = new HttpRequestMessage(new HttpMethod("TRACE"), "http://example.com/");
         var (encodedBuffer, written) = EncodeRequest(request);
@@ -184,7 +159,7 @@ public sealed class Http10RoundTripMethodSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void Http10RoundTripMethodSpec_should_preserveuppercasemethod()
+    public void Http10RoundTripMethodSpec_should_preserve_upper_case_method()
     {
         var request = new HttpRequestMessage(new HttpMethod("CUSTOM"), "http://example.com/");
         var (encodedBuffer, written) = EncodeRequest(request);

@@ -3,17 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests basic HTTP/2 frame decoding for all standard frame types per RFC 9113 §6.
-/// Verifies SETTINGS, DATA, HEADERS, WINDOW_UPDATE, RST_STREAM, and GOAWAY frame parsing.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6: Frame format specification for all frame types.
-/// </remarks>
-/// <remarks>
-/// Additional coverage for 97% → 100% gap-fill.
-/// </remarks>
 public sealed class Http2DecoderBasicFrameSpec
 {
     [Fact(Timeout = 5000)]

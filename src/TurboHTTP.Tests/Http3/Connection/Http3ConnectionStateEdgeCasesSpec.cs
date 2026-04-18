@@ -2,12 +2,6 @@ using TurboHTTP.Protocol.Http3;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Covers remaining edge cases and branches in HTTP/3 ConnectionState (RFC 9114).
-/// Tests GOAWAY validation, Settings handling, timeout behavior, push accounting,
-/// stream lifecycle, and reconnection reset logic.
-/// </summary>
-[Trait("RFC", "RFC9114-5")]
 public sealed class Http3ConnectionStateEdgeCasesSpec
 {
     [Fact(Timeout = 5000)]
@@ -115,7 +109,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnRemoteSettings_should_accept_first_settings_frame()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame(new[] { (Http3SettingsIdentifier.MaxFieldSectionSize, 4096L) });
+        var frame = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
 
         state.OnRemoteSettings(frame);
 
@@ -128,8 +122,8 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnRemoteSettings_should_reject_duplicate_settings_frames()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame1 = new Http3SettingsFrame(new[] { (Http3SettingsIdentifier.MaxFieldSectionSize, 4096L) });
-        var frame2 = new Http3SettingsFrame(new[] { (Http3SettingsIdentifier.MaxFieldSectionSize, 8192L) });
+        var frame1 = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
+        var frame2 = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192L)]);
 
         state.OnRemoteSettings(frame1);
 
@@ -151,11 +145,10 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnRemoteSettings_should_store_multiple_parameters()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame(new[]
-        {
+        var frame = new Http3SettingsFrame([
             (Http3SettingsIdentifier.MaxFieldSectionSize, 4096L),
-            (Http3SettingsIdentifier.QpackMaxTableCapacity, 2048L),
-        });
+            (Http3SettingsIdentifier.QpackMaxTableCapacity, 2048L)
+        ]);
 
         state.OnRemoteSettings(frame);
 
@@ -170,7 +163,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
 
         // Get initial state (activity recorded in constructor)
-        var initialTimeout = state.TimeUntilExpiry();
+        state.TimeUntilExpiry();
 
         Thread.Sleep(100);
 
@@ -462,7 +455,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void Reset_should_clear_settings_state()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame(new[] { (Http3SettingsIdentifier.MaxFieldSectionSize, 4096L) });
+        var frame = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
 
         state.OnRemoteSettings(frame);
         Assert.True(state.RemoteSettingsReceived);
@@ -607,7 +600,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void RemoteMaxFieldSectionSize_should_return_value_after_settings()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame(new[] { (Http3SettingsIdentifier.MaxFieldSectionSize, 8192L) });
+        var frame = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192L)]);
 
         state.OnRemoteSettings(frame);
 

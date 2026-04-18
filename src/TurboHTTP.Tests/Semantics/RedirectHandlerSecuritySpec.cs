@@ -4,20 +4,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// RFC 9110 §15.4 — Redirect handler security and cookie tests (RH-024 to RH-051).
-/// Covers Authorization header stripping on cross-origin redirects,
-/// HTTPS-to-HTTP downgrade enforcement, state reset, sensitive header policy,
-/// null-argument validation, and CookieJar re-evaluation on redirect.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RedirectHandler"/>.
-/// RFC 9110 §15.4: Sensitive headers (Authorization, Cookie) must be re-evaluated per redirect target.
-/// </remarks>
 public sealed class RedirectHandlerSecuritySpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_StripAuthorizationHeader_When_CrossOriginRedirect()
     {
@@ -35,7 +24,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Non-sensitive headers should still be forwarded");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_PreserveAuthorizationHeader_When_SameOriginRedirect()
     {
@@ -50,7 +39,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Authorization header should be preserved for same-origin redirects");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_StripAuthorizationHeader_When_SchemeChanges()
     {
@@ -65,7 +54,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Authorization must be stripped when scheme changes");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_StripAuthorizationHeader_When_PortChanges()
     {
@@ -81,7 +70,7 @@ public sealed class RedirectHandlerSecuritySpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowRedirectException_ProtocolDowngrade_When_HttpsToHttpDowngrade()
     {
@@ -94,7 +83,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Equal(RedirectError.ProtocolDowngrade, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_AllowDowngrade_When_PolicyPermitsDowngrade()
     {
@@ -107,7 +96,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Equal("http://example.com/insecure", redirected.RequestUri?.AbsoluteUri);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_AllowUpgrade_When_HttpToHttpsRedirect()
     {
@@ -121,7 +110,7 @@ public sealed class RedirectHandlerSecuritySpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ClearRedirectCountAndHistory_When_Reset()
     {
@@ -141,7 +130,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.NotNull(redirected);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_AllowPreviouslyVisitedUri_When_AfterReset()
     {
@@ -160,7 +149,7 @@ public sealed class RedirectHandlerSecuritySpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_CopyNonSensitiveHeaders_When_Redirecting()
     {
@@ -178,7 +167,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.True(redirected.Headers.Contains("X-Request-Id"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotCopyHostHeader_When_Redirecting()
     {
@@ -194,14 +183,14 @@ public sealed class RedirectHandlerSecuritySpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_HaveMaxRedirects10_When_UsingDefaultPolicy()
     {
         Assert.Equal(10, RedirectPolicy.Default.MaxRedirects);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotAllowDowngrade_When_UsingDefaultPolicy()
     {
@@ -209,7 +198,7 @@ public sealed class RedirectHandlerSecuritySpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowArgumentNullException_When_IsRedirectWithNullResponse()
     {
@@ -217,7 +206,7 @@ public sealed class RedirectHandlerSecuritySpec
             RedirectHandler.IsRedirect(null!));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowArgumentNullException_When_OriginalRequestIsNull()
     {
@@ -228,7 +217,7 @@ public sealed class RedirectHandlerSecuritySpec
             handler.BuildRedirectRequest(null!, response));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowArgumentNullException_When_ResponseIsNull()
     {
@@ -240,7 +229,7 @@ public sealed class RedirectHandlerSecuritySpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_StripCookieHeader_When_Redirecting()
     {
@@ -255,7 +244,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Cookie header must not be blindly forwarded — it must be re-evaluated per redirect URI");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ReapplyCookies_When_SameOriginRedirectWithJar()
     {
@@ -277,7 +266,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Contains("session=abc123", cookieHeader);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotReapplyCookies_When_CrossOriginRedirectWithJar()
     {
@@ -297,7 +286,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Cookies set for example.com must not be forwarded to other.com");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ProcessSetCookieFromRedirectResponse_When_RedirectingWithJar()
     {
@@ -315,7 +304,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Equal(1, jar.Count);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ApplySetCookieToRedirectRequest_When_RedirectingWithJar()
     {
@@ -335,11 +324,10 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Contains("auth=token123", cookieHeader);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_SendSecureCookiesOnlyToHttps_When_RedirectingWithJar()
     {
-        var handler = new RedirectHandler();
         var jar = new CookieJar();
         // Pre-populate with a Secure cookie
         var setResponse = new HttpResponseMessage(HttpStatusCode.OK);
@@ -359,7 +347,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Secure cookies must not be sent over HTTP");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_SendSecureCookies_When_RedirectStaysOnHttpsWithJar()
     {
@@ -381,7 +369,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Contains("secret=val", cookieHeader);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotSendPathRestrictedCookie_When_PathDoesNotMatchWithJar()
     {
@@ -401,7 +389,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Cookie with path=/admin must not be sent to /public");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_SendPathRestrictedCookie_When_PathMatchesWithJar()
     {
@@ -423,7 +411,7 @@ public sealed class RedirectHandlerSecuritySpec
         Assert.Contains("admin=secret", cookieHeader);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ThrowArgumentNullException_When_CookieJarIsNull()
     {
@@ -435,7 +423,7 @@ public sealed class RedirectHandlerSecuritySpec
             handler.BuildRedirectRequest(original, response, null!));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotAddCookieHeader_When_JarIsEmpty()
     {
@@ -451,7 +439,7 @@ public sealed class RedirectHandlerSecuritySpec
             "Empty jar should result in no Cookie header");
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_ReapplyDomainCookie_When_SubdomainRedirectWithJar()
     {

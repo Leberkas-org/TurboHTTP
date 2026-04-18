@@ -7,15 +7,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Tests the bidirectional decompression stage per RFC 9110.
-/// Verifies that the request direction passes messages through unchanged and the response
-/// direction decompresses gzip/deflate/brotli bodies, removes Content-Encoding, and updates Content-Length.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="ContentEncodingBidiStage"/>.
-/// RFC 9110 §8.4: Content-Encoding header and transparent decompression of response bodies.
-/// </remarks>
 public sealed class ContentEncodingSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
@@ -73,6 +64,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -83,6 +75,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
         {
             deflate.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -93,6 +86,7 @@ public sealed class ContentEncodingSpec : StreamTestBase
         {
             br.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -103,10 +97,9 @@ public sealed class ContentEncodingSpec : StreamTestBase
         {
             content.Headers.TryAddWithoutValidation("Content-Encoding", contentEncoding);
         }
+
         return new HttpResponseMessage { Content = content };
     }
-
-    // Request direction tests (pass-through)
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]
@@ -138,8 +131,6 @@ public sealed class ContentEncodingSpec : StreamTestBase
         Assert.Same(req1, results[0]);
         Assert.Same(req2, results[1]);
     }
-
-    // Response direction tests (decompression)
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9110-8.4")]

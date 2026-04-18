@@ -3,17 +3,9 @@ using System.Text;
 
 namespace TurboHTTP.Tests.Http11.Encoder;
 
-/// <summary>
-/// Tests legacy encoder compatibility behaviors per RFC 9112.
-/// Verifies backward-compatible encoding scenarios and obsolete header handling.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Encoder"/>.
-/// RFC 9112: Legacy compatibility — encoders must interoperate with older HTTP/1.x agents.
-/// </remarks>
 public sealed class Http11EncoderLegacySpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_produce_correct_request_line_when_get_request()
     {
@@ -22,7 +14,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.StartsWith("GET /index.html HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_encode_query_string_when_get_with_query_params()
     {
@@ -31,7 +23,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains("/search?q=hello+world&lang=de", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_set_content_type_and_length_when_post_json_body()
     {
@@ -48,7 +40,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains($"Content-Length: {Encoding.UTF8.GetByteCount(json)}", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_place_body_after_blank_line_when_post_json_body()
     {
@@ -65,7 +57,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Equal(json, result[(separatorIdx + 4)..]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_end_with_blank_line_when_get_request()
     {
@@ -74,7 +66,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.EndsWith("\r\n\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_set_authorization_header_when_bearer_token()
     {
@@ -86,7 +78,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains("Authorization: Bearer my-secret-token\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5.4")]
     public void Http11Encoder_should_omit_port_when_http_port_80()
     {
@@ -95,7 +87,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains("Host: example.com\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5.4")]
     public void Http11Encoder_should_omit_port_when_https_port_443()
     {
@@ -104,7 +96,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains("Host: example.com\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5.4")]
     public void Http11Encoder_should_include_port_when_non_standard_port()
     {
@@ -113,7 +105,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains("Host: example.com:8080\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_default_to_keep_alive_when_get_request()
     {
@@ -122,7 +114,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_preserve_connection_close_when_explicitly_set()
     {
@@ -135,7 +127,7 @@ public sealed class Http11EncoderLegacySpec
         Assert.DoesNotContain("Connection: keep-alive", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_throw_when_buffer_too_small_for_body()
     {
@@ -152,7 +144,7 @@ public sealed class Http11EncoderLegacySpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_throw_when_buffer_too_small_for_headers()
     {
@@ -165,7 +157,7 @@ public sealed class Http11EncoderLegacySpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Http11Encoder_should_place_body_after_blank_line_when_post_json_body_alt()
     {

@@ -10,9 +10,11 @@ namespace TurboHTTP.AcceptanceTests.H11;
 
 public sealed class ErrorHandlingSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
-    private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK, string? extraHeaders = null)
+    private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK,
+        string? extraHeaders = null)
     {
         var sb = new StringBuilder();
         sb.Append($"HTTP/1.1 {(int)status} {status}\r\n");
@@ -21,12 +23,14 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
         {
             sb.Append(extraHeaders);
         }
+
         sb.Append("\r\n");
         sb.Append(body);
         return Encoding.Latin1.GetBytes(sb.ToString());
     }
 
-    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = Engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
@@ -72,8 +76,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]

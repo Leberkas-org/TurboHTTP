@@ -27,6 +27,7 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
                 r.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
         }
+
         return r;
     }
 

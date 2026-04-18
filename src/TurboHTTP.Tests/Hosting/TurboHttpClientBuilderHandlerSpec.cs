@@ -5,23 +5,17 @@ namespace TurboHTTP.Tests.Hosting;
 
 public sealed class TurboHttpClientBuilderHandlerSpec
 {
-    // Test doubles
+    private sealed class TestHandler : TurboHandler;
 
-    private sealed class TestHandler : TurboHandler { }
+    private sealed class AlphaHandler : TurboHandler;
 
-    private sealed class AlphaHandler : TurboHandler { }
-
-    private sealed class BetaHandler : TurboHandler { }
-
-    // Helpers
+    private sealed class BetaHandler : TurboHandler;
 
     private static TurboClientDescriptor GetDescriptor(IServiceCollection services, string name)
     {
         var sp = services.BuildServiceProvider();
         return sp.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>().Get(name);
     }
-
-    // AddHandler<T> — type registration
 
     [Fact(Timeout = 5000)]
     public void TurboHttpClientBuilderHandler_should_add_type_to_handler_types()
@@ -45,8 +39,6 @@ public sealed class TurboHttpClientBuilderHandlerSpec
         Assert.Single(descriptor.HandlerFactories);
     }
 
-    // AddHandler<T> — DI registration lifetime
-
     [Fact(Timeout = 5000)]
     public void TurboHttpClientBuilderHandler_should_register_transient_service()
     {
@@ -57,8 +49,6 @@ public sealed class TurboHttpClientBuilderHandlerSpec
             sd.ServiceType == typeof(TestHandler) &&
             sd.Lifetime == ServiceLifetime.Transient);
     }
-
-    // UseRequest — anonymous handler
 
     [Fact(Timeout = 5000)]
     public void TurboHttpClientBuilderHandler_should_add_one_factory_with_no_type_entry()
@@ -71,8 +61,6 @@ public sealed class TurboHttpClientBuilderHandlerSpec
         Assert.Single(descriptor.HandlerFactories);
         Assert.Empty(descriptor.HandlerTypes);
     }
-
-    // FIFO ordering
 
     [Fact(Timeout = 5000)]
     public void TurboHttpClientBuilderHandler_should_preserve_fifo_order_in_types()
@@ -103,8 +91,6 @@ public sealed class TurboHttpClientBuilderHandlerSpec
         Assert.IsType<AlphaHandler>(descriptor.HandlerFactories[0](sp));
         Assert.IsType<BetaHandler>(descriptor.HandlerFactories[1](sp));
     }
-
-    // Factory DI resolution
 
     [Fact(Timeout = 5000)]
     public void TurboHttpClientBuilderHandler_should_resolve_from_service_provider()

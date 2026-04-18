@@ -7,14 +7,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="QuicConnectionHandle"/> lifecycle, stream creation, inbound stream acceptance,
-/// and endpoint routing.
-/// </summary>
-/// <remarks>
-/// QuicConnectionHandle wraps an IClientProvider and manages QUIC-specific stream I/O,
-/// including the acceptance of server-initiated streams and HTTP/3 stream-type decoding.
-/// </remarks>
 public sealed class QuicConnectionHandleSpec
 {
     private static readonly RequestEndpoint TestEndpoint = new()
@@ -33,7 +25,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void QuicConnectionHandle_should_set_key_from_constructor()
     {
         var handle = CreateHandle();
@@ -46,7 +37,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void QuicConnectionHandle_should_throw_on_null_provider()
     {
         Assert.Throws<ArgumentNullException>(() =>
@@ -54,7 +44,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void QuicConnectionHandle_should_throw_on_null_options()
     {
         var provider = new FakeClientProvider();
@@ -64,7 +53,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void QuicConnectionHandle_local_endpoint_should_reflect_provider_state()
     {
         var provider = new FakeClientProvider();
@@ -75,7 +63,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_should_open_stream_as_lease_for_request_streams()
     {
         var provider = new FakeClientProvider();
@@ -88,7 +75,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_should_open_stream_as_lease_for_control_streams()
     {
         var provider = new FakeClientProvider();
@@ -101,7 +87,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_should_open_stream_as_lease_for_qpack_encoder()
     {
         var provider = new FakeClientProvider();
@@ -115,7 +100,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_should_throw_for_qpack_decoder_as_output()
     {
         var provider = new FakeClientProvider();
@@ -127,7 +111,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_opened_request_stream_should_have_correct_stream_type()
     {
         var provider = new FakeClientProvider();
@@ -139,7 +122,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_opened_control_stream_should_be_usable()
     {
         var provider = new FakeClientProvider();
@@ -151,7 +133,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_opened_stream_lease_should_reference_handle_endpoint()
     {
         var provider = new FakeClientProvider();
@@ -163,7 +144,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_accept_inbound_stream_should_return_null_on_cancellation()
     {
         var provider = new FakeClientProvider();
@@ -178,7 +158,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_dispose_should_not_throw()
     {
         var provider = new FakeClientProvider();
@@ -190,7 +169,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task QuicConnectionHandle_dispose_should_be_safe_to_call_multiple_times()
     {
         var provider = new FakeClientProvider();
@@ -203,7 +181,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicConnectionHandle")]
     public async Task QuicConnectionHandle_inbound_stream_record_encapsulates_lease_and_type()
     {
         var provider = new FakeClientProvider();
@@ -217,7 +194,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicConnectionHandle")]
     public async Task QuicConnectionHandle_inbound_stream_record_equality_based_on_lease_and_type()
     {
         var provider = new FakeClientProvider();
@@ -232,7 +208,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicConnectionHandle")]
     public async Task QuicConnectionHandle_opened_stream_lease_should_have_client_state()
     {
         var provider = new FakeClientProvider();
@@ -245,7 +220,6 @@ public sealed class QuicConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicConnectionHandle")]
     public async Task QuicConnectionHandle_opened_stream_lease_should_have_key_set()
     {
         var provider = new FakeClientProvider();

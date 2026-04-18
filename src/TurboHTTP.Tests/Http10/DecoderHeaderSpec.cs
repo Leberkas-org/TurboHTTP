@@ -5,14 +5,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 response header parsing per RFC 1945 §4.2.
-/// Verifies field names, values, folded headers, and empty header blocks.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 §4.2: Message headers — name ':' value, optional folding.
-/// </remarks>
 public sealed class Http10DecoderHeaderSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -29,7 +21,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_parsesingleheader()
+    public void Http10DecoderHeaderSpec_should_parse_single_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -47,7 +39,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_parsecustomheader()
+    public void Http10DecoderHeaderSpec_should_parse_custom_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -61,7 +53,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_parseallcustomheaders()
+    public void Http10DecoderHeaderSpec_should_parse_all_custom_headers()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -77,7 +69,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_becaseinsensitive()
+    public void Http10DecoderHeaderSpec_should_be_case_insensitive()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -92,7 +84,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_continuefoldedheader()
+    public void Http10DecoderHeaderSpec_should_continue_folded_header()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Folded: first part\r\n continued\r\nContent-Length: 0\r\n\r\n";
@@ -108,7 +100,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_trimwhitespace()
+    public void Http10DecoderHeaderSpec_should_trim_whitespace()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -122,7 +114,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_parseheaders()
+    public void Http10DecoderHeaderSpec_should_parse_headers()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\nX-Lf-Header: lf-value\nContent-Length: 0\n\n";
@@ -135,7 +127,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_mergedoubleobsfold()
+    public void Http10DecoderHeaderSpec_should_merge_double_obs_fold()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Multi: part1\r\n part2\r\n part3\r\nContent-Length: 0\r\n\r\n";
@@ -151,7 +143,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_preservebothheaders()
+    public void Http10DecoderHeaderSpec_should_preserve_both_headers()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Dup: first\r\nX-Dup: second\r\nContent-Length: 0\r\n\r\n";
@@ -166,7 +158,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_throwinvalidheader()
+    public void Http10DecoderHeaderSpec_should_throw_invalid_header()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nBadHeaderNoColon\r\nContent-Length: 0\r\n\r\n";
@@ -177,7 +169,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_matchcaseinsensitive()
+    public void Http10DecoderHeaderSpec_should_match_case_insensitive()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nCONTENT-LENGTH: 5\r\n\r\nHello";
@@ -190,7 +182,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_trimwhitespace_2()
+    public void Http10DecoderHeaderSpec_should_trim_whitespace_2()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Trimmed:    hello world   \r\nContent-Length: 0\r\n\r\n";
@@ -203,7 +195,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_throwinvalidfieldname()
+    public void Http10DecoderHeaderSpec_should_throw_invalid_field_name()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nBad Name: value\r\nContent-Length: 0\r\n\r\n";
@@ -214,7 +206,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_accepttab()
+    public void Http10DecoderHeaderSpec_should_accept_tab()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Tab: before\tafter\r\nContent-Length: 0\r\n\r\n";
@@ -228,7 +220,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_acceptresponse()
+    public void Http10DecoderHeaderSpec_should_accept_response()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\n\r\n";
@@ -241,7 +233,7 @@ public sealed class Http10DecoderHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10DecoderHeaderSpec_should_skipsafely()
+    public void Http10DecoderHeaderSpec_should_skip_safely()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nX-Empty:\r\nContent-Length: 0\r\n\r\n";

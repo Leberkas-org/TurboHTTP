@@ -6,14 +6,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests the <see cref="ConnectionHandle"/> record that bundles channel reader/writer pairs with connection identity.
-/// Verifies property accessors, channel I/O, and HTTP version reflection from the RequestEndpoint.
-/// </summary>
-/// <remarks>
-/// Actor under test: <see cref="ConnectionHandle"/>.
-/// Validates that the handle correctly exposes the underlying channel pair and host key.
-/// </remarks>
 public sealed class ConnectionHandleSpec
 {
     private ConnectionHandle CreateHandle()
@@ -114,16 +106,14 @@ public sealed class ConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void CloseKind_should_default_to_zero()
     {
         var handle = CreateHandle();
 
-        Assert.Equal(default(TlsCloseKind), handle.CloseKind);
+        Assert.Equal(default, handle.CloseKind);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void SetCloseKind_should_update_close_kind()
     {
         var handle = CreateHandle();
@@ -134,7 +124,6 @@ public sealed class ConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void SetCloseKind_should_allow_multiple_updates()
     {
         var handle = CreateHandle();
@@ -147,7 +136,6 @@ public sealed class ConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void CreateDirect_should_create_handle_with_nobody_actor()
     {
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
@@ -169,7 +157,6 @@ public sealed class ConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void CreateDirect_should_create_handle_with_default_max_concurrent_streams()
     {
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
@@ -188,7 +175,6 @@ public sealed class ConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void Key_property_should_be_preserved()
     {
         var handle = CreateHandle();
@@ -201,7 +187,6 @@ public sealed class ConnectionHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "ConnectionHandle")]
     public void ConnectionActor_property_should_be_set()
     {
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();

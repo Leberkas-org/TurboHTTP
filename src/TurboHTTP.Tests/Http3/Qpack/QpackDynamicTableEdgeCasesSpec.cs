@@ -2,25 +2,19 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Edge-case tests for QPACK Dynamic Table to achieve 100% branch coverage.
-/// Tests capacity management, eviction scenarios, entry lookup edge cases, and entry size calculations.
-/// </summary>
 public sealed class QpackDynamicTableEdgeCasesSpec
 {
-    /// RFC 9204 §3.2 — Zero capacity table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Create_Table_With_Zero_Capacity()
     {
-        var table = new QpackDynamicTable(0);
+        var table = new QpackDynamicTable();
         Assert.Equal(0, table.Capacity);
         Assert.Equal(0, table.CurrentSize);
         Assert.Equal(0, table.Count);
         Assert.Equal(0, table.InsertCount);
     }
 
-    /// RFC 9204 §3.2 — Large capacity initialization
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Create_Table_With_Large_Capacity()
@@ -30,7 +24,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(0, table.CurrentSize);
     }
 
-    /// RFC 9204 §3.2.2 — Insert single entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Insert_Single_Entry()
@@ -44,7 +37,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.True(table.CurrentSize > 0);
     }
 
-    /// RFC 9204 §3.2.2 — Entry larger than capacity
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Return_Neg1_When_Entry_Exceeds_Capacity()
@@ -58,7 +50,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(0, table.CurrentSize);
     }
 
-    /// RFC 9204 §3.2.2 — Insert with eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Evict_Oldest_When_Capacity_Exceeded()
@@ -67,7 +58,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
 
         // Insert first entry
         var index1 = table.Insert("name1", "value1");
-        var size1 = table.CurrentSize;
         Assert.Equal(0, index1);
         Assert.Equal(1, table.Count);
 
@@ -79,7 +69,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.NotNull(table.GetEntry(0)); // First entry still present
     }
 
-    /// RFC 9204 §3.2.2 — Multiple inserts with cascading eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Evict_Multiple_Entries_When_Inserting_Large_Entry()
@@ -102,7 +91,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(beforeEvictionInsertCount + 1, table.InsertCount); // InsertCount always increases
     }
 
-    /// RFC 9204 §3.2 — GetEntry on empty table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Null_For_GetEntry_On_Empty_Table()
@@ -112,7 +100,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Null(entry);
     }
 
-    /// RFC 9204 §3.2 — GetEntry with negative index
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Null_For_Negative_Index()
@@ -124,7 +111,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Null(entry);
     }
 
-    /// RFC 9204 §3.2 — GetEntry with index >= InsertCount
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Null_For_Index_Beyond_InsertCount()
@@ -137,7 +123,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Null(entry);
     }
 
-    /// RFC 9204 §3.2 — GetEntry on evicted entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Null_For_Evicted_Entry()
@@ -157,7 +142,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Null(entry);
     }
 
-    /// RFC 9204 §3.2 — GetEntry on valid entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Entry_When_Still_In_Table()
@@ -171,7 +155,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal("test-value", entry.Value.Value);
     }
 
-    /// RFC 9204 §3.2.2 — Duplicate on valid entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Duplicate_Valid_Entry()
@@ -189,7 +172,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal("value", entry.Value.Value);
     }
 
-    /// RFC 9204 §3.2.2 — Duplicate on evicted entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Return_Neg1_When_Duplicating_Evicted_Entry()
@@ -207,7 +189,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(-1, duplicate); // Entry was evicted
     }
 
-    /// RFC 9204 §3.2.2 — Duplicate on non-existent entry
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Return_Neg1_When_Duplicating_Non_Existent_Entry()
@@ -219,7 +200,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(-1, duplicate);
     }
 
-    /// RFC 9204 §3.2.3 — SetCapacity reduction triggers eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.3")]
     public void Should_Evict_When_Capacity_Reduced()
@@ -241,7 +221,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.True(table.CurrentSize <= table.Capacity);
     }
 
-    /// RFC 9204 §3.2.3 — SetCapacity to zero
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.3")]
     public void Should_Clear_Table_When_Capacity_Set_To_Zero()
@@ -262,7 +241,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(0, table.Capacity);
     }
 
-    /// RFC 9204 §3.2.3 — SetCapacity increase (no eviction)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.3")]
     public void Should_Not_Evict_When_Capacity_Increased()
@@ -282,7 +260,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(512, table.Capacity);
     }
 
-    /// RFC 9204 §3.2.1 — Entry size calculation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.1")]
     public void Should_Calculate_Entry_Size_Correctly()
@@ -290,11 +267,10 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         var size = QpackDynamicTable.CalculateEntrySize("name", "value");
 
         // 4 + 5 + 32 overhead = 41
-        var expected = 4 + 5 + 32;
+        const int expected = 4 + 5 + 32;
         Assert.Equal(expected, size);
     }
 
-    /// RFC 9204 §3.2.1 — Entry size with empty values
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.1")]
     public void Should_Calculate_Size_With_Empty_Values()
@@ -303,7 +279,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(32, size); // Just the overhead
     }
 
-    /// RFC 9204 §3.2.1 — Entry size with large values
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.1")]
     public void Should_Calculate_Size_With_Large_Values()
@@ -312,11 +287,10 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         var largeValue = new string('y', 2000);
         var size = QpackDynamicTable.CalculateEntrySize(largeName, largeValue);
 
-        var expected = 1000 + 2000 + 32;
+        const int expected = 1000 + 2000 + 32;
         Assert.Equal(expected, size);
     }
 
-    /// RFC 9204 §3.2.1 — Entry size with UTF-8 characters
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.1")]
     public void Should_Calculate_Size_With_Utf8_Characters()
@@ -329,7 +303,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(expected, size);
     }
 
-    /// RFC 9204 §3.2 — DroppedCount on empty table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_InsertCount_For_DroppedCount_On_Empty_Table()
@@ -339,7 +312,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(0, table.InsertCount);
     }
 
-    /// RFC 9204 §3.2 — DroppedCount returns lowest absolute index
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Lowest_Absolute_Index_For_DroppedCount()
@@ -354,7 +326,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(0, table.DroppedCount);
     }
 
-    /// RFC 9204 §3.2 — DroppedCount after eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Next_Available_Index_After_Eviction()
@@ -378,7 +349,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.True(table.DroppedCount >= initialDropped);
     }
 
-    /// RFC 9204 §3.2.2 — InsertCount never resets
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.2")]
     public void Should_Never_Reset_InsertCount()
@@ -402,7 +372,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal(insertCountAfter2 + 1, table.InsertCount);
     }
 
-    /// RFC 9204 §3.2.2 — Capacity validation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Throw_On_Negative_Capacity()
@@ -413,7 +382,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Equal("capacity", ex.ParamName);
     }
 
-    /// RFC 9204 §3.2.3 — SetCapacity validation
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2.3")]
     public void Should_Throw_On_Negative_SetCapacity()
@@ -426,7 +394,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         Assert.Contains("non-negative", ex.Message);
     }
 
-    /// RFC 9204 §3.2 — GetEntry with absolute index at boundary
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Return_Correct_Entry_At_Boundaries()
@@ -449,7 +416,6 @@ public sealed class QpackDynamicTableEdgeCasesSpec
         }
     }
 
-    /// RFC 9204 §3.2 — GetEntry after partial eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Correctly_Access_Non_Evicted_Entries()

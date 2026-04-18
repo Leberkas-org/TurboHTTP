@@ -2,15 +2,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests that <see cref="Expect100Policy"/> correctly determines when the
-/// <c>Expect: 100-continue</c> header should be added to outgoing requests.
-/// RFC 9110 §10.1.1 — A client that will wait for a 100 (Continue) response before
-/// sending the request content MUST send an Expect: 100-continue header field.
-/// </summary>
 public sealed class ExpectContinueSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
     public void Should_AddExpect_When_BodyExceedsThreshold()
     {
@@ -24,7 +18,7 @@ public sealed class ExpectContinueSpec
         Assert.True(bodySize >= policy.MinBodySizeBytes);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
     public void Should_NotAddExpect_When_BodyBelowThreshold()
     {
@@ -38,7 +32,7 @@ public sealed class ExpectContinueSpec
         Assert.True(bodySize < policy.MinBodySizeBytes);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
     public void Should_NotAddExpect_When_NoBody()
     {
@@ -50,7 +44,7 @@ public sealed class ExpectContinueSpec
         Assert.True(bodySize < policy.MinBodySizeBytes);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
     public void Should_NotAddExpect_When_NoContent()
     {
@@ -65,7 +59,7 @@ public sealed class ExpectContinueSpec
         Assert.True(bodySize < policy.MinBodySizeBytes);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
     public void Should_AddExpect_When_BodyAtExactThreshold()
     {
@@ -79,7 +73,7 @@ public sealed class ExpectContinueSpec
         Assert.True(bodySize >= policy.MinBodySizeBytes);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-10.1.1")]
     public void Should_HaveDefaultThreshold_When_DefaultPolicyUsed()
     {

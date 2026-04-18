@@ -28,6 +28,7 @@ public sealed class FeatureInteractionSpec : AcceptanceTestBase
                 }
             }
         }
+
         return new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(JsonSerializer.Serialize(cookies))
@@ -211,6 +212,7 @@ public sealed class FeatureInteractionSpec : AcceptanceTestBase
                 {
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
+
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("success")
@@ -246,6 +248,7 @@ public sealed class FeatureInteractionSpec : AcceptanceTestBase
                 {
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
+
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("success")

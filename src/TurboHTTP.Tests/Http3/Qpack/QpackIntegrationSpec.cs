@@ -4,10 +4,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Integration tests verifying Http3RequestEncoder QPACK encoding and
-/// QpackEncoder/QpackDecoder dynamic table instruction exchange.
-/// </summary>
 public sealed class QpackIntegrationSpec
 {
     [Fact(Timeout = 5000)]
@@ -151,6 +147,7 @@ public sealed class QpackIntegrationSpec
                             qpackDecoder.DynamicTable.InsertCount - 1 - instruction.NameIndex);
                         name = entry!.Value.Name;
                     }
+
                     qpackDecoder.DynamicTable.Insert(name, instruction.ValueString);
                 }
 

@@ -126,7 +126,7 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
         var services = new ServiceCollection();
 
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            services.AddTurboTracing(null!, TurboTraceCategory.All)
+            services.AddTurboTracing(null!)
         );
 
         Assert.NotNull(ex);

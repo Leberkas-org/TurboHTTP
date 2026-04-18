@@ -11,11 +11,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests the BidiFlow Atop composition in <see cref="Engine.BuildExtendedPipeline"/>.
-/// Verifies conditional inclusion, minimal graph for <see cref="PipelineDescriptor.Empty"/>,
-/// each feature in isolation, and all features combined.
-/// </summary>
 public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
 {
     private static byte[] Ok200() =>
@@ -52,8 +47,11 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         http11ResponseFactory ??= Ok200;
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
-            .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(http11ResponseFactory))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
+            .Register(new Version(1, 1),
+                new DelegateTransportFactory(() =>
+                    Flow.FromGraph(new EngineFakeConnectionStage(http11ResponseFactory))))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
         return engine.CreateFlow(transports, descriptor);
@@ -195,7 +193,9 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         byte[] Factory()
         {
             callCount++;
-            return "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nDate: Thu, 21 Mar 2026 10:00:00 GMT\r\nContent-Length: 5\r\n\r\nhello"u8.ToArray();
+            return
+                "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nDate: Thu, 21 Mar 2026 10:00:00 GMT\r\nContent-Length: 5\r\n\r\nhello"u8
+                    .ToArray();
         }
 
         var descriptor = new PipelineDescriptor(
@@ -255,8 +255,10 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         var store = new CacheStore();
         var callCount = 0;
 
-        byte[] Factory() => ++callCount == 1 ? Response503() :
-            "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nDate: Thu, 21 Mar 2026 10:00:00 GMT\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
+        byte[] Factory() => ++callCount == 1
+            ? Response503()
+            : "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nDate: Thu, 21 Mar 2026 10:00:00 GMT\r\nContent-Length: 0\r\n\r\n"u8
+                .ToArray();
 
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: new RedirectPolicy(),
@@ -310,7 +312,8 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task EngineBidiFlowComposition_should_return_raw_compressed_bytes_when_automatic_decompression_disabled()
+    public async Task
+        EngineBidiFlowComposition_should_return_raw_compressed_bytes_when_automatic_decompression_disabled()
     {
         // AutomaticDecompression=false prevents the ContentEncodingBidiStage from being added.
         // Protocol-level decoders no longer decompress, so raw compressed

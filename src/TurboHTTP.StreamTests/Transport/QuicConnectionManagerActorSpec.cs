@@ -35,7 +35,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
                 maxConnectionsPerHost)));
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Acquire_should_create_new_lease()
     {
         var actor = CreateActor();
@@ -52,7 +51,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Acquire_should_reuse_lease_with_available_streams()
     {
         var actor = CreateActor();
@@ -77,7 +75,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Acquire_should_block_when_all_leases_saturated()
     {
         var actor = CreateActor();
@@ -97,7 +94,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Release_reusable_should_keep_lease_alive()
     {
         var actor = CreateActor();
@@ -114,7 +110,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Release_non_reusable_should_dispose_lease()
     {
         var actor = CreateActor();
@@ -131,7 +126,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Release_should_hand_off_to_pending_directly()
     {
         var actor = CreateActor();
@@ -155,7 +149,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task EvictIdle_should_keep_sentinel_lease()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));
@@ -172,7 +165,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task EvictIdle_should_remove_extra_idle_leases()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50), maxConnectionsPerHost: 3);
@@ -201,7 +193,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task GracefulStop_should_dispose_all_leases()
     {
         var actor = CreateActor();
@@ -217,7 +208,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task GracefulStop_should_fail_pending_requests()
     {
         var actor = CreateActor();
@@ -238,7 +228,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Cancellation_should_skip_cancelled_acquire()
     {
         var actor = CreateActor();
@@ -259,7 +248,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Multiple_hosts_should_be_independent()
     {
         var actor = CreateActor();
@@ -290,7 +278,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task CanAcceptStream_false_should_create_new_lease()
     {
         var actor = CreateActor(maxConnectionsPerHost: 2);
@@ -312,7 +299,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task MaxConcurrentStreams_should_limit_per_lease()
     {
         var actor = CreateActor();
@@ -347,7 +333,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Acquire_after_release_should_create_new_when_not_reusable()
     {
         var actor = CreateActor();
@@ -372,7 +357,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Release_unknown_lease_should_dispose()
     {
         var actor = CreateActor();
@@ -394,7 +378,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Acquire_should_block_when_max_connections_per_host_reached()
     {
         var actor = CreateActor(maxConnectionsPerHost: 2);
@@ -419,7 +402,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Release_should_free_slot_for_pending_request()
     {
         var actor = CreateActor(maxConnectionsPerHost: 1);
@@ -444,7 +426,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Multiple_hosts_should_maintain_separate_pools()
     {
         var actor = CreateActor();
@@ -488,7 +469,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Idle_timeout_zero_should_disable_eviction()
     {
         var actor = CreateActor(TimeSpan.Zero);
@@ -509,7 +489,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public async Task Evicted_idle_connection_should_not_be_reused()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));

@@ -4,14 +4,9 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.Shared;
 
-/// <summary>
-/// Verifies that <see cref="H2ResponseBuilder"/> produces valid HTTP/2 frame sequences
-/// decodable by <see cref="FrameDecoder"/>.
-/// </summary>
 public sealed class H2ResponseBuilderSpec
 {
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.1")]
     public void Build_should_produce_valid_settings_headers_data_sequence()
     {
         var bytes = new H2ResponseBuilder()
@@ -54,7 +49,6 @@ public sealed class H2ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5")]
     public void Build_should_produce_valid_empty_settings_ack()
     {
         var bytes = new H2ResponseBuilder()
@@ -71,7 +65,6 @@ public sealed class H2ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
     public void Build_should_produce_valid_window_update()
     {
         var bytes = new H2ResponseBuilder()
@@ -94,7 +87,6 @@ public sealed class H2ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.1")]
     public void Build_should_produce_headers_only_response_with_end_stream()
     {
         var bytes = new H2ResponseBuilder()
@@ -118,11 +110,10 @@ public sealed class H2ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
     public void Build_should_produce_valid_goaway_frame()
     {
         var bytes = new H2ResponseBuilder()
-            .GoAway(3, Http2ErrorCode.NoError)
+            .GoAway(3)
             .Build();
 
         using var decoder = new FrameDecoder();
@@ -135,7 +126,6 @@ public sealed class H2ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.4")]
     public void Build_should_produce_valid_rst_stream_frame()
     {
         var bytes = new H2ResponseBuilder()
@@ -152,7 +142,6 @@ public sealed class H2ResponseBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.1")]
     public void Build_should_produce_byte_exact_round_trip_through_decoder()
     {
         var builder = new H2ResponseBuilder();

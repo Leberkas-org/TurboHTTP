@@ -8,10 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests that <see cref="EndpointDispatchStage"/> caches flow blueprints per endpoint,
-/// avoiding redundant flow factory calls for substreams with the same endpoint.
-/// </summary>
 public sealed class EndpointDispatchCachingSpec : StreamTestBase
 {
     private static HttpRequestMessage Req(string url, Version version)
@@ -24,14 +20,10 @@ public sealed class EndpointDispatchCachingSpec : StreamTestBase
     private static HttpResponseMessage Echo(HttpRequestMessage request)
         => new(HttpStatusCode.OK) { RequestMessage = request };
 
-    /// <summary>
-    /// Creates a pass-through flow that echoes requests as responses.
-    /// </summary>
     private static Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> EchoFlow()
         => Flow.Create<HttpRequestMessage>().Select(Echo);
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-1")]
     public async Task EndpointDispatch_should_call_flow_factory_only_once_per_endpoint()
     {
         var factoryCallCount = new ConcurrentDictionary<RequestEndpoint, int>();
@@ -67,7 +59,6 @@ public sealed class EndpointDispatchCachingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-1")]
     public async Task EndpointDispatch_should_call_flow_factory_once_per_distinct_endpoint()
     {
         var factoryCallCount = new ConcurrentDictionary<RequestEndpoint, int>();
@@ -97,7 +88,6 @@ public sealed class EndpointDispatchCachingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-1")]
     public async Task EndpointDispatch_should_cache_across_multiple_materializations()
     {
         var factoryCallCount = new ConcurrentDictionary<RequestEndpoint, int>();
@@ -132,7 +122,6 @@ public sealed class EndpointDispatchCachingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-1")]
     public async Task EndpointDispatch_should_forward_all_elements_through_inner_flow()
     {
         var stage = new EndpointDispatchStage(_ => EchoFlow());
@@ -154,7 +143,6 @@ public sealed class EndpointDispatchCachingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-1")]
     public async Task EndpointDispatch_should_complete_cleanly_when_source_completes()
     {
         var stage = new EndpointDispatchStage(_ => EchoFlow());
@@ -168,7 +156,6 @@ public sealed class EndpointDispatchCachingSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-1")]
     public async Task EndpointDispatch_should_complete_cleanly_on_empty_source()
     {
         var stage = new EndpointDispatchStage(_ => EchoFlow());

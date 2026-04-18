@@ -4,20 +4,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// RFC 9110 §15.4 — Redirect handler version preservation and URL normalization tests (RH-052 to RH-067).
-/// Covers HTTP version preservation across redirects, independent handler isolation,
-/// query string and fragment handling, case-insensitive scheme/host loop detection,
-/// and three-hop cycle detection.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RedirectHandler"/>.
-/// RFC 9110 §15.4: URL comparison for loop detection must normalize scheme and host (case-insensitive).
-/// </remarks>
 public sealed class RedirectHandlerNormalizationSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_PreserveVersion_When_RedirectingHttp2Request()
     {
@@ -33,7 +22,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(new Version(2, 0), redirected.Version);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_PreserveVersion_When_RedirectingHttp10Request()
     {
@@ -49,7 +38,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(new Version(1, 0), redirected.Version);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_PreserveVersion_When_CrossOriginRedirect()
     {
@@ -65,7 +54,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(new Version(2, 0), redirected.Version);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_PreserveVersion_When_RedirectingHttp11Request()
     {
@@ -81,7 +70,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(new Version(1, 1), redirected.Version);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_PreserveVersion_When_RedirectingWithJar()
     {
@@ -99,7 +88,7 @@ public sealed class RedirectHandlerNormalizationSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_IsolateRedirectCount_When_UsingIndependentHandlers()
     {
@@ -113,6 +102,7 @@ public sealed class RedirectHandlerNormalizationSpec
             var res = BuildRedirect(HttpStatusCode.Found, $"http://example.com/a{i + 1}");
             handlerA.BuildRedirectRequest(req, res);
         }
+
         Assert.Equal(5, handlerA.RedirectCount);
 
         // Request A's 6th redirect should throw
@@ -131,7 +121,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(1, handlerB.RedirectCount);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotDetectFalseLoop_When_UsingIndependentHandlers()
     {
@@ -151,7 +141,7 @@ public sealed class RedirectHandlerNormalizationSpec
     }
 
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotDetectLoop_When_QueryStringsDiffer()
     {
@@ -163,7 +153,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal("http://example.com/page?v=2", redirected.RequestUri?.AbsoluteUri);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_QueryStringsMatch()
     {
@@ -180,7 +170,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_OnlyFragmentDiffers()
     {
@@ -194,7 +184,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_SchemeAndHostDifferOnlyInCase()
     {
@@ -211,7 +201,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_NotDetectLoop_When_PathsDifferInCase()
     {
@@ -224,7 +214,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal("http://example.com/page", redirected.RequestUri?.AbsoluteUri);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_RelativeUrlResolvesToVisitedAbsoluteUrl()
     {
@@ -242,7 +232,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_DetectLoop_When_ThreeHopCycle()
     {
@@ -264,7 +254,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Equal(RedirectError.RedirectLoop, ex.Error);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_IncludeLimitInMessage_When_MaxRedirectsExceeded()
     {
@@ -285,7 +275,7 @@ public sealed class RedirectHandlerNormalizationSpec
         Assert.Contains("RFC 9110 §15.4: Maximum redirect limit of 2 exceeded.", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void Should_IncludeUriInMessage_When_LoopDetected()
     {

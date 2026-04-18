@@ -4,7 +4,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-[Trait("RFC", "RFC9114-4.1")]
 public sealed class Http3ResponseDecoderSpec
 {
     private readonly QpackTableSync _tableSync = new();
@@ -94,7 +93,7 @@ public sealed class Http3ResponseDecoderSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
-        var result = _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x41, 0x42 }), state);
+        var result = _decoder.AccumulateData(new Http3DataFrame("AB"u8.ToArray()), state);
 
         Assert.True(result);
     }
@@ -117,14 +116,14 @@ public sealed class Http3ResponseDecoderSpec
         _decoder.DecodeHeaders(EncodeHeaders(
             (":status", "200"),
             ("content-type", "application/json")), state);
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x7B, 0x7D }), state);
+        _decoder.AccumulateData(new Http3DataFrame("{}"u8.ToArray()), state);
 
         var response = _decoder.CompleteResponse(state);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(response.Content);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(new byte[] { 0x7B, 0x7D }, body);
+        Assert.Equal("{}"u8.ToArray(), body);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
     }
 
@@ -159,12 +158,12 @@ public sealed class Http3ResponseDecoderSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
         _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x41 }), state);
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x42, 0x43 }), state);
+        _decoder.AccumulateData(new Http3DataFrame("BC"u8.ToArray()), state);
 
         var response = _decoder.CompleteResponse(state);
 
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(new byte[] { 0x41, 0x42, 0x43 }, body);
+        Assert.Equal("ABC"u8.ToArray(), body);
     }
 
     [Fact(Timeout = 5000)]

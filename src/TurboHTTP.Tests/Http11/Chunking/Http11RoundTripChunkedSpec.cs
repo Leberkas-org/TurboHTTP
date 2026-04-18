@@ -3,14 +3,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Chunking;
 
-/// <summary>
-/// Tests round-trip encoding and decoding of chunked transfer encoding per RFC 9112 §7.1.
-/// Verifies that chunked bodies are correctly encoded and decoded end-to-end.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §7.1: Chunked transfer coding — chunk-size CRLF chunk-data CRLF … "0" CRLF CRLF.
-/// </remarks>
 public sealed class Http11RoundTripChunkedSpec
 {
     private static ReadOnlyMemory<byte> BuildChunkedResponse(int status, string reason,

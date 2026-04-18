@@ -2,16 +2,9 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Streams;
 
-/// <summary>
-/// Tests for TurboAttributes custom Akka.Streams attributes.
-/// </summary>
-/// <remarks>
-/// Types under test: <see cref="TurboAttributes.MemoryBuffer"/>, <see cref="TurboAttributes.SubstreamQueueSize"/>.
-/// Akka.Streams: Attributes provide configuration for GraphStage behavior.
-/// </remarks>
 public sealed class TurboAttributesSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_store_initial_and_max_values()
     {
         var attr = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -20,7 +13,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(65536, attr.Max);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_implement_equality_correctly()
     {
         var attr1 = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -31,7 +24,7 @@ public sealed class TurboAttributesSpec
         Assert.NotEqual(attr1, attr3);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_handle_equality_with_null()
     {
         var attr = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -41,7 +34,7 @@ public sealed class TurboAttributesSpec
         Assert.False(attr.Equals(null));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_implement_equality_with_object()
     {
         var attr1 = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -51,7 +44,7 @@ public sealed class TurboAttributesSpec
         Assert.True(attr1.Equals(obj));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_handle_equality_with_incompatible_object_type()
     {
         var attr = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -60,7 +53,7 @@ public sealed class TurboAttributesSpec
         Assert.False(attr.Equals(incompatible));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_generate_same_hash_code_for_equal_instances()
     {
         var attr1 = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -69,7 +62,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(attr1.GetHashCode(), attr2.GetHashCode());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_generate_different_hash_codes_for_different_values()
     {
         var attr1 = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -79,7 +72,7 @@ public sealed class TurboAttributesSpec
         Assert.NotEqual(attr1.GetHashCode(), attr2.GetHashCode());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_have_descriptive_tostring()
     {
         var attr = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -90,7 +83,7 @@ public sealed class TurboAttributesSpec
         Assert.Contains("65536", str);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_handle_reference_equality()
     {
         var attr1 = new TurboAttributes.MemoryBuffer(4096, 65536);
@@ -99,7 +92,7 @@ public sealed class TurboAttributesSpec
         Assert.True(attr1.Equals(attr1));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_store_size_value()
     {
         var attr = new TurboAttributes.SubstreamQueueSize(128);
@@ -107,7 +100,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(128, attr.Size);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_implement_equality_correctly()
     {
         var attr1 = new TurboAttributes.SubstreamQueueSize(128);
@@ -118,7 +111,7 @@ public sealed class TurboAttributesSpec
         Assert.NotEqual(attr1, attr3);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_handle_equality_with_null()
     {
         var attr = new TurboAttributes.SubstreamQueueSize(128);
@@ -128,7 +121,7 @@ public sealed class TurboAttributesSpec
         Assert.False(attr.Equals(null));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_implement_equality_with_object()
     {
         var attr1 = new TurboAttributes.SubstreamQueueSize(128);
@@ -138,7 +131,7 @@ public sealed class TurboAttributesSpec
         Assert.True(attr1.Equals(obj));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_handle_equality_with_incompatible_type()
     {
         var attr = new TurboAttributes.SubstreamQueueSize(128);
@@ -147,7 +140,7 @@ public sealed class TurboAttributesSpec
         Assert.False(attr.Equals(incompatible));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_generate_same_hash_code_for_equal_instances()
     {
         var attr1 = new TurboAttributes.SubstreamQueueSize(128);
@@ -156,7 +149,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(attr1.GetHashCode(), attr2.GetHashCode());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_generate_different_hash_codes_for_different_values()
     {
         var attr1 = new TurboAttributes.SubstreamQueueSize(128);
@@ -166,7 +159,7 @@ public sealed class TurboAttributesSpec
         Assert.NotEqual(attr1.GetHashCode(), attr2.GetHashCode());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_have_descriptive_tostring()
     {
         var attr = new TurboAttributes.SubstreamQueueSize(128);
@@ -176,7 +169,7 @@ public sealed class TurboAttributesSpec
         Assert.Contains("128", str);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_handle_reference_equality()
     {
         var attr1 = new TurboAttributes.SubstreamQueueSize(128);
@@ -185,7 +178,7 @@ public sealed class TurboAttributesSpec
         Assert.True(attr1.Equals(attr1));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_handle_zero_size()
     {
         var attr = new TurboAttributes.SubstreamQueueSize(0);
@@ -193,7 +186,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(0, attr.Size);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void SubstreamQueueSize_should_handle_large_size()
     {
         var attr = new TurboAttributes.SubstreamQueueSize(1_000_000);
@@ -201,7 +194,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(1_000_000, attr.Size);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_handle_zero_values()
     {
         var attr = new TurboAttributes.MemoryBuffer(0, 0);
@@ -210,7 +203,7 @@ public sealed class TurboAttributesSpec
         Assert.Equal(0, attr.Max);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void MemoryBuffer_should_handle_large_values()
     {
         var attr = new TurboAttributes.MemoryBuffer(1024 * 1024, 512 * 1024 * 1024);

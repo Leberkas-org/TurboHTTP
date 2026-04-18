@@ -7,14 +7,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Measures throughput and latency of the HTTP/1.1 engine via an in-process loopback pipeline.
-/// Validates sustained round-trip performance under sequential and burst request loads.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Engine"/>.
-/// Uses an in-memory fake connection stage to eliminate network overhead from measurements.
-/// </remarks>
 public sealed class LoopbackBenchmarkStageSpec : EngineTestBase
 {
     private static byte[] Http11OkResponse() =>
@@ -26,10 +18,14 @@ public sealed class LoopbackBenchmarkStageSpec : EngineTestBase
         var responses = Channel.CreateUnbounded<HttpResponseMessage>();
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))))
-            .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))))
-            .Register(new Version(2, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))))
-            .Register(new Version(3, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))));
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))))
+            .Register(new Version(1, 1),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))))
+            .Register(new Version(2, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))))
+            .Register(new Version(3, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Http11OkResponse))));
         var flow = engine.CreateFlow(transports, PipelineDescriptor.Empty);
 
         var (queue, _) = Source.Queue<HttpRequestMessage>(16, OverflowStrategy.Backpressure)
@@ -52,7 +48,8 @@ public sealed class LoopbackBenchmarkStageSpec : EngineTestBase
             Version = HttpVersion.Version11
         });
 
-        var response = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        var response = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         queue.Complete();
@@ -70,7 +67,8 @@ public sealed class LoopbackBenchmarkStageSpec : EngineTestBase
             {
                 Version = HttpVersion.Version11
             });
-            var r = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            var r = await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask()
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         }
 
@@ -86,7 +84,8 @@ public sealed class LoopbackBenchmarkStageSpec : EngineTestBase
         {
             Version = HttpVersion.Version11
         });
-        await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await responses.Reader.ReadAsync(TestContext.Current.CancellationToken).AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // Completing the queue must not throw
         queue.Complete();

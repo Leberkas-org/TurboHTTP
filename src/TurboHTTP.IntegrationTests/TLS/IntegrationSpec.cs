@@ -153,7 +153,7 @@ public sealed class IntegrationSpec
     }
 
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [InlineData(64)]
     [InlineData(256)]
     public async Task Large_body_should_transfer_over_https(int kb)

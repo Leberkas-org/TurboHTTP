@@ -4,8 +4,7 @@ namespace TurboHTTP.Tests.Http3.Frames;
 
 public sealed class FrameRoundTripSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_data_frame()
     {
@@ -20,7 +19,7 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(payload, result.Data.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_headers_frame()
     {
@@ -35,7 +34,7 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(headerBlock, result.HeaderBlock.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_cancel_push_frame()
     {
@@ -49,15 +48,15 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(16383, result.PushId);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_settings_frame()
     {
         var parameters = new List<(long, long)>
         {
-            (0x06, 4096),   // MAX_FIELD_SECTION_SIZE
-            (0x01, 100),    // QPACK_MAX_TABLE_CAPACITY
-            (0x07, 50),     // QPACK_BLOCKED_STREAMS
+            (0x06, 4096), // MAX_FIELD_SECTION_SIZE
+            (0x01, 100), // QPACK_MAX_TABLE_CAPACITY
+            (0x07, 50), // QPACK_BLOCKED_STREAMS
         };
         var original = new Http3SettingsFrame(parameters);
 
@@ -72,7 +71,7 @@ public sealed class FrameRoundTripSpec
         Assert.Equal((0x07L, 50L), result.Parameters[2]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_push_promise_frame()
     {
@@ -88,7 +87,7 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(headerBlock, result.HeaderBlock.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_goaway_frame()
     {
@@ -102,7 +101,7 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(1_000_000, result.StreamId);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_max_push_id_frame()
     {
@@ -116,15 +115,14 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(63, result.PushId);
     }
 
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     [InlineData(0)]
-    [InlineData(63)]               // Max 1-byte varint
-    [InlineData(64)]               // Min 2-byte varint
-    [InlineData(16383)]            // Max 2-byte varint
-    [InlineData(16384)]            // Min 4-byte varint
-    [InlineData(1_073_741_823)]    // Max 4-byte varint
+    [InlineData(63)] // Max 1-byte varint
+    [InlineData(64)] // Min 2-byte varint
+    [InlineData(16383)] // Max 2-byte varint
+    [InlineData(16384)] // Min 4-byte varint
+    [InlineData(1_073_741_823)] // Max 4-byte varint
     public void FrameRoundTrip_should_preserve_large_varint_values(long value)
     {
         // CancelPush
@@ -143,7 +141,7 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(value, mpDecoded.PushId);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_empty_data_frame()
     {
@@ -156,7 +154,7 @@ public sealed class FrameRoundTripSpec
         Assert.Empty(result.Data.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_empty_settings_frame()
     {
@@ -169,7 +167,7 @@ public sealed class FrameRoundTripSpec
         Assert.Empty(result.Parameters);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_multiple_frames()
     {
@@ -230,13 +228,13 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(255, maxPushId.PushId);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_produce_identical_bytes_when_re_encoded()
     {
         var frames = new Http3Frame[]
         {
-            new Http3DataFrame(new byte[] { 0xDE, 0xAD }),
+            new Http3DataFrame("\u07ad"u8.ToArray()),
             new Http3HeadersFrame(new byte[] { 0x82 }),
             new Http3CancelPushFrame(16384),
             new Http3SettingsFrame(new List<(long, long)> { (0x01, 4096), (0x07, 100) }),
@@ -255,7 +253,6 @@ public sealed class FrameRoundTripSpec
             Assert.Equal(wire1, wire2);
         }
     }
-
 
     private static byte[] Encode(Http3Frame frame)
     {

@@ -10,14 +10,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests that <see cref="PipelineDescriptor"/> controls which middleware stages are wired into the engine.
-/// Verifies that null policies result in pass-through behaviour (FR-8) and that non-null policies
-/// activate the corresponding stage.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="Engine"/> (internal CreateFlow overload with <see cref="PipelineDescriptor"/>).
-/// </remarks>
 public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 {
     private static byte[] Ok200() =>
@@ -32,12 +24,6 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     private static Flow<IOutputItem, IInputItem, NotUsed> NoOpH2Flow()
         => Flow.FromGraph(new H2EngineFakeConnectionStage());
 
-    /// <summary>
-    /// Runs a single request through the engine flow and returns the response.
-    /// Uses <c>Source.Never</c> concat to keep the source alive during feedback loops
-    /// (retry / redirect), so that <see cref="MergePreferred"/> can process re-injected
-    /// requests even after the original source has emitted its one item.
-    /// </summary>
     private async Task<HttpResponseMessage> RunSingleAsync(
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> flow,
         HttpRequestMessage request)
@@ -58,7 +44,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
         var fake = new EngineFakeConnectionStage(Ok200);
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
             .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(fake)))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
@@ -85,8 +72,10 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     {
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response503))))
-            .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response503))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response503))))
+            .Register(new Version(1, 1),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response503))))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
         var flow = engine.CreateFlow(transports, PipelineDescriptor.Empty);
@@ -106,8 +95,10 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     {
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response301))))
-            .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response301))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response301))))
+            .Register(new Version(1, 1),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Response301))))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
         var flow = engine.CreateFlow(transports, PipelineDescriptor.Empty);
@@ -144,7 +135,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
             .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(fake)))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
@@ -186,8 +178,10 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
-            .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(StatefulFactory))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
+            .Register(new Version(1, 1),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(StatefulFactory))))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
         var flow = engine.CreateFlow(transports, descriptor);
@@ -221,8 +215,10 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
-            .Register(new Version(1, 1), new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(StatefulFactory))))
+            .Register(new Version(1, 0),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(Ok200))))
+            .Register(new Version(1, 1),
+                new DelegateTransportFactory(() => Flow.FromGraph(new EngineFakeConnectionStage(StatefulFactory))))
             .Register(new Version(2, 0), new DelegateTransportFactory(NoOpH2Flow))
             .Register(new Version(3, 0), new DelegateTransportFactory(NoOpH2Flow));
         var flow = engine.CreateFlow(transports, descriptor);

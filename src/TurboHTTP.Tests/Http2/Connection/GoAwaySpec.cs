@@ -3,18 +3,8 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
-/// <summary>
-/// Tests GOAWAY frame decoding per RFC 9113 §6.8.
-/// Verifies last-stream-ID, error code, and optional debug data extraction.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.8: GOAWAY initiates graceful shutdown, carrying the highest processed stream ID and an error code.
-/// </remarks>
 public sealed class Http2GoAwaySpec
 {
-    // GA-001..GA-005: GOAWAY basic field decoding
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_decode_with_correct_last_stream_id()
@@ -75,8 +65,6 @@ public sealed class Http2GoAwaySpec
         Assert.True(frame.DebugData.IsEmpty);
     }
 
-    // GA-006..GA-007: GOAWAY debug data and special lastStreamId values
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_decode_correctly_when_go_away_has_debug_data()
@@ -102,17 +90,17 @@ public sealed class Http2GoAwaySpec
         Assert.Equal(0, frame.LastStreamId);
     }
 
-    // GA-008: GOAWAY on non-zero stream → PROTOCOL_ERROR
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_be_protocol_error_when_go_away_on_non_zero_stream()
     {
         // Craft a GOAWAY frame with stream ID = 1 (violates RFC 9113 §6.8).
         var frame = new byte[9 + 8];
-        frame[0] = 0; frame[1] = 0; frame[2] = 8;   // length = 8
-        frame[3] = 0x7;                               // type = GOAWAY
-        frame[4] = 0x0;                               // no flags
+        frame[0] = 0;
+        frame[1] = 0;
+        frame[2] = 8; // length = 8
+        frame[3] = 0x7; // type = GOAWAY
+        frame[4] = 0x0; // no flags
         BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(5), 1u); // stream 1
         // lastStreamId=0, errorCode=0
 
@@ -121,8 +109,6 @@ public sealed class Http2GoAwaySpec
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
     }
-
-    // GA-009: Round-trip
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
@@ -140,8 +126,6 @@ public sealed class Http2GoAwaySpec
         Assert.True(decoded.DebugData.Span.SequenceEqual(original.DebugData.Span));
     }
 
-    // GA-010: Various error codes
-
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     [InlineData(Http2ErrorCode.NoError)]
@@ -150,7 +134,8 @@ public sealed class Http2GoAwaySpec
     [InlineData(Http2ErrorCode.Cancel)]
     [InlineData(Http2ErrorCode.FlowControlError)]
     [InlineData(Http2ErrorCode.CompressionError)]
-    internal void Http2FrameDecoder_should_decode_correctly_when_go_away_has_various_error_codes(Http2ErrorCode errorCode)
+    internal void Http2FrameDecoder_should_decode_correctly_when_go_away_has_various_error_codes(
+        Http2ErrorCode errorCode)
     {
         var bytes = new GoAwayFrame(1, errorCode).Serialize();
         var decoder = new FrameDecoder();
@@ -160,17 +145,17 @@ public sealed class Http2GoAwaySpec
         Assert.Equal(errorCode, frame.ErrorCode);
     }
 
-    // GA-011: Reserved high bit in lastStreamId stripped
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_strip_when_go_away_last_stream_id_has_reserved_high_bit()
     {
         // Craft a GOAWAY frame with the reserved high bit set in lastStreamId.
         var frame = new byte[9 + 8];
-        frame[0] = 0; frame[1] = 0; frame[2] = 8;   // length = 8
-        frame[3] = 0x7;                               // type = GOAWAY
-        frame[4] = 0x0;                               // no flags
+        frame[0] = 0;
+        frame[1] = 0;
+        frame[2] = 8; // length = 8
+        frame[3] = 0x7; // type = GOAWAY
+        frame[4] = 0x0; // no flags
         // stream id = 0
         // lastStreamId with high bit set = 0x80000005 → should decode as 5
         BinaryPrimitives.WriteUInt32BigEndian(frame.AsSpan(9), 0x80000005u);

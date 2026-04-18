@@ -44,7 +44,7 @@ public sealed class BehaviorStackSpec
     [Fact(Timeout = 5000)]
     public void BehaviorStack_should_fall_through_to_default_after_all_behaviors_popped()
     {
-        var stack = Stack("default");
+        var stack = Stack();
         stack.Push(_ => "pushed");
         stack.Pop();
         Assert.Equal("default", stack.Apply(0));
@@ -53,7 +53,7 @@ public sealed class BehaviorStackSpec
     [Fact(Timeout = 5000)]
     public void BehaviorStack_should_pop_noop_when_empty()
     {
-        var stack = Stack("default");
+        var stack = Stack();
         stack.Pop();
         Assert.Equal("default", stack.Apply(0));
     }
@@ -80,7 +80,7 @@ public sealed class BehaviorStackSpec
     [Fact(Timeout = 5000)]
     public void BehaviorStack_should_auto_pop_after_PushOnce()
     {
-        var stack = Stack("default");
+        var stack = Stack();
         stack.PushOnce(_ => "once");
         Assert.Equal("once", stack.Apply(0));
         Assert.Equal("default", stack.Apply(0));
@@ -89,7 +89,7 @@ public sealed class BehaviorStackSpec
     [Fact(Timeout = 5000)]
     public void BehaviorStack_should_auto_pop_PushOnce_leaving_lower_behavior_intact()
     {
-        var stack = Stack("default");
+        var stack = Stack();
         stack.Push(_ => "persistent");
         stack.PushOnce(_ => "once");
         Assert.Equal("once", stack.Apply(0));
@@ -120,13 +120,14 @@ public sealed class BehaviorStackSpec
         var applyTask = Task.Run(() => stack.Apply(0));
         gate.Fault(new TimeoutException("simulated"));
 
-        await Assert.ThrowsAsync<TimeoutException>(() => applyTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<TimeoutException>(() =>
+            applyTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
     public async Task BehaviorStack_should_fall_through_to_default_after_delayed_gate_consumed()
     {
-        var stack = Stack("default");
+        var stack = Stack();
         var gate = stack.PushDelayed();
 
         var applyTask = Task.Run(() => stack.Apply(0));
@@ -142,7 +143,7 @@ public sealed class BehaviorStackSpec
     [Fact(Timeout = 5000)]
     public void BehaviorStack_should_support_nested_push_and_pop_sequence()
     {
-        var stack = Stack("default");
+        var stack = Stack();
         stack.Push(_ => "a");
         stack.Push(_ => "b");
         stack.Push(_ => "c");

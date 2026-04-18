@@ -3,17 +3,9 @@ using System.Text;
 
 namespace TurboHTTP.Tests.Http11.Encoder;
 
-/// <summary>
-/// Tests Range request header encoding per RFC 9112 §5.
-/// Verifies byte-range and multi-range header serialization.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Encoder"/>.
-/// RFC 9112 §5 / RFC 9110 §14.2: Range header — bytes=first-byte-pos "-" last-byte-pos.
-/// </remarks>
 public sealed class Http11EncoderRangeRequestSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_encode_range_header_when_byte_range()
     {
@@ -23,7 +15,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("Range: bytes=0-499\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_encode_range_header_when_suffix_range()
     {
@@ -33,7 +25,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("Range: bytes=-500\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_encode_range_header_when_open_ended_range()
     {
@@ -43,7 +35,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("Range: bytes=500-\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_encode_range_header_when_multi_range()
     {
@@ -58,7 +50,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("1000-1499", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-5")]
     public void Http11Encoder_should_reject_range_when_invalid()
     {
@@ -72,7 +64,7 @@ public sealed class Http11EncoderRangeRequestSpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_reject_range_without_bytes_prefix()
     {
@@ -93,7 +85,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.True(threw);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_reject_range_with_missing_dash()
     {
@@ -114,7 +106,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.True(threw);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_reject_range_with_empty_spec()
     {
@@ -135,7 +127,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.True(threw);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_reject_range_with_non_digit_characters()
     {
@@ -156,7 +148,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.True(threw);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_accept_case_insensitive_bytes_prefix()
     {
@@ -166,7 +158,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("Range: BYTES=0-99\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_accept_range_with_large_numbers()
     {
@@ -176,7 +168,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("Range: bytes=0-9999999999\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_accept_range_with_spaces()
     {
@@ -186,7 +178,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.Contains("Range: bytes=0-99, 200-299\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_reject_range_with_invalid_character()
     {
@@ -207,7 +199,7 @@ public sealed class Http11EncoderRangeRequestSpec
         Assert.True(threw);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-14.1.1")]
     public void Http11Encoder_should_reject_range_non_bytes_unit()
     {

@@ -2,27 +2,17 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests RST_STREAM and PING frame error handling per RFC 9113 §6.3 and §6.7.
-/// Verifies error code decoding, reserved bits, and ACK flag semantics.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.3: RST_STREAM carries a 32-bit error code.
-/// RFC 9113 §6.7: PING frames are 8 bytes and must have exact payload size.
-/// </remarks>
 public sealed class Http2ErrorHandlingSpec
 {
     [Theory(Timeout = 5000)]
-    [InlineData((uint)0, Http2ErrorCode.NoError)]
-    [InlineData((uint)1, Http2ErrorCode.ProtocolError)]
-    [InlineData((uint)2, Http2ErrorCode.InternalError)]
-    [InlineData((uint)3, Http2ErrorCode.FlowControlError)]
-    [InlineData((uint)4, Http2ErrorCode.SettingsTimeout)]
-    [InlineData((uint)5, Http2ErrorCode.StreamClosed)]
+    [InlineData(Http2ErrorCode.NoError)]
+    [InlineData(Http2ErrorCode.ProtocolError)]
+    [InlineData(Http2ErrorCode.InternalError)]
+    [InlineData(Http2ErrorCode.FlowControlError)]
+    [InlineData(Http2ErrorCode.SettingsTimeout)]
+    [InlineData(Http2ErrorCode.StreamClosed)]
     [Trait("RFC", "RFC9113-6.3")]
-#pragma warning disable xUnit1026
-    internal void Http2FrameDecoder_should_decode_rst_stream_error_code(uint errorCodeInt, Http2ErrorCode expectedCode)
+    internal void Http2FrameDecoder_should_decode_rst_stream_error_code(Http2ErrorCode expectedCode)
     {
         var frame = new RstStreamFrame(1, expectedCode).Serialize();
         var frames = new FrameDecoder().Decode(frame);
@@ -30,7 +20,6 @@ public sealed class Http2ErrorHandlingSpec
         var rstFrame = Assert.IsType<RstStreamFrame>(frames[0]);
         Assert.Equal(expectedCode, rstFrame.ErrorCode);
     }
-#pragma warning restore xUnit1026
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.3")]
@@ -45,7 +34,7 @@ public sealed class Http2ErrorHandlingSpec
         frame[5] = 0;
         frame[6] = 0;
         frame[7] = 0;
-        frame[8] = 1;  // stream ID = 1
+        frame[8] = 1; // stream ID = 1
         frame[9] = 0;
         frame[10] = 0;
         frame[11] = 0;
@@ -72,7 +61,7 @@ public sealed class Http2ErrorHandlingSpec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_decode_ping_frame_with_ack_flag_false()
     {
-        var data = new byte[8] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var frame = new PingFrame(data, isAck: false).Serialize();
         var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
@@ -84,7 +73,7 @@ public sealed class Http2ErrorHandlingSpec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_decode_ping_frame_with_ack_flag_true()
     {
-        var data = new byte[8] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var frame = new PingFrame(data, isAck: true).Serialize();
         var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
@@ -96,7 +85,7 @@ public sealed class Http2ErrorHandlingSpec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_preserve_ping_data_unchanged()
     {
-        var data = new byte[8] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var frame = new PingFrame(data, isAck: false).Serialize();
         var frames = new FrameDecoder().Decode(frame);
         Assert.NotEmpty(frames);
@@ -128,13 +117,13 @@ public sealed class Http2ErrorHandlingSpec
         var frame = new byte[9 + 3];
         frame[0] = 0;
         frame[1] = 0;
-        frame[2] = 3;  // wrong: should be 4
+        frame[2] = 3; // wrong: should be 4
         frame[3] = 0x03; // RST_STREAM
         frame[4] = 0x00;
         frame[5] = 0;
         frame[6] = 0;
         frame[7] = 0;
-        frame[8] = 1;  // stream ID = 1
+        frame[8] = 1; // stream ID = 1
         frame[9] = 0;
         frame[10] = 0;
         frame[11] = 0;

@@ -3,19 +3,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Security;
 
-/// <summary>
-/// Fuzz tests for the HTTP/3 frame decoder per RFC 9114 §7.
-/// Verifies that the decoder either succeeds or handles errors gracefully —
-/// never an unhandled crash. Covers corrupt frame types, truncated frames,
-/// oversized payloads, and invalid frame-stream combinations.
-/// </summary>
 public sealed class Http3FrameFuzzSpec
 {
-    /// <summary>
-    /// Feeds bytes to the decoder and asserts that the outcome is either
-    /// a successful decode, NeedMoreData, or an expected protocol exception.
-    /// Any other exception type is a bug.
-    /// </summary>
     private static void AssertDecodeNeverCrashes(FrameDecoder decoder, byte[] data)
     {
         try
@@ -138,7 +127,7 @@ public sealed class Http3FrameFuzzSpec
     {
         using var decoder = new FrameDecoder();
 
-        var payload = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"
+        var payload = "Hello"u8.ToArray(); // "Hello"
         var frame = BuildRawFrame((long)FrameType.Data, payload);
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
@@ -243,7 +232,7 @@ public sealed class Http3FrameFuzzSpec
         var status = decoder.TryDecode(validFrame, out var frame, out _);
         Assert.Equal(DecodeStatus.Success, status);
         Assert.IsType<Http3DataFrame>(frame);
-        ((Http3DataFrame)frame!).Dispose();
+        ((Http3DataFrame)frame).Dispose();
 
         // Valid GOAWAY frame
         var goawayPayload = new byte[8];
@@ -316,7 +305,7 @@ public sealed class Http3FrameFuzzSpec
     {
         using var decoder = new FrameDecoder();
 
-        var payload = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F };
+        var payload = "Hello"u8.ToArray();
         var fullFrame = BuildRawFrame((long)FrameType.Data, payload);
 
         // Split in the middle

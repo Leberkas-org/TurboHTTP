@@ -2,7 +2,6 @@ using TurboHTTP.Protocol.Http3;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-[Trait("RFC", "RFC9114-6.1")]
 public sealed class Http3StreamTrackerSpec
 {
     [Fact(Timeout = 5000)]

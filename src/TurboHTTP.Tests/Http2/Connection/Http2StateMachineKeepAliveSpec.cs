@@ -1,25 +1,12 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
 public sealed class Http2StateMachineKeepAliveSpec
 {
-    private sealed class FakeOps : IStageOperations
-    {
-        public List<HttpResponseMessage> Responses { get; } = [];
-        public List<IOutputItem> Outbound { get; } = [];
-        public List<string> Warnings { get; } = [];
-        public bool ReconnectFailed { get; private set; }
-
-        public void OnResponse(HttpResponseMessage r) => Responses.Add(r);
-        public void OnOutbound(IOutputItem item) => Outbound.Add(item);
-        public void OnWarning(string msg) => Warnings.Add(msg);
-        public void OnReconnectFailed() => ReconnectFailed = true;
-    }
-
     private static Http2EngineOptions MakeConfig() =>
         new(
             MaxConnectionsPerServer: 6,

@@ -3,14 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests PUSH_PROMISE frame parsing per RFC 9113 §6.6.
-/// Verifies stream reservation, promised stream ID extraction, and header block parsing.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.6: PUSH_PROMISE reserves a stream and encodes pseudo-headers for the pushed request.
-/// </remarks>
 public sealed class Http2DecoderPushPromiseSpec
 {
     [Fact(Timeout = 5000)]
@@ -147,8 +139,14 @@ public sealed class Http2DecoderPushPromiseSpec
         raw[2] = (byte)(payloadLen & 0xFF);
         raw[3] = 0x05; // PUSH_PROMISE
         raw[4] = 0x04; // END_HEADERS
-        raw[5] = 0; raw[6] = 0; raw[7] = 0; raw[8] = 0; // stream ID = 0
-        raw[9] = 0; raw[10] = 0; raw[11] = 0; raw[12] = 2; // promised stream = 2
+        raw[5] = 0;
+        raw[6] = 0;
+        raw[7] = 0;
+        raw[8] = 0; // stream ID = 0
+        raw[9] = 0;
+        raw[10] = 0;
+        raw[11] = 0;
+        raw[12] = 2; // promised stream = 2
         headerBlock.CopyTo(raw.AsSpan(13));
 
         var frames = new FrameDecoder().Decode(raw);

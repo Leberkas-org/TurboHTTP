@@ -36,11 +36,15 @@ public sealed class ConnectionPoolDeadlockSpec : StreamTestBase
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: false));
 
-        var secondAcquire = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var completed = await Task.WhenAny(secondAcquire, Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+        var secondAcquire =
+            TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var completed = await Task.WhenAny(secondAcquire,
+            Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
 
         Assert.Same(secondAcquire, completed);
 
@@ -58,7 +62,8 @@ public sealed class ConnectionPoolDeadlockSpec : StreamTestBase
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken));
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken));
         }
 
         using var shortCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));

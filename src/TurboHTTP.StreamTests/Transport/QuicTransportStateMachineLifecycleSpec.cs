@@ -85,7 +85,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void ConnectionLeaseAcquired_should_set_current_connection_lease()
     {
         var (sm, ops) = CreateStateMachine();
@@ -105,7 +104,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void RequestLeaseAcquired_should_setup_stream_context_and_pump()
     {
         var (sm, ops) = CreateStateMachine();
@@ -128,7 +126,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void TypedLeaseAcquired_Control_should_flush_pending_and_open_encoder()
     {
         var (sm, ops) = CreateStateMachine();
@@ -149,7 +146,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void TypedLeaseAcquired_QpackEncoder_should_flush_pending()
     {
         var (sm, ops) = CreateStateMachine();
@@ -161,7 +157,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void CleanupTransport_should_increment_generation()
     {
         var (sm, ops) = CreateStateMachine();
@@ -187,7 +182,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void HandleDownstreamFinish_should_cleanup_and_return_connection()
     {
         var (sm, ops) = CreateStateMachine();
@@ -199,7 +193,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void PostStop_should_cancel_timer_and_cleanup()
     {
         var (sm, ops) = CreateStateMachine();
@@ -214,7 +207,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void EarlyDataRejected_should_requeue_to_first_stream()
     {
         var (sm, ops) = CreateStateMachine();
@@ -236,7 +228,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Multiple_streams_should_be_routed_independently()
     {
         var (sm, ops) = CreateStateMachine();
@@ -260,7 +251,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Untagged_buffer_should_route_to_first_stream_with_handle()
     {
         var (sm, ops) = CreateStateMachine();
@@ -284,7 +274,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void AcquisitionFailed_without_pending_connect_should_noop()
     {
         var (sm, ops) = CreateStateMachine();
@@ -296,7 +285,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Inbound_pump_failure_should_trigger_reconnect()
     {
         var (sm, ops) = CreateStateMachine();
@@ -308,7 +296,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9000-9")]
     public void CheckForConnectionMigration_should_detect_endpoint_change()
     {
         var (sm, ops) = CreateStateMachine(allowConnectionMigration: true);
@@ -325,7 +312,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Outbound_write_failure_should_trigger_close()
     {
         var (sm, ops) = CreateStateMachine();
@@ -337,7 +323,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Connect_timer_expiry_should_push_acquisition_failed()
     {
         var (sm, ops) = CreateStateMachine();
@@ -353,7 +338,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114")]
     public void Unknown_timer_expiry_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();

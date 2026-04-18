@@ -3,19 +3,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
-/// <summary>
-/// Tests SETTINGS_MAX_CONCURRENT_STREAMS enforcement per RFC 9113 §6.5.2.
-/// Verifies stream creation limits and correct error signalling when the limit is exceeded.
-/// Part 1: API tests.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.5.2: SETTINGS_MAX_CONCURRENT_STREAMS limits the number of simultaneously open streams on a connection.
-/// </remarks>
 public sealed class Http2SettingsMaxConcurrentApiSpec
 {
-    // Helpers
-
     private static byte[] MakeResponseHeadersBytes(int streamId, bool endStream = false, bool endHeaders = true)
     {
         var hpack = new HpackEncoder(useHuffman: false);
@@ -42,10 +31,6 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
         return result;
     }
 
-    /// <summary>
-    /// RFC 9113 §6.5.2: Extracts MAX_CONCURRENT_STREAMS parameter from a decoded SETTINGS frame.
-    /// Returns the current limit (int.MaxValue if not set).
-    /// </summary>
     private static int ExtractMaxConcurrentStreams(SettingsFrame frame, int currentLimit)
     {
         foreach (var (param, value) in frame.Parameters)
@@ -59,10 +44,6 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
         return currentLimit;
     }
 
-    /// <summary>
-    /// RFC 9113 §5.1.2 / §6.5.2: Opening a stream when active count >= max is a REFUSED_STREAM error.
-    /// Enforces the MAX_CONCURRENT_STREAMS limit on new stream creation.
-    /// </summary>
     private static void EnforceMaxConcurrentStreams(int activeCount, int maxConcurrent, int streamId)
     {
         if (maxConcurrent != int.MaxValue && activeCount >= maxConcurrent)
@@ -75,9 +56,6 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
         }
     }
 
-    /// <summary>
-    /// Tracks stream state transitions: HEADERS opens, END_STREAM/DATA+END_STREAM/RST_STREAM close.
-    /// </summary>
     private static void TrackStreamState(
         Http2Frame frame,
         HashSet<int> openStreams,
@@ -114,8 +92,6 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
                 break;
         }
     }
-
-    // MCS-API: API Contract Tests (§5.1.2 / §6.5.2)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5.2")]
@@ -266,11 +242,11 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_throw_refused_stream_when_concurrent_stream_limit_exceeded()
     {
-        var maxConcurrent = 1;
-        var activeCount = 1;
+        const int maxConcurrent = 1;
+        const int activeCount = 1;
 
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceMaxConcurrentStreams(activeCount, maxConcurrent, streamId: 3));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            EnforceMaxConcurrentStreams(activeCount, maxConcurrent, streamId: 3));
 
         Assert.Equal(Http2ErrorCode.RefusedStream, ex.ErrorCode);
     }
@@ -279,11 +255,11 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_use_refused_stream_error_code_when_concurrent_stream_limit_exceeded()
     {
-        var maxConcurrent = 1;
-        var activeCount = 1;
+        const int maxConcurrent = 1;
+        const int activeCount = 1;
 
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceMaxConcurrentStreams(activeCount, maxConcurrent, streamId: 3));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            EnforceMaxConcurrentStreams(activeCount, maxConcurrent, streamId: 3));
 
         Assert.Equal(Http2ErrorCode.RefusedStream, ex.ErrorCode);
     }
@@ -292,8 +268,8 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_include_stream_id_in_message_when_concurrent_stream_limit_exceeded()
     {
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceMaxConcurrentStreams(activeCount: 1, maxConcurrent: 1, streamId: 3));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            EnforceMaxConcurrentStreams(activeCount: 1, maxConcurrent: 1, streamId: 3));
 
         Assert.Contains("3", ex.Message);
     }
@@ -302,8 +278,8 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
     [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_include_limit_in_message_when_concurrent_stream_limit_exceeded()
     {
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceMaxConcurrentStreams(activeCount: 2, maxConcurrent: 2, streamId: 5));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            EnforceMaxConcurrentStreams(activeCount: 2, maxConcurrent: 2, streamId: 5));
 
         Assert.Contains("2", ex.Message);
     }
@@ -315,7 +291,7 @@ public sealed class Http2SettingsMaxConcurrentApiSpec
         var decoder = new FrameDecoder();
         var openStreams = new HashSet<int>();
         var closedStreams = new HashSet<int>();
-        var maxConcurrent = 1;
+        const int maxConcurrent = 1;
 
         // Open stream 1
         var headersFrames = decoder.Decode(MakeResponseHeadersBytes(streamId: 1, endStream: false));

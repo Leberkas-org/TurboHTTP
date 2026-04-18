@@ -8,20 +8,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Tests the Expect: 100-continue bidirectional stage per RFC 9110 §10.1.1.
-/// Verifies that the request direction adds the Expect header for large bodies,
-/// and the response direction filters 100 Continue and forwards 417 responses.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="ExpectContinueBidiStage"/>.
-/// </remarks>
 public sealed class ExpectContinueSpec : StreamTestBase
 {
-    /// <summary>
-    /// Runs requests through the request direction (In1→Out1) of the BidiStage.
-    /// The response direction is wired to empty source / ignored sink.
-    /// </summary>
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
         ExpectContinueBidiStage stage,
         params HttpRequestMessage[] requests)
@@ -46,10 +34,6 @@ public sealed class ExpectContinueSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    /// <summary>
-    /// Runs a single request through the BidiStage and feeds back specified responses.
-    /// Collects responses that emerge from Out2.
-    /// </summary>
     private Task<IImmutableList<HttpResponseMessage>> RunFullFlowAsync(
         ExpectContinueBidiStage stage,
         HttpRequestMessage request,
@@ -121,7 +105,7 @@ public sealed class ExpectContinueSpec : StreamTestBase
     [Trait("RFC", "RFC9110-10.1.1")]
     public async Task ExpectContinue_should_pass_through_when_null_policy()
     {
-        var stage = new ExpectContinueBidiStage(null);
+        var stage = new ExpectContinueBidiStage();
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/upload");
         request.Content = new ByteArrayContent(new byte[200]);

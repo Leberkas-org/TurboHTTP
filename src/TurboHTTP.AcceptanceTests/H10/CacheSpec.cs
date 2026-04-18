@@ -37,19 +37,23 @@ public sealed class CacheSpec : AcceptanceTestBase
         {
             r.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue($"\"{etag}\"");
         }
+
         if (lastModified is not null)
         {
             r.Content.Headers.LastModified = lastModified;
         }
+
         if (vary is not null)
         {
             r.Headers.TryAddWithoutValidation("Vary", vary);
         }
+
         if (expires is not null)
         {
             r.Content.Headers.Expires = expires;
             r.Headers.Date = DateTimeOffset.UtcNow;
         }
+
         return r;
     }
 
@@ -232,6 +236,7 @@ public sealed class CacheSpec : AcceptanceTestBase
                     return CacheableResponse("must-revalidate-body", "must-revalidate, max-age=0",
                         etag: "mr-etag-1");
                 }
+
                 // Subsequent calls: if If-None-Match present, return 304
                 if (req.Headers.IfNoneMatch.Any())
                 {
@@ -239,6 +244,7 @@ public sealed class CacheSpec : AcceptanceTestBase
                     r.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"mr-etag-1\"");
                     return r;
                 }
+
                 return CacheableResponse("must-revalidate-body-new", "must-revalidate, max-age=0",
                     etag: "mr-etag-2");
             });

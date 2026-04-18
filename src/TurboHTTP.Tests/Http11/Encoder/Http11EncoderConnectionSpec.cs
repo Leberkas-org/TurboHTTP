@@ -3,17 +3,9 @@ using System.Text;
 
 namespace TurboHTTP.Tests.Http11.Encoder;
 
-/// <summary>
-/// Tests Connection header encoding per RFC 9112 §9.
-/// Verifies keep-alive default, close opt-out, and upgrade negotiation.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Encoder"/>.
-/// RFC 9112 §9: Connection header — controls per-hop options including keep-alive and close.
-/// </remarks>
 public sealed class Http11EncoderConnectionSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_default_to_keep_alive_when_http11()
     {
@@ -22,7 +14,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_encode_connection_close_when_explicitly_set()
     {
@@ -35,7 +27,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.DoesNotContain("keep-alive", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_encode_multiple_tokens_when_connection_upgrade()
     {
@@ -45,7 +37,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: upgrade, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_strip_connection_specific_headers_when_present()
     {
@@ -57,7 +49,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.DoesNotContain("Upgrade:", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_set_keep_alive_when_default_connection_header()
     {
@@ -66,7 +58,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_preserve_connection_close_when_explicitly_set()
     {
@@ -79,7 +71,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.DoesNotContain("Connection: keep-alive", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_add_te_to_connection_when_te_header_present()
     {
@@ -93,7 +85,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("TE, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_not_duplicate_when_connection_already_has_te()
     {
@@ -108,7 +100,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: TE, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_exclude_chunked_when_te_contains_chunked()
     {
@@ -123,7 +115,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("TE, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_omit_te_header_when_only_chunked()
     {
@@ -137,7 +129,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_add_te_to_connection_close_when_te_present()
     {
@@ -151,7 +143,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("TE: trailers\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_filter_te_chunked_case_insensitive()
     {
@@ -165,7 +157,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_preserve_multiple_te_values()
     {
@@ -179,7 +171,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("TE, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7.4")]
     public void Http11Encoder_should_handle_te_with_whitespace()
     {
@@ -192,7 +184,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("TE, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_add_custom_connection_value_with_keep_alive()
     {
@@ -204,7 +196,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: custom-value, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_handle_connection_with_multiple_custom_values()
     {
@@ -217,7 +209,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.Contains("Connection: custom1, custom2, keep-alive\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_exclude_trailers_header()
     {
@@ -229,7 +221,7 @@ public sealed class Http11EncoderConnectionSpec
         Assert.DoesNotContain("Trailers:", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9")]
     public void Http11Encoder_should_exclude_proxy_connection_header()
     {

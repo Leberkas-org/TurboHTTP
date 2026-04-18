@@ -4,20 +4,11 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 header field serialization per RFC 1945 §4.2.
-/// Verifies name-value pairs, folding rules, and header ordering.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Encoder"/>.
-/// RFC 1945 §4.2: Message headers — field-name ':' field-value CRLF.
-/// </remarks>
 public sealed class Http10EncoderHeaderSpec
 {
     private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];
 
-    private static (string requestLine, string[] headerLines, byte[] body) ParseRaw(HttpRequestMessage request,
-        int bufferSize = 8192)
+    private static string[] ParseRaw(HttpRequestMessage request, int bufferSize = 8192)
     {
         var buffer = MakeBuffer(bufferSize);
         var written = Encoder.Encode(request, ref buffer);
@@ -25,13 +16,11 @@ public sealed class Http10EncoderHeaderSpec
 
         var separatorIndex = raw.IndexOf("\r\n\r\n", StringComparison.Ordinal);
         var headerSection = raw[..separatorIndex];
-        var bodyString = raw[(separatorIndex + 4)..];
 
         var lines = headerSection.Split("\r\n");
-        var requestLine = lines[0];
         var headerLines = lines[1..];
 
-        return (requestLine, headerLines, Encoding.ASCII.GetBytes(bodyString));
+        return headerLines;
     }
 
     private static string Encode(HttpRequestMessage request, int bufferSize = 8192)
@@ -46,7 +35,7 @@ public sealed class Http10EncoderHeaderSpec
     public void Http10EncoderHeader_should_remove_host_header()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Host:", StringComparison.OrdinalIgnoreCase));
     }
@@ -59,7 +48,7 @@ public sealed class Http10EncoderHeaderSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("Transfer-Encoding", "chunked");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Transfer-Encoding:", StringComparison.OrdinalIgnoreCase));
     }
@@ -71,7 +60,7 @@ public sealed class Http10EncoderHeaderSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Custom-Header", "my-value");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.Contains(headerLines, h => h == "X-Custom-Header: my-value");
     }
@@ -84,7 +73,7 @@ public sealed class Http10EncoderHeaderSpec
         request.Headers.TryAddWithoutValidation("X-Header-A", "value-a");
         request.Headers.TryAddWithoutValidation("X-Header-B", "value-b");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.Contains(headerLines, h => h == "X-Header-A: value-a");
         Assert.Contains(headerLines, h => h == "X-Header-B: value-b");
@@ -97,7 +86,7 @@ public sealed class Http10EncoderHeaderSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-Test", "test-value");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         var header = headerLines.Single(h => h.StartsWith("X-Test:"));
         Assert.Equal("X-Test: test-value", header);
@@ -127,7 +116,7 @@ public sealed class Http10EncoderHeaderSpec
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         var acceptLines = headerLines.Where(h => h.StartsWith("Accept:", StringComparison.OrdinalIgnoreCase)).ToArray();
         Assert.Equal(2, acceptLines.Length);
@@ -140,7 +129,7 @@ public sealed class Http10EncoderHeaderSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.Contains(headerLines, h => h.StartsWith("Accept:", StringComparison.OrdinalIgnoreCase));
     }
@@ -150,7 +139,7 @@ public sealed class Http10EncoderHeaderSpec
     public void Http10EncoderHeader_should_contain_only_mandatory_headers_when_no_custom_headers_present()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Host:", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Transfer-Encoding:", StringComparison.OrdinalIgnoreCase));
@@ -171,7 +160,7 @@ public sealed class Http10EncoderHeaderSpec
     public void Http10EncoderHeader_should_omit_host_header()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.DoesNotContain(headerLines, h => h.StartsWith("Host:", StringComparison.OrdinalIgnoreCase));
     }
@@ -197,7 +186,7 @@ public sealed class Http10EncoderHeaderSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         request.Headers.TryAddWithoutValidation("X-My-Custom-Header", "value");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.Contains(headerLines, h => h.StartsWith("X-My-Custom-Header:"));
     }
@@ -211,7 +200,7 @@ public sealed class Http10EncoderHeaderSpec
         request.Headers.TryAddWithoutValidation("X-Second", "b");
         request.Headers.TryAddWithoutValidation("X-Third", "c");
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.Contains(headerLines, h => h == "X-First: a");
         Assert.Contains(headerLines, h => h == "X-Second: b");
@@ -229,7 +218,7 @@ public sealed class Http10EncoderHeaderSpec
             Content = content
         };
 
-        var (_, headerLines, _) = ParseRaw(request);
+        var headerLines = ParseRaw(request);
 
         Assert.Contains(headerLines,
             h => h.StartsWith("Content-Type:", StringComparison.OrdinalIgnoreCase)
@@ -253,6 +242,7 @@ public sealed class Http10EncoderHeaderSpec
         {
             threw = true;
         }
+
         Assert.True(threw);
     }
 }

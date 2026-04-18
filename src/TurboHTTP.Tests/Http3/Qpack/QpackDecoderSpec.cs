@@ -1,20 +1,11 @@
 using System.Buffers;
-using System.Text;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK header block decoder per RFC 9204 §4.5.
-/// Covers static indexed, dynamic indexed, post-base indexed, literal with name ref,
-/// literal with post-base name ref, literal without name ref, Required Insert Count
-/// validation, blocked stream handling, and Huffman decoding.
-/// </summary>
 public sealed class QpackDecoderSpec
 {
-
-    /// RFC 9204 §4.5.2 — Static table indexed header decodes correctly
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_DecodeStaticIndexed_When_StaticTableMatch()
@@ -32,7 +23,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("GET", decoded[0].Value);
     }
 
-    /// RFC 9204 §4.5.2 — Multiple static table headers decoded
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_DecodeMultipleStaticIndexed()
@@ -58,8 +48,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("https", decoded[2].Value);
     }
 
-
-    /// RFC 9204 §4.5.2 — Dynamic table entry decoded via pre-base relative index
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.2")]
     public void Should_DecodeDynamicIndexed_When_DynamicTablePopulated()
@@ -79,8 +67,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("value1", decoded[0].Value);
     }
 
-
-    /// RFC 9204 §4.5.4 — Literal with static name reference decoded
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.4")]
     public void Should_DecodeLiteralWithStaticNameRef()
@@ -98,8 +84,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("/very/long/path/that/exceeds/capacity", decoded[0].Value);
     }
 
-
-    /// RFC 9204 §4.5.6 — Literal without name reference decoded
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.6")]
     public void Should_DecodeLiteralWithoutNameRef()
@@ -116,8 +100,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("my-value", decoded[0].Value);
     }
 
-
-    /// RFC 9204 §7.1 — Sensitive header (never-indexed) decoded correctly
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-7.1")]
     public void Should_DecodeSensitiveHeader_When_NeverIndexed()
@@ -134,8 +116,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("Bearer token123", decoded[0].Value);
     }
 
-
-    /// RFC 9204 §4.1.2 — Huffman-encoded string literals decoded
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.1.2")]
     public void Should_DecodeHuffman_When_StringIsHuffmanEncoded()
@@ -152,8 +132,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("www.example.com", decoded[0].Value);
     }
 
-
-    /// RFC 9204 §4.5.1.1 — Required Insert Count exceeding known count throws
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.1")]
     public void Should_Throw_When_RequiredInsertCountExceedsKnown()
@@ -169,8 +147,6 @@ public sealed class QpackDecoderSpec
         Assert.Throws<QpackException>(() => decoder.Decode(encoded.Span));
     }
 
-
-    /// RFC 9204 §2.1.2 — TryDecode returns blocked when RIC exceeds known insert count
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_ReturnBlocked_When_RicExceedsKnownInsertCount()
@@ -189,7 +165,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal(1, decoder.BlockedStreamCount);
     }
 
-    /// RFC 9204 §2.1.2 — TryDecode throws when blocked stream limit reached
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_Throw_When_BlockedStreamLimitReached()
@@ -209,8 +184,6 @@ public sealed class QpackDecoderSpec
         Assert.Throws<QpackException>(() => decoder.TryDecode(encoded.Span, streamId: 8));
     }
 
-
-    /// RFC 9204 §4.4.1 — Section Acknowledgment emitted when dynamic table referenced
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.1")]
     public void Should_EmitSectionAcknowledgment_When_DynamicTableReferenced()
@@ -237,7 +210,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal(4, instruction.IntValue);
     }
 
-    /// RFC 9204 §4.4.1 — No decoder instructions for static-only blocks
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.1")]
     public void Should_EmitNoInstructions_When_StaticOnly()
@@ -252,8 +224,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal(0, decoder.DecoderInstructions.Length);
     }
 
-
-    /// RFC 9204 §4.5.3 — Post-base indexed header field decoded
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.3")]
     public void Should_DecodePostBaseIndexed()
@@ -280,8 +250,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("pb-value", decoded[0].Value);
     }
 
-
-    /// RFC 9204 §4.5.5 — Literal with post-base name reference decoded
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5.5")]
     public void Should_DecodeLiteralWithPostBaseNameRef()
@@ -298,7 +266,7 @@ public sealed class QpackDecoderSpec
         WriteInt(0, 3, 0x00, buf);
 
         // Value string: "new-value" (plain, 7-bit prefix)
-        var valueBytes = Encoding.UTF8.GetBytes("new-value");
+        var valueBytes = "new-value"u8.ToArray();
         WriteStr(valueBytes.AsSpan(), 7, 0x00, false, buf);
 
         var decoder = new QpackDecoder(maxTableCapacity: 4096);
@@ -311,8 +279,6 @@ public sealed class QpackDecoderSpec
         Assert.Equal("new-value", decoded[0].Value);
     }
 
-
-    /// RFC 9204 — Empty header block with no fields
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.5")]
     public void Should_DecodeEmptyHeaderBlock()
@@ -327,7 +293,6 @@ public sealed class QpackDecoderSpec
         Assert.Empty(decoded);
     }
 
-    // Helper to write a QPACK integer into an ArrayBufferWriter using the new ref Span<byte> API.
     private static void WriteInt(int value, int prefixBits, byte prefixFlags, ArrayBufferWriter<byte> buf)
     {
         var tmp = new byte[16];
@@ -336,8 +301,8 @@ public sealed class QpackDecoderSpec
         buf.Write(tmp.AsSpan(0, n));
     }
 
-    // Helper to write a QPACK string into an ArrayBufferWriter using the new ref Span<byte> API.
-    private static void WriteStr(ReadOnlySpan<byte> value, int prefixBits, byte prefixFlags, bool useHuffman, ArrayBufferWriter<byte> buf)
+    private static void WriteStr(ReadOnlySpan<byte> value, int prefixBits, byte prefixFlags, bool useHuffman,
+        ArrayBufferWriter<byte> buf)
     {
         var maxLen = 16 + HuffmanCodec.GetMaxEncodedLength(Math.Max(value.Length, 1));
         var tmp = new byte[maxLen];

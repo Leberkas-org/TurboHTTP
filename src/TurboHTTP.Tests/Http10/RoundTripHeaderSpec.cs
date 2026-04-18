@@ -4,26 +4,8 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Round-trip tests for HTTP/1.0 header fields per RFC 1945 §4.2.
-/// Verifies that request and response headers survive encode-then-decode unchanged.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http10.Encoder"/>, <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 §4.2: Message headers — field-name ':' field-value.
-/// </remarks>
 public sealed class Http10RoundTripHeaderSpec
 {
-    private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];
-
-    private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)
-    {
-        var arr = new byte[65536];
-        Span<byte> buffer = arr;
-        var written = Encoder.Encode(request, ref buffer);
-        return (arr[..written], written);
-    }
-
     private static ReadOnlyMemory<byte> Bytes(string s)
         => Encoding.GetEncoding("ISO-8859-1").GetBytes(s);
 
@@ -38,7 +20,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preservecontenttypeheader()
+    public void Http10RoundTripHeaderSpec_should_preserve_content_type_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -51,7 +33,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preservecontentlengthheader()
+    public void Http10RoundTripHeaderSpec_should_preserve_content_length_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -65,7 +47,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preservecustomheader()
+    public void Http10RoundTripHeaderSpec_should_preserve_custom_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -79,7 +61,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preservelocationheader()
+    public void Http10RoundTripHeaderSpec_should_preserve_location_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 301 Moved Permanently",
@@ -94,7 +76,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preservemultiplecustomheaders()
+    public void Http10RoundTripHeaderSpec_should_preserve_multiple_custom_headers()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -112,7 +94,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preserveserverheader()
+    public void Http10RoundTripHeaderSpec_should_preserve_server_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
@@ -126,10 +108,10 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preservedateheader()
+    public void Http10RoundTripHeaderSpec_should_preserve_date_header()
     {
         var decoder = new Decoder();
-        var dateValue = "Thu, 06 Mar 2026 12:00:00 GMT";
+        const string dateValue = "Thu, 06 Mar 2026 12:00:00 GMT";
         var data = BuildRawResponse("HTTP/1.0 200 OK",
             $"Date: {dateValue}\r\nContent-Length: 0");
 
@@ -141,7 +123,7 @@ public sealed class Http10RoundTripHeaderSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-4.2")]
-    public void Http10RoundTripHeaderSpec_should_preserveheaderwithspecialchars()
+    public void Http10RoundTripHeaderSpec_should_preserve_header_with_special_chars()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",

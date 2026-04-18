@@ -3,18 +3,8 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.FlowControl;
 
-/// <summary>
-/// Tests decoder defenses against resource-exhaustion attacks such as SETTINGS floods.
-/// Part 1: SETTINGS/RST/CONTINUATION/PING flood protection.
-/// Verifies that flood protection thresholds produce Http2Exception with EnhanceYourCalm.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §10.5: Implementations should limit the rate at which control frames can be received to protect against floods.
-/// </remarks>
 public sealed class ResourceExhaustionPart1Spec
 {
-
     private static void EnforceSettingsFloodThreshold(int settingsCount, int threshold = 100)
     {
         if (settingsCount > threshold)
@@ -30,8 +20,7 @@ public sealed class ResourceExhaustionPart1Spec
         if (rstCount > threshold)
         {
             throw new Http2Exception(
-                "RFC 9113 security: Rapid RST_STREAM cycling — possible CVE-2023-44487 attack.",
-                Http2ErrorCode.ProtocolError);
+                "RFC 9113 security: Rapid RST_STREAM cycling — possible CVE-2023-44487 attack.");
         }
     }
 
@@ -40,8 +29,7 @@ public sealed class ResourceExhaustionPart1Spec
         if (count >= threshold)
         {
             throw new Http2Exception(
-                $"RFC 9113 security: Excessive CONTINUATION frames ({count}) — possible CONTINUATION flood.",
-                Http2ErrorCode.ProtocolError);
+                $"RFC 9113 security: Excessive CONTINUATION frames ({count}) — possible CONTINUATION flood.");
         }
     }
 
@@ -54,7 +42,6 @@ public sealed class ResourceExhaustionPart1Spec
                 Http2ErrorCode.EnhanceYourCalm);
         }
     }
-
 
     private static byte[] BuildRawFrame(byte frameType, byte flags, int streamId, byte[] payload)
     {
@@ -82,7 +69,6 @@ public sealed class ResourceExhaustionPart1Spec
         return BuildRawFrame(0x4, ack ? (byte)0x1 : (byte)0x0, 0, payload);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.5")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_101_settings_frames_received()
@@ -102,6 +88,7 @@ public sealed class ResourceExhaustionPart1Spec
                     settingsCount++;
                 }
             }
+
             EnforceSettingsFloodThreshold(settingsCount); // must not throw
         }
 
@@ -168,13 +155,12 @@ public sealed class ResourceExhaustionPart1Spec
         Assert.Equal(0, settingsCount);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.4")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_101_rst_stream_received()
     {
         var decoder = new FrameDecoder();
-        var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+        var errorCode = "\0\0\0\0"u8.ToArray();
         var rstCount = 0;
 
         // Decode 100 RST_STREAM frames on different stream IDs
@@ -189,6 +175,7 @@ public sealed class ResourceExhaustionPart1Spec
                     rstCount++;
                 }
             }
+
             EnforceRstFloodThreshold(rstCount); // must not throw
         }
 
@@ -212,7 +199,7 @@ public sealed class ResourceExhaustionPart1Spec
     public void Http2FrameDecoder_should_accept_100_rst_stream_frames_without_exception()
     {
         var decoder = new FrameDecoder();
-        var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+        var errorCode = "\0\0\0\0"u8.ToArray();
         var rstCount = 0;
 
         for (var i = 0; i < 100; i++)
@@ -237,7 +224,7 @@ public sealed class ResourceExhaustionPart1Spec
     public void Http2FrameDecoder_should_include_cve_reference_in_rapid_reset_message()
     {
         var decoder = new FrameDecoder();
-        var errorCode = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+        var errorCode = "\0\0\0\0"u8.ToArray();
         var rstCount = 0;
 
         for (var i = 0; i < 100; i++)
@@ -258,13 +245,12 @@ public sealed class ResourceExhaustionPart1Spec
         Assert.Contains("CVE-2023-44487", ex.Message);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.10")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_1000_continuation_frames_received()
     {
         var decoder = new FrameDecoder();
-        var headersFrame = BuildRawFrame(0x1, 0x0, 1, [0x88]);  // no END_HEADERS
+        var headersFrame = BuildRawFrame(0x1, 0x0, 1, [0x88]); // no END_HEADERS
         var continuationNoEnd = BuildRawFrame(0x9, 0x0, 1, []);
 
         var chunk = new byte[headersFrame.Length + 999 * continuationNoEnd.Length];
@@ -307,7 +293,7 @@ public sealed class ResourceExhaustionPart1Spec
     public void Http2FrameDecoder_should_accept_999_continuation_frames_without_exception()
     {
         var decoder = new FrameDecoder();
-        var headersFrame = BuildRawFrame(0x1, 0x0, 1, [0x88]);  // no END_HEADERS
+        var headersFrame = BuildRawFrame(0x1, 0x0, 1, [0x88]); // no END_HEADERS
         var continuationNoEnd = BuildRawFrame(0x9, 0x0, 1, []);
 
         var chunk = new byte[headersFrame.Length + 999 * continuationNoEnd.Length];
@@ -331,14 +317,13 @@ public sealed class ResourceExhaustionPart1Spec
         Assert.Equal(999, continuationCount);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_throw_http2_exception_when_1001_ping_frames_received()
     {
         var decoder = new FrameDecoder();
-        var pingPayload = new byte[8];  // 8-byte PING payload
-        var pingFrame = BuildRawFrame(0x6, 0x0, 0, pingPayload);  // type=PING, flags=0 (no ACK)
+        var pingPayload = new byte[8]; // 8-byte PING payload
+        var pingFrame = BuildRawFrame(0x6, 0x0, 0, pingPayload); // type=PING, flags=0 (no ACK)
         var pingCount = 0;
 
         for (var i = 0; i < 1000; i++)
@@ -399,7 +384,7 @@ public sealed class ResourceExhaustionPart1Spec
     {
         var decoder = new FrameDecoder();
         var pingPayload = new byte[8];
-        var pingAckFrame = BuildRawFrame(0x6, 0x1, 0, pingPayload);  // flags=0x1 → PING ACK
+        var pingAckFrame = BuildRawFrame(0x6, 0x1, 0, pingPayload); // flags=0x1 → PING ACK
         var pingCount = 0;
 
         // 2000 PING ACK frames — none count toward non-ACK limit
@@ -423,10 +408,9 @@ public sealed class ResourceExhaustionPart1Spec
     [Trait("RFC", "RFC9113-6.7")]
     public void Http2FrameDecoder_should_include_context_in_ping_flood_message()
     {
-        var pingCount = 1001;
+        const int pingCount = 1001;
         var ex = Assert.Throws<Http2Exception>(() => EnforcePingFloodThreshold(pingCount));
         Assert.Contains("PING", ex.Message);
         Assert.Contains("flood", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
-
 }

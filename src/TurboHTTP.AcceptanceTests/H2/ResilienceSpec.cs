@@ -29,8 +29,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]

@@ -9,7 +9,8 @@ namespace TurboHTTP.AcceptanceTests.H10;
 
 public sealed class EdgeCaseSpec : AcceptanceTestBase
 {
-    private static byte[] BuildResponse(byte[] body, HttpStatusCode status = HttpStatusCode.OK, string? extraHeaders = null)
+    private static byte[] BuildResponse(byte[] body, HttpStatusCode status = HttpStatusCode.OK,
+        string? extraHeaders = null)
     {
         var sb = new StringBuilder();
         sb.Append($"HTTP/1.0 {(int)status} {status}\r\n");
@@ -18,6 +19,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         {
             sb.Append(extraHeaders);
         }
+
         sb.Append("\r\n");
 
         var headerBytes = Encoding.Latin1.GetBytes(sb.ToString());
@@ -27,12 +29,14 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         return result;
     }
 
-    private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK, string? extraHeaders = null)
+    private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK,
+        string? extraHeaders = null)
     {
         return BuildResponse(Encoding.Latin1.GetBytes(body), status, extraHeaders);
     }
 
-    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
@@ -92,7 +96,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
             Version = HttpVersion.Version10
         };
 
-        var response = await SendScriptedAsync(request, (_, _) => BuildResponse("", HttpStatusCode.OK));
+        var response = await SendScriptedAsync(request, (_, _) => BuildResponse(""));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

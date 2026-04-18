@@ -2,18 +2,8 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP/2 frame header parsing per RFC 9113 §4.1 — Part 1.
-/// Covers partial input, unknown frame types, and correct field extraction.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §4.1: The frame header is 9 bytes — length(24) + type(8) + flags(8) + stream(31).
-/// </remarks>
 public sealed class Http2FrameParsingPart1Spec
 {
-    // Frame Header Parsing (RFC 7540 §4.1)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4.1")]
     public void Http2FrameDecoder_should_return_empty_when_zero_bytes_provided()
@@ -76,8 +66,6 @@ public sealed class Http2FrameParsingPart1Spec
         Assert.IsType<PingFrame>(frames[0]);
     }
 
-    // 24-Bit Length Field (RFC 7540 §4.1)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4.1")]
     public void Http2FrameDecoder_should_use_24_bit_length_when_payload_is_large()
@@ -100,8 +88,6 @@ public sealed class Http2FrameParsingPart1Spec
         var settingsFrame = (SettingsFrame)frames[0];
         Assert.NotNull(settingsFrame);
     }
-
-    // Frame Size Limits (RFC 7540 §4.2, §6.5.2)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4.2")]
@@ -189,8 +175,6 @@ public sealed class Http2FrameParsingPart1Spec
         var ex = Record.Exception(() => new FrameDecoder().Decode(settings));
         Assert.Null(ex);
     }
-
-    // Unknown Frame Types (RFC 7540 §4.1)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4.1")]

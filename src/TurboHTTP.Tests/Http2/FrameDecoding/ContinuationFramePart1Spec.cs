@@ -3,17 +3,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.FrameDecoding;
 
-/// <summary>
-/// Tests CONTINUATION frame handling and header block reassembly per RFC 9113 §6.10 — Part 1.
-/// Verifies that fragmented header blocks are correctly joined before HPACK decoding.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.10: CONTINUATION frames must immediately follow HEADERS or PUSH_PROMISE; END_HEADERS flag terminates the sequence.
-/// </remarks>
 public sealed class ContinuationFramePart1Spec
 {
-
     private static byte[] EncodeBlock(params (string Name, string Value)[] headers)
     {
         var enc = new HpackEncoder(useHuffman: false);
@@ -34,11 +25,6 @@ public sealed class ContinuationFramePart1Spec
         return result;
     }
 
-    /// <summary>
-    /// Assembles the full HPACK header block from a sequence of decoded frames
-    /// (one HeadersFrame optionally followed by ContinuationFrames).
-    /// Throws Http2Exception if the sequence violates §6.10 ordering rules.
-    /// </summary>
     private static byte[] AssembleHeaderBlock(IReadOnlyList<Http2Frame> frames)
     {
         var buffer = new List<byte>();
@@ -50,8 +36,7 @@ public sealed class ContinuationFramePart1Spec
             if (pendingStreamId.HasValue && frame is not ContinuationFrame)
             {
                 throw new Http2Exception(
-                    $"RFC 9113 §6.10: Expected CONTINUATION but received {frame.GetType().Name}.",
-                    Http2ErrorCode.ProtocolError);
+                    $"RFC 9113 §6.10: Expected CONTINUATION but received {frame.GetType().Name}.");
             }
 
             switch (frame)
@@ -70,23 +55,20 @@ public sealed class ContinuationFramePart1Spec
                     if (!pendingStreamId.HasValue)
                     {
                         throw new Http2Exception(
-                            $"RFC 9113 §6.10: Unexpected CONTINUATION on stream {c.StreamId}; no pending header block.",
-                            Http2ErrorCode.ProtocolError);
+                            $"RFC 9113 §6.10: Unexpected CONTINUATION on stream {c.StreamId}; no pending header block.");
                     }
 
                     if (c.StreamId != pendingStreamId.Value)
                     {
                         throw new Http2Exception(
-                            $"RFC 9113 §6.10: CONTINUATION on stream {c.StreamId}; expected stream {pendingStreamId.Value}.",
-                            Http2ErrorCode.ProtocolError);
+                            $"RFC 9113 §6.10: CONTINUATION on stream {c.StreamId}; expected stream {pendingStreamId.Value}.");
                     }
 
                     continuationCount++;
                     if (continuationCount >= 1000)
                     {
                         throw new Http2Exception(
-                            "RFC 9113 §6.10: Excessive CONTINUATION frames — possible flood attack.",
-                            Http2ErrorCode.ProtocolError);
+                            "RFC 9113 §6.10: Excessive CONTINUATION frames — possible flood attack.");
                     }
 
                     buffer.AddRange(c.HeaderBlockFragment.ToArray());
@@ -101,7 +83,6 @@ public sealed class ContinuationFramePart1Spec
 
         return buffer.ToArray();
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
@@ -146,7 +127,8 @@ public sealed class ContinuationFramePart1Spec
     {
         var block = EncodeBlock((":status", "200"));
         var split = block.Length / 2;
-        var headersBytes = new HeadersFrame(1, block.AsMemory()[..split], endStream: true, endHeaders: false).Serialize();
+        var headersBytes =
+            new HeadersFrame(1, block.AsMemory()[..split], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[split..], endHeaders: true).Serialize();
 
         var decoder = new FrameDecoder();
@@ -170,8 +152,11 @@ public sealed class ContinuationFramePart1Spec
     {
         var block = EncodeBlock((":status", "200"));
         var third = Math.Max(1, block.Length / 3);
-        var headersBytes = new HeadersFrame(1, block.AsMemory()[..third], endStream: true, endHeaders: false).Serialize();
-        var cont1Bytes = new ContinuationFrame(1, block.AsMemory()[third..Math.Min(2 * third, block.Length)], endHeaders: false).Serialize();
+        var headersBytes =
+            new HeadersFrame(1, block.AsMemory()[..third], endStream: true, endHeaders: false).Serialize();
+        var cont1Bytes =
+            new ContinuationFrame(1, block.AsMemory()[third..Math.Min(2 * third, block.Length)], endHeaders: false)
+                .Serialize();
 
         var decoder = new FrameDecoder();
         var decoded = decoder.Decode(ConcatArrays(headersBytes, cont1Bytes));
@@ -190,7 +175,8 @@ public sealed class ContinuationFramePart1Spec
 
         var h = new HeadersFrame(1, block.AsMemory()[..quarter], endStream: true, endHeaders: false).Serialize();
         var c1 = new ContinuationFrame(1, block.AsMemory()[quarter..(2 * quarter)], endHeaders: false).Serialize();
-        var c2 = new ContinuationFrame(1, block.AsMemory()[(2 * quarter)..(3 * quarter)], endHeaders: false).Serialize();
+        var c2 = new ContinuationFrame(1, block.AsMemory()[(2 * quarter)..(3 * quarter)], endHeaders: false)
+            .Serialize();
         var c3 = new ContinuationFrame(1, block.AsMemory()[(3 * quarter)..], endHeaders: true).Serialize();
 
         var decoder = new FrameDecoder();
@@ -211,7 +197,8 @@ public sealed class ContinuationFramePart1Spec
         var block = EncodeBlock((":status", "201"), ("content-type", "application/json"), ("x-custom", "hello"));
         var half = block.Length / 2;
 
-        var headersBytes = new HeadersFrame(1, block.AsMemory()[..half], endStream: true, endHeaders: false).Serialize();
+        var headersBytes =
+            new HeadersFrame(1, block.AsMemory()[..half], endStream: true, endHeaders: false).Serialize();
         var contBytes = new ContinuationFrame(1, block.AsMemory()[half..], endHeaders: true).Serialize();
 
         var decoder = new FrameDecoder();
@@ -225,7 +212,6 @@ public sealed class ContinuationFramePart1Spec
         Assert.Contains(headers, h => h is { Name: "content-type", Value: "application/json" });
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
     public void Http2FrameDecoder_should_throw_protocol_error_when_data_frame_interleaves_continuation()
@@ -237,9 +223,9 @@ public sealed class ContinuationFramePart1Spec
         var dataFrame = new byte[]
         {
             0x00, 0x00, 0x03, // length = 3
-            0x00, 0x01,       // type=DATA, flag=END_STREAM
+            0x00, 0x01, // type=DATA, flag=END_STREAM
             0x00, 0x00, 0x00, 0x01, // stream=1
-            0x61, 0x62, 0x63  // "abc"
+            0x61, 0x62, 0x63 // "abc"
         };
 
         var decoder = new FrameDecoder();
@@ -331,5 +317,4 @@ public sealed class ContinuationFramePart1Spec
         var ex = Assert.Throws<Http2Exception>(() => decoder.Decode(headersBytes3));
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
     }
-
 }

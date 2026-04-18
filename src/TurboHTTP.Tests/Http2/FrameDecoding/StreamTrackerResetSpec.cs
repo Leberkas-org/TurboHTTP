@@ -8,7 +8,7 @@ public sealed class StreamTrackerResetSpec
     [Trait("RFC", "RFC9113-5.1.1")]
     public void StreamTracker_should_reset_to_initial_state()
     {
-        var tracker = new StreamTracker(1, 100);
+        var tracker = new StreamTracker();
         var id1 = tracker.AllocateStreamId();
         tracker.OnStreamOpened(id1);
         var id2 = tracker.AllocateStreamId();

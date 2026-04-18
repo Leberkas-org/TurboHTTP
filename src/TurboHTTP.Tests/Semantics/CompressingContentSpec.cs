@@ -1,4 +1,3 @@
-using System.Text;
 using TurboHTTP.Internal;
 using static System.Text.Encoding;
 
@@ -7,7 +6,6 @@ namespace TurboHTTP.Tests.Semantics;
 public sealed class CompressingContentSpec
 {
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public async Task SerializeToStreamAsync_should_compress_content()
     {
         var original = "hello compressed world"u8.ToArray();
@@ -27,7 +25,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void SerializeToStream_should_compress_content()
     {
         var original = "hello compressed world"u8.ToArray();
@@ -44,7 +41,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Constructor_should_skip_content_encoding_and_content_length()
     {
         var inner = new ByteArrayContent("test"u8.ToArray());
@@ -58,7 +54,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Constructor_should_skip_content_encoding_header()
     {
         var inner = new ByteArrayContent("test"u8.ToArray());
@@ -71,7 +66,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Constructor_should_set_content_encoding_header()
     {
         var inner = new ByteArrayContent("test"u8.ToArray());
@@ -84,7 +78,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Constructor_should_compute_content_length()
     {
         var original = UTF8.GetBytes(new string('a', 1000));
@@ -100,7 +93,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Dispose_should_free_memory_owner()
     {
         var inner = new ByteArrayContent("test"u8.ToArray());
@@ -111,7 +103,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Serialize_after_dispose_should_throw_ObjectDisposedException()
     {
         var inner = new ByteArrayContent("test"u8.ToArray());
@@ -123,7 +114,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public async Task SerializeAsync_after_dispose_should_throw_ObjectDisposedException()
     {
         var inner = new ByteArrayContent("test"u8.ToArray());
@@ -136,7 +126,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public async Task SerializeToStreamAsync_without_cancellation_token_should_work()
     {
         var original = "test data"u8.ToArray();
@@ -150,7 +139,6 @@ public sealed class CompressingContentSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "CompressingContent")]
     public void Compress_large_repetitive_data_should_achieve_good_ratio()
     {
         var original = UTF8.GetBytes(string.Concat(Enumerable.Repeat("aaaaaaaaaa", 1000)));
@@ -163,5 +151,4 @@ public sealed class CompressingContentSpec
         var ratio = (double)compressedLength / original.Length;
         Assert.True(ratio < 0.1); // Should compress repetitive data significantly
     }
-
 }

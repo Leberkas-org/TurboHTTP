@@ -5,16 +5,8 @@ using TurboHTTP.Streams;
 
 namespace TurboHTTP.Tests.Streams;
 
-/// <summary>
-/// Tests <see cref="Engine"/> flow creation and request options building.
-/// </summary>
-/// <remarks>
-/// Under test: <see cref="Engine.CreateFlow"/>.
-/// Key behaviors: descriptor-driven pipeline construction, request options factory.
-/// </remarks>
 public sealed class EngineSpec
 {
-    // Mock factory that returns a pass-through flow
     private sealed class TestTransportFactory : ITransportFactory
     {
         public Flow<IOutputItem, IInputItem, NotUsed> Create()
@@ -35,9 +27,7 @@ public sealed class EngineSpec
         return registry;
     }
 
-    // ENT-001: CreateFlow returns a valid flow
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Engine_should_create_valid_flow()
     {
         // Arrange
@@ -52,9 +42,7 @@ public sealed class EngineSpec
         Assert.NotNull(flow);
     }
 
-    // ENT-002: CreateFlow uses provided options
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Engine_should_use_provided_turbo_client_options()
     {
         // Arrange
@@ -74,9 +62,7 @@ public sealed class EngineSpec
         Assert.NotNull(flow);
     }
 
-    // ENT-003: CreateFlow with null options uses defaults
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Engine_should_use_default_options_when_null_provided()
     {
         // Arrange
@@ -91,9 +77,7 @@ public sealed class EngineSpec
         Assert.NotNull(flow);
     }
 
-    // ENT-004: CreateFlow with null requestOptionsFactory uses default factory
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Engine_should_use_default_request_options_factory_when_null()
     {
         // Arrange
@@ -110,9 +94,7 @@ public sealed class EngineSpec
         Assert.NotNull(flow);
     }
 
-    // ENT-005: TurboRequestOptions factory creates valid options
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void Engine_should_build_turbo_request_options_with_base_address()
     {
         // Arrange

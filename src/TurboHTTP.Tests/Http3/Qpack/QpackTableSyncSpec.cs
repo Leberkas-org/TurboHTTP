@@ -2,16 +2,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK table synchronization per RFC 9204 §2.1.1, §2.1.2.
-/// Verifies that encoder and decoder dynamic tables stay synchronized via
-/// instruction streams, insert count is tracked across multiple header blocks,
-/// and blocked streams are resolved when the required insert count is reached.
-/// </summary>
 public sealed class QpackTableSyncSpec
 {
-
-    /// RFC 9204 §2.1.1 — Encoder instructions synchronize decoder dynamic table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.1")]
     public void Should_SyncDecoderTable_ViaEncoderInstructions()
@@ -46,7 +38,6 @@ public sealed class QpackTableSyncSpec
         }
     }
 
-    /// RFC 9204 §2.1.1 — Insert count tracked across multiple header blocks
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.1")]
     public void Should_TrackInsertCount_AcrossMultipleHeaderBlocks()
@@ -86,7 +77,6 @@ public sealed class QpackTableSyncSpec
         Assert.Equal("x-header-d", decoded2[1].Name);
     }
 
-    /// RFC 9204 §2.1.1 — Reused headers skip inserts on second encode
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.1")]
     public void Should_SkipInserts_WhenHeadersAlreadyInTable()
@@ -119,8 +109,6 @@ public sealed class QpackTableSyncSpec
         Assert.Equal(1, sync.InsertCount);
     }
 
-
-    /// RFC 9204 §2.1.2 — Stream blocks when required insert count exceeds known
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_BlockStream_WhenRequiredInsertCountExceedsKnown()
@@ -145,7 +133,6 @@ public sealed class QpackTableSyncSpec
         Assert.Equal(1, sync.BlockedStreamCount);
     }
 
-    /// RFC 9204 §2.1.2 — Blocked stream resolved when insert count reached
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_ResolveBlockedStream_WhenInsertCountReached()
@@ -178,7 +165,6 @@ public sealed class QpackTableSyncSpec
         Assert.Equal(0, sync.BlockedStreamCount);
     }
 
-    /// RFC 9204 §2.1.2 — Multiple blocked streams resolved in batch
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_ResolveMultipleBlockedStreams_InBatch()
@@ -220,15 +206,12 @@ public sealed class QpackTableSyncSpec
         Assert.Contains(8, streamIds);
     }
 
-
-    /// RFC 9204 §4.4.3 — Insert Count Increment updates Known Received Count
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.3")]
     public void Should_UpdateKnownReceivedCount_ViaInsertCountIncrement()
     {
         var sync = new QpackTableSync(encoderMaxCapacity: 4096);
         var decoder = sync.Decoder;
-        var encoder = sync.Encoder;
 
         // Manually insert entries into decoder's table (simulating encoder instructions)
         decoder.DynamicTable.Insert("x-test", "value1");
@@ -253,7 +236,6 @@ public sealed class QpackTableSyncSpec
         Assert.Equal(2, encoderSync.Encoder.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.4.2 — Stream Cancellation removes blocked stream
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.2")]
     public void Should_RemoveBlockedStream_OnStreamCancellation()

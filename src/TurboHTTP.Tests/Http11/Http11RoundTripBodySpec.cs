@@ -3,14 +3,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests round-trip encoding and decoding of message bodies per RFC 9112 §6.
-/// Verifies that request bodies survive a full encode → decode cycle intact.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §6: Message body — Content-Length or Transfer-Encoding delimits the payload.
-/// </remarks>
 public sealed class Http11RoundTripBodySpec
 {
     private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)
@@ -81,7 +73,7 @@ public sealed class Http11RoundTripBodySpec
         };
         request.Content.Headers.ContentType =
             new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-        var (buffer, written) = EncodeRequest(request);
+        var (buffer, _) = EncodeRequest(request);
         Assert.Contains("POST", Encoding.ASCII.GetString(buffer, 0, 20));
 
         var decoder = new Decoder();

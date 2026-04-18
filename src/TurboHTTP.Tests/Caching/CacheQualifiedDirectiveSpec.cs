@@ -3,16 +3,6 @@ using TurboHTTP.Protocol.Caching;
 
 namespace TurboHTTP.Tests.Caching;
 
-/// <summary>
-/// RFC 9111 §5.2.2.3 / §5.2.2.7 — Qualified no-cache and private directive enforcement.
-/// Verifies that qualified field lists are stripped from cached responses (no-cache)
-/// and from shared cache storage (private).
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="CacheStore"/>, <see cref="CacheFreshnessEvaluator"/>.
-/// RFC 9111 §5.2.2.3: Qualified no-cache strips named fields on reuse.
-/// RFC 9111 §5.2.2.7: Qualified private strips named fields from shared cache storage.
-/// </remarks>
 public sealed class CacheQualifiedDirectiveSpec
 {
     private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);

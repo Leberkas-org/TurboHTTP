@@ -85,7 +85,7 @@ public sealed class CookieSpec
         Assert.Equal("xyz", cookies["token"]);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [InlineData("Strict")]
     [InlineData("Lax")]
     [InlineData("None")]

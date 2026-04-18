@@ -3,17 +3,9 @@ using System.Text;
 
 namespace TurboHTTP.Tests.Http11.Encoder;
 
-/// <summary>
-/// Tests HTTP/1.1 request-line serialization per RFC 9112 §3.
-/// Verifies that method, request-target, and HTTP-version are correctly encoded.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Encoder"/>.
-/// RFC 9112 §3: Request-Line — Method SP Request-Target SP HTTP-Version CRLF.
-/// </remarks>
 public sealed class Http11EncoderRequestLineSpec
 {
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_produce_correct_request_line_when_get_request()
     {
@@ -22,7 +14,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("GET /index.html HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_use_http11_version_when_encoding_request_line()
     {
@@ -31,7 +23,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET / HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_reject_when_lowercase_method()
     {
@@ -44,7 +36,7 @@ public sealed class Http11EncoderRequestLineSpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_end_with_crlf_when_encoding_request_line()
     {
@@ -53,7 +45,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET /test HTTP/1.1\r\n", result);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     [InlineData("GET")]
     [InlineData("POST")]
@@ -70,7 +62,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith($"{method} /resource HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Encoder_should_include_port_443_when_connect_https()
     {
@@ -79,7 +71,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("CONNECT example.com:443 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Encoder_should_include_port_80_when_connect_http()
     {
@@ -88,7 +80,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("CONNECT example.com:80 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Encoder_should_include_port_when_connect_custom_port()
     {
@@ -97,7 +89,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("CONNECT example.com:8080 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_encode_options_star_when_asterisk_target()
     {
@@ -106,7 +98,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("OPTIONS * HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_preserve_absolute_uri_when_proxy_request()
     {
@@ -115,7 +107,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET https://example.com:8443/path?query=value HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_normalize_to_slash_when_missing_path()
     {
@@ -124,7 +116,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET / HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_preserve_query_string_when_present()
     {
@@ -133,7 +125,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET /search?q=hello+world&lang=en HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_strip_fragment_when_present()
     {
@@ -143,7 +135,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.DoesNotContain("#section", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_preserve_percent_encoding_when_already_encoded()
     {
@@ -152,7 +144,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET /path%20with%20spaces HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Encoder_should_use_authority_form_for_connect_method()
     {
@@ -161,7 +153,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("CONNECT proxy.example.com:8080 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_use_absolute_form_for_proxy_requests()
     {
@@ -170,7 +162,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("GET http://example.com:8080/path?query=1 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_strip_userinfo_in_absolute_form()
     {
@@ -181,7 +173,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("example.com", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_handle_ipv6_address_in_host_header()
     {
@@ -191,7 +183,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("GET /path HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.3.6")]
     public void Http11Encoder_should_handle_ipv6_in_connect_authority()
     {
@@ -200,7 +192,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.StartsWith("CONNECT [2001:db8::1]:443 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_preserve_multiple_query_params()
     {
@@ -209,7 +201,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("GET /search?q=hello&sort=asc&limit=10 HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_accept_mixed_case_custom_method()
     {
@@ -218,7 +210,7 @@ public sealed class Http11EncoderRequestLineSpec
         Assert.Contains("PROPFIND / HTTP/1.1\r\n", result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_reject_method_with_lowercase_letters()
     {
@@ -231,7 +223,7 @@ public sealed class Http11EncoderRequestLineSpec
         });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11Encoder_should_handle_options_with_absolute_path()
     {

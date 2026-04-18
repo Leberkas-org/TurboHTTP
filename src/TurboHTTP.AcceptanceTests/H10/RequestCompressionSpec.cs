@@ -12,7 +12,6 @@ namespace TurboHTTP.AcceptanceTests.H10;
 
 public sealed class RequestCompressionSpec : AcceptanceTestBase
 {
-    
     private static byte[] MakePayload(int size)
     {
         var payload = new byte[size];
@@ -20,6 +19,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         {
             payload[i] = (byte)('A' + i % 26);
         }
+
         return payload;
     }
 
@@ -53,6 +53,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         {
             sb.Append(extraHeaders);
         }
+
         sb.Append("\r\n");
 
         var headerBytes = Encoding.Latin1.GetBytes(sb.ToString());
@@ -96,6 +97,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -128,6 +130,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         {
             return [];
         }
+
         return span[(idx + 4)..].ToArray();
     }
 
@@ -230,7 +233,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
                 var rawStr = Encoding.Latin1.GetString(outbound);
                 var hasContentEncoding = rawStr.Contains("Content-Encoding:", StringComparison.OrdinalIgnoreCase);
                 var encoding = hasContentEncoding ? "compressed" : "identity";
-                return BuildResponse(Array.Empty<byte>(), $"X-Content-Encoding: {encoding}\r\n");
+                return BuildResponse([], $"X-Content-Encoding: {encoding}\r\n");
             });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -260,7 +263,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
                 var encoding = rawStr.Contains("Content-Encoding: gzip", StringComparison.OrdinalIgnoreCase)
                     ? "gzip"
                     : "identity";
-                return BuildResponse(Array.Empty<byte>(), $"X-Content-Encoding: {encoding}\r\n");
+                return BuildResponse([], $"X-Content-Encoding: {encoding}\r\n");
             });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

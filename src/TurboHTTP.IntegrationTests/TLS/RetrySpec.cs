@@ -78,7 +78,7 @@ public sealed class RetrySpec
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [InlineData(2)]
     [InlineData(3)]
     public async Task Get_succeed_after_n_should_return_200_after_n_minus_1_failures_over_https(int n)

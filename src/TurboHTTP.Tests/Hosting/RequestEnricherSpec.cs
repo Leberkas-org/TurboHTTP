@@ -4,14 +4,6 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Hosting;
 
-/// <summary>
-/// Tests the <see cref="RequestEnricher"/> that applies base address, default version, and default headers.
-/// Verifies RFC 9110-compliant header merging and URI resolution behavior.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RequestEnricher"/>.
-/// Validates base-address combination, version override, and header merge/skip-if-present semantics.
-/// </remarks>
 public sealed class RequestEnricherSpec
 {
     private static RequestEnricher CreateEnricher(

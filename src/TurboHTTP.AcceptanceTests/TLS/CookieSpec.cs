@@ -26,6 +26,7 @@ public sealed class CookieSpec : AcceptanceTestBase
                 }
             }
         }
+
         return new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(JsonSerializer.Serialize(cookies))

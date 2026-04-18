@@ -1,21 +1,11 @@
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.FlowControl;
 
-/// <summary>
-/// Tests decoder correctness under high-concurrency and high-volume frame sequences per RFC 9113 §5.
-/// Part 2: Parallel decoding, flow control, and window management across multiple decoder instances.
-/// Verifies stream multiplexing with many parallel streams processed sequentially through the decoder.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §5.1.1: Stream identifiers are assigned sequentially by the client; concurrent streams are multiplexed on a single connection.
-/// </remarks>
 public sealed class HighConcurrencyPart2Spec
 {
-
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
         var frame = new byte[9 + payload.Length];
@@ -35,26 +25,15 @@ public sealed class HighConcurrencyPart2Spec
     private static byte[] BuildDataFrame(int streamId, byte[] data, bool endStream = true)
         => BuildRawFrame(0x0, endStream ? (byte)0x1 : (byte)0x0, streamId, data);
 
-    private static byte[] BuildSettingsFrame(bool ack, params (ushort id, uint value)[] settings)
-    {
-        var payload = new byte[settings.Length * 6];
-        for (var i = 0; i < settings.Length; i++)
-        {
-            BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), settings[i].id);
-            BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), settings[i].value);
-        }
-
-        return BuildRawFrame(0x4, ack ? (byte)0x1 : (byte)0x0, 0, payload);
-    }
-
     private static void EnforceConnectionReceiveWindow(int dataLength, ref int connectionWindow)
     {
         if (dataLength > connectionWindow)
         {
             throw new Http2Exception(
-                $"RFC 9113 §6.9: DATA of {dataLength} bytes exceeds connection receive window of {connectionWindow}",
+                $"RFC 9113 Â§6.9: DATA of {dataLength} bytes exceeds connection receive window of {connectionWindow}",
                 Http2ErrorCode.FlowControlError);
         }
+
         connectionWindow -= dataLength;
     }
 
@@ -64,14 +43,14 @@ public sealed class HighConcurrencyPart2Spec
         if (dataLength > window)
         {
             throw new Http2Exception(
-                $"RFC 9113 §6.9: DATA of {dataLength} bytes exceeds stream {streamId} receive window of {window}",
+                $"RFC 9113 Â§6.9: DATA of {dataLength} bytes exceeds stream {streamId} receive window of {window}",
                 Http2ErrorCode.FlowControlError,
                 Http2ErrorScope.Stream,
                 streamId);
         }
+
         streamWindows[streamId] = window - dataLength;
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
@@ -79,7 +58,7 @@ public sealed class HighConcurrencyPart2Spec
     {
         var headersFrame = BuildHeadersFrame(1, endStream: true);
 
-        var tasks = Enumerable.Range(0, 50).Select(_idx => Task.Run(() =>
+        var tasks = Enumerable.Range(0, 50).Select(_ => Task.Run(() =>
         {
             var decoder = new FrameDecoder();
             var frames = decoder.Decode(headersFrame);
@@ -93,7 +72,7 @@ public sealed class HighConcurrencyPart2Spec
     [Trait("RFC", "RFC9113-5.1")]
     public async Task Http2FrameDecoder_should_handle_100_decoder_instances_each_decoding_20_streams_in_parallel()
     {
-        var tasks = Enumerable.Range(0, 100).Select(_idx => Task.Run(() =>
+        var tasks = Enumerable.Range(0, 100).Select(_ => Task.Run(() =>
         {
             var decoder = new FrameDecoder();
             var activeCount = 0;
@@ -193,7 +172,7 @@ public sealed class HighConcurrencyPart2Spec
         }
 
         // Parallel: 20 independent decoders each decode the same 10 streams
-        var tasks = Enumerable.Range(0, 20).Select(_idx => Task.Run(() =>
+        var tasks = Enumerable.Range(0, 20).Select(_ => Task.Run(() =>
         {
             var decoder = new FrameDecoder();
             var closedCount = 0;
@@ -217,7 +196,6 @@ public sealed class HighConcurrencyPart2Spec
         Assert.All(results, count => Assert.Equal(expectedClosed, count));
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_accept_data_when_total_bytes_do_not_exceed_connection_window()
@@ -228,7 +206,7 @@ public sealed class HighConcurrencyPart2Spec
         // Open stream 1
         decoder.Decode(BuildHeadersFrame(1, endStream: false));
 
-        // Use 15000-byte chunks — each well within the 16384 MAX_FRAME_SIZE limit
+        // Use 15000-byte chunks â€” each well within the 16384 MAX_FRAME_SIZE limit
         var chunk = new byte[15000];
 
         var frames1 = decoder.Decode(BuildDataFrame(1, chunk, endStream: false));
@@ -268,7 +246,6 @@ public sealed class HighConcurrencyPart2Spec
     {
         var decoder = new FrameDecoder();
         var connectionWindow = 100;
-        var streamWindows = new Dictionary<int, int> { { 1, 65535 } };
 
         decoder.Decode(BuildHeadersFrame(1, endStream: false));
 
@@ -291,14 +268,12 @@ public sealed class HighConcurrencyPart2Spec
     public void Http2FrameDecoder_should_accept_further_data_after_connection_window_restored()
     {
         var decoder = new FrameDecoder();
-        var connectionWindow = 65535;
-        var streamWindows = new Dictionary<int, int> { { 1, 65535 } };
 
         decoder.Decode(BuildHeadersFrame(1, endStream: false));
 
         // Exhaust the window
         var chunk = new byte[50];
-        connectionWindow = 50;
+        var connectionWindow = 50;
 
         var frames1 = decoder.Decode(BuildDataFrame(1, chunk, endStream: false));
         foreach (var frame in frames1)
@@ -409,7 +384,6 @@ public sealed class HighConcurrencyPart2Spec
         Assert.Equal(5, closedStreams.Count);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
     public void Http2FrameDecoder_should_decode_new_streams_on_fresh_decoder_without_prior_state_interference()
@@ -425,7 +399,7 @@ public sealed class HighConcurrencyPart2Spec
         // Create a fresh decoder (no prior state)
         var decoder2 = new FrameDecoder();
 
-        // Reuse stream IDs 1..20 — on the fresh decoder they are not in prior closed-stream tracking,
+        // Reuse stream IDs 1..20 â€” on the fresh decoder they are not in prior closed-stream tracking,
         // so they are treated as fresh idle streams
         var decodedCount = 0;
         for (var i = 0; i < 20; i++)

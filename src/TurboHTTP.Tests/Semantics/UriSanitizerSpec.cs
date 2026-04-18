@@ -2,11 +2,6 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for URI sanitization per RFC 9110 §4.2.4.
-/// Verifies userinfo removal, authority formatting, and port handling.
-/// </summary>
-[Trait("RFC", "RFC9110-4.2.4")]
 public sealed class UriSanitizerSpec
 {
     [Fact(Timeout = 5000)]

@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Round-trip tests for HTTP/1.0 status codes per RFC 1945 §6.1.1.
-/// Verifies that all defined status codes survive encode-then-decode unchanged.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http10.Encoder"/>, <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 §6.1.1: Status codes — 1xx, 2xx, 3xx, 4xx, 5xx.
-/// </remarks>
 public sealed class Http10RoundTripStatusCodeSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -28,7 +20,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode200ok()
+    public void Http10RoundTripStatusCodeSpec_should_decode_200_ok()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -41,7 +33,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode201created()
+    public void Http10RoundTripStatusCodeSpec_should_decode_201_created()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 201 Created", "Content-Length: 0");
@@ -54,7 +46,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode204nocontent()
+    public void Http10RoundTripStatusCodeSpec_should_decode_204_no_content()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 204 No Content", "");
@@ -67,7 +59,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode301movedpermanently()
+    public void Http10RoundTripStatusCodeSpec_should_decode_301_moved_permanently()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 301 Moved Permanently",
@@ -81,7 +73,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode302found()
+    public void Http10RoundTripStatusCodeSpec_should_decode_302_found()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 302 Found",
@@ -95,7 +87,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode304notmodified()
+    public void Http10RoundTripStatusCodeSpec_should_decode304_not_modified()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 304 Not Modified",
@@ -109,7 +101,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode400badrequest()
+    public void Http10RoundTripStatusCodeSpec_should_decode_400_bad_request()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 400 Bad Request",
@@ -123,7 +115,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode401unauthorized()
+    public void Http10RoundTripStatusCodeSpec_should_decode_401_unauthorized()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 401 Unauthorized",
@@ -137,7 +129,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode404notfound()
+    public void Http10RoundTripStatusCodeSpec_should_decode_404_not_found()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 404 Not Found",
@@ -151,7 +143,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode500internalservererror()
+    public void Http10RoundTripStatusCodeSpec_should_decode_500_internal_server_error()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 500 Internal Server Error",
@@ -165,7 +157,7 @@ public sealed class Http10RoundTripStatusCodeSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void Http10RoundTripStatusCodeSpec_should_decode503serviceunavailable()
+    public void Http10RoundTripStatusCodeSpec_should_decode_503_service_unavailable()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 503 Service Unavailable",

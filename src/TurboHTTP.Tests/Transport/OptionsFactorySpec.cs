@@ -5,10 +5,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="OptionsFactory"/> for building appropriate <see cref="TcpOptions"/>,
-/// <see cref="TlsOptions"/>, and <see cref="QuicOptions"/> based on HTTP version and scheme.
-/// </summary>
 public sealed class OptionsFactorySpec
 {
     private static RequestEndpoint CreateHttpEndpoint(string host = "example.com", ushort port = 80)
@@ -212,7 +208,7 @@ public sealed class OptionsFactorySpec
     public void OptionsFactory_should_preserve_client_certificate_validation_callback()
     {
         var endpoint = CreateHttpsEndpoint();
-        var callback = (RemoteCertificateValidationCallback)((s, c, ch, e) => true);
+        var callback = (RemoteCertificateValidationCallback)((_, _, _, _) => true);
         var clientOptions = new TurboClientOptions
         {
             ServerCertificateValidationCallback = callback
@@ -344,7 +340,6 @@ public sealed class OptionsFactorySpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "OptionsFactory")]
     public void OptionsFactory_should_preserve_proxy_settings()
     {
         var endpoint = CreateHttpEndpoint();
@@ -365,7 +360,6 @@ public sealed class OptionsFactorySpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "OptionsFactory")]
     public void OptionsFactory_should_build_options_for_all_http_versions()
     {
         var clientOptions = CreateClientOptions();
@@ -420,7 +414,6 @@ public sealed class OptionsFactorySpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "OptionsFactory")]
     public void OptionsFactory_should_handle_non_standard_ports()
     {
         var endpoint = new RequestEndpoint
@@ -438,7 +431,6 @@ public sealed class OptionsFactorySpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "OptionsFactory")]
     public void OptionsFactory_should_handle_localhost()
     {
         var endpoint = new RequestEndpoint
@@ -458,7 +450,6 @@ public sealed class OptionsFactorySpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "OptionsFactory")]
     public void OptionsFactory_should_handle_ip_addresses()
     {
         var endpoint = new RequestEndpoint

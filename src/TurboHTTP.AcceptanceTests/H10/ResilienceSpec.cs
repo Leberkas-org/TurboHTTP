@@ -17,7 +17,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
         return decomp.Atop(CreateHttp10Engine().CreateFlow());
     }
 
-    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
@@ -30,7 +31,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
         return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    private async Task<HttpResponseMessage> SendDecompressingAsync(HttpRequestMessage request, Func<int, byte[], byte[]?> factory)
+    private async Task<HttpResponseMessage> SendDecompressingAsync(HttpRequestMessage request,
+        Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
         var flow = CreateDecompressingEngine().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
@@ -194,8 +196,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -216,7 +218,7 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 }

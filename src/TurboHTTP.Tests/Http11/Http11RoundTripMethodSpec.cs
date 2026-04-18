@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests round-trip encoding and decoding of HTTP methods per RFC 9112 §3.
-/// Verifies that all standard methods survive a full encode → decode cycle.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §3: Method token must be preserved verbatim through encode/decode.
-/// </remarks>
 public sealed class Http11RoundTripMethodSpec
 {
     private static (byte[] Buffer, int Written) EncodeRequest(HttpRequestMessage request)
@@ -55,7 +47,7 @@ public sealed class Http11RoundTripMethodSpec
         Assert.Equal("hello", await responses[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11RoundTrip_should_return_201_created_when_post_json_round_trip()
     {
@@ -80,7 +72,7 @@ public sealed class Http11RoundTripMethodSpec
         Assert.Equal("/users/42", loc.Single());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11RoundTrip_should_return_204_no_content_when_put_round_trip()
     {
@@ -100,7 +92,7 @@ public sealed class Http11RoundTripMethodSpec
         Assert.Equal(HttpStatusCode.NoContent, responses[0].StatusCode);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11RoundTrip_should_return_200_when_delete_round_trip()
     {
@@ -142,7 +134,7 @@ public sealed class Http11RoundTripMethodSpec
         Assert.Equal(responseBody, await responses[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11RoundTrip_should_return_content_length_header_when_head_round_trip()
     {
@@ -162,7 +154,7 @@ public sealed class Http11RoundTripMethodSpec
         Assert.Equal(0, responses[0].Content.Headers.ContentLength);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11RoundTrip_should_return_allow_header_when_options_round_trip()
     {
@@ -183,7 +175,7 @@ public sealed class Http11RoundTripMethodSpec
         Assert.Contains("GET", string.Join(",", allowVals));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-3")]
     public void Http11RoundTrip_should_encode_query_string_when_request_has_query_string_round_trip()
     {

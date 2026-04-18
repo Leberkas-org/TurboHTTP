@@ -29,17 +29,20 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
             new TcpConnectionManagerActor(_factory, idleTimeout ?? TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan)));
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     public async Task Acquire_should_always_create_new_connection_for_http10()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version10);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
 
@@ -47,19 +50,22 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Acquire_should_reuse_idle_connection_for_http11()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.Same(lease1, lease2);
 
@@ -67,14 +73,14 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Release_should_return_to_idle_when_can_reuse()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
@@ -83,14 +89,14 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Release_should_dispose_connection_when_cannot_reuse()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: false));
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
@@ -99,15 +105,18 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task EvictIdle_should_remove_expired_connections()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         Assert.NotSame(lease1, lease2);
 
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
@@ -120,15 +129,18 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task EvictIdle_should_keep_at_least_one_per_host()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
@@ -143,7 +155,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Acquire_should_block_when_per_host_limit_is_full()
     {
         var actor = CreateActor();
@@ -153,7 +164,8 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken));
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken));
         }
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
@@ -169,19 +181,22 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113")]
     public async Task Http2_acquire_should_create_exclusive_connection()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version20);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
 
@@ -189,14 +204,14 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task GracefulStop_should_dispose_all_leases()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
         await actor.GracefulStop(TimeSpan.FromSeconds(5));
 
@@ -204,14 +219,14 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC1945")]
     public async Task Http10_should_always_dispose_on_release()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version10);
 
-        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: true));
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
@@ -219,7 +234,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Release_with_pending_should_hand_off_directly()
     {
         var actor = CreateActor();
@@ -229,10 +243,12 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken));
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken));
         }
 
-        var pendingTask = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var pendingTask =
+            TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
         actor.Tell(new TcpConnectionManagerActor.Release(leases[0], CanReuse: true));
 
@@ -248,7 +264,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Multiple_hosts_should_maintain_separate_pools()
     {
         var actor = CreateActor();
@@ -263,8 +278,12 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
             Host = "host2.example.com", Port = 80, Scheme = "http", Version = HttpVersion.Version11
         };
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options2, endpoint2,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
 
@@ -273,8 +292,12 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease3 = await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1, TestContext.Current.CancellationToken);
-        var lease4 = await TcpConnectionManagerActor.AcquireAsync(actor, options2, endpoint2, TestContext.Current.CancellationToken);
+        var lease3 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
+                TestContext.Current.CancellationToken);
+        var lease4 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options2, endpoint2,
+                TestContext.Current.CancellationToken);
 
         Assert.Same(lease1, lease3);
         Assert.Same(lease2, lease4);
@@ -284,7 +307,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Acquire_should_timeout_when_exhausted_and_pending()
     {
         var actor = CreateActor();
@@ -294,7 +316,8 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
         var leases = new List<ConnectionLease>();
         for (var i = 0; i < 6; i++)
         {
-            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken));
+            leases.Add(await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken));
         }
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
@@ -312,35 +335,40 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Release_dead_lease_should_not_crash_actor()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
 
         lease.Dispose();
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         Assert.NotNull(lease2);
 
         lease2.Dispose();
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Idle_timeout_zero_should_disable_eviction()
     {
         var actor = CreateActor(TimeSpan.Zero);
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
@@ -354,19 +382,22 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Version30_should_not_reuse_connections()
     {
         var actor = CreateActor();
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version30);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(50, TestContext.Current.CancellationToken);
 
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
 
         Assert.NotSame(lease1, lease2);
 
@@ -374,19 +405,22 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public async Task Evicted_idle_connection_should_not_be_reused()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));
         var options = CreateOptions();
         var endpoint = CreateEndpoint(HttpVersion.Version11);
 
-        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease1 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
-        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
+        var lease2 =
+            await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+                TestContext.Current.CancellationToken);
         Assert.NotNull(lease2);
 
         lease2.Dispose();

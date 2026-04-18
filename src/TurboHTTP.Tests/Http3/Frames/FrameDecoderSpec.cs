@@ -4,8 +4,7 @@ namespace TurboHTTP.Tests.Http3.Frames;
 
 public sealed class FrameDecoderSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_data_frame()
     {
@@ -22,7 +21,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal(wire.Length, consumed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_headers_frame()
     {
@@ -38,7 +37,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal(headerBlock, headers.HeaderBlock.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_cancel_push_frame()
     {
@@ -53,15 +52,15 @@ public sealed class FrameDecoderSpec
         Assert.Equal(16383, cp.PushId);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_settings_frame()
     {
         var parameters = new List<(long, long)>
         {
-            (0x06, 4096),   // MAX_FIELD_SECTION_SIZE
-            (0x01, 100),    // QPACK_MAX_TABLE_CAPACITY
-            (0x07, 50),     // QPACK_BLOCKED_STREAMS
+            (0x06, 4096), // MAX_FIELD_SECTION_SIZE
+            (0x01, 100), // QPACK_MAX_TABLE_CAPACITY
+            (0x07, 50), // QPACK_BLOCKED_STREAMS
         };
         var original = new Http3SettingsFrame(parameters);
         var wire = original.Serialize();
@@ -77,7 +76,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal((0x07L, 50L), settings.Parameters[2]);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_push_promise_frame()
     {
@@ -94,7 +93,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal(headerBlock, pp.HeaderBlock.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_goaway_frame()
     {
@@ -109,7 +108,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal(1_000_000, goaway.StreamId);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_max_push_id_frame()
     {
@@ -124,8 +123,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal(63, mp.PushId);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_return_need_more_data_when_partial_type_varint()
     {
@@ -136,7 +134,7 @@ public sealed class FrameDecoderSpec
         Assert.Null(frame);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_reassemble_partial_payload_across_calls()
     {
@@ -164,7 +162,7 @@ public sealed class FrameDecoderSpec
         Assert.False(decoder.HasRemainder);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_handle_byte_at_a_time_feeding()
     {
@@ -192,16 +190,15 @@ public sealed class FrameDecoderSpec
         Assert.Equal(256, goaway.StreamId);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_skip_unknown_frame_type()
     {
         // Encode an unknown frame type (0xFF) with a 3-byte payload
         var buf = new byte[16];
         var offset = 0;
-        offset += QuicVarInt.Encode(0xFF, buf.AsSpan(offset));  // Unknown type
-        offset += QuicVarInt.Encode(3, buf.AsSpan(offset));     // Length = 3
+        offset += QuicVarInt.Encode(0xFF, buf.AsSpan(offset)); // Unknown type
+        offset += QuicVarInt.Encode(3, buf.AsSpan(offset)); // Length = 3
         buf[offset++] = 0xAA;
         buf[offset++] = 0xBB;
         buf[offset++] = 0xCC;
@@ -214,8 +211,7 @@ public sealed class FrameDecoderSpec
         Assert.Equal(offset, consumed);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_all_multiple_frames()
     {

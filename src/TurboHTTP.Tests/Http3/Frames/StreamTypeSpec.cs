@@ -4,7 +4,7 @@ namespace TurboHTTP.Tests.Http3.Frames;
 
 public sealed class StreamTypeSpec
 {
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
     [InlineData(StreamType.Control, 0x00L)]
     [InlineData(StreamType.Push, 0x01L)]
@@ -15,7 +15,7 @@ public sealed class StreamTypeSpec
         Assert.Equal(expected, (long)type);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
     public void StreamType_should_have_all_types_defined()
     {
@@ -23,28 +23,28 @@ public sealed class StreamTypeSpec
         Assert.Equal(4, values.Length);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
     public void StreamType_should_be_zero_when_control_stream()
     {
         Assert.Equal(0x00L, (long)StreamType.Control);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
     public void StreamType_should_be_one_when_push_stream()
     {
         Assert.Equal(0x01L, (long)StreamType.Push);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
     public void StreamType_should_be_two_when_qpack_encoder_stream()
     {
         Assert.Equal(0x02L, (long)StreamType.QpackEncoder);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
     public void StreamType_should_be_three_when_qpack_decoder_stream()
     {

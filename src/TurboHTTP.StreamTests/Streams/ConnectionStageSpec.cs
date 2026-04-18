@@ -12,22 +12,8 @@ using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests <see cref="TcpConnectionStage"/> integration with the actor-based connection management.
-/// Verifies that the stage acquires a <see cref="ConnectionLease"/> via a
-/// <see cref="TcpConnectionManagerActor"/> and routes bytes through in-memory channels.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="TcpConnectionStage"/>.
-/// Uses a <see cref="StubConnectionManagerActor"/> to isolate the stage from real TCP,
-/// while exercising the real actor message protocol.
-/// </remarks>
 public sealed class ConnectionStageSpec : StreamTestBase
 {
-    /// <summary>
-    /// Tracks <see cref="TcpConnectionManagerActor.Release"/> details for test assertions.
-    /// Written on the actor thread; read on the test thread after a delay.
-    /// </summary>
     private sealed class ReleaseTracker
     {
         public volatile bool Released;
@@ -35,10 +21,6 @@ public sealed class ConnectionStageSpec : StreamTestBase
         public ConnectionLease? ReleasedLease;
     }
 
-    /// <summary>
-    /// Stub actor that handles <see cref="TcpConnectionManagerActor.Acquire"/> and
-    /// <see cref="TcpConnectionManagerActor.Release"/> with controllable behavior.
-    /// </summary>
     private sealed class StubConnectionManagerActor : ReceiveActor
     {
         public StubConnectionManagerActor(ConnectionLease? lease, ReleaseTracker tracker)
@@ -82,10 +64,6 @@ public sealed class ConnectionStageSpec : StreamTestBase
         return buf;
     }
 
-    /// <summary>
-    /// Creates a <see cref="ConnectionLease"/> backed by in-memory channels,
-    /// a <see cref="StubConnectionManagerActor"/>, and wires it to a <see cref="TcpConnectionStage"/>.
-    /// </summary>
     private (
         Flow<IOutputItem, IInputItem, NotUsed> stageFlow,
         ReleaseTracker tracker,
@@ -386,11 +364,11 @@ public sealed class ConnectionStageSpec : StreamTestBase
             .ToMaterialized(Sink.Seq<IInputItem>(), Keep.Both)
             .Run(Materializer);
 
-        var data = MakeData(0xFF, 4);
+        var data = MakeData(0xFF);
         await inputQueue.OfferAsync(data);
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
-        var data2 = MakeData(0xEE, 4);
+        var data2 = MakeData(0xEE);
         await inputQueue.OfferAsync(data2);
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
@@ -429,7 +407,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         await inputQueue.OfferAsync(connectItem);
         await Task.Delay(300, TestContext.Current.CancellationToken);
 
-        var data = MakeData(0xBB, 4);
+        var data = MakeData(0xBB);
         await inputQueue.OfferAsync(data);
         await Task.Delay(300, TestContext.Current.CancellationToken);
 

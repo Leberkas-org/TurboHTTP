@@ -11,6 +11,7 @@ using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.StreamTests.Http2;
+
 public sealed class Http2EngineEndToEndSpec : EngineTestBase
 {
     private static Http20Engine Engine => new(new Http2Options().ToEngineOptions());
@@ -201,7 +202,8 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9113-6.5")]
-    public async Task Http2Engine_should_produce_max_concurrent_streams_signal_when_settings_max_concurrent_streams_received()
+    public async Task
+        Http2Engine_should_produce_max_concurrent_streams_signal_when_settings_max_concurrent_streams_received()
     {
         var engine = new Http20Engine(new Http2Options().ToEngineOptions());
 
@@ -323,8 +325,8 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
 
         // Verify that a captured DataItem begins with the 24-byte HTTP/2 magic
         var magic = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
-        var hasPrefaceMagic = capturedByteSnapshots.Exists(
-            bytes => bytes.Length >= 24 && bytes.AsSpan(0, 24).SequenceEqual(magic));
+        var hasPrefaceMagic =
+            capturedByteSnapshots.Exists(bytes => bytes.Length >= 24 && bytes.AsSpan(0, 24).SequenceEqual(magic));
         Assert.True(hasPrefaceMagic, "Expected outbound bytes to contain the 24-byte HTTP/2 connection preface magic");
     }
 }

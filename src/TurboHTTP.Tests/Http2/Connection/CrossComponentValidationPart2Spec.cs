@@ -4,19 +4,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
-/// <summary>
-/// Tests cross-component encoder/decoder round-trip contracts per RFC 9113.
-/// Part 2: RST_STREAM cleanup, GOAWAY, and header injection prevention.
-/// Verifies that every frame produced by the encoder can be decoded to equivalent values.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/> and <see cref="RequestEncoder"/>.
-/// These tests validate the full encode→transmit→decode pipeline used by TurboHttp connections.
-/// </remarks>
 public sealed class Http2CrossComponentValidationPart2Spec
 {
-    // Helpers
-
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
         var frame = new byte[9 + payload.Length];
@@ -30,7 +19,8 @@ public sealed class Http2CrossComponentValidationPart2Spec
         return frame;
     }
 
-    private static byte[] BuildHeadersFrame(int streamId, byte[] headerBlock, bool endStream = false, bool endHeaders = true)
+    private static byte[] BuildHeadersFrame(int streamId, byte[] headerBlock, bool endStream = false,
+        bool endHeaders = true)
     {
         byte flags = 0;
         if (endStream)
@@ -67,24 +57,12 @@ public sealed class Http2CrossComponentValidationPart2Spec
         return BuildRawFrame(0x7, 0, 0, payload);
     }
 
-    private static byte[] BuildWindowUpdateFrame(int streamId, int increment)
-    {
-        var payload = new byte[4];
-        BinaryPrimitives.WriteUInt32BigEndian(payload, (uint)increment & 0x7FFFFFFF);
-        return BuildRawFrame(0x8, 0, streamId, payload);
-    }
-
     private static byte[] ValidStatusHeaderBlock()
     {
         var enc = new HpackEncoder(useHuffman: false);
         return enc.Encode([(":status", "200")]).ToArray();
     }
 
-    /// <summary>
-    /// RFC 9113 §4.3: HPACK decompression failure is a connection COMPRESSION_ERROR.
-    /// The decoder produces the frame; the caller must HPACK-decode the fragment.
-    /// If HpackException occurs during decode, wrap it as CompressionError.
-    /// </summary>
     private static IReadOnlyList<HpackHeader> DecodeHpackWithCompressionErrorWrapping(
         HpackDecoder hpack,
         ReadOnlySpan<byte> fragment)
@@ -97,28 +75,19 @@ public sealed class Http2CrossComponentValidationPart2Spec
         {
             throw new Http2Exception(
                 $"RFC 9113 §4.3: HPACK decompression failure — {ex.Message}",
-                Http2ErrorCode.CompressionError,
-                Http2ErrorScope.Connection);
+                Http2ErrorCode.CompressionError);
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.8: After GOAWAY, new HEADERS with streamId > lastStreamId must be rejected.
-    /// </summary>
     private static void EnforceGoAwayRejectsNewStreams(int streamId, int lastStreamId)
     {
         if (streamId > lastStreamId)
         {
             throw new Http2Exception(
-                $"RFC 9113 §6.8: HEADERS on stream {streamId} after GOAWAY with lastStreamId={lastStreamId}",
-                Http2ErrorCode.ProtocolError,
-                Http2ErrorScope.Connection);
+                $"RFC 9113 §6.8: HEADERS on stream {streamId} after GOAWAY with lastStreamId={lastStreamId}");
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §6.1: DATA on a closed stream is a stream error STREAM_CLOSED.
-    /// </summary>
     private static void EnforceStreamNotClosed(int streamId, HashSet<int> closedStreams)
     {
         if (closedStreams.Contains(streamId))
@@ -131,9 +100,6 @@ public sealed class Http2CrossComponentValidationPart2Spec
         }
     }
 
-    /// <summary>
-    /// RFC 9113 §8.2: All header names (except pseudo-headers starting with ':') must be lowercase.
-    /// </summary>
     private static void ValidateResponseHeaders(IReadOnlyList<HpackHeader> headers)
     {
         foreach (var h in headers)
@@ -145,16 +111,12 @@ public sealed class Http2CrossComponentValidationPart2Spec
                     if (char.IsUpper(c))
                     {
                         throw new Http2Exception(
-                            $"RFC 9113 §8.2: Header name '{h.Name}' contains uppercase characters.",
-                            Http2ErrorCode.ProtocolError,
-                            Http2ErrorScope.Connection);
+                            $"RFC 9113 §8.2: Header name '{h.Name}' contains uppercase characters.");
                     }
                 }
             }
         }
     }
-
-    // CC-011..014: Stream cleanup on RST_STREAM (RFC 9113 §6.4)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.4")]
@@ -221,8 +183,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
         var data = decoder.Decode(BuildDataFrame(1, new byte[10]));
         var dataFrame = Assert.IsType<DataFrame>(data[0]);
 
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceStreamNotClosed(dataFrame.StreamId, closedStreams));
+        var ex = Assert.Throws<Http2Exception>(() => EnforceStreamNotClosed(dataFrame.StreamId, closedStreams));
 
         Assert.Equal(Http2ErrorCode.StreamClosed, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Stream, ex.Scope);
@@ -245,8 +206,6 @@ public sealed class Http2CrossComponentValidationPart2Spec
         Assert.Equal(Http2ErrorCode.Cancel, frame.ErrorCode);
     }
 
-    // CC-015..018: GOAWAY stops new stream creation (RFC 9113 §6.8)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
     public void Http2FrameDecoder_should_decode_correct_last_stream_id_when_go_away_received()
@@ -257,7 +216,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
         decoder.Decode(BuildHeadersFrame(1, ValidStatusHeaderBlock()));
 
         // GOAWAY with lastStreamId = 1
-        var goAway = decoder.Decode(BuildGoAwayFrame(1, Http2ErrorCode.NoError));
+        var goAway = decoder.Decode(BuildGoAwayFrame(1));
         var frame = Assert.IsType<GoAwayFrame>(goAway[0]);
 
         Assert.Equal(1, frame.LastStreamId);
@@ -271,15 +230,15 @@ public sealed class Http2CrossComponentValidationPart2Spec
         var decoder = new FrameDecoder();
 
         // GOAWAY with lastStreamId = 0
-        var goAway = decoder.Decode(BuildGoAwayFrame(0, Http2ErrorCode.NoError));
+        var goAway = decoder.Decode(BuildGoAwayFrame(0));
         var goAwayFrame = Assert.IsType<GoAwayFrame>(goAway[0]);
 
         // Stream 1 is > lastStreamId → should be rejected
         var headers = decoder.Decode(BuildHeadersFrame(1, ValidStatusHeaderBlock()));
         var headersFrame = Assert.IsType<HeadersFrame>(headers[0]);
 
-        var ex = Assert.Throws<Http2Exception>(
-            () => EnforceGoAwayRejectsNewStreams(headersFrame.StreamId, goAwayFrame.LastStreamId));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            EnforceGoAwayRejectsNewStreams(headersFrame.StreamId, goAwayFrame.LastStreamId));
 
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);
@@ -297,7 +256,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
         decoder.Decode(BuildHeadersFrame(5, ValidStatusHeaderBlock()));
 
         // GOAWAY with lastStreamId = 3
-        var goAway = decoder.Decode(BuildGoAwayFrame(3, Http2ErrorCode.NoError));
+        var goAway = decoder.Decode(BuildGoAwayFrame(3));
         var frame = Assert.IsType<GoAwayFrame>(goAway[0]);
 
         Assert.Equal(3, frame.LastStreamId);
@@ -315,8 +274,6 @@ public sealed class Http2CrossComponentValidationPart2Spec
         Assert.Equal(Http2ErrorCode.FlowControlError, frame.ErrorCode);
     }
 
-    // CC-019..020: No header injection via HPACK (RFC 9113 §8.2)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2")]
     public void Http2FrameDecoder_should_prevent_header_injection_when_hpack_index_is_invalid()
@@ -330,8 +287,8 @@ public sealed class Http2CrossComponentValidationPart2Spec
         var frame = Assert.IsType<HeadersFrame>(frames[0]);
 
         var hpackDecoder = new HpackDecoder();
-        var ex = Assert.Throws<Http2Exception>(
-            () => DecodeHpackWithCompressionErrorWrapping(hpackDecoder, frame.HeaderBlockFragment.Span));
+        var ex = Assert.Throws<Http2Exception>(() =>
+            DecodeHpackWithCompressionErrorWrapping(hpackDecoder, frame.HeaderBlockFragment.Span));
 
         Assert.Equal(Http2ErrorCode.CompressionError, ex.ErrorCode);
         Assert.True(ex.IsConnectionError);
@@ -343,11 +300,13 @@ public sealed class Http2CrossComponentValidationPart2Spec
     {
         // Build a valid HPACK block with an uppercase header name
         // Start with :status: 200 (indexed, index 8)
-        var combined = new List<byte> { 0x88 }; // indexed :status: 200
-
-        // Add literal with new name: "X-UPPER": "test"
-        // Literal without indexing: 0x00 (4-bit prefix)
-        combined.Add(0x00);
+        var combined = new List<byte>
+        {
+            0x88,
+            // Add literal with new name: "X-UPPER": "test"
+            // Literal without indexing: 0x00 (4-bit prefix)
+            0x00
+        }; // indexed :status: 200
 
         // Name: "X-UPPER"
         var upperName = "X-UPPER"u8.ToArray();
@@ -369,8 +328,7 @@ public sealed class Http2CrossComponentValidationPart2Spec
         var headers = hpackDecoder.Decode(frame.HeaderBlockFragment.Span);
 
         // Validation should reject uppercase "X-UPPER"
-        var ex = Assert.Throws<Http2Exception>(
-            () => ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<Http2Exception>(() => ValidateResponseHeaders(headers));
 
         Assert.Equal(Http2ErrorCode.ProtocolError, ex.ErrorCode);
         Assert.Equal(Http2ErrorScope.Connection, ex.Scope);

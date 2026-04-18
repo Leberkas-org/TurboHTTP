@@ -2,14 +2,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Frames;
 
-/// <summary>
-/// Tests HTTP/2 frame serialization and binary layout per RFC 9113 §4.1 and §6.
-/// Verifies that each frame type produces the correct byte sequence when serialized.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="SettingsFrame"/>, <see cref="DataFrame"/>, <see cref="HeadersFrame"/>, and related frame types.
-/// RFC 9113 §4.1: Frame format — length(24) + type(8) + flags(8) + stream(31) + payload.
-/// </remarks>
 public sealed class Http2FrameSpec
 {
     [Fact(Timeout = 5000)]

@@ -4,20 +4,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Edge-case and corner-case tests for <see cref="ResponseDecoder"/>.
-/// Complements Http3ResponseDecoderSpec with comprehensive coverage of:
-/// - Boundary conditions (empty headers, extreme status codes, null handling)
-/// - RFC 9114 §4.1 pseudo-header validation (missing :status, unknown pseudo-headers)
-/// - Content header identification with case-insensitivity
-/// - Multiple content headers of the same type
-/// - Large and fragmented response bodies
-/// - Trailer handling (explicitly unsupported)
-/// - Header ordering constraints
-/// - Empty content with content headers
-/// - Invalid status codes and header values
-/// </summary>
-[Trait("RFC", "RFC9114-4.1")]
 public sealed class Http3ResponseDecoderEdgeCasesSpec
 {
     private readonly QpackTableSync _tableSync = new();
@@ -32,10 +18,6 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     {
         return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
-
-    // ─────────────────────────────────────────────────────────────────
-    // DecodeHeaders boundary conditions
-    // ─────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
@@ -57,7 +39,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
 
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3")]
     public void DecodeHeaders_missing_status_pseudo_header()
     {
         var state = new StreamState();
@@ -71,7 +53,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3")]
     public void DecodeHeaders_duplicate_status_pseudo_header()
     {
         var state = new StreamState();
@@ -90,7 +72,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3")]
     public void DecodeHeaders_unknown_pseudo_header()
     {
         var state = new StreamState();
@@ -104,7 +86,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_codes_100()
     {
         var state = new StreamState();
@@ -116,7 +98,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_codes_1xx_series()
     {
         var state = new StreamState();
@@ -128,7 +110,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_codes_2xx_series()
     {
         var testCodes = new[] { 200, 201, 204, 206 };
@@ -144,7 +126,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_codes_3xx_series()
     {
         var testCodes = new[] { 300, 301, 302, 304, 307 };
@@ -160,7 +142,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_codes_4xx_series()
     {
         var testCodes = new[] { 400, 401, 403, 404, 429 };
@@ -176,7 +158,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_codes_5xx_series()
     {
         var testCodes = new[] { 500, 501, 502, 503, 504 };
@@ -192,7 +174,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_invalid_status_code_non_numeric()
     {
         var state = new StreamState();
@@ -202,7 +184,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_invalid_status_code_too_large()
     {
         var state = new StreamState();
@@ -214,7 +196,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_invalid_status_code_negative()
     {
         var state = new StreamState();
@@ -226,7 +208,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_empty_status_code_value()
     {
         var state = new StreamState();
@@ -236,7 +218,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.3.2")]
     public void DecodeHeaders_status_code_with_whitespace()
     {
         var state = new StreamState();
@@ -247,10 +229,6 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         Assert.True(result);
         Assert.Equal(HttpStatusCode.OK, state.GetResponse().StatusCode);
     }
-
-    // ─────────────────────────────────────────────────────────────────
-    // AssembleHeaders edge cases
-    // ─────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
@@ -285,7 +263,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void AssembleHeaders_multiple_regular_headers()
     {
         var state = new StreamState();
@@ -307,7 +285,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void AssembleHeaders_header_case_insensitivity()
     {
         var state = new StreamState();
@@ -352,7 +330,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void AssembleHeaders_duplicate_regular_headers()
     {
         var state = new StreamState();
@@ -374,7 +352,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void AssembleHeaders_empty_header_values()
     {
         var state = new StreamState();
@@ -393,7 +371,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void AssembleHeaders_long_header_values()
     {
         var state = new StreamState();
@@ -412,7 +390,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void AssembleHeaders_special_characters_in_header_values()
     {
         var state = new StreamState();
@@ -428,10 +406,6 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var response = state.GetResponse();
         Assert.Equal("value=with;special,chars:123", response.Headers.GetValues("x-special").Single());
     }
-
-    // ─────────────────────────────────────────────────────────────────
-    // AccumulateData edge cases
-    // ─────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
@@ -496,7 +470,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
 
         for (var i = 0; i < 1000; i++)
         {
-            var frame = new Http3DataFrame(new byte[] { (byte)(i % 256) });
+            var frame = new Http3DataFrame(new[] { (byte)(i % 256) });
             Assert.True(_decoder.AccumulateData(frame, state));
         }
     }
@@ -514,10 +488,6 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         Assert.True(_decoder.AccumulateData(emptyFrame1, state));
         Assert.True(_decoder.AccumulateData(emptyFrame2, state));
     }
-
-    // ─────────────────────────────────────────────────────────────────
-    // CompleteResponse edge cases
-    // ─────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
@@ -537,7 +507,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
-    public async Task CompleteResponse_response_without_content_body()
+    public void CompleteResponse_response_without_content_body()
     {
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "204")), state);
@@ -601,6 +571,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
             {
                 chunk[j] = (byte)((i + j) % 256);
             }
+
             _decoder.AccumulateData(new Http3DataFrame(chunk), state);
         }
 
@@ -686,10 +657,6 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         Assert.NotNull(response.Content.Headers);
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // IsContentHeader edge cases
-    // ─────────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public void IsContentHeader_null_name()
@@ -706,7 +673,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void IsContentHeader_all_content_prefixed_headers()
     {
         var contentHeaders = new[]
@@ -730,7 +697,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void IsContentHeader_special_content_headers()
     {
         Assert.True(ResponseDecoder.IsContentHeader("allow"));
@@ -745,7 +712,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void IsContentHeader_non_content_headers()
     {
         var nonContentHeaders = new[]
@@ -769,17 +736,13 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-4.1")]
+    [Trait("RFC", "RFC9114-4.2")]
     public void IsContentHeader_content_prefix_but_not_content_header()
     {
         // Headers that start with "content-" in the name but are not HTTP headers
         Assert.False(ResponseDecoder.IsContentHeader("cont"));
         Assert.False(ResponseDecoder.IsContentHeader("context"));
     }
-
-    // ─────────────────────────────────────────────────────────────────
-    // DecoderInstructions property
-    // ─────────────────────────────────────────────────────────────────
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
@@ -803,10 +766,6 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         Assert.True(instructions.Length >= 0);
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Combined scenarios
-    // ─────────────────────────────────────────────────────────────────
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.1")]
     public async Task Combined_full_response_lifecycle()
@@ -821,11 +780,11 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         _decoder.DecodeHeaders(headerFrame, state);
 
         // Accumulate body in multiple frames
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x48, 0x65, 0x6C }), state); // "Hel"
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x6C, 0x6F }), state);       // "lo"
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x20, 0x57, 0x6F }), state); // " Wo"
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x72, 0x6C, 0x64 }), state); // "rld"
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x21 }), state);             // "!"
+        _decoder.AccumulateData(new Http3DataFrame("Hel"u8.ToArray()), state); // "Hel"
+        _decoder.AccumulateData(new Http3DataFrame("lo"u8.ToArray()), state); // "lo"
+        _decoder.AccumulateData(new Http3DataFrame(" Wo"u8.ToArray()), state); // " Wo"
+        _decoder.AccumulateData(new Http3DataFrame("rld"u8.ToArray()), state); // "rld"
+        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x21 }), state); // "!"
 
         // Complete response
         var response = _decoder.CompleteResponse(state);

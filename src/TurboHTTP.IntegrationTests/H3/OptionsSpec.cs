@@ -3,11 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.H3;
 
-/// <summary>
-/// Integration tests for TurboClientOptions wiring in HTTP/3 (QUIC).
-/// Verifies Credentials, PreAuthenticate, and PooledConnectionLifetime
-/// through the pipeline.
-/// </summary>
 [Collection("H3")]
 [Trait("Category", "Http3")]
 [Obsolete("Replaced by StreamTests.Acceptance.H3.OptionsSpec")]

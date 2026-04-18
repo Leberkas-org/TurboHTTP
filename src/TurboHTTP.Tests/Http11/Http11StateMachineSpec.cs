@@ -1,25 +1,12 @@
 using System.Text;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
-using TurboHTTP.Streams.Stages;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http11;
 
 public sealed class Http11StateMachineSpec
 {
-    private sealed class FakeOps : IStageOperations
-    {
-        public List<HttpResponseMessage> Responses { get; } = [];
-        public List<IOutputItem> Outbound { get; } = [];
-        public List<string> Warnings { get; } = [];
-        public bool ReconnectFailed { get; private set; }
-
-        public void OnResponse(HttpResponseMessage response) => Responses.Add(response);
-        public void OnOutbound(IOutputItem item) => Outbound.Add(item);
-        public void OnWarning(string message) => Warnings.Add(message);
-        public void OnReconnectFailed() => ReconnectFailed = true;
-    }
-
     private static HttpRequestMessage MakeRequest(string path = "/", string? method = null, HttpContent? content = null)
     {
         var httpMethod = method switch
@@ -50,8 +37,6 @@ public sealed class Http11StateMachineSpec
         return buffer;
     }
 
-    // ===== EncodeRequest Tests (9 tests) =====
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void EncodeRequest_should_enqueue_request_and_emit_stream_acquire()
@@ -77,7 +62,7 @@ public sealed class Http11StateMachineSpec
         var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
         Assert.NotNull(buffer);
         Assert.True(buffer.Length > 0);
-        buffer?.Dispose();
+        buffer.Dispose();
     }
 
     [Fact(Timeout = 5000)]
@@ -150,12 +135,12 @@ public sealed class Http11StateMachineSpec
         var ops = new FakeOps();
         var sm = new StateMachine(ops, maxPipelineDepth: 8);
 
-        sm.EncodeRequest(MakeRequest("/", "GET", null));
+        sm.EncodeRequest(MakeRequest("/", "GET"));
 
         Assert.True(sm.HasInFlightRequests);
         var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
         Assert.NotNull(buffer);
-        buffer?.Dispose();
+        buffer.Dispose();
     }
 
     [Fact(Timeout = 5000)]
@@ -171,10 +156,8 @@ public sealed class Http11StateMachineSpec
         var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
         Assert.NotNull(buffer);
         Assert.True(buffer.Capacity <= 2048);
-        buffer?.Dispose();
+        buffer.Dispose();
     }
-
-    // ===== DecodeServerData Tests (11 tests) =====
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
@@ -328,8 +311,6 @@ public sealed class Http11StateMachineSpec
         Assert.NotNull(ops.Responses[0].RequestMessage);
     }
 
-    // ===== HandleCloseSignal Tests (7 tests) =====
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.8")]
     public void HandleCloseSignal_should_complete_close_delimited_response_on_clean_close()
@@ -437,8 +418,6 @@ public sealed class Http11StateMachineSpec
         Assert.Single(ops.Responses);
     }
 
-    // ===== TryDecodeEof Tests (4 tests) =====
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.8")]
     public void TryDecodeEof_should_return_false_when_no_buffered_data()
@@ -499,8 +478,6 @@ public sealed class Http11StateMachineSpec
         Assert.False(sm.HasInFlightRequests);
     }
 
-    // ===== HandleOrphanedRequests Tests (3 tests) =====
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.3")]
     public void HandleOrphanedRequests_should_clear_queue_when_inflight()
@@ -542,8 +519,6 @@ public sealed class Http11StateMachineSpec
 
         Assert.Empty(ops.Warnings);
     }
-
-    // ===== State Properties Tests (6 tests) =====
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
@@ -613,8 +588,6 @@ public sealed class Http11StateMachineSpec
         Assert.False(sm.IsReconnecting);
     }
 
-    // ===== Cleanup Tests (2 tests) =====
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-6")]
     public void Cleanup_should_clear_inflight_queue()
@@ -647,8 +620,6 @@ public sealed class Http11StateMachineSpec
         // If cleanup didn't dispose, this would leak
         Assert.True(true); // Just verify no exception
     }
-
-    // ===== Integration Tests (8 tests) =====
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.3")]

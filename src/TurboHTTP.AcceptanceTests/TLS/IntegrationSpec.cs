@@ -14,7 +14,8 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class IntegrationSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine => new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine =>
+        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
 
     private async Task<HttpResponseMessage> SendViaEngineAsync(HttpRequestMessage request,
         Func<byte[], byte[]>? transform = null)
@@ -134,6 +135,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
                 {
                     r.Headers.TryAddWithoutValidation("X-Custom-Tls", vals);
                 }
+
                 return r;
             });
 
@@ -143,7 +145,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(response.Headers.TryGetValues("X-Custom-Tls", out var values));
-        Assert.Equal("secure-value", values!.First());
+        Assert.Equal("secure-value", values.First());
     }
 
     [Fact(Timeout = 5000)]
@@ -175,6 +177,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
                         }
                     }
                 }
+
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(JsonSerializer.Serialize(cookies))
@@ -223,6 +226,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
                         }
                     }
                 }
+
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(JsonSerializer.Serialize(cookies))
@@ -251,6 +255,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
         {
             bodyBytes[i] = (byte)('A' + i % 26);
         }
+
         var map = new ResponseMap()
             .On("/compress/gzip/4", _ => new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -302,6 +307,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
         {
             bodyBytes[i] = (byte)(i & 0xFF);
         }
+
         var map = new ResponseMap()
             .On($"/large/{kb}", _ => new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -325,6 +331,7 @@ public sealed class IntegrationSpec : AcceptanceTestBase
         {
             bodyBytes[i] = (byte)(i & 0xFF);
         }
+
         var map = new ResponseMap()
             .On("/chunked/4", _ => new HttpResponseMessage(HttpStatusCode.OK)
             {

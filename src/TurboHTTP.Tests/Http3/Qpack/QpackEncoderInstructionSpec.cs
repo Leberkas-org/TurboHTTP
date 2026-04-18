@@ -3,23 +3,17 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK encoder instruction writer per RFC 9204 §4.3.
-/// Covers Set Dynamic Table Capacity, Insert With Name Reference,
-/// Insert With Literal Name, and Duplicate instructions.
-/// </summary>
 public sealed class QpackEncoderInstructionSpec
 {
     private readonly byte[] _buffer = new byte[1024];
 
     private Span<byte> CreateSpan() => _buffer.AsSpan();
 
-    /// RFC 9204 §4.3.1 — Set Dynamic Table Capacity with small value fits in one byte
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.1")]
-    [InlineData(0, new byte[] { 0x20 })]           // 001_00000 → capacity=0
-    [InlineData(30, new byte[] { 0x3E })]           // 001_11110 → capacity=30
-    [InlineData(31, new byte[] { 0x3F, 0x00 })]    // 001_11111 + 0x00 → capacity=31
+    [InlineData(0, new byte[] { 0x20 })] // 001_00000 → capacity=0
+    [InlineData(30, new byte[] { 0x3E })] // 001_11110 → capacity=30
+    [InlineData(31, new byte[] { 0x3F, 0x00 })] // 001_11111 + 0x00 → capacity=31
     [InlineData(4096, new byte[] { 0x3F, 0xE1, 0x1F })] // 001_11111 + multi-byte
     public void Should_EncodeSetDynamicTableCapacity(int capacity, byte[] expected)
     {
@@ -29,12 +23,12 @@ public sealed class QpackEncoderInstructionSpec
         Assert.Equal(expected, _buffer[..written]);
     }
 
-    /// RFC 9204 §4.3.1 — Negative capacity rejected
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.1")]
     public void Should_ThrowForNegativeCapacity()
     {
         Assert.Throws<ArgumentOutOfRangeException>(ThrowHelper);
+        return;
 
         static void ThrowHelper()
         {
@@ -43,8 +37,6 @@ public sealed class QpackEncoderInstructionSpec
         }
     }
 
-
-    /// RFC 9204 §4.3.2 — Insert with static table name reference
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.2")]
     public void Should_EncodeInsertWithNameReference_Static()
@@ -67,7 +59,6 @@ public sealed class QpackEncoderInstructionSpec
         Assert.Equal(written, pos);
     }
 
-    /// RFC 9204 §4.3.2 — Insert with dynamic table name reference
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.2")]
     public void Should_EncodeInsertWithNameReference_Dynamic()
@@ -88,12 +79,12 @@ public sealed class QpackEncoderInstructionSpec
         Assert.Equal("bar", Encoding.UTF8.GetString(valueBytes));
     }
 
-    /// RFC 9204 §4.3.2 — Negative name index rejected
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.2")]
     public void Should_ThrowForNegativeNameIndex()
     {
         Assert.Throws<ArgumentOutOfRangeException>(ThrowHelper);
+        return;
 
         static void ThrowHelper()
         {
@@ -102,8 +93,6 @@ public sealed class QpackEncoderInstructionSpec
         }
     }
 
-
-    /// RFC 9204 §4.3.3 — Insert with literal name and value
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.3")]
     public void Should_EncodeInsertWithLiteralName()
@@ -128,7 +117,6 @@ public sealed class QpackEncoderInstructionSpec
         Assert.Equal(written, pos);
     }
 
-    /// RFC 9204 §4.3.3 — Insert with empty value
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.3")]
     public void Should_EncodeInsertWithLiteralName_EmptyValue()
@@ -146,14 +134,12 @@ public sealed class QpackEncoderInstructionSpec
         Assert.Empty(valueBytes);
     }
 
-
-    /// RFC 9204 §4.3.4 — Duplicate instruction
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.4")]
-    [InlineData(0, new byte[] { 0x00 })]           // 000_00000 → index=0
-    [InlineData(7, new byte[] { 0x07 })]            // 000_00111 → index=7
-    [InlineData(31, new byte[] { 0x1F, 0x00 })]    // 000_11111 + 0x00 → index=31
-    [InlineData(100, new byte[] { 0x1F, 0x45 })]   // 000_11111 + 69
+    [InlineData(0, new byte[] { 0x00 })] // 000_00000 → index=0
+    [InlineData(7, new byte[] { 0x07 })] // 000_00111 → index=7
+    [InlineData(31, new byte[] { 0x1F, 0x00 })] // 000_11111 + 0x00 → index=31
+    [InlineData(100, new byte[] { 0x1F, 0x45 })] // 000_11111 + 69
     public void Should_EncodeDuplicate(int index, byte[] expected)
     {
         var span = CreateSpan();
@@ -162,12 +148,12 @@ public sealed class QpackEncoderInstructionSpec
         Assert.Equal(expected, _buffer[..written]);
     }
 
-    /// RFC 9204 §4.3.4 — Negative duplicate index rejected
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.4")]
     public void Should_ThrowForNegativeDuplicateIndex()
     {
         Assert.Throws<ArgumentOutOfRangeException>(ThrowHelper);
+        return;
 
         static void ThrowHelper()
         {

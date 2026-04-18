@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Chunking;
 
-/// <summary>
-/// Tests chunk-extension parsing per RFC 9112 §7.1.1.
-/// Verifies that chunk-ext tokens are ignored and do not interfere with body decoding.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §7.1.1: chunk-ext = *( ";" chunk-ext-name [ "=" chunk-ext-val ] ) — MUST be ignored.
-/// </remarks>
 public sealed class Http11DecoderChunkExtensionSpec
 {
     private readonly Decoder _decoder = new();
@@ -68,7 +60,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal("", await responses[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_preserve_trailer_fields_when_no_extension_and_trailer_present()
     {
@@ -276,7 +268,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal("Hello", await responses[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_bws_with_no_name_following()
     {
@@ -287,7 +279,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_double_semicolon()
     {
@@ -298,7 +290,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_unclosed_quote()
     {
@@ -309,7 +301,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_empty_token_value()
     {
@@ -321,7 +313,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_name_starts_with_equals()
     {
@@ -332,7 +324,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_space_embedded_in_name()
     {
@@ -344,7 +336,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_at_sign_in_token_value()
     {
@@ -355,7 +347,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_trailing_invalid_char_after_value()
     {
@@ -367,7 +359,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_at_sign_in_name()
     {
@@ -378,7 +370,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_slash_in_name()
     {
@@ -389,7 +381,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_left_bracket_in_name()
     {
@@ -400,7 +392,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_trailing_text_with_no_equals_or_semicolon()
     {
@@ -412,7 +404,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_nul_byte_in_name()
     {
@@ -422,7 +414,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         sb.Append("Transfer-Encoding: chunked\r\n");
         sb.Append("\r\n");
         var prefix = Encoding.ASCII.GetBytes(sb.ToString());
-        var chunkLine = new byte[] { (byte)'5', (byte)';', (byte)'n', 0, (byte)'m', (byte)'\r', (byte)'\n' };
+        var chunkLine = "5;n\0m\r\n"u8.ToArray();
         var chunkData = "Hello\r\n0\r\n\r\n"u8.ToArray();
         var raw = new byte[prefix.Length + chunkLine.Length + chunkData.Length];
         prefix.CopyTo(raw, 0);
@@ -433,7 +425,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_second_extension_has_invalid_name()
     {
@@ -445,7 +437,7 @@ public sealed class Http11DecoderChunkExtensionSpec
         Assert.Equal(HttpDecoderError.InvalidChunkExtension, ex.DecodeError);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-7")]
     public void Http11Decoder_should_throw_invalid_chunk_extension_when_second_chunk_has_invalid_extension()
     {

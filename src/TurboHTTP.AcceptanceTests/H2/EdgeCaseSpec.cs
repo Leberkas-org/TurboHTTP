@@ -49,6 +49,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         {
             headers.Add(($"x-custom-{i:D3}", $"value-{i:D3}"));
         }
+
         headers.Add(("content-length", "12"));
 
         var serverFrames = new H2ResponseBuilder()
@@ -69,7 +70,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
             Assert.True(
                 response.Headers.TryGetValues($"X-Custom-{i:D3}", out var values),
                 $"Header X-Custom-{i:D3} missing");
-            Assert.Equal($"value-{i:D3}", string.Join("", values!));
+            Assert.Equal($"value-{i:D3}", string.Join("", values));
         }
     }
 
@@ -106,7 +107,7 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         Assert.Equal(4 * 1024, bytes.Length);
 
         Assert.True(response.Headers.TryGetValues("X-Large-00", out var headerValues));
-        Assert.Equal(90, string.Join("", headerValues!).Length);
+        Assert.Equal(90, string.Join("", headerValues).Length);
     }
 
     [Fact(Timeout = 5000)]
@@ -149,7 +150,8 @@ public sealed class EdgeCaseSpec : AcceptanceTestBase
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-length", System.Text.Encoding.UTF8.GetByteCount(path).ToString())], endStream: false)
+            .Headers(1, 200, [("content-length", System.Text.Encoding.UTF8.GetByteCount(path).ToString())],
+                endStream: false)
             .Data(1, path)
             .Build();
 

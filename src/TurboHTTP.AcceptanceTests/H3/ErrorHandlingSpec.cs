@@ -108,7 +108,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Data("delayed")
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -134,8 +135,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -182,7 +183,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Data("test")
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -198,10 +200,12 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
 
         var controlFrames = new H3ResponseBuilder().Settings().Build();
         var responseFrames = new H3ResponseBuilder()
-            .Headers(200, [("x-unknown-foo", "bar"), ("x-unknown-bar", "baz"), ("content-length", "0")], endStream: true)
+            .Headers(200, [("x-unknown-foo", "bar"), ("x-unknown-bar", "baz"), ("content-length", "0")],
+                endStream: true)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(response.Headers.TryGetValues("X-Unknown-Foo", out var fooValues));
@@ -222,7 +226,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Headers(statusCode, endStream: true)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
         Assert.Equal(expected, response.StatusCode);
     }
 }

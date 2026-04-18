@@ -3,14 +3,9 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Streams;
 
-/// <summary>
-/// RFC 9114 §4.3.1 — Pseudo-header validation for HTTP/3 requests.
-/// Covers required pseudo-headers, unknown rejection, ordering, duplicates, and encoder output.
-/// </summary>
 public sealed class PseudoHeaderValidationRequestSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_valid_with_all_pseudo_headers()
     {
@@ -26,7 +21,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         // No exception means pass
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_missing_method_rejected()
     {
@@ -37,13 +32,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":method", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_missing_scheme_rejected()
     {
@@ -54,13 +48,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":scheme", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_missing_authority_rejected()
     {
@@ -71,13 +64,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":scheme", "https"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":authority", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_missing_path_rejected()
     {
@@ -88,13 +80,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":path", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_valid_with_regular_headers_after()
     {
@@ -111,8 +102,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         RequestEncoder.ValidatePseudoHeaders(headers);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_unknown_pseudo_header_status_rejected()
     {
@@ -125,14 +115,13 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":status", "200"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
         Assert.Contains(":status", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_unknown_pseudo_header_protocol_rejected()
     {
@@ -145,13 +134,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":protocol", "websocket"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_unknown_pseudo_header_custom_rejected()
     {
@@ -164,14 +152,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":custom", "value"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":custom", ex.Message);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_pseudo_after_regular_rejected()
     {
@@ -184,13 +170,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular header", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_all_pseudo_after_regular_rejected()
     {
@@ -203,13 +188,11 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_duplicate_method_rejected()
     {
@@ -222,13 +205,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_duplicate_path_rejected()
     {
@@ -241,13 +223,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_duplicate_scheme_rejected()
     {
@@ -260,13 +241,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Request_duplicate_authority_rejected()
     {
@@ -279,14 +259,12 @@ public sealed class PseudoHeaderValidationRequestSpec
             (":authority", "other.com"),
         };
 
-        var ex = Assert.Throws<Http3Exception>(
-            () => RequestEncoder.ValidatePseudoHeaders(headers));
+        var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
         Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Encoder_generates_valid_pseudo_headers_for_get()
     {
@@ -304,7 +282,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "example.com" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Encoder_generates_valid_pseudo_headers_for_post()
     {
@@ -322,7 +300,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "api.example.com:8443" });
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void Encoder_pseudo_headers_before_regular()
     {

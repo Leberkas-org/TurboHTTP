@@ -48,9 +48,14 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
                 if (!connectResponseConsumed)
                 {
                     connectResponseConsumed = true;
-                    if (item is NetworkBuffer nb) { nb.Dispose(); }
+                    if (item is NetworkBuffer nb)
+                    {
+                        nb.Dispose();
+                    }
+
                     return false;
                 }
+
                 return true;
             });
 
@@ -88,7 +93,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_tunnel_https_request_via_connect()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/hello")
@@ -106,7 +110,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_send_proxy_authorization_when_credentials_set()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/hello")
@@ -122,7 +125,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_send_default_proxy_credentials_when_set()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/hello")
@@ -138,7 +140,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_bypass_when_use_proxy_is_false()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/hello")
@@ -153,7 +154,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_bypass_when_proxy_is_null()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/hello")
@@ -168,7 +168,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Proxy_should_work_with_preauthenticate_through_tunnel()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/auth")

@@ -2,13 +2,6 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK decoder instruction feedback per RFC 9204 §4.4.
-/// Verifies that <see cref="QpackEncoder.ApplyDecoderInstruction"/> correctly
-/// updates the encoder's Known Received Count and pending section tracking
-/// in response to Section Acknowledgment, Insert Count Increment, and
-/// Stream Cancellation instructions.
-/// </summary>
 public sealed class QpackDecoderFeedbackSpec
 {
     [Fact(Timeout = 5000)]

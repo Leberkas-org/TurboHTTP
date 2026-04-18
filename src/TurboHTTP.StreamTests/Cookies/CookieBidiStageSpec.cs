@@ -82,8 +82,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         return response;
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_pass_through_request_when_cookie_jar_is_null()
     {
         var stage = new CookieBidiStage(null);
@@ -95,8 +95,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_inject_cookie_when_matching_cookie_in_jar()
     {
         var jar = JarWithCookie("session", "abc123", "example.com");
@@ -111,8 +111,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.Contains("session=abc123", cookieValue);
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_not_add_cookie_header_when_jar_is_empty()
     {
         var jar = new CookieJar();
@@ -125,8 +125,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_not_add_cookie_header_when_domain_does_not_match()
     {
         var jar = JarWithCookie("session", "abc123", "other.com");
@@ -139,8 +139,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_pass_through_request_when_request_uri_is_null()
     {
         var jar = JarWithCookie("session", "abc123", "example.com");
@@ -153,8 +153,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.False(result.Headers.Contains("Cookie"));
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_inject_cookies_independently_for_multiple_requests()
     {
         var jar = JarWithCookie("token", "xyz", "example.com");
@@ -173,8 +173,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         }
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieBidiStage_should_pass_through_response_when_cookie_jar_is_null()
     {
         var stage = new CookieBidiStage(null);
@@ -186,8 +186,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.Same(response, results[0]);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieBidiStage_should_store_cookie_when_set_cookie_header_present()
     {
         var jar = new CookieJar();
@@ -203,8 +203,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.Contains("session=abc123", cookieValue);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieBidiStage_should_not_modify_response()
     {
         var jar = new CookieJar();
@@ -219,8 +219,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.Equal(originalStatusCode, result.StatusCode);
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieBidiStage_should_keep_jar_empty_when_no_set_cookie_header()
     {
         var jar = new CookieJar();
@@ -234,8 +234,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.False(nextRequest.Headers.Contains("Cookie"));
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieBidiStage_should_pass_through_response_when_request_message_is_null()
     {
         var jar = new CookieJar();
@@ -250,8 +250,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.False(nextRequest.Headers.Contains("Cookie"));
     }
 
-    [Trait("RFC", "RFC6265-5.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.3")]
     public async Task CookieBidiStage_should_accumulate_cookies_for_multiple_responses()
     {
         var jar = new CookieJar();
@@ -269,8 +269,8 @@ public sealed class CookieBidiStageSpec : StreamTestBase
         Assert.Contains("b=2", cookieValue);
     }
 
-    [Trait("RFC", "RFC6265-5.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC6265-5.4")]
     public async Task CookieBidiStage_should_inject_cookie_stored_from_previous_response()
     {
         var jar = new CookieJar();

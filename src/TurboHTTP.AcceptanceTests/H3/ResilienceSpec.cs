@@ -27,8 +27,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -48,7 +48,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
                 .Data("pong")
                 .Build();
 
-            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                responseFrames);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
@@ -71,7 +72,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Data((ReadOnlyMemory<byte>)largeBody)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
@@ -95,7 +97,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
                 .Data("pong")
                 .Build();
 
-            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                responseFrames);
             return response;
         }).ToArray();
 
@@ -119,7 +122,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Data("Hello World")
             .Build();
 
-        var (response1, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request1, controlFrames, responseFrames);
+        var (response1, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request1, controlFrames, responseFrames);
         Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
 
         var request2 = new HttpRequestMessage(HttpMethod.Get, "http://localhost/hello")
@@ -127,7 +131,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             Version = HttpVersion.Version30
         };
 
-        var (response2, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request2, controlFrames, responseFrames);
+        var (response2, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request2, controlFrames, responseFrames);
         Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
         var body2 = await response2.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Hello World", body2);
@@ -150,7 +155,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
                 .Data("Hello World")
                 .Build();
 
-            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+            var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames,
+                responseFrames);
             return response;
         }).ToArray();
 
@@ -180,7 +186,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Data(body)
             .Build();
 
-        var (response, _) = await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
+        var (response, _) =
+            await SendH3EngineAsync(CreateHttp30Engine().CreateFlow(), request, controlFrames, responseFrames);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var responseBody = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);

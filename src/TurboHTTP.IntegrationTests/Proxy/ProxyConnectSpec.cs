@@ -3,11 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Proxy;
 
-/// <summary>
-/// Integration tests for HTTP CONNECT tunnel proxy support.
-/// Verifies that UseProxy, Proxy, and DefaultProxyCredentials work correctly
-/// when TurboHTTP routes HTTPS requests through an HTTP proxy via CONNECT.
-/// </summary>
 [Collection("Proxy")]
 [Obsolete("Replaced by StreamTests.Acceptance.Proxy.ProxyConnectSpec")]
 public sealed class ProxyConnectSpec : IAsyncLifetime

@@ -4,11 +4,6 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for request compression and <see cref="CompressionPolicy"/>.
-/// RFC 9110 §8.4 — A sender that applied content encoding MUST generate a Content-Encoding
-/// header field listing the applied encodings.
-/// </summary>
 public sealed class RequestCompressionSpec
 {
     private static byte[] MakeBody(int size)
@@ -46,7 +41,7 @@ public sealed class RequestCompressionSpec
         return output.ToArray();
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_Compress_When_GzipPolicy()
     {
@@ -57,7 +52,7 @@ public sealed class RequestCompressionSpec
         Assert.False(body.AsSpan().SequenceEqual(buf));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_SetHeader_When_Compressed()
     {
@@ -73,7 +68,7 @@ public sealed class RequestCompressionSpec
         Assert.Equal(buf.Length, content.Headers.ContentLength);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_NotCompress_When_BelowThreshold()
     {
@@ -87,7 +82,7 @@ public sealed class RequestCompressionSpec
         Assert.True(bodySize < policy.MinBodySizeBytes);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     [InlineData("gzip")]
     [InlineData("deflate")]
@@ -104,7 +99,7 @@ public sealed class RequestCompressionSpec
         Assert.Equal(original, result);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_ReturnEmpty_When_EmptyBody()
     {
@@ -112,7 +107,7 @@ public sealed class RequestCompressionSpec
         Assert.Empty(buf);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_Throw_When_UnknownEncoding()
     {
@@ -120,7 +115,7 @@ public sealed class RequestCompressionSpec
         Assert.Throws<HttpDecoderException>(() => Compress(body, "unknown"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_HaveDefaults_When_DefaultPolicy()
     {
@@ -130,7 +125,7 @@ public sealed class RequestCompressionSpec
         Assert.Equal("gzip", policy.Encoding);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_UpdateContentLength_When_Compressed()
     {
@@ -145,7 +140,7 @@ public sealed class RequestCompressionSpec
         Assert.Equal(buf.Length, content.Headers.ContentLength);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-8.4")]
     public void Should_PassThrough_When_NoBody()
     {

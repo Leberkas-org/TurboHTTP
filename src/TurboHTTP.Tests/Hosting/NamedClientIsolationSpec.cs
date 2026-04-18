@@ -6,15 +6,11 @@ namespace TurboHTTP.Tests.Hosting;
 
 public sealed class NamedClientIsolationSpec
 {
-    // Helpers
-
     private static TurboClientDescriptor GetDescriptor(IServiceCollection services, string name)
     {
         var sp = services.BuildServiceProvider();
         return sp.GetRequiredService<IOptionsMonitor<TurboClientDescriptor>>().Get(name);
     }
-
-    // Distinct descriptor instances per named client
 
     [Fact(Timeout = 5000)]
     public void NamedClientIsolation_should_have_independent_descriptor_instances()
@@ -31,8 +27,6 @@ public sealed class NamedClientIsolationSpec
 
         Assert.NotSame(descriptorA, descriptorB);
     }
-
-    // Cookie jar isolation — separate CookieJar per named client
 
     [Fact(Timeout = 5000)]
     public void NamedClientIsolation_should_have_separate_jar_instances()
@@ -66,8 +60,6 @@ public sealed class NamedClientIsolationSpec
         Assert.False(descriptorB.EnableCookies);
         Assert.Null(descriptorB.CustomCookieJar);
     }
-
-    // Mixed configuration — client with cookies, client without
 
     [Fact(Timeout = 5000)]
     public void NamedClientIsolation_should_be_independent_when_mixed_configuration()

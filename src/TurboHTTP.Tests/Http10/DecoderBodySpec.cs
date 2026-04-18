@@ -5,14 +5,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 response body handling per RFC 1945 �7.
-/// Verifies that the entity body is read until connection close (EOF).
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 �7: Entity body delimited by connection close in HTTP/1.0.
-/// </remarks>
 public sealed class Http10DecoderBodySpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -41,7 +33,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_readbodycorrectly()
+    public async Task Http10DecoderBodySpec_should_read_body_correctly()
     {
         var decoder = new Decoder();
         const string body = "Hello, World!";
@@ -56,7 +48,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_readexactbytes()
+    public async Task Http10DecoderBodySpec_should_read_exact_bytes()
     {
         var decoder = new Decoder();
         const string body = "ABCDE";
@@ -71,7 +63,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_returnemptybody()
+    public void Http10DecoderBodySpec_should_return_empty_body()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -83,7 +75,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_readuntilendofdata()
+    public async Task Http10DecoderBodySpec_should_read_until_end_of_data()
     {
         var decoder = new Decoder();
         const string body = "body without content-length";
@@ -97,7 +89,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_preservebinarycontent()
+    public async Task Http10DecoderBodySpec_should_preserve_binary_content()
     {
         var bodyBytes = new byte[] { 0x00, 0x01, 0x7F, 0x80, 0xFE, 0xFF };
         var decoder = new Decoder();
@@ -112,7 +104,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_setcontentlengthheader()
+    public void Http10DecoderBodySpec_should_set_content_length_header()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 5", "Hello");
@@ -124,7 +116,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_returnnullcontent()
+    public void Http10DecoderBodySpec_should_return_null_content()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 204 No Content", "Content-Length: 0");
@@ -136,7 +128,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_throwdecoderexception()
+    public void Http10DecoderBodySpec_should_throw_decoder_exception()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: -1");
@@ -147,7 +139,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_throwmultiplecontentlength()
+    public void Http10DecoderBodySpec_should_throw_multiple_content_length()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nContent-Length: 3\r\nContent-Length: 5\r\n\r\nHello";
@@ -158,7 +150,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_acceptidenticalcontentlength()
+    public async Task Http10DecoderBodySpec_should_accept_identical_content_length()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\nContent-Length: 5\r\n\r\nHello";
@@ -172,7 +164,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_haveemptybody()
+    public async Task Http10DecoderBodySpec_should_have_empty_body()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 304 Not Modified", "Content-Length: 100");
@@ -187,7 +179,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_haveemptybody_2()
+    public async Task Http10DecoderBodySpec_should_have_empty_body_2()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 304 Not Modified\r\n\r\n";
@@ -202,7 +194,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_haveemptybody_3()
+    public async Task Http10DecoderBodySpec_should_have_empty_body_3()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 204 No Content\r\n\r\n";
@@ -217,9 +209,9 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_preservenullbytes()
+    public async Task Http10DecoderBodySpec_should_preserve_null_bytes()
     {
-        var bodyBytes = new byte[] { 0x48, 0x00, 0x65, 0x00, 0x6C };
+        var bodyBytes = "H\0e\0l"u8.ToArray();
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK",
             $"Content-Length: {bodyBytes.Length}", bodyBytes);
@@ -232,7 +224,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_decode2mbbody()
+    public async Task Http10DecoderBodySpec_should_decode_2mb_body()
     {
         var bodyBytes = new byte[2 * 1024 * 1024];
         new Random(42).NextBytes(bodyBytes);
@@ -250,7 +242,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_handlecorrectly()
+    public void Http10DecoderBodySpec_should_handle_correctly()
     {
         var decoder = new Decoder();
         var longValue = new string('A', 8000);
@@ -265,7 +257,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_treatchunkedasrawbody()
+    public async Task Http10DecoderBodySpec_should_treat_chunked_as_raw_body()
     {
         var decoder = new Decoder();
         // HTTP/1.0 does not support chunked TE � body should be raw
@@ -282,7 +274,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public async Task Http10DecoderBodySpec_should_readbodyviaeof()
+    public async Task Http10DecoderBodySpec_should_read_body_via_eof()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\r\n\r\nEOF body data";
@@ -296,7 +288,7 @@ public sealed class Http10DecoderBodySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-7")]
-    public void Http10DecoderBodySpec_should_returnfalse()
+    public void Http10DecoderBodySpec_should_return_false()
     {
         var decoder = new Decoder();
 

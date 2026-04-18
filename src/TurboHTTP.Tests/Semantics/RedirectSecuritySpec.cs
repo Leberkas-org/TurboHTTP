@@ -3,15 +3,6 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// RFC 9110 §15.4 — Redirect security tests (RS-001 to RS-016).
-/// Covers HTTPS→HTTP downgrade protection, redirect loop detection,
-/// and max redirect depth enforcement.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="RedirectHandler"/>.
-/// These tests verify FR-5 (HTTPS→HTTP downgrade) and FR-6 (loop/depth).
-/// </remarks>
 public sealed class RedirectSecuritySpec
 {
     [Fact(Timeout = 5000)]
@@ -114,7 +105,8 @@ public sealed class RedirectSecuritySpec
         var ex = Assert.Throws<RedirectException>(() =>
             handler.BuildRedirectRequest(original, response));
 
-        Assert.Contains("RFC 9110 §15.4: Redirect from HTTPS to HTTP is not", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RFC 9110 §15.4: Redirect from HTTPS to HTTP is not", ex.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact(Timeout = 5000)]
@@ -287,7 +279,6 @@ public sealed class RedirectSecuritySpec
 
         Assert.Equal(RedirectError.MaxRedirectsExceeded, ex.Error);
     }
-
 
     private static HttpResponseMessage BuildRedirect(HttpStatusCode statusCode, string location)
     {

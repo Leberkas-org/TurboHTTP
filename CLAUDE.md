@@ -46,6 +46,10 @@ Single source of truth for all non-code knowledge. **Use Obsidian MCP tools** (`
 - Before architecture decisions → `search_notes("component name")`
 - Before ending a session → write discoveries via `write_note` or `patch_note`
 
+### RFC vault structure
+
+`notes/RFC/RFC{number}/RFC{number}.md` (index) + `sections/` subfolder. Each section file has `rfc_section: "X.Y"` in frontmatter. Sub-sections (X.Y.Z) are `###` headings within the parent section file.
+
 Key vault guides: `Architecture/Guides/10-TEST_CONVENTIONS`, `11-STAGE_PORT_NAMING`, `12-OBSIDIAN_WORKFLOW`
 
 ## Workflow Rules
@@ -90,11 +94,7 @@ Full details: `notes/Architecture/Guides/11-STAGE_PORT_NAMING`
 
 | Agent | When to use |
 |-------|-------------|
-| `akka-stage-builder` | Implement a new Akka.Streams `GraphStage` |
-| `build-guardian` | Run full build + tests; produce RFC-breakdown coverage report |
-| `namespace-refactorer` | Execute namespace reorganisation tasks |
-| `stage-port-validator` | Scan all stages for port naming convention violations |
-| `spec-naming-validator` | Validate Spec naming conventions in new component-based test files |
+| `spec-refactorer` | Refactor test specs: remove non-Protocol RFC traits, validate RFC section refs against Obsidian vault, strip `///` comments outside methods |
 
 ## Agent Guidance: dotnet-skills
 

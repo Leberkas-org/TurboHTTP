@@ -84,8 +84,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Via(flow)
             .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            async () => await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -254,6 +254,7 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
         {
             headers.Add(($"x-custom-{i:D3}", $"value-{i:D3}"));
         }
+
         headers.Add(("content-length", "12"));
 
         var serverFrames = new H2ResponseBuilder()

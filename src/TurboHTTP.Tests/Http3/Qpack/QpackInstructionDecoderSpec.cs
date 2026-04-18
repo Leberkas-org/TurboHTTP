@@ -2,17 +2,12 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK instruction stream parser per RFC 9204 §4.3 and §4.4.
-/// Covers encoder instructions, decoder instructions, and partial data handling.
-/// </summary>
 public sealed class QpackInstructionDecoderSpec
 {
     private readonly QpackInstructionDecoder _decoder = new();
     private readonly byte[] _buffer = new byte[1024];
 
     private Span<byte> CreateSpan() => _buffer.AsSpan();
-
 
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.1")]
@@ -31,7 +26,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal(EncoderInstructionType.SetDynamicTableCapacity, instruction.Type);
         Assert.Equal(capacity, instruction.IntValue);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.2")]
@@ -67,7 +61,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal("bar", instruction.ValueString);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.3")]
     public void Should_DecodeInsertWithLiteralName()
@@ -83,7 +76,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal("x-custom", instruction.NameString);
         Assert.Equal("hello", instruction.ValueString);
     }
-
 
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3.4")]
@@ -103,7 +95,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal(index, instruction.IntValue);
     }
 
-
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.1")]
     [InlineData(0)]
@@ -121,7 +112,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal(DecoderInstructionType.SectionAcknowledgment, instruction.Type);
         Assert.Equal(streamId, instruction.IntValue);
     }
-
 
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.2")]
@@ -141,7 +131,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal(streamId, instruction.IntValue);
     }
 
-
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.3")]
     [InlineData(1)]
@@ -159,7 +148,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal(DecoderInstructionType.InsertCountIncrement, instruction.Type);
         Assert.Equal(increment, instruction.IntValue);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
@@ -223,7 +211,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.False(_decoder.HasRemainder);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_DecodeMultipleEncoderInstructions()
@@ -267,7 +254,6 @@ public sealed class QpackInstructionDecoderSpec
         Assert.Equal(3, instructions[2].IntValue);
     }
 
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_ClearRemainder_WhenReset()
@@ -280,7 +266,6 @@ public sealed class QpackInstructionDecoderSpec
 
         Assert.False(_decoder.HasRemainder);
     }
-
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]

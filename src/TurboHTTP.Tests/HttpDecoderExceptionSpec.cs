@@ -2,19 +2,8 @@ using TurboHTTP.Protocol;
 
 namespace TurboHTTP.Tests;
 
-/// <summary>
-/// Tests for <see cref="HttpDecoderException"/> error message generation.
-/// Verifies that all 25 error codes produce RFC-referenced messages with proper formatting.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="HttpDecoderException"/>.
-/// RFC 9112: HTTP/1.1 Message Syntax and Routing.
-/// RFC 9110: HTTP Semantics.
-/// </remarks>
 public sealed class HttpDecoderExceptionSpec
 {
-    // Tests for basic exception construction with error code only
-
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_construct_with_error_code_only()
     {
@@ -35,15 +24,13 @@ public sealed class HttpDecoderExceptionSpec
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_construct_with_error_code_and_context()
     {
-        var context = "Received 150 fields; limit is 100";
+        const string context = "Received 150 fields; limit is 100";
         var ex = new HttpDecoderException(HttpDecoderError.TooManyHeaders, context);
 
         Assert.NotNull(ex);
         Assert.Equal(HttpDecoderError.TooManyHeaders, ex.DecodeError);
         Assert.Contains(context, ex.Message);
     }
-
-    // Error code message tests (RFC 9112 Section 4: Status-line)
 
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_NeedMoreData()
@@ -61,8 +48,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("status-line", ex.Message);
     }
-
-    // Error code message tests (RFC 9112 Section 3: Request-line)
 
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_InvalidRequestLine()
@@ -99,8 +84,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("RFC 9112", ex.Message);
         Assert.Contains("HTTP version", ex.Message);
     }
-
-    // Error code message tests (RFC 9112 Section 5: Header fields)
 
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_InvalidHeader()
@@ -147,8 +130,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("line folding", ex.Message);
     }
 
-    // Error code message tests (RFC 9112 Section 6.3: Content-Length and Transfer-Encoding)
-
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_InvalidContentLength()
     {
@@ -178,8 +159,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("Content-Length", ex.Message);
         Assert.Contains("request-smuggling", ex.Message);
     }
-
-    // Error code message tests (RFC 9112 Section 7.1: Chunked transfer encoding)
 
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_InvalidChunkedEncoding()
@@ -226,8 +205,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("trailer", ex.Message);
     }
 
-    // Error code message tests (RFC 9110 Section 7.2: Host header)
-
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_MissingHostHeader()
     {
@@ -246,8 +223,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("Host", ex.Message);
     }
 
-    // Content decompression
-
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_DecompressionFailed()
     {
@@ -255,8 +230,6 @@ public sealed class HttpDecoderExceptionSpec
 
         Assert.Contains("decompression", ex.Message);
     }
-
-    // Security-related error messages
 
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_format_TooManyHeaders()
@@ -283,12 +256,10 @@ public sealed class HttpDecoderExceptionSpec
         Assert.Contains("header", ex.Message);
     }
 
-    // Context appending tests
-
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_append_context_after_default_message()
     {
-        var context = "Expected: HTTP/1.1 200 OK";
+        const string context = "Expected: HTTP/1.1 200 OK";
         var ex = new HttpDecoderException(HttpDecoderError.InvalidStatusLine, context);
 
         Assert.Contains("status-line", ex.Message);
@@ -301,7 +272,7 @@ public sealed class HttpDecoderExceptionSpec
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_preserve_context_with_special_characters()
     {
-        var context = "Line: 'X-Custom: value with \"quotes\" and \\ backslash'";
+        const string context = "Line: 'X-Custom: value with \"quotes\" and \\ backslash'";
         var ex = new HttpDecoderException(HttpDecoderError.InvalidHeader, context);
 
         Assert.Contains(context, ex.Message);
@@ -316,8 +287,6 @@ public sealed class HttpDecoderExceptionSpec
         Assert.EndsWith(" ", ex.Message); // Default message + space + empty context
     }
 
-    // Constructor validation
-
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_inherit_from_TurboProtocolException()
     {
@@ -329,7 +298,7 @@ public sealed class HttpDecoderExceptionSpec
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_set_decode_error_property()
     {
-        var error = HttpDecoderError.InvalidChunkedEncoding;
+        const HttpDecoderError error = HttpDecoderError.InvalidChunkedEncoding;
         var ex = new HttpDecoderException(error);
 
         Assert.Equal(error, ex.DecodeError);
@@ -338,7 +307,7 @@ public sealed class HttpDecoderExceptionSpec
     [Fact(Timeout = 5000)]
     public void HttpDecoderException_should_set_decode_error_property_with_context()
     {
-        var error = HttpDecoderError.LineTooLong;
+        const HttpDecoderError error = HttpDecoderError.LineTooLong;
         var ex = new HttpDecoderException(error, "Line is 8192 bytes");
 
         Assert.Equal(error, ex.DecodeError);
@@ -347,16 +316,16 @@ public sealed class HttpDecoderExceptionSpec
     // Ensure all error codes are handled
 
     [Theory(Timeout = 5000)]
-    [InlineData(0)]  // NeedMoreData
-    [InlineData(1)]  // InvalidStatusLine
-    [InlineData(2)]  // InvalidHeader
-    [InlineData(3)]  // InvalidContentLength
-    [InlineData(4)]  // InvalidChunkedEncoding
-    [InlineData(5)]  // DecompressionFailed
-    [InlineData(6)]  // LineTooLong
-    [InlineData(7)]  // InvalidRequestLine
-    [InlineData(8)]  // InvalidMethodToken
-    [InlineData(9)]  // InvalidRequestTarget
+    [InlineData(0)] // NeedMoreData
+    [InlineData(1)] // InvalidStatusLine
+    [InlineData(2)] // InvalidHeader
+    [InlineData(3)] // InvalidContentLength
+    [InlineData(4)] // InvalidChunkedEncoding
+    [InlineData(5)] // DecompressionFailed
+    [InlineData(6)] // LineTooLong
+    [InlineData(7)] // InvalidRequestLine
+    [InlineData(8)] // InvalidMethodToken
+    [InlineData(9)] // InvalidRequestTarget
     [InlineData(10)] // InvalidHttpVersion
     [InlineData(11)] // MissingHostHeader
     [InlineData(12)] // MultipleHostHeaders
@@ -382,16 +351,16 @@ public sealed class HttpDecoderExceptionSpec
     }
 
     [Theory(Timeout = 5000)]
-    [InlineData(0)]  // NeedMoreData
-    [InlineData(1)]  // InvalidStatusLine
-    [InlineData(2)]  // InvalidHeader
-    [InlineData(3)]  // InvalidContentLength
-    [InlineData(4)]  // InvalidChunkedEncoding
-    [InlineData(5)]  // DecompressionFailed
-    [InlineData(6)]  // LineTooLong
-    [InlineData(7)]  // InvalidRequestLine
-    [InlineData(8)]  // InvalidMethodToken
-    [InlineData(9)]  // InvalidRequestTarget
+    [InlineData(0)] // NeedMoreData
+    [InlineData(1)] // InvalidStatusLine
+    [InlineData(2)] // InvalidHeader
+    [InlineData(3)] // InvalidContentLength
+    [InlineData(4)] // InvalidChunkedEncoding
+    [InlineData(5)] // DecompressionFailed
+    [InlineData(6)] // LineTooLong
+    [InlineData(7)] // InvalidRequestLine
+    [InlineData(8)] // InvalidMethodToken
+    [InlineData(9)] // InvalidRequestTarget
     [InlineData(10)] // InvalidHttpVersion
     [InlineData(11)] // MissingHostHeader
     [InlineData(12)] // MultipleHostHeaders

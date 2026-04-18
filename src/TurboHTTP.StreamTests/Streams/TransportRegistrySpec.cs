@@ -6,10 +6,6 @@ using TurboHTTP.Streams;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Verifies that <see cref="TransportRegistry"/> correctly registers and retrieves
-/// transport factories by HTTP version using a fluent builder pattern.
-/// </summary>
 public sealed class TransportRegistrySpec
 {
     [Fact(Timeout = 5000)]

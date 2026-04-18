@@ -189,7 +189,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
             frameBuffers.Add(combined);
         }
 
-        var endpoints = new[] { "/hello", "/ping", "/h2/settings", "/hello", "/ping", "/h2/settings", "/hello", "/ping" };
+        var endpoints = new[]
+            { "/hello", "/ping", "/h2/settings", "/hello", "/ping", "/h2/settings", "/hello", "/ping" };
         var requests = endpoints
             .Select(path => new HttpRequestMessage(HttpMethod.Get, $"http://localhost{path}")
             {

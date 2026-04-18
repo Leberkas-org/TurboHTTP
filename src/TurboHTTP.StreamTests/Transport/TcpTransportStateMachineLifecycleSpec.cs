@@ -58,7 +58,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_LeaseAcquired_during_reconnect_should_push_connected_signal()
     {
         var (sm, ops) = CreateStateMachine();
@@ -73,7 +72,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_LeaseAcquired_duplicate_should_skip()
     {
         var (sm, ops) = CreateStateMachine();
@@ -88,7 +86,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandlePush_NetworkBuffer_with_handle_should_write_immediately()
     {
         var (sm, ops) = CreateStateMachine();
@@ -102,7 +99,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void OnTimer_connect_timeout_without_pending_connect_should_be_ignored()
     {
         var (sm, ops) = CreateStateMachine();
@@ -114,7 +110,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleConnectionReuseItem_canReuse_true_with_multiple_pending_should_decrement_and_pull()
     {
         var (sm, ops) = CreateStateMachine();
@@ -132,7 +127,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleConnectionReuseItem_canReuse_true_with_single_pending_should_mark_idle()
     {
         var (sm, ops) = CreateStateMachine();
@@ -149,7 +143,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleConnectionReuseItem_canReuse_true_with_upstream_finished_should_complete()
     {
         var (sm, ops) = CreateStateMachine();
@@ -167,7 +160,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void HandleConnectionReuseItem_canReuse_false_with_upstream_finished_should_complete()
     {
         var (sm, ops) = CreateStateMachine();
@@ -185,7 +177,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void AutoConnect_with_different_endpoint_should_trigger_acquire()
     {
         var (sm, ops) = CreateStateMachine();
@@ -198,7 +189,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void ReconnectItem_should_teardown_and_acquire()
     {
         var (sm, ops) = CreateStateMachine();
@@ -213,7 +203,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_InboundComplete_should_mark_no_reuse_on_lease()
     {
         var (sm, ops) = CreateStateMachine();
@@ -227,7 +216,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9112")]
     public void Dispatch_OutboundWriteFailed_should_mark_no_reuse()
     {
         var (sm, _) = CreateStateMachine();

@@ -2,14 +2,8 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-// QUIC APIs are platform-guarded; usage is gated at runtime via QuicOptions.
 #pragma warning disable CA1416
 
-/// <summary>
-/// Tests <see cref="QuicClientProvider"/> initialization, retry logic, and cleanup.
-/// Note: Actual QUIC connections are not tested here (requires network/platform support);
-/// focus is on construction, disposal, and thread-safety.
-/// </summary>
 public sealed class QuicClientProviderSpec
 {
     [Fact(Timeout = 5000)]

@@ -18,6 +18,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         {
             payload[i] = (byte)('A' + i % 26);
         }
+
         return payload;
     }
 
@@ -42,6 +43,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         {
             gzip.Write(data, 0, data.Length);
         }
+
         return output.ToArray();
     }
 
@@ -207,7 +209,8 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         var getServerFrames = new H2ResponseBuilder()
             .Settings()
             .SettingsAck()
-            .Headers(1, 200, [("content-encoding", "gzip"), ("content-length", compressed.Length.ToString())], endStream: false)
+            .Headers(1, 200, [("content-encoding", "gzip"), ("content-length", compressed.Length.ToString())],
+                endStream: false)
             .Data(1, (ReadOnlyMemory<byte>)compressed)
             .Build();
 

@@ -174,8 +174,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         return response;
     }
 
-    [Trait("RFC", "RFC9111-4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4")]
     public async Task CacheBidiStage_should_pass_through_request_when_store_is_null()
     {
         var stage = new CacheBidiStage(null);
@@ -187,8 +187,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Same(request, result);
     }
 
-    [Trait("RFC", "RFC9111-4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4")]
     public async Task CacheBidiStage_should_forward_request_when_cache_miss()
     {
         var store = new CacheStore();
@@ -201,8 +201,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Same(request, result);
     }
 
-    [Trait("RFC", "RFC9111-4.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.3")]
     public async Task CacheBidiStage_should_build_conditional_request_when_must_revalidate_with_etag()
     {
         var store = StoreWithStaleEntry(etag: "\"abc123\"");
@@ -217,8 +217,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Contains("\"abc123\"", inmValue);
     }
 
-    [Trait("RFC", "RFC9111-4.3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.3")]
     public async Task CacheBidiStage_should_build_conditional_request_with_if_modified_since()
     {
         var lm = DateTimeOffset.UtcNow.AddHours(-1);
@@ -232,8 +232,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.True(result.Headers.IfModifiedSince.HasValue);
     }
 
-    [Trait("RFC", "RFC9111-4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4")]
     public async Task CacheBidiStage_should_evaluate_each_request_independently()
     {
         var store = new CacheStore();
@@ -251,8 +251,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Same(req2, result2);
     }
 
-    [Trait("RFC", "RFC9111-4.2")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.2")]
     public async Task CacheBidiStage_should_short_circuit_when_cache_hit_fresh()
     {
         var store = StoreWithFreshEntry(body: "fresh data");
@@ -265,8 +265,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Empty(forwardedRequests);
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_pass_through_response_when_store_is_null()
     {
         var stage = new CacheBidiStage(null);
@@ -278,8 +278,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Same(response, result);
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_pass_through_response_when_request_message_is_null()
     {
         var store = new CacheStore();
@@ -292,8 +292,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Same(response, result);
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_store_response_when_cacheable_200()
     {
         var store = new CacheStore();
@@ -311,8 +311,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.NotNull(entry);
     }
 
-    [Trait("RFC", "RFC9111-4.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.4")]
     public async Task CacheBidiStage_should_invalidate_cache_when_unsafe_method_post()
     {
         var store = StoreWithFreshEntry();
@@ -332,8 +332,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Null(store.Get(lookupAfter));
     }
 
-    [Trait("RFC", "RFC9111-4.3.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.3.4")]
     public async Task CacheBidiStage_should_merge_304_with_cached_entry()
     {
         var store = StoreWithFreshEntry(body: "original body", etag: "\"v1\"");
@@ -351,8 +351,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Equal("original body", Encoding.UTF8.GetString(body));
     }
 
-    [Trait("RFC", "RFC9111-4.3.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.3.4")]
     public async Task CacheBidiStage_should_pass_through_304_when_no_cached_entry()
     {
         var store = new CacheStore();
@@ -367,8 +367,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Equal(HttpStatusCode.NotModified, result.StatusCode);
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_not_store_non_cacheable_status()
     {
         var store = new CacheStore();
@@ -384,8 +384,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Null(store.Get(lookup));
     }
 
-    [Trait("RFC", "RFC9111-4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4")]
     public async Task CacheBidiStage_should_cache_and_serve_from_cache_on_second_request()
     {
         var store = new CacheStore();
@@ -413,8 +413,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.NotNull(store.Get(lookup));
     }
 
-    [Trait("RFC", "RFC9111-4.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.4")]
     public async Task CacheBidiStage_should_invalidate_on_put()
     {
         var store = StoreWithFreshEntry();
@@ -431,8 +431,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Null(store.Get(lookup));
     }
 
-    [Trait("RFC", "RFC9111-4.4")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-4.4")]
     public async Task CacheBidiStage_should_invalidate_on_delete()
     {
         var store = StoreWithFreshEntry();
@@ -448,8 +448,8 @@ public sealed class CacheBidiStageSpec : StreamTestBase
         Assert.Null(store.Get(lookup));
     }
 
-    [Trait("RFC", "RFC9111-3")]
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9111-3")]
     public async Task CacheBidiStage_should_not_store_when_no_store_directive()
     {
         var store = new CacheStore();

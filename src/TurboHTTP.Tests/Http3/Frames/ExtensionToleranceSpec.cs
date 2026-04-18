@@ -2,28 +2,21 @@
 
 namespace TurboHTTP.Tests.Http3.Frames;
 
-/// <summary>
-/// Extension tolerance tests per RFC 9114 §9.
-/// Implementations MUST ignore unknown frame types and unknown settings
-/// to allow future extensions without breaking existing deployments.
-/// Reserved GREASE identifiers (0x1f * N + 0x21) exercise this requirement.
-/// </summary>
 public sealed class ExtensionToleranceSpec
 {
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
-    [InlineData(0x02)]  // HTTP/2 PRIORITY — reserved, no HTTP/3 equivalent
-    [InlineData(0x07)]  // HTTP/2 GOAWAY — not a frame type in HTTP/3 (0x07 is settings ID only)
-    [InlineData(0x08)]  // HTTP/2 WINDOW_UPDATE — reserved, no HTTP/3 equivalent
-    [InlineData(0x09)]  // HTTP/2 CONTINUATION — reserved, no HTTP/3 equivalent
-    [InlineData(0x0E)]  // Unassigned
-    [InlineData(0x10)]  // Unassigned
-    [InlineData(0xFF)]  // Arbitrary unknown
+    [InlineData(0x02)] // HTTP/2 PRIORITY — reserved, no HTTP/3 equivalent
+    [InlineData(0x07)] // HTTP/2 GOAWAY — not a frame type in HTTP/3 (0x07 is settings ID only)
+    [InlineData(0x08)] // HTTP/2 WINDOW_UPDATE — reserved, no HTTP/3 equivalent
+    [InlineData(0x09)] // HTTP/2 CONTINUATION — reserved, no HTTP/3 equivalent
+    [InlineData(0x0E)] // Unassigned
+    [InlineData(0x10)] // Unassigned
+    [InlineData(0xFF)] // Arbitrary unknown
     [InlineData(0x1234)] // Large unknown type (multi-byte varint)
     public void FrameDecoder_should_ignore_unknown_frame_types(long unknownType)
     {
-        var payload = new byte[] { 0xDE, 0xAD };
+        var payload = "\u07ad"u8.ToArray();
         var buf = new byte[32];
         var offset = 0;
         offset += QuicVarInt.Encode(unknownType, buf.AsSpan(offset));
@@ -39,14 +32,14 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(offset, consumed);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
-    [InlineData(0)]     // 0x1f*0+0x21 = 0x21
-    [InlineData(1)]     // 0x1f*1+0x21 = 0x40
-    [InlineData(2)]     // 0x1f*2+0x21 = 0x5f
-    [InlineData(10)]    // 0x1f*10+0x21 = 0x155
-    [InlineData(100)]   // 0x1f*100+0x21 = 0xC55
-    [InlineData(1000)]  // 0x1f*1000+0x21 = 0x7A39
+    [InlineData(0)] // 0x1f*0+0x21 = 0x21
+    [InlineData(1)] // 0x1f*1+0x21 = 0x40
+    [InlineData(2)] // 0x1f*2+0x21 = 0x5f
+    [InlineData(10)] // 0x1f*10+0x21 = 0x155
+    [InlineData(100)] // 0x1f*100+0x21 = 0xC55
+    [InlineData(1000)] // 0x1f*1000+0x21 = 0x7A39
     public void FrameDecoder_should_ignore_grease_frame_types(int n)
     {
         var greaseType = 0x1fL * n + 0x21;
@@ -66,14 +59,14 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(offset, consumed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void FrameDecoder_should_ignore_unknown_frame_type_with_zero_payload()
     {
         var buf = new byte[16];
         var offset = 0;
         offset += QuicVarInt.Encode(0xABCD, buf.AsSpan(offset)); // Unknown type
-        offset += QuicVarInt.Encode(0, buf.AsSpan(offset));       // Zero-length payload
+        offset += QuicVarInt.Encode(0, buf.AsSpan(offset)); // Zero-length payload
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(buf.AsSpan(0, offset), out var frame, out var consumed);
@@ -83,7 +76,7 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(offset, consumed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void FrameDecoder_should_filter_unknown_frames_in_decodeall()
     {
@@ -109,7 +102,7 @@ public sealed class ExtensionToleranceSpec
         pos += uOffset;
 
         span = wire.AsSpan(pos);
-        pos += goaway.WriteTo(ref span);
+        goaway.WriteTo(ref span);
 
         var decoder = new FrameDecoder();
         var frames = decoder.DecodeAll(wire, out var consumed);
@@ -120,7 +113,7 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(totalSize, consumed);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void FrameDecoder_should_ignore_multiple_consecutive_unknown_frames()
     {
@@ -131,7 +124,7 @@ public sealed class ExtensionToleranceSpec
         for (var i = 0; i < 3; i++)
         {
             offset += QuicVarInt.Encode(0x1fL * i + 0x21, buf.AsSpan(offset)); // GREASE type
-            offset += QuicVarInt.Encode(1, buf.AsSpan(offset));                  // 1-byte payload
+            offset += QuicVarInt.Encode(1, buf.AsSpan(offset)); // 1-byte payload
             buf[offset++] = (byte)(0x10 + i);
         }
 
@@ -142,14 +135,13 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(offset, consumed);
     }
 
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
-    [InlineData(0x08)]    // Unassigned
-    [InlineData(0x10)]    // Unassigned
-    [InlineData(0x33)]    // Arbitrary unknown
-    [InlineData(0xFF)]    // Arbitrary unknown
-    [InlineData(0x1234)]  // Large unknown ID
+    [InlineData(0x08)] // Unassigned
+    [InlineData(0x10)] // Unassigned
+    [InlineData(0x33)] // Arbitrary unknown
+    [InlineData(0xFF)] // Arbitrary unknown
+    [InlineData(0x1234)] // Large unknown ID
     public void Settings_should_ignore_unknown_setting_ids(long unknownId)
     {
         var settings = new Settings();
@@ -164,12 +156,12 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(42, restored[unknownId]);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
-    [InlineData(0)]     // 0x21
-    [InlineData(1)]     // 0x40
-    [InlineData(5)]     // 0xBA
-    [InlineData(100)]   // 0xC55
+    [InlineData(0)] // 0x21
+    [InlineData(1)] // 0x40
+    [InlineData(5)] // 0xBA
+    [InlineData(100)] // 0xC55
     public void Settings_should_preserve_grease_setting_ids(int n)
     {
         var greaseId = 0x1fL * n + 0x21;
@@ -184,15 +176,15 @@ public sealed class ExtensionToleranceSpec
         Assert.Single(restored.AllParameters);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void Settings_should_allow_mixed_known_and_unknown_settings()
     {
         var settings = new Settings();
         settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 8192);
-        settings.Set(0x21, 0);       // GREASE
+        settings.Set(0x21, 0); // GREASE
         settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, 4096);
-        settings.Set(0xBEEF, 999);   // Unknown extension
+        settings.Set(0xBEEF, 999); // Unknown extension
         settings.Set(Http3SettingsIdentifier.QpackBlockedStreams, 16);
 
         var payload = settings.Serialize();
@@ -206,8 +198,7 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(5, restored.AllParameters.Count);
     }
 
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     [InlineData(0x02)] // SETTINGS_ENABLE_PUSH
     [InlineData(0x03)] // SETTINGS_MAX_CONCURRENT_STREAMS
@@ -220,8 +211,7 @@ public sealed class ExtensionToleranceSpec
         Assert.Throws<Http3Exception>(() => settings.Set(reservedId, 0));
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void FrameDecoder_should_reassemble_partial_unknown_frame()
     {
@@ -250,7 +240,7 @@ public sealed class ExtensionToleranceSpec
         Assert.False(decoder.HasRemainder);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void FrameDecoder_should_decode_known_frame_after_unknown_frame()
     {
@@ -284,7 +274,7 @@ public sealed class ExtensionToleranceSpec
         Assert.Equal(new byte[] { 0xCA, 0xFE }, data.Data.ToArray());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-9")]
     public void FrameDecoder_should_skip_unknown_frame_with_large_payload()
     {

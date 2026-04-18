@@ -1,17 +1,17 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-[Trait("RFC", "RFC9114-7.2")]
 public sealed class Http3StateMachineSpec
 {
-    private readonly TestOps _ops = new();
+    private readonly FakeOps _ops = new();
 
     private StateMachine CreateMachine(
         Http3EngineOptions? options = null,
-        TestOps? ops = null)
+        FakeOps? ops = null)
     {
         return new StateMachine(
             options ?? new Http3Options().ToEngineOptions(),
@@ -124,8 +124,8 @@ public sealed class Http3StateMachineSpec
         var result = sm.ProcessFrame(push);
 
         Assert.Null(result);
-        Assert.Single(_ops.OutboundItems); // serialized CANCEL_PUSH frame
-        Assert.IsType<Http3NetworkBuffer>(_ops.OutboundItems[0]);
+        Assert.Single(_ops.Outbound); // serialized CANCEL_PUSH frame
+        Assert.IsType<Http3NetworkBuffer>(_ops.Outbound[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -147,7 +147,7 @@ public sealed class Http3StateMachineSpec
         var result = sm.ProcessFrame(push);
 
         Assert.Same(push, result); // forwarded to app layer
-        Assert.Empty(_ops.OutboundItems); // no CANCEL_PUSH sent
+        Assert.Empty(_ops.Outbound); // no CANCEL_PUSH sent
     }
 
     [Fact(Timeout = 5000)]
@@ -206,7 +206,7 @@ public sealed class Http3StateMachineSpec
     public void ProcessFrame_should_forward_data_frame_to_app()
     {
         var sm = CreateMachine();
-        var data = new Http3DataFrame(new byte[] { 0x48, 0x65 });
+        var data = new Http3DataFrame("He"u8.ToArray());
 
         var result = sm.ProcessFrame(data);
 
@@ -247,7 +247,7 @@ public sealed class Http3StateMachineSpec
 
         sm.EncodeRequest(CreateGetRequest());
 
-        Assert.NotEmpty(_ops.OutboundItems); // at least HEADERS frame serialized
+        Assert.NotEmpty(_ops.Outbound); // at least HEADERS frame serialized
     }
 
     [Fact(Timeout = 5000)]
@@ -365,12 +365,12 @@ public sealed class Http3StateMachineSpec
     {
         var sm = CreateMachine();
         sm.OnConnectionLost();
-        _ops.OutboundItems.Clear();
+        _ops.Outbound.Clear();
 
         sm.EncodeRequest(CreateGetRequest());
 
         Assert.True(sm.ReconnectBufferCount > 0);
-        Assert.Empty(_ops.OutboundItems); // not emitted during reconnect
+        Assert.Empty(_ops.Outbound); // not emitted during reconnect
     }
 
     [Fact(Timeout = 5000)]
@@ -378,7 +378,7 @@ public sealed class Http3StateMachineSpec
     {
         var sm = CreateMachine();
         sm.OnConnectionLost();
-        _ops.OutboundItems.Clear();
+        _ops.Outbound.Clear();
 
         sm.EncodeRequest(CreateGetRequest());
         var bufferedCount = sm.ReconnectBufferCount;
@@ -388,7 +388,7 @@ public sealed class Http3StateMachineSpec
 
         Assert.False(sm.IsReconnecting);
         Assert.Equal(0, sm.ReconnectBufferCount);
-        Assert.NotEmpty(_ops.OutboundItems); // replayed frames + preface
+        Assert.NotEmpty(_ops.Outbound); // replayed frames + preface
     }
 
     [Fact(Timeout = 5000)]
@@ -463,7 +463,7 @@ public sealed class Http3StateMachineSpec
         sm.AssembleResponse(headers404, streamId: 4);
 
         // Data on stream 0
-        sm.AssembleResponse(new Http3DataFrame(new byte[] { 0x41, 0x42 }), streamId: 0);
+        sm.AssembleResponse(new Http3DataFrame("AB"u8.ToArray()), streamId: 0);
 
         // Flush stream 4 first (out-of-order)
         sm.EncodeRequest(CreateGetRequest("https://example.com/a"));
@@ -563,7 +563,7 @@ public sealed class Http3StateMachineSpec
         sm.EncodeRequest(CreateGetRequest());
 
         // All request frames should be tagged as Http3NetworkBuffer with stream ID 0
-        var tagged = _ops.OutboundItems
+        var tagged = _ops.Outbound
             .OfType<Http3NetworkBuffer>()
             .Where(t => t.StreamType == Http3StreamType.Request)
             .ToList();
@@ -571,7 +571,7 @@ public sealed class Http3StateMachineSpec
         Assert.All(tagged, t => Assert.Equal(0L, t.StreamId));
 
         // End-of-request marker should carry the same stream ID
-        var endItem = _ops.OutboundItems.OfType<Http3EndOfRequestItem>().Single();
+        var endItem = _ops.Outbound.OfType<Http3EndOfRequestItem>().Single();
         Assert.Equal(0L, endItem.StreamId);
     }
 
@@ -584,7 +584,7 @@ public sealed class Http3StateMachineSpec
         sm.EncodeRequest(CreateGetRequest("https://example.com/a"));
         sm.EncodeRequest(CreateGetRequest("https://example.com/b"));
 
-        var endItems = _ops.OutboundItems.OfType<Http3EndOfRequestItem>().ToList();
+        var endItems = _ops.Outbound.OfType<Http3EndOfRequestItem>().ToList();
         Assert.Equal(2, endItems.Count);
         Assert.NotEqual(endItems[0].StreamId, endItems[1].StreamId);
     }
@@ -593,5 +593,4 @@ public sealed class Http3StateMachineSpec
     {
         return new HttpRequestMessage(HttpMethod.Get, url);
     }
-
 }

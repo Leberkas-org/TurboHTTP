@@ -3,10 +3,6 @@ using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Internal;
 
-/// <summary>
-/// Tests <see cref="RequestEndpoint"/> record structure, equality, hashing,
-/// and static factory methods for creating endpoints from HTTP requests.
-/// </summary>
 public sealed class RequestEndpointSpec
 {
     [Fact(Timeout = 5000)]
@@ -355,7 +351,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_hash_code_should_be_consistent_across_calls()
     {
         var endpoint = new RequestEndpoint
@@ -373,7 +368,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_should_support_wss_scheme()
     {
         var endpoint = new RequestEndpoint
@@ -388,7 +382,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_should_support_custom_ports()
     {
         var endpoint = new RequestEndpoint
@@ -403,7 +396,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_should_support_localhost()
     {
         var endpoint = new RequestEndpoint
@@ -418,7 +410,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_should_support_ip_addresses()
     {
         var endpoint = new RequestEndpoint
@@ -433,7 +424,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_should_handle_subdomain_hosts()
     {
         var endpoint = new RequestEndpoint
@@ -448,7 +438,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_equality_should_be_reflexive()
     {
         var endpoint = new RequestEndpoint
@@ -463,7 +452,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_equality_should_be_symmetric()
     {
         var endpoint1 = new RequestEndpoint
@@ -487,7 +475,6 @@ public sealed class RequestEndpointSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "RequestEndpoint")]
     public void RequestEndpoint_equality_should_be_transitive()
     {
         var endpoint1 = new RequestEndpoint

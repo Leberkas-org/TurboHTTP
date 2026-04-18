@@ -5,14 +5,6 @@ using Decoder = TurboHTTP.Protocol.Http10.Decoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 response status-line parsing per RFC 1945 §6.1.
-/// Verifies version, status code, and reason phrase extraction.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http10.Decoder"/>.
-/// RFC 1945 §6.1: Status-Line — HTTP-Version SP Status-Code SP Reason-Phrase CRLF.
-/// </remarks>
 public sealed class Http10DecoderStatusLineSpec
 {
     private static ReadOnlyMemory<byte> Bytes(string s)
@@ -25,18 +17,6 @@ public sealed class Http10DecoderStatusLineSpec
     {
         var raw = $"{statusLine}\r\n{headers}\r\n\r\n{body}";
         return Bytes(raw);
-    }
-
-    private static ReadOnlyMemory<byte> BuildRawResponse(
-        string statusLine,
-        string headers,
-        byte[] body)
-    {
-        var headerPart = Encoding.ASCII.GetBytes($"{statusLine}\r\n{headers}\r\n\r\n");
-        var result = new byte[headerPart.Length + body.Length];
-        headerPart.CopyTo(result, 0);
-        body.CopyTo(result, headerPart.Length);
-        return result;
     }
 
     [Fact(Timeout = 5000)]
@@ -56,7 +36,6 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
     public void Http10DecoderStatusLineSpec_should_parse404notfound()
     {
         var decoder = new Decoder();
@@ -71,8 +50,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_parse500internalservererror()
+    public void Http10DecoderStatusLineSpec_should_parse500_internal_server_error()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 500 Internal Server Error", "Content-Length: 0");
@@ -86,8 +64,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_parse301movedpermanently()
+    public void Http10DecoderStatusLineSpec_should_parse301_moved_permanently()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 301 Moved Permanently",
@@ -101,8 +78,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_preservemultiwordreasonphrase()
+    public void Http10DecoderStatusLineSpec_should_preserve_multi_word_reason_phrase()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 Very Long Reason Phrase Here", "Content-Length: 0");
@@ -114,8 +90,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_setversiontohttp10()
+    public void Http10DecoderStatusLineSpec_should_set_version_to_http10()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 200 OK", "Content-Length: 0");
@@ -127,8 +102,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_throwdecoderexception()
+    public void Http10DecoderStatusLineSpec_should_throw_decoder_exception()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 ABC BadCode", "Content-Length: 0");
@@ -139,7 +113,6 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
     [InlineData(200)]
     [InlineData(201)]
     [InlineData(202)]
@@ -167,8 +140,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_acceptunknownstatuscode()
+    public void Http10DecoderStatusLineSpec_should_accept_unknown_status_code()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 299 Custom", "Content-Length: 0");
@@ -181,8 +153,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_rejectstatuscode()
+    public void Http10DecoderStatusLineSpec_should_reject_status_code()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 99 TooLow", "Content-Length: 0");
@@ -193,8 +164,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_rejectstatuscode_2()
+    public void Http10DecoderStatusLineSpec_should_reject_statu_scode_2()
     {
         var decoder = new Decoder();
         var data = BuildRawResponse("HTTP/1.0 1000 TooHigh", "Content-Length: 0");
@@ -205,8 +175,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_acceptlfonlylineendings()
+    public void Http10DecoderStatusLineSpec_should_accept_lf_only_line_endings()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 OK\nContent-Length: 5\n\nHello";
@@ -219,8 +188,7 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_acceptemptyreasonphrase()
+    public void Http10DecoderStatusLineSpec_should_accept_empty_reason_phrase()
     {
         var decoder = new Decoder();
         const string raw = "HTTP/1.0 200 \r\nContent-Length: 0\r\n\r\n";
@@ -234,10 +202,8 @@ public sealed class Http10DecoderStatusLineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    
-    public void Http10DecoderStatusLineSpec_should_treatashttp09()
+    public void Http10DecoderStatusLineSpec_should_treat_as_http09()
     {
-        // RFC 1945 §3.1: data without HTTP/ prefix is a Simple-Response (HTTP/0.9)
         var decoder = new Decoder();
         var data = Bytes("\r\n\r\n");
 

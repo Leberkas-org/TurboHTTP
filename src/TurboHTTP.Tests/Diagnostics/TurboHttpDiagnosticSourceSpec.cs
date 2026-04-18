@@ -3,7 +3,6 @@ using TurboHTTP.Diagnostics;
 
 namespace TurboHTTP.Tests.Diagnostics;
 
-[Collection("OTEL")]
 public sealed class TurboHttpDiagnosticSourceSpec : IDisposable
 {
     private readonly List<KeyValuePair<string, object?>> _events = [];
@@ -20,13 +19,13 @@ public sealed class TurboHttpDiagnosticSourceSpec : IDisposable
         _subscription.Dispose();
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void ListenerName_should_be_TurboHTTP()
     {
         Assert.Equal("TurboHTTP", TurboHttpDiagnosticSource.ListenerName);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void OnRequestStart_should_emit_event()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -37,7 +36,7 @@ public sealed class TurboHttpDiagnosticSourceSpec : IDisposable
         Assert.NotNull(evt.Value);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void OnRequestStop_should_emit_event()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
@@ -49,7 +48,7 @@ public sealed class TurboHttpDiagnosticSourceSpec : IDisposable
         Assert.NotNull(evt.Value);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     public void OnException_should_emit_event()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");

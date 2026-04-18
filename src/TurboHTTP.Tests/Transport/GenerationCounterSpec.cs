@@ -2,15 +2,6 @@ using System.Threading.Channels;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests for the generation counter + CancellationToken pattern used by
-/// <c>TcpTransportStateMachine</c>.
-/// The actor thread owns <c>_connectionGen</c> (no cross-thread reads).
-/// When a connection is torn down the actor increments the gen and cancels the
-/// pump's <see cref="CancellationTokenSource"/>. The pump (ThreadPool) checks
-/// <c>ct.IsCancellationRequested</c> to detect stale work, and the actor
-/// uses <c>batch.Gen == _connectionGen</c> to discard stale batches.
-/// </summary>
 public sealed class GenerationCounterSpec
 {
     [Fact(Timeout = 5000)]

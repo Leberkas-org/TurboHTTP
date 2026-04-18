@@ -2,44 +2,39 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.Components;
 
-/// <summary>
-/// Unit tests for ConnectionState RFC 9113 flow control, SETTINGS, PING, and GOAWAY handling.
-/// Covers per-connection and per-stream receive window management, WINDOW_UPDATE batching,
-/// and connection state lifecycle.
-/// </summary>
 public sealed class Http2ConnectionStateSpec
 {
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
+    [Trait("RFC", "RFC9113-5.2")]
     public void ConnectionState_should_initialize_with_correct_window_thresholds_when_constructed_with_min_window_size()
     {
-        const int MinSize = 8192;
-        var state = new ConnectionState(MinSize, MinSize);
+        const int minSize = 8192;
+        var state = new ConnectionState(minSize, minSize);
 
-        Assert.Equal(MinSize, state.RecvConnectionWindow);
+        Assert.Equal(minSize, state.RecvConnectionWindow);
         Assert.Equal(65535, state.SendConnectionWindow);
-        Assert.Equal(MinSize, state.InitialRecvStreamWindow);
+        Assert.Equal(minSize, state.InitialRecvStreamWindow);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
+    [Trait("RFC", "RFC9113-5.2")]
     public void ConnectionState_should_clamp_threshold_to_max_when_constructed_with_large_window_size()
     {
-        const int LargeSize = 1_000_000;
-        var state = new ConnectionState(LargeSize, LargeSize);
+        const int largeSize = 1_000_000;
+        var state = new ConnectionState(largeSize, largeSize);
 
-        Assert.Equal(LargeSize, state.RecvConnectionWindow);
+        Assert.Equal(largeSize, state.RecvConnectionWindow);
         Assert.Equal(65535, state.SendConnectionWindow);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
+    [Trait("RFC", "RFC9113-5.2")]
     public void ConnectionState_should_use_quarter_of_window_as_threshold_when_constructed_with_medium_window_size()
     {
-        const int WindowSize = 65536;
-        var state = new ConnectionState(WindowSize, WindowSize);
+        const int windowSize = 65536;
+        var state = new ConnectionState(windowSize, windowSize);
 
-        Assert.Equal(WindowSize, state.RecvConnectionWindow);
+        Assert.Equal(windowSize, state.RecvConnectionWindow);
     }
 
     [Fact(Timeout = 5000)]
@@ -74,14 +69,14 @@ public sealed class Http2ConnectionStateSpec
     public void OnRemoteSettings_should_update_initial_send_window_when_initialwindowsize_parameter_present()
     {
         var state = new ConnectionState(65535, 65535);
-        const int NewWindowSize = 32768;
-        var parameters = new[] { (SettingsParameter.InitialWindowSize, (uint)NewWindowSize) };
+        const int newWindowSize = 32768;
+        var parameters = new[] { (SettingsParameter.InitialWindowSize, (uint)newWindowSize) };
         var frame = new SettingsFrame(parameters, isAck: false);
 
         var result = state.OnRemoteSettings(frame);
 
-        Assert.Equal(NewWindowSize, state.InitialSendStreamWindow);
-        Assert.Equal(NewWindowSize, result.InitialWindowSizeChange);
+        Assert.Equal(newWindowSize, state.InitialSendStreamWindow);
+        Assert.Equal(newWindowSize, result.InitialWindowSizeChange);
         Assert.NotNull(result.AckFrame);
     }
 
@@ -90,13 +85,13 @@ public sealed class Http2ConnectionStateSpec
     public void OnRemoteSettings_should_report_maxconcurrentstreams_change_when_parameter_present()
     {
         var state = new ConnectionState(65535, 65535);
-        const int MaxStreams = 100;
-        var parameters = new[] { (SettingsParameter.MaxConcurrentStreams, (uint)MaxStreams) };
+        const int maxStreams = 100;
+        var parameters = new[] { (SettingsParameter.MaxConcurrentStreams, (uint)maxStreams) };
         var frame = new SettingsFrame(parameters, isAck: false);
 
         var result = state.OnRemoteSettings(frame);
 
-        Assert.Equal(MaxStreams, result.MaxConcurrentStreamsChange);
+        Assert.Equal(maxStreams, result.MaxConcurrentStreamsChange);
         Assert.NotNull(result.AckFrame);
     }
 
@@ -139,12 +134,12 @@ public sealed class Http2ConnectionStateSpec
     public void OnInboundData_should_return_success_when_data_below_threshold()
     {
         var state = new ConnectionState(65535, 65535);
-        const int SmallDataLength = 100;
+        const int smallDataLength = 100;
 
-        var result = state.OnInboundData(streamId: 1, dataLength: SmallDataLength);
+        var result = state.OnInboundData(streamId: 1, dataLength: smallDataLength);
 
         Assert.True(result.Success);
-        Assert.Equal(65535 - SmallDataLength, state.RecvConnectionWindow);
+        Assert.Equal(65535 - smallDataLength, state.RecvConnectionWindow);
         Assert.Null(result.ConnectionWindowUpdate);
         Assert.Null(result.StreamWindowUpdate);
     }
@@ -181,9 +176,9 @@ public sealed class Http2ConnectionStateSpec
     public void OnInboundData_should_send_connection_window_update_when_pending_threshold_reached()
     {
         var state = new ConnectionState(65535, 65535);
-        const int LargeData = 20000;
+        const int largeData = 20000;
 
-        var result = state.OnInboundData(streamId: 1, dataLength: LargeData);
+        var result = state.OnInboundData(streamId: 1, dataLength: largeData);
 
         Assert.True(result.Success);
         Assert.NotNull(result.ConnectionWindowUpdate);
@@ -196,9 +191,9 @@ public sealed class Http2ConnectionStateSpec
     public void OnInboundData_should_send_stream_window_update_when_pending_threshold_reached()
     {
         var state = new ConnectionState(65535, 65535);
-        const int LargeData = 20000;
+        const int largeData = 20000;
 
-        var result = state.OnInboundData(streamId: 1, dataLength: LargeData);
+        var result = state.OnInboundData(streamId: 1, dataLength: largeData);
 
         Assert.True(result.Success);
         Assert.NotNull(result.StreamWindowUpdate);
@@ -211,16 +206,16 @@ public sealed class Http2ConnectionStateSpec
     public void OnInboundData_should_batch_window_updates_across_multiple_frames()
     {
         var state = new ConnectionState(65535, 65535);
-        const int SmallData = 1000;
+        const int smallData = 1000;
 
-        var result1 = state.OnInboundData(streamId: 1, dataLength: SmallData);
+        var result1 = state.OnInboundData(streamId: 1, dataLength: smallData);
         Assert.Null(result1.ConnectionWindowUpdate);
 
-        var result2 = state.OnInboundData(streamId: 1, dataLength: SmallData);
+        var result2 = state.OnInboundData(streamId: 1, dataLength: smallData);
         Assert.Null(result2.ConnectionWindowUpdate);
 
-        const int LargeData = 20000;
-        var result3 = state.OnInboundData(streamId: 2, dataLength: LargeData);
+        const int largeData = 20000;
+        var result3 = state.OnInboundData(streamId: 2, dataLength: largeData);
         Assert.NotNull(result3.ConnectionWindowUpdate);
     }
 
@@ -285,7 +280,7 @@ public sealed class Http2ConnectionStateSpec
         var result = state.OnPing(ping);
 
         Assert.NotNull(result);
-        Assert.True(result!.IsAck);
+        Assert.True(result.IsAck);
         Assert.True(result.Data.Span.SequenceEqual(data));
     }
 
@@ -315,7 +310,7 @@ public sealed class Http2ConnectionStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
+    [Trait("RFC", "RFC9113-5.2")]
     public void Reset_should_clear_all_state()
     {
         var state = new ConnectionState(65535, 65535);
@@ -330,17 +325,17 @@ public sealed class Http2ConnectionStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6")]
+    [Trait("RFC", "RFC9113-5.2")]
     public void Reset_should_reinitialize_windows_to_provided_values()
     {
         var state = new ConnectionState(65535, 65535);
-        const int NewConnWindow = 50000;
-        const int NewStreamWindow = 40000;
+        const int newConnWindow = 50000;
+        const int newStreamWindow = 40000;
 
-        state.Reset(NewConnWindow, NewStreamWindow);
+        state.Reset(newConnWindow, newStreamWindow);
 
-        Assert.Equal(NewConnWindow, state.RecvConnectionWindow);
-        Assert.Equal(NewStreamWindow, state.InitialRecvStreamWindow);
+        Assert.Equal(newConnWindow, state.RecvConnectionWindow);
+        Assert.Equal(newStreamWindow, state.InitialRecvStreamWindow);
     }
 
     [Fact(Timeout = 5000)]
@@ -360,14 +355,14 @@ public sealed class Http2ConnectionStateSpec
     public void OnStreamClosed_should_return_window_update_when_pending_increment_exists()
     {
         var state = new ConnectionState(65535, 65535);
-        const int SmallData = 1000;
-        state.OnInboundData(streamId: 1, dataLength: SmallData);
+        const int smallData = 1000;
+        state.OnInboundData(streamId: 1, dataLength: smallData);
 
         var result = state.OnStreamClosed(streamId: 1);
 
         Assert.NotNull(result);
-        Assert.Equal(1, result!.StreamId);
-        Assert.Equal(SmallData, result.Increment);
+        Assert.Equal(1, result.StreamId);
+        Assert.Equal(smallData, result.Increment);
     }
 
     [Fact(Timeout = 5000)]
@@ -399,17 +394,17 @@ public sealed class Http2ConnectionStateSpec
     public void OnInboundData_should_handle_multiple_window_updates_on_same_stream()
     {
         var state = new ConnectionState(65535, 65535);
-        const int Data1 = 3000;
-        const int Data2 = 3000;
-        const int Data3 = 20000;
+        const int data1 = 3000;
+        const int data2 = 3000;
+        const int data3 = 20000;
 
-        var result1 = state.OnInboundData(streamId: 1, dataLength: Data1);
+        var result1 = state.OnInboundData(streamId: 1, dataLength: data1);
         Assert.Null(result1.StreamWindowUpdate);
 
-        var result2 = state.OnInboundData(streamId: 1, dataLength: Data2);
+        var result2 = state.OnInboundData(streamId: 1, dataLength: data2);
         Assert.Null(result2.StreamWindowUpdate);
 
-        var result3 = state.OnInboundData(streamId: 1, dataLength: Data3);
+        var result3 = state.OnInboundData(streamId: 1, dataLength: data3);
         Assert.NotNull(result3.StreamWindowUpdate);
     }
 
@@ -432,13 +427,13 @@ public sealed class Http2ConnectionStateSpec
     public void OnInboundData_should_accumulate_pending_increments_correctly()
     {
         var state = new ConnectionState(65535, 65535);
-        const int Chunk = 5000;
+        const int chunk = 5000;
 
-        state.OnInboundData(streamId: 1, dataLength: Chunk);
-        state.OnInboundData(streamId: 2, dataLength: Chunk);
-        state.OnInboundData(streamId: 3, dataLength: Chunk);
+        state.OnInboundData(streamId: 1, dataLength: chunk);
+        state.OnInboundData(streamId: 2, dataLength: chunk);
+        state.OnInboundData(streamId: 3, dataLength: chunk);
 
-        Assert.Equal(65535 - Chunk * 3, state.RecvConnectionWindow);
+        Assert.Equal(65535 - chunk * 3, state.RecvConnectionWindow);
     }
 
     [Fact(Timeout = 5000)]

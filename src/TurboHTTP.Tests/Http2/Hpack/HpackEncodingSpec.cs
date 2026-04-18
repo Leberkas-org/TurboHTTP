@@ -3,10 +3,6 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Hpack;
 
-/// <summary>
-/// Tests HPACK encoding/decoding round-trips, integer representation, and string representation per RFC 7541.
-/// Covers static table lookups, Huffman coding, WriteInteger/ReadInteger, and string literal handling.
-/// </summary>
 public sealed class HpackEncodingSpec
 {
     [Fact(Timeout = 5000)]
@@ -235,7 +231,8 @@ public sealed class HpackEncodingSpec
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC7541-A")]
     [MemberData(nameof(StaticTableEntries))]
-    public void HpackEncoder_should_round_trip_as_indexed_representation_when_encoding_and_decoding_static_table_entry(int index, string name, string value)
+    public void HpackEncoder_should_round_trip_as_indexed_representation_when_encoding_and_decoding_static_table_entry(
+        int index, string name, string value)
     {
         var encoder = new HpackEncoder(useHuffman: false);
         var decoder = new HpackDecoder();
@@ -325,23 +322,19 @@ public sealed class HpackEncodingSpec
             Assert.Equal(limit - 1, HpackDecoder.ReadInteger(buf1, ref p1, bits));
         }
 
-        {
-            var buf2 = new byte[16];
-            Span<byte> span2 = buf2;
-            HpackEncoder.WriteInteger(limit, prefixBits: bits, prefixFlags: 0x00, ref span2);
-            var written2 = 16 - span2.Length;
-            var p2 = 0;
-            Assert.Equal(limit, HpackDecoder.ReadInteger(buf2[..written2], ref p2, bits));
-        }
+        var buf2 = new byte[16];
+        Span<byte> span2 = buf2;
+        HpackEncoder.WriteInteger(limit, prefixBits: bits, prefixFlags: 0x00, ref span2);
+        var written2 = 16 - span2.Length;
+        var p2 = 0;
+        Assert.Equal(limit, HpackDecoder.ReadInteger(buf2.AsSpan()[..written2], ref p2, bits));
 
-        {
-            var buf3 = new byte[16];
-            Span<byte> span3 = buf3;
-            HpackEncoder.WriteInteger(limit + 1, prefixBits: bits, prefixFlags: 0x00, ref span3);
-            var written3 = 16 - span3.Length;
-            var p3 = 0;
-            Assert.Equal(limit + 1, HpackDecoder.ReadInteger(buf3[..written3], ref p3, bits));
-        }
+        var buf3 = new byte[16];
+        Span<byte> span3 = buf3;
+        HpackEncoder.WriteInteger(limit + 1, prefixBits: bits, prefixFlags: 0x00, ref span3);
+        var written3 = 16 - span3.Length;
+        var p3 = 0;
+        Assert.Equal(limit + 1, HpackDecoder.ReadInteger(buf3.AsSpan()[..written3], ref p3, bits));
     }
 
     [Fact(Timeout = 5000)]

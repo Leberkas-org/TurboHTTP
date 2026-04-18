@@ -8,25 +8,11 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Timer, mixed-scenario, upstream-failure, and atomic re-injection tests for the retry
-/// bidirectional stage per RFC 9110.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="RetryBidiStage"/>.
-/// RFC 9110 §9.2: Idempotency, safe methods, and retry semantics.
-/// </remarks>
 public sealed class RetryTimerSpec : StreamTestBase
 {
-    /// <summary>
-    /// Materialises a <see cref="RetryBidiStage"/> with manual subscriber probes on both outlets
-    /// and a manual publisher probe on the response inlet. The request inlet receives the given
-    /// requests concatenated with Source.Never to prevent premature completion.
-    /// </summary>
     private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
         TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
-        Action<HttpResponseMessage> pushResponse,
-        Action completeResponse) RunManual(
+        Action<HttpResponseMessage> pushResponse) RunManual(
             RetryBidiStage stage,
             int requestOutDemand,
             int responseOutDemand,
@@ -57,7 +43,7 @@ public sealed class RetryTimerSpec : StreamTestBase
         reqOutSub.Request(requestOutDemand);
         respOutSub.Request(responseOutDemand);
 
-        return (requestOutProbe, responseOutProbe, responseSub.SendNext, responseSub.SendComplete);
+        return (requestOutProbe, responseOutProbe, responseSub.SendNext);
     }
 
     private static HttpResponseMessage BuildResponse(
@@ -77,15 +63,13 @@ public sealed class RetryTimerSpec : StreamTestBase
         return response;
     }
 
-    // Retry-After timer tests
-
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryTimer_should_retry_immediately_when_retry_after_is_zero()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy { RespectRetryAfter = true });
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -103,7 +87,7 @@ public sealed class RetryTimerSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
         var stage = new RetryBidiStage(new RetryPolicy { RespectRetryAfter = true });
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -119,8 +103,6 @@ public sealed class RetryTimerSpec : StreamTestBase
         respOut.ExpectNoMsg(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
     }
 
-    // Mixed scenario tests
-
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryTimer_should_pass_final_through_when_retry_timer_is_pending()
@@ -128,7 +110,7 @@ public sealed class RetryTimerSpec : StreamTestBase
         var requestA = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var requestB = new HttpRequestMessage(HttpMethod.Get, "http://example.com/b");
         var stage = new RetryBidiStage(new RetryPolicy { RespectRetryAfter = true });
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, requestA, requestB);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, requestA, requestB);
 
         // Both requests forwarded
         Assert.Same(requestA, reqOut.ExpectNext(TestContext.Current.CancellationToken));
@@ -201,7 +183,7 @@ public sealed class RetryTimerSpec : StreamTestBase
         var requestA = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var requestB = new HttpRequestMessage(HttpMethod.Get, "http://example.com/b");
         var stage = new RetryBidiStage(policy);
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 10, 10, requestA, requestB);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 10, 10, requestA, requestB);
 
         // Both forwarded
         Assert.Same(requestA, reqOut.ExpectNext(TestContext.Current.CancellationToken));
@@ -225,8 +207,6 @@ public sealed class RetryTimerSpec : StreamTestBase
         pushResp(responseB2);
         Assert.Same(responseB2, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
-
-    // Upstream failure handling
 
     [Fact]
     [Trait("RFC", "RFC9110-9.2")]

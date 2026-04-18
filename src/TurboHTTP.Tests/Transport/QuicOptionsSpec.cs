@@ -6,13 +6,8 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Transport;
 
-/// <summary>
-/// Tests <see cref="QuicOptions"/> configuration properties, inheritance from <see cref="TlsOptions"/>,
-/// and QUIC-specific settings like idle timeout, stream limits, and connection migration.
-/// </summary>
-[SupportedOSPlatform("windows")]
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macos")]
+#pragma warning disable CA1416
+
 public sealed class QuicOptionsSpec
 {
     [Fact(Timeout = 5000)]
@@ -328,7 +323,6 @@ public sealed class QuicOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicOptions")]
     public void QuicOptions_should_support_very_large_stream_limits()
     {
         var options = new QuicOptions
@@ -344,7 +338,6 @@ public sealed class QuicOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicOptions")]
     public void QuicOptions_should_support_zero_timeout()
     {
         var options = new QuicOptions
@@ -358,7 +351,6 @@ public sealed class QuicOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicOptions")]
     public void QuicOptions_should_allow_combining_early_data_and_connection_migration()
     {
         var options = new QuicOptions
@@ -374,7 +366,6 @@ public sealed class QuicOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicOptions")]
     public void QuicOptions_should_allow_disabling_both_early_data_and_connection_migration()
     {
         var options = new QuicOptions
@@ -390,7 +381,6 @@ public sealed class QuicOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicOptions")]
     public void QuicOptions_hash_code_should_be_consistent()
     {
         var options = new QuicOptions { Host = "example.com", Port = 443 };
@@ -402,7 +392,6 @@ public sealed class QuicOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("Coverage", "QuicOptions")]
     public void QuicOptions_should_support_full_configuration()
     {
         var protocols = new List<SslApplicationProtocol> { SslApplicationProtocol.Http3 };

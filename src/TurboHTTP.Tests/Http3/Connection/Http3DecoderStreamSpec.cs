@@ -1,18 +1,13 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Streams;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
 
-/// <summary>
-/// Tests QPACK decoder instruction stream integration in the HTTP/3 StateMachine:
-/// FlushDecoderInstructions, decoder stream preface, and reconnect reset.
-/// RFC 9204 §4.4.
-/// </summary>
-[Trait("RFC", "RFC9204-4.4")]
 public sealed class Http3DecoderStreamSpec
 {
-    private readonly TestOps _ops = new();
+    private readonly FakeOps _ops = new();
 
     private StateMachine CreateMachine(Http3EngineOptions? options = null)
     {
@@ -26,7 +21,7 @@ public sealed class Http3DecoderStreamSpec
 
         sm.FlushDecoderInstructions();
 
-        var decoderItems = _ops.OutboundItems
+        var decoderItems = _ops.Outbound
             .OfType<Http3NetworkBuffer>()
             .Where(t => t.StreamType == Http3StreamType.QpackDecoder)
             .ToList();
@@ -45,7 +40,7 @@ public sealed class Http3DecoderStreamSpec
 
         sm.FlushDecoderInstructions();
 
-        var decoderItems = _ops.OutboundItems
+        var decoderItems = _ops.Outbound
             .OfType<Http3NetworkBuffer>()
             .Where(t => t.StreamType == Http3StreamType.QpackDecoder)
             .ToList();
@@ -70,7 +65,7 @@ public sealed class Http3DecoderStreamSpec
         first.Dispose();
 
         // Second emission — no preface
-        _ops.OutboundItems.Clear();
+        _ops.Outbound.Clear();
         sm.TableSync.ApplyEncoderInstructions(BuildInsertInstruction("x-second", "v2"));
         sm.FlushDecoderInstructions();
 
@@ -88,7 +83,7 @@ public sealed class Http3DecoderStreamSpec
         // First emission with preface
         sm.TableSync.ApplyEncoderInstructions(BuildInsertInstruction("x-test", "value"));
         sm.FlushDecoderInstructions();
-        _ops.OutboundItems.Clear();
+        _ops.Outbound.Clear();
 
         // Reconnect cycle
         sm.EncodeRequest(new HttpRequestMessage(HttpMethod.Get, "https://example.com/"));
@@ -129,7 +124,7 @@ public sealed class Http3DecoderStreamSpec
         var encoderInstr = BuildInsertInstruction("x-test", "value");
         sm.ProcessQpackEncoderBytes(encoderInstr);
 
-        var decoderItems = _ops.OutboundItems
+        var decoderItems = _ops.Outbound
             .OfType<Http3NetworkBuffer>()
             .Where(t => t.StreamType == Http3StreamType.QpackDecoder)
             .ToList();
@@ -141,19 +136,15 @@ public sealed class Http3DecoderStreamSpec
         buf.Dispose();
     }
 
-    private static NetworkBuffer ExtractDecoderBuffer(TestOps ops, int index)
+    private static NetworkBuffer ExtractDecoderBuffer(FakeOps ops, int index)
     {
-        var items = ops.OutboundItems
+        var items = ops.Outbound
             .OfType<Http3NetworkBuffer>()
             .Where(t => t.StreamType == Http3StreamType.QpackDecoder)
             .ToList();
         return items[index];
     }
 
-    /// <summary>
-    /// Builds a raw QPACK encoder instruction that inserts a literal name/value entry.
-    /// Format: Insert With Literal Name (§4.3.3): 0b01 + H=0 + name-len + name + H=0 + value-len + value.
-    /// </summary>
     private static byte[] BuildInsertInstruction(string name, string value)
     {
         var nameBytes = System.Text.Encoding.ASCII.GetBytes(name);
@@ -174,5 +165,4 @@ public sealed class Http3DecoderStreamSpec
 
         return buf;
     }
-
 }

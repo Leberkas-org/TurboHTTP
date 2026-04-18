@@ -13,15 +13,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests that the BidiFlow Atop composition preserves RFC-compliant request and response semantics.
-/// Verifies that cookie injection, cache lookup, retry, redirect, and decompression BidiStages
-/// execute in the correct sequence when composed via <c>BidiFlow.Atop()</c>.
-/// </summary>
-/// <remarks>
-/// Stage under test: BidiFlow composition (Redirect → Cookie → Retry → Cache → Decompression → Engine).
-/// Validates execution order of all feature BidiStages within the engine pipeline.
-/// </remarks>
 public sealed class StageOrderingSpec : EngineTestBase
 {
     private static CookieJar JarWithCookie(string name, string value, string domain, string path = "/")
@@ -114,10 +105,9 @@ public sealed class StageOrderingSpec : EngineTestBase
         return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    // BidiFlow composition ordering tests (SORD-001 through SORD-010)
-
     [Fact(Timeout = 10_000)]
-    public async Task StageOrdering_should_have_cookie_header_when_reaching_engine_when_cookie_bidi_is_outer_to_cache_bidi()
+    public async Task
+        StageOrdering_should_have_cookie_header_when_reaching_engine_when_cookie_bidi_is_outer_to_cache_bidi()
     {
         // CookieBidi.Atop(CacheBidi): request path is Cookie → Cache → Engine.
         // The echo engine returns the request as RequestMessage, proving cookies were injected first.
@@ -125,7 +115,7 @@ public sealed class StageOrderingSpec : EngineTestBase
         var store = new CacheStore();
 
         var bidi = BidiFlow.FromGraph(new CookieBidiStage(jar))
-            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store, null)));
+            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store)));
 
         var echo = Flow.Create<HttpRequestMessage>()
             .Select(req => new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = req });
@@ -253,7 +243,7 @@ public sealed class StageOrderingSpec : EngineTestBase
         var store = new CacheStore();
 
         var bidi = BidiFlow.FromGraph(new CookieBidiStage(jar))
-            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store, null)));
+            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store)));
 
         var engine = Flow.Create<HttpRequestMessage>()
             .Select(req =>
@@ -282,13 +272,14 @@ public sealed class StageOrderingSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task StageOrdering_should_cache_response_before_retry_evaluation_when_cache_bidi_is_inner_to_retry_bidi()
+    public async Task
+        StageOrdering_should_cache_response_before_retry_evaluation_when_cache_bidi_is_inner_to_retry_bidi()
     {
         // RetryBidi.Atop(CacheBidi): response path is Engine → CacheBidi(store) → RetryBidi(evaluate: 200=pass).
         var store = new CacheStore();
 
         var bidi = BidiFlow.FromGraph(new RetryBidiStage(new RetryPolicy()))
-            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store, null)));
+            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store)));
 
         var engine = Flow.Create<HttpRequestMessage>()
             .Select(req =>
@@ -335,7 +326,7 @@ public sealed class StageOrderingSpec : EngineTestBase
         var engineCallCount = 0;
 
         var bidi = BidiFlow.FromGraph(new RetryBidiStage(new RetryPolicy()))
-            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store, null)));
+            .Atop(BidiFlow.FromGraph(new CacheBidiStage(store)));
 
         var engine = Flow.Create<HttpRequestMessage>()
             .Select(req =>
@@ -353,7 +344,8 @@ public sealed class StageOrderingSpec : EngineTestBase
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task StageOrdering_should_store_response_in_jar_and_cache_when_engine_processes_before_bidi_flow_chain()
+    public async Task
+        StageOrdering_should_store_response_in_jar_and_cache_when_engine_processes_before_bidi_flow_chain()
     {
         // Engine-level test: ConnectionReuseStage is inside the engine; CookieBidi/CacheBidi are outside.
         // The response flows: Engine(ConnectionReuse) → BidiFlow(CacheBidi → CookieBidi) → Client.
@@ -407,7 +399,7 @@ public sealed class StageOrderingSpec : EngineTestBase
         var store = new CacheStore();
         var plainBody = "Hello, decompressed world!"u8.ToArray();
 
-        var bidi = BidiFlow.FromGraph(new CacheBidiStage(store, null))
+        var bidi = BidiFlow.FromGraph(new CacheBidiStage(store))
             .Atop(BidiFlow.FromGraph(new ContentEncodingBidiStage()));
 
         var engine = Flow.Create<HttpRequestMessage>()
@@ -440,5 +432,4 @@ public sealed class StageOrderingSpec : EngineTestBase
         Assert.NotNull(cacheResult);
         Assert.True(cacheResult.Body.Span.SequenceEqual(plainBody));
     }
-
 }

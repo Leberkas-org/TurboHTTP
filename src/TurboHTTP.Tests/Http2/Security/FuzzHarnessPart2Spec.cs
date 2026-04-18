@@ -4,23 +4,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Security;
 
-/// <summary>
-/// Tests decoder robustness against malformed, truncated, and adversarial byte sequences per RFC 9113 §4.
-/// Verifies that the decoder either succeeds or throws Http2Exception — never an unhandled crash.
-/// This is Part 2 of the fuzz harness tests (FZ-011 through FZ-025).
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §4.2: Receivers must treat frames with unknown types as PROTOCOL_ERROR or ignore them safely.
-/// </remarks>
 public sealed class Http2FuzzHarnessPart2Spec
 {
-    // Core invariant helper
-
-    /// <summary>
-    /// Feeds <paramref name="frame"/> to the decoder and asserts that the outcome
-    /// is either a successful decode or an Http2Exception. Any other exception is a bug.
-    /// </summary>
     private static void AssertDecodeNeverCrashes(FrameDecoder decoder, byte[] frame)
     {
         try
@@ -35,12 +20,11 @@ public sealed class Http2FuzzHarnessPart2Spec
         {
             // HpackException must NOT propagate outside the decoder pipeline.
             // The decoder must wrap it as Http2Exception(CompressionError).
-            Assert.Fail($"HpackException escaped decoder — must be wrapped as Http2Exception(CompressionError). Message: {ex.Message}");
+            Assert.Fail(
+                $"HpackException escaped decoder — must be wrapped as Http2Exception(CompressionError). Message: {ex.Message}");
         }
         // Any other exception type propagates and fails the test via xUnit.
     }
-
-    // Frame building helpers
 
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
@@ -80,6 +64,7 @@ public sealed class Http2FuzzHarnessPart2Spec
             BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), settings[i].id);
             BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), settings[i].value);
         }
+
         return BuildRawFrame(0x4, ack ? (byte)0x1 : (byte)0x0, 0, payload);
     }
 
@@ -90,13 +75,9 @@ public sealed class Http2FuzzHarnessPart2Spec
         return BuildRawFrame(0x8, 0, streamId, payload);
     }
 
-    // Valid :status 200 HPACK block (RFC 7541 static table index 8 → :status: 200)
     private static readonly byte[] Status200HpackBlock = [0x88];
 
-    // FZ-011..015: Invalid header (HPACK) encodings (RFC 9113 §4.3)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.3")]
     public void Http2FrameDecoder_should_handle_random_hpack_bytes_without_crashing()
     {
         var rng = new Random(42_000);
@@ -112,7 +93,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.3")]
     public void Http2FrameDecoder_should_handle_valid_hpack_prefix_with_garbage_without_crashing()
     {
         var rng = new Random(99_000);
@@ -134,7 +114,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.3")]
     public void Http2FrameDecoder_should_handle_hpack_oversized_string_length_without_crashing()
     {
         var decoder = new FrameDecoder();
@@ -148,7 +127,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-6.1")]
     public void Http2FrameDecoder_should_handle_out_of_range_hpack_index_without_crashing()
     {
         var decoder = new FrameDecoder();
@@ -162,7 +140,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-5.2")]
     public void Http2FrameDecoder_should_handle_invalid_huffman_bitstream_without_crashing()
     {
         var rng = new Random(777);
@@ -189,10 +166,7 @@ public sealed class Http2FuzzHarnessPart2Spec
         }
     }
 
-    // FZ-016..020: Window overflow attempts (RFC 9113 §6.9)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_reject_connection_window_overflow_with_explicit_enforcement()
     {
         var decoder = new FrameDecoder();
@@ -210,13 +184,12 @@ public sealed class Http2FuzzHarnessPart2Spec
         Assert.Equal(0x7FFFFFFF, wu.Increment);
 
         // Explicit enforcement: window overflow check.
-        var initialWindow = 65535L;
+        const long initialWindow = 65535L;
         var newWindow = initialWindow + wu.Increment;
         Assert.True(newWindow > int.MaxValue, "Expected overflow to be detected");
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_reject_stream_window_overflow_with_explicit_enforcement()
     {
         var decoder = new FrameDecoder();
@@ -235,13 +208,12 @@ public sealed class Http2FuzzHarnessPart2Spec
         var wu = Assert.IsType<WindowUpdateFrame>(Assert.Single(framesDecoded));
 
         // Explicit enforcement: stream window overflow check.
-        var streamWindow = 65535L;
+        const long streamWindow = 65535L;
         var newWindow = streamWindow + wu.Increment;
         Assert.True(newWindow > 0x7FFFFFFF, "Expected stream window overflow");
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
     public void Http2FrameDecoder_should_reject_zero_increment_window_update_with_protocol_error()
     {
         var decoder = new FrameDecoder();
@@ -254,7 +226,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_accept_settings_initial_window_size_at_maximum_valid_value()
     {
         var decoder = new FrameDecoder();
@@ -267,7 +238,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5.2")]
     public void Http2FrameDecoder_should_reject_settings_initial_window_size_exceeding_max_with_explicit_enforcement()
     {
         var decoder = new FrameDecoder();
@@ -285,10 +255,7 @@ public sealed class Http2FuzzHarnessPart2Spec
         Assert.True(hasOverflow, "Expected INITIAL_WINDOW_SIZE overflow in parameters");
     }
 
-    // FZ-021..025: Dynamic table resizing storms (RFC 7541 §6.3)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-6.3")]
     public void Http2FrameDecoder_should_handle_repeated_table_size_oscillation_without_crashing()
     {
         var hpack = new HpackDecoder();
@@ -298,15 +265,14 @@ public sealed class Http2FuzzHarnessPart2Spec
             // RFC 7541 §6.3: Dynamic Table Size Update — prefix = 0b001XXXXX (5-bit prefix).
             // DTS=0:  0x20 (= 0b00100000 | 0).
             // DTS=30: 0x3E (= 0b00100000 | 30). Values 0..30 fit in one byte (< 31 threshold).
-            var blockToZero = new byte[] { 0x20 };  // DTS=0
-            var blockToMax = new byte[] { 0x3E };  // DTS=30
+            var blockToZero = new byte[] { 0x20 }; // DTS=0
+            var blockToMax = new byte[] { 0x3E }; // DTS=30
             hpack.Decode(blockToZero);
             hpack.Decode(blockToMax);
         }
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-6.3")]
     public void Http2FrameDecoder_should_evict_all_entries_when_table_size_reduced_to_zero_after_filling()
     {
         var hpack = new HpackDecoder();
@@ -326,7 +292,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-6.3")]
     public void Http2FrameDecoder_should_handle_rapid_header_table_size_changes_without_crashing()
     {
         var rng = new Random(42);
@@ -341,7 +306,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC7541-6.3")]
     public void Http2FrameDecoder_should_handle_header_table_size_zero_followed_by_normal_headers()
     {
         var decoder = new FrameDecoder();
@@ -357,7 +321,6 @@ public sealed class Http2FuzzHarnessPart2Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_survive_extended_random_frame_sequence_without_unhandled_exceptions()
     {
         var rng = new Random(314159);

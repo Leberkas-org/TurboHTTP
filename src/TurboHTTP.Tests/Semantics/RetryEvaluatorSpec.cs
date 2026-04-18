@@ -3,18 +3,9 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Tests.Semantics;
 
-/// <summary>
-/// Tests for <see cref="RetryEvaluator"/> and <see cref="RetryPolicy"/>.
-/// RFC 9110 §9.2 — Idempotency-constrained automatic retry policy.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="RetryEvaluator"/> and <see cref="RetryPolicy"/>.
-/// RFC 9110 §9.2: Only idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS, TRACE) may be automatically retried.
-/// </remarks>
 public sealed class RetryEvaluatorSpec
 {
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_GET_And_NetworkFailure()
     {
@@ -24,7 +15,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_HEAD_And_NetworkFailure()
     {
@@ -34,7 +25,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_PUT_And_NetworkFailure()
     {
@@ -44,7 +35,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_DELETE_And_NetworkFailure()
     {
@@ -54,7 +45,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_OPTIONS_And_NetworkFailure()
     {
@@ -64,7 +55,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_TRACE_And_NetworkFailure()
     {
@@ -74,8 +65,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_POST_And_NetworkFailure()
     {
@@ -86,7 +76,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("not idempotent", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_PATCH_And_NetworkFailure()
     {
@@ -97,7 +87,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("not idempotent", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_POST_And_408Response()
     {
@@ -109,7 +99,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("not idempotent", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_POST_And_503Response()
     {
@@ -121,8 +111,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("not idempotent", decision.Reason);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_GET_And_408Response()
     {
@@ -134,7 +123,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("408", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_GET_And_503Response()
     {
@@ -146,7 +135,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("503", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_DELETE_And_408Response()
     {
@@ -157,8 +146,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_GET_And_500Response()
     {
@@ -170,7 +158,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("500", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_GET_And_404Response()
     {
@@ -181,7 +169,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_GET_And_429Response()
     {
@@ -193,7 +181,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_GET_And_200Response()
     {
@@ -204,8 +192,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(decision.ShouldRetry);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_BodyPartiallyConsumed_GET()
     {
@@ -217,7 +204,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("partially consumed", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_BodyPartiallyConsumed_PUT()
     {
@@ -230,7 +217,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("partially consumed", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_BodyPartiallyConsumed_DELETE()
     {
@@ -241,8 +228,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(decision.ShouldRetry);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_MaxRetries_Reached()
     {
@@ -255,7 +241,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("Retry limit", decision.Reason);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_AttemptCount_BelowLimit()
     {
@@ -267,7 +253,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_MaxRetries_Zero()
     {
@@ -279,7 +265,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_AttemptCount_ExceedsLimit()
     {
@@ -292,8 +278,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Contains("Retry limit", decision.Reason);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_IncludeRetryAfterDelay_When_503_With_Seconds()
     {
@@ -307,7 +292,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Equal(TimeSpan.FromSeconds(120), decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_IncludeRetryAfterDelay_When_408_With_Seconds()
     {
@@ -321,7 +306,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Equal(TimeSpan.FromSeconds(30), decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_RetryAfterDelay_Be_Null_When_No_Header()
     {
@@ -335,7 +320,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Null(decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_RetryAfterDelay_Be_Null_When_RespectRetryAfter_False()
     {
@@ -350,7 +335,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Null(decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_RetryAfterDelay_Be_Zero_When_Date_In_Past()
     {
@@ -367,7 +352,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Equal(TimeSpan.Zero, decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_RetryAfterDelay_Be_Null_When_Header_Unparseable()
     {
@@ -382,8 +367,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Null(decision.RetryAfterDelay);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_UseDefaultPolicy_When_Policy_Null()
     {
@@ -394,7 +378,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_Retry_When_NoResponse_And_NoNetworkFailureFlag_GET()
     {
@@ -405,7 +389,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.ShouldRetry);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_NotRetry_When_NoResponse_And_POST()
     {
@@ -415,8 +399,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(decision.ShouldRetry);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_AlwaysHaveNonEmptyReason()
     {
@@ -430,23 +413,21 @@ public sealed class RetryEvaluatorSpec
         Assert.NotEmpty(noRetryDecision.Reason);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryPolicy_Default_MaxRetries_Is_Three()
     {
         Assert.Equal(3, RetryPolicy.Default.MaxRetries);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryPolicy_Default_RespectRetryAfter_Is_True()
     {
         Assert.True(RetryPolicy.Default.RespectRetryAfter);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryDecision_Retry_Sets_ShouldRetry_True()
     {
@@ -457,7 +438,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Null(decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryDecision_Retry_WithDelay_Sets_RetryAfterDelay()
     {
@@ -468,7 +449,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Equal(delay, decision.RetryAfterDelay);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryDecision_NoRetry_Sets_ShouldRetry_False()
     {
@@ -479,8 +460,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Null(decision.RetryAfterDelay);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void Should_RetryAfterDelay_Be_Positive_When_Date_In_Future()
     {
@@ -497,7 +477,7 @@ public sealed class RetryEvaluatorSpec
         Assert.True(decision.RetryAfterDelay!.Value > TimeSpan.Zero);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     [InlineData(1)]
     [InlineData(2)]
@@ -510,7 +490,7 @@ public sealed class RetryEvaluatorSpec
         Assert.Equal(maxRetries, policy.MaxRetries);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     public void RetryOptions_should_propagate_RespectRetryAfter_false_to_policy()
     {
@@ -520,7 +500,7 @@ public sealed class RetryEvaluatorSpec
         Assert.False(policy.RespectRetryAfter);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9110-9.2")]
     [InlineData(1)]
     [InlineData(2)]

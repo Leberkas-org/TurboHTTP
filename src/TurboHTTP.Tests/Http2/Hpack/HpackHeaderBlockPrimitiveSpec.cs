@@ -24,7 +24,7 @@ public sealed class HpackHeaderBlockPrimitiveSpec
         var decoder = new HpackDecoder();
         // 0x3f = dynamic table size update (001xxxxx) with 5-bit prefix = 31 (max, multi-byte follows)
         // 0x00 = continuation byte: no continuation bit, value = 0 → total size = 31 + 0 = 31
-        var block = new byte[] { 0x3f, 0x00 };
+        var block = "?\0"u8.ToArray();
 
         decoder.Decode(block);
         // Decoder should handle multi-byte integers
@@ -282,17 +282,18 @@ public sealed class HpackHeaderBlockPrimitiveSpec
 
     private static byte[] RawString(List<byte> header, string name, int valueLen, string value)
     {
-        var result = new List<byte>(header);
-        result.Add((byte)name.Length);
+        var result = new List<byte>(header) { (byte)name.Length };
         foreach (var c in name)
         {
             result.Add((byte)c);
         }
+
         result.Add((byte)valueLen);
         foreach (var c in value)
         {
             result.Add((byte)c);
         }
+
         return result.ToArray();
     }
 }

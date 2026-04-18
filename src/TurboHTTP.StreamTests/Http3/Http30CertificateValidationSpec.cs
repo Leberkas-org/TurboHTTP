@@ -27,7 +27,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         return request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddYears(1));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_cover_hostname_when_san_matches_exactly()
     {
@@ -36,7 +36,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.True(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_not_cover_hostname_when_san_does_not_match()
     {
@@ -45,7 +45,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.False(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_cover_subdomain_when_wildcard_san_present()
     {
@@ -54,7 +54,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.True(ConnectionReuseEvaluator.CoversHostname(cert, "api.example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_not_cover_bare_domain_when_wildcard_san_present()
     {
@@ -63,7 +63,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.False(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_not_cover_nested_subdomain_when_wildcard_san_present()
     {
@@ -72,7 +72,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.False(ConnectionReuseEvaluator.CoversHostname(cert, "deep.sub.example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_cover_hostname_when_cn_matches_and_no_san()
     {
@@ -81,7 +81,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.True(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_not_cover_hostname_when_cn_does_not_match()
     {
@@ -90,7 +90,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.False(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_cover_hostname_when_any_san_matches()
     {
@@ -99,7 +99,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.True(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_not_cover_hostname_when_no_san_matches()
     {
@@ -108,7 +108,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.False(ConnectionReuseEvaluator.CoversHostname(cert, "example.com"));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_deny_reuse_when_cert_does_not_cover_target_host()
     {
@@ -127,7 +127,7 @@ public sealed class Http30CertificateValidationSpec : StreamTestBase
         Assert.False(decision.CanReuse);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-3.3")]
     public void Http30CertificateValidation_should_allow_reuse_when_cert_covers_target_host()
     {

@@ -2,13 +2,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests for QPACK dynamic table per RFC 9204 §3.2.
-/// Covers absolute indexing, insert count tracking, capacity management, and eviction.
-/// </summary>
 public sealed class QpackDynamicTableSpec
 {
-    /// RFC 9204 §3.2 — Absolute indexing starts at 0 and increases monotonically
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_AssignAbsoluteIndices_When_Inserting()
@@ -25,7 +20,6 @@ public sealed class QpackDynamicTableSpec
         Assert.Equal(3, table.InsertCount);
     }
 
-    /// RFC 9204 §3.2 — Entries retrievable by absolute index
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_ReturnEntry_When_LookedUpByAbsoluteIndex()
@@ -47,7 +41,6 @@ public sealed class QpackDynamicTableSpec
         Assert.Equal("/", entry1.Value.Value);
     }
 
-    /// RFC 9204 §3.2.4 — Insert count only increases, never resets on eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_MaintainInsertCount_When_EntriesEvicted()
@@ -55,7 +48,7 @@ public sealed class QpackDynamicTableSpec
         // Small capacity: fits ~1 entry (":method" + "GET" = 7+3+32 = 42 bytes, so 80 fits ~1)
         var table = new QpackDynamicTable(80);
 
-        table.Insert(":method", "GET");   // index 0, size 42
+        table.Insert(":method", "GET"); // index 0, size 42
         Assert.Equal(1, table.InsertCount);
         Assert.Equal(1, table.Count);
 
@@ -68,7 +61,6 @@ public sealed class QpackDynamicTableSpec
         Assert.NotNull(table.GetEntry(1));
     }
 
-    /// RFC 9204 §3.2.1 — 32-byte per-entry overhead applied
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_Include32ByteOverhead_When_CalculatingEntrySize()
@@ -82,16 +74,15 @@ public sealed class QpackDynamicTableSpec
         Assert.Equal(32, emptySize);
     }
 
-    /// RFC 9204 §3.2.3 — Capacity management triggers eviction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_EvictOldest_When_CapacityReduced()
     {
         var table = new QpackDynamicTable(4096);
 
-        table.Insert(":method", "GET");       // index 0, size 42
-        table.Insert(":path", "/");            // index 1, size 38
-        table.Insert("host", "example.com");   // index 2, size 47
+        table.Insert(":method", "GET"); // index 0, size 42
+        table.Insert(":path", "/"); // index 1, size 38
+        table.Insert("host", "example.com"); // index 2, size 47
 
         Assert.Equal(3, table.Count);
 
@@ -104,7 +95,6 @@ public sealed class QpackDynamicTableSpec
         Assert.NotNull(table.GetEntry(2));
     }
 
-    /// RFC 9204 §3.2.2 — Oversized entry clears table, returns -1
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_ClearTableAndReturnNegative_When_EntryExceedsCapacity()
@@ -123,7 +113,6 @@ public sealed class QpackDynamicTableSpec
         Assert.Equal(1, table.InsertCount); // failed insert does not increment
     }
 
-    /// RFC 9204 §3.2.2 — Duplicate creates new entry with new absolute index
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_CreateNewEntry_When_Duplicating()
@@ -131,7 +120,7 @@ public sealed class QpackDynamicTableSpec
         var table = new QpackDynamicTable(4096);
 
         var idx0 = table.Insert(":method", "GET"); // index 0
-        var idx1 = table.Duplicate(0);              // index 1
+        var idx1 = table.Duplicate(0); // index 1
 
         Assert.Equal(0, idx0);
         Assert.Equal(1, idx1);
@@ -146,7 +135,6 @@ public sealed class QpackDynamicTableSpec
         Assert.Equal(original.Value.Value, duplicate.Value.Value);
     }
 
-    /// RFC 9204 §3.2 — Evicted entries return null, valid range tracked via DroppedCount
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.2")]
     public void Should_ReturnNull_When_EntryEvicted()

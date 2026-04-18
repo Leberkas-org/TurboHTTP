@@ -43,6 +43,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.8")]
     public async Task Http2ConnectionGoAway_should_not_forward_goaway_to_out_response()
     {
         var goAway = new GoAwayFrame(lastStreamId: 5, Http2ErrorCode.NoError, debugData: new byte[] { 0x01, 0x02 });
@@ -54,6 +55,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
     }
 
     [Fact(Timeout = 10_000)]
+    [Trait("RFC", "RFC9113-6.8")]
     public async Task Http2ConnectionGoAway_should_drop_new_requests_without_failing_stream_when_goaway_received()
     {
         var goAway = new GoAwayFrame(lastStreamId: 1, Http2ErrorCode.InternalError);

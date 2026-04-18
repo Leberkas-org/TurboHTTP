@@ -6,18 +6,6 @@ using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Tests.Security;
 
-/// <summary>
-/// Tests TLS certificate validation, transport security options, and cross-scheme
-/// downgrade protection. Verifies that the default configuration rejects untrusted
-/// certificates, custom callbacks propagate correctly through the options pipeline,
-/// HTTPS→HTTP redirects are blocked, and sensitive headers are stripped on scheme downgrade.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="TurboClientOptions"/>, <see cref="OptionsFactory"/>,
-/// <see cref="RedirectHandler"/>, <see cref="RedirectPolicy"/>.
-/// Attack vectors: self-signed certificate acceptance, protocol downgrade, credential leakage
-/// on scheme change, TLS option misconfiguration.
-/// </remarks>
 public sealed class TlsSecuritySpec
 {
     [Fact(Timeout = 5000)]
@@ -29,7 +17,7 @@ public sealed class TlsSecuritySpec
         var callback = options.ServerCertificateValidationCallback;
 
         Assert.NotNull(callback);
-        Assert.False(callback!(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors));
+        Assert.False(callback(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors));
     }
 
     [Fact(Timeout = 5000)]
@@ -100,7 +88,7 @@ public sealed class TlsSecuritySpec
         var effective = options.EffectiveServerCertificateValidationCallback;
         Assert.NotNull(effective);
 
-        effective!(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors);
+        effective(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors);
 
         Assert.True(invoked);
         Assert.Equal(SslPolicyErrors.RemoteCertificateChainErrors, observedErrors);

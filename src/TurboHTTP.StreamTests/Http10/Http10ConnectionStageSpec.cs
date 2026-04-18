@@ -58,7 +58,7 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
         // Pull on network outlet to signal demand
         netSubscription.Request(10);

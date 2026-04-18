@@ -2,14 +2,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Edge-case tests for QPACK table synchronization to achieve 100% branch coverage.
-/// Tests synchronization coordinator initialization, instruction processing, blocked stream
-/// management, and all error conditions per RFC 9204 §2.1.
-/// </summary>
 public sealed class QpackTableSyncEdgeCasesSpec
 {
-    /// RFC 9204 §2.1 — Initialize with zero encoder capacity
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Initialize_With_Zero_EncoderCapacity()
@@ -20,7 +14,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(4096, sync.Decoder.DynamicTable.Capacity);
     }
 
-    /// RFC 9204 §2.1 — Initialize with large capacities
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Initialize_With_Large_Capacities()
@@ -31,7 +24,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(65536, sync.Decoder.DynamicTable.Capacity);
     }
 
-    /// RFC 9204 §2.1 — Throws on negative max blocked streams
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Throw_On_Negative_MaxBlockedStreams()
@@ -42,7 +34,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal("maxBlockedStreams", ex.ParamName);
     }
 
-    /// RFC 9204 §2.1 — Zero max blocked streams disables blocking
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Throw_When_BlockingExceeds_MaxBlockedStreams_Zero()
@@ -60,7 +51,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Contains("blocked", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// RFC 9204 §2.1 — Throws when exceeding max blocked streams
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Throw_When_MaxBlockedStreams_Exceeded()
@@ -93,7 +83,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Contains("violation", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// RFC 9204 §4.3 — Apply empty encoder instructions
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_Handle_Empty_EncoderInstructions()
@@ -106,7 +95,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(0, count);
     }
 
-    /// RFC 9204 §4.3 — Multiple encoder instructions applied in sequence
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_Apply_Multiple_EncoderInstructions()
@@ -116,11 +104,11 @@ public sealed class QpackTableSyncEdgeCasesSpec
 
         // Encode multiple unique headers to generate multiple insert instructions
         var headers1 = new List<(string, string)> { ("x-header-1", "value1") };
-        var encoded1 = encoder.Encode(headers1);
+        encoder.Encode(headers1);
         var instructions1 = encoder.EncoderInstructions;
 
         var headers2 = new List<(string, string)> { ("x-header-2", "value2") };
-        var encoded2 = encoder.Encode(headers2);
+        encoder.Encode(headers2);
         var instructions2 = encoder.EncoderInstructions;
 
         // Apply both instruction sets sequentially
@@ -132,7 +120,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(2, sync.InsertCount);
     }
 
-    /// RFC 9204 §4.4 — Process empty decoder instructions
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4")]
     public void Should_Handle_Empty_DecoderInstructions()
@@ -145,7 +132,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(0, count);
     }
 
-    /// RFC 9204 §4.4 — Section Acknowledgment updates encoder KnownReceivedCount
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.1")]
     public void Should_Update_EncoderKnownReceivedCount_OnSectionAck()
@@ -170,7 +156,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(1, encoder.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.4.3 — Insert Count Increment in decoder instructions
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.3")]
     public void Should_Process_InsertCountIncrement_InDecoderInstructions()
@@ -191,7 +176,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(5, encoder.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.4.2 — Stream Cancellation removes blocked stream for that ID only
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.2")]
     public void Should_Remove_Only_Cancelled_BlockedStream()
@@ -218,7 +202,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(2, sync.BlockedStreamCount);
     }
 
-    /// RFC 9204 §2.1.2 — Resolve partial blocked streams (some still blocked)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_Resolve_Only_Ready_BlockedStreams()
@@ -235,10 +218,10 @@ public sealed class QpackTableSyncEdgeCasesSpec
         var enc1 = encoder.EncoderInstructions.ToArray();
 
         var encoded2 = encoder.Encode(headers2);
-        var enc2 = encoder.EncoderInstructions.ToArray();
+        encoder.EncoderInstructions.ToArray();
 
         var encoded3 = encoder.Encode(headers3);
-        var enc3 = encoder.EncoderInstructions.ToArray();
+        encoder.EncoderInstructions.ToArray();
 
         // Block all three
         sync.TryDecodeOrBlock(encoded1, streamId: 1);
@@ -258,7 +241,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(2, sync.BlockedStreamCount); // Streams 2 and 3 still blocked
     }
 
-    /// RFC 9204 §2.1.2 — Resolve all blocked streams at once
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1.2")]
     public void Should_Resolve_All_BlockedStreams_When_ConditionMet()
@@ -295,7 +277,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(0, sync.BlockedStreamCount);
     }
 
-    /// RFC 9204 §4.4.3 — Known Received Count starts at zero
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.3")]
     public void Should_Have_Zero_KnownReceivedCount_Initially()
@@ -305,7 +286,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(0, sync.KnownReceivedCount);
     }
 
-    /// RFC 9204 §4.4.3 — WriteInsertCountIncrement returns zero when no change
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.3")]
     public void Should_Return_Zero_Increment_When_NoChange()
@@ -319,7 +299,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(0, increment);
     }
 
-    /// RFC 9204 §4.4.3 — WriteInsertCountIncrement updates KnownReceivedCount
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.4.3")]
     public void Should_Update_KnownReceivedCount_OnWriteIncrement()
@@ -341,7 +320,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(3, sync.KnownReceivedCount);
     }
 
-    /// RFC 9204 §2.1 — Reset clears all state and creates fresh tables
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Reset_ClearsAllState()
@@ -365,7 +343,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.NotNull(sync.Decoder);
     }
 
-    /// RFC 9204 §4.3 — Set Dynamic Table Capacity instruction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_Apply_SetDynamicTableCapacity_Instruction()
@@ -400,7 +377,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(1024, sync.Decoder.DynamicTable.Capacity);
     }
 
-    /// RFC 9204 §4.3 — Duplicate instruction duplicates entry in decoder table
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_Apply_Duplicate_Instruction()
@@ -434,7 +410,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal("original", dup.Value.Value);
     }
 
-    /// RFC 9204 §2.1 — BlockedStreamCount property is accurate
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Maintain_Accurate_BlockedStreamCount()
@@ -466,7 +441,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.True(sync.BlockedStreamCount <= 5);
     }
 
-    /// RFC 9204 §2.1 — InsertCount property reflects decoder table state
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-2.1")]
     public void Should_Return_Current_InsertCount()
@@ -482,7 +456,6 @@ public sealed class QpackTableSyncEdgeCasesSpec
         Assert.Equal(2, sync.InsertCount);
     }
 
-    /// RFC 9204 §4.3 — Insert With Name Reference (static) instruction
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-4.3")]
     public void Should_Apply_InsertWithNameReference_Static()

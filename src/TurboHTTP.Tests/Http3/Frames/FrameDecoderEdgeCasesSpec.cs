@@ -2,14 +2,8 @@ using TurboHTTP.Protocol.Http3;
 
 namespace TurboHTTP.Tests.Http3.Frames;
 
-/// <summary>
-/// Edge-case tests for HTTP/3 FrameDecoder to achieve 100% branch coverage.
-/// Tests frame decoding with various payload sizes, partial frame assembly,
-/// unknown frame types, memory pool management, and all error conditions per RFC 9114 §7.
-/// </summary>
 public sealed class FrameDecoderEdgeCasesSpec
 {
-    /// RFC 9114 §7 — Empty DATA frame (zero payload)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_empty_data_frame()
@@ -27,7 +21,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(wire.Length, consumed);
     }
 
-    /// RFC 9114 §7 — Empty HEADERS frame (zero payload)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_empty_headers_frame()
@@ -43,7 +36,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Empty(headers.HeaderBlock.ToArray());
     }
 
-    /// RFC 9114 §7 — Large payload frame (1MB)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_large_data_frame()
@@ -65,7 +57,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(largePayload, data.Data.ToArray());
     }
 
-    /// RFC 9114 §7 — Partial header only (no length varint)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_return_need_more_data_when_length_varint_incomplete()
@@ -81,7 +72,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.True(decoder.HasRemainder);
     }
 
-    /// RFC 9114 §7 — Partial payload (less than declared length)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_return_need_more_data_when_payload_incomplete()
@@ -89,7 +79,7 @@ public sealed class FrameDecoderEdgeCasesSpec
         // Encode type and length, but provide incomplete payload
         var buf = new byte[16];
         var offset = 0;
-        offset += QuicVarInt.Encode(0, buf.AsSpan(offset));  // DATA type
+        offset += QuicVarInt.Encode(0, buf.AsSpan(offset)); // DATA type
         offset += QuicVarInt.Encode(100, buf.AsSpan(offset)); // Length = 100
         // Only provide 10 bytes of payload instead of 100
 
@@ -100,7 +90,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Null(frame);
     }
 
-    /// RFC 9114 §7 — Multiple frames in one buffer
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_all_and_skip_unknown_frame_types()
@@ -126,14 +115,13 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(offset, consumed);
     }
 
-    /// RFC 9114 §7 — Throws on frame payload size overflow
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_throw_on_frame_size_overflow()
     {
         var buf = new byte[16];
         var offset = 0;
-        offset += QuicVarInt.Encode(0, buf.AsSpan(offset));  // DATA type
+        offset += QuicVarInt.Encode(0, buf.AsSpan(offset)); // DATA type
         // Encode a length larger than int.MaxValue
         offset += QuicVarInt.Encode((long)int.MaxValue + 1, buf.AsSpan(offset));
 
@@ -144,7 +132,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Contains("exceeds maximum", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// RFC 9114 §7 — HasRemainder property tracks buffered state
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_track_has_remainder_correctly()
@@ -168,7 +155,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.False(decoder.HasRemainder); // After completing, no remainder
     }
 
-    /// RFC 9114 §7 — Reset clears remainder buffer
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_clear_remainder_on_reset()
@@ -185,7 +171,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.False(decoder.HasRemainder);
     }
 
-    /// RFC 9114 §7 — Dispose clears remainder buffer
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_clear_remainder_on_dispose()
@@ -202,12 +187,11 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.False(decoder.HasRemainder);
     }
 
-    /// RFC 9114 §7 — CancelPush frame with large push ID
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_cancel_push_frame_with_large_push_id()
     {
-        var largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
+        const long largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
         var original = new Http3CancelPushFrame(largeId);
         var wire = original.Serialize();
 
@@ -219,7 +203,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(largeId, cp.PushId);
     }
 
-    /// RFC 9114 §7 — CancelPush frame with zero push ID
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_cancel_push_frame_with_zero_push_id()
@@ -235,7 +218,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(0, cp.PushId);
     }
 
-    /// RFC 9114 §7 — Settings frame with no parameters
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_settings_frame_when_empty()
@@ -251,7 +233,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Empty(settings.Parameters);
     }
 
-    /// RFC 9114 §7 — Settings frame with many parameters
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_settings_frame_with_many_parameters()
@@ -273,12 +254,11 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(100, settings.Parameters.Count);
     }
 
-    /// RFC 9114 §7 — Settings frame with large setting values
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_settings_frame_with_large_values()
     {
-        var largeValue = (1L << 62) - 1; // Maximum QUIC VarInt value
+        const long largeValue = (1L << 62) - 1; // Maximum QUIC VarInt value
         var parameters = new List<(long, long)>
         {
             (0x06, largeValue), // MAX_FIELD_SECTION_SIZE
@@ -298,7 +278,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(largeValue, settings.Parameters[1].Item2);
     }
 
-    /// RFC 9114 §7 — PushPromise with empty header block
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_push_promise_frame_with_empty_headers()
@@ -315,7 +294,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Empty(pp.HeaderBlock.ToArray());
     }
 
-    /// RFC 9114 §7 — PushPromise with large header block
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_push_promise_frame_with_large_headers()
@@ -338,12 +316,11 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(largeHeaders, pp.HeaderBlock.ToArray());
     }
 
-    /// RFC 9114 §7 — GoAway with large stream ID
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_go_away_frame_with_large_stream_id()
     {
-        var largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
+        const long largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
         var original = new Http3GoAwayFrame(largeId);
         var wire = original.Serialize();
 
@@ -355,7 +332,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(largeId, goaway.StreamId);
     }
 
-    /// RFC 9114 §7 — MaxPushId with zero
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_max_push_id_frame_when_zero()
@@ -371,12 +347,11 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(0, mp.PushId);
     }
 
-    /// RFC 9114 §7 — MaxPushId with large value
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_max_push_id_frame_with_large_value()
     {
-        var largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
+        const long largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
         var original = new Http3MaxPushIdFrame(largeId);
         var wire = original.Serialize();
 
@@ -388,7 +363,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(largeId, mp.PushId);
     }
 
-    /// RFC 9114 §7 — DecodeAll with no frames
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_all_with_empty_input()
@@ -400,7 +374,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(0, consumed);
     }
 
-    /// RFC 9114 §7 — DecodeAll with partial frame leaves remainder
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_all_and_leave_remainder()
@@ -421,7 +394,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.True(decoder.HasRemainder);
     }
 
-    /// RFC 9114 §7 — Bytes consumed correctly with remainder buffer
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_return_correct_bytes_consumed_with_remainder()
@@ -445,7 +417,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.True(consumed2 > 0);
     }
 
-    /// RFC 9114 §7 — Unknown frame type returns null frame but consumes bytes
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_skip_unknown_frame_while_consuming_bytes()
@@ -454,8 +425,8 @@ public sealed class FrameDecoderEdgeCasesSpec
         var offset = 0;
 
         // Encode unknown frame type
-        offset += QuicVarInt.Encode(0xABCD, buf.AsSpan(offset));  // Unknown type
-        offset += QuicVarInt.Encode(5, buf.AsSpan(offset));       // Length = 5
+        offset += QuicVarInt.Encode(0xABCD, buf.AsSpan(offset)); // Unknown type
+        offset += QuicVarInt.Encode(5, buf.AsSpan(offset)); // Length = 5
         for (var i = 0; i < 5; i++) buf[offset++] = 0xFF;
 
         var decoder = new FrameDecoder();
@@ -466,7 +437,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Equal(offset, consumed); // All bytes consumed despite null frame
     }
 
-    /// RFC 9114 §7 — DecodeAll clears frame list between calls
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_clear_frame_list_in_decode_all()
@@ -480,14 +450,14 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.Single(frames1);
 
         // Second call with different frames
-        var frame2a = new Http3GoAwayFrame(0);
-        var frame2b = new Http3MaxPushIdFrame(42);
+        var frame2A = new Http3GoAwayFrame(0);
+        var frame2B = new Http3MaxPushIdFrame(42);
         var buf = new byte[64];
         var offset = 0;
         var bufSpan = buf.AsSpan();
-        offset += frame2a.WriteTo(ref bufSpan);
+        offset += frame2A.WriteTo(ref bufSpan);
         bufSpan = buf.AsSpan(offset);
-        offset += frame2b.WriteTo(ref bufSpan);
+        offset += frame2B.WriteTo(ref bufSpan);
 
         var frames2 = decoder.DecodeAll(buf.AsSpan(0, offset), out _);
 
@@ -497,7 +467,6 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.IsType<Http3MaxPushIdFrame>(frames2[1]);
     }
 
-    /// RFC 9114 §7 — Multiple DecodeAll calls with carryover frames
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_handle_partial_frames_across_decode_all_calls()
@@ -514,12 +483,12 @@ public sealed class FrameDecoderEdgeCasesSpec
         var decoder = new FrameDecoder();
 
         // First DecodeAll with partial frame
-        var frames1 = decoder.DecodeAll(part1, out var consumed1);
+        var frames1 = decoder.DecodeAll(part1, out _);
         Assert.Empty(frames1);
         Assert.True(decoder.HasRemainder);
 
         // Second DecodeAll with rest of frame
-        var frames2 = decoder.DecodeAll(part2, out var consumed2);
+        var frames2 = decoder.DecodeAll(part2, out _);
         Assert.Single(frames2);
         Assert.False(decoder.HasRemainder);
     }

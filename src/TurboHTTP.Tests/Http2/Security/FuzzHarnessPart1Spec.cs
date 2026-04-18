@@ -4,23 +4,8 @@ using TurboHTTP.Protocol.Http2.Hpack;
 
 namespace TurboHTTP.Tests.Http2.Security;
 
-/// <summary>
-/// Tests decoder robustness against malformed, truncated, and adversarial byte sequences per RFC 9113 §4.
-/// Verifies that the decoder either succeeds or throws Http2Exception — never an unhandled crash.
-/// This is Part 1 of the fuzz harness tests (FZ-001 through FZ-010).
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §4.2: Receivers must treat frames with unknown types as PROTOCOL_ERROR or ignore them safely.
-/// </remarks>
 public sealed class Http2FuzzHarnessPart1Spec
 {
-    // Core invariant helper
-
-    /// <summary>
-    /// Feeds <paramref name="frame"/> to the decoder and asserts that the outcome
-    /// is either a successful decode or an Http2Exception. Any other exception is a bug.
-    /// </summary>
     private static void AssertDecodeNeverCrashes(FrameDecoder decoder, byte[] frame)
     {
         try
@@ -35,12 +20,11 @@ public sealed class Http2FuzzHarnessPart1Spec
         {
             // HpackException must NOT propagate outside the decoder pipeline.
             // The decoder must wrap it as Http2Exception(CompressionError).
-            Assert.Fail($"HpackException escaped decoder — must be wrapped as Http2Exception(CompressionError). Message: {ex.Message}");
+            Assert.Fail(
+                $"HpackException escaped decoder — must be wrapped as Http2Exception(CompressionError). Message: {ex.Message}");
         }
         // Any other exception type propagates and fails the test via xUnit.
     }
-
-    // Frame building helpers
 
     private static byte[] BuildRawFrame(byte type, byte flags, int streamId, byte[] payload)
     {
@@ -80,6 +64,7 @@ public sealed class Http2FuzzHarnessPart1Spec
             BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(i * 6), settings[i].id);
             BinaryPrimitives.WriteUInt32BigEndian(payload.AsSpan(i * 6 + 2), settings[i].value);
         }
+
         return BuildRawFrame(0x4, ack ? (byte)0x1 : (byte)0x0, 0, payload);
     }
 
@@ -90,13 +75,9 @@ public sealed class Http2FuzzHarnessPart1Spec
         return BuildRawFrame(0x8, 0, streamId, payload);
     }
 
-    // Valid :status 200 HPACK block (RFC 7541 static table index 8 → :status: 200)
     private static readonly byte[] Status200HpackBlock = [0x88];
 
-    // FZ-001..005: Random frame ordering (RFC 9113 §5.5)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_handle_random_headers_data_sequences_without_crashing()
     {
         var rng = new Random(42);
@@ -116,7 +97,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_handle_random_rst_stream_frames_without_crashing()
     {
         var rng = new Random(137);
@@ -134,7 +114,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_handle_random_window_update_frames_without_crashing()
     {
         var rng = new Random(7);
@@ -149,7 +128,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_handle_interleaved_frame_types_without_crashing()
     {
         var rng = new Random(99);
@@ -157,10 +135,10 @@ public sealed class Http2FuzzHarnessPart1Spec
 
         Func<byte[]>[] frameBuilders =
         [
-            () => BuildRawFrame(0x6, 0x0, 0, new byte[8]),          // PING (non-ACK)
-            () => BuildRawFrame(0x6, 0x1, 0, new byte[8]),          // PING ACK
-            () => BuildSettingsFrame(false, []),                     // SETTINGS (empty)
-            () => BuildSettingsFrame(true, []),                      // SETTINGS ACK (empty)
+            () => BuildRawFrame(0x6, 0x0, 0, new byte[8]), // PING (non-ACK)
+            () => BuildRawFrame(0x6, 0x1, 0, new byte[8]), // PING ACK
+            () => BuildSettingsFrame(false, []), // SETTINGS (empty)
+            () => BuildSettingsFrame(true, []), // SETTINGS ACK (empty)
             () => BuildWindowUpdateFrame(0, (uint)rng.Next(1, 1000)), // Connection WINDOW_UPDATE
         ];
 
@@ -172,7 +150,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.5")]
     public void Http2FrameDecoder_should_ignore_unknown_frame_types_per_rfc9113()
     {
         var rng = new Random(555);
@@ -189,10 +166,7 @@ public sealed class Http2FuzzHarnessPart1Spec
         }
     }
 
-    // FZ-006..010: Invalid frame lengths (RFC 9113 §4.2)
-
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_reject_oversized_frame_with_frame_size_error()
     {
         var decoder = new FrameDecoder();
@@ -213,14 +187,15 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_buffer_truncated_frame_without_crashing()
     {
         var decoder = new FrameDecoder();
 
         // Declare a PING with length=8 but provide only 4 payload bytes → decoder returns empty.
         var frame = new byte[9 + 4];
-        frame[0] = 0; frame[1] = 0; frame[2] = 8; // declared length = 8
+        frame[0] = 0;
+        frame[1] = 0;
+        frame[2] = 8; // declared length = 8
         frame[3] = 0x6; // PING
         frame[4] = 0x0;
         // Remaining bytes left zeroed (only 4, not the declared 8)
@@ -230,7 +205,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_reject_ping_with_wrong_payload_length_with_frame_size_error()
     {
         var decoder = new FrameDecoder();
@@ -244,7 +218,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_reject_settings_with_non_multiple_of_6_payload_with_frame_size_error()
     {
         var decoder = new FrameDecoder();
@@ -258,7 +231,6 @@ public sealed class Http2FuzzHarnessPart1Spec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-4.2")]
     public void Http2FrameDecoder_should_handle_corrupted_frame_headers_without_unhandled_exceptions()
     {
         var rng = new Random(1234);

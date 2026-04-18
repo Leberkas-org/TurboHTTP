@@ -10,12 +10,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Http3;
 
-/// <summary>
-/// Stage-level tests verifying that <see cref="Http30ConnectionStage"/> correctly handles
-/// concurrent requests — multiplexed stream acquisition, slot reuse after stream close,
-/// and response-to-request correlation across interleaved streams.
-/// </summary>
-[Trait("RFC", "RFC9114-6.1")]
 public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
 {
     private static Http3EngineOptions DefaultOptions => new Http3Options().ToEngineOptions();
@@ -26,12 +20,6 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
     private ReadOnlyMemory<byte> EncodeResponseHeaders(params (string Name, string Value)[] headers)
         => _qpack.Encode(headers);
 
-    /// <summary>
-    /// Builds an <see cref="IInputItem"/> sequence that simulates server-side responses
-    /// for the given stream IDs. Each stream gets a HEADERS frame with :status 200,
-    /// followed by a <see cref="QuicCloseItem"/> with <see cref="QuicCloseKind.RequestStreamComplete"/>
-    /// to signal FIN on that stream.
-    /// </summary>
     private IEnumerable<IInputItem> BuildResponseSequence(params long[] streamIds)
     {
         foreach (var streamId in streamIds)
@@ -50,9 +38,6 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
         }
     }
 
-    /// <summary>
-    /// Builds a settings frame as an <see cref="IInputItem"/> on the control stream.
-    /// </summary>
     private static Http3NetworkBuffer BuildControlSettings()
     {
         var settingsBytes = new Http3SettingsFrame([]).Serialize();
@@ -63,10 +48,6 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
         return buf;
     }
 
-    /// <summary>
-    /// Runs the <see cref="Http30ConnectionStage"/> with the given requests and server responses.
-    /// Returns the collected outbound items and HTTP responses.
-    /// </summary>
     private async Task<(IReadOnlyList<IOutputItem> OutboundItems, IReadOnlyList<HttpResponseMessage> Responses)>
         RunConcurrentAsync(HttpRequestMessage[] requests, long[] responseStreamIds, Http3EngineOptions? options = null)
     {
@@ -106,10 +87,6 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
         return (outbound, responses);
     }
 
-    /// <summary>
-    /// Extracts stream IDs from outbound <see cref="Http3NetworkBuffer"/> items
-    /// that carry request data (not control/QPACK streams).
-    /// </summary>
     private static List<long> ExtractRequestStreamIds(IReadOnlyList<IOutputItem> items)
     {
         var seen = new HashSet<long>();
@@ -126,9 +103,6 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
         return result;
     }
 
-    /// <summary>
-    /// Extracts <see cref="Http3EndOfRequestItem"/> stream IDs from outbound items.
-    /// </summary>
     private static List<long> ExtractEndOfRequestStreamIds(IReadOnlyList<IOutputItem> items)
     {
         return items.OfType<Http3EndOfRequestItem>().Select(e => e.StreamId).ToList();
@@ -150,7 +124,7 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
         var responseStreamIds = new long[] { 0, 4, 8 };
 
         // Act
-        var (outbound, responses) = await RunConcurrentAsync(requests, responseStreamIds);
+        var (outbound, _) = await RunConcurrentAsync(requests, responseStreamIds);
 
         // Assert: each request gets a unique stream ID (0, 4, 8 per RFC 9114 §6.1)
         var streamIds = ExtractRequestStreamIds(outbound);

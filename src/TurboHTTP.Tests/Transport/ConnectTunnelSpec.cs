@@ -8,11 +8,10 @@ namespace TurboHTTP.Tests.Transport;
 
 public sealed class ConnectTunnelSpec
 {
-    private static readonly string TargetHost = "example.com";
+    private const string TargetHost = "example.com";
     private const int TargetPort = 443;
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Tunnel_should_send_correct_CONNECT_request()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();
@@ -31,7 +30,6 @@ public sealed class ConnectTunnelSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Tunnel_should_succeed_on_200_response()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();
@@ -47,7 +45,6 @@ public sealed class ConnectTunnelSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Tunnel_should_throw_on_non_200_response()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();
@@ -64,7 +61,6 @@ public sealed class ConnectTunnelSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Tunnel_should_throw_on_proxy_close()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();
@@ -80,7 +76,6 @@ public sealed class ConnectTunnelSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Tunnel_should_include_proxy_auth_header()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();
@@ -96,12 +91,11 @@ public sealed class ConnectTunnelSpec
         await WriteResponseAsync(serverStream, "HTTP/1.1 200 OK\r\n\r\n");
         await tunnelTask;
 
-        var expectedEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("user:pass"));
+        var expectedEncoded = Convert.ToBase64String("user:pass"u8.ToArray());
         Assert.Contains($"Proxy-Authorization: Basic {expectedEncoded}\r\n", request);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Tunnel_should_accept_http10_200_response()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();
@@ -181,6 +175,7 @@ public sealed class ConnectTunnelSpec
         public override bool CanSeek => false;
         public override bool CanWrite => true;
         public override long Length => throw new NotSupportedException();
+
         public override long Position
         {
             get => throw new NotSupportedException();
@@ -233,7 +228,11 @@ public sealed class ConnectTunnelSpec
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        public override void Flush() { }
+
+        public override void Flush()
+        {
+        }
+
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
     }

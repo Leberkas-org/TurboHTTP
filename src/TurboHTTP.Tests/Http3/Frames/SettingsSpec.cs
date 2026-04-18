@@ -4,8 +4,7 @@ namespace TurboHTTP.Tests.Http3.Frames;
 
 public sealed class SettingsFrameSpec
 {
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     [InlineData(Http3SettingsIdentifier.QpackMaxTableCapacity, 0x01)]
     [InlineData(Http3SettingsIdentifier.MaxFieldSectionSize, 0x06)]
@@ -15,7 +14,7 @@ public sealed class SettingsFrameSpec
         Assert.Equal(expected, actual);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4.1")]
     [InlineData(Http3SettingsIdentifier.ReservedH2EnablePush)]
     [InlineData(Http3SettingsIdentifier.ReservedH2MaxConcurrentStreams)]
@@ -26,8 +25,7 @@ public sealed class SettingsFrameSpec
         Assert.True(Http3SettingsIdentifier.IsReservedH2Setting(identifier));
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Settings_should_roundtrip_serialize_deserialize()
     {
@@ -45,7 +43,7 @@ public sealed class SettingsFrameSpec
         Assert.Equal(3, restored.AllParameters.Count);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Settings_should_serialize_to_zero_bytes_when_empty()
     {
@@ -57,15 +55,14 @@ public sealed class SettingsFrameSpec
         Assert.Empty(restored.AllParameters);
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Settings_should_preserve_unknown_settings_through_roundtrip()
     {
         var settings = new Settings();
         settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 1024);
-        settings.Set(0x33, 999);   // unknown extension setting
-        settings.Set(0xFF, 42);    // another unknown
+        settings.Set(0x33, 999); // unknown extension setting
+        settings.Set(0xFF, 42); // another unknown
 
         var payload = settings.Serialize();
         var restored = Settings.Deserialize(payload);
@@ -76,8 +73,7 @@ public sealed class SettingsFrameSpec
         Assert.Equal(3, restored.AllParameters.Count);
     }
 
-
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4.1")]
     [InlineData(0x02)] // SETTINGS_ENABLE_PUSH
     [InlineData(0x03)] // SETTINGS_MAX_CONCURRENT_STREAMS
@@ -91,7 +87,7 @@ public sealed class SettingsFrameSpec
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4.1")]
     [InlineData(0x02)]
     [InlineData(0x03)]
@@ -105,7 +101,7 @@ public sealed class SettingsFrameSpec
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Settings_should_throw_when_deserializing_duplicate_identifier()
     {
@@ -139,8 +135,7 @@ public sealed class SettingsFrameSpec
         return buf[..pos];
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Settings_should_return_defaults_when_absent()
     {
@@ -151,8 +146,7 @@ public sealed class SettingsFrameSpec
         Assert.Null(settings[0x99]); // unknown absent setting
     }
 
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Settings_should_create_valid_frame_via_toframe()
     {

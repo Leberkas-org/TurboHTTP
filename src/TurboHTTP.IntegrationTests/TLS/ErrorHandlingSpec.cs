@@ -106,7 +106,7 @@ public sealed class ErrorHandlingSpec
         Assert.Equal("", body);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [InlineData(400)]
     [InlineData(401)]
     [InlineData(403)]
@@ -123,7 +123,7 @@ public sealed class ErrorHandlingSpec
         Assert.Equal((HttpStatusCode)statusCode, response.StatusCode);
     }
 
-    [Theory]
+    [Theory(Timeout = 5000)]
     [InlineData(500)]
     [InlineData(502)]
     [InlineData(503)]

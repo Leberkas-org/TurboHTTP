@@ -3,11 +3,6 @@ using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.H10;
 
-/// <summary>
-/// HTTP/1.0 connection management tests.
-/// Unlike HTTP/1.1, HTTP/1.0 defaults to connection-close after each response.
-/// Keep-alive is opt-in via the <c>Connection: Keep-Alive</c> header.
-/// </summary>
 [Collection("H10")]
 [Obsolete("Replaced by StreamTests.Acceptance.H10.ConnectionSpec")]
 public sealed class ConnectionSpec

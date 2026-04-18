@@ -8,15 +8,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// RFC 9110 §10.1.1 — ExpectContinueBidiStage request and response direction tests.
-/// Verifies that the request direction adds Expect: 100-continue for bodies meeting size threshold,
-/// and the response direction consumes 100 Continue responses and handles 417 Expectation Failed.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="ExpectContinueBidiStage"/>.
-/// RFC 9110 §10.1.1: Expect: 100-continue header and 100 Continue response handling.
-/// </remarks>
 public sealed class ExpectContinueBidiStageSpec : StreamTestBase
 {
     private Task<IImmutableList<HttpRequestMessage>> RunRequestAsync(
@@ -90,13 +81,11 @@ public sealed class ExpectContinueBidiStageSpec : StreamTestBase
         return RunnableGraph.FromGraph(graph).Run(Materializer);
     }
 
-    // Pass-through tests (null policy)
-
     [Trait("RFC", "RFC9110-10.1.1")]
     [Fact(Timeout = 5000)]
     public async Task ExpectContinueBidiStage_should_pass_through_when_policy_is_null()
     {
-        var stage = new ExpectContinueBidiStage(null);
+        var stage = new ExpectContinueBidiStage();
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/")
         {
             Content = new ByteArrayContent(new byte[10000])
@@ -107,8 +96,6 @@ public sealed class ExpectContinueBidiStageSpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.False(result.Headers.ExpectContinue.GetValueOrDefault());
     }
-
-    // Request direction tests
 
     [Trait("RFC", "RFC9110-10.1.1")]
     [Fact(Timeout = 5000)]
@@ -171,8 +158,6 @@ public sealed class ExpectContinueBidiStageSpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.Same(request, result);
     }
-
-    // Response direction tests
 
     [Trait("RFC", "RFC9110-10.1.1")]
     [Fact(Timeout = 5000)]
@@ -318,8 +303,6 @@ public sealed class ExpectContinueBidiStageSpec : StreamTestBase
 
         Assert.Equal(4, results.Count);
     }
-
-    // Helper methods
 
     private static HttpResponseMessage MakeResponse(HttpStatusCode statusCode)
     {

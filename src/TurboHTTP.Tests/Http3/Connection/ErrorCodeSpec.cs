@@ -4,7 +4,7 @@ namespace TurboHTTP.Tests.Http3.Connection;
 
 public sealed class ErrorCodeSpec
 {
-    [Theory]
+    [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-8.1")]
     [InlineData(Http3ErrorCode.NoError, 0x100u)]
     [InlineData(Http3ErrorCode.GeneralProtocolError, 0x101u)]
@@ -28,7 +28,7 @@ public sealed class ErrorCodeSpec
         Assert.Equal(expected, (uint)code);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-8.1")]
     public void AllErrorCodes_AreDefined()
     {
@@ -36,7 +36,7 @@ public sealed class ErrorCodeSpec
         Assert.Equal(17, values.Length);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-8.1")]
     public void FirstErrorCode_IsNoError()
     {
@@ -44,7 +44,7 @@ public sealed class ErrorCodeSpec
         Assert.Equal(0x100u, min);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-8.1")]
     public void LastErrorCode_IsVersionFallback()
     {

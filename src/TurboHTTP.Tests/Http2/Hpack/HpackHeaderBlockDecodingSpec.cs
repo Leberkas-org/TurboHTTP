@@ -200,17 +200,18 @@ public sealed class HpackHeaderBlockDecodingSpec
 
     private static byte[] RawString(List<byte> header, string name, int valueLen, string value)
     {
-        var result = new List<byte>(header);
-        result.Add((byte)name.Length);
+        var result = new List<byte>(header) { (byte)name.Length };
         foreach (var c in name)
         {
             result.Add((byte)c);
         }
+
         result.Add((byte)valueLen);
         foreach (var c in value)
         {
             result.Add((byte)c);
         }
+
         return result.ToArray();
     }
 }

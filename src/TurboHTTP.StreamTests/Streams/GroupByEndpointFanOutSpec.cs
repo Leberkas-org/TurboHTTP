@@ -8,26 +8,11 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams;
 
-/// <summary>
-/// Tests the 6-slot fan-out behavior of <see cref="GroupByRequestEndpointStage{T}"/>,
-/// including per-key slot limits, connection affinity tagging, slot reuse after completion,
-/// and least-loaded routing once all slots are saturated.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="GroupByRequestEndpointStage{T}"/>.
-/// Validates maxSubstreamsPerKey = 6, connection affinity re-injection, and load distribution.
-/// </remarks>
 public sealed class GroupByEndpointFanOutSpec : StreamTestBase
 {
-    // Helpers
-
     private static HttpRequestMessage Req(string url)
         => new(HttpMethod.Get, url) { Version = HttpVersion.Version11 };
 
-    /// <summary>
-    /// Returns the <see cref="GroupByRequestEndpointStage{T}.ConnectionAffinitySlot"/> ID
-    /// stamped on a request by the stage, or -1 if the option is absent.
-    /// </summary>
     private static int SlotOf(HttpRequestMessage req)
         => req.Options.TryGetValue(
             GroupByRequestEndpointStage<HttpRequestMessage>.ConnectionAffinitySlot,
@@ -35,13 +20,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
             ? id
             : -1;
 
-    /// <summary>
-    /// Runs all <paramref name="requests"/> through a
-    /// <c>GroupByRequestEndpoint → MergeSubstreams</c> pipeline and returns the
-    /// fully ordered output list.  Items carry their affinity-slot ID in
-    /// <see cref="GroupByRequestEndpointStage{T}.ConnectionAffinitySlot"/> after
-    /// the stage stamps them; callers use <see cref="SlotOf"/> to read it.
-    /// </summary>
     private async Task<IReadOnlyList<HttpRequestMessage>> RunWithMergeAsync(
         IEnumerable<HttpRequestMessage> requests,
         uint maxSubstreams = 32,
@@ -59,8 +37,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
             .Via(flow)
             .RunWith(Sink.Seq<HttpRequestMessage>(), Materializer);
     }
-
-    // GBEF-001 — 6 requests to the same endpoint spread across up to 6 slots
 
     [Fact(Timeout = 10_000)]
     public async Task GroupByEndpointFanOut_should_use_up_to_6_slots_when_6_requests_sent_to_same_endpoint()
@@ -83,8 +59,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         Assert.InRange(distinctSlots, 1, 6);
     }
 
-    // GBEF-002 — maxSubstreamsPerKey = 1 forces all requests through one slot
-
     [Fact(Timeout = 10_000)]
     public async Task GroupByEndpointFanOut_should_use_exactly_one_slot_when_max_substreams_per_key_is_one()
     {
@@ -103,10 +77,9 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         Assert.Single(distinctSlots);
     }
 
-    // GBEF-003 — Different endpoints each get their own independent slot group
-
     [Fact(Timeout = 10_000)]
-    public async Task GroupByEndpointFanOut_should_use_independent_slot_groups_when_requests_target_different_endpoints()
+    public async Task
+        GroupByEndpointFanOut_should_use_independent_slot_groups_when_requests_target_different_endpoints()
     {
         // Arrange — 2 requests per host, 3 different hosts.
         var requests = new List<HttpRequestMessage>
@@ -131,9 +104,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         Assert.True(distinctSlots >= 3,
             $"Expected at least 3 distinct slot IDs (one per host), but got {distinctSlots}");
     }
-
-    // GBEF-004 — Affinity tagging: request pre-tagged with ConnectionAffinitySlot
-    //            is routed to the existing slot without creating a new substream
 
     [Fact(Timeout = 10_000)]
     public async Task GroupByEndpointFanOut_should_route_to_same_slot_when_request_has_affinity_tag()
@@ -201,8 +171,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         Assert.Equal(originalSlotId, slots[0]);
     }
 
-    // GBEF-005 — All 6 requests pass through the pipeline end-to-end
-
     [Fact(Timeout = 10_000)]
     public async Task GroupByEndpointFanOut_should_deliver_all_requests_when_max_substreams_per_key_is_6()
     {
@@ -217,9 +185,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         // Assert — no requests dropped; all 6 must exit the pipeline.
         Assert.Equal(6, results.Count);
     }
-
-    // GBEF-006 — Slot cap: with maxSlotsPerKey = 6 and 10 requests only ≤ 6
-    //            distinct slots are ever created (excess items use existing slots)
 
     [Fact(Timeout = 10_000)]
     public async Task GroupByEndpointFanOut_should_cap_slot_count_when_more_requests_than_max_substreams_per_key()
@@ -240,11 +205,9 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
             $"Expected at most 6 distinct slot IDs, but got {distinctSlots}");
     }
 
-    // GBEF-007 — Least-loaded routing: all 10 requests delivered even after
-    //            the per-key slot cap is reached
-
     [Fact(Timeout = 10_000)]
-    public async Task GroupByEndpointFanOut_should_deliver_all_requests_when_slot_cap_reached_and_least_loaded_routing_applies()
+    public async Task
+        GroupByEndpointFanOut_should_deliver_all_requests_when_slot_cap_reached_and_least_loaded_routing_applies()
     {
         // Arrange — 10 requests to the same host, slot cap = 6.
         // The 7th–10th requests route to the least-loaded existing slot.
@@ -258,8 +221,6 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         // Assert — no requests lost; all 10 must arrive.
         Assert.Equal(10, results.Count);
     }
-
-    // GBEF-008 — Global maxSubstreams cap is respected across multiple endpoints
 
     [Fact(Timeout = 10_000)]
     public async Task GroupByEndpointFanOut_should_respect_global_max_substreams_when_multiple_endpoints_compete()

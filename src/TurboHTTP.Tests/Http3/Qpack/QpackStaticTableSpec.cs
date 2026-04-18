@@ -2,13 +2,8 @@ using TurboHTTP.Protocol.Http3.Qpack;
 
 namespace TurboHTTP.Tests.Http3.Qpack;
 
-/// <summary>
-/// Tests the QPACK static table definition per RFC 9204 §3.1 and Appendix A.
-/// Verifies table size, correctness of all 99 static entries, and lookup functionality.
-/// </summary>
 public sealed class QpackStaticTableSpec
 {
-    /// RFC 9204 Appendix A — Static table contains exactly 99 entries
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     public void Should_HaveExactly99Entries()
@@ -17,7 +12,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(99, QpackStaticTable.Entries.Length);
     }
 
-    /// RFC 9204 Appendix A — Index 0 is :authority with empty value
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     public void Should_HaveAuthorityAtIndex0()
@@ -27,7 +21,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(string.Empty, entry.Value);
     }
 
-    /// RFC 9204 Appendix A — Index 98 is the last entry (x-frame-options: sameorigin)
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     public void Should_HaveXFrameOptionsSameoriginAtIndex98()
@@ -37,7 +30,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal("sameorigin", entry.Value);
     }
 
-    /// RFC 9204 Appendix A — All 99 static entries have correct name and value
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     [MemberData(nameof(AllStaticEntries))]
@@ -48,7 +40,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(expectedValue, entry.Value);
     }
 
-    /// RFC 9204 §3.1 — FindExact returns correct index for known name-value pairs
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.1")]
     [InlineData(":authority", "", 0)]
@@ -66,7 +57,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(expectedIndex, QpackStaticTable.FindExact(name, value));
     }
 
-    /// RFC 9204 §3.1 — FindExact returns -1 for unknown name-value pairs
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.1")]
     [InlineData(":method", "PATCH")]
@@ -77,7 +67,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(-1, QpackStaticTable.FindExact(name, value));
     }
 
-    /// RFC 9204 §3.1 — FindName returns lowest index for known header names
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.1")]
     [InlineData(":authority", 0)]
@@ -93,7 +82,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(expectedIndex, QpackStaticTable.FindName(name));
     }
 
-    /// RFC 9204 §3.1 — FindName returns -1 for unknown header names
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9204-3.1")]
     [InlineData("x-custom")]
@@ -104,7 +92,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal(-1, QpackStaticTable.FindName(name));
     }
 
-    /// RFC 9204 Appendix A — Pseudo-headers appear at expected indices
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     public void Should_HavePseudoHeadersAtExpectedIndices()
@@ -126,7 +113,6 @@ public sealed class QpackStaticTableSpec
         Assert.Equal("103", QpackStaticTable.Entries[24].Value);
     }
 
-    /// RFC 9204 Appendix A — All entries with non-empty values have exact match in lookup
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     public void Should_FindExactMatch_ForAllEntriesWithValues()
@@ -143,7 +129,6 @@ public sealed class QpackStaticTableSpec
         }
     }
 
-    /// RFC 9204 Appendix A — All entries have name match in lookup
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9204-A")]
     public void Should_FindNameMatch_ForAllEntries()

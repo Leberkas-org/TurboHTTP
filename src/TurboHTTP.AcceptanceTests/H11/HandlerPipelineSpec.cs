@@ -54,6 +54,7 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
                 r.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
         }
+
         return r;
     }
 
@@ -74,6 +75,7 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
                 }
             }
         }
+
         var r = new HttpResponseMessage(HttpStatusCode.OK);
         foreach (var header in req.Headers)
         {
@@ -82,11 +84,13 @@ public sealed class HandlerPipelineSpec : AcceptanceTestBase
                 r.Headers.TryAddWithoutValidation(header.Key, header.Value);
             }
         }
+
         if (cookies.Count > 0)
         {
             r.Headers.TryAddWithoutValidation("X-Received-Cookie",
                 string.Join("; ", cookies.Select(kv => $"{kv.Key}={kv.Value}")));
         }
+
         return r;
     }
 

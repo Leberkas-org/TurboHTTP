@@ -342,7 +342,7 @@ public sealed class TurboClientOptionsSpec
 
         Assert.NotNull(effective);
         // Default callback returns true only when no policy errors
-        var resultValid = effective!.Invoke(null!, null, null, SslPolicyErrors.None);
+        var resultValid = effective.Invoke(null!, null, null, SslPolicyErrors.None);
         var resultInvalid = effective.Invoke(null!, null, null, SslPolicyErrors.RemoteCertificateNameMismatch);
 
         Assert.True(resultValid);

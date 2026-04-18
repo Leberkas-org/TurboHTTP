@@ -3,14 +3,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11.Decoding;
 
-/// <summary>
-/// Tests TCP fragmentation handling per RFC 9112 §6.
-/// Verifies that the decoder correctly reassembles responses split across multiple TCP segments.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §6: Decoders must handle arbitrary TCP fragmentation of response streams.
-/// </remarks>
 public sealed class Http11DecoderFragmentationSpec
 {
     private readonly Decoder _decoder = new();

@@ -3,12 +3,6 @@ using Encoder = TurboHTTP.Protocol.Http10.Encoder;
 
 namespace TurboHTTP.Tests.Http10;
 
-/// <summary>
-/// Tests HTTP/1.0 absolute-form URI encoding per RFC 1945 §5.1.2.
-/// Verifies that the Encode method correctly formats request URIs
-/// in both origin-form (default) and absolute-form (proxy mode).
-/// </summary>
-[Trait("RFC", "RFC1945-5.1.2")]
 public sealed class Http10EncoderAbsoluteFormSpec
 {
     private static Span<byte> MakeBuffer(int size = 8192) => new byte[size];

@@ -1,25 +1,14 @@
-namespace TurboHTTP.Tests.Security;
-
 using System.Buffers;
 using TurboHTTP.Protocol.Http2.Hpack;
-using Xunit;
 
-/// <summary>
-/// Fuzzing tests for HPACK decoder resistance to adversarial inputs.
-/// Tests random bytes, Huffman data, dynamic table management, out-of-bounds indexing,
-/// string length validation, never-indexed headers, table eviction, truncated blocks,
-/// and boundary conditions with seeded Random for reproducibility.
-/// </summary>
+namespace TurboHTTP.Tests.Security;
+
 public sealed class HpackFuzzSpec
 {
     private const int IterationsPerSeed = 100;
     private const int MaxHeaderTableSize = 65536;
-    private const int MaxHeaderListSize = 65536;
-    private const int MaxStringLength = 8192;
-    private const int MemoryLimitBytes = 256 * 1024;
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -42,7 +31,6 @@ public sealed class HpackFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
     [InlineData(42)]
     [InlineData(137)]
     [InlineData(7)]
@@ -70,7 +58,6 @@ public sealed class HpackFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
     [InlineData(42)]
     [InlineData(137)]
     public void HpackDecoder_should_bound_dynamic_table_size_update(int seed)
@@ -125,14 +112,10 @@ public sealed class HpackFuzzSpec
         Assert.NotNull(ex);
     }
 
-    [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
-    [InlineData(42)]
-    [InlineData(137)]
-    public void HpackDecoder_should_throw_when_indexed_reference_is_out_of_bounds(int seed)
+    [Fact(Timeout = 5000)]
+    public void HpackDecoder_should_throw_when_indexed_reference_is_out_of_bounds()
     {
         var decoder = new HpackDecoder();
-        var random = new Random(seed);
 
         var buffer = new ArrayBufferWriter<byte>();
         var span = buffer.GetSpan(3);
@@ -145,14 +128,10 @@ public sealed class HpackFuzzSpec
         Assert.NotNull(ex);
     }
 
-    [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
-    [InlineData(42)]
-    [InlineData(137)]
-    public void HpackDecoder_should_gracefully_fail_when_string_length_exceeds_remaining_bytes(int seed)
+    [Fact(Timeout = 5000)]
+    public void HpackDecoder_should_gracefully_fail_when_string_length_exceeds_remaining_bytes()
     {
         var decoder = new HpackDecoder();
-        var random = new Random(seed);
 
         var buffer = new ArrayBufferWriter<byte>();
         var span = buffer.GetSpan(10);
@@ -167,14 +146,10 @@ public sealed class HpackFuzzSpec
         Assert.NotNull(ex);
     }
 
-    [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
-    [InlineData(42)]
-    [InlineData(137)]
-    public void HpackDecoder_should_throw_when_string_length_exceeds_max(int seed)
+    [Fact(Timeout = 5000)]
+    public void HpackDecoder_should_throw_when_string_length_exceeds_max()
     {
         var decoder = new HpackDecoder();
-        var random = new Random(seed);
         decoder.SetMaxStringLength(100);
 
         var buffer = new ArrayBufferWriter<byte>();
@@ -191,7 +166,6 @@ public sealed class HpackFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
     [InlineData(42)]
     [InlineData(137)]
     public void HpackDecoder_should_preserve_never_indexed_sensitive_header_flag(int seed)
@@ -223,14 +197,11 @@ public sealed class HpackFuzzSpec
         }
     }
 
-    [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
-    [InlineData(42)]
-    public void HpackDecoder_should_handle_dynamic_table_eviction_without_bomb(int seed)
+    [Fact(Timeout = 5000)]
+    public void HpackDecoder_should_handle_dynamic_table_eviction_without_bomb()
     {
         var decoder = new HpackDecoder();
         decoder.SetMaxAllowedTableSize(MaxHeaderTableSize);
-        var random = new Random(seed);
 
         var buffer = new ArrayBufferWriter<byte>();
 
@@ -261,7 +232,6 @@ public sealed class HpackFuzzSpec
     }
 
     [Theory(Timeout = 5000)]
-    [Trait("RFC", "RFC7541")]
     [InlineData(42)]
     [InlineData(137)]
     public void HpackDecoder_should_gracefully_fail_when_header_block_is_truncated(int seed)
@@ -372,6 +342,7 @@ public sealed class HpackFuzzSpec
         {
             data[i] = 0xFF;
         }
+
         data[11] = 0x00;
 
         var decoder = new HpackDecoder();

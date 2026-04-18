@@ -8,25 +8,11 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Semantics;
 
-/// <summary>
-/// Chain, loop-detection, protection, and upstream-failure tests for the redirect bidirectional
-/// stage per RFC 9110 §15.4.
-/// </summary>
-/// <remarks>
-/// Stage under test: <see cref="RedirectBidiStage"/>.
-/// RFC 9110 §15.4: Max-redirect enforcement, loop detection, downgrade protection, cross-origin stripping.
-/// </remarks>
 public sealed class RedirectChainSpec : StreamTestBase
 {
-    /// <summary>
-    /// Materialises a <see cref="RedirectBidiStage"/> with manual subscriber probes on both outlets
-    /// and a manual publisher probe on the response inlet. The request inlet receives the given
-    /// requests concatenated with Source.Never to prevent premature completion.
-    /// </summary>
     private (TestSubscriber.ManualProbe<HttpRequestMessage> requestOut,
         TestSubscriber.ManualProbe<HttpResponseMessage> responseOut,
-        Action<HttpResponseMessage> pushResponse,
-        Action completeResponse) RunManual(
+        Action<HttpResponseMessage> pushResponse) RunManual(
             RedirectBidiStage stage,
             int requestOutDemand,
             int responseOutDemand,
@@ -57,7 +43,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         reqOutSub.Request(requestOutDemand);
         respOutSub.Request(responseOutDemand);
 
-        return (requestOutProbe, responseOutProbe, responseSub.SendNext, responseSub.SendComplete);
+        return (requestOutProbe, responseOutProbe, responseSub.SendNext);
     }
 
     private static HttpResponseMessage BuildRedirectResponse(
@@ -68,7 +54,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         var response = new HttpResponseMessage(statusCode);
         response.Headers.TryAddWithoutValidation("Location", location);
         response.RequestMessage = requestMessage
-            ?? new HttpRequestMessage(HttpMethod.Get, "http://example.com/origin");
+                                  ?? new HttpRequestMessage(HttpMethod.Get, "http://example.com/origin");
         return response;
     }
 
@@ -77,9 +63,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         request.Options.Set(RedirectBidiStage.RedirectHandlerKey, handler);
     }
 
-    // Max redirects, loop detection, downgrade protection
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_forward_final_response_when_max_redirects_exceeded()
     {
@@ -96,7 +80,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         SeedRedirectHandler(request, handler);
 
         var stage = new RedirectBidiStage(policy);
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -108,7 +92,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_forward_final_response_when_redirect_loop_detected()
     {
@@ -124,7 +108,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         SeedRedirectHandler(request, handler);
 
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -135,13 +119,13 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_forward_final_response_when_https_to_http_downgrade()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/secure");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -151,13 +135,13 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_forward_final_response_when_location_header_missing()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/page");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -168,15 +152,13 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Same(response, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    // State machine: redirect chain followed by final response
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_deliver_final_response_after_redirect_chain()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 5, 5, request);
 
         // Original request forwarded
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
@@ -195,13 +177,13 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Same(finalResponse, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_deliver_final_response_after_two_redirects()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/a");
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, respOut, pushResp, _) = RunManual(stage, 10, 10, request);
+        var (reqOut, respOut, pushResp) = RunManual(stage, 10, 10, request);
 
         // Original request
         Assert.Same(request, reqOut.ExpectNext(TestContext.Current.CancellationToken));
@@ -225,9 +207,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Same(finalResponse, respOut.ExpectNext(TestContext.Current.CancellationToken));
     }
 
-    // Cross-origin redirect strips Authorization
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_strip_authorization_header_when_cross_origin_redirect()
     {
@@ -235,7 +215,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         request.Headers.TryAddWithoutValidation("Authorization", "Bearer token123");
 
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, _, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, _, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -247,9 +227,7 @@ public sealed class RedirectChainSpec : StreamTestBase
             "Authorization must be stripped on cross-origin redirect");
     }
 
-    // Version preservation
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_preserve_http2_version_when_redirecting()
     {
@@ -258,7 +236,7 @@ public sealed class RedirectChainSpec : StreamTestBase
             Version = new Version(2, 0)
         };
         var stage = new RedirectBidiStage(new RedirectPolicy());
-        var (reqOut, _, pushResp, _) = RunManual(stage, 5, 5, request);
+        var (reqOut, _, pushResp) = RunManual(stage, 5, 5, request);
 
         reqOut.ExpectNext(TestContext.Current.CancellationToken);
 
@@ -269,9 +247,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         Assert.Equal(new Version(2, 0), redirectReq.Version);
     }
 
-    // Upstream failure handling
-
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_absorb_request_upstream_failure()
     {
@@ -304,7 +280,7 @@ public sealed class RedirectChainSpec : StreamTestBase
         responseOutProbe.ExpectNoMsg(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9110-15.4")]
     public void RedirectChain_should_absorb_response_upstream_failure()
     {

@@ -4,14 +4,6 @@ using Decoder = TurboHTTP.Protocol.Http11.Decoder;
 
 namespace TurboHTTP.Tests.Http11;
 
-/// <summary>
-/// Tests round-trip encoding and decoding of HTTP status codes per RFC 9112 §4.
-/// Verifies that all standard status classes survive a full encode → decode cycle.
-/// </summary>
-/// <remarks>
-/// Classes under test: <see cref="Protocol.Http11.Encoder"/> and <see cref="Protocol.Http11.Decoder"/>.
-/// RFC 9112 §4: Status-Code — three-digit integer categorised by class (1xx–5xx).
-/// </remarks>
 public sealed class Http11RoundTripStatusCodeSpec
 {
     private static ReadOnlyMemory<byte> BuildResponse(int status, string reason, string body,
@@ -29,7 +21,7 @@ public sealed class Http11RoundTripStatusCodeSpec
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-4")]
     public void Http11RoundTrip_should_return_301_with_location_when_get_round_trip()
     {
@@ -59,7 +51,7 @@ public sealed class Http11RoundTripStatusCodeSpec
         Assert.Equal("Not Found", await responses[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-4")]
     public void Http11RoundTrip_should_return_500_when_server_error_round_trip()
     {
@@ -71,7 +63,7 @@ public sealed class Http11RoundTripStatusCodeSpec
         Assert.Equal(HttpStatusCode.InternalServerError, responses[0].StatusCode);
     }
 
-    [Fact]
+    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-4")]
     public void Http11RoundTrip_should_return_503_with_retry_after_when_service_unavailable_round_trip()
     {

@@ -2,14 +2,6 @@ using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Tests.Http2.FlowControl;
 
-/// <summary>
-/// Tests stream-level and connection-level WINDOW_UPDATE decoding per RFC 9113 §6.9.
-/// Verifies increment values, boundary conditions, and zero-increment error handling.
-/// </summary>
-/// <remarks>
-/// Class under test: <see cref="FrameDecoder"/>.
-/// RFC 9113 §6.9.1: A zero-increment WINDOW_UPDATE on a stream is a stream error (PROTOCOL_ERROR).
-/// </remarks>
 public sealed class DecoderStreamFlowControlSpec
 {
     [Fact(Timeout = 5000)]
