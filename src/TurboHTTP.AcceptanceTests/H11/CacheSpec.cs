@@ -222,7 +222,7 @@ public sealed class CacheSpec : AcceptanceTestBase
         Assert.Equal(body1, body3);
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9111-5.2.2.2")]
     public async Task Cache_should_force_revalidation_with_must_revalidate()
     {

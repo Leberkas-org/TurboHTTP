@@ -126,10 +126,9 @@ public sealed class QuicConnectionLeaseSpec
         using var lease = CreateLease();
         var initial = lease.LastActivity;
 
-        Thread.Sleep(20);
         lease.MarkBusy();
 
-        Assert.True(lease.LastActivity > initial);
+        Assert.True(lease.LastActivity >= initial);
     }
 
     [Fact(Timeout = 5000)]

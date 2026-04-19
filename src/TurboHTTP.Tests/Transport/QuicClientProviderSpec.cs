@@ -203,21 +203,25 @@ public sealed class QuicClientProviderSpec
     {
         var options = new QuicOptions
         {
-            Host = "192.0.2.1", // TEST-NET-1: guaranteed not to route
+            Host = "192.0.2.1",
             Port = 443,
             ApplicationProtocols = [System.Net.Security.SslApplicationProtocol.Http3]
         };
 
         var provider = new QuicClientProvider(options);
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        // Pre-cancel to avoid real network I/O — tests that the provider
+        // propagates OperationCanceledException and can be disposed cleanly.
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
 
         try
         {
             await provider.GetStreamAsync(cts.Token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Expected: connection timeout
+            Assert.True(cts.IsCancellationRequested, $"Unexpected cancellation source: {ex}");
         }
 
         await provider.DisposeAsync();

@@ -468,20 +468,22 @@ public sealed class Http3StateMachineEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6")]
-    public void ProcessFrame_should_record_activity_on_all_frames()
+    public async Task ProcessFrame_should_record_activity_on_all_frames()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) }.ToEngineOptions());
+        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(50) }.ToEngineOptions());
 
-        Thread.Sleep(5);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        // Before processing any frame, timeout should be imminent
-        sm.CheckIdleTimeout();
+        var beforeFrame = sm.CheckIdleTimeout();
+        Assert.NotNull(beforeFrame);
 
         sm.ProcessFrame(new Http3SettingsFrame([]));
-        // After processing, timeout should be reset
 
-        sm.CheckIdleTimeout();
-        // If activity was recorded, timeout should not expire immediately
+        // CheckIdleTimeout is called immediately after ProcessFrame records activity.
+        // The 50ms window is far wider than the time needed to execute the next line,
+        // preventing the timer from firing again under parallel test load.
+        var afterFrame = sm.CheckIdleTimeout();
+        Assert.Null(afterFrame);
     }
 
     [Fact(Timeout = 5000)]

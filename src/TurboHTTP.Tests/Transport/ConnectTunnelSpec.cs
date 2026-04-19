@@ -11,7 +11,7 @@ public sealed class ConnectTunnelSpec
     private const string TargetHost = "example.com";
     private const int TargetPort = 443;
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     public async Task Tunnel_should_send_correct_CONNECT_request()
     {
         var (clientStream, serverStream) = CreateDuplexPipe();

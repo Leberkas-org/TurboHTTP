@@ -63,8 +63,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
         lease1.MaxConcurrentStreams = 10;
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         var lease2 =
             await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
@@ -104,8 +102,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
             TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         Assert.True(lease.IsAlive);
     }
 
@@ -120,8 +116,7 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
             TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: false));
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
+        AwaitCondition(() => !lease.IsAlive, TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
         Assert.False(lease.IsAlive);
     }
 
@@ -185,10 +180,10 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
         actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: true));
         actor.Tell(new QuicConnectionManagerActor.Release(lease3, CanReuse: true));
 
-        await Task.Delay(300, TestContext.Current.CancellationToken);
-
+        AwaitCondition(() => (lease1.IsAlive ? 1 : 0) + (lease2.IsAlive ? 1 : 0) + (lease3.IsAlive ? 1 : 0) < 3,
+            TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
         var aliveCount = (lease1.IsAlive ? 1 : 0) + (lease2.IsAlive ? 1 : 0) + (lease3.IsAlive ? 1 : 0);
-        Assert.True(aliveCount >= 1 && aliveCount < 3,
+        Assert.True(aliveCount is >= 1 and < 3,
             $"Expected 1-2 leases alive after eviction, got {aliveCount}");
     }
 
@@ -310,7 +305,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
         lease.MaxConcurrentStreams = 2;
 
         actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: true));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         var lease2 =
             await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
@@ -344,8 +338,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
                 TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: false));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         var lease2 =
             await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
@@ -372,8 +364,7 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
 
         actor.Tell(new QuicConnectionManagerActor.Release(orphanLease, CanReuse: false));
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
+        AwaitCondition(() => !orphanLease.IsAlive, TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
         Assert.False(orphanLease.IsAlive);
     }
 
@@ -415,8 +406,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
         var pendingTask =
             QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: false));
 
         var lease2 = await pendingTask.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
@@ -451,8 +440,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
 
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new QuicConnectionManagerActor.Release(lease2, CanReuse: true));
-
-        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         var lease3 =
             await QuicConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
@@ -499,8 +486,6 @@ public sealed class QuicConnectionManagerActorSpec : StreamTestBase
             await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
         actor.Tell(new QuicConnectionManagerActor.Release(lease1, CanReuse: true));
-
-        await Task.Delay(200, TestContext.Current.CancellationToken);
 
         // Lease should be evicted, next acquire creates new
         var lease2 =

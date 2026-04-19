@@ -190,8 +190,8 @@ public sealed class TlsClientProviderSpec
         var tunnelTask = TlsClientProvider.EstablishConnectTunnelAsync(
             clientStream, "example.com", 443, proxy, null, TestContext.Current.CancellationToken);
 
-        // Wait a tiny bit for request to be sent, then close
-        await Task.Delay(10, TestContext.Current.CancellationToken);
+        // Read the CONNECT request so we know it arrived, then close without responding
+        await ReadRequestAsync(serverStream);
         await serverStream.DisposeAsync();
 
         await Assert.ThrowsAsync<HttpRequestException>(() => tunnelTask);
@@ -247,7 +247,7 @@ public sealed class TlsClientProviderSpec
         // Send first part of response
         await serverStream.WriteAsync("HTTP/1.1 200 "u8.ToArray(), TestContext.Current.CancellationToken);
         await serverStream.FlushAsync(TestContext.Current.CancellationToken);
-        await Task.Delay(10, TestContext.Current.CancellationToken);
+        await Task.Yield();
 
         // Send rest of response
         await serverStream.WriteAsync("Connection Established\r\n\r\n"u8.ToArray(),

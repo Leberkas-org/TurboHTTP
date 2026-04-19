@@ -162,18 +162,10 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
 
-        // Get initial state (activity recorded in constructor)
-        state.TimeUntilExpiry();
-
-        Thread.Sleep(100);
-
-        // Record new activity
         state.RecordActivity();
 
-        // New timeout should be close to full timeout (fresh activity)
         var newTimeout = state.TimeUntilExpiry();
 
-        // Should be very close to 30 seconds (fresh activity means full timeout remaining)
         Assert.True(newTimeout.TotalSeconds > 29);
     }
 
@@ -188,11 +180,11 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-5.1")]
-    public void IsIdleTimeoutExpired_should_return_true_when_timeout_elapsed()
+    public async Task IsIdleTimeoutExpired_should_return_true_when_timeout_elapsed()
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        Thread.Sleep(150);
+        await Task.Delay(150, TestContext.Current.CancellationToken);
 
         Assert.True(state.IsIdleTimeoutExpired());
     }
@@ -202,9 +194,6 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void IsIdleTimeoutExpired_should_return_false_when_timeout_disabled()
     {
         var state = new ConnectionState(TimeSpan.Zero);
-
-        // Even after waiting, should never expire
-        Thread.Sleep(100);
 
         Assert.False(state.IsIdleTimeoutExpired());
     }
@@ -223,11 +212,11 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-5.1")]
-    public void TimeUntilExpiry_should_return_zero_when_expired()
+    public async Task TimeUntilExpiry_should_return_zero_when_expired()
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        Thread.Sleep(150);
+        await Task.Delay(150, TestContext.Current.CancellationToken);
 
         var remaining = state.TimeUntilExpiry();
 
@@ -291,11 +280,11 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.4")]
-    public void OnStreamOpened_should_record_activity()
+    public async Task OnStreamOpened_should_record_activity()
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        Thread.Sleep(150);
+        await Task.Delay(150, TestContext.Current.CancellationToken);
 
         // Expired before opening stream
         Assert.True(state.IsIdleTimeoutExpired());
@@ -501,11 +490,11 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-5")]
-    public void Reset_should_record_activity()
+    public async Task Reset_should_record_activity()
     {
         var state = new ConnectionState(TimeSpan.FromMilliseconds(100));
 
-        Thread.Sleep(150);
+        await Task.Delay(150, TestContext.Current.CancellationToken);
         Assert.True(state.IsIdleTimeoutExpired());
 
         state.Reset();

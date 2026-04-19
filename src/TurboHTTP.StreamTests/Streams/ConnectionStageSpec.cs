@@ -251,7 +251,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var decision = ConnectionReuseDecision.Close("Connection: close");
         var reuseItem = new ConnectionReuseItem(decision) { Key = TestKey };
         await inputQueue.OfferAsync(reuseItem);
-        await Task.Delay(300, TestContext.Current.CancellationToken);
+        AwaitCondition(() => tracker.Released, TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
         Assert.False(lease.Reusable);
         Assert.True(tracker.Released);
@@ -366,11 +366,9 @@ public sealed class ConnectionStageSpec : StreamTestBase
 
         var data = MakeData(0xFF);
         await inputQueue.OfferAsync(data);
-        await Task.Delay(200, TestContext.Current.CancellationToken);
 
         var data2 = MakeData(0xEE);
         await inputQueue.OfferAsync(data2);
-        await Task.Delay(200, TestContext.Current.CancellationToken);
 
         inputQueue.Complete();
         var results = await outputTask.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
@@ -409,7 +407,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
 
         var data = MakeData(0xBB);
         await inputQueue.OfferAsync(data);
-        await Task.Delay(300, TestContext.Current.CancellationToken);
+        AwaitCondition(() => tracker.Released, TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
         Assert.True(tracker.Released);
         Assert.False(tracker.ReleasedCanReuse);

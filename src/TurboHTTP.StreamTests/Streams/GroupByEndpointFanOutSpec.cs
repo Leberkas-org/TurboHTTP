@@ -136,8 +136,11 @@ public sealed class GroupByEndpointFanOutSpec : StreamTestBase
         await queue.OfferAsync(firstRequest)
             .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // Give the stage time to process the push and stamp the affinity tag.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        // Poll until the stage stamps the affinity tag.
+        AwaitCondition(
+            () => firstRequest.Options.TryGetValue(
+                GroupByRequestEndpointStage<HttpRequestMessage>.ConnectionAffinitySlot, out _), TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
 
         // Read back the slot ID stamped by the stage.
         var hasTag = firstRequest.Options.TryGetValue(

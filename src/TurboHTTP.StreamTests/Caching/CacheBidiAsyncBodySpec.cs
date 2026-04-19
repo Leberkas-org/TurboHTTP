@@ -96,8 +96,10 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
 
-        // Allow the PipeTo callback to fire
-        await Task.Delay(200, TestContext.Current.CancellationToken);
+        // Poll until the PipeTo callback fires and cache is populated
+        await AwaitAssertAsync(
+            () => Assert.NotNull(store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/slow"))),
+            TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
 
         var entry = store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/slow"));
         Assert.NotNull(entry);
@@ -129,8 +131,10 @@ public sealed class CacheBidiAsyncBodySpec : StreamTestBase
         var result = Assert.Single(results);
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
 
-        // Allow the PipeTo callback to fire
-        await Task.Delay(200, TestContext.Current.CancellationToken);
+        // Poll until the PipeTo callback fires and cache is populated
+        await AwaitAssertAsync(
+            () => Assert.NotNull(store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/pending"))),
+            TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
 
         var entry = store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/pending"));
         Assert.NotNull(entry);

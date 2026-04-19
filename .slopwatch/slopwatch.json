@@ -1,0 +1,16 @@
+{
+  "minSeverity": "warning",
+  "rules": {
+    "SW001": { "enabled": true, "severity": "error" },
+    "SW002": { "enabled": true, "severity": "error" },
+    "SW003": { "enabled": true, "severity": "error" },
+    "SW004": { "enabled": true, "severity": "error" },
+    "SW005": { "enabled": true, "severity": "error" },
+    "SW006": { "enabled": true, "severity": "error" }
+  },
+  "exclude": [
+    "**/Generated/**",
+    "**/obj/**",
+    "**/bin/**"
+  ]
+}

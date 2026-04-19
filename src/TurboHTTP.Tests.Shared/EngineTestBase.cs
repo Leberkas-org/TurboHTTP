@@ -3,7 +3,6 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Akka.TestKit.Xunit;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http3;
@@ -12,20 +11,17 @@ using FrameDecoder = TurboHTTP.Protocol.Http3.FrameDecoder;
 
 namespace TurboHTTP.Tests.Shared;
 
-/// <summary>
-/// Abstract base class for engine round-trip tests.
-/// Provides SendAsync/SendManyAsync helpers that pipe requests through an engine and a fake connection stage.
-/// </summary>
-/// <remarks>
-/// Inherits from TestKit; uses <see cref="EngineFakeConnectionStage"/> and <see cref="H2EngineFakeConnectionStage"/> to simulate TCP connections.
-/// </remarks>
-public abstract class EngineTestBase : TestKit
+public abstract class EngineTestBase
 {
-    protected readonly IMaterializer Materializer;
+    private static readonly ActorSystem _sharedSystem;
+    protected static readonly IMaterializer Materializer;
 
-    protected EngineTestBase() : base(ActorSystem.Create("engine-test-" + Guid.NewGuid()))
+    static EngineTestBase()
     {
-        Materializer = Sys.Materializer();
+        _sharedSystem = ActorSystem.Create("acceptance-tests");
+        Materializer = _sharedSystem.Materializer();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            _sharedSystem.Terminate().Wait(TimeSpan.FromSeconds(10));
     }
 
     internal async Task<(HttpResponseMessage Response, string RawRequest)> SendAsync(
@@ -88,10 +84,6 @@ public abstract class EngineTestBase : TestKit
         return (results, rawBuilder.ToString());
     }
 
-    /// <summary>
-    /// Runs Http20Engine (ITransportItem variant) against pre-queued server frames.
-    /// Returns the decoded response and all outbound H2 frames.
-    /// </summary>
     internal async Task<(HttpResponseMessage Response, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2EngineAsync(
         BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
@@ -117,10 +109,6 @@ public abstract class EngineTestBase : TestKit
         return (response, frames);
     }
 
-    /// <summary>
-    /// Runs Http20Engine (ITransportItem variant) with multiple requests against pre-queued server frames.
-    /// Returns all decoded responses and all outbound H2 frames.
-    /// </summary>
     internal async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
         SendH2EngineAsyncMany(
             BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
@@ -156,10 +144,6 @@ public abstract class EngineTestBase : TestKit
         return (results, frames);
     }
 
-    /// <summary>
-    /// Runs Http30Engine against pre-queued server frames.
-    /// Returns the decoded response and all outbound H3 frames.
-    /// </summary>
     internal async Task<(HttpResponseMessage Response, IReadOnlyList<Http3Frame> OutboundFrames)> SendH3EngineAsync(
         BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
@@ -204,7 +188,6 @@ public abstract class EngineTestBase : TestKit
 
         if (controlBytes.Count > 0)
         {
-            // Control stream bytes start with stream type VarInt(0x00); skip it.
             var controlSpan = controlBytes.ToArray().AsSpan();
             if (controlSpan.Length > 0 && controlSpan[0] == 0x00)
             {
@@ -220,10 +203,6 @@ public abstract class EngineTestBase : TestKit
         return (response, frames);
     }
 
-    /// <summary>
-    /// Drains the H2 fake stage outbound channel, waiting briefly for in-flight frames
-    /// that may still be traversing the outbound pipeline after the response has arrived.
-    /// </summary>
     private static async Task<List<byte>> DrainOutboundH2Async(H2EngineFakeConnectionStage fake)
     {
         var outboundBytes = new List<byte>();
@@ -241,7 +220,6 @@ public abstract class EngineTestBase : TestKit
         }
         catch (OperationCanceledException)
         {
-            // Timeout — drain any remaining items synchronously.
             while (fake.OutboundChannel.Reader.TryRead(out var chunk))
             {
                 outboundBytes.AddRange(chunk.Span.ToArray());

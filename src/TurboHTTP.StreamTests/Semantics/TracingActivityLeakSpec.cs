@@ -4,6 +4,7 @@ using Akka.Streams.TestKit;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
+using Activity = System.Diagnostics.Activity;
 using ActivityListener = System.Diagnostics.ActivityListener;
 using ActivitySamplingResult = System.Diagnostics.ActivitySamplingResult;
 using ActivitySource = System.Diagnostics.ActivitySource;
@@ -17,10 +18,20 @@ public sealed class TracingActivityLeakSpec : StreamTestBase
     public async Task TracingBidiStage_should_stop_activity_when_stage_tears_down_without_response()
     {
         var stoppedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Activity? capturedActivity = null;
 
         using var listener = new ActivityListener();
         listener.ShouldListenTo = source => source.Name == TurboHttpInstrumentation.SourceName;
         listener.Sample = (ref _) => ActivitySamplingResult.AllData;
+        // Wire ActivityStopped before AddActivityListener so the callback is always
+        // registered before the Akka dispatch thread can call PostStop.
+        listener.ActivityStopped = stopped =>
+        {
+            if (capturedActivity is { } a && ReferenceEquals(stopped, a))
+            {
+                stoppedTcs.TrySetResult();
+            }
+        };
         ActivitySource.AddActivityListener(listener);
 
         var stage = new TracingBidiStage();
@@ -55,13 +66,7 @@ public sealed class TracingActivityLeakSpec : StreamTestBase
         Assert.True(forwarded.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var activity));
         Assert.NotNull(activity);
 
-        listener.ActivityStopped = stopped =>
-        {
-            if (ReferenceEquals(stopped, activity))
-            {
-                stoppedTcs.TrySetResult();
-            }
-        };
+        capturedActivity = activity;
 
         // Tear down the stage — complete both inlets and cancel downstream
         reqInSub.SendComplete();

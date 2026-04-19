@@ -309,13 +309,11 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void CheckIdleTimeout_should_return_goaway_when_expired_no_active_streams()
+    public async Task CheckIdleTimeout_should_return_goaway_when_expired_no_active_streams()
     {
-        // Use a very short timeout so it expires immediately.
         var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) }.ToEngineOptions());
 
-        // Wait for timeout to expire.
-        Thread.Sleep(10);
+        await Task.Delay(20, TestContext.Current.CancellationToken);
 
         var result = sm.CheckIdleTimeout();
 
@@ -324,12 +322,12 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void CheckIdleTimeout_should_not_expire_when_streams_active()
+    public async Task CheckIdleTimeout_should_not_expire_when_streams_active()
     {
         var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) }.ToEngineOptions());
         sm.EncodeRequest(CreateGetRequest());
 
-        Thread.Sleep(10);
+        await Task.Delay(20, TestContext.Current.CancellationToken);
 
         var result = sm.CheckIdleTimeout();
 

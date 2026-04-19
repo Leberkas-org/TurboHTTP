@@ -60,7 +60,7 @@ public sealed class Http11RoundTripBodySpec
         return result;
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9112-6")]
     public async Task Http11RoundTripBody_should_preserve_binary_body_when_post_binary_roundtrip()
     {

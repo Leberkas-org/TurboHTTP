@@ -59,9 +59,9 @@ public sealed class PendingRequestSpec
         var task = pending.GetValueTask();
 
         // Set result asynchronously
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
-            Thread.Sleep(50);
+            await Task.Yield();
             pending.TrySetResult(response, version);
         }, TestContext.Current.CancellationToken);
 

@@ -43,12 +43,8 @@ public sealed class ConnectionPoolDeadlockSpec : StreamTestBase
 
         var secondAcquire =
             TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, TestContext.Current.CancellationToken);
-        var completed = await Task.WhenAny(secondAcquire,
-            Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
 
-        Assert.Same(secondAcquire, completed);
-
-        var lease2 = await secondAcquire;
+        var lease2 = await secondAcquire.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: false));
     }
 
@@ -143,9 +139,7 @@ public sealed class ConnectionPoolDeadlockSpec : StreamTestBase
 
         var writePump = ClientByteMover.MoveChannelToStream(state, onClose, byteMoverCts.Token);
 
-        var completed = await Task.WhenAny(writePump,
-            Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
-        Assert.Same(writePump, completed);
+        await writePump.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
         Assert.False(byteMoverCts.IsCancellationRequested);
     }

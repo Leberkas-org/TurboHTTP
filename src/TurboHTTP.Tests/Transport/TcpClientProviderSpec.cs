@@ -160,7 +160,7 @@ public sealed class TcpClientProviderSpec
         await provider.DisposeAsync();
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     public async Task TcpClientProvider_should_apply_default_proxy_credentials()
     {
         var credentials = new NetworkCredential("user", "pass");
@@ -177,13 +177,17 @@ public sealed class TcpClientProviderSpec
 
         var provider = new TcpClientProvider(options);
 
+        // proxy.local is a .local mDNS domain — resolution may be slow on Windows.
+        // Use a short CTS so the test doesn't block waiting for OS TCP timeout.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try
         {
-            await provider.GetStreamAsync(CancellationToken.None);
+            await provider.GetStreamAsync(cts.Token);
         }
-        catch (SocketException)
+        catch (Exception ex) when (ex is SocketException or OperationCanceledException)
         {
-            // Expected
+            // Expected: proxy connection refused, DNS failure, or mDNS timeout
+            Assert.True(ex is SocketException or OperationCanceledException, $"Unexpected: {ex}");
         }
 
         // Verify credentials were applied to proxy

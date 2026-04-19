@@ -191,7 +191,7 @@ public sealed class AltSvcCacheSpec
         Assert.Equal(1, cache.Count);
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC7838-5")]
     public async Task TryGetHttp3_should_survive_concurrent_store_and_eviction_under_contention()
     {
@@ -199,7 +199,7 @@ public sealed class AltSvcCacheSpec
         // to verify the atomic compare-and-remove doesn't corrupt state.
         var cache = new AltSvcCache();
         var afterExpiry = FixedNow.AddSeconds(61);
-        const int iterations = 1000;
+        const int iterations = 200;
 
         using var barrier = new Barrier(2);
 

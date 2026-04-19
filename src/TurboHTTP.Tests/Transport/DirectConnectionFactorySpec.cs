@@ -213,7 +213,7 @@ public sealed class DirectConnectionFactorySpec : IAsyncLifetime
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (lease.IsAlive && sw.ElapsedMilliseconds < 3000)
         {
-            await Task.Delay(50, TestContext.Current.CancellationToken);
+            await Task.Delay(1, TestContext.Current.CancellationToken);
         }
 
         Assert.False(lease.IsAlive);

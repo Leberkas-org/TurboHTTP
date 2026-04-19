@@ -83,8 +83,6 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
 
         probe.Send(actor, failureMessage);
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
         probe.Send(actor, new ClientStreamOwner.Shutdown());
         await actor.GracefulStop(TimeSpan.FromSeconds(2));
     }
@@ -100,7 +98,6 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
             var failureMessage = new ClientStreamOwner.StreamInstanceFailed(
                 new InvalidOperationException($"Test failure {i}"), i);
             probe.Send(actor, failureMessage);
-            await Task.Delay(50, TestContext.Current.CancellationToken);
         }
 
         probe.Send(actor, new ClientStreamOwner.Shutdown());
@@ -125,9 +122,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
         var probe = CreateTestProbe();
 
         probe.Send(actor, new ClientStreamOwner.Shutdown());
-        await Task.Delay(100, TestContext.Current.CancellationToken);
         probe.Send(actor, new ClientStreamOwner.Shutdown());
-        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
         Assert.True(stopped);
@@ -139,8 +134,6 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
         var actor = CreateClientStreamOwner();
 
         actor.Tell(new ClientStreamOwner.Shutdown());
-
-        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(5));
         Assert.True(stopped);
@@ -154,33 +147,18 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
 
         probe.Send(actor, "unknown message");
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
         probe.Send(actor, new ClientStreamOwner.Shutdown());
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
         Assert.True(stopped);
     }
 
     [Fact(Timeout = 10_000)]
-    public async Task ClientStreamOwner_should_complete_on_force_stop()
+    public void ClientStreamOwner_should_complete_on_force_stop()
     {
         var actor = CreateClientStreamOwner();
 
+        Watch(actor);
         actor.Tell(PoisonPill.Instance);
-
-        await Task.Delay(200, TestContext.Current.CancellationToken);
-
-        try
-        {
-            var probe = CreateTestProbe();
-            probe.Send(actor, "ping");
-            probe.ExpectMsg<string>(TimeSpan.FromMilliseconds(500),
-                "Message should not be received - actor should be dead", TestContext.Current.CancellationToken);
-            Assert.Fail("Actor should be dead after PoisonPill");
-        }
-        catch
-        {
-            // ignored
-        }
+        ExpectTerminated(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
     }
 }

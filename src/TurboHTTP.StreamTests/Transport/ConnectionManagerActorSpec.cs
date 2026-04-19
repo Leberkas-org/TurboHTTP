@@ -61,8 +61,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
                 TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         var lease2 =
             await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
@@ -83,8 +81,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
             TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         Assert.True(lease.IsAlive);
     }
 
@@ -99,7 +95,7 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
             TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: false));
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
+        AwaitCondition(() => !lease.IsAlive, TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
 
         Assert.False(lease.IsAlive);
     }
@@ -122,7 +118,8 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
-        await Task.Delay(300, TestContext.Current.CancellationToken);
+        AwaitCondition(() => !lease1.IsAlive || !lease2.IsAlive, TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
 
         var evictedCount = (!lease1.IsAlive ? 1 : 0) + (!lease2.IsAlive ? 1 : 0);
         Assert.True(evictedCount >= 1, "At least one idle connection should have been evicted");
@@ -145,7 +142,8 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
-        await Task.Delay(300, TestContext.Current.CancellationToken);
+        AwaitCondition(() => !lease1.IsAlive || !lease2.IsAlive, TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
 
         var anyAlive = lease1.IsAlive || lease2.IsAlive;
         Assert.True(anyAlive);
@@ -192,8 +190,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
                 TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         var lease2 =
             await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
@@ -229,7 +225,7 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
             TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease, CanReuse: true));
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
+        AwaitCondition(() => !lease.IsAlive, TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
         Assert.False(lease.IsAlive);
     }
 
@@ -290,8 +286,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         var lease3 =
             await TcpConnectionManagerActor.AcquireAsync(actor, options1, endpoint1,
                 TestContext.Current.CancellationToken);
@@ -346,8 +340,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
 
         lease.Dispose();
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
         var lease2 =
             await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
@@ -393,8 +385,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
                 TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
-
         var lease2 =
             await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
@@ -415,8 +405,6 @@ public sealed class TcpConnectionManagerActorSpec : StreamTestBase
             await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
                 TestContext.Current.CancellationToken);
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
-
-        await Task.Delay(200, TestContext.Current.CancellationToken);
 
         var lease2 =
             await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,

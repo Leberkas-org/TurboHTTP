@@ -183,7 +183,6 @@ public sealed class ConnectionLeaseSpec
         var lease = new ConnectionLease(handle, state);
         var before = lease.LastActivity;
 
-        Thread.Sleep(1);
         lease.MarkBusy();
 
         Assert.True(lease.LastActivity >= before);
@@ -199,7 +198,6 @@ public sealed class ConnectionLeaseSpec
         lease.MarkBusy();
         var before = lease.LastActivity;
 
-        Thread.Sleep(1);
         lease.MarkIdle();
 
         Assert.True(lease.LastActivity >= before);
@@ -500,9 +498,9 @@ public sealed class ConnectionLeaseSpec
         var lease = new ConnectionLease(handle, state);
         var token = lease.Token;
 
-        var disposeTask = Task.Run(() =>
+        var disposeTask = Task.Run(async () =>
         {
-            Thread.Sleep(100);
+            await Task.Yield();
             lease.Dispose();
         }, TestContext.Current.CancellationToken);
 
