@@ -216,8 +216,8 @@ ConnectionLease
 
 ### Thread Safety
 - ✅ `ConnectionPool` is thread-safe (SemaphoreSlim, ConcurrentQueue)
-- ✅ `CookieJar` is thread-safe (locking on writes)
-- ✅ `HttpCacheStore` is thread-safe (ReaderWriterLockSlim)
+- ✅ `CookieJar` is actor-confined — `MemoryCookieStore` uses a plain `List<T>` (no locking needed)
+- ✅ `MemoryCacheStore` is actor-confined — uses a plain `Dictionary` (no locking needed)
 - ✅ Akka stages are single-threaded per actor
 
 ### Testing

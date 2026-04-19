@@ -236,10 +236,18 @@ src/TurboHTTP/Protocol/
 │   ├── ContentEncodingDecoder.cs
 │   └── …
 ├── Caching/                 # HTTP Caching (RFC 9111)
-│   ├── CacheStore.cs
+│   ├── ICacheStore.cs           # Store interface (custom backend extension point)
+│   ├── MemoryCacheStore.cs      # Default in-memory store (actor-confined)
+│   ├── CacheStoreEntry.cs       # Stored response snapshot (Vary, ETag, freshness)
+│   ├── CacheControlStoreEntry.cs
 │   ├── CacheFreshnessEvaluator.cs
+│   ├── CacheValidationRequestBuilder.cs
+│   ├── CacheControlParser.cs
 │   └── …
 └── Cookies/                 # Cookie management (RFC 6265)
+    ├── ICookieStore.cs          # Store interface (custom backend extension point)
+    ├── MemoryCookieStore.cs     # Default in-memory store (actor-confined)
+    ├── CookieStoreEntry.cs      # Persisted cookie record
     ├── CookieJar.cs
     └── CookieParser.cs
 ```

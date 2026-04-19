@@ -107,39 +107,31 @@ A cookie with no `Max-Age` and no `Expires` is a **session cookie** — it lives
 Set-Cookie: sid=abc123   ← no expiry: lasts until the client is disposed
 ```
 
-## Working with `CookieJar` Directly
+## Sharing a Cookie Store
 
-`CookieJar` is a public class. You can construct one independently to pre-populate cookies, test cookie matching logic, or share a jar across request processing outside the pipeline.
+By default each named client gets its own isolated cookie store. To share cookies across multiple clients — for example, so that a login performed by one client is visible to another — implement `ICookieStore` and pass the same instance to each:
 
 ```csharp
 using TurboHTTP.Protocol.Cookies;
 
-var jar = new CookieJar();
+// Your thread-safe ICookieStore implementation
+ICookieStore sharedStore = new MySharedCookieStore();
 
-// Simulate a server response that sets a cookie
-var response = new HttpResponseMessage();
-response.Headers.TryAddWithoutValidation("Set-Cookie", "session=abc123; Path=/; Secure");
-jar.ProcessResponse(new Uri("https://api.example.com"), response);
+builder.Services.AddTurboHttpClient("auth", options =>
+{
+    options.BaseAddress = new Uri("https://auth.example.com");
+})
+.WithCookies(sharedStore);
 
-Console.WriteLine($"Cookies stored: {jar.Count}"); // → 1
-
-// Inspect what would be injected into a request
-var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/data");
-jar.AddCookiesToRequest(new Uri("https://api.example.com/data"), ref request);
-// request.Headers["Cookie"] now contains "session=abc123"
-
-// Clear all stored cookies (e.g., on logout)
-jar.Clear();
-Console.WriteLine($"Cookies after clear: {jar.Count}"); // → 0
+builder.Services.AddTurboHttpClient("api", options =>
+{
+    options.BaseAddress = new Uri("https://api.example.com");
+})
+.WithCookies(sharedStore);
 ```
 
-### Clearing cookies on logout
+A cookie set during login on the `auth` client will now be available to the `api` client.
 
-Call `Clear()` on the jar when a user logs out to remove all stored cookies:
-
-```csharp
-// After a successful logout response:
-jar.Clear();
-```
-
-Since the per-client `CookieJar` is managed internally by the pipeline, clearing it in tests or custom integrations requires direct access to the jar instance used at construction time.
+::: warning Thread safety
+When an `ICookieStore` is shared across multiple clients it will receive concurrent reads and writes. Your implementation must be thread-safe.
+:::

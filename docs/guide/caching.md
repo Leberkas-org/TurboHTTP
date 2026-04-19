@@ -151,10 +151,13 @@ request.Headers.CacheControl = new CacheControlHeaderValue
 
 ## Sharing a Cache Store
 
-By default each named client gets its own `CacheStore`. To share a single store across multiple named clients — for example, to deduplicate in-flight requests across services — create a `CacheStore` once and pass it directly:
+By default each named client gets its own cache. To share a single store across multiple named clients — for example, to serve the same cached responses to parallel services — implement `ICacheStore` and pass the same instance to each client:
 
 ```csharp
-var sharedStore = new CacheStore();
+using TurboHTTP.Protocol.Caching;
+
+// Your thread-safe ICacheStore implementation
+ICacheStore sharedStore = new MySharedCacheStore();
 
 builder.Services.AddTurboHttpClient("client-a", options =>
 {
@@ -169,6 +172,8 @@ builder.Services.AddTurboHttpClient("client-b", options =>
 .WithCache(sharedStore);
 ```
 
-`CacheStore` is thread-safe and designed for concurrent access from multiple clients.
+::: warning Thread safety
+When an `ICacheStore` is shared across multiple clients it will receive concurrent reads and writes. Your implementation must be thread-safe.
+:::
 
 See the [Configuration guide](./configuration) for more details on cache setup.
