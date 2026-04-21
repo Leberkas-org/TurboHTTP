@@ -64,10 +64,7 @@ internal readonly record struct ConnectedSignalItem : IInputItem
     public RequestEndpoint Key { get; init; }
 }
 
-internal readonly record struct ReconnectItem : IControlItem
-{
-    public RequestEndpoint Key { get; init; }
-}
+
 
 internal class NetworkBuffer : IInputItem, IOutputItem
 {

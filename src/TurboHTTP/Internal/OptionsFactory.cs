@@ -1,7 +1,7 @@
 using System.Net.Security;
-using TurboHTTP.Internal;
+using TurboHTTP.Transport.Connection;
 
-namespace TurboHTTP.Transport.Connection;
+namespace TurboHTTP.Internal;
 
 internal static class OptionsFactory
 {
