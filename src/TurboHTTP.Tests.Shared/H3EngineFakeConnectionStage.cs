@@ -46,9 +46,9 @@ internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
                 {
                     var item = Grab(stage.In);
 
-                    // Extract stream type from Http3NetworkBuffer (control preface, QPACK encoder, etc.)
+                    // Extract stream type from RoutedNetworkBuffer (control preface, QPACK encoder, etc.)
                     long? streamType = null;
-                    if (item is Http3NetworkBuffer h3Buf)
+                    if (item is RoutedNetworkBuffer h3Buf)
                     {
                         streamType = h3Buf.StreamTypeValue;
                     }
@@ -58,10 +58,10 @@ internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
                         stage.OutboundChannel.Writer.TryWrite((
                             NetworkBufferTestExtensions.FromArray(dataChunk.Span.ToArray()), streamType));
                         dataChunk.Dispose();
-                    }
 
-                    // Every outbound push (tagged or not) unlocks a server frame.
-                    Unlock();
+                        // Only actual data unlocks a server frame — control metadata items do not.
+                        Unlock();
+                    }
 
                     if (!IsClosed(stage.In))
                     {
@@ -118,7 +118,7 @@ internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
             var buf = NetworkBufferTestExtensions.FromArray(frameBytes);
 
             // First frame is the control stream (SETTINGS), remaining are request stream data.
-            var h3Buf = Http3NetworkBuffer.Rent(buf.Length);
+            var h3Buf = RoutedNetworkBuffer.Rent(buf.Length);
             buf.Span.CopyTo(h3Buf.FullMemory.Span);
             h3Buf.Length = buf.Length;
             buf.Dispose();

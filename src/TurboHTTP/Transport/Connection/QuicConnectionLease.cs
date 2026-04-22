@@ -54,7 +54,7 @@ internal sealed class QuicConnectionLease : IDisposable
     /// Defaults to 1 (exclusive use per stage — QUIC multiplexes internally).
     /// Can be raised to share one connection across multiple stages.
     /// </summary>
-    public int MaxConcurrentStreams { get; set; } = 1;
+    public int MaxConcurrentStreams { get; internal set; } = 1;
 
     /// <summary>
     /// Whether this connection can accept another stage. Checks liveness, reusability,

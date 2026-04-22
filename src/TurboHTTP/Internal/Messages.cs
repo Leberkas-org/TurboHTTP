@@ -121,20 +121,20 @@ internal class NetworkBuffer : IInputItem, IOutputItem
     }
 }
 
-internal class Http3NetworkBuffer : NetworkBuffer
+internal class RoutedNetworkBuffer : NetworkBuffer
 {
-    private static readonly ConcurrentStack<Http3NetworkBuffer> WrapperPool = new();
+    private static readonly ConcurrentStack<RoutedNetworkBuffer> WrapperPool = new();
 
     public long? StreamTypeValue { get; set; }
 
     public long? StreamId { get; set; }
 
-    public new static Http3NetworkBuffer Rent(int minimumSize)
+    public new static RoutedNetworkBuffer Rent(int minimumSize)
     {
         var owner = MemoryPool<byte>.Shared.Rent(minimumSize);
         if (!WrapperPool.TryPop(out var buf))
         {
-            return new Http3NetworkBuffer { Owner = owner };
+            return new RoutedNetworkBuffer { Owner = owner };
         }
 
         buf.Owner = owner;
@@ -211,6 +211,26 @@ internal enum QuicCloseKind
 /// which recovery path to take.
 /// </summary>
 internal readonly record struct QuicCloseItem(QuicCloseKind Kind, long StreamId = -1) : IInputItem
+{
+    public RequestEndpoint Key { get; init; }
+}
+
+/// <summary>
+/// Instructs the QUIC transport state machine to register a typed stream slot
+/// before the connection is established. Emitted by the transport stage via
+/// <see cref="ITransportOperations.OnConnectionReadyForSetup"/> so the SM
+/// remains protocol-agnostic.
+/// </summary>
+internal readonly record struct OpenTypedStreamItem(long StreamTypeValue, long SyntheticStreamId, bool Outbound) : IOutputItem
+{
+    public RequestEndpoint Key { get; init; }
+}
+
+/// <summary>
+/// Signals that all <see cref="OpenTypedStreamItem"/>s for the current connection
+/// have been injected and the SM may begin opening typed streams.
+/// </summary>
+internal readonly record struct ProtocolReadyItem : IOutputItem
 {
     public RequestEndpoint Key { get; init; }
 }

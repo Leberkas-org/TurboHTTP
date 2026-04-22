@@ -80,7 +80,7 @@ internal sealed class QpackStreamHandler
     {
         var sectionAck = _responseDecoder.DecoderInstructions;
 
-        var buf = Http3NetworkBuffer.Rent(1 + sectionAck.Length + 16);
+        var buf = RoutedNetworkBuffer.Rent(1 + sectionAck.Length + 16);
         var dest = buf.FullMemory.Span;
         var offset = 0;
 
@@ -143,7 +143,7 @@ internal sealed class QpackStreamHandler
             totalLength = instructions.Length;
         }
 
-        var buf = Http3NetworkBuffer.Rent(totalLength);
+        var buf = RoutedNetworkBuffer.Rent(totalLength);
         owner.Memory.Span[..totalLength].CopyTo(buf.FullMemory.Span);
         buf.Length = totalLength;
         buf.Key = endpoint;

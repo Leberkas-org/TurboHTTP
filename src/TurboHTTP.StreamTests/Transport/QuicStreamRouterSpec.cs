@@ -102,7 +102,7 @@ public sealed class QuicStreamRouterSpec
         var ctx = router.GetOrCreateContext(1);
         ctx.Handle = handle;
 
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamId = 1;
         dataItem.Length = 3;
 
@@ -118,7 +118,7 @@ public sealed class QuicStreamRouterSpec
         var (router, ops) = CreateRouter();
         router.GetOrCreateContext(1);
 
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamId = 1;
         dataItem.Length = 3;
 
@@ -136,7 +136,7 @@ public sealed class QuicStreamRouterSpec
         var controlState = new TypedStreamState { StreamId = -2 };
         var typedStreams = new Dictionary<long, TypedStreamState> { [0x00] = controlState };
 
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamTypeValue = (long)StreamType.Control;
         dataItem.Length = 3;
 
@@ -154,7 +154,7 @@ public sealed class QuicStreamRouterSpec
         var controlState = new TypedStreamState { Handle = controlHandle, StreamId = -2 };
         var typedStreams = new Dictionary<long, TypedStreamState> { [0x00] = controlState };
 
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamTypeValue = (long)StreamType.Control;
         dataItem.Length = 3;
 

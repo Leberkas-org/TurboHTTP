@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Diagnostics;
-using System.Threading.Channels;
 using Akka.Actor;
 using Akka.Event;
 using TurboHTTP.Diagnostics;
@@ -45,7 +44,7 @@ internal sealed class TcpTransportStateMachine
 
     private bool _upstreamFinished;
     private bool _isReconnecting;
-    private CancellationTokenSource? _pumpCts;
+    private readonly TcpPumpManager _pumpManager;
     private CancellationTokenSource? _acquireCts;
 
     public TcpTransportStateMachine(
@@ -56,6 +55,7 @@ internal sealed class TcpTransportStateMachine
         _ops = ops;
         _connectionManager = connectionManager;
         _self = self;
+        _pumpManager = new TcpPumpManager(self);
     }
 
     public void Dispatch(ITcpTransportEvent evt)
@@ -141,7 +141,7 @@ internal sealed class TcpTransportStateMachine
             // Complete now; otherwise we'd wait forever since no more
             // ConnectionReuseItem signals will arrive.
             _connectionGen++;
-            StopInboundPump();
+            _pumpManager.StopInboundPump();
             ReturnLeaseToPool(canReuse: true);
             _handle = null;
             _currentLease = null;
@@ -200,7 +200,7 @@ internal sealed class TcpTransportStateMachine
             _leaseReturned = false;
             ReturnLeaseToPool(canReuse: false);
             _connectionGen++;
-            StopInboundPump();
+            _pumpManager.StopInboundPump();
             _handle = null;
             _currentLease = null;
         }
@@ -225,7 +225,7 @@ internal sealed class TcpTransportStateMachine
             if (_handle is not null)
             {
                 _connectionGen++;
-                StopInboundPump();
+                _pumpManager.StopInboundPump();
                 _handle = null;
                 _currentLease = null;
             }
@@ -293,7 +293,7 @@ internal sealed class TcpTransportStateMachine
         _handle = lease.Handle;
         _currentKey = lease.Key;
 
-        StartInboundPump();
+        _pumpManager.StartInboundPump(_handle, _currentKey, _connectionGen);
 
         if (_isReconnecting)
         {
@@ -319,7 +319,7 @@ internal sealed class TcpTransportStateMachine
         var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _currentKey };
         _ops.OnPushOutput(signal);
 
-        StopInboundPump();
+        _pumpManager.StopInboundPump();
         _handle = null;
         _currentLease = null;
 
@@ -448,7 +448,7 @@ internal sealed class TcpTransportStateMachine
     {
         _ops.Log.Debug("TcpConnectionStage: CleanupTransport gen={0}", _connectionGen);
         _connectionGen++;
-        StopInboundPump();
+        _pumpManager.StopInboundPump();
 
         // Cancel any in-flight connection acquisition so the ConnectionManager
         // can immediately release the lease instead of sending it to dead letters.
@@ -469,107 +469,6 @@ internal sealed class TcpTransportStateMachine
             _currentLease = null;
             _handle = null;
         }
-    }
-
-    private void StartInboundPump()
-    {
-        StopInboundPump();
-
-        var handle = _handle;
-        if (handle is null)
-        {
-            return;
-        }
-
-        _pumpCts = new CancellationTokenSource();
-        var ct = _pumpCts.Token;
-        var reader = handle.InboundReader;
-        var key = _currentKey;
-        var gen = _connectionGen;
-
-        _ = PumpAsync(reader, key, gen, ct, _self);
-    }
-
-    private static async Task PumpAsync(
-        ChannelReader<NetworkBuffer> reader,
-        RequestEndpoint key,
-        int gen,
-        CancellationToken ct,
-        IActorRef self)
-    {
-        var closeKind = TlsCloseKind.CleanClose;
-        try
-        {
-            while (await reader.WaitToReadAsync(ct).ConfigureAwait(false))
-            {
-                IInputItem[]? batch = null;
-                var count = 0;
-
-                while (reader.TryRead(out var chunk))
-                {
-                    // Early exit when the connection generation changed — the actor thread
-                    // always cancels the pump CTS after incrementing _connectionGen, so
-                    // checking the token is sufficient. This avoids a cross-thread volatile
-                    // read of _connectionGen from the pump's ThreadPool thread.
-                    if (ct.IsCancellationRequested)
-                    {
-                        chunk.Dispose();
-                        while (reader.TryRead(out var stale)) stale.Dispose();
-                        if (batch is not null) ArrayPool<IInputItem>.Shared.Return(batch);
-                        return;
-                    }
-
-                    chunk.Key = key;
-                    batch ??= ArrayPool<IInputItem>.Shared.Rent(8);
-
-                    if (count == batch.Length)
-                    {
-                        self.Tell(new InboundBatch(batch, count, gen));
-                        batch = ArrayPool<IInputItem>.Shared.Rent(count * 2);
-                        count = 0;
-                    }
-
-                    batch[count++] = chunk;
-                }
-
-                if (count > 0)
-                {
-                    self.Tell(new InboundBatch(batch!, count, gen));
-                }
-                else if (batch is not null)
-                {
-                    ArrayPool<IInputItem>.Shared.Return(batch);
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-        catch (ChannelClosedException ex) when (ex.InnerException is AbruptCloseException)
-        {
-            closeKind = TlsCloseKind.AbruptClose;
-        }
-        catch (Exception ex)
-        {
-            self.Tell(new InboundPumpFailed(ex));
-            return;
-        }
-
-        self.Tell(new InboundComplete(closeKind, gen));
-    }
-
-    private void StopInboundPump()
-    {
-        if (_pumpCts is null)
-        {
-            return;
-        }
-
-        _ops.Log.Debug("TcpConnectionStage: StopInboundPump gen={0}", _connectionGen);
-        _pumpCts.Cancel();
-        _pumpCts.Dispose();
-        _pumpCts = null;
     }
 
     private void WriteToOutbound(NetworkBuffer buffer)

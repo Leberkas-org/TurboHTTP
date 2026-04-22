@@ -66,7 +66,7 @@ internal sealed class QuicStreamRouter
     /// <summary>
     /// Routes a tagged item to the appropriate stream (request, control, or encoder).
     /// </summary>
-    public void RouteTaggedItem(Http3NetworkBuffer dataItem, long? streamTypeValue,
+    public void RouteTaggedItem(RoutedNetworkBuffer dataItem, long? streamTypeValue,
         Dictionary<long, TypedStreamState> typedStreams)
     {
         if (streamTypeValue is null)
@@ -260,7 +260,7 @@ internal sealed class QuicStreamRouter
     {
         if (handle is not null)
         {
-            if (dataItem is Http3NetworkBuffer h3)
+            if (dataItem is RoutedNetworkBuffer h3)
             {
                 h3.StreamId = streamId;
             }
@@ -285,8 +285,8 @@ internal sealed class QuicStreamRouter
 
         _ = handle.OutboundWriter.WriteAsync(buffer)
             .PipeTo(_self,
-                success: () => new OutboundWriteDone(),
-                failure: ex => new OutboundWriteFailed(ex.GetBaseException()));
+                success: static () => new OutboundWriteDone(),
+                failure: static ex => new OutboundWriteFailed(ex.GetBaseException()));
     }
 
     /// <summary>

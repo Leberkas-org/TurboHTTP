@@ -95,6 +95,12 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
 
         public override void PreStart()
         {
+            EmitMultiple<IOutputItem>(_stage._outNetwork, [
+                new OpenTypedStreamItem(0x00, -2, Outbound: true),
+                new OpenTypedStreamItem(0x02, -3, Outbound: true),
+                new OpenTypedStreamItem(0x03, -4, Outbound: false),
+                new ProtocolReadyItem(),
+            ]);
             ScheduleIdleCheck();
         }
 
@@ -109,7 +115,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             if (goAway is not null)
             {
                 // Serialize and emit the GOAWAY frame
-                var buf = Http3NetworkBuffer.Rent(goAway.SerializedSize);
+                var buf = RoutedNetworkBuffer.Rent(goAway.SerializedSize);
                 var span = buf.FullMemory.Span;
                 goAway.WriteTo(ref span);
                 buf.Length = goAway.SerializedSize;
@@ -153,7 +159,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                 case QuicCloseItem:
                     HandleSignalItem(item);
                     return;
-                case Http3NetworkBuffer tagged:
+                case RoutedNetworkBuffer tagged:
                     HandleTaggedStreamData(tagged);
                     return;
                 case NetworkBuffer rawBuffer:
@@ -239,7 +245,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             }
         }
 
-        private void HandleTaggedStreamData(Http3NetworkBuffer tagged)
+        private void HandleTaggedStreamData(RoutedNetworkBuffer tagged)
         {
             StreamType? type = tagged switch
             {

@@ -1,6 +1,6 @@
 namespace TurboHTTP.Transport.Connection;
 
-public interface ITransportOptions
+internal interface ITransportOptions
 {
     string Host { get; init; }
     int Port { get; init; }

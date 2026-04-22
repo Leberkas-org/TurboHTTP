@@ -68,11 +68,6 @@ internal sealed class QuicConnectionStage : GraphStage<FlowShape<IOutputItem, II
         {
             var stageActor = GetStageActor(OnReceive);
             _sm = new QuicTransportStateMachine(this, stageActor.Ref, _stage._connectionManager,
-                [
-                    new TypedStreamDescriptor(0x00, -2, Outbound: true),
-                    new TypedStreamDescriptor(0x02, -3, Outbound: true),
-                    new TypedStreamDescriptor(0x03, -4, Outbound: false),
-                ],
                 _stage._allowConnectionMigration);
             Pull(_stage._in);
         }

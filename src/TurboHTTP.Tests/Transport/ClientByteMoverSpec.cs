@@ -150,17 +150,14 @@ public sealed class ClientByteMoverSpec
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
 
-        // Empty stream (EOF immediately)
         var stream = new MemoryStream([], writable: false);
         var state = new ClientState(stream, inbound, outbound);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
-        // Act
         await ClientByteMover.MoveStreamToChannel(state, () => { }, cts.Token);
 
-        // Assert: clean close should be set
-        Assert.Equal(TlsCloseKind.CleanClose, state.CloseKind);
+        Assert.True(inbound.Reader.Completion.IsCompletedSuccessfully);
     }
 
     [Fact(Timeout = 5000)]
@@ -169,17 +166,15 @@ public sealed class ClientByteMoverSpec
         var inbound = Channel.CreateUnbounded<NetworkBuffer>();
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
 
-        // Failing stream that throws on read
         var stream = new FailingStream();
         var state = new ClientState(stream, inbound, outbound);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
-        // Act
         await ClientByteMover.MoveStreamToChannel(state, () => { }, cts.Token);
 
-        // Assert: abrupt close should be set
-        Assert.Equal(TlsCloseKind.AbruptClose, state.CloseKind);
+        Assert.True(inbound.Reader.Completion.IsFaulted);
+        Assert.IsType<AbruptCloseException>(inbound.Reader.Completion.Exception?.InnerException);
     }
 
     [Fact(Timeout = 5000)]
@@ -219,23 +214,19 @@ public sealed class ClientByteMoverSpec
         var outbound = Channel.CreateUnbounded<NetworkBuffer>();
 
         var stream = new FailingStream();
-        var state = new ClientState(stream, inbound, outbound)
-        {
-            CloseKind = null
-        };
+        var state = new ClientState(stream, inbound, outbound);
 
         var buf = NetworkBuffer.Rent(10);
         buf.Length = 10;
         outbound.Writer.TryWrite(buf);
         outbound.Writer.Complete();
 
+        var onCloseCalled = false;
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
-        // Act
-        await ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
+        await ClientByteMover.MoveChannelToStream(state, () => { onCloseCalled = true; }, cts.Token);
 
-        // Assert: close kind should be set to AbruptClose
-        Assert.Equal(TlsCloseKind.AbruptClose, state.CloseKind);
+        Assert.True(onCloseCalled);
     }
 
     private sealed class CapturingStream(List<byte[]> writes) : Stream

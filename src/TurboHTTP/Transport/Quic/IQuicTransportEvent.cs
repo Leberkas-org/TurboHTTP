@@ -15,7 +15,7 @@ internal readonly record struct AcquisitionFailed(Exception Error) : IQuicTransp
 
 internal readonly record struct InboundData(IInputItem Item, int Gen) : IQuicTransportEvent;
 
-internal readonly record struct InboundComplete(TlsCloseKind CloseKind, int Gen, long StreamId) : IQuicTransportEvent;
+internal readonly record struct InboundComplete(QuicCloseKind CloseKind, int Gen, long StreamId) : IQuicTransportEvent;
 
 internal readonly record struct InboundPumpFailed(Exception Error, long StreamId) : IQuicTransportEvent;
 

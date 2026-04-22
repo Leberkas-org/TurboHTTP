@@ -7,14 +7,6 @@ using TurboHTTP.Transport.Quic;
 
 namespace TurboHTTP.Transport.Connection;
 
-/// <summary>
-/// Wraps a <see cref="IClientProvider"/> for a single QUIC connection and exposes
-/// typed stream-opening and inbound-stream acceptance.
-/// <para>
-/// Mirrors <see cref="ConnectionHandle"/> structurally. Carries the QUIC-specific
-/// <see cref="InboundStream"/> record (moved from the deleted <c>QuicConnectionManager</c>).
-/// </para>
-/// </summary>
 [SupportedOSPlatform("linux")]
 [SupportedOSPlatform("macOS")]
 [SupportedOSPlatform("windows")]
@@ -157,7 +149,7 @@ internal sealed class QuicConnectionHandle : IAsyncDisposable
         if (direction != StreamDirection.WriteOnly)
         {
             _ = ClientByteMover.MoveStreamToChannel(state, static () => { }, lease.Token,
-                bufferFactory: Http3NetworkBuffer.Rent);
+                bufferFactory: ClientByteMover.Http3Factory);
         }
 
         if (direction != StreamDirection.ReadOnly)
@@ -167,5 +159,4 @@ internal sealed class QuicConnectionHandle : IAsyncDisposable
 
         return lease;
     }
-
 }

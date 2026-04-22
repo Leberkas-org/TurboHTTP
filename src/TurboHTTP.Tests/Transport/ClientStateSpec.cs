@@ -117,18 +117,6 @@ public sealed class ClientStateSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void ClientState_should_set_close_kind()
-    {
-        var stream = new MemoryStream();
-        var state = new ClientState(stream, null, null);
-
-        Assert.Null(state.CloseKind);
-
-        state.CloseKind = TlsCloseKind.CleanClose;
-        Assert.Equal(TlsCloseKind.CleanClose, state.CloseKind);
-    }
-
-    [Fact(Timeout = 5000)]
     public void ClientState_should_allow_on_writes_complete_callback()
     {
         var stream = new MemoryStream();

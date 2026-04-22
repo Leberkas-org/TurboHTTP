@@ -16,7 +16,7 @@ namespace TurboHTTP.Transport.Quic;
 internal sealed class QuicPumpManager
 {
     private readonly IActorRef _self;
-    private readonly List<CancellationTokenSource> _pumpCancellations = [];
+    private CancellationTokenSource? _pumpsCts;
     private CancellationTokenSource? _inboundAcceptCts;
 
     public QuicPumpManager(IActorRef self)
@@ -31,10 +31,8 @@ internal sealed class QuicPumpManager
     public void StartInboundPump(ConnectionHandle handle, long streamTypeValue,
         RequestEndpoint key, int connectionGen, long streamId)
     {
-        var cts = new CancellationTokenSource();
-        _pumpCancellations.Add(cts);
-
-        _ = PumpAsync(handle.InboundReader, key, streamTypeValue, cts.Token, _self, connectionGen, streamId);
+        _pumpsCts ??= new CancellationTokenSource();
+        _ = PumpAsync(handle.InboundReader, key, streamTypeValue, _pumpsCts.Token, _self, connectionGen, streamId);
     }
 
     /// <summary>
@@ -58,13 +56,9 @@ internal sealed class QuicPumpManager
         _inboundAcceptCts?.Dispose();
         _inboundAcceptCts = null;
 
-        foreach (var cts in _pumpCancellations)
-        {
-            cts.Cancel();
-            cts.Dispose();
-        }
-
-        _pumpCancellations.Clear();
+        _pumpsCts?.Cancel();
+        _pumpsCts?.Dispose();
+        _pumpsCts = null;
     }
 
     private static async Task AcceptLoopAsync(QuicConnectionHandle handle, IActorRef self,
@@ -98,7 +92,7 @@ internal sealed class QuicPumpManager
         int gen,
         long streamId)
     {
-        var closeKind = TlsCloseKind.CleanClose;
+        var closeKind = QuicCloseKind.RequestStreamComplete;
         try
         {
             while (await reader.WaitToReadAsync(ct).ConfigureAwait(false))
@@ -107,7 +101,7 @@ internal sealed class QuicPumpManager
                 {
                     chunk.Key = key;
 
-                    if (chunk is Http3NetworkBuffer h3Buf)
+                    if (chunk is RoutedNetworkBuffer h3Buf)
                     {
                         h3Buf.StreamTypeValue = streamTypeValue;
                         h3Buf.StreamId = streamId;
@@ -123,11 +117,11 @@ internal sealed class QuicPumpManager
         }
         catch (AbruptCloseException)
         {
-            closeKind = TlsCloseKind.AbruptClose;
+            closeKind = QuicCloseKind.ConnectionFailure;
         }
         catch (ChannelClosedException ex) when (ex.InnerException is AbruptCloseException)
         {
-            closeKind = TlsCloseKind.AbruptClose;
+            closeKind = QuicCloseKind.ConnectionFailure;
         }
         catch (Exception ex)
         {

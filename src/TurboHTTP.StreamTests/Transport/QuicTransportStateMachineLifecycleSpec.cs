@@ -50,16 +50,12 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         bool allowConnectionMigration = true)
     {
         var ops = new MockTransportOperations();
-        var sm = new QuicTransportStateMachine(
-            ops,
-            ActorRefs.Nobody,
-            ActorRefs.Nobody,
-            [
-                new TypedStreamDescriptor(0x00, -2, Outbound: true),
-                new TypedStreamDescriptor(0x02, -3, Outbound: true),
-                new TypedStreamDescriptor(0x03, -4, Outbound: false),
-            ],
-            allowConnectionMigration);
+        var sm = new QuicTransportStateMachine(ops, ActorRefs.Nobody, ActorRefs.Nobody, allowConnectionMigration);
+        sm.HandlePush(new OpenTypedStreamItem(0x00, -2, Outbound: true));
+        sm.HandlePush(new OpenTypedStreamItem(0x02, -3, Outbound: true));
+        sm.HandlePush(new OpenTypedStreamItem(0x03, -4, Outbound: false));
+        sm.HandlePush(new ProtocolReadyItem());
+        ops.PullInputCount = 0;
         return (sm, ops);
     }
 
@@ -135,7 +131,7 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     {
         var (sm, ops) = CreateStateMachine();
 
-        var controlData = Http3NetworkBuffer.Rent(4);
+        var controlData = RoutedNetworkBuffer.Rent(4);
         controlData.StreamTypeValue = (long)StreamType.Control;
         controlData.StreamTypeValue = 0x00;
         controlData.Length = 3;
@@ -219,7 +215,7 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
         // Create a pending request stream
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamId = 1;
         dataItem.Length = 3;
         dataItem.Key = TestEndpoint;
@@ -240,12 +236,12 @@ public sealed class QuicTransportStateMachineLifecycleSpec
 
         sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
-        var stream1 = Http3NetworkBuffer.Rent(4);
+        var stream1 = RoutedNetworkBuffer.Rent(4);
         stream1.StreamId = 1;
         stream1.Length = 3;
         stream1.Key = TestEndpoint;
 
-        var stream3 = Http3NetworkBuffer.Rent(4);
+        var stream3 = RoutedNetworkBuffer.Rent(4);
         stream3.StreamId = 3;
         stream3.Length = 3;
         stream3.Key = TestEndpoint;
@@ -264,7 +260,7 @@ public sealed class QuicTransportStateMachineLifecycleSpec
         sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
         // Create a request stream context
-        var requestData = Http3NetworkBuffer.Rent(4);
+        var requestData = RoutedNetworkBuffer.Rent(4);
         requestData.StreamId = 1;
         requestData.Length = 3;
         requestData.Key = TestEndpoint;

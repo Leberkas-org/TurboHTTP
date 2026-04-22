@@ -26,8 +26,8 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var preface = sm.TryBuildControlPreface();
 
         Assert.NotNull(preface);
-        Assert.IsType<Http3NetworkBuffer>(preface);
-        var buf = (Http3NetworkBuffer)preface;
+        Assert.IsType<RoutedNetworkBuffer>(preface);
+        var buf = (RoutedNetworkBuffer)preface;
         Assert.Equal((long)StreamType.Control, buf.StreamTypeValue);
         Assert.True(buf.Length > 0);
     }
@@ -54,7 +54,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var preface = sm.TryBuildControlPreface();
 
         Assert.NotNull(preface);
-        var buf = (Http3NetworkBuffer)preface;
+        var buf = (RoutedNetworkBuffer)preface;
         // Preface contains: StreamType VarInt + Settings frame + MaxPushIdFrame
         // With MAX_PUSH_ID, size should be larger than without it
         Assert.Equal((long)StreamType.Control, buf.StreamTypeValue);
@@ -70,7 +70,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var preface = sm.TryBuildControlPreface();
 
         Assert.NotNull(preface);
-        var buf = (Http3NetworkBuffer)preface;
+        var buf = (RoutedNetworkBuffer)preface;
         // Without MaxPushIdFrame, still contains StreamType VarInt + Settings frame
         Assert.Equal((long)StreamType.Control, buf.StreamTypeValue);
         Assert.True(buf.Length > 0);
@@ -85,7 +85,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         sm.OnConnectionRestored();
 
         // OnConnectionRestored emits preface via _ops callback
-        var prefaces = _ops.Outbound.OfType<Http3NetworkBuffer>()
+        var prefaces = _ops.Outbound.OfType<RoutedNetworkBuffer>()
             .Where(b => b.StreamTypeValue == (long)StreamType.Control)
             .ToList();
         Assert.NotEmpty(prefaces);
@@ -96,7 +96,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     public void DecodeServerData_should_delegate_to_stream_manager()
     {
         var sm = CreateMachine();
-        var buffer = Http3NetworkBuffer.Rent(10);
+        var buffer = RoutedNetworkBuffer.Rent(10);
         buffer.FullMemory.Span[..1].Fill(0x00); // minimal DATA frame
         buffer.Length = 1;
 
@@ -112,11 +112,11 @@ public sealed class Http3StateMachineEdgeCasesSpec
     {
         var sm = CreateMachine();
 
-        var buffer1 = Http3NetworkBuffer.Rent(1);
+        var buffer1 = RoutedNetworkBuffer.Rent(1);
         buffer1.FullMemory.Span[0] = 0x00;
         buffer1.Length = 1;
 
-        var buffer4 = Http3NetworkBuffer.Rent(1);
+        var buffer4 = RoutedNetworkBuffer.Rent(1);
         buffer4.FullMemory.Span[0] = 0x00;
         buffer4.Length = 1;
 
@@ -403,7 +403,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         // First item should be control preface
         var items = _ops.Outbound.ToList();
         Assert.NotEmpty(items);
-        if (items[0] is Http3NetworkBuffer buf)
+        if (items[0] is RoutedNetworkBuffer buf)
         {
             Assert.Equal((long)StreamType.Control, buf.StreamTypeValue);
         }

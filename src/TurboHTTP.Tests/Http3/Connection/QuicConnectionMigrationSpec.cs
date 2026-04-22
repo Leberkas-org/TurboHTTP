@@ -64,13 +64,7 @@ public sealed class QuicConnectionMigrationSpec
     {
         // Arrange
         var ops = new StubTransportOperations();
-        var sm = new QuicTransportStateMachine(ops, Nobody.Instance, Nobody.Instance,
-            [
-                new TypedStreamDescriptor(0x00, -2, Outbound: true),
-                new TypedStreamDescriptor(0x02, -3, Outbound: true),
-                new TypedStreamDescriptor(0x03, -4, Outbound: false),
-            ],
-            allowConnectionMigration: true);
+        var sm = new QuicTransportStateMachine(ops, Nobody.Instance, Nobody.Instance, allowConnectionMigration: true);
 
         var oldEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.10"), 12345);
         var newEndPoint = new IPEndPoint(IPAddress.Parse("10.0.0.5"), 54321);
@@ -88,13 +82,7 @@ public sealed class QuicConnectionMigrationSpec
     {
         // Arrange
         var ops = new StubTransportOperations();
-        var sm = new QuicTransportStateMachine(ops, Nobody.Instance, Nobody.Instance,
-            [
-                new TypedStreamDescriptor(0x00, -2, Outbound: true),
-                new TypedStreamDescriptor(0x02, -3, Outbound: true),
-                new TypedStreamDescriptor(0x03, -4, Outbound: false),
-            ],
-            allowConnectionMigration: false);
+        var sm = new QuicTransportStateMachine(ops, Nobody.Instance, Nobody.Instance, allowConnectionMigration: false);
 
         var oldEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.10"), 12345);
         var newEndPoint = new IPEndPoint(IPAddress.Parse("10.0.0.5"), 54321);

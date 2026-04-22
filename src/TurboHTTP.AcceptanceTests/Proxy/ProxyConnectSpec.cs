@@ -5,7 +5,6 @@ using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
-using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.AcceptanceTests.Proxy;
 
@@ -20,19 +19,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
             $"HTTP/1.1 {(int)status} {status}\r\nContent-Length: {Encoding.Latin1.GetByteCount(body)}\r\n\r\n{body}");
     }
 
-    private static ConnectItem ToConnectItem(StreamAcquireItem acquire)
-    {
-        return new ConnectItem(new TcpOptions
-        {
-            Host = acquire.Key.Host,
-            Port = acquire.Key.Port,
-            UseProxy = true
-        })
-        {
-            Key = acquire.Key
-        };
-    }
-
     private async Task<(HttpResponseMessage Response, string TunneledRequest)> SendViaTunnelAsync(
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
@@ -41,7 +27,6 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
 
         var connectResponseConsumed = false;
         var tunnelFlow = Flow.Create<IOutputItem>()
-            .Select(item => item is StreamAcquireItem acquire ? ToConnectItem(acquire) : item)
             .Via(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake))
             .Where(item =>
             {

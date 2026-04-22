@@ -5,21 +5,23 @@ namespace TurboHTTP.Transport.Connection;
 
 internal static class ClientByteMover
 {
-    /// <summary>
-    /// Threshold below which consecutive small buffers are coalesced into a single write.
-    /// Reduces syscall overhead for HTTP/2 frame headers (9 bytes) and small DATA frames.
-    /// </summary>
+    // Threshold below which consecutive small buffers are coalesced into a single write.
+    // Reduces syscall overhead for HTTP/2 frame headers (9 bytes) and small DATA frames.
     private const int CoalesceThreshold = 16 * 1024;
 
-    /// <summary>
-    /// Reads bytes directly from <paramref name="state"/>'s network stream into pooled buffers
-    /// and writes them to the inbound channel. Eliminates the Pipe intermediary and the
-    /// associated per-chunk copy.
-    /// </summary>
-    internal static async Task MoveStreamToChannel(ClientState state, Action onClose, CancellationToken ct,
+    // Cached delegates — created once at class init, reused for every connection.
+    // Avoids a delegate heap allocation on each MoveStreamToChannel call.
+    private static readonly Func<int, NetworkBuffer> DefaultFactory = NetworkBuffer.Rent;
+    internal static readonly Func<int, NetworkBuffer> Http3Factory = RoutedNetworkBuffer.Rent;
+
+    internal static async Task MoveStreamToChannel(
+        ClientState state,
+        Action onClose,
+        CancellationToken ct,
         Func<int, NetworkBuffer>? bufferFactory = null)
     {
-        bufferFactory ??= NetworkBuffer.Rent;
+        bufferFactory ??= DefaultFactory;
+        var abrupt = false;
         try
         {
             while (!ct.IsCancellationRequested)
@@ -39,7 +41,7 @@ internal static class ClientByteMover
                 catch (Exception)
                 {
                     buffer.Dispose();
-                    state.CloseKind = TlsCloseKind.AbruptClose;
+                    abrupt = true;
                     onClose();
                     return;
                 }
@@ -47,7 +49,6 @@ internal static class ClientByteMover
                 if (bytesRead == 0)
                 {
                     buffer.Dispose();
-                    state.CloseKind = TlsCloseKind.CleanClose;
                     onClose();
                     return;
                 }
@@ -61,7 +62,7 @@ internal static class ClientByteMover
         }
         finally
         {
-            if (state.CloseKind == TlsCloseKind.AbruptClose)
+            if (abrupt)
             {
                 state.InboundWriter.TryComplete(new AbruptCloseException());
             }
@@ -74,9 +75,9 @@ internal static class ClientByteMover
 
     internal static async Task MoveChannelToStream(ClientState state, Action onClose, CancellationToken ct)
     {
-        // Coalesce buffer lives for the entire connection — avoids ArrayPool rent/return
-        // per drain cycle. Rented lazily on first small write, returned on exit.
-        byte[]? coalesceBuf = null;
+        // Coalesce buffer lives for the entire connection — rented lazily on first small write,
+        // returned on exit. MemoryPool avoids a raw byte[] heap allocation (ArrayPool is banned).
+        IMemoryOwner<byte>? coalesceOwner = null;
 
         try
         {
@@ -86,45 +87,38 @@ internal static class ClientByteMover
                 {
                     while (await state.OutboundReader.WaitToReadAsync(ct).ConfigureAwait(false))
                     {
-                        // Drain all available buffers. When multiple small buffers are ready
-                        // (common for HTTP/2 frame headers + small DATA frames), coalesce them
-                        // into a single write to reduce syscall overhead.
                         var coalesceLen = 0;
 
                         while (state.OutboundReader.TryRead(out var buf))
                         {
                             try
                             {
-                                var span = buf.Memory;
+                                var mem = buf.Memory;
 
-                                // If the buffer is large or coalescing would overflow, flush
-                                // the coalesce buffer first, then write the large buffer directly.
-                                if (span.Length > CoalesceThreshold)
+                                if (mem.Length > CoalesceThreshold)
                                 {
                                     if (coalesceLen > 0)
                                     {
                                         await state.Stream.WriteAsync(
-                                            coalesceBuf.AsMemory(0, coalesceLen), ct).ConfigureAwait(false);
+                                            coalesceOwner!.Memory[..coalesceLen], ct).ConfigureAwait(false);
                                         coalesceLen = 0;
                                     }
 
-                                    await state.Stream.WriteAsync(span, ct).ConfigureAwait(false);
+                                    await state.Stream.WriteAsync(mem, ct).ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    // Small buffer — coalesce into a single write.
-                                    coalesceBuf ??= ArrayPool<byte>.Shared.Rent(CoalesceThreshold);
+                                    coalesceOwner ??= MemoryPool<byte>.Shared.Rent(CoalesceThreshold);
 
-                                    if (coalesceLen + span.Length > coalesceBuf.Length)
+                                    if (coalesceLen + mem.Length > coalesceOwner.Memory.Length)
                                     {
-                                        // Flush current batch before adding more.
                                         await state.Stream.WriteAsync(
-                                            coalesceBuf.AsMemory(0, coalesceLen), ct).ConfigureAwait(false);
+                                            coalesceOwner.Memory[..coalesceLen], ct).ConfigureAwait(false);
                                         coalesceLen = 0;
                                     }
 
-                                    span.CopyTo(coalesceBuf.AsMemory(coalesceLen));
-                                    coalesceLen += span.Length;
+                                    mem.CopyTo(coalesceOwner.Memory[coalesceLen..]);
+                                    coalesceLen += mem.Length;
                                 }
                             }
                             finally
@@ -133,16 +127,14 @@ internal static class ClientByteMover
                             }
                         }
 
-                        // Flush remaining coalesced data.
                         if (coalesceLen > 0)
                         {
                             await state.Stream.WriteAsync(
-                                coalesceBuf.AsMemory(0, coalesceLen), ct).ConfigureAwait(false);
+                                coalesceOwner!.Memory[..coalesceLen], ct).ConfigureAwait(false);
                         }
 
-                        // No FlushAsync needed — Socket.NoDelay = true ensures data is
-                        // sent immediately without Nagle buffering. For SslStream, each
-                        // WriteAsync already emits a self-contained TLS record.
+                        // No FlushAsync needed — Socket.NoDelay = true ensures data is sent immediately.
+                        // For SslStream each WriteAsync already emits a self-contained TLS record.
                     }
                 }
                 catch (OperationCanceledException)
@@ -152,7 +144,6 @@ internal static class ClientByteMover
                 }
                 catch (Exception)
                 {
-                    state.CloseKind ??= TlsCloseKind.AbruptClose;
                     onClose();
                     return;
                 }
@@ -160,13 +151,10 @@ internal static class ClientByteMover
         }
         finally
         {
-            if (coalesceBuf is not null)
-            {
-                ArrayPool<byte>.Shared.Return(coalesceBuf);
-            }
+            coalesceOwner?.Dispose();
         }
 
-        // Outbound channel was completed without error — signal write-side FIN.
+        // Outbound channel drained normally — signal write-side FIN.
         // For QUIC request streams this calls QuicStream.CompleteWrites() so the server
         // sees end-of-request while the read side stays open for the response.
         state.OnWritesComplete?.Invoke();

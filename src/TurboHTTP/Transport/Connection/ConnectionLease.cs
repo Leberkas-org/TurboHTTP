@@ -11,7 +11,7 @@ namespace TurboHTTP.Transport.Connection;
 internal sealed class ConnectionLease : IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
-    private readonly long _createdTicks = DateTime.UtcNow.Ticks;
+    private readonly long _createdTicks = Environment.TickCount64;
 
     public ConnectionLease(ConnectionHandle handle, ClientState state)
     {
@@ -82,7 +82,7 @@ internal sealed class ConnectionLease : IDisposable
             return false;
         }
 
-        return DateTime.UtcNow.Ticks - _createdTicks > (long)maxLifetime.TotalMilliseconds;
+        return Environment.TickCount64 - _createdTicks > (long)maxLifetime.TotalMilliseconds;
     }
 
     /// <summary>

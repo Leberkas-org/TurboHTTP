@@ -14,6 +14,14 @@ internal interface ITransportOperations
     void OnScheduleTimer(string key, TimeSpan delay);
     void OnCancelTimer(string key);
     ILoggingAdapter Log { get; }
+
+    /// <summary>
+    /// Called by the SM when a new connection is ready but typed streams have not
+    /// yet been registered. The stage implementation injects <see cref="OpenTypedStreamItem"/>
+    /// and <see cref="ProtocolReadyItem"/> so the SM remains protocol-agnostic.
+    /// Default implementation is a no-op (TCP stage does not use typed streams).
+    /// </summary>
+    void OnConnectionReadyForSetup() { }
 }
 
 internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>

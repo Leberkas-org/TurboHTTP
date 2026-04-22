@@ -21,7 +21,7 @@ public sealed class Http3DecoderStreamSpec
         sm.FlushDecoderInstructions();
 
         var decoderItems = _ops.Outbound
-            .OfType<Http3NetworkBuffer>()
+            .OfType<RoutedNetworkBuffer>()
             .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
             .ToList();
         Assert.Empty(decoderItems);
@@ -40,7 +40,7 @@ public sealed class Http3DecoderStreamSpec
         sm.FlushDecoderInstructions();
 
         var decoderItems = _ops.Outbound
-            .OfType<Http3NetworkBuffer>()
+            .OfType<RoutedNetworkBuffer>()
             .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
             .ToList();
         Assert.Single(decoderItems);
@@ -124,7 +124,7 @@ public sealed class Http3DecoderStreamSpec
         sm.ProcessQpackEncoderBytes(encoderInstr);
 
         var decoderItems = _ops.Outbound
-            .OfType<Http3NetworkBuffer>()
+            .OfType<RoutedNetworkBuffer>()
             .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
             .ToList();
         Assert.Single(decoderItems);
@@ -138,7 +138,7 @@ public sealed class Http3DecoderStreamSpec
     private static NetworkBuffer ExtractDecoderBuffer(FakeOps ops, int index)
     {
         var items = ops.Outbound
-            .OfType<Http3NetworkBuffer>()
+            .OfType<RoutedNetworkBuffer>()
             .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
             .ToList();
         return items[index];

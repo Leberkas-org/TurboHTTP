@@ -29,16 +29,12 @@ public sealed class QuicTransportStateMachineSpec
         bool allowConnectionMigration = true)
     {
         var ops = new MockTransportOperations();
-        var sm = new QuicTransportStateMachine(
-            ops,
-            ActorRefs.Nobody,
-            ActorRefs.Nobody,
-            [
-                new TypedStreamDescriptor(0x00, -2, Outbound: true),
-                new TypedStreamDescriptor(0x02, -3, Outbound: true),
-                new TypedStreamDescriptor(0x03, -4, Outbound: false),
-            ],
-            allowConnectionMigration);
+        var sm = new QuicTransportStateMachine(ops, ActorRefs.Nobody, ActorRefs.Nobody, allowConnectionMigration);
+        sm.HandlePush(new OpenTypedStreamItem(0x00, -2, Outbound: true));
+        sm.HandlePush(new OpenTypedStreamItem(0x02, -3, Outbound: true));
+        sm.HandlePush(new OpenTypedStreamItem(0x03, -4, Outbound: false));
+        sm.HandlePush(new ProtocolReadyItem());
+        ops.PullInputCount = 0;
         return (sm, ops);
     }
 
@@ -122,7 +118,7 @@ public sealed class QuicTransportStateMachineSpec
     {
         var (sm, ops) = CreateStateMachine();
 
-        sm.Dispatch(new Quic.InboundComplete(TlsCloseKind.CleanClose, 0, StreamId: 1));
+        sm.Dispatch(new Quic.InboundComplete(QuicCloseKind.RequestStreamComplete, 0, StreamId: 1));
 
         Assert.Contains(ops.PushedOutputs,
             item => item is QuicCloseItem { Kind: QuicCloseKind.RequestStreamComplete });
@@ -133,7 +129,7 @@ public sealed class QuicTransportStateMachineSpec
     {
         var (sm, ops) = CreateStateMachine();
 
-        sm.Dispatch(new Quic.InboundComplete(TlsCloseKind.AbruptClose, 0, StreamId: 1));
+        sm.Dispatch(new Quic.InboundComplete(QuicCloseKind.ConnectionFailure, 0, StreamId: 1));
 
         Assert.Contains(ops.PushedOutputs,
             item => item is QuicCloseItem { Kind: QuicCloseKind.ConnectionFailure });
@@ -193,7 +189,7 @@ public sealed class QuicTransportStateMachineSpec
 
         sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamId = 1;
         dataItem.Length = 3;
         dataItem.Key = TestEndpoint;

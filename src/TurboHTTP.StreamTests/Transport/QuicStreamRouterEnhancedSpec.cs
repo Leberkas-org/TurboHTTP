@@ -40,7 +40,7 @@ public sealed class QuicStreamRouterEnhancedSpec
     {
         var (router, ops) = CreateRouter();
 
-        var encoderData = Http3NetworkBuffer.Rent(4);
+        var encoderData = RoutedNetworkBuffer.Rent(4);
         encoderData.StreamTypeValue = (long)StreamType.QpackEncoder;
         encoderData.Length = 3;
 
@@ -58,7 +58,7 @@ public sealed class QuicStreamRouterEnhancedSpec
         var (router, _) = CreateRouter();
         var (encoderHandle, encoderReader) = CreateTestHandle();
 
-        var encoderData = Http3NetworkBuffer.Rent(4);
+        var encoderData = RoutedNetworkBuffer.Rent(4);
         encoderData.StreamTypeValue = (long)StreamType.QpackEncoder;
         encoderData.Length = 3;
 
@@ -301,7 +301,7 @@ public sealed class QuicStreamRouterEnhancedSpec
         var ctx = router.GetOrCreateContext(1);
         ctx.Handle = handle;
 
-        var dataItem = Http3NetworkBuffer.Rent(4);
+        var dataItem = RoutedNetworkBuffer.Rent(4);
         dataItem.StreamId = 999; // Different from expected
         dataItem.Length = 3;
 
