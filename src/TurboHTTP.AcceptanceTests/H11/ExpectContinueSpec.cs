@@ -13,7 +13,7 @@ namespace TurboHTTP.AcceptanceTests.H11;
 public sealed class ExpectContinueSpec : AcceptanceTestBase
 {
     private static Http11Engine Engine =>
-        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+        new(new TurboClientOptions());
 
     private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
         CreateExpectContinueEngine()

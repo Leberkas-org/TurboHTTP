@@ -1,7 +1,6 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
-using TurboHTTP.Transport.Quic;
 
 #pragma warning disable CA1416
 

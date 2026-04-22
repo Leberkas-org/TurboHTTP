@@ -14,7 +14,7 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_should_buffer_request_and_emit_reconnect_item_on_start_reconnect()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxReconnectAttempts: 3);
+        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         var request = MakeRequest();
         sm.EncodeRequest(request);
         ops.Outbound.Clear(); // ignore encode output
@@ -23,7 +23,7 @@ public sealed class Http10StateMachineReconnectSpec
 
         Assert.True(sm.IsReconnecting);
         Assert.False(sm.HasInFlightRequest);
-        Assert.Single(ops.Outbound.OfType<ReconnectItem>());
+        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
     }
 
     [Fact(Timeout = 5000)]
@@ -31,7 +31,7 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_CanAcceptRequest_should_be_false_when_reconnecting()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxReconnectAttempts: 3);
+        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         sm.EncodeRequest(MakeRequest());
         sm.StartReconnect();
 
@@ -43,11 +43,11 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_OnConnectionRestored_should_replay_buffered_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxReconnectAttempts: 3);
+        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         sm.EncodeRequest(MakeRequest());
         ops.Outbound.Clear();
         sm.StartReconnect();
-        ops.Outbound.Clear(); // ignore ReconnectItem
+        ops.Outbound.Clear(); // ignore ConnectItem (reconnect)
 
         sm.OnConnectionRestored();
 
@@ -63,7 +63,7 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_OnReconnectAttemptFailed_should_fail_when_max_exceeded()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxReconnectAttempts: 1);
+        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 1 } });
         sm.EncodeRequest(MakeRequest());
         sm.StartReconnect(); // attempt 1
 
@@ -77,14 +77,14 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_OnReconnectAttemptFailed_should_emit_new_reconnect_item_when_under_limit()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxReconnectAttempts: 3);
+        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         sm.EncodeRequest(MakeRequest());
         sm.StartReconnect(); // attempt 1
-        var countAfterFirst = ops.Outbound.OfType<ReconnectItem>().Count();
+        var countAfterFirst = ops.Outbound.OfType<ConnectItem>().Count(c => c.IsReconnect);
 
         sm.OnReconnectAttemptFailed(); // attempt 2
 
         Assert.False(ops.ReconnectFailed);
-        Assert.Equal(countAfterFirst + 1, ops.Outbound.OfType<ReconnectItem>().Count());
+        Assert.Equal(countAfterFirst + 1, ops.Outbound.OfType<ConnectItem>().Count(c => c.IsReconnect));
     }
 }

@@ -4,5 +4,5 @@ namespace TurboHTTP.Transport.Connection;
 
 internal interface IConnectionFactory
 {
-    Task<ConnectionLease> EstablishAsync(TcpOptions options, RequestEndpoint endpoint, CancellationToken ct);
+    Task<ConnectionLease> EstablishAsync(ITransportOptions options, RequestEndpoint endpoint, CancellationToken ct);
 }

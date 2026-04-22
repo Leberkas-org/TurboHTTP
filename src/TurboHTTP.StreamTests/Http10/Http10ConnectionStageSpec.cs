@@ -32,7 +32,7 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_encode_request_and_emit_on_network_outlet()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -67,6 +67,9 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         // Send a request
         appSubscription.SendNext(MakeRequest("/test"));
 
+        // ConnectItem emitted first when endpoint is known from the first request
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
         // Should get StreamAcquireItem + NetworkBuffer on network outlet
         var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<StreamAcquireItem>(item1);
@@ -82,7 +85,7 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC1945-6")]
     public async Task Http10ConnectionStage_should_decode_response_and_correlate_with_request()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -116,7 +119,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         // Send request
         appSubscription.SendNext(MakeRequest("/hello"));
 
-        // Consume outbound items (StreamAcquire + NetworkBuffer)
+        // Consume outbound items (ConnectItem + StreamAcquire + NetworkBuffer)
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
@@ -135,7 +139,7 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC1945-7.2.2")]
     public async Task Http10ConnectionStage_should_emit_connection_reuse_close_for_http10()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -169,7 +173,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         // Send request + response
         appSubscription.SendNext(MakeRequest());
 
-        // StreamAcquire + NetworkBuffer
+        // ConnectItem + StreamAcquire + NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
@@ -190,7 +195,7 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_complete_stage_when_app_upstream_finishes_without_inflight()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -232,7 +237,7 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_complete_when_server_closes_and_no_response_pending()
     {
-        var stage = new Http10ConnectionStage();
+        var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

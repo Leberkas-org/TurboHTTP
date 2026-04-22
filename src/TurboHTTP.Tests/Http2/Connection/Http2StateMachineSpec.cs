@@ -1,26 +1,19 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
-using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
 public sealed class Http2StateMachineSpec
 {
-    private static Http2EngineOptions MakeConfig(int maxReconnect = 3, int maxConcurrentStreams = 100) =>
-        new(
-            MaxConnectionsPerServer: 6,
-            InitialConcurrentStreams: maxConcurrentStreams,
-            InitialConnectionWindowSize: 65535,
-            InitialStreamWindowSize: 65535,
-            MaxFrameSize: 16384,
-            HeaderTableSize: 4096,
-            MaxReconnectAttempts: maxReconnect,
-            MaxBatchWeight: 262_144,
-            KeepAlivePingDelay: Timeout.InfiniteTimeSpan,
-            KeepAlivePingTimeout: TimeSpan.FromSeconds(20),
-            KeepAlivePingPolicy: HttpKeepAlivePingPolicy.Always);
+    private static TurboClientOptions MakeConfig(int? maxConcurrentStreams = null, int? maxReconnect = null)
+    {
+        var options = new TurboClientOptions();
+        if (maxConcurrentStreams.HasValue) options.Http2.MaxConcurrentStreams = maxConcurrentStreams.Value;
+        if (maxReconnect.HasValue) options.Http2.MaxReconnectAttempts = maxReconnect.Value;
+        return options;
+    }
 
     private static HttpRequestMessage MakeGet(string path = "/") =>
         new(HttpMethod.Get, $"https://example.com{path}");
@@ -76,18 +69,23 @@ public sealed class Http2StateMachineSpec
     public void StateMachine_TryBuildPreface_should_return_null_when_connection_window_disabled()
     {
         var ops = new FakeOps();
-        var config = new Http2EngineOptions(
-            MaxConnectionsPerServer: 6,
-            InitialConcurrentStreams: 100,
-            InitialConnectionWindowSize: 0, // disabled
-            InitialStreamWindowSize: 65535,
-            MaxFrameSize: 16384,
-            HeaderTableSize: 4096,
-            MaxReconnectAttempts: 3,
-            MaxBatchWeight: 262_144,
-            KeepAlivePingDelay: Timeout.InfiniteTimeSpan,
-            KeepAlivePingTimeout: TimeSpan.FromSeconds(20),
-            KeepAlivePingPolicy: HttpKeepAlivePingPolicy.Always);
+        var config = new TurboClientOptions
+        {
+            Http2 = new Http2Options
+            {
+                MaxConnectionsPerServer = 6,
+                MaxConcurrentStreams = 100,
+                InitialConnectionWindowSize = 0, // disabled
+                InitialStreamWindowSize = 65535,
+                MaxFrameSize = 16384,
+                HeaderTableSize = 4096,
+                MaxReconnectAttempts = 3,
+                MaxBatchWeight = 262_144,
+                KeepAlivePingDelay = Timeout.InfiniteTimeSpan,
+                KeepAlivePingTimeout = TimeSpan.FromSeconds(20),
+                KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always
+            }
+        };
         var sm = new StateMachine(config, ops);
 
         var preface = sm.TryBuildPreface();
@@ -494,7 +492,7 @@ public sealed class Http2StateMachineSpec
         sm.ProcessFrame(goaway);
 
         Assert.True(sm.IsReconnecting);
-        Assert.Single(ops.Outbound.OfType<ReconnectItem>());
+        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
     }
 
     [Fact(Timeout = 5000)]
@@ -774,7 +772,7 @@ public sealed class Http2StateMachineSpec
         sm.OnReconnectAttemptFailed(); // attempt 2
 
         Assert.True(sm.IsReconnecting);
-        Assert.Single(ops.Outbound.OfType<ReconnectItem>());
+        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
     }
 
     [Fact(Timeout = 5000)]

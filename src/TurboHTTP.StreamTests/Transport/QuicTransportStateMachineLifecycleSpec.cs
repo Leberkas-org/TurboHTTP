@@ -54,7 +54,6 @@ public sealed class QuicTransportStateMachineLifecycleSpec
             ops,
             ActorRefs.Nobody,
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             [
                 new TypedStreamDescriptor(0x00, -2, Outbound: true),
                 new TypedStreamDescriptor(0x02, -3, Outbound: true),
@@ -217,6 +216,8 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     {
         var (sm, ops) = CreateStateMachine();
 
+        sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
+
         // Create a pending request stream
         var dataItem = Http3NetworkBuffer.Rent(4);
         dataItem.StreamId = 1;
@@ -236,6 +237,8 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     public void Multiple_streams_should_be_routed_independently()
     {
         var (sm, ops) = CreateStateMachine();
+
+        sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
         var stream1 = Http3NetworkBuffer.Rent(4);
         stream1.StreamId = 1;
@@ -257,6 +260,8 @@ public sealed class QuicTransportStateMachineLifecycleSpec
     public void Untagged_buffer_should_route_to_first_stream_with_handle()
     {
         var (sm, ops) = CreateStateMachine();
+
+        sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
         // Create a request stream context
         var requestData = Http3NetworkBuffer.Rent(4);

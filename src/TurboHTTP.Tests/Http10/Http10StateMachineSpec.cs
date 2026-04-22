@@ -7,6 +7,8 @@ namespace TurboHTTP.Tests.Http10;
 
 public sealed class Http10StateMachineSpec
 {
+    private static TurboClientOptions MakeConfig() => new();
+
     private static HttpRequestMessage MakeRequest(string uri = "http://example.com/", HttpContent? content = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -32,7 +34,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_set_endpoint_on_first_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest("http://example.com:8080/path"));
 
@@ -46,7 +48,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_not_overwrite_endpoint_on_subsequent_requests()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         RequestEndpoint.FromRequest(MakeRequest("http://example.com:8080/"));
         sm.EncodeRequest(MakeRequest("http://example.com:8080/"));
@@ -62,7 +64,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_emit_stream_acquire_item()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
 
@@ -74,7 +76,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_emit_network_buffer_with_encoded_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest("http://example.com/test"));
 
@@ -91,7 +93,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_set_in_flight_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
 
@@ -103,7 +105,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_include_content_length_in_encoded_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var content = new StringContent("hello world");
         var request = MakeRequest("http://example.com/", content);
@@ -122,7 +124,7 @@ public sealed class Http10StateMachineSpec
     {
         var ops = new FakeOps();
         const int minBufferSize = 1024;
-        var sm = new StateMachine(ops, minBufferSize: minBufferSize);
+        var sm = new StateMachine(ops, MakeConfig(), minBufferSize: minBufferSize);
 
         var content = new StringContent("hello world");
         var request = MakeRequest("http://example.com/", content);
@@ -141,7 +143,7 @@ public sealed class Http10StateMachineSpec
     {
         var ops = new FakeOps();
         const int minBufferSize = 2048;
-        var sm = new StateMachine(ops, minBufferSize: minBufferSize);
+        var sm = new StateMachine(ops, MakeConfig(), minBufferSize: minBufferSize);
 
         sm.EncodeRequest(MakeRequest()); // Minimal request
 
@@ -155,7 +157,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_handle_successful_encode_for_post_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var content = new StringContent("test body");
         var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com/api");
@@ -173,7 +175,7 @@ public sealed class Http10StateMachineSpec
     public void EncodeRequest_should_handle_request_without_body()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var request = new HttpRequestMessage(HttpMethod.Head, "http://example.com/");
 
@@ -191,7 +193,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_handle_close_signal_item()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var closeSignal = new CloseSignalItem(TlsCloseKind.CleanClose);
@@ -207,7 +209,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_ignore_non_network_buffer_items()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var item = new ConnectedSignalItem { Key = default };
 
@@ -222,7 +224,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_decode_complete_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello");
@@ -238,7 +240,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_emit_connection_reuse_item_on_successful_decode()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
         ops.Outbound.Clear(); // Clear encode output
 
@@ -254,7 +256,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_set_request_message_on_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         var originalRequest = MakeRequest("http://example.com/test");
         sm.EncodeRequest(originalRequest);
 
@@ -272,7 +274,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_clear_in_flight_request_on_decode()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -287,7 +289,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_handle_incomplete_response_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Send incomplete response (missing body)
@@ -304,7 +306,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_dispose_buffer_after_decode()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -320,7 +322,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_handle_http09_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // HTTP/0.9 responses don't have status line — just body
@@ -337,7 +339,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_handle_fragmented_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Send response in fragments
@@ -359,7 +361,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_throw_on_abrupt_close_with_content_length_mismatch()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // First, start receiving data with Content-Length
@@ -377,7 +379,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_throw_on_abrupt_close_without_content_length()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var closeSignal = new CloseSignalItem(TlsCloseKind.AbruptClose);
@@ -391,7 +393,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_mark_closed_on_abrupt_close()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         try
@@ -413,7 +415,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_handle_clean_close_with_complete_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Send complete response
@@ -434,7 +436,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_complete_response_on_clean_close_with_buffered_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Send partial response that's buffered by decoder
@@ -456,7 +458,7 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_reset_decoder_on_clean_close_with_no_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Send no response data, then clean close
@@ -471,7 +473,7 @@ public sealed class Http10StateMachineSpec
     public void TryDecodeEof_should_decode_eof_response_when_no_content_length()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Send incomplete response without Content-Length (waiting for EOF)
@@ -492,7 +494,7 @@ public sealed class Http10StateMachineSpec
     public void TryDecodeEof_should_return_false_when_no_buffered_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var result = sm.TryDecodeEof();
 
@@ -504,7 +506,7 @@ public sealed class Http10StateMachineSpec
     public void TryDecodeEof_should_handle_http09_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // HTTP/0.9 response (no HTTP status line)
@@ -524,7 +526,7 @@ public sealed class Http10StateMachineSpec
     public void TryDecodeEof_should_emit_response_after_http09_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // HTTP/0.9 body data (no HTTP status line — plain text response)
@@ -544,7 +546,7 @@ public sealed class Http10StateMachineSpec
     public void HandleOrphanedRequest_should_warn_when_request_in_flight()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         sm.HandleOrphanedRequest();
@@ -557,7 +559,7 @@ public sealed class Http10StateMachineSpec
     public void HandleOrphanedRequest_should_clear_in_flight_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         sm.HandleOrphanedRequest();
@@ -570,7 +572,7 @@ public sealed class Http10StateMachineSpec
     public void HandleOrphanedRequest_should_be_noop_when_no_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.HandleOrphanedRequest();
 
@@ -582,7 +584,7 @@ public sealed class Http10StateMachineSpec
     public void MarkClosed_should_prevent_new_requests()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.MarkClosed();
 
@@ -594,7 +596,7 @@ public sealed class Http10StateMachineSpec
     public void MarkClosed_should_transition_from_accepting_to_closed()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.True(sm.CanAcceptRequest); // Initially accepting
 
@@ -608,7 +610,7 @@ public sealed class Http10StateMachineSpec
     public void CanAcceptRequest_should_return_false_with_in_flight_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         Assert.False(sm.CanAcceptRequest);
@@ -619,7 +621,7 @@ public sealed class Http10StateMachineSpec
     public void CanAcceptRequest_should_return_true_when_idle()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.True(sm.CanAcceptRequest);
     }
@@ -629,7 +631,7 @@ public sealed class Http10StateMachineSpec
     public void PendingRequestCount_should_return_one_with_in_flight_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         Assert.Equal(1, sm.PendingRequestCount);
@@ -640,7 +642,7 @@ public sealed class Http10StateMachineSpec
     public void PendingRequestCount_should_return_zero_when_idle()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.Equal(0, sm.PendingRequestCount);
     }
@@ -650,7 +652,7 @@ public sealed class Http10StateMachineSpec
     public void HasInFlightRequest_should_return_true_when_request_pending()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         Assert.True(sm.HasInFlightRequest);
@@ -661,7 +663,7 @@ public sealed class Http10StateMachineSpec
     public void HasInFlightRequest_should_return_false_when_idle()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.False(sm.HasInFlightRequest);
     }
@@ -671,7 +673,7 @@ public sealed class Http10StateMachineSpec
     public void Cleanup_should_clear_in_flight_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         sm.Cleanup();
@@ -684,7 +686,7 @@ public sealed class Http10StateMachineSpec
     public void Cleanup_should_reset_decoder()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Partially receive response
@@ -706,7 +708,7 @@ public sealed class Http10StateMachineSpec
     public void StateMachine_should_handle_full_request_response_cycle()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         // Encode request
         var request = MakeRequest("http://example.com/path");
@@ -733,7 +735,7 @@ public sealed class Http10StateMachineSpec
     public void StateMachine_should_handle_multiple_sequential_requests()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         // First request
         sm.EncodeRequest(MakeRequest("http://example.com/1"));
@@ -763,7 +765,7 @@ public sealed class Http10StateMachineSpec
     public void StateMachine_should_handle_204_no_content_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest(HttpMethod.Delete.ToString() == "DELETE"
             ? "http://example.com/"
             : "http://example.com/"));
@@ -780,7 +782,7 @@ public sealed class Http10StateMachineSpec
     public void StateMachine_should_handle_304_not_modified_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 304 Not Modified\r\n\r\n");
@@ -795,7 +797,7 @@ public sealed class Http10StateMachineSpec
     public void StateMachine_should_allow_request_after_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -809,7 +811,7 @@ public sealed class Http10StateMachineSpec
     public void StateMachine_should_preserve_request_reference_across_responses()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var request1 = MakeRequest("http://example.com/path1");
         sm.EncodeRequest(request1);

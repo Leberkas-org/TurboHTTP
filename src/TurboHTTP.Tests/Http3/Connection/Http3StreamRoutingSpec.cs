@@ -13,7 +13,7 @@ public sealed class Http3StreamRoutingSpec
     private StateMachine CreateMachine(FakeOps? ops = null)
     {
         return new StateMachine(
-            new Http3Options().ToEngineOptions(),
+            new TurboClientOptions(),
             ops ?? _ops);
     }
 

@@ -32,7 +32,6 @@ internal sealed class QuicTransportStateMachine
     private readonly ITransportOperations _ops;
     private readonly IActorRef _self;
     private readonly IActorRef _quicManagerActor;
-    private readonly TurboClientOptions _clientOptions;
     private readonly bool _allowConnectionMigration;
     private readonly TypedStreamDescriptor[] _descriptors;
 
@@ -59,13 +58,12 @@ internal sealed class QuicTransportStateMachine
     private System.Net.EndPoint? _lastLocalEndPoint;
 
     public QuicTransportStateMachine(ITransportOperations ops, IActorRef self, IActorRef quicManagerActor,
-        TurboClientOptions clientOptions, TypedStreamDescriptor[] typedStreamDescriptors,
+        TypedStreamDescriptor[] typedStreamDescriptors,
         bool allowConnectionMigration = true)
     {
         _ops = ops;
         _self = self;
         _quicManagerActor = quicManagerActor;
-        _clientOptions = clientOptions;
         _allowConnectionMigration = allowConnectionMigration;
         _descriptors = typedStreamDescriptors;
         _router = new QuicStreamRouter(ops, self);
@@ -148,11 +146,6 @@ internal sealed class QuicTransportStateMachine
                 OpenNewRequestStream(streamId!.Value);
                 break;
             case QuicStreamRouter.StreamContextResult.NeedsConnection:
-                if (_pendingConnect is null && _currentConnectionLease is null)
-                {
-                    AutoConnect(item.Key);
-                }
-
                 break;
         }
 
@@ -241,32 +234,16 @@ internal sealed class QuicTransportStateMachine
         _ops.Log.Debug("QuicConnectionStage: ConnectItem key={0}:{1}", connect.Key.Host, connect.Key.Port);
 
         CleanupTransport();
-        _pendingConnect = connect;
+        var options = connect.Options!;
 
-        if (connect.Options is not QuicOptions quicOptions)
+        if (options is not QuicOptions quicOptions)
         {
             _self.Tell(new AcquisitionFailed(new InvalidOperationException(
                 "QuicConnectionStage received a non-QuicOptions ConnectItem.")));
             return;
         }
 
-        AcquireQuicConnection(quicOptions, connect);
-    }
-
-    private void AutoConnect(RequestEndpoint endpoint)
-    {
-        _ops.Log.Debug("QuicConnectionStage: AutoConnect for {0}:{1}", endpoint.Host, endpoint.Port);
-
-        var options = OptionsFactory.Build(endpoint, _clientOptions);
-        _pendingConnect = new ConnectItem(options) { Key = endpoint };
-
-        if (options is not QuicOptions quicOptions)
-        {
-            _self.Tell(new AcquisitionFailed(new InvalidOperationException(
-                "QuicConnectionStage: AutoConnect produced non-QuicOptions for endpoint.")));
-            return;
-        }
-
+        _pendingConnect = connect with { Options = options };
         AcquireQuicConnection(quicOptions, _pendingConnect.Value);
     }
 
@@ -464,7 +441,7 @@ internal sealed class QuicTransportStateMachine
             success: connLease => new ConnectionLeaseAcquired(connLease),
             failure: ex => new AcquisitionFailed(ex.GetBaseException()));
 
-        var timeout = connect.Options.ConnectTimeout;
+        var timeout = options.ConnectTimeout;
         if (timeout <= TimeSpan.Zero)
         {
             timeout = TimeSpan.FromSeconds(10);

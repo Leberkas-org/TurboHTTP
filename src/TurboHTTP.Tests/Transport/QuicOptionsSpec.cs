@@ -1,5 +1,4 @@
 using System.Net.Security;
-using System.Runtime.Versioning;
 using TurboHTTP.Transport.Connection;
 
 #pragma warning disable CA1416

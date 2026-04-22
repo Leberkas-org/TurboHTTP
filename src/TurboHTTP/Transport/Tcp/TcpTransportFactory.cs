@@ -14,17 +14,14 @@ namespace TurboHTTP.Transport.Tcp;
 internal sealed class TcpTransportFactory : ITransportFactory
 {
     private readonly IActorRef _connectionManager;
-    private readonly TurboClientOptions _clientOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TcpTransportFactory"/> class.
     /// </summary>
     /// <param name="connectionManager">Actor reference for managing TCP connection lifecycle</param>
-    /// <param name="clientOptions">Client configuration options</param>
-    public TcpTransportFactory(IActorRef connectionManager, TurboClientOptions clientOptions)
+    public TcpTransportFactory(IActorRef connectionManager)
     {
         _connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
-        _clientOptions = clientOptions ?? throw new ArgumentNullException(nameof(clientOptions));
     }
 
     /// <summary>
@@ -33,6 +30,6 @@ internal sealed class TcpTransportFactory : ITransportFactory
     /// <returns>A flow wrapping a <see cref="TcpConnectionStage"/>.</returns>
     public Flow<IOutputItem, IInputItem, NotUsed> Create()
     {
-        return Flow.FromGraph(new TcpConnectionStage(_connectionManager, _clientOptions));
+        return Flow.FromGraph(new TcpConnectionStage(_connectionManager));
     }
 }

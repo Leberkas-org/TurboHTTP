@@ -138,13 +138,13 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
                 "quic-pool");
 
             // Build transport registry and engine flow
-            var tcpFactory = new TcpTransportFactory(_tcpConnectionManager, create.ClientOptions);
+            var tcpFactory = new TcpTransportFactory(_tcpConnectionManager);
             var transports = new TransportRegistry()
                 .Register(new Version(1, 0), tcpFactory)
                 .Register(new Version(1, 1), tcpFactory)
                 .Register(new Version(2, 0), tcpFactory)
                 .Register(new Version(3, 0), new QuicTransportFactory(_quicConnectionManager,
-                    create.ClientOptions, create.ClientOptions.Http3.AllowConnectionMigration));
+                    create.ClientOptions.Http3.AllowConnectionMigration));
 
             var engine = new Engine();
             var engineFlow = engine.CreateFlow(

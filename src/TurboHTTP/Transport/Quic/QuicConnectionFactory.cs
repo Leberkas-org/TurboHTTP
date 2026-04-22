@@ -10,7 +10,7 @@ namespace TurboHTTP.Transport.Quic;
 
 /// <summary>
 /// Eagerly establishes a new QUIC connection and wraps it in a <see cref="QuicConnectionLease"/>.
-/// Mirrors <see cref="DirectConnectionFactory"/> for the QUIC path.
+/// Mirrors <see cref="TcpConnectionFactory"/> for the QUIC path.
 /// </summary>
 internal sealed class QuicConnectionFactory : IQuicConnectionFactory
 {

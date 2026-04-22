@@ -11,7 +11,7 @@ namespace TurboHTTP.AcceptanceTests.Shared;
 public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
 {
     private static Http10Engine Engine =>
-        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+        new(new TurboClientOptions());
 
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_route_responses_by_request_index()

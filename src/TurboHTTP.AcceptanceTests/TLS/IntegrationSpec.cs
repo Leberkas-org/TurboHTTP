@@ -14,29 +14,6 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class IntegrationSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
-        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
-
-    private async Task<HttpResponseMessage> SendViaEngineAsync(HttpRequestMessage request,
-        Func<byte[], byte[]>? transform = null)
-    {
-        var fake = new ScriptedFakeConnectionStage((_, _) =>
-        {
-            var body = "Hello World";
-            var raw = $"HTTP/1.1 200 OK\r\nContent-Length: {body.Length}\r\n\r\n{body}";
-            var bytes = Encoding.Latin1.GetBytes(raw);
-            return transform is not null ? transform(bytes) : bytes;
-        });
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
-
-        var tcs = new TaskCompletionSource<HttpResponseMessage>();
-        _ = Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
-
-        return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-    }
-
     private async Task<HttpResponseMessage> SendAsync(ResponseMap map, HttpRequestMessage request)
     {
         var fake = ResponseMapFake.Create(map);

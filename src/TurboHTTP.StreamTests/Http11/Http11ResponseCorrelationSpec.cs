@@ -8,8 +8,7 @@ public sealed class Http11ResponseCorrelationSpec : EngineTestBase
 {
     private static readonly Func<byte[]> Ok200 = () => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
-    private static Http11Engine Engine =>
-        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine => new(new TurboClientOptions());
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9112-9.3")]
@@ -60,14 +59,11 @@ public sealed class Http11ResponseCorrelationSpec : EngineTestBase
     [Trait("RFC", "RFC9112-9.3")]
     public async Task Http11ResponseCorrelation_should_preserve_correlation_when_fake_tcp_used()
     {
-        var engine =
-            new Http11Engine(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
-
         var request1 = new HttpRequestMessage(HttpMethod.Get, "http://a.test/one");
         var request2 = new HttpRequestMessage(HttpMethod.Get, "http://a.test/two");
         var request3 = new HttpRequestMessage(HttpMethod.Delete, "http://a.test/three");
 
-        var (responses, _) = await SendManyAsync(engine.CreateFlow(),
+        var (responses, _) = await SendManyAsync(Engine.CreateFlow(),
             [request1, request2, request3], Ok200, 3);
 
         Assert.Equal(3, responses.Count);

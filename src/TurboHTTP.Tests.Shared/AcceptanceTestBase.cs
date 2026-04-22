@@ -11,30 +11,30 @@ public abstract class AcceptanceTestBase : EngineTestBase
 {
     internal static IHttpProtocolEngine CreateHttp10Engine(Action<Http1Options>? configure = null)
     {
-        var options = new Http1Options();
-        configure?.Invoke(options);
-        return new Http10Engine(options.ToEngineOptions());
+        var clientOptions = new TurboClientOptions();
+        configure?.Invoke(clientOptions.Http1);
+        return new Http10Engine(clientOptions);
     }
 
     internal static IHttpProtocolEngine CreateHttp11Engine(Action<Http1Options>? configure = null)
     {
-        var options = new Http1Options();
-        configure?.Invoke(options);
-        return new Http11Engine(options.ToEngineOptions());
+        var clientOptions = new TurboClientOptions();
+        configure?.Invoke(clientOptions.Http1);
+        return new Http11Engine(clientOptions);
     }
 
     internal static IHttpProtocolEngine CreateHttp20Engine(Action<Http2Options>? configure = null)
     {
-        var options = new Http2Options();
-        configure?.Invoke(options);
-        return new Http20Engine(options.ToEngineOptions());
+        var clientOptions = new TurboClientOptions();
+        configure?.Invoke(clientOptions.Http2);
+        return new Http20Engine(clientOptions);
     }
 
     internal static IHttpProtocolEngine CreateHttp30Engine(Action<Http3Options>? configure = null)
     {
-        var options = new Http3Options();
-        configure?.Invoke(options);
-        return new Http30Engine(options.ToEngineOptions());
+        var clientOptions = new TurboClientOptions();
+        configure?.Invoke(clientOptions.Http3);
+        return new Http30Engine(clientOptions);
     }
 
     internal async Task<HttpResponseMessage> SendScriptedAsync(

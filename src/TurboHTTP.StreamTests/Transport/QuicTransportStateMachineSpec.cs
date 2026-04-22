@@ -1,13 +1,11 @@
 using System.Net;
 using Akka.Actor;
-using Akka.Event;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Tests.Shared;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Transport.Quic;
 using Quic = TurboHTTP.Transport.Quic;
-using TurboHTTP.Transport.Tcp;
 
 namespace TurboHTTP.StreamTests.Transport;
 
@@ -35,7 +33,6 @@ public sealed class QuicTransportStateMachineSpec
             ops,
             ActorRefs.Nobody,
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             [
                 new TypedStreamDescriptor(0x00, -2, Outbound: true),
                 new TypedStreamDescriptor(0x02, -3, Outbound: true),
@@ -194,6 +191,8 @@ public sealed class QuicTransportStateMachineSpec
     {
         var (sm, ops) = CreateStateMachine();
 
+        sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
+
         var dataItem = Http3NetworkBuffer.Rent(4);
         dataItem.StreamId = 1;
         dataItem.Length = 3;
@@ -221,6 +220,8 @@ public sealed class QuicTransportStateMachineSpec
     public void HandlePush_EndOfRequest_should_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();
+
+        sm.HandlePush(new ConnectItem(TestQuicOptions) { Key = TestEndpoint });
 
         sm.HandlePush(new Http3EndOfRequestItem { Key = TestEndpoint, StreamId = 1 });
 

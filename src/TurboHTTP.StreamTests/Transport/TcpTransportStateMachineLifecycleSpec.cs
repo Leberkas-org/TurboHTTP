@@ -33,7 +33,6 @@ public sealed class TcpTransportStateMachineLifecycleSpec
         var sm = new TcpTransportStateMachine(
             ops,
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             ActorRefs.Nobody);
         return (sm, ops);
     }
@@ -62,7 +61,7 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     {
         var (sm, ops) = CreateStateMachine();
 
-        sm.HandlePush(new ReconnectItem { Key = TestEndpoint });
+        sm.HandlePush(new ConnectItem(new TcpOptions { Host = TestEndpoint.Host, Port = TestEndpoint.Port }) { Key = TestEndpoint, IsReconnect = true });
         ops.PushedOutputs.Clear();
 
         var lease = CreateTestLease();
@@ -181,22 +180,24 @@ public sealed class TcpTransportStateMachineLifecycleSpec
     {
         var (sm, ops) = CreateStateMachine();
 
-        var buffer = NetworkBufferTestExtensions.FromArray([1, 2, 3]);
-        buffer.Key = AltEndpoint;
-        sm.HandlePush(buffer);
+        sm.HandlePush(new ConnectItem
+        {
+            Key = AltEndpoint,
+            Options = new TcpOptions { Host = AltEndpoint.Host, Port = AltEndpoint.Port }
+        });
 
         Assert.Contains(ops.ScheduledTimers, t => t.Key == "connect-timeout");
     }
 
     [Fact(Timeout = 5000)]
-    public void ReconnectItem_should_teardown_and_acquire()
+    public void ConnectItem_with_IsReconnect_should_teardown_and_acquire()
     {
         var (sm, ops) = CreateStateMachine();
         var lease1 = CreateTestLease();
         sm.Dispatch(new LeaseAcquired(lease1));
         ops.PushedOutputs.Clear();
 
-        sm.HandlePush(new ReconnectItem { Key = AltEndpoint });
+        sm.HandlePush(new ConnectItem(new TcpOptions { Host = AltEndpoint.Host, Port = AltEndpoint.Port }) { Key = AltEndpoint, IsReconnect = true });
 
         Assert.Contains(ops.ScheduledTimers, t => t.Key == "connect-timeout");
         Assert.False(lease1.IsAlive);

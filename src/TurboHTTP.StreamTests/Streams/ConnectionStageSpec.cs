@@ -79,7 +79,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var lease = new ConnectionLease(handle, state);
         var tracker = new ReleaseTracker();
         var actor = Sys.ActorOf(StubConnectionManagerActor.Props(lease, tracker));
-        var stageFlow = Flow.FromGraph(new TcpConnectionStage(actor, new TurboClientOptions()));
+        var stageFlow = Flow.FromGraph(new TcpConnectionStage(actor));
         return (stageFlow, tracker, lease, state.OutboundReader, state.InboundWriter);
     }
 
@@ -357,12 +357,16 @@ public sealed class ConnectionStageSpec : StreamTestBase
         // Actor that never returns a lease
         var tracker = new ReleaseTracker();
         var neverActor = Sys.ActorOf(StubConnectionManagerActor.Props(null, tracker));
-        var stageFlow = Flow.FromGraph(new TcpConnectionStage(neverActor, new TurboClientOptions()));
+        var stageFlow = Flow.FromGraph(new TcpConnectionStage(neverActor));
 
         var (inputQueue, outputTask) = Source.Queue<IOutputItem>(8, OverflowStrategy.Backpressure)
             .Via(stageFlow)
             .ToMaterialized(Sink.Seq<IInputItem>(), Keep.Both)
             .Run(Materializer);
+
+        var options = new TcpOptions { Host = TestKey.Host, Port = TestKey.Port };
+        var connectItem = new ConnectItem(options) { Key = TestKey };
+        await inputQueue.OfferAsync(connectItem);
 
         var data = MakeData(0xFF);
         await inputQueue.OfferAsync(data);
@@ -389,7 +393,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var tracker = new ReleaseTracker();
         var actor = Sys.ActorOf(StubConnectionManagerActor.Props(lease, tracker));
 
-        var stageFlow = Flow.FromGraph(new TcpConnectionStage(actor, new TurboClientOptions()));
+        var stageFlow = Flow.FromGraph(new TcpConnectionStage(actor));
         var options = new TcpOptions { Host = "localhost", Port = 8080 };
         var connectItem = new ConnectItem(options)
         {

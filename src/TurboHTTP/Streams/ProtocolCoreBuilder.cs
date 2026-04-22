@@ -24,13 +24,9 @@ internal static class ProtocolCoreBuilder
         // sustained throughput peaks without excessive memory.
         var highThroughputBuffer = Attributes.CreateInputBuffer(64, 256);
 
-        var http1Options = clientOptions.Http1.ToEngineOptions();
-        var http2Options = clientOptions.Http2.ToEngineOptions();
-        var http3Options = clientOptions.Http3.ToEngineOptions();
-
-        var maxConnsH1 = http1Options.MaxConnectionsPerServer;
-        var maxConnsH2 = http2Options.MaxConnectionsPerServer;
-        var h2Streams = http2Options.InitialConcurrentStreams;
+        var maxConnsH1 = clientOptions.Http1.MaxConnectionsPerServer;
+        var maxConnsH2 = clientOptions.Http2.MaxConnectionsPerServer;
+        var h2Streams = clientOptions.Http2.MaxConcurrentStreams;
 
         var maxConnsH3 = clientOptions.Http3.MaxConnectionsPerServer;
 
@@ -61,10 +57,10 @@ internal static class ProtocolCoreBuilder
             var version = endpoint.Version;
             IHttpProtocolEngine engine = version switch
             {
-                { Major: 1, Minor: 0 } => new Http10Engine(http1Options),
-                { Major: 1, Minor: 1 } => new Http11Engine(http1Options),
-                { Major: 2, Minor: 0 } => new Http20Engine(http2Options),
-                { Major: 3, Minor: 0 } => new Http30Engine(http3Options),
+                { Major: 1, Minor: 0 } => new Http10Engine(clientOptions),
+                { Major: 1, Minor: 1 } => new Http11Engine(clientOptions),
+                { Major: 2, Minor: 0 } => new Http20Engine(clientOptions),
+                { Major: 3, Minor: 0 } => new Http30Engine(clientOptions),
                 _ => throw new ArgumentOutOfRangeException(nameof(version), version,
                     $"Unsupported HTTP version: {version}")
             };

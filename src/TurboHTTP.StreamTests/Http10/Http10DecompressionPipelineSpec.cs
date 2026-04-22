@@ -12,8 +12,7 @@ namespace TurboHTTP.StreamTests.Http10;
 
 public sealed class Http10DecompressionPipelineSpec : EngineTestBase
 {
-    private static readonly Http10Engine Engine =
-        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static readonly Http10Engine Engine = new(new TurboClientOptions());
 
     private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
         CreateDecompressingEngine()

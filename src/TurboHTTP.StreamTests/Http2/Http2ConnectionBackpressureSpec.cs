@@ -27,8 +27,8 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
                 Source.Queue<HttpRequestMessage>(16, OverflowStrategy.Backpressure),
                 (b, reqSrc) =>
                 {
-                    var stage = b.Add(new Http20ConnectionStage(
-                        new Http2Options { MaxConcurrentStreams = maxConcurrentStreams }.ToEngineOptions()));
+                    var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
+                        { Http2 = { MaxConcurrentStreams = maxConcurrentStreams } }));
                     var srvSrc = b.Add(Source.FromPublisher(serverProbe));
 
                     b.From(srvSrc).To(stage.InServer);
@@ -67,7 +67,13 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         for (var i = 0; i < count; i++)
         {
             await OfferAsync(queue, new HttpRequestMessage(HttpMethod.Get, "http://example.com/"));
-            // Each request produces a NetworkBuffer (frame data) + StreamAcquireItem (signal)
+            if (i == 0)
+            {
+                // First request also emits ConnectItem before StreamAcquireItem and NetworkBuffer
+                networkProbe.ExpectNext(TestContext.Current.CancellationToken);
+            }
+
+            // Each request produces StreamAcquireItem (signal) + NetworkBuffer (frame data)
             ExpectRequestOutput(networkProbe);
         }
     }

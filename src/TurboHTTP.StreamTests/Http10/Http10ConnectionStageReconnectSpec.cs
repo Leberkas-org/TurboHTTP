@@ -29,7 +29,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
     [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_reconnect_and_replay_request_on_connection_drop()
     {
-        var stage = new Http10ConnectionStage(maxReconnectAttempts: 3);
+        var stage = new Http10ConnectionStage(new TurboClientOptions { Http1 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -57,7 +57,9 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
         // Send a request
         appSub.SendNext(MakeRequest());
 
-        // Consume StreamAcquireItem + NetworkBuffer
+        // Consume ConnectItem + StreamAcquireItem + NetworkBuffer
+        var item0 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<ConnectItem>(item0);
         var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<StreamAcquireItem>(item1);
         var item2 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
@@ -66,9 +68,10 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
         // Connection drops while request is in-flight
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
 
-        // Stage must emit ReconnectItem (not fail or complete)
+        // Stage must emit ConnectItem with IsReconnect (not fail or complete)
         var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var reconnect = Assert.IsType<ReconnectItem>(reconnectRaw);
+        var reconnect = Assert.IsType<ConnectItem>(reconnectRaw);
+        Assert.True(reconnect.IsReconnect);
 
         // Simulate TcpConnectionStage reconnect success → sends ConnectedSignalItem
         serverSub.SendNext(new ConnectedSignalItem { Key = reconnect.Key });
@@ -90,7 +93,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
     [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_complete_stage_when_max_reconnect_attempts_exceeded()
     {
-        var stage = new Http10ConnectionStage(maxReconnectAttempts: 1);
+        var stage = new Http10ConnectionStage(new TurboClientOptions { Http1 = { MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -116,13 +119,15 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
         resSub.Request(10);
 
         appSub.SendNext(MakeRequest());
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // ConnectItem
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // StreamAcquireItem
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // NetworkBuffer
 
         // First drop → reconnect attempt 1 (hits max immediately)
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
         var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<ReconnectItem>(reconnectRaw);
+        var reconnectItem = Assert.IsType<ConnectItem>(reconnectRaw);
+        Assert.True(reconnectItem.IsReconnect);
 
         // Reconnect fails → CloseSignalItem again (attempt 2 exceeds max of 1)
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
@@ -135,7 +140,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
     [Trait("RFC", "RFC1945-4")]
     public async Task Http10ConnectionStage_should_not_reconnect_when_no_inflight_request_on_close()
     {
-        var stage = new Http10ConnectionStage(maxReconnectAttempts: 3);
+        var stage = new Http10ConnectionStage(new TurboClientOptions { Http1 = { MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

@@ -13,9 +13,9 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
     private readonly Inlet<HttpRequestMessage> _inApp = new("Http30Connection.In.App");
     private readonly Outlet<IOutputItem> _outNetwork = new("Http30Connection.Out.Network");
 
-    private readonly Http3EngineOptions _options;
+    private readonly TurboClientOptions _options;
 
-    public Http30ConnectionStage(Http3EngineOptions options)
+    public Http30ConnectionStage(TurboClientOptions options)
     {
         _options = options;
     }

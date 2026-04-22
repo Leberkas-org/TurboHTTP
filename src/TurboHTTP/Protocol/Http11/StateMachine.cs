@@ -1,6 +1,7 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Protocol.Http11;
 
@@ -15,15 +16,13 @@ internal sealed class StateMachine
     private readonly Decoder _decoder;
     private readonly int _minBufferSize;
     private readonly int _maxBufferSize;
-    private readonly int _maxPipelineDepth;
-    private readonly int _maxReconnectAttempts;
-    private readonly int _maxResponseDrainSize;
-    private readonly TimeSpan _responseDrainTimeout;
+    private readonly TurboClientOptions _options;
 
     private readonly Queue<HttpRequestMessage> _inFlightQueue = new();
-    private int _effectivePipelineDepth;
     private Queue<HttpRequestMessage>? _reconnectBufferedQueue;
+    private int _effectivePipelineDepth;
     private int _reconnectAttempts;
+    private ITransportOptions? _transportOptions;
 
     /// <summary>
     /// Holds a response whose body is delimited by connection close (no Content-Length,
@@ -59,23 +58,16 @@ internal sealed class StateMachine
 
     public StateMachine(
         IStageOperations ops,
-        int maxPipelineDepth = 8,
-        int maxReconnectAttempts = 3,
+        TurboClientOptions options,
         int minBufferSize = 4 * 1024,
-        int maxBufferSize = 256 * 1024,
-        int maxResponseHeadersLength = 64,
-        int maxResponseDrainSize = 1024 * 1024,
-        TimeSpan? responseDrainTimeout = null)
+        int maxBufferSize = 256 * 1024)
     {
         _ops = ops;
-        _decoder = new Decoder(maxTotalHeaderSize: maxResponseHeadersLength * 1024);
-        _maxPipelineDepth = maxPipelineDepth;
-        _effectivePipelineDepth = maxPipelineDepth;
-        _maxReconnectAttempts = maxReconnectAttempts;
+        _options = options;
+        _decoder = new Decoder(maxTotalHeaderSize: options.Http1.MaxResponseHeadersLength * 1024);
         _minBufferSize = minBufferSize;
         _maxBufferSize = maxBufferSize;
-        _maxResponseDrainSize = maxResponseDrainSize;
-        _responseDrainTimeout = responseDrainTimeout ?? TimeSpan.FromSeconds(2);
+        _effectivePipelineDepth = options.Http1.MaxPipelineDepth;
     }
 
     /// <summary>
@@ -91,6 +83,12 @@ internal sealed class StateMachine
         if (Endpoint == default && endpoint != default)
         {
             Endpoint = endpoint;
+            _transportOptions = OptionsFactory.Build(Endpoint, _options);
+            _ops.OnOutbound(new ConnectItem
+            {
+                Key = Endpoint,
+                Options = _transportOptions
+            });
         }
 
         // Emit StreamAcquireItem before request data
@@ -258,7 +256,7 @@ internal sealed class StateMachine
     }
 
     /// <summary>
-    /// Buffers all in-flight requests and emits a ReconnectItem to trigger a new TCP connection.
+    /// Buffers all in-flight requests and emits a ConnectItem (reconnect) to trigger a new TCP connection.
     /// Call when a CloseSignalItem arrives with in-flight requests and we are not yet reconnecting.
     /// </summary>
     public void StartReconnect()
@@ -268,7 +266,11 @@ internal sealed class StateMachine
         IsReconnecting = true;
         _reconnectAttempts = 1;
         _decoder.Reset();
-        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+        _ops.OnOutbound(new ConnectItem
+        {
+            Key = Endpoint, IsReconnect = true,
+            Options = _transportOptions!
+        });
     }
 
     /// <summary>
@@ -293,18 +295,22 @@ internal sealed class StateMachine
 
     /// <summary>
     /// Called when a CloseSignalItem arrives while already reconnecting (reconnect attempt failed).
-    /// Increments the attempt counter; emits a new ReconnectItem or calls OnReconnectFailed.
+    /// Increments the attempt counter; emits a new ConnectItem (reconnect) or calls OnReconnectFailed.
     /// </summary>
     public void OnReconnectAttemptFailed()
     {
-        if (_reconnectAttempts >= _maxReconnectAttempts)
+        if (_reconnectAttempts >= _options.Http1.MaxReconnectAttempts)
         {
             _ops.OnReconnectFailed();
             return;
         }
 
         _reconnectAttempts++;
-        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+        _ops.OnOutbound(new ConnectItem
+        {
+            Key = Endpoint, IsReconnect = true,
+            Options = _transportOptions!
+        });
     }
 
     /// <summary>
@@ -449,6 +455,4 @@ internal sealed class StateMachine
     {
         return response.Headers.ConnectionClose == true;
     }
-
-   
 }

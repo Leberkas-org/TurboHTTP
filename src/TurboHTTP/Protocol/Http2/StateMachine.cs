@@ -2,8 +2,8 @@ using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Protocol.Semantics;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Protocol.Http2;
 
@@ -16,7 +16,7 @@ namespace TurboHTTP.Protocol.Http2;
 internal sealed class StateMachine
 {
     private const int MaxStatePoolCapacity = 1000;
-    private readonly Http2EngineOptions _options;
+    private readonly TurboClientOptions _options;
 
     private readonly IStageOperations _ops;
 
@@ -29,6 +29,7 @@ internal sealed class StateMachine
 
     private readonly Dictionary<int, StreamState> _streams = new();
     private readonly Stack<StreamState> _statePool;
+    private ITransportOptions? _transportOptions;
     private int _statePoolCapacity;
 
     private bool _prefaceSent;
@@ -52,14 +53,14 @@ internal sealed class StateMachine
     /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
 
-    public StateMachine(Http2EngineOptions options, IStageOperations ops)
+    public StateMachine(TurboClientOptions options, IStageOperations ops)
     {
         _options = options;
         _ops = ops;
-        _tracker = new StreamTracker(1, options.InitialConcurrentStreams);
-        _connection = new ConnectionState(options.InitialConnectionWindowSize,
-            options.InitialStreamWindowSize);
-        _requestEncoder = new RequestEncoder(maxFrameSize: options.MaxFrameSize);
+        _tracker = new StreamTracker(1, options.Http2.MaxConcurrentStreams);
+        _connection = new ConnectionState(options.Http2.InitialConnectionWindowSize,
+            options.Http2.InitialStreamWindowSize);
+        _requestEncoder = new RequestEncoder(maxFrameSize: options.Http2.MaxFrameSize);
         _statePoolCapacity = Math.Min(
             _tracker.MaxConcurrentStreams > 0 ? _tracker.MaxConcurrentStreams : 100,
             MaxStatePoolCapacity);
@@ -72,16 +73,16 @@ internal sealed class StateMachine
     /// </summary>
     public NetworkBuffer? TryBuildPreface()
     {
-        if (_options.InitialConnectionWindowSize <= 0 || _prefaceSent)
+        if (_options.Http2.InitialConnectionWindowSize <= 0 || _prefaceSent)
         {
             return null;
         }
 
         _prefaceSent = true;
         var (prefaceOwner, prefaceLength) = PrefaceBuilder.Build(
-            _options.InitialConnectionWindowSize,
-            _options.HeaderTableSize,
-            _options.MaxFrameSize);
+            _options.Http2.InitialConnectionWindowSize,
+            _options.Http2.HeaderTableSize,
+            _options.Http2.MaxFrameSize);
         var prefaceBuf = NetworkBuffer.Rent(prefaceLength);
         prefaceOwner.Memory.Span[..prefaceLength].CopyTo(prefaceBuf.FullMemory.Span);
         prefaceOwner.Dispose();
@@ -212,6 +213,12 @@ internal sealed class StateMachine
         if (Endpoint == default && endpoint != default)
         {
             Endpoint = endpoint;
+            _transportOptions = OptionsFactory.Build(Endpoint, _options);
+            _ops.OnOutbound(new ConnectItem
+            {
+                Key = Endpoint,
+                Options = _transportOptions
+            });
         }
 
         _correlationMap.TryAdd(streamId, request);
@@ -389,7 +396,7 @@ internal sealed class StateMachine
     /// <summary>
     /// Called when the TCP connection is lost (GOAWAY or abrupt close) with in-flight requests.
     /// Classifies streams by LastStreamId and idempotency, buffers safe-to-replay requests,
-    /// resets all connection state, and emits a ReconnectItem.
+    /// resets all connection state, and emits a ConnectItem (reconnect).
     /// </summary>
     public void OnConnectionLost(int lastStreamId)
     {
@@ -399,7 +406,7 @@ internal sealed class StateMachine
 
         IsReconnecting = true;
         _reconnectAttempts = 1;
-        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+        _ops.OnOutbound(new ConnectItem { Key = Endpoint, IsReconnect = true, Options = _transportOptions! });
     }
 
     private void ClassifyStreamsForReplay(int lastStreamId)
@@ -444,7 +451,7 @@ internal sealed class StateMachine
     private void ResetConnectionState()
     {
         _tracker.Reset();
-        _connection.Reset(_options.InitialConnectionWindowSize, _options.InitialStreamWindowSize);
+        _connection.Reset(_options.Http2.InitialConnectionWindowSize, _options.Http2.InitialStreamWindowSize);
         _requestEncoder.ResetHpack();
         _responseDecoder.ResetHpack();
         _prefaceSent = false;
@@ -477,18 +484,18 @@ internal sealed class StateMachine
 
     /// <summary>
     /// Called when a CloseSignalItem arrives while already reconnecting (reconnect attempt failed).
-    /// Increments the attempt counter; emits a new ReconnectItem or calls OnReconnectFailed.
+    /// Increments the attempt counter; emits a new ConnectItem (reconnect) or calls OnReconnectFailed.
     /// </summary>
     public void OnReconnectAttemptFailed()
     {
-        if (_reconnectAttempts >= _options.MaxReconnectAttempts)
+        if (_reconnectAttempts >= _options.Http2.MaxReconnectAttempts)
         {
             _ops.OnReconnectFailed();
             return;
         }
 
         _reconnectAttempts++;
-        _ops.OnOutbound(new ReconnectItem { Key = Endpoint });
+        _ops.OnOutbound(new ConnectItem { Key = Endpoint, IsReconnect = true, Options = _transportOptions! });
     }
 
     private static bool IsIdempotentMethod(HttpMethod method)

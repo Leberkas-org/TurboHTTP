@@ -4,7 +4,6 @@ using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 
@@ -12,8 +11,6 @@ namespace TurboHTTP.StreamTests.Http3;
 
 public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
 {
-    private static Http3EngineOptions DefaultOptions => new Http3Options().ToEngineOptions();
-
     private readonly QpackEncoder _qpack = new(maxTableCapacity: 0);
     private static readonly string[] Expected = ["/alpha", "/beta", "/gamma"];
 
@@ -47,7 +44,7 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
     }
 
     private async Task<(IReadOnlyList<IOutputItem> OutboundItems, IReadOnlyList<HttpResponseMessage> Responses)>
-        RunConcurrentAsync(HttpRequestMessage[] requests, long[] responseStreamIds, Http3EngineOptions? options = null)
+        RunConcurrentAsync(HttpRequestMessage[] requests, long[] responseStreamIds, Http3Options? options = null)
     {
         var networkSink = Sink.Seq<IOutputItem>();
         var responseSink = Sink.Seq<HttpResponseMessage>();
@@ -59,7 +56,8 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
             GraphDsl.Create(networkSink, responseSink, (nw, resp) => (nw, resp),
                 (b, nwSink, respSink) =>
                 {
-                    var stage = b.Add(new Http30ConnectionStage(options ?? DefaultOptions));
+                    var stage = b.Add(new Http30ConnectionStage(new TurboClientOptions
+                        { Http3 = options ?? new Http3Options() }));
 
                     // Server responses arrive after a short delay to allow request encoding first
                     var serverSource = b.Add(

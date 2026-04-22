@@ -21,15 +21,13 @@ internal sealed class QuicConnectionStage : GraphStage<FlowShape<IOutputItem, II
     private readonly Outlet<IInputItem> _out = new("QuicConnection.Out");
 
     private readonly IActorRef _connectionManager;
-    private readonly TurboClientOptions _clientOptions;
     private readonly bool _allowConnectionMigration;
 
     public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
-    public QuicConnectionStage(IActorRef connectionManager, TurboClientOptions clientOptions, bool allowConnectionMigration = true)
+    public QuicConnectionStage(IActorRef connectionManager, bool allowConnectionMigration = true)
     {
         _connectionManager = connectionManager;
-        _clientOptions = clientOptions;
         _allowConnectionMigration = allowConnectionMigration;
         Shape = new FlowShape<IOutputItem, IInputItem>(_in, _out);
     }
@@ -70,7 +68,6 @@ internal sealed class QuicConnectionStage : GraphStage<FlowShape<IOutputItem, II
         {
             var stageActor = GetStageActor(OnReceive);
             _sm = new QuicTransportStateMachine(this, stageActor.Ref, _stage._connectionManager,
-                _stage._clientOptions,
                 [
                     new TypedStreamDescriptor(0x00, -2, Outbound: true),
                     new TypedStreamDescriptor(0x02, -3, Outbound: true),

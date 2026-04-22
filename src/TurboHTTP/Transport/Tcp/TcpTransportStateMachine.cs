@@ -22,7 +22,6 @@ internal sealed class TcpTransportStateMachine
 
     private readonly ITransportOperations _ops;
     private readonly IActorRef _connectionManager;
-    private readonly TurboClientOptions _clientOptions;
     private readonly IActorRef _self;
 
     private ConnectionHandle? _handle;
@@ -52,12 +51,10 @@ internal sealed class TcpTransportStateMachine
     public TcpTransportStateMachine(
         ITransportOperations ops,
         IActorRef connectionManager,
-        TurboClientOptions clientOptions,
         IActorRef self)
     {
         _ops = ops;
         _connectionManager = connectionManager;
-        _clientOptions = clientOptions;
         _self = self;
     }
 
@@ -103,17 +100,6 @@ internal sealed class TcpTransportStateMachine
 
     public void HandlePush(IOutputItem item)
     {
-        // Auto-connect: on the first data/control item, derive connection parameters
-        // from the item's endpoint and acquire a connection.  Skip ConnectItem — it
-        // handles its own acquisition in HandleConnectItem and running AutoConnect
-        // first would start a duplicate acquire that races with the real one.
-        if (_handle is null && _pendingConnect is null && item is not ConnectItem &&
-            !string.IsNullOrEmpty(item.Key.Scheme) &&
-            item.Key != RequestEndpoint.Default)
-        {
-            AutoConnect(item.Key);
-        }
-
         switch (item)
         {
             case ConnectItem connect:
@@ -139,9 +125,6 @@ internal sealed class TcpTransportStateMachine
                 _ops.OnSignalPullInput();
                 break;
 
-            case ReconnectItem reconnectItem:
-                HandleReconnectItem(reconnectItem);
-                break;
         }
     }
 
@@ -172,35 +155,22 @@ internal sealed class TcpTransportStateMachine
         CleanupTransport();
     }
 
-    private void HandleReconnectItem(ReconnectItem reconnectItem)
-    {
-        _ops.Log.Debug("TcpConnectionStage: ReconnectItem — tearing down and reconnecting to {0}:{1}",
-            reconnectItem.Key.Host, reconnectItem.Key.Port);
-
-        _isReconnecting = true;
-        CleanupTransport();
-
-        var options = OptionsFactory.Build(reconnectItem.Key, _clientOptions);
-        _pendingConnect = new ConnectItem(options) { Key = reconnectItem.Key };
-        AcquireConnection(_pendingConnect.Value);
-    }
-
-    private void AutoConnect(RequestEndpoint endpoint)
-    {
-        _ops.Log.Debug("TcpConnectionStage: AutoConnect for {0}:{1}", endpoint.Host, endpoint.Port);
-
-        var options = OptionsFactory.Build(endpoint, _clientOptions);
-        _pendingConnect = new ConnectItem(options) { Key = endpoint };
-        AcquireConnection(_pendingConnect.Value);
-    }
-
     private void HandleConnectItem(ConnectItem connect)
     {
-        _ops.Log.Debug("TcpConnectionStage: ConnectItem key={0}:{1}", connect.Key.Host, connect.Key.Port);
+        if (connect.IsReconnect)
+        {
+            _ops.Log.Debug("TcpConnectionStage: ConnectItem (reconnect) key={0}:{1}", connect.Key.Host, connect.Key.Port);
+            _isReconnecting = true;
+        }
+        else
+        {
+            _ops.Log.Debug("TcpConnectionStage: ConnectItem key={0}:{1}", connect.Key.Host, connect.Key.Port);
+        }
 
         CleanupTransport();
-        _pendingConnect = connect;
-        AcquireConnection(connect);
+        _pendingConnect = connect with { Options = connect.Options! };
+        AcquireConnection(_pendingConnect.Value);
+        _ops.OnSignalPullInput();
     }
 
     private void HandleBuffer(NetworkBuffer buffer)
@@ -454,7 +424,7 @@ internal sealed class TcpTransportStateMachine
             failure: ex => new AcquisitionFailed(ex.GetBaseException()));
 
         const int defaultConnectTimeoutSeconds = 10;
-        var timeout = connect.Options.ConnectTimeout;
+        var timeout = connect.Options!.ConnectTimeout;
         if (timeout <= TimeSpan.Zero)
         {
             timeout = TimeSpan.FromSeconds(defaultConnectTimeoutSeconds);

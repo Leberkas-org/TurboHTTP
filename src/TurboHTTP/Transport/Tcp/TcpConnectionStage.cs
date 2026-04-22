@@ -19,17 +19,15 @@ internal interface ITransportOperations
 internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
 {
     private IActorRef ConnectionManager { get; }
-    private TurboClientOptions ClientOptions { get; }
 
     private readonly Inlet<IOutputItem> _in = new("TcpConnection.In");
     private readonly Outlet<IInputItem> _out = new("TcpConnection.Out");
 
     public override FlowShape<IOutputItem, IInputItem> Shape { get; }
 
-    public TcpConnectionStage(IActorRef connectionManager, TurboClientOptions clientOptions)
+    public TcpConnectionStage(IActorRef connectionManager)
     {
         ConnectionManager = connectionManager;
-        ClientOptions = clientOptions;
         Shape = new FlowShape<IOutputItem, IInputItem>(_in, _out);
     }
 
@@ -71,7 +69,6 @@ internal sealed class TcpConnectionStage : GraphStage<FlowShape<IOutputItem, IIn
             _sm = new TcpTransportStateMachine(
                 this,
                 _stage.ConnectionManager,
-                _stage.ClientOptions,
                 stageActor.Ref);
             Pull(_stage._in);
         }

@@ -19,7 +19,7 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
     [Trait("RFC", "RFC9113-6.8")]
     public async Task Http20ConnectionStage_should_emit_reconnect_item_on_abrupt_close_with_inflight()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -48,8 +48,10 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
         var preface = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<NetworkBuffer>(preface);
 
-        // Send a request
+        // Send a request — first request also emits ConnectItem before StreamAcquireItem
         appSub.SendNext(MakeRequest());
+        var connectItem = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<ConnectItem>(connectItem);
         var acquire = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<StreamAcquireItem>(acquire);
         var headers = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
@@ -58,16 +60,17 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
         // Abrupt TCP close with no GOAWAY — in-flight request exists
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
 
-        // Stage must emit ReconnectItem instead of failing
+        // Stage must emit ConnectItem with IsReconnect instead of failing
         var reconnect = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<ReconnectItem>(reconnect);
+        var reconnectItem = Assert.IsType<ConnectItem>(reconnect);
+        Assert.True(reconnectItem.IsReconnect);
     }
 
     [Fact(Timeout = 10000)]
     [Trait("RFC", "RFC9113-6.8")]
     public async Task Http20ConnectionStage_should_fail_when_max_reconnect_attempts_exceeded()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 1 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -95,13 +98,15 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // preface
 
         appSub.SendNext(MakeRequest());
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // ConnectItem
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // StreamAcquireItem
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // HEADERS frame
 
         // First drop → reconnect attempt 1 (hits max immediately)
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
         var reconnect = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<ReconnectItem>(reconnect);
+        var reconnectItem2 = Assert.IsType<ConnectItem>(reconnect);
+        Assert.True(reconnectItem2.IsReconnect);
 
         // Reconnect fails → CloseSignalItem again (attempt 2 exceeds max of 1)
         serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
@@ -114,7 +119,7 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
     [Trait("RFC", "RFC9113-6.8")]
     public async Task Http20ConnectionStage_should_complete_normally_on_close_with_no_inflight()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

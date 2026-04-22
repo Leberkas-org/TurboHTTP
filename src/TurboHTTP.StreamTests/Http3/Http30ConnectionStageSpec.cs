@@ -1,4 +1,3 @@
-using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
@@ -22,7 +21,7 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9114-4")]
     public async Task Http30ConnectionStage_should_route_to_correct_quic_stream()
     {
-        var stage = new Http30ConnectionStage(new Http3Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http30ConnectionStage(new TurboClientOptions { Http3 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -71,12 +70,14 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9114-5.2")]
     public async Task Http30ConnectionStage_should_handle_idle_timeout()
     {
-        var stage = new Http30ConnectionStage(
-            new Http3Options
+        var stage = new Http30ConnectionStage(new TurboClientOptions
+        {
+            Http3 =
             {
                 MaxReconnectAttempts = 3,
                 IdleTimeout = TimeSpan.FromMilliseconds(100)
-            }.ToEngineOptions());
+            }
+        });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -118,7 +119,7 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9114-3")]
     public async Task Http30ConnectionStage_should_complete_when_app_upstream_finishes_with_no_inflight()
     {
-        var stage = new Http30ConnectionStage(new Http3Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http30ConnectionStage(new TurboClientOptions { Http3 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

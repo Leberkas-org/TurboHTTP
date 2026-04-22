@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Protocol.Semantics;
 using Encoder = TurboHTTP.Protocol.Http11.Encoder;
 

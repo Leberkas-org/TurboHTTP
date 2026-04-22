@@ -1,6 +1,5 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
-using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
@@ -10,11 +9,11 @@ public sealed class Http3StateMachineSpec
     private readonly FakeOps _ops = new();
 
     private StateMachine CreateMachine(
-        Http3EngineOptions? options = null,
+        TurboClientOptions? options = null,
         FakeOps? ops = null)
     {
         return new StateMachine(
-            options ?? new Http3Options().ToEngineOptions(),
+            options ?? new TurboClientOptions(),
             ops ?? _ops);
     }
 
@@ -118,7 +117,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void ProcessFrame_should_reject_push_promise_when_push_disabled()
     {
-        var sm = CreateMachine(new Http3Options { AllowServerPush = false }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = false } });
         var push = new Http3PushPromiseFrame(1, new byte[] { 0x01 });
 
         var result = sm.ProcessFrame(push);
@@ -131,7 +130,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void ProcessFrame_should_warn_when_push_rejected()
     {
-        var sm = CreateMachine(new Http3Options { AllowServerPush = false }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = false } });
 
         sm.ProcessFrame(new Http3PushPromiseFrame(42, new byte[] { 0x01 }));
 
@@ -141,7 +140,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void ProcessFrame_should_forward_push_promise_to_app_when_push_enabled()
     {
-        var sm = CreateMachine(new Http3Options { AllowServerPush = true }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = true } });
         var push = new Http3PushPromiseFrame(1, new byte[] { 0x01 });
 
         var result = sm.ProcessFrame(push);
@@ -153,7 +152,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void ProcessFrame_should_enforce_push_limit_when_push_enabled()
     {
-        var sm = CreateMachine(new Http3Options { AllowServerPush = true }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = true } });
 
         // The default maxPushCount is 100 when AllowServerPush = true.
         // Push 100 times to hit the limit, then one more should warn.
@@ -301,7 +300,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void CheckIdleTimeout_should_return_null_when_timeout_disabled()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.Zero }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.Zero } });
 
         var result = sm.CheckIdleTimeout();
 
@@ -311,7 +310,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public async Task CheckIdleTimeout_should_return_goaway_when_expired_no_active_streams()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) } });
 
         await Task.Delay(20, TestContext.Current.CancellationToken);
 
@@ -324,7 +323,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public async Task CheckIdleTimeout_should_not_expire_when_streams_active()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(1) } });
         sm.EncodeRequest(CreateGetRequest());
 
         await Task.Delay(20, TestContext.Current.CancellationToken);
@@ -404,7 +403,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void OnReconnectAttemptFailed_should_signal_after_max_attempts()
     {
-        var options = new Http3Options { MaxReconnectAttempts = 2 }.ToEngineOptions();
+        var options = new TurboClientOptions { Http3 = new Http3Options { MaxReconnectAttempts = 2 } };
         var sm = CreateMachine(options);
         sm.OnConnectionLost(); // attempt 1
 
@@ -419,7 +418,7 @@ public sealed class Http3StateMachineSpec
     [Fact(Timeout = 5000)]
     public void OnReconnectAttemptFailed_should_allow_retry_before_max()
     {
-        var options = new Http3Options { MaxReconnectAttempts = 3 }.ToEngineOptions();
+        var options = new TurboClientOptions { Http3 = new Http3Options { MaxReconnectAttempts = 3 } };
         var sm = CreateMachine(options);
         sm.OnConnectionLost(); // attempt 1
 

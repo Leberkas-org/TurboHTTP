@@ -7,6 +7,8 @@ namespace TurboHTTP.Tests.Http11;
 
 public sealed class Http11StateMachineSpec
 {
+    private static TurboClientOptions MakeConfig(int maxPipelineDepth = 8) => new() { Http1 = new() { MaxPipelineDepth = maxPipelineDepth } };
+
     private static HttpRequestMessage MakeRequest(string path = "/", string? method = null, HttpContent? content = null)
     {
         var httpMethod = method switch
@@ -42,7 +44,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_enqueue_request_and_emit_stream_acquire()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
 
@@ -55,7 +57,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_emit_network_buffer_with_encoded_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
 
@@ -70,7 +72,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_set_endpoint_on_first_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
 
@@ -82,7 +84,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_respect_max_pipeline_depth()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 2);
+        var sm = new StateMachine(ops, MakeConfig(maxPipelineDepth: 2));
 
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
@@ -95,7 +97,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_handle_post_request_with_content()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         var content = new StringContent("test body", Encoding.UTF8);
 
         sm.EncodeRequest(MakeRequest("/", "POST", content));
@@ -113,7 +115,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_emit_multiple_requests_in_pipeline()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
@@ -133,7 +135,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_handle_request_without_content()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest("/", "GET"));
 
@@ -148,7 +150,7 @@ public sealed class Http11StateMachineSpec
     public void EncodeRequest_should_respect_max_buffer_size()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8, minBufferSize: 1024, maxBufferSize: 2048);
+        var sm = new StateMachine(ops, MakeConfig(), minBufferSize: 1024, maxBufferSize: 2048);
         var content = new StringContent("test", Encoding.UTF8);
 
         sm.EncodeRequest(MakeRequest("/", "POST", content));
@@ -164,7 +166,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_decode_single_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
@@ -179,7 +181,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_emit_connection_reuse_item()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -193,7 +195,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_decode_multiple_pipelined_responses()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
 
@@ -212,7 +214,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_buffer_close_delimited_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Response with no Content-Length or Transfer-Encoding (close-delimited)
@@ -229,7 +231,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_accumulate_body_for_close_delimited_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // First chunk: headers without Content-Length
@@ -249,7 +251,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_handle_connection_close_header()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
 
@@ -267,7 +269,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_handle_close_signal_items()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
         sm.DecodeServerData(buffer);
@@ -284,7 +286,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_clear_effective_pipeline_depth_when_connection_close_with_multiple_inflight()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
         sm.EncodeRequest(MakeRequest("/3"));
@@ -301,7 +303,7 @@ public sealed class Http11StateMachineSpec
     public void DecodeServerData_should_preserve_request_reference()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         var req = MakeRequest();
         sm.EncodeRequest(req);
 
@@ -316,7 +318,7 @@ public sealed class Http11StateMachineSpec
     public void HandleCloseSignal_should_complete_close_delimited_response_on_clean_close()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Setup close-delimited response
@@ -337,7 +339,7 @@ public sealed class Http11StateMachineSpec
     public void HandleCloseSignal_should_throw_on_abrupt_close_with_pending_close_delimited()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
@@ -354,7 +356,7 @@ public sealed class Http11StateMachineSpec
     public void HandleCloseSignal_should_decode_eof_response_on_clean_close()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Incomplete response (no final headers delimiter)
@@ -372,7 +374,7 @@ public sealed class Http11StateMachineSpec
     public void HandleCloseSignal_should_warn_on_abrupt_close_without_pending()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -388,7 +390,7 @@ public sealed class Http11StateMachineSpec
     public void HandleCloseSignal_should_dispose_body_owners_on_abrupt_close()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
@@ -407,7 +409,7 @@ public sealed class Http11StateMachineSpec
     public void HandleCloseSignal_should_handle_clean_close_without_buffered_response()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -423,7 +425,7 @@ public sealed class Http11StateMachineSpec
     public void TryDecodeEof_should_return_false_when_no_buffered_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         var result = sm.TryDecodeEof();
 
@@ -435,7 +437,7 @@ public sealed class Http11StateMachineSpec
     public void TryDecodeEof_should_complete_response_when_buffered_data()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Use a response without final \r\n to leave incomplete data in decoder buffer
@@ -453,7 +455,7 @@ public sealed class Http11StateMachineSpec
     public void TryDecodeEof_should_return_false_on_exception()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         // No setup needed, invalid data will cause exception which is caught
         var result = sm.TryDecodeEof();
@@ -466,7 +468,7 @@ public sealed class Http11StateMachineSpec
     public void TryDecodeEof_should_reset_decoder_after_decode()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -483,7 +485,7 @@ public sealed class Http11StateMachineSpec
     public void HandleOrphanedRequests_should_clear_queue_when_inflight()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
 
@@ -498,7 +500,7 @@ public sealed class Http11StateMachineSpec
     public void HandleOrphanedRequests_should_disable_pipelining()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         sm.HandleOrphanedRequests();
@@ -513,7 +515,7 @@ public sealed class Http11StateMachineSpec
     public void HandleOrphanedRequests_should_return_early_when_empty()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.HandleOrphanedRequests();
 
@@ -525,7 +527,7 @@ public sealed class Http11StateMachineSpec
     public void CanAcceptRequest_should_be_true_initially()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.True(sm.CanAcceptRequest);
     }
@@ -535,7 +537,7 @@ public sealed class Http11StateMachineSpec
     public void CanAcceptRequest_should_be_false_when_queue_full()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 2);
+        var sm = new StateMachine(ops, MakeConfig(maxPipelineDepth: 2));
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
 
@@ -547,7 +549,7 @@ public sealed class Http11StateMachineSpec
     public void HasInFlightRequests_should_reflect_queue_count()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.False(sm.HasInFlightRequests);
         sm.EncodeRequest(MakeRequest());
@@ -559,7 +561,7 @@ public sealed class Http11StateMachineSpec
     public void Endpoint_should_be_initialized_on_first_request()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.Equal(default, sm.Endpoint);
         sm.EncodeRequest(MakeRequest());
@@ -571,7 +573,7 @@ public sealed class Http11StateMachineSpec
     public void PendingRequestCount_should_reflect_queue_count()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
 
@@ -583,7 +585,7 @@ public sealed class Http11StateMachineSpec
     public void IsReconnecting_should_be_false_initially()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         Assert.False(sm.IsReconnecting);
     }
@@ -593,7 +595,7 @@ public sealed class Http11StateMachineSpec
     public void Cleanup_should_clear_inflight_queue()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
 
@@ -607,7 +609,7 @@ public sealed class Http11StateMachineSpec
     public void Cleanup_should_dispose_body_owners()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
@@ -626,7 +628,7 @@ public sealed class Http11StateMachineSpec
     public void Pipeline_should_correlate_responses_to_requests_in_order()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
         sm.EncodeRequest(MakeRequest("/3"));
@@ -648,7 +650,7 @@ public sealed class Http11StateMachineSpec
     public void CloseDelimited_should_work_with_initial_body_bytes()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Response headers and partial body in one buffer
@@ -671,7 +673,7 @@ public sealed class Http11StateMachineSpec
     public void NoBodyResponseTypes_should_not_be_close_delimited()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // 204 No Content (should complete immediately)
@@ -687,7 +689,7 @@ public sealed class Http11StateMachineSpec
     public void Not_Modified_should_not_be_close_delimited()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // 304 Not Modified (should complete immediately)
@@ -703,7 +705,7 @@ public sealed class Http11StateMachineSpec
     public void TransferEncoding_chunked_should_not_be_close_delimited()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
         // Response with chunked encoding (not close-delimited)
@@ -719,7 +721,7 @@ public sealed class Http11StateMachineSpec
     public void Multiple_requests_with_connection_close_should_disable_pipeline()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest("/1"));
         sm.EncodeRequest(MakeRequest("/2"));
         sm.EncodeRequest(MakeRequest("/3"));
@@ -738,7 +740,7 @@ public sealed class Http11StateMachineSpec
     public void Empty_request_queue_and_orphaned_should_not_warn()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, maxPipelineDepth: 8);
+        var sm = new StateMachine(ops, MakeConfig());
 
         sm.HandleOrphanedRequests();
 

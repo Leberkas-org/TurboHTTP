@@ -1,6 +1,5 @@
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.TestKit.Xunit;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Lifecycle;
 using TurboHTTP.Tests.Shared;

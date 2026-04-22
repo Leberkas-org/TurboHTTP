@@ -14,7 +14,8 @@ namespace TurboHTTP.StreamTests.Http2;
 
 public sealed class Http2EngineEndToEndSpec : EngineTestBase
 {
-    private static Http20Engine Engine => new(new Http2Options().ToEngineOptions());
+    private static Http20Engine Engine =>
+        new(new TurboClientOptions { Http2 = { InitialConnectionWindowSize = 65535 } });
 
     private readonly HpackEncoder _hpack = new(useHuffman: false);
     private static readonly int[] Expected = [1, 3, 5];
@@ -205,7 +206,7 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
     public async Task
         Http2Engine_should_produce_max_concurrent_streams_signal_when_settings_max_concurrent_streams_received()
     {
-        var engine = new Http20Engine(new Http2Options().ToEngineOptions());
+        var engine = new Http20Engine(new TurboClientOptions { Http2 = { InitialConnectionWindowSize = 65535 } });
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/signal-test")
         {
@@ -259,7 +260,8 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
     [Trait("RFC", "RFC9113-3.4")]
     public async Task Http2Engine_should_emit_connection_preface_when_first_connect_item_arrives()
     {
-        var engine = new Http20Engine(new Http2Options().ToEngineOptions());
+        var engine = new Http20Engine(new TurboClientOptions
+            { Http2 = { InitialConnectionWindowSize = 65535 } });
         var bidiFlow = engine.CreateFlow();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/preface-test")

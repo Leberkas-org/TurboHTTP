@@ -20,7 +20,7 @@ namespace TurboHTTP.Transport.Connection;
 internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
 {
     internal sealed record Acquire(
-        TcpOptions Options,
+        ITransportOptions Options,
         RequestEndpoint Endpoint,
         TaskCompletionSource<ConnectionLease> Tcs,
         CancellationToken Token);
@@ -74,7 +74,7 @@ internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     /// the actor skips already-completed TCS instances on dequeue.
     /// </summary>
     public static Task<ConnectionLease> AcquireAsync(
-        IActorRef actor, TcpOptions options, RequestEndpoint endpoint, CancellationToken ct = default)
+        IActorRef actor, ITransportOptions options, RequestEndpoint endpoint, CancellationToken ct = default)
     {
         var tcs = new TaskCompletionSource<ConnectionLease>();
 
@@ -90,7 +90,7 @@ internal sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     }
 
     public TcpConnectionManagerActor(TimeSpan idleTimeout, TimeSpan connectionLifetime, int maxConnectionsPerServer = 6)
-        : this(DirectConnectionFactory.Instance, idleTimeout, connectionLifetime, maxConnectionsPerServer)
+        : this(TcpConnectionFactory.Instance, idleTimeout, connectionLifetime, maxConnectionsPerServer)
     {
     }
 

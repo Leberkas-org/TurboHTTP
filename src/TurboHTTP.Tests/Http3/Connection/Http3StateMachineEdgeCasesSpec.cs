@@ -1,6 +1,5 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
-using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
@@ -10,11 +9,11 @@ public sealed class Http3StateMachineEdgeCasesSpec
     private readonly FakeOps _ops = new();
 
     private StateMachine CreateMachine(
-        Http3EngineOptions? options = null,
+        TurboClientOptions? options = null,
         FakeOps? ops = null)
     {
         return new StateMachine(
-            options ?? new Http3Options().ToEngineOptions(),
+            options ?? new TurboClientOptions(),
             ops ?? _ops);
     }
 
@@ -50,7 +49,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-6.2")]
     public void TryBuildControlPreface_should_include_max_push_id_when_push_enabled()
     {
-        var sm = CreateMachine(new Http3Options { AllowServerPush = true }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = true } });
 
         var preface = sm.TryBuildControlPreface();
 
@@ -66,7 +65,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-6.2")]
     public void TryBuildControlPreface_should_not_include_max_push_id_when_push_disabled()
     {
-        var sm = CreateMachine(new Http3Options { AllowServerPush = false }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = false } });
 
         var preface = sm.TryBuildControlPreface();
 
@@ -176,7 +175,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     {
         // StateMachine replaces zero timeout with DefaultIdleTimeout (30s)
         // so IsTimeoutDisabled is never true in normal operation
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromSeconds(1) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromSeconds(1) } });
 
         Assert.False(sm.IsTimeoutDisabled);
     }
@@ -185,7 +184,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-5.1")]
     public void IsTimeoutDisabled_should_be_false_for_nonzero_timeout()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromSeconds(30) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromSeconds(30) } });
 
         Assert.False(sm.IsTimeoutDisabled);
     }
@@ -194,7 +193,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-5.1")]
     public void TimeUntilExpiry_should_return_remaining_time()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromSeconds(10) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromSeconds(10) } });
 
         var remaining = sm.TimeUntilExpiry();
 
@@ -206,7 +205,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-5.1")]
     public void TimeUntilExpiry_should_return_remaining_time_on_active_connection()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromSeconds(60) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromSeconds(60) } });
 
         var remaining = sm.TimeUntilExpiry();
 
@@ -445,7 +444,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-5")]
     public void OnReconnectAttemptFailed_should_track_attempts_separately()
     {
-        var options = new Http3Options { MaxReconnectAttempts = 5 }.ToEngineOptions();
+        var options = new TurboClientOptions { Http3 = new Http3Options { MaxReconnectAttempts = 5 } };
         var sm = CreateMachine(options);
         sm.OnConnectionLost();
 
@@ -470,7 +469,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
     [Trait("RFC", "RFC9114-6")]
     public async Task ProcessFrame_should_record_activity_on_all_frames()
     {
-        var sm = CreateMachine(new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(50) }.ToEngineOptions());
+        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { IdleTimeout = TimeSpan.FromMilliseconds(50) } });
 
         await Task.Delay(100, TestContext.Current.CancellationToken);
 

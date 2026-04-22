@@ -7,8 +7,7 @@ namespace TurboHTTP.StreamTests.Http11;
 
 public sealed class Http11EngineEndToEndSpec : EngineTestBase
 {
-    private static Http11Engine Engine =>
-        new(new Http1EngineOptions(16, 6, 3, 64 * 1024, 64, 1024 * 1024, TimeSpan.FromSeconds(2)));
+    private static Http11Engine Engine => new(new TurboClientOptions());
 
     private static byte[] Ok200(string body) =>
         TextEncoding.Latin1.GetBytes($"HTTP/1.1 200 OK\r\nContent-Length: {body.Length}\r\n\r\n{body}");

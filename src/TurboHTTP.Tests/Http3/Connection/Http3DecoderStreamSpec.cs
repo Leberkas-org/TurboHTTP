@@ -1,6 +1,5 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
-using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http3.Connection;
@@ -9,9 +8,9 @@ public sealed class Http3DecoderStreamSpec
 {
     private readonly FakeOps _ops = new();
 
-    private StateMachine CreateMachine(Http3EngineOptions? options = null)
+    private StateMachine CreateMachine(TurboClientOptions? options = null)
     {
-        return new StateMachine(options ?? new Http3Options().ToEngineOptions(), _ops);
+        return new StateMachine(options ?? new TurboClientOptions(), _ops);
     }
 
     [Fact(Timeout = 5000)]

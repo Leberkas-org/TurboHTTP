@@ -22,9 +22,10 @@ internal readonly record struct ConnectionReuseItem(ConnectionReuseDecision Deci
     public RequestEndpoint Key { get; init; }
 }
 
-internal readonly record struct ConnectItem(TcpOptions Options) : IControlItem
+internal readonly record struct ConnectItem(ITransportOptions Options) : IControlItem
 {
     public RequestEndpoint Key { get; init; }
+    public bool IsReconnect { get; init; }
 }
 
 internal readonly record struct MaxConcurrentStreamsItem(int MaxStreams) : IControlItem
@@ -63,8 +64,6 @@ internal readonly record struct ConnectedSignalItem : IInputItem
 {
     public RequestEndpoint Key { get; init; }
 }
-
-
 
 internal class NetworkBuffer : IInputItem, IOutputItem
 {

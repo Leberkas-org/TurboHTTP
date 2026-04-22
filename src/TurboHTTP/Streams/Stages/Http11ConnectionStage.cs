@@ -13,24 +13,11 @@ internal sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
     private readonly Inlet<HttpRequestMessage> _inApp = new("Http11Connection.In.App");
     private readonly Outlet<IOutputItem> _outNetwork = new("Http11Connection.Out.Network");
 
-    private readonly int _maxPipelineDepth;
-    private readonly int _maxReconnectAttempts;
-    private readonly int _maxResponseHeadersLength;
-    private readonly int _maxResponseDrainSize;
-    private readonly TimeSpan _responseDrainTimeout;
+    private readonly TurboClientOptions _options;
 
-    public Http11ConnectionStage(
-        int maxPipelineDepth = 8,
-        int maxReconnectAttempts = 3,
-        int maxResponseHeadersLength = 64,
-        int maxResponseDrainSize = 1024 * 1024,
-        TimeSpan? responseDrainTimeout = null)
+    public Http11ConnectionStage(TurboClientOptions options)
     {
-        _maxPipelineDepth = maxPipelineDepth;
-        _maxReconnectAttempts = maxReconnectAttempts;
-        _maxResponseHeadersLength = maxResponseHeadersLength;
-        _maxResponseDrainSize = maxResponseDrainSize;
-        _responseDrainTimeout = responseDrainTimeout ?? TimeSpan.FromSeconds(2);
+        _options = options;
     }
 
     public override ConnectionShape Shape => new(_inServer, _outResponse, _inApp, _outNetwork);
@@ -53,9 +40,7 @@ internal sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
             _stage = stage;
 
             var memoryBuffer = inheritedAttributes.GetAttribute(new TurboAttributes.MemoryBuffer(4 * 1024, 256 * 1024));
-            _sm = new StateMachine(this, stage._maxPipelineDepth, stage._maxReconnectAttempts,
-                memoryBuffer.Initial, memoryBuffer.Max, stage._maxResponseHeadersLength,
-                stage._maxResponseDrainSize, stage._responseDrainTimeout);
+            _sm = new StateMachine(this, stage._options, memoryBuffer.Initial, memoryBuffer.Max);
 
             SetHandler(stage._inServer, onPush: OnServerPush,
                 onUpstreamFinish: () =>

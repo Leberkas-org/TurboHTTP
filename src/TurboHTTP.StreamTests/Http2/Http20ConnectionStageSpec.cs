@@ -31,7 +31,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9113-3.2")]
     public async Task Http20ConnectionStage_should_emit_preface_on_first_network_pull()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions
+            { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -74,7 +75,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9113-6")]
     public async Task Http20ConnectionStage_should_encode_request_as_headers_frame()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions
+            { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -112,7 +114,10 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         // Send request
         appSubscription.SendNext(MakeRequest("/test"));
 
-        // Should emit StreamAcquireItem + HEADERS frame (as NetworkBuffer)
+        // First request: ConnectItem (transport connect) + StreamAcquireItem + HEADERS frame (as NetworkBuffer)
+        var connect = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<ConnectItem>(connect);
+
         var acquire = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<StreamAcquireItem>(acquire);
 
@@ -124,7 +129,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9113-6.2")]
     public async Task Http20ConnectionStage_should_support_stream_multiplexing()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -176,7 +181,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9113-3.1")]
     public async Task Http20ConnectionStage_should_handle_settings_frame()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -222,7 +227,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9113-6.8")]
     public async Task Http20ConnectionStage_should_complete_on_goaway_with_no_inflight()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -267,7 +272,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9113-6")]
     public async Task Http20ConnectionStage_should_complete_when_app_upstream_finishes_with_no_inflight()
     {
-        var stage = new Http20ConnectionStage(new Http2Options { MaxReconnectAttempts = 3 }.ToEngineOptions());
+        var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

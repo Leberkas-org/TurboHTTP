@@ -22,7 +22,8 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
                 (m1, m2) => (m1, m2),
                 (b, dsSink, nwSink) =>
                 {
-                    var stage = b.Add(new Http20ConnectionStage(new Http2Options().ToEngineOptions()));
+                    var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
+                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 
@@ -101,7 +102,8 @@ public sealed class Http2ConnectionSettingsSpec : StreamTestBase
                 (m1, m2) => (m1, m2),
                 (b, dsSink, nwSink) =>
                 {
-                    var stage = b.Add(new Http20ConnectionStage(new Http2Options().ToEngineOptions()));
+                    var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
+                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
                     var serverSource = b.Add(Source.From(FramesToInputs([data])));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 

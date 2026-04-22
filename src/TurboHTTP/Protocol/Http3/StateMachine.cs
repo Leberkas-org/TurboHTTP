@@ -2,8 +2,8 @@ using System.Buffers;
 using System.Security.Cryptography.X509Certificates;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3.Qpack;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Transport.Connection;
 
 namespace TurboHTTP.Protocol.Http3;
 
@@ -34,8 +34,9 @@ internal sealed class StateMachine : IDisposable
         HttpMethod.Delete,
     ];
 
-    private readonly Http3EngineOptions _options;
+    private readonly TurboClientOptions _options;
     private readonly IStageOperations _ops;
+    private ITransportOptions? _transportOptions;
 
     private readonly RequestEncoder _requestEncoder;
     private readonly ResponseDecoder _responseDecoder;
@@ -76,7 +77,7 @@ internal sealed class StateMachine : IDisposable
     /// <summary>The QPACK table synchronization coordinator.</summary>
     internal QpackTableSync TableSync { get; }
 
-    public StateMachine(Http3EngineOptions options, IStageOperations ops)
+    public StateMachine(TurboClientOptions options, IStageOperations ops)
     {
         _options = options;
         _ops = ops;
@@ -86,7 +87,7 @@ internal sealed class StateMachine : IDisposable
         TableSync = new QpackTableSync(
             encoderMaxCapacity: 0,
             decoderMaxCapacity: 4096,
-            maxBlockedStreams: options.QpackBlockedStreams);
+            maxBlockedStreams: options.Http3.QpackBlockedStreams);
         _requestEncoder = new RequestEncoder(TableSync);
         _responseDecoder = new ResponseDecoder(TableSync);
         _qpackHandler = new QpackStreamHandler(ops, _requestEncoder, _responseDecoder, TableSync);
@@ -97,11 +98,11 @@ internal sealed class StateMachine : IDisposable
         };
         Tracker = new StreamTracker();
 
-        var idleTimeout = options.IdleTimeout == TimeSpan.Zero
+        var idleTimeout = options.Http3.IdleTimeout == TimeSpan.Zero
             ? DefaultIdleTimeout
-            : options.IdleTimeout;
+            : options.Http3.IdleTimeout;
 
-        Connection = new ConnectionState(idleTimeout, options.AllowServerPush ? 100 : 0);
+        Connection = new ConnectionState(idleTimeout, options.Http3.AllowServerPush ? 100 : 0);
     }
 
     /// <summary>
@@ -126,7 +127,7 @@ internal sealed class StateMachine : IDisposable
         var totalSize = streamTypeSize + frameSize;
 
         Http3MaxPushIdFrame? maxPushIdFrame = null;
-        if (_options.AllowServerPush)
+        if (_options.Http3.AllowServerPush)
         {
             maxPushIdFrame = new Http3MaxPushIdFrame(99);
             totalSize += maxPushIdFrame.SerializedSize;
@@ -351,7 +352,7 @@ internal sealed class StateMachine : IDisposable
     /// </summary>
     public bool OnReconnectAttemptFailed()
     {
-        if (_reconnectAttempts >= _options.MaxReconnectAttempts)
+        if (_reconnectAttempts >= _options.Http3.MaxReconnectAttempts)
         {
             _ops.OnReconnectFailed();
             return false;
@@ -393,6 +394,12 @@ internal sealed class StateMachine : IDisposable
         if (Endpoint == default && endpoint != default)
         {
             Endpoint = endpoint;
+            _transportOptions = OptionsFactory.Build(Endpoint, _options);
+            _ops.OnOutbound(new ConnectItem
+            {
+                Key = Endpoint,
+                Options = _transportOptions
+            });
         }
 
         var streamId = Tracker.AllocateStreamId();
@@ -417,7 +424,7 @@ internal sealed class StateMachine : IDisposable
         OriginValidator.Validate(request.RequestUri!, request.Method == HttpMethod.Connect);
         var frames = _requestEncoder.Encode(request);
 
-        if (_options.AllowEarlyData && IdempotentMethods.Contains(request.Method))
+        if (_options.Http3.AllowEarlyData && IdempotentMethods.Contains(request.Method))
         {
             foreach (var f in frames)
             {
@@ -512,7 +519,7 @@ internal sealed class StateMachine : IDisposable
 
     private Http3PushPromiseFrame? HandlePushPromise(Http3PushPromiseFrame pushPromise)
     {
-        if (!_options.AllowServerPush)
+        if (!_options.Http3.AllowServerPush)
         {
             var cancelFrame = new Http3CancelPushFrame(pushPromise.PushId);
             EmitSerializedFrame(cancelFrame);

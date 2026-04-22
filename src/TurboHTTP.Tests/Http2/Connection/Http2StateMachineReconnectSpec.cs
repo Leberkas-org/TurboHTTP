@@ -1,25 +1,18 @@
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
-using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Http2.Connection;
 
 public sealed class Http2StateMachineReconnectSpec
 {
-    private static Http2EngineOptions MakeConfig(int maxReconnect = 3) =>
-        new(
-            MaxConnectionsPerServer: 6,
-            InitialConcurrentStreams: 100,
-            InitialConnectionWindowSize: 65535,
-            InitialStreamWindowSize: 65535,
-            MaxFrameSize: 16384,
-            HeaderTableSize: 4096,
-            MaxReconnectAttempts: maxReconnect,
-            MaxBatchWeight: 262_144,
-            KeepAlivePingDelay: Timeout.InfiniteTimeSpan,
-            KeepAlivePingTimeout: TimeSpan.FromSeconds(20),
-            KeepAlivePingPolicy: HttpKeepAlivePingPolicy.Always);
+    private static TurboClientOptions MakeConfig(int? maxConcurrentStreams = null, int? maxReconnect = null)
+    {
+        var options = new TurboClientOptions();
+        if (maxConcurrentStreams.HasValue) options.Http2.MaxConcurrentStreams = maxConcurrentStreams.Value;
+        if (maxReconnect.HasValue) options.Http2.MaxReconnectAttempts = maxReconnect.Value;
+        return options;
+    }
 
     private static HttpRequestMessage MakeGet(string path = "/") =>
         new(HttpMethod.Get, $"https://example.com{path}");
@@ -44,7 +37,7 @@ public sealed class Http2StateMachineReconnectSpec
 
         Assert.True(sm.IsReconnecting);
         Assert.Equal(2, sm.ReconnectBufferCount);
-        Assert.Single(ops.Outbound.OfType<ReconnectItem>());
+        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
     }
 
     [Fact(Timeout = 5000)]

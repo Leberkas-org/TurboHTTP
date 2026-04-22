@@ -13,11 +13,11 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
     private readonly Outlet<HttpResponseMessage> _outResponse = new("Http20Connection.Out.Response");
     private readonly Inlet<HttpRequestMessage> _inApp = new("Http20Connection.In.App");
     private readonly Outlet<IOutputItem> _outNetwork = new("Http20Connection.Out.Network");
-    private readonly Http2EngineOptions _options;
+    private readonly TurboClientOptions _options;
 
     public override ConnectionShape Shape => new(_inServer, _outResponse, _inApp, _outNetwork);
 
-    public Http20ConnectionStage(Http2EngineOptions options)
+    public Http20ConnectionStage(TurboClientOptions options)
     {
         _options = options;
     }
@@ -41,7 +41,7 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
         {
             _stage = stage;
             _sm = new StateMachine(stage._options, this);
-            _keepAliveEnabled = stage._options.KeepAlivePingDelay != Timeout.InfiniteTimeSpan;
+            _keepAliveEnabled = stage._options.Http2.KeepAlivePingDelay != Timeout.InfiniteTimeSpan;
 
             SetHandler(stage._inServer, onPush: OnServerPush,
                 onUpstreamFinish: () =>
@@ -228,7 +228,7 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             {
                 case KeepAlivePingTimerKey:
                 {
-                    var policy = _stage._options.KeepAlivePingPolicy;
+                    var policy = _stage._options.Http2.KeepAlivePingPolicy;
                     if (policy == HttpKeepAlivePingPolicy.WithActiveRequests && !_sm.HasInFlightRequests)
                     {
                         return;
@@ -241,7 +241,7 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
                 }
                 case KeepAlivePingTimeoutKey:
                 {
-                    if (_sm.IsKeepAliveTimedOut(_stage._options.KeepAlivePingTimeout))
+                    if (_sm.IsKeepAliveTimedOut(_stage._options.Http2.KeepAlivePingTimeout))
                     {
                         Log.Warning("Http20ConnectionStage: Keep-alive PING timeout — closing connection.");
                         if (_sm.HasInFlightRequests)
@@ -264,7 +264,7 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
         {
             if (_keepAliveEnabled)
             {
-                ScheduleOnce(KeepAlivePingTimerKey, _stage._options.KeepAlivePingDelay);
+                ScheduleOnce(KeepAlivePingTimerKey, _stage._options.Http2.KeepAlivePingDelay);
             }
         }
 
@@ -272,7 +272,7 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
         {
             if (_keepAliveEnabled)
             {
-                ScheduleOnce(KeepAlivePingTimeoutKey, _stage._options.KeepAlivePingTimeout);
+                ScheduleOnce(KeepAlivePingTimeoutKey, _stage._options.Http2.KeepAlivePingTimeout);
             }
         }
 

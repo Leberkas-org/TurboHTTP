@@ -11,11 +11,12 @@ namespace TurboHTTP.Transport.Tcp;
 /// spawns ByteMover tasks, and returns a <see cref="ConnectionLease"/> —
 /// all in a single async call with no actor involvement.
 /// </summary>
-internal sealed class DirectConnectionFactory : IConnectionFactory
+internal sealed class TcpConnectionFactory : IConnectionFactory
 {
-    public static readonly DirectConnectionFactory Instance = new();
+    public static readonly TcpConnectionFactory Instance = new();
 
-    Task<ConnectionLease> IConnectionFactory.EstablishAsync(TcpOptions options, RequestEndpoint endpoint, CancellationToken ct)
+    Task<ConnectionLease> IConnectionFactory.EstablishAsync(ITransportOptions options, RequestEndpoint endpoint,
+        CancellationToken ct)
         => EstablishAsync(options, endpoint, ct);
 
     /// <summary>
@@ -27,7 +28,7 @@ internal sealed class DirectConnectionFactory : IConnectionFactory
     /// <param name="ct">Cancellation token for the connection establishment.</param>
     /// <returns>A <see cref="ConnectionLease"/> wrapping the live connection.</returns>
     public static async Task<ConnectionLease> EstablishAsync(
-        TcpOptions options,
+        ITransportOptions options,
         RequestEndpoint endpoint,
         CancellationToken ct = default)
     {
@@ -37,7 +38,8 @@ internal sealed class DirectConnectionFactory : IConnectionFactory
         IClientProvider provider = options switch
         {
             TlsOptions tls => new TlsClientProvider(tls),
-            _ => new TcpClientProvider(options)
+            TcpOptions tcp => new TcpClientProvider(tcp),
+            _ => throw new ArgumentException($"Unsupported options type: {options.GetType()}", nameof(options))
         };
 
         // Start a Connect span that wraps the entire establishment (DNS + socket + TLS)
@@ -94,7 +96,7 @@ internal sealed class DirectConnectionFactory : IConnectionFactory
                 new("http.connection.state", "active"),
                 new("server.address", endpoint.Host),
                 new("server.port", endpoint.Port));
-            TurboTrace.Connection.Info(typeof(DirectConnectionFactory), "Connection opened: {0}:{1} ({2})",
+            TurboTrace.Connection.Info(typeof(TcpConnectionFactory), "Connection opened: {0}:{1} ({2})",
                 endpoint.Host, endpoint.Port, protocol);
 
             return lease;

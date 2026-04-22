@@ -28,18 +28,18 @@ public sealed class QuicConnectionMigrationSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-9")]
-    public void Http3EngineOptions_should_default_AllowConnectionMigration_to_true()
+    public void TurboClientOptions_should_default_Http3_AllowConnectionMigration_to_true()
     {
-        var options = new Http3Options().ToEngineOptions();
-        Assert.True(options.AllowConnectionMigration);
+        var options = new TurboClientOptions();
+        Assert.True(options.Http3.AllowConnectionMigration);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9000-9")]
-    public void Http3EngineOptions_should_accept_AllowConnectionMigration_false()
+    public void TurboClientOptions_should_accept_Http3_AllowConnectionMigration_false()
     {
-        var options = new Http3Options { AllowConnectionMigration = false }.ToEngineOptions();
-        Assert.False(options.AllowConnectionMigration);
+        var options = new TurboClientOptions { Http3 = new Http3Options { AllowConnectionMigration = false } };
+        Assert.False(options.Http3.AllowConnectionMigration);
     }
 
     [Fact(Timeout = 5000)]
@@ -65,7 +65,6 @@ public sealed class QuicConnectionMigrationSpec
         // Arrange
         var ops = new StubTransportOperations();
         var sm = new QuicTransportStateMachine(ops, Nobody.Instance, Nobody.Instance,
-            new TurboClientOptions(),
             [
                 new TypedStreamDescriptor(0x00, -2, Outbound: true),
                 new TypedStreamDescriptor(0x02, -3, Outbound: true),
@@ -90,7 +89,6 @@ public sealed class QuicConnectionMigrationSpec
         // Arrange
         var ops = new StubTransportOperations();
         var sm = new QuicTransportStateMachine(ops, Nobody.Instance, Nobody.Instance,
-            new TurboClientOptions(),
             [
                 new TypedStreamDescriptor(0x00, -2, Outbound: true),
                 new TypedStreamDescriptor(0x02, -3, Outbound: true),

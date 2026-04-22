@@ -10,7 +10,6 @@ public sealed class QuicConnectionStageSpec
     {
         var stage = new QuicConnectionStage(
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             allowConnectionMigration: true);
 
         Assert.NotNull(stage);
@@ -22,7 +21,6 @@ public sealed class QuicConnectionStageSpec
     {
         var stage = new QuicConnectionStage(
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             allowConnectionMigration: true);
 
         var shape = stage.Shape;
@@ -35,7 +33,6 @@ public sealed class QuicConnectionStageSpec
     {
         var stage = new QuicConnectionStage(
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             allowConnectionMigration: false);
 
         Assert.NotNull(stage);
@@ -48,7 +45,6 @@ public sealed class QuicConnectionStageSpec
         {
             var stage = new QuicConnectionStage(
                 ActorRefs.Nobody,
-                new TurboClientOptions(),
                 allowConnectionMigration: true);
 
             Assert.NotNull(stage);
@@ -60,7 +56,6 @@ public sealed class QuicConnectionStageSpec
     {
         var stage = new QuicConnectionStage(
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             allowConnectionMigration: true);
 
         var shape = stage.Shape;
@@ -71,26 +66,16 @@ public sealed class QuicConnectionStageSpec
     [Fact(Timeout = 5000)]
     public void Stage_shape_inlet_matches_outlet()
     {
-        var stage = new QuicConnectionStage(
-            ActorRefs.Nobody,
-            new TurboClientOptions());
+        var stage = new QuicConnectionStage(ActorRefs.Nobody);
 
         var shape = stage.Shape;
-        Assert.Same(shape, stage.Shape); // Shape should be consistent
+        Assert.Same(shape, stage.Shape);
     }
 
     [Fact(Timeout = 5000)]
-    public void Stage_with_custom_client_options_should_work()
+    public void Stage_with_connection_migration_default_should_work()
     {
-        var clientOptions = new TurboClientOptions
-        {
-            ConnectTimeout = TimeSpan.FromSeconds(30)
-        };
-
-        var stage = new QuicConnectionStage(
-            ActorRefs.Nobody,
-            clientOptions,
-            allowConnectionMigration: true);
+        var stage = new QuicConnectionStage(ActorRefs.Nobody);
 
         Assert.NotNull(stage);
     }
@@ -100,12 +85,10 @@ public sealed class QuicConnectionStageSpec
     {
         var stage1 = new QuicConnectionStage(
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             allowConnectionMigration: true);
 
         var stage2 = new QuicConnectionStage(
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             allowConnectionMigration: false);
 
         Assert.NotSame(stage1, stage2);

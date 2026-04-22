@@ -2,7 +2,6 @@ using System.Buffers;
 using System.Net;
 using System.Threading.Channels;
 using Akka.Actor;
-using Akka.Event;
 using TurboHTTP.Internal;
 using TurboHTTP.Transport.Connection;
 using TurboHTTP.Protocol.Http11;
@@ -33,7 +32,6 @@ public sealed class TcpTransportStateMachineSpec
         var sm = new TcpTransportStateMachine(
             ops,
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             ActorRefs.Nobody);
         return (sm, ops);
     }
@@ -395,15 +393,16 @@ public sealed class TcpTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void AutoConnect_should_trigger_on_first_data_item()
+    public void HandlePush_data_before_ConnectItem_should_buffer_and_signal_pull()
     {
         var (sm, ops) = CreateStateMachine();
 
         var buffer = NetworkBufferTestExtensions.FromArray([1, 2, 3]);
         buffer.Key = TestEndpoint;
+
         sm.HandlePush(buffer);
 
-        Assert.Contains(ops.ScheduledTimers, t => t.Key == "connect-timeout");
+        Assert.True(ops.PullInputCount > 0);
     }
 
     [Fact(Timeout = 5000)]

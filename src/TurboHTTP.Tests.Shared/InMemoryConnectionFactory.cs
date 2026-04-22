@@ -10,7 +10,7 @@ internal sealed class InMemoryConnectionFactory : IConnectionFactory
 
     public IReadOnlyList<ConnectionLease> EstablishedLeases => _established;
 
-    public Task<ConnectionLease> EstablishAsync(TcpOptions options, RequestEndpoint endpoint, CancellationToken ct)
+    public Task<ConnectionLease> EstablishAsync(ITransportOptions options, RequestEndpoint endpoint, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 

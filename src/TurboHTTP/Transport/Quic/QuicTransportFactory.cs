@@ -15,12 +15,11 @@ namespace TurboHTTP.Transport.Quic;
 /// </summary>
 internal sealed class QuicTransportFactory(
     IActorRef connectionManager,
-    TurboClientOptions clientOptions,
     bool allowConnectionMigration = true) : ITransportFactory
 {
     /// <summary>
     /// Creates a QUIC transport stage wired to the shared connection manager actor.
     /// </summary>
     public Flow<IOutputItem, IInputItem, NotUsed> Create()
-        => Flow.FromGraph(new QuicConnectionStage(connectionManager, clientOptions, allowConnectionMigration));
+        => Flow.FromGraph(new QuicConnectionStage(connectionManager, allowConnectionMigration));
 }

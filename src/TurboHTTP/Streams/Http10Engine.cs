@@ -9,9 +9,9 @@ namespace TurboHTTP.Streams;
 
 internal class Http10Engine : IHttpProtocolEngine
 {
-    private readonly Http1EngineOptions _options;
+    private readonly TurboClientOptions _options;
 
-    public Http10Engine(Http1EngineOptions options)
+    public Http10Engine(TurboClientOptions options)
     {
         _options = options;
     }
@@ -20,11 +20,9 @@ internal class Http10Engine : IHttpProtocolEngine
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            var connection = b.Add(new Http10ConnectionStage(
-                _options.MaxReconnectAttempts, _options.MaxResponseHeadersLength,
-                _options.MaxResponseDrainSize, _options.ResponseDrainTimeout));
+            var connection = b.Add(new Http10ConnectionStage(_options));
 
-            var batchFlow = b.Add(new NetworkBufferBatchStage(_options.MaxBatchWeight));
+            var batchFlow = b.Add(new NetworkBufferBatchStage(_options.Http1.MaxBatchWeight));
 
             b.From(connection.OutNetwork).Via(batchFlow);
 

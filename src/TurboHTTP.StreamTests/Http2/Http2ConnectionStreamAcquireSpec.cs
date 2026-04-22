@@ -22,7 +22,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
             GraphDsl.Create(networkSink,
                 (b, nwSink) =>
                 {
-                    var stage = b.Add(new Http20ConnectionStage(new Http2Options().ToEngineOptions()));
+                    var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
+                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
 
                     // A SETTINGS ACK on InServer is harmless (no ACK reply) and lets
                     // the inlet complete, which tears down the stage via the default
@@ -60,7 +61,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
             GraphDsl.Create(networkSink,
                 (b, nwSink) =>
                 {
-                    var stage = b.Add(new Http20ConnectionStage(new Http2Options().ToEngineOptions()));
+                    var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
+                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
 
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(
@@ -93,7 +95,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var (_, signals) = await RunWithRequestsAsync(request);
 
-        var signal = Assert.Single(signals);
+        var signal = Assert.Single(signals.OfType<StreamAcquireItem>());
         Assert.IsType<StreamAcquireItem>(signal);
     }
 
@@ -110,7 +112,8 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var (_, signals) = await RunWithRequestsAsync(request);
 
-        Assert.Single(signals);
+        // Only the HeadersFrame triggers a StreamAcquireItem; ConnectItem and DATA frame must not add one.
+        Assert.Single(signals.OfType<StreamAcquireItem>());
     }
 
     [Fact(Timeout = 10_000)]
@@ -132,7 +135,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var (_, signals) = await RunWithRequestsAsync(request);
 
-        var signal = Assert.Single(signals);
+        var signal = Assert.Single(signals.OfType<StreamAcquireItem>());
         var acquire = Assert.IsType<StreamAcquireItem>(signal);
         Assert.Equal(endpoint, acquire.Key);
     }
@@ -145,7 +148,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var (_, signals) = await RunWithRequestsAsync(request);
 
-        var signal = Assert.Single(signals);
+        var signal = Assert.Single(signals.OfType<StreamAcquireItem>());
         var acquire = Assert.IsType<StreamAcquireItem>(signal);
         Assert.Equal(RequestEndpoint.Default, acquire.Key);
     }
@@ -170,9 +173,10 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
 
         var (_, signals) = await RunWithRequestsAsync(req1, req2);
 
-        Assert.Equal(2, signals.Count);
-        var acquire1 = Assert.IsType<StreamAcquireItem>(signals[0]);
-        var acquire2 = Assert.IsType<StreamAcquireItem>(signals[1]);
+        var acquires = signals.OfType<StreamAcquireItem>().ToList();
+        Assert.Equal(2, acquires.Count);
+        var acquire1 = Assert.IsType<StreamAcquireItem>(acquires[0]);
+        var acquire2 = Assert.IsType<StreamAcquireItem>(acquires[1]);
         Assert.Equal(endpoint, acquire1.Key);
         Assert.Equal(endpoint, acquire2.Key);
     }

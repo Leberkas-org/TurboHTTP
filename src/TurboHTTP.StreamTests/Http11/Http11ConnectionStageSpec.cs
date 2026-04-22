@@ -32,7 +32,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-6")]
     public async Task Http11ConnectionStage_should_encode_request_and_emit_on_network_outlet()
     {
-        var stage = new Http11ConnectionStage();
+        var stage = new Http11ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -68,6 +68,9 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
             appSubscription.SendNext(MakeRequest("/test"));
         }
 
+        // ConnectItem emitted first when endpoint is known from the first request
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+
         // StreamAcquireItem + NetworkBuffer
         var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.IsType<StreamAcquireItem>(item1);
@@ -84,7 +87,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-6")]
     public async Task Http11ConnectionStage_should_decode_response_and_correlate_with_request()
     {
-        var stage = new Http11ConnectionStage();
+        var stage = new Http11ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -120,6 +123,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         // Consume outbound
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         serverSubscription.SendNext(MakeResponseBuffer(
             "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"));
@@ -134,7 +138,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-9.3")]
     public async Task Http11ConnectionStage_should_support_pipelining_multiple_requests()
     {
-        var stage = new Http11ConnectionStage(maxPipelineDepth: 4);
+        var stage = new Http11ConnectionStage(new TurboClientOptions { Http1 = { MaxPipelineDepth = 4 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -167,12 +171,13 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
 
         // Send two requests (pipelined)
         appSubscription.SendNext(MakeRequest("/first"));
-        // StreamAcquire + NetworkBuffer for first request
+        // ConnectItem + StreamAcquire + NetworkBuffer for first request
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         appSubscription.SendNext(MakeRequest("/second"));
-        // StreamAcquire + NetworkBuffer for second request
+        // StreamAcquire + NetworkBuffer for second request (endpoint already known)
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
@@ -199,7 +204,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-7")]
     public async Task Http11ConnectionStage_should_pipeline_requests_up_to_max_depth()
     {
-        var stage = new Http11ConnectionStage(maxPipelineDepth: 3);
+        var stage = new Http11ConnectionStage(new TurboClientOptions { Http1 = { MaxPipelineDepth = 4 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -235,8 +240,9 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         appSubscription.SendNext(MakeRequest("/req2"));
         appSubscription.SendNext(MakeRequest("/req3"));
 
-        // Consume all 6 items (StreamAcquire + NetworkBuffer for each request)
-        for (var i = 0; i < 6; i++)
+        // Consume all 7 items: ConnectItem + StreamAcquire + NetworkBuffer for req1,
+        // StreamAcquire + NetworkBuffer for req2 and req3
+        for (var i = 0; i < 7; i++)
         {
             await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         }
@@ -265,7 +271,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-10.1")]
     public async Task Http11ConnectionStage_should_reduce_pipeline_depth_when_connection_close_received()
     {
-        var stage = new Http11ConnectionStage(maxPipelineDepth: 3);
+        var stage = new Http11ConnectionStage(new TurboClientOptions { Http1 = { MaxPipelineDepth = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -299,7 +305,8 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         // Send first request
         appSubscription.SendNext(MakeRequest("/req1"));
 
-        // Consume StreamAcquire + NetworkBuffer
+        // Consume ConnectItem + StreamAcquire + NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
@@ -337,7 +344,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-9.3")]
     public async Task Http11ConnectionStage_should_emit_connection_reuse_keep_alive_for_http11()
     {
-        var stage = new Http11ConnectionStage();
+        var stage = new Http11ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -373,6 +380,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         // StreamAcquire + NetworkBuffer
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         serverSubscription.SendNext(MakeResponseBuffer(
             "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
@@ -389,7 +397,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-7")]
     public async Task Http11ConnectionStage_should_handle_100_continue_response()
     {
-        var stage = new Http11ConnectionStage();
+        var stage = new Http11ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -422,7 +430,8 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
 
         appSubscription.SendNext(MakeRequest("/upload"));
 
-        // Consume StreamAcquire + NetworkBuffer
+        // Consume ConnectItem + StreamAcquire + NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
@@ -441,7 +450,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-6")]
     public async Task Http11ConnectionStage_should_handle_connection_close_header()
     {
-        var stage = new Http11ConnectionStage();
+        var stage = new Http11ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -474,7 +483,8 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
 
         appSubscription.SendNext(MakeRequest("/close"));
 
-        // Consume StreamAcquire + NetworkBuffer
+        // Consume ConnectItem + StreamAcquire + NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
@@ -495,7 +505,7 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
     [Trait("RFC", "RFC9112-6")]
     public async Task Http11ConnectionStage_should_complete_when_app_upstream_finishes_and_no_inflight()
     {
-        var stage = new Http11ConnectionStage();
+        var stage = new Http11ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

@@ -32,7 +32,6 @@ public sealed class TcpTransportStateMachineDataFlowSpec
         var sm = new TcpTransportStateMachine(
             ops,
             ActorRefs.Nobody,
-            new TurboClientOptions(),
             ActorRefs.Nobody);
         return (sm, ops);
     }
