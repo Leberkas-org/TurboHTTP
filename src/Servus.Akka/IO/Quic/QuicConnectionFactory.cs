@@ -31,6 +31,8 @@ internal sealed class QuicConnectionFactory : IQuicConnectionFactory
         var handle = new QuicConnectionHandle(provider, options, endpoint);
         var lease = new QuicConnectionLease(handle);
 
+        ServusTrace.Connection.Debug(Instance, "QUIC connected to {0}:{1}", endpoint.Host, endpoint.Port);
+
         ServusMetrics.OpenConnections.Add(1,
             new("http.connection.state", "active"),
             new("server.address", endpoint.Host),

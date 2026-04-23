@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Servus.Akka.IO;
-using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests;
 

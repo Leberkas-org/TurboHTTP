@@ -2,7 +2,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
 using Servus.Akka.IO;
-using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 

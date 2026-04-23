@@ -53,16 +53,11 @@ internal sealed class LoggerTraceListener : ITurboTraceListener
     {
         return new Dictionary<TurboTraceCategory, ILogger>
         {
-            [TurboTraceCategory.Connection] = loggerFactory.CreateLogger("TurboHTTP.Trace.Connection"),
             [TurboTraceCategory.Protocol] = loggerFactory.CreateLogger("TurboHTTP.Trace.Protocol"),
             [TurboTraceCategory.Request] = loggerFactory.CreateLogger("TurboHTTP.Trace.Request"),
-            [TurboTraceCategory.Response] = loggerFactory.CreateLogger("TurboHTTP.Trace.Response"),
             [TurboTraceCategory.Cache] = loggerFactory.CreateLogger("TurboHTTP.Trace.Cache"),
             [TurboTraceCategory.Redirect] = loggerFactory.CreateLogger("TurboHTTP.Trace.Redirect"),
             [TurboTraceCategory.Retry] = loggerFactory.CreateLogger("TurboHTTP.Trace.Retry"),
-            [TurboTraceCategory.Pool] = loggerFactory.CreateLogger("TurboHTTP.Trace.Pool"),
-            [TurboTraceCategory.Transport] = loggerFactory.CreateLogger("TurboHTTP.Trace.Transport"),
-            [TurboTraceCategory.Stream] = loggerFactory.CreateLogger("TurboHTTP.Trace.Stream"),
         };
     }
 }

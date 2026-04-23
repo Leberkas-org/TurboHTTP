@@ -10,4 +10,8 @@
       <PackageReference Include="Akka.Hosting" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Servus.Akka.Tests"/>
+    </ItemGroup>
+
 </Project>

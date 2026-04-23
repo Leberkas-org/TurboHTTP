@@ -1,5 +1,4 @@
 using Servus.Akka.IO;
-using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http10;
 using TurboHTTP.Tests.Shared;
 

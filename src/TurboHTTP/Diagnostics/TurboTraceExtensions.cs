@@ -54,14 +54,4 @@ public static class TurboTraceExtensions
         services.AddSingleton(listener);
         return services;
     }
-
-    public static MeterProviderBuilder AddTurboHttpMetrics(this MeterProviderBuilder builder)
-    {
-        return builder.AddServusMetrics().AddMeter(TurboHttpMetrics.MeterName);
-    }
-
-    public static TracerProviderBuilder AddTurboHttpTracing(this TracerProviderBuilder builder)
-    {
-        return builder.AddServusTracing().AddSource(TurboHttpInstrumentation.SourceName);
-    }
 }

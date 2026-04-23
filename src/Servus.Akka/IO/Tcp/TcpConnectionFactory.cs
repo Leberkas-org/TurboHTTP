@@ -43,6 +43,7 @@ public sealed class TcpConnectionFactory : IConnectionFactory
         // Start a Connect span that wraps the entire establishment (DNS + socket + TLS)
         var uri = new Uri($"{(options is TlsOptions ? "https" : "http")}://{endpoint.Host}:{endpoint.Port}/");
         var connectActivity = ServusInstrumentation.StartConnect(uri);
+        ServusTrace.Connection.Debug(Instance, "Connecting to {0}:{1}", endpoint.Host, endpoint.Port);
 
         try
         {
@@ -55,6 +56,7 @@ public sealed class TcpConnectionFactory : IConnectionFactory
             }
 
             connectActivity?.Stop();
+            ServusTrace.Connection.Debug(Instance, "Connected to {0}:{1}", endpoint.Host, endpoint.Port);
 
             // 3. Create ClientState with channels + Pipe
             var state = new ClientState(
@@ -96,6 +98,8 @@ public sealed class TcpConnectionFactory : IConnectionFactory
         }
         catch (Exception ex)
         {
+            ServusTrace.Connection.Warning(Instance, "Connection to {0}:{1} failed: {2}", endpoint.Host, endpoint.Port, ex.Message);
+
             if (connectActivity is not null)
             {
                 ServusInstrumentation.SetError(connectActivity, ex);

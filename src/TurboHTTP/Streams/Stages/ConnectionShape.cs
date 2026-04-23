@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using Akka.Streams;
 using Servus.Akka.IO;
-using TurboHTTP.Internal;
 
 namespace TurboHTTP.Streams.Stages;
 

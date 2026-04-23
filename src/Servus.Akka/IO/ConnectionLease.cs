@@ -148,6 +148,8 @@ public sealed class ConnectionLease : IDisposable
         var host = Key.Host;
         var port = Key.Port;
 
+        ServusTrace.Connection.Debug(this, "Connection to {0}:{1} disposed after {2}ms", host, port, durationMs);
+
         ServusMetrics.ConnectionDuration.Record(
             durationMs / 1000.0,
             new("server.address", host),

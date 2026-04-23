@@ -165,6 +165,7 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
                 }
                 else
                 {
+                    ServusTrace.Pool.Debug(this, "Idle connection reused for {0}:{1}", host.Endpoint.Host, host.Endpoint.Port);
                     ServusMetrics.OpenConnections.Add(-1,
                         new("http.connection.state", "idle"),
                         new("server.address", host.Endpoint.Host),
@@ -362,6 +363,12 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
             host.Idle.Enqueue(item);
         }
 
+        if (expired.Count > 0)
+        {
+            ServusTrace.Pool.Debug(this, "Evicting {0} idle connection(s) from pool for {1}:{2}",
+                expired.Count, host.Endpoint.Host, host.Endpoint.Port);
+        }
+
         foreach (var lease in expired)
         {
             host.Leases.Remove(lease);
@@ -413,6 +420,8 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     private void Establish(HostState host, Acquire msg)
     {
         host.Establishing++;
+        ServusTrace.Pool.Debug(this, "Establishing connection to {0}:{1} (establishing={2})",
+            host.Endpoint.Host, host.Endpoint.Port, host.Establishing);
         _ = _factory
             .EstablishAsync(msg.Options, msg.Endpoint, msg.Token)
             .PipeTo(Self,

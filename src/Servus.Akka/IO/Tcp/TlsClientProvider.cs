@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using Servus.Akka.Diagnostics;
@@ -48,6 +47,7 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
         };
 
         var tlsActivity = ServusInstrumentation.StartTlsHandshake(targetHost);
+        ServusTrace.Tls.Debug(this, "TLS handshake starting with '{0}'", targetHost);
         try
         {
             await _sslStream.AuthenticateAsClientAsync(authOptions, ct)
@@ -65,6 +65,8 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
                 ServusInstrumentation.SetTlsInfo(tlsActivity, "tls", protocolVersion);
                 tlsActivity.Stop();
             }
+
+            ServusTrace.Tls.Debug(this, "TLS handshake completed with '{0}'", targetHost);
         }
         catch (Exception ex)
         {
@@ -74,6 +76,7 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
                 tlsActivity.Stop();
             }
 
+            ServusTrace.Tls.Warning(this, "TLS handshake with '{0}' failed: {1}", targetHost, ex.Message);
             throw;
         }
 

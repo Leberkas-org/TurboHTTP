@@ -46,6 +46,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
             ServusMetrics.DnsLookupDuration.Record(dnsDuration,
                 new KeyValuePair<string, object?>("dns.question.name", connectHost));
             dnsActivity?.Stop();
+            ServusTrace.Dns.Debug(this, "DNS '{0}' resolved {1} address(es)", connectHost, addresses.Length);
         }
         catch (Exception ex)
         {
@@ -55,6 +56,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
                 dnsActivity.Stop();
             }
 
+            ServusTrace.Dns.Warning(this, "DNS '{0}' failed: {1}", connectHost, ex.Message);
             throw;
         }
 
@@ -67,6 +69,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         {
             await _socket.ConnectAsync(addresses, connectPort, ct).ConfigureAwait(false);
             socketActivity?.Stop();
+            ServusTrace.Connection.Debug(this, "TCP connected to {0}:{1}", addresses[0], connectPort);
         }
         catch (Exception ex)
         {
@@ -76,6 +79,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
                 socketActivity.Stop();
             }
 
+            ServusTrace.Connection.Warning(this, "TCP connect to {0}:{1} failed: {2}", addresses[0], connectPort, ex.Message);
             throw;
         }
 

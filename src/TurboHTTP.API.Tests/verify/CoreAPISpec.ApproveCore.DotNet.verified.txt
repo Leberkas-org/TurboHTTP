@@ -208,24 +208,19 @@ namespace TurboHTTP.Diagnostics
     public enum TurboTraceCategory : ushort
     {
         None = 0,
-        Connection = 1,
         Protocol = 2,
         Request = 4,
-        Response = 8,
         Cache = 16,
         Redirect = 32,
         Retry = 64,
-        Pool = 128,
-        Transport = 256,
-        Stream = 512,
-        All = 1023,
+        All = 118,
     }
     public static class TurboTraceExtensions
     {
         public static OpenTelemetry.Metrics.MeterProviderBuilder AddTurboHttpMetrics(this OpenTelemetry.Metrics.MeterProviderBuilder builder) { }
         public static OpenTelemetry.Trace.TracerProviderBuilder AddTurboHttpTracing(this OpenTelemetry.Trace.TracerProviderBuilder builder) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.TurboTraceCategory categories = 1023, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.ITurboTraceListener listener, TurboHTTP.Diagnostics.TurboTraceCategory categories = 1023, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.TurboTraceCategory categories = 118, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.ITurboTraceListener listener, TurboHTTP.Diagnostics.TurboTraceCategory categories = 118, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
     }
     public enum TurboTraceLevel : byte
     {

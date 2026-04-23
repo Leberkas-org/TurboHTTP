@@ -78,11 +78,11 @@ public sealed class TurboTraceSpec : IDisposable
     public void TraceEvent_should_store_level_and_category()
     {
         var evt = new TraceEvent(
-            0, TurboTraceLevel.Warning, TurboTraceCategory.Transport,
+            0, TurboTraceLevel.Warning, TurboTraceCategory.Cache,
             "Test", 0, "msg");
 
         Assert.Equal(TurboTraceLevel.Warning, evt.Level);
-        Assert.Equal(TurboTraceCategory.Transport, evt.Category);
+        Assert.Equal(TurboTraceCategory.Cache, evt.Category);
     }
 
     [Fact(Timeout = 5000)]
@@ -131,14 +131,6 @@ public sealed class TurboTraceSpec : IDisposable
     }
 
     [Fact(Timeout = 5000)]
-    public void ShouldTrace_should_return_false_when_category_disabled()
-    {
-        TurboTrace.Configure(_mock, TurboTraceCategory.Connection);
-
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
-    }
-
-    [Fact(Timeout = 5000)]
     public void ShouldTrace_should_return_false_when_below_minimum()
     {
         TurboTrace.Configure(_mock, TurboTraceCategory.All, TurboTraceLevel.Warning);
@@ -179,17 +171,6 @@ public sealed class TurboTraceSpec : IDisposable
     }
 
     [Fact(Timeout = 5000)]
-    public void ConnectionInfo_should_write_correct_category()
-    {
-        TurboTrace.Configure(_mock);
-
-        TurboTrace.Connection.Info(this, "test");
-
-        Assert.Single(_mock.Events);
-        Assert.Equal(TurboTraceCategory.Connection, _mock.Events[0].Category);
-    }
-
-    [Fact(Timeout = 5000)]
     public void RequestWarning_should_write_correct_level()
     {
         TurboTrace.Configure(_mock);
@@ -213,15 +194,14 @@ public sealed class TurboTraceSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void CategoryFiltering_should_work_with_bitwise_flags()
     {
-        TurboTrace.Configure(_mock, TurboTraceCategory.Protocol | TurboTraceCategory.Connection);
+        TurboTrace.Configure(_mock, TurboTraceCategory.Protocol);
 
         TurboTrace.Protocol.Debug(this, "yes");
-        TurboTrace.Connection.Debug(this, "yes");
         TurboTrace.Request.Debug(this, "no");
 
-        Assert.Equal(2, _mock.Events.Count);
+        Assert.Single(_mock.Events);
         Assert.All(_mock.Events, e =>
-            Assert.True(e.Category == TurboTraceCategory.Protocol || e.Category == TurboTraceCategory.Connection));
+            Assert.True(e.Category == TurboTraceCategory.Protocol));
     }
 
     [Fact(Timeout = 5000)]
@@ -240,16 +220,11 @@ public sealed class TurboTraceSpec : IDisposable
     }
 
     [Theory]
-    [InlineData(TurboTraceCategory.Connection)]
     [InlineData(TurboTraceCategory.Protocol)]
     [InlineData(TurboTraceCategory.Request)]
-    [InlineData(TurboTraceCategory.Response)]
     [InlineData(TurboTraceCategory.Cache)]
     [InlineData(TurboTraceCategory.Redirect)]
     [InlineData(TurboTraceCategory.Retry)]
-    [InlineData(TurboTraceCategory.Pool)]
-    [InlineData(TurboTraceCategory.Transport)]
-    [InlineData(TurboTraceCategory.Stream)]
     public void AllCategories_should_produce_correct_flag(TurboTraceCategory category)
     {
         TurboTrace.Configure(_mock, category);
@@ -366,11 +341,11 @@ public sealed class TurboTraceSpec : IDisposable
 
         var categories = new[]
         {
-            TurboTraceCategory.Connection, TurboTraceCategory.Protocol,
-            TurboTraceCategory.Request, TurboTraceCategory.Response,
-            TurboTraceCategory.Cache, TurboTraceCategory.Redirect,
-            TurboTraceCategory.Retry, TurboTraceCategory.Pool,
-            TurboTraceCategory.Transport, TurboTraceCategory.Stream
+            TurboTraceCategory.Protocol,
+            TurboTraceCategory.Request,
+            TurboTraceCategory.Cache,
+            TurboTraceCategory.Redirect,
+            TurboTraceCategory.Retry,
         };
 
         foreach (var cat in categories)
@@ -411,13 +386,11 @@ public sealed class TurboTraceSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void MultipleCategories_should_work_with_bitwise_or()
     {
-        var combined = TurboTraceCategory.Protocol | TurboTraceCategory.Request | TurboTraceCategory.Stream;
+        const TurboTraceCategory combined = TurboTraceCategory.Protocol | TurboTraceCategory.Request;
         TurboTrace.Configure(_mock, combined);
 
         Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
         Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Request, TurboTraceLevel.Debug));
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Stream, TurboTraceLevel.Debug));
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Connection, TurboTraceLevel.Debug));
         Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Cache, TurboTraceLevel.Debug));
     }
 
@@ -425,16 +398,11 @@ public sealed class TurboTraceSpec : IDisposable
     {
         switch (category)
         {
-            case TurboTraceCategory.Connection: TurboTrace.Connection.Debug(source, message); break;
             case TurboTraceCategory.Protocol: TurboTrace.Protocol.Debug(source, message); break;
             case TurboTraceCategory.Request: TurboTrace.Request.Debug(source, message); break;
-            case TurboTraceCategory.Response: TurboTrace.Response.Debug(source, message); break;
             case TurboTraceCategory.Cache: TurboTrace.Cache.Debug(source, message); break;
             case TurboTraceCategory.Redirect: TurboTrace.Redirect.Debug(source, message); break;
             case TurboTraceCategory.Retry: TurboTrace.Retry.Debug(source, message); break;
-            case TurboTraceCategory.Pool: TurboTrace.Pool.Debug(source, message); break;
-            case TurboTraceCategory.Transport: TurboTrace.Transport.Debug(source, message); break;
-            case TurboTraceCategory.Stream: TurboTrace.Stream.Debug(source, message); break;
         }
     }
 }

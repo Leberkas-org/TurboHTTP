@@ -5,7 +5,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.IO;
 using Servus.Akka.IO.Tcp;
-using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Streams;

@@ -1,6 +1,5 @@
 using Servus.Akka.IO;
 using TurboHTTP.Internal;
-using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;

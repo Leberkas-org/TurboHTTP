@@ -4,7 +4,6 @@ using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
 using Servus.Akka.IO;
-using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
 

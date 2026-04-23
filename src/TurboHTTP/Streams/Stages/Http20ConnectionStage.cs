@@ -3,7 +3,6 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using Servus.Akka.IO;
 using TurboHTTP.Diagnostics;
-using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.Streams.Stages;

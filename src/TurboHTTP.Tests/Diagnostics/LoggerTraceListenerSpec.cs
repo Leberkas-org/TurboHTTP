@@ -20,7 +20,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
     {
         _ = new LoggerTraceListener(_factory);
 
-        Assert.Equal(10, _factory.CreatedLoggers.Count);
+        Assert.Equal(5, _factory.CreatedLoggers.Count);
     }
 
     [Fact(Timeout = 5000)]
@@ -126,7 +126,7 @@ public sealed class LoggerTraceListenerSpec : IDisposable
         var listener = new LoggerTraceListener(_factory, TurboTraceCategory.Protocol);
 
         Assert.True(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Protocol));
-        Assert.False(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Connection));
+        Assert.False(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Request));
     }
 
     [Fact(Timeout = 5000)]
@@ -173,16 +173,11 @@ public sealed class LoggerTraceListenerSpec : IDisposable
 
         var expectedNames = new[]
         {
-            "TurboHTTP.Trace.Connection",
             "TurboHTTP.Trace.Protocol",
             "TurboHTTP.Trace.Request",
-            "TurboHTTP.Trace.Response",
             "TurboHTTP.Trace.Cache",
             "TurboHTTP.Trace.Redirect",
-            "TurboHTTP.Trace.Retry",
-            "TurboHTTP.Trace.Pool",
-            "TurboHTTP.Trace.Transport",
-            "TurboHTTP.Trace.Stream",
+            "TurboHTTP.Trace.Retry"
         };
 
         foreach (var name in expectedNames)
@@ -196,10 +191,10 @@ public sealed class LoggerTraceListenerSpec : IDisposable
     {
         var listener = new LoggerTraceListener(
             _factory,
-            TurboTraceCategory.Protocol | TurboTraceCategory.Connection);
+            TurboTraceCategory.Protocol | TurboTraceCategory.Redirect);
 
         Assert.True(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Protocol));
-        Assert.True(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Connection));
+        Assert.True(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Redirect));
         Assert.False(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Request));
         Assert.False(listener.IsEnabled(TurboTraceLevel.Debug, TurboTraceCategory.Cache));
     }

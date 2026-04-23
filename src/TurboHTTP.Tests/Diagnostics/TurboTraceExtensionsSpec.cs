@@ -1,7 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using TurboHTTP.Diagnostics;
 
 namespace TurboHTTP.Tests.Diagnostics;
@@ -55,7 +52,7 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
         _ = provider.GetRequiredService<ITurboTraceListener>();
 
         Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Connection, TurboTraceLevel.Debug));
+        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Redirect, TurboTraceLevel.Debug));
     }
 
     [Fact(Timeout = 5000)]
@@ -144,7 +141,7 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
         _ = provider.GetRequiredService<ITurboTraceListener>();
 
         Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Request, TurboTraceLevel.Debug));
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Response, TurboTraceLevel.Debug));
+        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Retry, TurboTraceLevel.Debug));
     }
 
     [Fact(Timeout = 5000)]
@@ -160,26 +157,6 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
 
         Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
         Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Info));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboHttpMetrics_should_add_meter()
-    {
-        using var meterProvider = Sdk.CreateMeterProviderBuilder()
-            .AddTurboHttpMetrics()
-            .Build();
-
-        Assert.NotNull(meterProvider);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboHttpTracing_should_add_source()
-    {
-        using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-            .AddTurboHttpTracing()
-            .Build();
-
-        Assert.NotNull(tracerProvider);
     }
 
     private sealed class MockTraceListener : ITurboTraceListener

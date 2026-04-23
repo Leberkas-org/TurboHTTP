@@ -2,7 +2,6 @@ using System.Net;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.IO;
-using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Streams.Stages;
