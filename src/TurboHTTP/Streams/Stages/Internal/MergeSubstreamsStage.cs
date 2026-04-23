@@ -141,7 +141,7 @@ internal sealed class MergeSubstreamsStage<T> : GraphStage<FlowShape<Source<T, N
                     if (IsAvailable(_stage._out))
                     {
                         var elem = subSink.Grab();
-    
+
                         Push(_stage._out, elem);
                         subSink.Pull();
                     }

@@ -22,7 +22,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
                 (b, dsSink, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
-                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
+                    { Http2 = { InitialConnectionWindowSize = 65535 } }));
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 
@@ -71,7 +71,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
                 (b, dsSink, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
-                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
+                    { Http2 = { InitialConnectionWindowSize = 65535 } }));
 
                     // Server sends GOAWAY then stays open (never finishes)
                     var serverSource = b.Add(

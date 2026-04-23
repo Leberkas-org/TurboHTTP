@@ -91,7 +91,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (queue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -120,7 +120,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, resultTask) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -155,7 +155,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
         var data = MakeData(0xCD, 8);
 
@@ -186,7 +186,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, resultTask) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -236,7 +236,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -268,7 +268,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -302,7 +302,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -329,7 +329,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, _) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)
@@ -397,7 +397,7 @@ public sealed class ConnectionStageSpec : StreamTestBase
         var connectItem = new ConnectItem(options)
         {
             Key = new RequestEndpoint
-                { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
+            { Host = "localhost", Port = 8080, Scheme = "Https", Version = HttpVersion.Unknown }
         };
 
         var (inputQueue, resultTask) = Source.Queue<IOutputItem>(4, OverflowStrategy.Backpressure)

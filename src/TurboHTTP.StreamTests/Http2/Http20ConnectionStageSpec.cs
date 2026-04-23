@@ -32,7 +32,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     public async Task Http20ConnectionStage_should_emit_preface_on_first_network_pull()
     {
         var stage = new Http20ConnectionStage(new TurboClientOptions
-            { Http2 = { MaxReconnectAttempts = 3 } });
+        { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -76,7 +76,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
     public async Task Http20ConnectionStage_should_encode_request_as_headers_frame()
     {
         var stage = new Http20ConnectionStage(new TurboClientOptions
-            { Http2 = { MaxReconnectAttempts = 3 } });
+        { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

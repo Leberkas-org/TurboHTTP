@@ -30,7 +30,7 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
     public async Task Http11ConnectionStage_should_reconnect_and_replay_request_on_connection_drop()
     {
         var stage = new Http11ConnectionStage(new TurboClientOptions
-            { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
+        { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -95,7 +95,7 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
     public async Task Http11ConnectionStage_should_complete_stage_when_max_reconnect_attempts_exceeded()
     {
         var stage = new Http11ConnectionStage(new TurboClientOptions
-            { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
+        { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
@@ -143,7 +143,7 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
     public async Task Http11ConnectionStage_should_not_reconnect_when_no_inflight_request_on_close()
     {
         var stage = new Http11ConnectionStage(new TurboClientOptions
-            { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
+        { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
         var serverProbe = this.CreateManualPublisherProbe<IInputItem>();

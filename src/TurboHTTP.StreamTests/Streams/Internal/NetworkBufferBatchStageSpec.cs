@@ -21,7 +21,7 @@ public sealed class NetworkBufferBatchStageSpec : StreamTestBase
         public string Name { get; }
 
         public RequestEndpoint Key { get; } = new()
-            { Host = "test", Port = 80, Scheme = "http", Version = new Version(1, 1) };
+        { Host = "test", Port = 80, Scheme = "http", Version = new Version(1, 1) };
 
         public ControlItem(string name = "Control")
         {

@@ -239,7 +239,7 @@ public sealed class QuicStreamRouterEnhancedSpec
     {
         var (router, _) = CreateRouter();
         var endpoint = new RequestEndpoint
-            { Scheme = null!, Host = "localhost", Port = 443, Version = HttpVersion.Version30 };
+        { Scheme = null!, Host = "localhost", Port = 443, Version = HttpVersion.Version30 };
         var item = new ConnectItem(new QuicOptions { Host = "localhost", Port = 443 })
         {
             Key = endpoint

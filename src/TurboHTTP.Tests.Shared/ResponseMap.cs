@@ -26,7 +26,8 @@ public sealed class ResponseMap
                     Content = new StringContent(body)
                 };
                 return response;
-            }));
+            }
+        ));
         return this;
     }
 

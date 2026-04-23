@@ -57,7 +57,7 @@ public sealed class Http30ConnectionConcurrencySpec : StreamTestBase
                 (b, nwSink, respSink) =>
                 {
                     var stage = b.Add(new Http30ConnectionStage(new TurboClientOptions
-                        { Http3 = options ?? new Http3Options() }));
+                    { Http3 = options ?? new Http3Options() }));
 
                     // Server responses arrive after a short delay to allow request encoding first
                     var serverSource = b.Add(

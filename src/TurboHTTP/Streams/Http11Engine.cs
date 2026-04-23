@@ -10,7 +10,7 @@ namespace TurboHTTP.Streams;
 internal class Http11Engine : IHttpProtocolEngine
 {
     private readonly TurboClientOptions _options;
-    
+
 
     public Http11Engine(TurboClientOptions options)
     {

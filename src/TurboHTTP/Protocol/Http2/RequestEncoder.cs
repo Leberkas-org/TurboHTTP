@@ -242,9 +242,9 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
                         hasAuthority = true;
                         break;
                     default:
-                    {
-                        throw new Http2Exception($"RFC 9113 §8.3.1: Unknown request pseudo-header '{name}'");
-                    }
+                        {
+                            throw new Http2Exception($"RFC 9113 §8.3.1: Unknown request pseudo-header '{name}'");
+                        }
                 }
             }
             else
@@ -335,17 +335,17 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
                     _hpack.AcknowledgeTableSizeChange((int)val);
                     break;
                 case SettingsParameter.InitialWindowSize:
-                {
-                    // RFC 9113 §6.9.2: Apply delta to all existing stream send windows
-                    var delta = val - _initialSendStreamWindow;
-                    _initialSendStreamWindow = val;
-                    foreach (var streamId in _streamSendWindows.Keys)
                     {
-                        _streamSendWindows[streamId] += delta;
-                    }
+                        // RFC 9113 §6.9.2: Apply delta to all existing stream send windows
+                        var delta = val - _initialSendStreamWindow;
+                        _initialSendStreamWindow = val;
+                        foreach (var streamId in _streamSendWindows.Keys)
+                        {
+                            _streamSendWindows[streamId] += delta;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
     }

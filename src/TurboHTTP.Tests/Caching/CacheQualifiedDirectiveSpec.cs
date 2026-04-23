@@ -17,7 +17,7 @@ public sealed class CacheQualifiedDirectiveSpec
         r.Headers.Date = _baseTime;
         return r;
     }
-    
+
     private static void Put(Cache store, HttpRequestMessage request, HttpResponseMessage response,
         byte[] body, DateTimeOffset requestTime, DateTimeOffset responseTime)
     {

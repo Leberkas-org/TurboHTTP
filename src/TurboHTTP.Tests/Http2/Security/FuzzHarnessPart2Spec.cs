@@ -351,22 +351,22 @@ public sealed class Http2FuzzHarnessPart2Spec
                     break;
 
                 case 4: // Random garbage HEADERS on a new stream
-                {
-                    var garbage = new byte[rng.Next(0, 64)];
-                    rng.NextBytes(garbage);
-                    AssertDecodeNeverCrashes(decoder, BuildHeadersFrame(streamCounter, garbage));
-                    streamCounter += 2; // Advance to next valid odd client stream ID
-                    break;
-                }
+                    {
+                        var garbage = new byte[rng.Next(0, 64)];
+                        rng.NextBytes(garbage);
+                        AssertDecodeNeverCrashes(decoder, BuildHeadersFrame(streamCounter, garbage));
+                        streamCounter += 2; // Advance to next valid odd client stream ID
+                        break;
+                    }
 
                 case 5: // RST_STREAM on a random previous stream
-                {
-                    var targetStream = streamCounter > 1 ? rng.Next(1, streamCounter) : 1;
-                    var payload = new byte[4];
-                    BinaryPrimitives.WriteUInt32BigEndian(payload, (uint)rng.Next(0, 20));
-                    AssertDecodeNeverCrashes(decoder, BuildRawFrame(0x3, 0, targetStream, payload));
-                    break;
-                }
+                    {
+                        var targetStream = streamCounter > 1 ? rng.Next(1, streamCounter) : 1;
+                        var payload = new byte[4];
+                        BinaryPrimitives.WriteUInt32BigEndian(payload, (uint)rng.Next(0, 20));
+                        AssertDecodeNeverCrashes(decoder, BuildRawFrame(0x3, 0, targetStream, payload));
+                        break;
+                    }
             }
         }
     }

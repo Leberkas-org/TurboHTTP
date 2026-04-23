@@ -69,7 +69,7 @@ public sealed class ResourceExhaustionPart2Spec
         };
         fullBlock.AddRange(blocks);
 
-        hpack.Decode([..fullBlock]); // must not throw; eviction must have maintained bounds
+        hpack.Decode([.. fullBlock]); // must not throw; eviction must have maintained bounds
     }
 
     [Fact(Timeout = 5000)]

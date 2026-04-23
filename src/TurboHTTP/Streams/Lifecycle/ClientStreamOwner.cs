@@ -23,7 +23,7 @@ namespace TurboHTTP.Streams.Lifecycle;
 /// and on actor termination (via <see cref="PostStop"/>).
 /// </para>
 /// </summary>
-internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
+internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 {
     internal sealed record CreateStreamInstance(
         TurboClientOptions ClientOptions,
@@ -38,14 +38,17 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
 
     internal sealed record Shutdown;
 
-    private static readonly TimeSpan[] RetryBackoffs =
-    [
-        TimeSpan.FromMilliseconds(100),
-        TimeSpan.FromMilliseconds(500),
-        TimeSpan.FromSeconds(2)
-    ];
+    private static readonly TimeSpan InitialBackoff = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(30);
+    private const double BackoffMultiplier = 2.0;
 
-    private const int MaxRetryAttempts = 3;
+    private const int MaxRetryAttempts = 10;
+
+    // Exponential backoff: initialBackoff * 2^attempt, capped at MaxBackoff.
+    private static TimeSpan CalculateBackoff(int attempt) =>
+        TimeSpan.FromMilliseconds(
+            Math.Min(InitialBackoff.TotalMilliseconds * Math.Pow(BackoffMultiplier, attempt),
+                MaxBackoff.TotalMilliseconds));
     private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
 
     private const string RetryTimerKey = "retry-create";
@@ -67,38 +70,14 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
 
     public ITimerScheduler Timers { get; set; } = null!;
 
-    protected override void OnReceive(object message)
+    public ClientStreamOwner()
     {
-        switch (message)
-        {
-            case CreateStreamInstance create:
-                HandleCreateStreamInstance(create);
-                break;
-
-            case StreamInstanceFailed failed:
-                HandleStreamInstanceFailed(failed);
-                break;
-
-            case Shutdown:
-                HandleShutdown();
-                break;
-
-            case StreamSinkCompleted completed:
-                HandleStreamSinkCompleted(completed);
-                break;
-
-            case RetryCreateInstance:
-                ExecuteRetryCreate();
-                break;
-
-            case ShutdownTimeoutExpired:
-                HandleShutdownTimeout();
-                break;
-
-            default:
-                Unhandled(message);
-                break;
-        }
+        Receive<CreateStreamInstance>(HandleCreateStreamInstance);
+        Receive<StreamInstanceFailed>(HandleStreamInstanceFailed);
+        Receive<Shutdown>(_ => HandleShutdown());
+        Receive<StreamSinkCompleted>(HandleStreamSinkCompleted);
+        Receive<RetryCreateInstance>(_ => ExecuteRetryCreate());
+        Receive<ShutdownTimeoutExpired>(_ => HandleShutdownTimeout());
     }
 
     private void HandleCreateStreamInstance(CreateStreamInstance create)
@@ -220,7 +199,7 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
 
         if (_retryAttempts <= MaxRetryAttempts && _createRequest is not null && !_shuttingDown)
         {
-            var backoff = RetryBackoffs[Math.Min(_retryAttempts - 1, RetryBackoffs.Length - 1)];
+            var backoff = CalculateBackoff(_retryAttempts - 1);
             _log.Info("Scheduling retry attempt {0} after {1}ms backoff",
                 _retryAttempts, backoff.TotalMilliseconds);
 
@@ -251,7 +230,7 @@ internal sealed class ClientStreamOwner : UntypedActor, IWithTimers
 
         if (_retryAttempts < MaxRetryAttempts && _createRequest is not null && !_shuttingDown)
         {
-            var backoff = RetryBackoffs[Math.Min(_retryAttempts, RetryBackoffs.Length - 1)];
+            var backoff = CalculateBackoff(_retryAttempts);
             _retryAttempts++;
             _log.Info("Scheduling retry attempt {0} after {1}ms backoff",
                 _retryAttempts, backoff.TotalMilliseconds);

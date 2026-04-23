@@ -250,12 +250,18 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options1 = new QuicOptions { Host = "host1.example.com", Port = 443 };
         var endpoint1 = new RequestEndpoint
         {
-            Host = "host1.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+            Host = "host1.example.com",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version30
         };
         var options2 = new QuicOptions { Host = "host2.example.com", Port = 443 };
         var endpoint2 = new RequestEndpoint
         {
-            Host = "host2.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+            Host = "host2.example.com",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version30
         };
 
         var lease1 =
@@ -358,7 +364,10 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var handle = new QuicConnectionHandle(provider, new QuicOptions { Host = "orphan.local", Port = 443 },
             new RequestEndpoint
             {
-                Host = "orphan.local", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+                Host = "orphan.local",
+                Port = 443,
+                Scheme = "https",
+                Version = HttpVersion.Version30
             });
         var orphanLease = new QuicConnectionLease(handle);
         orphanLease.MarkBusy();
@@ -422,12 +431,18 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
         var options1 = new QuicOptions { Host = "host1.example.com", Port = 443 };
         var endpoint1 = new RequestEndpoint
         {
-            Host = "host1.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+            Host = "host1.example.com",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version30
         };
         var options2 = new QuicOptions { Host = "host2.example.com", Port = 443 };
         var endpoint2 = new RequestEndpoint
         {
-            Host = "host2.example.com", Port = 443, Scheme = "https", Version = HttpVersion.Version30
+            Host = "host2.example.com",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version30
         };
 
         var lease1 =

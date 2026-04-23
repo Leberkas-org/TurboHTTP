@@ -131,58 +131,58 @@ internal sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
             switch (item)
             {
                 case ConnectedSignalItem:
-                {
-                    _sm.OnConnectionRestored();
-                    FlushOutbound();
-                    TryPullRequest();
-                    // Pull to receive the response from the new connection
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        Pull(_stage._inServer);
-                    }
+                        _sm.OnConnectionRestored();
+                        FlushOutbound();
+                        TryPullRequest();
+                        // Pull to receive the response from the new connection
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
 
-                    return;
-                }
+                        return;
+                    }
                 case CloseSignalItem when _sm.IsReconnecting:
-                {
-                    _sm.OnReconnectAttemptFailed();
-                    if (_reconnectFailed)
                     {
-                        Log.Warning(
-                            "Http10ConnectionStage: Reconnect failed after max attempts — discarding {0} in-flight request(s).",
-                            _sm.PendingRequestCount);
+                        _sm.OnReconnectAttemptFailed();
+                        if (_reconnectFailed)
+                        {
+                            Log.Warning(
+                                "Http10ConnectionStage: Reconnect failed after max attempts — discarding {0} in-flight request(s).",
+                                _sm.PendingRequestCount);
+                            CompleteStage();
+                            return;
+                        }
+
+                        FlushOutbound();
+                        // Pull to receive ConnectedSignalItem or next CloseSignalItem
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
+
+                        return;
+                    }
+                case CloseSignalItem when _sm.HasInFlightRequest:
+                    {
+                        _sm.StartReconnect();
+                        FlushOutbound();
+                        // Pull to receive ConnectedSignalItem from the reconnected transport
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
+
+                        return;
+                    }
+                case CloseSignalItem:
+                    {
+                        // Connection closed with no in-flight request and no reconnect pending.
+                        // App upstream is either already finished or will complete via onUpstreamFinish.
                         CompleteStage();
                         return;
                     }
-
-                    FlushOutbound();
-                    // Pull to receive ConnectedSignalItem or next CloseSignalItem
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
-                    {
-                        Pull(_stage._inServer);
-                    }
-
-                    return;
-                }
-                case CloseSignalItem when _sm.HasInFlightRequest:
-                {
-                    _sm.StartReconnect();
-                    FlushOutbound();
-                    // Pull to receive ConnectedSignalItem from the reconnected transport
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
-                    {
-                        Pull(_stage._inServer);
-                    }
-
-                    return;
-                }
-                case CloseSignalItem:
-                {
-                    // Connection closed with no in-flight request and no reconnect pending.
-                    // App upstream is either already finished or will complete via onUpstreamFinish.
-                    CompleteStage();
-                    return;
-                }
             }
 
             try

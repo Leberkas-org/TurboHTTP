@@ -60,7 +60,7 @@ public sealed class TcpTransportStateMachineLifecycleSpec
         var (sm, ops) = CreateStateMachine();
 
         sm.HandlePush(new ConnectItem(new TcpOptions { Host = TestEndpoint.Host, Port = TestEndpoint.Port })
-            { Key = TestEndpoint, IsReconnect = true });
+        { Key = TestEndpoint, IsReconnect = true });
         ops.PushedOutputs.Clear();
 
         var lease = CreateTestLease();
@@ -173,7 +173,7 @@ public sealed class TcpTransportStateMachineLifecycleSpec
         Assert.Equal(0, ops.CompleteStageCount);
 
         sm.HandlePush(new ConnectionReuseItem(false)
-            { Key = TestEndpoint });
+        { Key = TestEndpoint });
 
         Assert.Equal(1, ops.CompleteStageCount);
     }
@@ -201,7 +201,7 @@ public sealed class TcpTransportStateMachineLifecycleSpec
         ops.PushedOutputs.Clear();
 
         sm.HandlePush(new ConnectItem(new TcpOptions { Host = AltEndpoint.Host, Port = AltEndpoint.Port })
-            { Key = AltEndpoint, IsReconnect = true });
+        { Key = AltEndpoint, IsReconnect = true });
 
         Assert.Contains(ops.ScheduledTimers, t => t.Key == "connect-timeout");
         Assert.False(lease1.IsAlive);

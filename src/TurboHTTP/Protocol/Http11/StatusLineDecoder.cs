@@ -81,19 +81,19 @@ internal static class StatusLineDecoder
     private static string GetOrCreateReasonPhrase(ReadOnlySpan<byte> span)
         => span.Length switch
         {
-            2  => span.SequenceEqual("OK"u8)                    ? "OK"                    : Encoding.ASCII.GetString(span),
-            5  => span.SequenceEqual("Found"u8)                 ? "Found"                 : Encoding.ASCII.GetString(span),
-            7  => span.SequenceEqual("Created"u8)               ? "Created"               : Encoding.ASCII.GetString(span),
-            8  => span.SequenceEqual("Accepted"u8)              ? "Accepted"              : Encoding.ASCII.GetString(span),
-            9  => span.SequenceEqual("Not Found"u8)             ? "Not Found"             :
-                  span.SequenceEqual("Forbidden"u8)             ? "Forbidden"             : Encoding.ASCII.GetString(span),
-            10 => span.SequenceEqual("No Content"u8)            ? "No Content"            : Encoding.ASCII.GetString(span),
-            11 => span.SequenceEqual("Bad Request"u8)           ? "Bad Request"           : Encoding.ASCII.GetString(span),
-            12 => span.SequenceEqual("Unauthorized"u8)          ? "Unauthorized"          :
-                  span.SequenceEqual("Not Modified"u8)          ? "Not Modified"          : Encoding.ASCII.GetString(span),
-            15 => span.SequenceEqual("Partial Content"u8)       ? "Partial Content"       : Encoding.ASCII.GetString(span),
-            17 => span.SequenceEqual("Moved Permanently"u8)     ? "Moved Permanently"     : Encoding.ASCII.GetString(span),
+            2 => span.SequenceEqual("OK"u8) ? "OK" : Encoding.ASCII.GetString(span),
+            5 => span.SequenceEqual("Found"u8) ? "Found" : Encoding.ASCII.GetString(span),
+            7 => span.SequenceEqual("Created"u8) ? "Created" : Encoding.ASCII.GetString(span),
+            8 => span.SequenceEqual("Accepted"u8) ? "Accepted" : Encoding.ASCII.GetString(span),
+            9 => span.SequenceEqual("Not Found"u8) ? "Not Found" :
+                  span.SequenceEqual("Forbidden"u8) ? "Forbidden" : Encoding.ASCII.GetString(span),
+            10 => span.SequenceEqual("No Content"u8) ? "No Content" : Encoding.ASCII.GetString(span),
+            11 => span.SequenceEqual("Bad Request"u8) ? "Bad Request" : Encoding.ASCII.GetString(span),
+            12 => span.SequenceEqual("Unauthorized"u8) ? "Unauthorized" :
+                  span.SequenceEqual("Not Modified"u8) ? "Not Modified" : Encoding.ASCII.GetString(span),
+            15 => span.SequenceEqual("Partial Content"u8) ? "Partial Content" : Encoding.ASCII.GetString(span),
+            17 => span.SequenceEqual("Moved Permanently"u8) ? "Moved Permanently" : Encoding.ASCII.GetString(span),
             21 => span.SequenceEqual("Internal Server Error"u8) ? "Internal Server Error" : Encoding.ASCII.GetString(span),
-            _  => Encoding.ASCII.GetString(span),
+            _ => Encoding.ASCII.GetString(span),
         };
 }

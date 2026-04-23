@@ -115,49 +115,49 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             {
                 // Reconnect: new connection ready — replay buffered requests
                 case ConnectedSignalItem:
-                {
-                    _sm.OnConnectionRestored();
-                    FlushOutbound();
-                    ScheduleKeepAlivePing();
-                    TryPullRequest();
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        Pull(_stage._inServer);
-                    }
+                        _sm.OnConnectionRestored();
+                        FlushOutbound();
+                        ScheduleKeepAlivePing();
+                        TryPullRequest();
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
 
-                    return;
-                }
-                // Reconnect: connection dropped again while already reconnecting
-                case CloseSignalItem when _sm.IsReconnecting:
-                {
-                    _sm.OnReconnectAttemptFailed();
-                    if (_reconnectFailed)
-                    {
-                        FailStage(new HttpRequestException(
-                            "TurboHTTP: HTTP/2 reconnect failed after max attempts."));
                         return;
                     }
-
-                    FlushOutbound();
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                // Reconnect: connection dropped again while already reconnecting
+                case CloseSignalItem when _sm.IsReconnecting:
                     {
-                        Pull(_stage._inServer);
-                    }
+                        _sm.OnReconnectAttemptFailed();
+                        if (_reconnectFailed)
+                        {
+                            FailStage(new HttpRequestException(
+                                "TurboHTTP: HTTP/2 reconnect failed after max attempts."));
+                            return;
+                        }
 
-                    return;
-                }
+                        FlushOutbound();
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
+
+                        return;
+                    }
                 // Reconnect: abrupt close with in-flight requests (no GOAWAY)
                 case CloseSignalItem when _sm.HasInFlightRequests:
-                {
-                    _sm.OnConnectionLost(lastStreamId: 0);
-                    FlushOutbound();
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        Pull(_stage._inServer);
-                    }
+                        _sm.OnConnectionLost(lastStreamId: 0);
+                        FlushOutbound();
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
 
-                    return;
-                }
+                        return;
+                    }
                 // CloseSignalItem with no in-flight — complete normally
                 case CloseSignalItem:
                     CompleteStage();
@@ -227,36 +227,36 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             switch (timerKey)
             {
                 case KeepAlivePingTimerKey:
-                {
-                    var policy = _stage._options.Http2.KeepAlivePingPolicy;
-                    if (policy == HttpKeepAlivePingPolicy.WithActiveRequests && !_sm.HasInFlightRequests)
                     {
-                        return;
-                    }
+                        var policy = _stage._options.Http2.KeepAlivePingPolicy;
+                        if (policy == HttpKeepAlivePingPolicy.WithActiveRequests && !_sm.HasInFlightRequests)
+                        {
+                            return;
+                        }
 
-                    _sm.SendKeepAlivePing();
-                    FlushOutbound();
-                    ScheduleKeepAlivePingTimeout();
-                    break;
-                }
+                        _sm.SendKeepAlivePing();
+                        FlushOutbound();
+                        ScheduleKeepAlivePingTimeout();
+                        break;
+                    }
                 case KeepAlivePingTimeoutKey:
-                {
-                    if (_sm.IsKeepAliveTimedOut(_stage._options.Http2.KeepAlivePingTimeout))
                     {
-                        Log.Warning("Http20ConnectionStage: Keep-alive PING timeout — closing connection.");
-                        if (_sm.HasInFlightRequests)
+                        if (_sm.IsKeepAliveTimedOut(_stage._options.Http2.KeepAlivePingTimeout))
                         {
-                            _sm.OnConnectionLost(lastStreamId: 0);
-                            FlushOutbound();
+                            Log.Warning("Http20ConnectionStage: Keep-alive PING timeout — closing connection.");
+                            if (_sm.HasInFlightRequests)
+                            {
+                                _sm.OnConnectionLost(lastStreamId: 0);
+                                FlushOutbound();
+                            }
+                            else
+                            {
+                                CompleteStage();
+                            }
                         }
-                        else
-                        {
-                            CompleteStage();
-                        }
-                    }
 
-                    break;
-                }
+                        break;
+                    }
             }
         }
 

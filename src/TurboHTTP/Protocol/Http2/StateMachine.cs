@@ -293,7 +293,7 @@ internal sealed class StateMachine
         {
             _ops.OnWarning("RFC 9113 §6.9 — connection flow control window exceeded. Triggering reconnect.");
             var item = new ConnectionReuseItem(false)
-                { Key = Endpoint };
+            { Key = Endpoint };
             _ops.OnOutbound(item);
             return false;
         }
@@ -303,7 +303,7 @@ internal sealed class StateMachine
             _ops.OnWarning(
                 $"RFC 9113 §6.9 — stream {frame.StreamId} flow control window exceeded. Triggering reconnect.");
             var item = new ConnectionReuseItem(false)
-                { Key = Endpoint };
+            { Key = Endpoint };
             _ops.OnOutbound(item);
             return false;
         }

@@ -25,7 +25,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
                 (b, dsSink, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions()
-                        { Http2 = { InitialConnectionWindowSize = initialWindowSize } }));
+                    { Http2 = { InitialConnectionWindowSize = initialWindowSize } }));
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 

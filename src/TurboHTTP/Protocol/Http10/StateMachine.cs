@@ -203,7 +203,8 @@ internal sealed class StateMachine
         _reconnectAttempts = 1;
         _ops.OnOutbound(new ConnectItem
         {
-            Key = Endpoint, IsReconnect = true,
+            Key = Endpoint,
+            IsReconnect = true,
             Options = _transportOptions!
         });
     }
@@ -240,7 +241,8 @@ internal sealed class StateMachine
         _reconnectAttempts++;
         _ops.OnOutbound(new ConnectItem
         {
-            Key = Endpoint, IsReconnect = true,
+            Key = Endpoint,
+            IsReconnect = true,
             Options = _transportOptions!
         });
     }

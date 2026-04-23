@@ -59,10 +59,8 @@ internal sealed class RequestEnricher
             }
         }
 
-        // Rule 4 removed: RFC 9110 §6.6.1 — clients SHOULD NOT send Date.
-
         // Rule 5: PreAuthenticate — inject Authorization header when credentials are available
-        if (options.PreAuthenticate && options.Credentials is not null && !request.Headers.Contains("Authorization"))
+        if (options is { PreAuthenticate: true, Credentials: not null } && !request.Headers.Contains("Authorization"))
         {
             InjectAuthorization(request, options.Credentials);
         }

@@ -240,25 +240,25 @@ public sealed class TcpTransportStateMachine
         switch (timerKey)
         {
             case ConnectTimerKey:
-            {
-                if (_pendingConnect is null)
                 {
-                    return;
+                    if (_pendingConnect is null)
+                    {
+                        return;
+                    }
+
+                    _ops.Log.Warning("TcpConnectionStage: Connection acquisition timed out for {0}:{1}",
+                        _pendingConnect.Value.Key.Host, _pendingConnect.Value.Key.Port);
+
+                    _waitActivity?.Stop();
+                    _waitActivity = null;
+
+                    var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Value.Key };
+                    _pendingConnect = null;
+
+                    _ops.OnPushOutput(signal);
+                    _ops.OnSignalPullInput();
+                    break;
                 }
-
-                _ops.Log.Warning("TcpConnectionStage: Connection acquisition timed out for {0}:{1}",
-                    _pendingConnect.Value.Key.Host, _pendingConnect.Value.Key.Port);
-
-                _waitActivity?.Stop();
-                _waitActivity = null;
-
-                var signal = new CloseSignalItem(TlsCloseKind.AbruptClose) { Key = _pendingConnect.Value.Key };
-                _pendingConnect = null;
-
-                _ops.OnPushOutput(signal);
-                _ops.OnSignalPullInput();
-                break;
-            }
         }
     }
 

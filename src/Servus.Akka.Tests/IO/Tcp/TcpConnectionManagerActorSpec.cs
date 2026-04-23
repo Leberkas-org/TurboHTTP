@@ -267,12 +267,18 @@ public sealed class TcpConnectionManagerActorSpec : TestKit
         var options1 = new TcpOptions { Host = "host1.example.com", Port = 80 };
         var endpoint1 = new RequestEndpoint
         {
-            Host = "host1.example.com", Port = 80, Scheme = "http", Version = HttpVersion.Version11
+            Host = "host1.example.com",
+            Port = 80,
+            Scheme = "http",
+            Version = HttpVersion.Version11
         };
         var options2 = new TcpOptions { Host = "host2.example.com", Port = 80 };
         var endpoint2 = new RequestEndpoint
         {
-            Host = "host2.example.com", Port = 80, Scheme = "http", Version = HttpVersion.Version11
+            Host = "host2.example.com",
+            Port = 80,
+            Scheme = "http",
+            Version = HttpVersion.Version11
         };
 
         var lease1 =

@@ -28,7 +28,7 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
                 (b, reqSrc) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
-                        { Http2 = { MaxConcurrentStreams = maxConcurrentStreams } }));
+                    { Http2 = { MaxConcurrentStreams = maxConcurrentStreams } }));
                     var srvSrc = b.Add(Source.FromPublisher(serverProbe));
 
                     b.From(srvSrc).To(stage.InServer);

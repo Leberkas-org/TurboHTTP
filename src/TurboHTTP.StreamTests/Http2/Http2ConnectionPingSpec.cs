@@ -23,7 +23,7 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
                 (b, dsSink, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
-                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
+                    { Http2 = { InitialConnectionWindowSize = 65535 } }));
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 

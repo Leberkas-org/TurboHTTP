@@ -100,14 +100,14 @@ internal sealed class Settings
         {
             if (!QuicVarInt.TryDecode(payload, out var identifier, out var consumed))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError,"Incomplete setting identifier in SETTINGS payload.");
+                throw new Http3Exception(Http3ErrorCode.SettingsError, "Incomplete setting identifier in SETTINGS payload.");
             }
 
             payload = payload[consumed..];
 
             if (!QuicVarInt.TryDecode(payload, out var value, out consumed))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError,"Incomplete setting value in SETTINGS payload.");
+                throw new Http3Exception(Http3ErrorCode.SettingsError, "Incomplete setting value in SETTINGS payload.");
             }
 
             payload = payload[consumed..];

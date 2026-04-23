@@ -261,7 +261,7 @@ public sealed class Http2EngineEndToEndSpec : EngineTestBase
     public async Task Http2Engine_should_emit_connection_preface_when_first_connect_item_arrives()
     {
         var engine = new Http20Engine(new TurboClientOptions
-            { Http2 = { InitialConnectionWindowSize = 65535 } });
+        { Http2 = { InitialConnectionWindowSize = 65535 } });
         var bidiFlow = engine.CreateFlow();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/preface-test")

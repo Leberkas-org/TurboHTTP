@@ -235,14 +235,14 @@ internal sealed class QpackTableSync
         switch (instruction.Type)
         {
             case EncoderInstructionType.InsertWithNameReference:
-            {
-                var name = instruction.IsStatic
-                    ? QpackStaticTable.Entries[instruction.NameIndex].Name
-                    : Decoder.DynamicTable.GetEntry(
-                        Decoder.DynamicTable.InsertCount - 1 - instruction.NameIndex)!.Value.Name;
-                Decoder.DynamicTable.Insert(name, instruction.ValueString);
-                break;
-            }
+                {
+                    var name = instruction.IsStatic
+                        ? QpackStaticTable.Entries[instruction.NameIndex].Name
+                        : Decoder.DynamicTable.GetEntry(
+                            Decoder.DynamicTable.InsertCount - 1 - instruction.NameIndex)!.Value.Name;
+                    Decoder.DynamicTable.Insert(name, instruction.ValueString);
+                    break;
+                }
 
             case EncoderInstructionType.InsertWithLiteralName:
                 Decoder.DynamicTable.Insert(instruction.NameString, instruction.ValueString);

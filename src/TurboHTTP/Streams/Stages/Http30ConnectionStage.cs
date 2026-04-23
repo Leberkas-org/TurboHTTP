@@ -180,64 +180,64 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             {
                 // Reconnect: new connection ready — replay buffered requests
                 case ConnectedSignalItem:
-                {
-                    _sm.OnConnectionRestored();
-                    FlushOutbound();
-                    TryPullRequest();
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        Pull(_stage._inServer);
-                    }
+                        _sm.OnConnectionRestored();
+                        FlushOutbound();
+                        TryPullRequest();
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
 
-                    return;
-                }
-                // Request stream FIN — server finished sending the response.
-                case QuicCloseItem { Kind: QuicCloseKind.RequestStreamComplete } close:
-                {
-                    if (close.StreamId >= 0)
-                    {
-                        _sm.FlushPendingResponse(close.StreamId);
-                    }
-                    else
-                    {
-                        _sm.FlushPendingResponse();
-                    }
-
-                    FlushResponses();
-                    TryPullRequest();
-                    return;
-                }
-                // Reconnect: connection dropped again while already reconnecting
-                case QuicCloseItem when _sm.IsReconnecting:
-                {
-                    _sm.OnReconnectAttemptFailed();
-                    if (_reconnectFailed)
-                    {
-                        FailStage(new HttpRequestException(
-                            "TurboHTTP: HTTP/3 reconnect failed after max attempts."));
                         return;
                     }
-
-                    FlushOutbound();
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                // Request stream FIN — server finished sending the response.
+                case QuicCloseItem { Kind: QuicCloseKind.RequestStreamComplete } close:
                     {
-                        Pull(_stage._inServer);
-                    }
+                        if (close.StreamId >= 0)
+                        {
+                            _sm.FlushPendingResponse(close.StreamId);
+                        }
+                        else
+                        {
+                            _sm.FlushPendingResponse();
+                        }
 
-                    return;
-                }
+                        FlushResponses();
+                        TryPullRequest();
+                        return;
+                    }
+                // Reconnect: connection dropped again while already reconnecting
+                case QuicCloseItem when _sm.IsReconnecting:
+                    {
+                        _sm.OnReconnectAttemptFailed();
+                        if (_reconnectFailed)
+                        {
+                            FailStage(new HttpRequestException(
+                                "TurboHTTP: HTTP/3 reconnect failed after max attempts."));
+                            return;
+                        }
+
+                        FlushOutbound();
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
+
+                        return;
+                    }
                 // Abrupt close with in-flight requests — reconnect
                 case QuicCloseItem when _sm.HasInFlightRequests:
-                {
-                    _sm.OnConnectionLost();
-                    FlushOutbound();
-                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        Pull(_stage._inServer);
-                    }
+                        _sm.OnConnectionLost();
+                        FlushOutbound();
+                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                        {
+                            Pull(_stage._inServer);
+                        }
 
-                    return;
-                }
+                        return;
+                    }
                 // QuicCloseItem with no in-flight — complete normally
                 case QuicCloseItem:
                     CompleteStage();
@@ -259,29 +259,29 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             switch (type)
             {
                 case StreamType.QpackDecoder:
-                {
-                    _sm.ProcessQpackDecoderBytes(tagged.Memory);
-                    tagged.Dispose();
-                    Pull(_stage._inServer);
-                    return;
-                }
+                    {
+                        _sm.ProcessQpackDecoderBytes(tagged.Memory);
+                        tagged.Dispose();
+                        Pull(_stage._inServer);
+                        return;
+                    }
                 case StreamType.QpackEncoder:
-                {
-                    _sm.ProcessQpackEncoderBytes(tagged.Memory);
-                    tagged.Dispose();
-                    Pull(_stage._inServer);
-                    return;
-                }
+                    {
+                        _sm.ProcessQpackEncoderBytes(tagged.Memory);
+                        tagged.Dispose();
+                        Pull(_stage._inServer);
+                        return;
+                    }
                 case StreamType.Control:
                     ProcessFrameData(tagged, streamId: ControlStreamDecoderId);
                     return;
                 case StreamType.Push:
                     break;
                 default:
-                {
-                    ProcessFrameData(tagged, tagged.StreamId!.Value);
-                    return;
-                }
+                    {
+                        ProcessFrameData(tagged, tagged.StreamId!.Value);
+                        return;
+                    }
             }
         }
 

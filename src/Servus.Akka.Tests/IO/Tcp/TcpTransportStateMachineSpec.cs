@@ -220,7 +220,7 @@ public sealed class TcpTransportStateMachineSpec
         var pullBefore = ops.PullInputCount;
 
         sm.HandlePush(new ConnectionReuseItem(false)
-            { Key = TestEndpoint });
+        { Key = TestEndpoint });
 
         Assert.True(ops.PullInputCount > pullBefore);
     }

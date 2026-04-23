@@ -4,7 +4,7 @@ using Servus.Akka.IO;
 
 namespace TurboHTTP.Streams.Stages;
 
-internal sealed class ConnectionShape: Shape
+internal sealed class ConnectionShape : Shape
 {
     public Inlet<IInputItem> InServer { get; }
     public Outlet<HttpResponseMessage> OutResponse { get; }

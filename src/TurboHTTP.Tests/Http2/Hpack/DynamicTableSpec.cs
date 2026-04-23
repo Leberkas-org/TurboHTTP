@@ -154,18 +154,18 @@ public sealed class DynamicTableSpec
     {
         var table = new HpackDynamicTable();
         table.Add("alpha", "1");
-        table.Add("beta",  "2");
+        table.Add("beta", "2");
         table.Add("gamma", "3");
 
         var gammaSize = "gamma".Length + "3".Length + 32;
-        var betaSize  = "beta".Length  + "2".Length + 32;
+        var betaSize = "beta".Length + "2".Length + 32;
         var newMax = gammaSize + betaSize;
 
         table.SetMaxSize(newMax);
 
         Assert.Equal(2, table.Count);
         Assert.Equal("gamma", table.GetEntry(1)!.Value.Name);
-        Assert.Equal("beta",  table.GetEntry(2)!.Value.Name);
+        Assert.Equal("beta", table.GetEntry(2)!.Value.Name);
     }
 
     [Fact(Timeout = 5000)]

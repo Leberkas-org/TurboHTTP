@@ -93,7 +93,7 @@ public sealed class ConnectionShapeSpec
         var newInlets = new[] { inServer.CarbonCopy(), inApp.CarbonCopy() };
         var newOutlets = new[] { outResponse.CarbonCopy(), outNetwork.CarbonCopy() };
 
-        var copiedShape = shape.CopyFromPorts([..newInlets], [..newOutlets]);
+        var copiedShape = shape.CopyFromPorts([.. newInlets], [.. newOutlets]);
 
         Assert.IsType<ConnectionShape>(copiedShape);
         var result = (ConnectionShape)copiedShape;
@@ -178,7 +178,7 @@ public sealed class ConnectionShapeSpec
         var newInlets = new[] { inServer.CarbonCopy(), inApp.CarbonCopy() };
         var newOutlets = new[] { outResponse.CarbonCopy(), outNetwork.CarbonCopy() };
 
-        var copiedShape = shape.CopyFromPorts([..newInlets], [..newOutlets]);
+        var copiedShape = shape.CopyFromPorts([.. newInlets], [.. newOutlets]);
         var result = (ConnectionShape)copiedShape;
 
         Assert.IsType<Inlet<IInputItem>>(result.InServer);

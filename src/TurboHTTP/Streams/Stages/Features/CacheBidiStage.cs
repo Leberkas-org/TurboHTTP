@@ -269,14 +269,14 @@ internal sealed class CacheStateMachine
         switch (message)
         {
             case BodyReadComplete msg:
-            {
-                var request = msg.Response.RequestMessage!;
-                var now = DateTimeOffset.UtcNow;
-                _store!.Put(request, msg.Response, msg.Owner, msg.Length, now, now);
-                FlushPendingCacheResponse();
-                DecrementPendingAsync();
-                break;
-            }
+                {
+                    var request = msg.Response.RequestMessage!;
+                    var now = DateTimeOffset.UtcNow;
+                    _store!.Put(request, msg.Response, msg.Owner, msg.Length, now, now);
+                    FlushPendingCacheResponse();
+                    DecrementPendingAsync();
+                    break;
+                }
 
             case BodyReadFailed msg:
                 _ops.Log.Warning("CacheBidiStage: Async body read failed: {0}", msg.Exception.Message);

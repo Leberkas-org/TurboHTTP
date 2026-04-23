@@ -23,7 +23,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
                 (b, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
-                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
+                    { Http2 = { InitialConnectionWindowSize = 65535 } }));
 
                     // A SETTINGS ACK on InServer is harmless (no ACK reply) and lets
                     // the inlet complete, which tears down the stage via the default
@@ -62,7 +62,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
                 (b, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
-                        { Http2 = { InitialConnectionWindowSize = 65535 } }));
+                    { Http2 = { InitialConnectionWindowSize = 65535 } }));
 
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(
