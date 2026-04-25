@@ -6,7 +6,7 @@ public static class ClientByteMover
 {
     // Threshold below which consecutive small buffers are coalesced into a single write.
     // Reduces syscall overhead for HTTP/2 frame headers (9 bytes) and small DATA frames.
-    private const int CoalesceThreshold = 16 * 1024;
+    private const int CoalesceThreshold = 32 * 1024;
 
     // Cached delegates — created once at class init, reused for every connection.
     // Avoids a delegate heap allocation on each MoveStreamToChannel call.

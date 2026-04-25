@@ -284,17 +284,13 @@ internal sealed class RedirectStateMachine
 
             var newRequest = handler.BuildRedirectRequest(original, response);
 
-            var previous = Activity.Current;
+            Activity? rootActivity = null;
             if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey,
-                    out var rootActivity))
+                    out rootActivity))
             {
-                Activity.Current = rootActivity;
+                TurboHttpInstrumentation.AddRedirectEvent(
+                    rootActivity, newRequest.RequestUri!, (int)response.StatusCode);
             }
-
-            var redirectActivity = TurboHttpInstrumentation.StartRedirect(
-                newRequest.RequestUri!, (int)response.StatusCode);
-            redirectActivity?.Stop();
-            Activity.Current = previous;
 
             TurboHttpMetrics.RedirectCount.Add(1,
                 new KeyValuePair<string, object?>("http.response.status_code", (int)response.StatusCode));

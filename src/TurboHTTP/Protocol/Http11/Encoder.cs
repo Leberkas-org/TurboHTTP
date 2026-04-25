@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net.Http.Headers;
 using System.Text;
 using TurboHTTP.Protocol.Semantics;
@@ -326,10 +327,10 @@ internal static class Encoder
         var hasTeValues = HasNonChunkedTeValues(headers);
 
         // Check if Connection header is already set
-        if (headers.Connection.Any(value => value.Equals("close", StringComparison.OrdinalIgnoreCase)))
+        if (ContainsToken(headers.Connection, "close"))
         {
             // Even with "close", we must list TE if present (RFC 9112 §7.4)
-            if (hasTeValues && !headers.Connection.Any(v => v.Equals("TE", StringComparison.OrdinalIgnoreCase)))
+            if (hasTeValues && !ContainsToken(headers.Connection, "TE"))
             {
                 bytesWritten += WriteBytes(ref buffer, "Connection: close, TE\r\n"u8);
             }
@@ -455,28 +456,30 @@ internal static class Encoder
     {
         using var stream = content.ReadAsStream();
         var total = 0;
-        const int chunkSize = 8192; // 8KB chunks
+        const int chunkSize = 8192;
 
-        var chunkBuffer = new byte[chunkSize];
-
-        while (true)
+        var chunkBuffer = ArrayPool<byte>.Shared.Rent(chunkSize);
+        try
         {
-            var read = stream.Read(chunkBuffer, 0, chunkSize);
-            if (read == 0)
+            while (true)
             {
-                break;
+                var read = stream.Read(chunkBuffer, 0, chunkSize);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                total += WriteHex(ref buffer, read);
+                total += WriteCrlf(ref buffer);
+                total += WriteBytes(ref buffer, chunkBuffer.AsSpan(0, read));
+                total += WriteCrlf(ref buffer);
             }
-
-            // Write chunk size in hex
-            total += WriteHex(ref buffer, read);
-            total += WriteCrlf(ref buffer);
-
-            // Write chunk data
-            total += WriteBytes(ref buffer, chunkBuffer.AsSpan(0, read));
-            total += WriteCrlf(ref buffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(chunkBuffer);
         }
 
-        // Write final chunk: 0\r\n\r\n
         total += WriteBytes(ref buffer, "0\r\n\r\n"u8);
 
         return total;
@@ -587,6 +590,19 @@ internal static class Encoder
         buffer = buffer[length..];
 
         return length;
+    }
+
+    private static bool ContainsToken(HttpHeaderValueCollection<string> values, string token)
+    {
+        foreach (var value in values)
+        {
+            if (value.Equals(token, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void ValidateMethod(string method)

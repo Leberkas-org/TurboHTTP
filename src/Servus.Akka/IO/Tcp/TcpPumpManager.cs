@@ -69,7 +69,7 @@ internal sealed class TcpPumpManager
                     }
 
                     chunk.Key = key;
-                    batch ??= ArrayPool<IInputItem>.Shared.Rent(8);
+                    batch ??= ArrayPool<IInputItem>.Shared.Rent(32);
 
                     if (count == batch.Length)
                     {

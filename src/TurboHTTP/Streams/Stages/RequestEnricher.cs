@@ -108,7 +108,13 @@ internal sealed class RequestEnricher
             return;
         }
 
-        var refererValue = values.FirstOrDefault();
+        string? refererValue = null;
+        foreach (var v in values)
+        {
+            refererValue = v;
+            break;
+        }
+
         if (string.IsNullOrEmpty(refererValue) || !Uri.TryCreate(refererValue, UriKind.Absolute, out var refererUri))
         {
             return;

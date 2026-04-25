@@ -41,7 +41,6 @@ public sealed class TurboHttpMetricsSpec : IDisposable
         _listener.Dispose();
     }
 
-
     [Fact(Timeout = 5000)]
     public void Meter_should_have_correct_name()
     {
@@ -109,60 +108,70 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     }
 
     [Fact(Timeout = 5000)]
-    public void CacheHit_should_increment()
+    public void CacheLookup_should_increment_with_hit_result()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheHit.Add(1);
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "hit"));
 
         _listener.RecordObservableInstruments();
 
-        var m = Assert.Single(GetLongMeasurements("http.client.cache.hit"));
+        var m = Assert.Single(GetLongMeasurements("http.client.cache.lookup"));
         Assert.Equal(1, m.Value);
+        Assert.Equal("hit", GetTag(m.Tags, "cache.result"));
     }
 
     [Fact(Timeout = 5000)]
-    public void CacheMiss_should_increment()
+    public void CacheLookup_should_increment_with_miss_result()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheMiss.Add(1);
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "miss"));
 
         _listener.RecordObservableInstruments();
 
-        var m = Assert.Single(GetLongMeasurements("http.client.cache.miss"));
+        var m = Assert.Single(GetLongMeasurements("http.client.cache.lookup"));
         Assert.Equal(1, m.Value);
+        Assert.Equal("miss", GetTag(m.Tags, "cache.result"));
     }
 
     [Fact(Timeout = 5000)]
-    public void CacheHit_should_count_multiple()
+    public void CacheLookup_should_count_multiple()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheHit.Add(1);
-        TurboHttpMetrics.CacheHit.Add(1);
-        TurboHttpMetrics.CacheHit.Add(1);
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "hit"));
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "hit"));
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "miss"));
 
         _listener.RecordObservableInstruments();
 
-        var measurements = GetLongMeasurements("http.client.cache.hit");
+        var measurements = GetLongMeasurements("http.client.cache.lookup");
         Assert.Equal(3, measurements.Count);
-        Assert.All(measurements, m => Assert.Equal(1, m.Value));
     }
 
     [Fact(Timeout = 5000)]
-    public void CacheHitAndMiss_should_be_independent()
+    public void CacheLookup_hit_and_miss_should_be_distinguished_by_tag()
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheHit.Add(1);
-        TurboHttpMetrics.CacheMiss.Add(1);
-        TurboHttpMetrics.CacheMiss.Add(1);
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "hit"));
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "miss"));
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", "miss"));
 
         _listener.RecordObservableInstruments();
 
-        Assert.Single(GetLongMeasurements("http.client.cache.hit"));
-        Assert.Equal(2, GetLongMeasurements("http.client.cache.miss").Count);
+        var measurements = GetLongMeasurements("http.client.cache.lookup");
+        Assert.Single(measurements, m => (string?)GetTag(m.Tags, "cache.result") == "hit");
+        Assert.Equal(2, measurements.Count(m => (string?)GetTag(m.Tags, "cache.result") == "miss"));
     }
 
     [Fact(Timeout = 5000)]
@@ -271,31 +280,14 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     }
 
     [Fact(Timeout = 5000)]
-    public void PipelineStall_should_increment()
-    {
-        ClearMeasurements();
-
-        TurboHttpMetrics.PipelineStall.Add(1,
-            new KeyValuePair<string, object?>("stage", "Http20Connection"),
-            new KeyValuePair<string, object?>("direction", "request"));
-
-        _listener.RecordObservableInstruments();
-
-        var m = Assert.Single(GetLongMeasurements("turbohttp.pipeline.stall"));
-        Assert.Equal(1, m.Value);
-    }
-
-    [Fact(Timeout = 5000)]
     public void Instruments_should_have_correct_units()
     {
         Assert.Equal("{request}", TurboHttpMetrics.RequestCount.Unit);
         Assert.Equal("s", TurboHttpMetrics.RequestDuration.Unit);
-        Assert.Equal("{hit}", TurboHttpMetrics.CacheHit.Unit);
-        Assert.Equal("{miss}", TurboHttpMetrics.CacheMiss.Unit);
+        Assert.Equal("{lookup}", TurboHttpMetrics.CacheLookup.Unit);
         Assert.Equal("{retry}", TurboHttpMetrics.RetryCount.Unit);
         Assert.Equal("{redirect}", TurboHttpMetrics.RedirectCount.Unit);
         Assert.Equal("{request}", TurboHttpMetrics.ActiveRequests.Unit);
-        Assert.Equal("{stall}", TurboHttpMetrics.PipelineStall.Unit);
     }
 
     [Fact(Timeout = 5000)]
@@ -303,14 +295,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RequestCount.Description));
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RequestDuration.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.CacheHit.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.CacheMiss.Description));
+        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.CacheLookup.Description));
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RetryCount.Description));
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RedirectCount.Description));
         Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.ActiveRequests.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.PipelineStall.Description));
     }
-
 
     private void ClearMeasurements()
     {

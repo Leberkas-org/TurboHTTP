@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Buffers;
+using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using Servus.Akka.Diagnostics;
@@ -117,39 +118,43 @@ public class TlsClientProvider(TlsOptions options) : IClientProvider
         await proxyStream.WriteAsync(requestBytes, ct).ConfigureAwait(false);
         await proxyStream.FlushAsync(ct).ConfigureAwait(false);
 
-        // Read the proxy response status line
-        var responseBuffer = new byte[4096];
-        var totalRead = 0;
-        while (totalRead < responseBuffer.Length)
+        var responseBuffer = ArrayPool<byte>.Shared.Rent(4096);
+        try
         {
-            var bytesRead = await proxyStream.ReadAsync(
-                responseBuffer.AsMemory(totalRead, responseBuffer.Length - totalRead), ct).ConfigureAwait(false);
-
-            if (bytesRead == 0)
+            var totalRead = 0;
+            while (totalRead < responseBuffer.Length)
             {
-                throw new HttpRequestException("Proxy closed connection during CONNECT tunnel establishment.");
-            }
+                var bytesRead = await proxyStream.ReadAsync(
+                    responseBuffer.AsMemory(totalRead, responseBuffer.Length - totalRead), ct).ConfigureAwait(false);
 
-            totalRead += bytesRead;
-
-            // Check if we've received the full response headers (ends with \r\n\r\n)
-            var response = System.Text.Encoding.ASCII.GetString(responseBuffer, 0, totalRead);
-            if (response.Contains("\r\n\r\n"))
-            {
-                // Verify 200 status
-                if (!response.StartsWith("HTTP/1.1 200", StringComparison.OrdinalIgnoreCase)
-                    && !response.StartsWith("HTTP/1.0 200", StringComparison.OrdinalIgnoreCase))
+                if (bytesRead == 0)
                 {
-                    var statusLine = response[..response.IndexOf('\r')];
-                    throw new HttpRequestException(
-                        $"Proxy CONNECT tunnel failed: {statusLine}");
+                    throw new HttpRequestException("Proxy closed connection during CONNECT tunnel establishment.");
                 }
 
-                return;
-            }
-        }
+                totalRead += bytesRead;
 
-        throw new HttpRequestException("Proxy CONNECT response exceeded buffer size.");
+                var span = responseBuffer.AsSpan(0, totalRead);
+                var headerEnd = span.IndexOf("\r\n\r\n"u8);
+                if (headerEnd >= 0)
+                {
+                    if (!span.StartsWith("HTTP/1.1 200"u8) && !span.StartsWith("HTTP/1.0 200"u8))
+                    {
+                        var crIndex = span.IndexOf((byte)'\r');
+                        var statusLine = System.Text.Encoding.ASCII.GetString(span[..crIndex]);
+                        throw new HttpRequestException($"Proxy CONNECT tunnel failed: {statusLine}");
+                    }
+
+                    return;
+                }
+            }
+
+            throw new HttpRequestException("Proxy CONNECT response exceeded buffer size.");
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(responseBuffer);
+        }
     }
 
     public async ValueTask DisposeAsync()

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Reflection;
-using TurboHTTP.Streams.Stages.Features;
 
 namespace TurboHTTP.Diagnostics;
 
@@ -38,8 +37,7 @@ internal static class TurboHttpInstrumentation
     public static ActivitySource Source { get; } = new(SourceName, Version);
 
     /// <summary>
-    /// Returns <c>true</c> when any tracing or metrics listener is active and the
-    /// <see cref="TracingBidiStage"/> should be materialized into the pipeline.
+    /// Returns <c>true</c> when any tracing or metrics listener is active.
     /// Checked once at stream materialization time — if no listener is subscribed,
     /// the tracing stage is omitted entirely (zero overhead, no graph node).
     /// </summary>
@@ -136,77 +134,33 @@ internal static class TurboHttpInstrumentation
         return activity;
     }
 
-    /// <summary>
-    /// Starts a "TurboHTTP.Redirect" activity for a redirect hop.
-    /// </summary>
-    public static Activity? StartRedirect(Uri uri, int statusCode)
+    public static void AddRedirectEvent(Activity activity, Uri uri, int statusCode)
     {
-        if (!Source.HasListeners())
-        {
-            return null;
-        }
-
-        var activity = Source.StartActivity(
-            $"{SourceName}.Redirect",
-            ActivityKind.Client);
-
-        if (activity is null)
-        {
-            return null;
-        }
-
-        activity.SetTag("http.response.status_code", statusCode);
-        activity.SetTag("url.full", RedactUrl(uri));
-
-        return activity;
+        activity.AddEvent(new ActivityEvent("http.redirect",
+            tags: new ActivityTagsCollection
+            {
+                { "http.response.status_code", statusCode },
+                { "url.full", RedactUrl(uri) }
+            }));
     }
 
-    /// <summary>
-    /// Starts a "TurboHTTP.Retry" activity for a retry attempt.
-    /// </summary>
-    public static Activity? StartRetry(int attemptNumber)
+    public static void AddRetryEvent(Activity activity, int attemptNumber)
     {
-        if (!Source.HasListeners())
-        {
-            return null;
-        }
-
-        var activity = Source.StartActivity(
-            $"{SourceName}.Retry",
-            ActivityKind.Client);
-
-        if (activity is null)
-        {
-            return null;
-        }
-
-        activity.SetTag("http.resend_count", attemptNumber);
-
-        return activity;
+        activity.AddEvent(new ActivityEvent("http.retry",
+            tags: new ActivityTagsCollection
+            {
+                { "http.resend_count", attemptNumber }
+            }));
     }
 
-    /// <summary>
-    /// Starts a "TurboHTTP.CacheLookup" activity for a cache lookup.
-    /// </summary>
-    public static Activity? StartCacheLookup(Uri uri)
+    public static void AddCacheLookupEvent(Activity activity, Uri uri, bool isHit)
     {
-        if (!Source.HasListeners())
-        {
-            return null;
-        }
-
-        var activity = Source.StartActivity(
-            $"{SourceName}.CacheLookup",
-            ActivityKind.Client);
-
-        if (activity is null)
-        {
-            return null;
-        }
-
-        activity.SetTag("url.full", RedactUrl(uri));
-
-        return activity;
+        activity.AddEvent(new ActivityEvent("http.cache_lookup",
+            tags: new ActivityTagsCollection
+            {
+                { "url.full", RedactUrl(uri) },
+                { "cache.hit", isHit }
+            }));
     }
 
     /// <summary>
@@ -244,15 +198,9 @@ internal static class TurboHttpInstrumentation
         }
     }
 
-    /// <summary>
-    /// Marks an activity as failed with error details.
-    /// Sets <c>otel.status_code</c> to ERROR, <c>error.type</c> (OTel convention),
-    /// and records exception attributes.
-    /// </summary>
     public static void SetError(Activity activity, Exception exception)
     {
         activity.SetStatus(ActivityStatusCode.Error, exception.Message);
-        activity.SetTag("otel.status_code", "ERROR");
         activity.SetTag("error.type", exception.GetType().FullName);
         activity.SetTag("exception.type", exception.GetType().FullName);
         activity.SetTag("exception.message", exception.Message);

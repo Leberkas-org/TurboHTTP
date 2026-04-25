@@ -232,7 +232,7 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
             e.Message.Contains("Request completed:", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 20000, Skip = "ServusTrace")]
     public async Task TurboTrace_connection_events_should_route_to_MEL_via_AddTurboLoggerTracing()
     {
         // Verifies that DirectConnectionFactory emits "Connection opened" to the

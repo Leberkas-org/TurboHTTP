@@ -51,13 +51,11 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
         BuildHeaderList(request, _reusableHeaders);
         ValidatePseudoHeaders(_reusableHeaders);
 
-        using var hpackOwner = MemoryPool<byte>.Shared.Rent(4096);
+        var hpackOwner = MemoryPool<byte>.Shared.Rent(4096);
+        _rentedBodyOwners.Add(hpackOwner);
         var hpackWritable = hpackOwner.Memory.Span;
         var hpackBytesWritten = _hpack.Encode(_reusableHeaders, ref hpackWritable, useHuffman);
-        // Copy the written memory to an owned array so multiple Encode() calls batched
-        // in the same scheduling turn (eager re-pull) do not alias each other's header
-        // block data through the shared MemoryPool rental.
-        var headerBlock = hpackOwner.Memory[..hpackBytesWritten].ToArray().AsMemory();
+        var headerBlock = hpackOwner.Memory[..hpackBytesWritten];
         var hasBody = request.Content != null;
 
         _reusableFrames.Clear();
@@ -163,12 +161,11 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
         headers.Add(new(":scheme", uri.Scheme));
         headers.Add(new(":authority", UriSanitizer.FormatAuthority(uri)));
 
-        // I1: foreach instead of LINQ to eliminate Where+Select iterator allocations
         foreach (var h in request.Headers)
         {
             if (!IsForbidden(h.Key))
             {
-                headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value.ToArray())));
+                headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value)));
             }
         }
 
@@ -179,7 +176,7 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
 
         foreach (var h in request.Content.Headers)
         {
-            headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value.ToArray())));
+            headers.Add(new HpackHeader(ToLower(h.Key), JoinValues(h.Value)));
         }
     }
 
@@ -403,10 +400,7 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
         return name;
     }
 
-    /// <summary>
-    /// Joins header values without allocating if there is only a single value (common case).
-    /// </summary>
-    private static string JoinValues(string[] values)
+    private static string JoinValues(IEnumerable<string> values)
     {
         string? first = null;
         foreach (var v in values)
@@ -417,7 +411,6 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
                 continue;
             }
 
-            // Multiple values — fall back to Join
             return string.Join(", ", values);
         }
 

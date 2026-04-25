@@ -67,7 +67,7 @@ public class NetworkBuffer : IInputItem, IOutputItem
 {
     private static readonly ConcurrentStack<NetworkBuffer> WrapperPool = new();
 
-    protected static int MaxPoolSize { get; private set; } = Environment.ProcessorCount * 2;
+    protected static int MaxPoolSize { get; private set; } = Environment.ProcessorCount * 4;
 
     protected IMemoryOwner<byte>? Owner;
 

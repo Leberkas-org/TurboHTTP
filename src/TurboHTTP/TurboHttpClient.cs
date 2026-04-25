@@ -84,13 +84,12 @@ internal sealed class PendingRequest : IValueTaskSource<HttpResponseMessage>
 
 public sealed class TurboHttpClient : ITurboHttpClient
 {
+    private static readonly int MaxPooledCts = Math.Max(Environment.ProcessorCount * 4, 64);
+
     private readonly HttpRequestMessage _defaultHeadersHolder = new();
 
-    // Lock-free tracking for CancelPendingRequests — avoids lock contention on the hot path.
     private readonly ConcurrentDictionary<PendingRequest, byte> _pendingTcs = new();
 
-    // Pooled CancellationTokenSources — reused via TryReset() to avoid per-request allocation.
-    // Only used for non-linked CTS (no caller CT). Capped to avoid unbounded growth.
     private readonly ConcurrentStack<CancellationTokenSource> _ctsPool = new();
     private int _ctsPoolCount;
 
@@ -247,7 +246,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
                 {
                     cts.Dispose();
                 }
-                else if (Interlocked.Increment(ref _ctsPoolCount) <= 64)
+                else if (Interlocked.Increment(ref _ctsPoolCount) <= MaxPooledCts)
                 {
                     _ctsPool.Push(cts);
                 }

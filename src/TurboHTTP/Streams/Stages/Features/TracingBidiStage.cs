@@ -83,7 +83,6 @@ internal sealed class TracingBidiStage
                 {
                     _processor.OnResponseUpstreamFailure(ex);
                     Fail(_stage._outResponse, ex);
-                    TurboHttpMetrics.ActiveRequests.Add(-1);
                 });
 
             SetHandler(stage._outResponse,
@@ -133,6 +132,7 @@ internal sealed class TracingBidiProcessor
 
     private readonly IFeatureStageOperations _ops;
     private Activity? _currentActivity;
+    private HttpRequestMessage? _currentRequest;
 
     public TracingBidiProcessor(IFeatureStageOperations ops)
     {
@@ -152,6 +152,8 @@ internal sealed class TracingBidiProcessor
         var method = request.Method.Method;
         var uri = request.RequestUri?.OriginalString ?? "";
         TurboTrace.Request.Info(_ops, "Request started: {0} {1}", method, uri);
+
+        _currentRequest = request;
 
         RecordActiveRequestStart(request);
 
@@ -176,6 +178,8 @@ internal sealed class TracingBidiProcessor
             _currentActivity.Stop();
             _currentActivity = null;
         }
+
+        RecordFailedRequestMetrics(ex);
     }
 
     public void OnResponsePush(HttpResponseMessage response)
@@ -201,6 +205,7 @@ internal sealed class TracingBidiProcessor
 
 
         RecordActiveRequestEnd(request);
+        _currentRequest = null;
 
         RecordRequestMetrics(response, durationMs);
 
@@ -217,6 +222,9 @@ internal sealed class TracingBidiProcessor
             _currentActivity.Stop();
             _currentActivity = null;
         }
+
+        RecordActiveRequestEnd(_currentRequest);
+        RecordFailedRequestMetrics(ex);
     }
 
     public void PostStop()
@@ -309,5 +317,43 @@ internal sealed class TracingBidiProcessor
 
         TurboHttpMetrics.RequestDuration.Record(durationMs / 1000.0,
             durationTags.ToArray().AsSpan());
+    }
+
+    private void RecordFailedRequestMetrics(Exception ex)
+    {
+        if (!TurboHttpMetrics.RequestCount.Enabled && !TurboHttpMetrics.RequestDuration.Enabled)
+        {
+            return;
+        }
+
+        var request = _currentRequest;
+        if (request is null)
+        {
+            return;
+        }
+
+        var method = TurboHttpInstrumentation.NormalizeMethod(request.Method.Method);
+        var host = request.RequestUri?.Host ?? "unknown";
+        var port = request.RequestUri?.Port ?? 0;
+        var scheme = request.RequestUri?.Scheme ?? "https";
+        var errorType = ex.GetType().FullName ?? "unknown";
+
+        TurboHttpMetrics.RequestCount.Add(1,
+            new KeyValuePair<string, object?>("http.request.method", method),
+            new KeyValuePair<string, object?>("error.type", errorType),
+            new KeyValuePair<string, object?>("server.address", host));
+
+        if (request.Options.TryGetValue(RequestTimestampKey, out var timestamp))
+        {
+            var durationSeconds = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds / 1000.0;
+            TurboHttpMetrics.RequestDuration.Record(durationSeconds,
+                new KeyValuePair<string, object?>("http.request.method", method),
+                new KeyValuePair<string, object?>("error.type", errorType),
+                new KeyValuePair<string, object?>("server.address", host),
+                new KeyValuePair<string, object?>("server.port", port),
+                new KeyValuePair<string, object?>("url.scheme", scheme));
+        }
+
+        _currentRequest = null;
     }
 }

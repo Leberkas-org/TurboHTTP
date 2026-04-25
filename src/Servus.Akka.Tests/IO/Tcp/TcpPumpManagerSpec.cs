@@ -94,8 +94,7 @@ public sealed class TcpPumpManagerSpec : TestKit
         var pump = new TcpPumpManager(probe.Ref);
         var (inbound, handle) = CreateTestHandle();
 
-        // Detect the actual ArrayPool bucket size for Rent(8) at runtime (may be 8, 16, etc.)
-        var sampleBatch = ArrayPool<IInputItem>.Shared.Rent(8);
+        var sampleBatch = ArrayPool<IInputItem>.Shared.Rent(32);
         var initialBatchSize = sampleBatch.Length;
         ArrayPool<IInputItem>.Shared.Return(sampleBatch);
 

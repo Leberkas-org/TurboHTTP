@@ -29,7 +29,7 @@ public class TcpClientProvider(TcpOptions options) : IClientProvider
         try
         {
             var dnsStart = Stopwatch.GetTimestamp();
-            addresses = await Dns.GetHostAddressesAsync(connectHost, ct).ConfigureAwait(false);
+            addresses = await DnsCache.ResolveAsync(connectHost, ct).ConfigureAwait(false);
             var dnsDuration = Stopwatch.GetElapsedTime(dnsStart).TotalSeconds;
 
             if (addresses.Length == 0)

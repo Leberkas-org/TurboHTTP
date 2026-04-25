@@ -106,7 +106,15 @@ internal static class ConnectionReuseEvaluator
 
     private static bool HasConnectionToken(HttpResponseMessage response, string token)
     {
-        return response.Headers.Connection.Any(t => t.Equals(token, StringComparison.OrdinalIgnoreCase));
+        foreach (var t in response.Headers.Connection)
+        {
+            if (t.Equals(token, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static (TimeSpan? timeout, int? maxRequests) ParseKeepAliveParameters(HttpResponseMessage response)
@@ -121,9 +129,13 @@ internal static class ConnectionReuseEvaluator
 
         foreach (var headerValue in values)
         {
-            // Keep-Alive: timeout=30, max=100
-            foreach (var param in headerValue.Split(','))
+            var remaining = headerValue.AsSpan();
+            while (remaining.Length > 0)
             {
+                var comma = remaining.IndexOf(',');
+                var param = comma >= 0 ? remaining[..comma] : remaining;
+                remaining = comma >= 0 ? remaining[(comma + 1)..] : [];
+
                 var trimmed = param.Trim();
                 var eqIdx = trimmed.IndexOf('=');
                 if (eqIdx < 0)

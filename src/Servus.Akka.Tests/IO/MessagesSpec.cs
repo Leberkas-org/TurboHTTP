@@ -1,7 +1,6 @@
 using System.Net;
 using Servus.Akka.IO;
 using Servus.Akka.IO.Tcp;
-using Servus.Akka.Tests.Utils;
 
 namespace Servus.Akka.Tests.IO;
 
@@ -22,17 +21,6 @@ public sealed class MessagesSpec
 
         Assert.True(buf.Capacity >= 1024);
         Assert.Equal(0, buf.Length);
-
-        buf.Dispose();
-    }
-
-    [Fact(Timeout = 5000)]
-    public void NetworkBuffer_Rent_should_have_key()
-    {
-        var buf = NetworkBuffer.Rent(64);
-
-        Assert.Equal(string.Empty, buf.Key.Host);
-        Assert.Equal(string.Empty, buf.Key.Scheme);
 
         buf.Dispose();
     }

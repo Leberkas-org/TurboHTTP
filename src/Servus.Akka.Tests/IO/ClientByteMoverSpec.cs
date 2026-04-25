@@ -107,9 +107,9 @@ public sealed class ClientByteMoverSpec
         var state = new ClientState(stream, inbound, outbound);
 
         // Write a large buffer (> 16KB) followed by a small buffer
-        var largeBuf = NetworkBuffer.Rent(17 * 1024);
+        var largeBuf = NetworkBuffer.Rent(33 * 1024);
         largeBuf.Memory.Span.Fill(0xAA);
-        largeBuf.Length = 17 * 1024;
+        largeBuf.Length = 33 * 1024;
 
         var smallBuf = NetworkBuffer.Rent(100);
         smallBuf.Memory.Span.Fill(0xBB);
@@ -259,17 +259,17 @@ public sealed class ClientByteMoverSpec
         var stream = new CapturingStream(capturedWrites);
         var state = new ClientState(stream, inbound, outbound);
 
-        var largeBuf = NetworkBuffer.Rent(17 * 1024);
+        var largeBuf = NetworkBuffer.Rent(33 * 1024);
         largeBuf.Memory.Span.Fill(0xAA);
-        largeBuf.Length = 17 * 1024;
+        largeBuf.Length = 33 * 1024;
 
         var smallBuf = NetworkBuffer.Rent(100);
         smallBuf.Memory.Span.Fill(0xBB);
         smallBuf.Length = 100;
 
-        var largeBuf2 = NetworkBuffer.Rent(17 * 1024);
+        var largeBuf2 = NetworkBuffer.Rent(33 * 1024);
         largeBuf2.Memory.Span.Fill(0xCC);
-        largeBuf2.Length = 17 * 1024;
+        largeBuf2.Length = 33 * 1024;
 
         var smallBuf2 = NetworkBuffer.Rent(100);
         smallBuf2.Memory.Span.Fill(0xDD);
@@ -327,9 +327,9 @@ public sealed class ClientByteMoverSpec
         smallBuf.Memory.Span.Fill(0x11);
         smallBuf.Length = 100;
 
-        var largeBuf = NetworkBuffer.Rent(17 * 1024);
+        var largeBuf = NetworkBuffer.Rent(33 * 1024);
         largeBuf.Memory.Span.Fill(0xAA);
-        largeBuf.Length = 17 * 1024;
+        largeBuf.Length = 33 * 1024;
 
         outbound.Writer.TryWrite(smallBuf);
         outbound.Writer.TryWrite(largeBuf);
@@ -341,7 +341,7 @@ public sealed class ClientByteMoverSpec
 
         Assert.True(capturedWrites.Count >= 2);
         Assert.Equal(100, capturedWrites[0].Length);
-        Assert.Equal(17 * 1024, capturedWrites[1].Length);
+        Assert.Equal(33 * 1024, capturedWrites[1].Length);
     }
 
     [Fact(Timeout = 5000)]

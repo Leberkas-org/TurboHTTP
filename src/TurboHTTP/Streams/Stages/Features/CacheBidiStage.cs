@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Diagnostics;
 using System.Net;
 using Akka.Actor;
 using Akka.Event;
@@ -361,32 +360,18 @@ internal sealed class CacheStateMachine
 
     private void EmitCacheTelemetry(HttpRequestMessage request, bool isHit)
     {
-        var previous = Activity.Current;
-        if (request.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
+        if (request.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity)
+            && request.RequestUri is not null)
         {
-            Activity.Current = rootActivity;
+            TurboHttpInstrumentation.AddCacheLookupEvent(rootActivity, request.RequestUri, isHit);
         }
 
-        if (request.RequestUri is not null)
-        {
-            var cacheActivity = TurboHttpInstrumentation.StartCacheLookup(request.RequestUri);
-            cacheActivity?.SetTag("cache.hit", isHit);
-            cacheActivity?.Stop();
-        }
-
-        Activity.Current = previous;
+        var result = isHit ? "hit" : "miss";
+        TurboHttpMetrics.CacheLookup.Add(1,
+            new KeyValuePair<string, object?>("cache.result", result));
 
         var uri = request.RequestUri?.OriginalString ?? "";
-        if (isHit)
-        {
-            TurboHttpMetrics.CacheHit.Add(1);
-            TurboTrace.Cache.Info(_ops, "Cache hit: {0}", uri);
-        }
-        else
-        {
-            TurboHttpMetrics.CacheMiss.Add(1);
-            TurboTrace.Cache.Info(_ops, "Cache miss: {0}", uri);
-        }
+        TurboTrace.Cache.Info(_ops, "Cache {0}: {1}", result, uri);
     }
 
     private void HandleCacheHit(HttpRequestMessage request, CacheLookupResult result)

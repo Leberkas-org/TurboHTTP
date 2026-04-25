@@ -74,7 +74,7 @@ public sealed class TcpClientProviderSpec
             provider.AcceptInboundStreamAsync(CancellationToken.None));
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     public async Task TcpClientProvider_should_resolve_proxy_when_configured()
     {
         var proxyUri = new Uri("http://proxy.local:8080");
@@ -90,15 +90,15 @@ public sealed class TcpClientProviderSpec
 
         var provider = new TcpClientProvider(options);
 
-        // Verify GetStreamAsync uses proxy for connection (DNS lookup will fail, which is ok for this test)
-        // This test verifies the proxy resolution path works without requiring actual network
+        // proxy.local is a .local mDNS domain — resolution may be slow on Linux.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try
         {
-            await provider.GetStreamAsync(CancellationToken.None);
+            await provider.GetStreamAsync(cts.Token);
         }
-        catch (SocketException)
+        catch (Exception ex) when (ex is SocketException or OperationCanceledException)
         {
-            // Expected: DNS resolution fails for "proxy.local"
+            // Expected: DNS resolution fails or times out for "proxy.local"
         }
 
         await provider.DisposeAsync();
@@ -196,7 +196,7 @@ public sealed class TcpClientProviderSpec
         await provider.DisposeAsync();
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10_000)]
     public async Task TcpClientProvider_should_not_override_existing_proxy_credentials()
     {
         var existingCredentials = new NetworkCredential("existing", "existing");
@@ -214,13 +214,15 @@ public sealed class TcpClientProviderSpec
 
         var provider = new TcpClientProvider(options);
 
+        // proxy.local is a .local mDNS domain — resolution may be slow on Linux.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         try
         {
-            await provider.GetStreamAsync(CancellationToken.None);
+            await provider.GetStreamAsync(cts.Token);
         }
-        catch (SocketException)
+        catch (Exception ex) when (ex is SocketException or OperationCanceledException)
         {
-            // Expected
+            // Expected: DNS resolution fails or times out for "proxy.local"
         }
 
         // Verify existing credentials were not replaced

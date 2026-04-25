@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -353,15 +352,11 @@ internal sealed class RetryStateMachine
 
     private void EmitRetryTelemetry(HttpRequestMessage original, int attemptCount)
     {
-        var previous = Activity.Current;
         if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
         {
-            Activity.Current = rootActivity;
+            TurboHttpInstrumentation.AddRetryEvent(rootActivity, attemptCount);
         }
 
-        var retryActivity = TurboHttpInstrumentation.StartRetry(attemptCount);
-        retryActivity?.Stop();
-        Activity.Current = previous;
         TurboHttpMetrics.RetryCount.Add(1,
             new KeyValuePair<string, object?>("http.request.method", original.Method.Method),
             new KeyValuePair<string, object?>("server.address", original.RequestUri?.Host ?? "unknown"));

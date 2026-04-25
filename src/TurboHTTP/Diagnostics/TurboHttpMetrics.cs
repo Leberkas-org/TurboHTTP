@@ -48,22 +48,14 @@ internal static class TurboHttpMetrics
             description: "Duration of HTTP requests in seconds");
 
     /// <summary>
-    /// Total cache hits.
+    /// Total cache lookups.
+    /// Tags: <c>cache.result</c> (<c>"hit"</c> or <c>"miss"</c>).
     /// </summary>
-    public static Counter<long> CacheHit { get; } =
+    public static Counter<long> CacheLookup { get; } =
         Meter.CreateCounter<long>(
-            "http.client.cache.hit",
-            unit: "{hit}",
-            description: "Number of HTTP cache hits");
-
-    /// <summary>
-    /// Total cache misses.
-    /// </summary>
-    public static Counter<long> CacheMiss { get; } =
-        Meter.CreateCounter<long>(
-            "http.client.cache.miss",
-            unit: "{miss}",
-            description: "Number of HTTP cache misses");
+            "http.client.cache.lookup",
+            unit: "{lookup}",
+            description: "Number of HTTP cache lookups");
 
     /// <summary>
     /// Total retry attempts.
@@ -95,13 +87,4 @@ internal static class TurboHttpMetrics
             unit: "{request}",
             description: "Number of currently active HTTP requests");
 
-    /// <summary>
-    /// Pipeline stall events detected by <c>PipelineHealthMonitorStage</c>.
-    /// Tags: <c>stage</c>, <c>direction</c>.
-    /// </summary>
-    public static Counter<long> PipelineStall { get; } =
-        Meter.CreateCounter<long>(
-            "turbohttp.pipeline.stall",
-            unit: "{stall}",
-            description: "Number of pipeline stall events detected");
 }

@@ -110,24 +110,24 @@ internal sealed class HpackEncoder
         return totalWritten;
     }
 
-    /// <summary>
-    /// Encodes a list of header tuples and returns the encoded bytes.
-    /// Convenience overload for Http2RequestEncoder and Http2SizePredictor.
-    /// Uses MemoryPool for the internal buffer.
-    /// </summary>
-    /// <param name="headers">Headers as (name, value) tuples.</param>
-    /// <returns>HPACK-encoded header block.</returns>
     public ReadOnlyMemory<byte> Encode(IReadOnlyList<(string Name, string Value)> headers)
+    {
+        var (owner, length) = EncodePooled(headers);
+        using (owner)
+        {
+            return owner.Memory[..length].ToArray();
+        }
+    }
+
+    public (IMemoryOwner<byte> Owner, int Length) EncodePooled(IReadOnlyList<(string Name, string Value)> headers)
     {
         ArgumentNullException.ThrowIfNull(headers);
 
-        // Rent a generous buffer from MemoryPool
-        using var owner = MemoryPool<byte>.Shared.Rent(4096);
+        var owner = MemoryPool<byte>.Shared.Rent(4096);
         var span = owner.Memory.Span;
 
         var totalWritten = 0;
 
-        // RFC 7541 §6.3: emit pending table size update BEFORE any header field
         if (_pendingTableSizeUpdate.HasValue)
         {
             totalWritten += WriteTableSizeUpdate(_pendingTableSizeUpdate.Value, ref span);
@@ -145,7 +145,7 @@ internal sealed class HpackEncoder
             totalWritten += EncodeHeader(header, ref span, _defaultUseHuffman);
         }
 
-        return owner.Memory[..totalWritten].ToArray();
+        return (owner, totalWritten);
     }
 
     private int EncodeHeader(HpackHeader header, ref Span<byte> output, bool useHuffman)

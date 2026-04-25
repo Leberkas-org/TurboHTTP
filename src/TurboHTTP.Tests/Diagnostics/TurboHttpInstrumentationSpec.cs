@@ -91,29 +91,18 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Equal(200, activity.GetTagItem("http.response.status_code"));
     }
 
-
     [Fact(Timeout = 5000)]
-    public void StartRedirect_should_create_redirect_activity()
+    public void AddRedirectEvent_should_add_event_to_activity()
     {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/start");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
         var uri = new Uri("https://example.com/new-location");
 
-        var activity = TurboHttpInstrumentation.StartRedirect(uri, 301);
+        TurboHttpInstrumentation.AddRedirectEvent(activity, uri, 301);
 
-        Assert.NotNull(activity);
-        Assert.Equal("TurboHTTP.Redirect", activity.OperationName);
-        Assert.Equal(ActivityKind.Client, activity.Kind);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void StartRedirect_should_set_tags()
-    {
-        var uri = new Uri("https://example.com/redirected");
-
-        var activity = TurboHttpInstrumentation.StartRedirect(uri, 302);
-
-        Assert.NotNull(activity);
-        Assert.Equal(302, activity.GetTagItem("http.response.status_code"));
-        Assert.Equal("https://example.com/redirected", activity.GetTagItem("url.full"));
+        var evt = Assert.Single(activity.Events, e => e.Name == "http.redirect");
+        Assert.Equal(301, evt.Tags.First(t => t.Key == "http.response.status_code").Value);
+        Assert.Equal("https://example.com/new-location", evt.Tags.First(t => t.Key == "url.full").Value);
     }
 
     [Theory]
@@ -122,188 +111,99 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     [InlineData(303)]
     [InlineData(307)]
     [InlineData(308)]
-    public void StartRedirect_should_record_correct_status_code(int statusCode)
+    public void AddRedirectEvent_should_record_correct_status_code(int statusCode)
     {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/start");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
         var uri = new Uri("https://example.com/target");
 
-        var activity = TurboHttpInstrumentation.StartRedirect(uri, statusCode);
+        TurboHttpInstrumentation.AddRedirectEvent(activity, uri, statusCode);
 
-        Assert.NotNull(activity);
-        Assert.Equal(statusCode, activity.GetTagItem("http.response.status_code"));
+        var evt = Assert.Single(activity.Events, e => e.Name == "http.redirect");
+        Assert.Equal(statusCode, evt.Tags.First(t => t.Key == "http.response.status_code").Value);
     }
 
     [Fact(Timeout = 5000)]
-    public void MultipleRedirectHops_should_produce_separate_activities()
+    public void MultipleRedirectEvents_should_be_recorded_on_same_activity()
     {
-        _activities.Clear();
-
-        var hop1 = TurboHttpInstrumentation.StartRedirect(new Uri("https://a.com/1"), 301);
-        hop1?.Stop();
-        var hop2 = TurboHttpInstrumentation.StartRedirect(new Uri("https://b.com/2"), 302);
-        hop2?.Stop();
-        var hop3 = TurboHttpInstrumentation.StartRedirect(new Uri("https://c.com/3"), 307);
-        hop3?.Stop();
-
-        var redirectActivities = _activities
-            .Where(a => a.OperationName == "TurboHTTP.Redirect")
-            .ToList();
-
-        Assert.Equal(3, redirectActivities.Count);
-        Assert.Equal("https://a.com/1", redirectActivities[0].GetTagItem("url.full"));
-        Assert.Equal("https://b.com/2", redirectActivities[1].GetTagItem("url.full"));
-        Assert.Equal("https://c.com/3", redirectActivities[2].GetTagItem("url.full"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void RedirectSpans_should_parent_under_root_activity()
-    {
-        _activities.Clear();
-
-        // Simulate the pattern used by TracingBidiStage + RedirectBidiStage:
-        // root activity is started and set as Activity.Current
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/start");
-        var rootActivity = TurboHttpInstrumentation.StartRequest(request);
-        Assert.NotNull(rootActivity);
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        // Redirect stage parents under root by setting Activity.Current
-        var previous = Activity.Current;
-        Activity.Current = rootActivity;
-        var redirectActivity = TurboHttpInstrumentation.StartRedirect(
-            new Uri("https://example.com/redirect"), 301);
-        Assert.NotNull(redirectActivity);
-        Assert.Equal(rootActivity.Id, redirectActivity.ParentId);
-        redirectActivity.Stop();
-        Activity.Current = previous;
+        TurboHttpInstrumentation.AddRedirectEvent(activity, new Uri("https://a.com/1"), 301);
+        TurboHttpInstrumentation.AddRedirectEvent(activity, new Uri("https://b.com/2"), 302);
+        TurboHttpInstrumentation.AddRedirectEvent(activity, new Uri("https://c.com/3"), 307);
 
-        rootActivity.Stop();
+        var redirectEvents = activity.Events.Where(e => e.Name == "http.redirect").ToList();
+        Assert.Equal(3, redirectEvents.Count);
     }
 
     [Fact(Timeout = 5000)]
-    public void StartRetry_should_create_retry_activity()
+    public void AddRetryEvent_should_add_event_to_activity()
     {
-        var activity = TurboHttpInstrumentation.StartRetry(1);
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        Assert.NotNull(activity);
-        Assert.Equal("TurboHTTP.Retry", activity.OperationName);
-        Assert.Equal(ActivityKind.Client, activity.Kind);
-    }
+        TurboHttpInstrumentation.AddRetryEvent(activity, 1);
 
-    [Fact(Timeout = 5000)]
-    public void StartRetry_should_set_resend_count_tag()
-    {
-        var activity = TurboHttpInstrumentation.StartRetry(3);
-
-        Assert.NotNull(activity);
-        Assert.Equal(3, activity.GetTagItem("http.resend_count"));
+        var evt = Assert.Single(activity.Events, e => e.Name == "http.retry");
+        Assert.Equal(1, evt.Tags.First(t => t.Key == "http.resend_count").Value);
     }
 
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
-    public void StartRetry_should_have_correct_attempt_number(int attempt)
+    public void AddRetryEvent_should_have_correct_attempt_number(int attempt)
     {
-        var activity = TurboHttpInstrumentation.StartRetry(attempt);
-
-        Assert.NotNull(activity);
-        Assert.Equal(attempt, activity.GetTagItem("http.resend_count"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void MultipleRetryAttempts_should_produce_separate_activities()
-    {
-        _activities.Clear();
-
-        var retry1 = TurboHttpInstrumentation.StartRetry(1);
-        retry1?.Stop();
-        var retry2 = TurboHttpInstrumentation.StartRetry(2);
-        retry2?.Stop();
-
-        var retryActivities = _activities
-            .Where(a => a.OperationName == "TurboHTTP.Retry")
-            .ToList();
-
-        Assert.Equal(2, retryActivities.Count);
-        Assert.Equal(1, retryActivities[0].GetTagItem("http.resend_count"));
-        Assert.Equal(2, retryActivities[1].GetTagItem("http.resend_count"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void RetrySpans_should_parent_under_root_activity()
-    {
-        _activities.Clear();
-
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
-        var rootActivity = TurboHttpInstrumentation.StartRequest(request);
-        Assert.NotNull(rootActivity);
-
-        var previous = Activity.Current;
-        Activity.Current = rootActivity;
-        var retryActivity = TurboHttpInstrumentation.StartRetry(1);
-        Assert.NotNull(retryActivity);
-        Assert.Equal(rootActivity.Id, retryActivity.ParentId);
-        retryActivity.Stop();
-        Activity.Current = previous;
-
-        rootActivity.Stop();
-    }
-
-    [Fact(Timeout = 5000)]
-    public void StartCacheLookup_should_create_cache_lookup_activity()
-    {
-        var uri = new Uri("https://example.com/cached");
-
-        var activity = TurboHttpInstrumentation.StartCacheLookup(uri);
-
-        Assert.NotNull(activity);
-        Assert.Equal("TurboHTTP.CacheLookup", activity.OperationName);
-        Assert.Equal(ActivityKind.Client, activity.Kind);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void StartCacheLookup_should_set_url_tag()
-    {
-        var uri = new Uri("https://example.com/resource");
-
-        var activity = TurboHttpInstrumentation.StartCacheLookup(uri);
-
-        Assert.NotNull(activity);
-        Assert.Equal("https://example.com/resource", activity.GetTagItem("url.full"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void CacheLookup_hit_should_set_tag()
-    {
-        var uri = new Uri("https://example.com/cached");
-        var activity = TurboHttpInstrumentation.StartCacheLookup(uri)!;
-
-        // Simulate what CacheBidiStage does on a cache hit
-        activity.SetTag("cache.hit", true);
-
-        Assert.Equal(true, activity.GetTagItem("cache.hit"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void CacheLookup_miss_should_set_tag()
-    {
-        var uri = new Uri("https://example.com/uncached");
-        var activity = TurboHttpInstrumentation.StartCacheLookup(uri)!;
-
-        // Simulate what CacheBidiStage does on a cache miss
-        activity.SetTag("cache.hit", false);
-
-        Assert.Equal(false, activity.GetTagItem("cache.hit"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void SetError_should_set_otel_status_code()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/fail");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        TurboHttpInstrumentation.SetError(activity, new HttpRequestException("Connection refused"));
+        TurboHttpInstrumentation.AddRetryEvent(activity, attempt);
 
-        Assert.Equal("ERROR", activity.GetTagItem("otel.status_code"));
+        var evt = Assert.Single(activity.Events, e => e.Name == "http.retry");
+        Assert.Equal(attempt, evt.Tags.First(t => t.Key == "http.resend_count").Value);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void MultipleRetryEvents_should_be_recorded_on_same_activity()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        TurboHttpInstrumentation.AddRetryEvent(activity, 1);
+        TurboHttpInstrumentation.AddRetryEvent(activity, 2);
+
+        var retryEvents = activity.Events.Where(e => e.Name == "http.retry").ToList();
+        Assert.Equal(2, retryEvents.Count);
+        Assert.Equal(1, retryEvents[0].Tags.First(t => t.Key == "http.resend_count").Value);
+        Assert.Equal(2, retryEvents[1].Tags.First(t => t.Key == "http.resend_count").Value);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void AddCacheLookupEvent_should_add_event_to_activity()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/cached");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+        var uri = new Uri("https://example.com/cached");
+
+        TurboHttpInstrumentation.AddCacheLookupEvent(activity, uri, true);
+
+        var evt = Assert.Single(activity.Events, e => e.Name == "http.cache_lookup");
+        Assert.Equal("https://example.com/cached", evt.Tags.First(t => t.Key == "url.full").Value);
+        Assert.Equal(true, evt.Tags.First(t => t.Key == "cache.hit").Value);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void AddCacheLookupEvent_miss_should_set_hit_false()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/uncached");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+        var uri = new Uri("https://example.com/uncached");
+
+        TurboHttpInstrumentation.AddCacheLookupEvent(activity, uri, false);
+
+        var evt = Assert.Single(activity.Events, e => e.Name == "http.cache_lookup");
+        Assert.Equal(false, evt.Tags.First(t => t.Key == "cache.hit").Value);
     }
 
     [Fact(Timeout = 5000)]
@@ -341,6 +241,18 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     }
 
     [Fact(Timeout = 5000)]
+    public void SetError_should_not_set_redundant_otel_status_code_tag()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/fail");
+        var activity = TurboHttpInstrumentation.StartRequest(request)!;
+
+        TurboHttpInstrumentation.SetError(activity, new HttpRequestException("fail"));
+
+        Assert.Null(activity.GetTagItem("otel.status_code"));
+        Assert.Equal(ActivityStatusCode.Error, activity.Status);
+    }
+
+    [Fact(Timeout = 5000)]
     public void SetError_on_root_activity_should_set_all_attributes()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/error");
@@ -350,7 +262,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         TurboHttpInstrumentation.SetError(activity, exception);
 
         Assert.Equal("TurboHTTP.Request", activity.OperationName);
-        Assert.Equal("ERROR", activity.GetTagItem("otel.status_code"));
         Assert.Equal(typeof(HttpRequestException).FullName, activity.GetTagItem("exception.type"));
         Assert.Equal("Connection reset by peer", activity.GetTagItem("exception.message"));
         Assert.Equal(ActivityStatusCode.Error, activity.Status);
@@ -359,14 +270,11 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void StartRequest_should_return_null_when_no_listener()
     {
-        // Dispose our listener so there are none active
         _listener.Dispose();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         TurboHttpInstrumentation.StartRequest(request);
 
-        // Activity may or may not be null depending on other test listeners,
-        // but verify our source name is correct
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.SourceName);
     }
 
@@ -376,7 +284,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        // Store activity the way TracingBidiStage does
         request.Options.Set(TurboHttpInstrumentation.RequestActivityKey, activity);
 
         Assert.True(request.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var retrieved));
@@ -384,57 +291,29 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     }
 
     [Fact(Timeout = 5000)]
-    public void FullLifecycle_with_redirect_and_retry()
+    public void FullLifecycle_with_redirect_and_retry_events()
     {
         _activities.Clear();
 
-        // 1. Root request starts
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/start");
         var rootActivity = TurboHttpInstrumentation.StartRequest(request)!;
         request.Options.Set(TurboHttpInstrumentation.RequestActivityKey, rootActivity);
 
-        // 2. First redirect hop (301)
-        var prev = Activity.Current;
-        Activity.Current = rootActivity;
-        var redirect1 = TurboHttpInstrumentation.StartRedirect(new Uri("https://example.com/hop1"), 301)!;
-        redirect1.Stop();
-        Activity.Current = prev;
+        TurboHttpInstrumentation.AddRedirectEvent(rootActivity, new Uri("https://example.com/hop1"), 301);
+        TurboHttpInstrumentation.AddRetryEvent(rootActivity, 1);
+        TurboHttpInstrumentation.AddRedirectEvent(rootActivity, new Uri("https://example.com/hop2"), 302);
+        TurboHttpInstrumentation.AddCacheLookupEvent(rootActivity, new Uri("https://example.com/hop2"), false);
 
-        // 3. Retry after transient failure
-        prev = Activity.Current;
-        Activity.Current = rootActivity;
-        var retry1 = TurboHttpInstrumentation.StartRetry(1)!;
-        retry1.Stop();
-        Activity.Current = prev;
-
-        // 4. Second redirect hop (302)
-        prev = Activity.Current;
-        Activity.Current = rootActivity;
-        var redirect2 = TurboHttpInstrumentation.StartRedirect(new Uri("https://example.com/hop2"), 302)!;
-        redirect2.Stop();
-        Activity.Current = prev;
-
-        // 5. Cache lookup (miss)
-        prev = Activity.Current;
-        Activity.Current = rootActivity;
-        var cacheLookup = TurboHttpInstrumentation.StartCacheLookup(new Uri("https://example.com/hop2"))!;
-        cacheLookup.SetTag("cache.hit", false);
-        cacheLookup.Stop();
-        Activity.Current = prev;
-
-        // 6. Response received
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         TurboHttpInstrumentation.SetResponse(rootActivity, response);
         rootActivity.Stop();
 
-        // Verify span counts
-        Assert.Equal(5, _activities.Count); // root + 2 redirects + 1 retry + 1 cache
-        Assert.Single(_activities, a => a.OperationName == "TurboHTTP.Request");
-        Assert.Equal(2, _activities.Count(a => a.OperationName == "TurboHTTP.Redirect"));
-        Assert.Single(_activities, a => a.OperationName == "TurboHTTP.Retry");
-        Assert.Single(_activities, a => a.OperationName == "TurboHTTP.CacheLookup");
-
-        // Verify root span has response status
+        Assert.Single(_activities);
+        var events = rootActivity.Events.ToList();
+        Assert.Equal(4, events.Count);
+        Assert.Equal(2, events.Count(e => e.Name == "http.redirect"));
+        Assert.Single(events, e => e.Name == "http.retry");
+        Assert.Single(events, e => e.Name == "http.cache_lookup");
         Assert.Equal(200, rootActivity.GetTagItem("http.response.status_code"));
     }
 
@@ -447,7 +326,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var rootActivity = TurboHttpInstrumentation.StartRequest(request)!;
         request.Options.Set(TurboHttpInstrumentation.RequestActivityKey, rootActivity);
 
-        // Simulate pipeline failure
         var exception = new HttpRequestException("Connection refused");
         TurboHttpInstrumentation.SetError(rootActivity, exception);
         rootActivity.Stop();
@@ -455,7 +333,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         Assert.Single(_activities);
         Assert.Equal("TurboHTTP.Request", rootActivity.OperationName);
         Assert.Equal(ActivityStatusCode.Error, rootActivity.Status);
-        Assert.Equal("ERROR", rootActivity.GetTagItem("otel.status_code"));
         Assert.Equal("Connection refused", rootActivity.GetTagItem("exception.message"));
         Assert.True(rootActivity.IsStopped);
     }
@@ -470,7 +347,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
 
         Assert.True(request.Headers.Contains("traceparent"));
         var traceparent = request.Headers.GetValues("traceparent").Single();
-        // W3C format: 00-{traceId}-{spanId}-{flags}
         Assert.Matches(@"^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$", traceparent);
         Assert.Contains(activity.TraceId.ToString(), traceparent);
         Assert.Contains(activity.SpanId.ToString(), traceparent);
@@ -506,7 +382,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        // Our listener samples with AllDataAndRecorded, so Recorded should be set
         TurboHttpInstrumentation.InjectTraceContext(activity, request);
 
         var traceparent = request.Headers.GetValues("traceparent").Single();
@@ -522,7 +397,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
 
         TurboHttpInstrumentation.InjectTraceContext(activity, request);
 
-        // TryAddWithoutValidation won't overwrite — both values present
         var values = request.Headers.GetValues("traceparent").ToList();
         Assert.Contains("00-11111111111111111111111111111111-2222222222222222-01", values);
     }
@@ -538,7 +412,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     {
         Assert.False(string.IsNullOrEmpty(TurboHttpInstrumentation.Source.Version));
     }
-
 
     [Fact(Timeout = 5000)]
     public void RedactUrl_should_replace_query_with_asterisk()
@@ -702,7 +575,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void IsTracingActive_should_return_true_when_listener_present()
     {
-        // Our listener is already subscribed in constructor
         Assert.True(TurboHttpInstrumentation.IsTracingActive);
     }
 
@@ -792,7 +664,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
         var activity = TurboHttpInstrumentation.StartRequest(request)!;
 
-        // Clear Activity.Current before injecting
         var prev = Activity.Current;
         Activity.Current = null;
         try
@@ -822,7 +693,6 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     public void Source_should_be_disposable()
     {
         Assert.NotNull(TurboHttpInstrumentation.Source);
-        // Source is static and shared, verify it has Name and Version
         Assert.Equal("TurboHTTP", TurboHttpInstrumentation.Source.Name);
     }
 
