@@ -95,6 +95,10 @@ internal sealed class TcpPumpManager
         {
             return;
         }
+        catch (AbruptCloseException)
+        {
+            closeKind = TlsCloseKind.AbruptClose;
+        }
         catch (ChannelClosedException ex) when (ex.InnerException is AbruptCloseException)
         {
             closeKind = TlsCloseKind.AbruptClose;

@@ -202,4 +202,98 @@ public sealed class ConnectionHandleSpec
 
         Assert.Equal(ActorRefs.Nobody, handle.ConnectionActor);
     }
+
+    [Fact(Timeout = 5000)]
+    public void Equals_should_return_false_for_null()
+    {
+        var handle = CreateHandle();
+
+        Assert.False(handle.Equals(null));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Equals_should_return_true_for_same_instance()
+    {
+        var handle = CreateHandle();
+
+        Assert.True(handle.Equals(handle));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Equals_should_return_false_for_different_key()
+    {
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var key1 = new RequestEndpoint
+        {
+            Host = "host-a",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version20
+        };
+        var key2 = new RequestEndpoint
+        {
+            Host = "host-b",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version20
+        };
+
+        var handle1 = new ConnectionHandle(outbound.Writer, inbound.Reader, key1, ActorRefs.Nobody);
+        var handle2 = new ConnectionHandle(outbound.Writer, inbound.Reader, key2, ActorRefs.Nobody);
+
+        Assert.NotEqual(handle1, handle2);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void GetHashCode_should_be_consistent()
+    {
+        var handle = CreateHandle();
+
+        var hash1 = handle.GetHashCode();
+        var hash2 = handle.GetHashCode();
+
+        Assert.Equal(hash1, hash2);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void UpdateMaxConcurrentStreams_should_accept_zero()
+    {
+        var handle = CreateHandle();
+
+        handle.UpdateMaxConcurrentStreams(0);
+
+        Assert.Equal(0, handle.MaxConcurrentStreams);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void UpdateMaxConcurrentStreams_should_accept_max_value()
+    {
+        var handle = CreateHandle();
+
+        handle.UpdateMaxConcurrentStreams(int.MaxValue);
+
+        Assert.Equal(int.MaxValue, handle.MaxConcurrentStreams);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Equality_operator_should_match_equals()
+    {
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var key = new RequestEndpoint
+        {
+            Host = "localhost",
+            Port = 443,
+            Scheme = "https",
+            Version = HttpVersion.Version20
+        };
+
+        var handle1 = new ConnectionHandle(outbound.Writer, inbound.Reader, key, ActorRefs.Nobody);
+        var handle2 = new ConnectionHandle(outbound.Writer, inbound.Reader, key, ActorRefs.Nobody);
+
+        Assert.True(handle1 == handle2);
+        Assert.False(handle1 != handle2);
+    }
 }

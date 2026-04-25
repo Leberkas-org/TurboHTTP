@@ -402,6 +402,117 @@ public sealed class TcpConnectionManagerActorSpec : TestKit
     }
 
     [Fact(Timeout = 5000)]
+    public async Task Acquire_with_already_cancelled_token_should_be_ignored_by_actor()
+    {
+        var actor = CreateActor();
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // UnsafeRegister fires synchronously for already-cancelled tokens, so TCS is completed
+        // before actor.Tell. The actor receives a completed TCS and immediately returns.
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token));
+
+        // Actor must still be alive and functional
+        var lease = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(lease);
+
+        lease.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Established_with_cancelled_caller_should_release_back_to_pool()
+    {
+        var slowFactory = new SlowConnectionFactory(TimeSpan.FromMilliseconds(200));
+        var actor = Sys.ActorOf(Props.Create(() =>
+            new TcpConnectionManagerActor(slowFactory, TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan,
+                maxConnectionsPerServer: 1)));
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(30));
+
+        // acquire1: cancelled before factory completes; establishing slot held
+        var task1 = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+
+        // acquire2: queued because max-connections=1 slot is being established
+        var task2 = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task1);
+
+        // When factory resolves, actor calls OnEstablished → TrySetResult(tcs1) fails →
+        // OnRelease → direct handoff to acquire2
+        var lease = await task2;
+        Assert.NotNull(lease);
+        Assert.True(lease.IsAlive);
+
+        lease.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Acquire_should_skip_dead_idle_lease_and_establish_fresh_connection()
+    {
+        var actor = CreateActor();
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version11);
+
+        var lease1 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+
+        // Release to idle queue
+        actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
+
+        // Wait for Release to be processed
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        // Externally dispose the lease — IsAlive becomes false (stale idle)
+        lease1.Dispose();
+
+        // Acquire: scans idle, finds stale lease (IsAlive=false), disposes it, establishes fresh
+        var lease2 = await TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+        Assert.NotSame(lease1, lease2);
+        Assert.True(lease2.IsAlive);
+
+        lease2.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task EstablishFailed_should_cascade_to_pending_waiter()
+    {
+        var failOnce = new FailOnceConnectionFactory();
+        var actor = Sys.ActorOf(Props.Create(() =>
+            new TcpConnectionManagerActor(failOnce, TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan,
+                maxConnectionsPerServer: 1)));
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint(HttpVersion.Version20);
+
+        // acquire1: EstablishAsync fails → OnFailed → tcs1 faulted → ServeNextPending
+        var task1 = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+
+        // Small delay so acquire1's Establish increments Establishing before acquire2 arrives
+        await Task.Delay(10, TestContext.Current.CancellationToken);
+
+        // acquire2: queued (establishing=1, max=1) → served after OnFailed cascades
+        var task2 = TcpConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAnyAsync<IOException>(() => task1);
+
+        var lease = await task2;
+        Assert.NotNull(lease);
+        Assert.True(lease.IsAlive);
+
+        lease.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
     public async Task Evicted_idle_connection_should_not_be_reused()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));

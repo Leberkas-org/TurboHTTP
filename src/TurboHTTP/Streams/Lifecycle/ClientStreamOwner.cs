@@ -49,6 +49,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         TimeSpan.FromMilliseconds(
             Math.Min(InitialBackoff.TotalMilliseconds * Math.Pow(BackoffMultiplier, attempt),
                 MaxBackoff.TotalMilliseconds));
+
     private static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
 
     private const string RetryTimerKey = "retry-create";

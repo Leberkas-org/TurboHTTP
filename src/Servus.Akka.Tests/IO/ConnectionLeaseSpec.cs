@@ -507,4 +507,115 @@ public sealed class ConnectionLeaseSpec
         await disposeTask;
         Assert.True(token.IsCancellationRequested);
     }
+
+    [Fact(Timeout = 5000)]
+    public async Task IsExpired_should_consider_zero_timespan_as_expired_after_tick()
+    {
+        var handle = CreateHandle(HttpVersion.Version11);
+        using var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        await Task.Delay(2, TestContext.Current.CancellationToken);
+        Assert.True(lease.IsExpired(TimeSpan.Zero));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void IsExpired_should_treat_minus_one_ms_as_infinite()
+    {
+        var handle = CreateHandle(HttpVersion.Version11);
+        using var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        // TimeSpan.FromMilliseconds(-1) == Timeout.InfiniteTimeSpan
+        Assert.False(lease.IsExpired(TimeSpan.FromMilliseconds(-1)));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void MaxConcurrentStreams_should_default_to_100_for_unknown_major_version()
+    {
+        var handle = CreateHandle(new Version(4, 0));
+        using var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        Assert.Equal(100, lease.MaxConcurrentStreams);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void MaxConcurrentStreams_should_default_to_6_for_http11_minor_variants()
+    {
+        var handle = CreateHandle(new Version(1, 2));
+        using var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        Assert.Equal(6, lease.MaxConcurrentStreams);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void HasAvailableSlot_should_be_false_at_exact_capacity_boundary()
+    {
+        var handle = CreateHandle(HttpVersion.Version20);
+        using var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+        lease.UpdateMaxConcurrentStreams(3);
+
+        lease.MarkBusy();
+        lease.MarkBusy();
+        Assert.True(lease.HasAvailableSlot);
+
+        lease.MarkBusy();
+        Assert.False(lease.HasAvailableSlot);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void MarkBusy_after_dispose_should_not_throw()
+    {
+        var handle = CreateHandle(HttpVersion.Version11);
+        var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        lease.Dispose();
+        lease.MarkBusy();
+
+        Assert.Equal(1, lease.ActiveStreams);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void MarkIdle_after_dispose_should_not_throw()
+    {
+        var handle = CreateHandle(HttpVersion.Version11);
+        var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        lease.MarkBusy();
+        lease.Dispose();
+        lease.MarkIdle();
+
+        Assert.Equal(0, lease.ActiveStreams);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void MarkNoReuse_after_dispose_should_not_throw()
+    {
+        var handle = CreateHandle(HttpVersion.Version11);
+        var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        lease.Dispose();
+        lease.MarkNoReuse();
+
+        Assert.False(lease.Reusable);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void UpdateMaxConcurrentStreams_after_dispose_should_not_throw()
+    {
+        var handle = CreateHandle(HttpVersion.Version11);
+        var state = CreateState();
+        var lease = new ConnectionLease(handle, state);
+
+        lease.Dispose();
+        lease.UpdateMaxConcurrentStreams(50);
+
+        Assert.Equal(50, lease.MaxConcurrentStreams);
+    }
 }

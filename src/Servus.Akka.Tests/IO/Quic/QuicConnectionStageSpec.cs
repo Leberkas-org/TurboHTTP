@@ -94,4 +94,29 @@ public sealed class QuicConnectionStageSpec
         Assert.NotSame(stage1, stage2);
         Assert.NotSame(stage1.Shape, stage2.Shape);
     }
+
+    [Fact(Timeout = 5000)]
+    public void Stage_inlet_should_be_named_correctly()
+    {
+        var stage = new QuicConnectionStage(ActorRefs.Nobody);
+
+        Assert.Equal("QuicConnection.In", stage.Shape.Inlet.Name);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Stage_outlet_should_be_named_correctly()
+    {
+        var stage = new QuicConnectionStage(ActorRefs.Nobody);
+
+        Assert.Equal("QuicConnection.Out", stage.Shape.Outlet.Name);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Stage_should_have_single_inlet_and_outlet()
+    {
+        var stage = new QuicConnectionStage(ActorRefs.Nobody);
+
+        Assert.Single(stage.Shape.Inlets);
+        Assert.Single(stage.Shape.Outlets);
+    }
 }

@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Servus.Akka.IO;
+using Servus.Akka.IO.Quic;
 using Servus.Akka.Tests.Utils;
 
 namespace Servus.Akka.Tests.IO;
@@ -183,5 +184,85 @@ public sealed class ClientStateSpec
 
         state.Dispose();
         state.Dispose(); // Should not throw
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ClientState_should_create_write_only_channels()
+    {
+        var stream = new MemoryStream();
+        var state = new ClientState(stream, null, null, StreamDirection.WriteOnly);
+
+        Assert.Equal(StreamDirection.WriteOnly, state.Direction);
+        Assert.NotNull(state.OutboundReader);
+        Assert.NotNull(state.OutboundWriter);
+
+        var buf = NetworkBufferTestExtensions.FromArray([1, 2, 3]);
+        Assert.True(state.OutboundWriter.TryWrite(buf));
+
+        Assert.False(state.InboundWriter.TryWrite(NetworkBufferTestExtensions.FromArray([4, 5, 6])));
+
+        state.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ClientState_should_create_read_only_channels()
+    {
+        var stream = new MemoryStream();
+        var state = new ClientState(stream, null, null, StreamDirection.ReadOnly);
+
+        Assert.Equal(StreamDirection.ReadOnly, state.Direction);
+        Assert.NotNull(state.InboundReader);
+        Assert.NotNull(state.InboundWriter);
+
+        var buf = NetworkBufferTestExtensions.FromArray([1, 2, 3]);
+        Assert.True(state.InboundWriter.TryWrite(buf));
+
+        Assert.False(state.OutboundWriter.TryWrite(NetworkBufferTestExtensions.FromArray([4, 5, 6])));
+
+        state.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ClientState_write_only_should_pre_complete_inbound_channel()
+    {
+        var stream = new MemoryStream();
+        var state = new ClientState(stream, null, null, StreamDirection.WriteOnly);
+
+        Assert.True(state.InboundReader.Completion.IsCompleted);
+
+        state.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ClientState_read_only_should_pre_complete_outbound_channel()
+    {
+        var stream = new MemoryStream();
+        var state = new ClientState(stream, null, null, StreamDirection.ReadOnly);
+
+        Assert.True(state.OutboundReader.Completion.IsCompleted);
+
+        state.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ClientState_should_default_to_bidirectional_direction()
+    {
+        var stream = new MemoryStream();
+        var state = new ClientState(stream, null, null);
+
+        Assert.Equal(StreamDirection.Bidirectional, state.Direction);
+
+        state.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ClientState_should_expose_on_writes_complete_as_null_by_default()
+    {
+        var stream = new MemoryStream();
+        var state = new ClientState(stream, null, null);
+
+        Assert.Null(state.OnWritesComplete);
+
+        state.Dispose();
     }
 }

@@ -228,6 +228,191 @@ public sealed class ClientByteMoverSpec
         Assert.True(onCloseCalled);
     }
 
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_use_http3_factory_for_routed_buffers()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var stream = new MemoryStream([0xAB, 0xCD], writable: false);
+        var state = new ClientState(stream, inbound, outbound);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await ClientByteMover.MoveStreamToChannel(state, () => { }, cts.Token, ClientByteMover.Http3Factory);
+
+        var ok = inbound.Reader.TryRead(out var item);
+        Assert.True(ok);
+        Assert.IsType<RoutedNetworkBuffer>(item);
+        Assert.Equal(2, item.Length);
+
+        item.Dispose();
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_handle_alternating_large_small_buffers()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var capturedWrites = new List<byte[]>();
+        var stream = new CapturingStream(capturedWrites);
+        var state = new ClientState(stream, inbound, outbound);
+
+        var largeBuf = NetworkBuffer.Rent(17 * 1024);
+        largeBuf.Memory.Span.Fill(0xAA);
+        largeBuf.Length = 17 * 1024;
+
+        var smallBuf = NetworkBuffer.Rent(100);
+        smallBuf.Memory.Span.Fill(0xBB);
+        smallBuf.Length = 100;
+
+        var largeBuf2 = NetworkBuffer.Rent(17 * 1024);
+        largeBuf2.Memory.Span.Fill(0xCC);
+        largeBuf2.Length = 17 * 1024;
+
+        var smallBuf2 = NetworkBuffer.Rent(100);
+        smallBuf2.Memory.Span.Fill(0xDD);
+        smallBuf2.Length = 100;
+
+        outbound.Writer.TryWrite(largeBuf);
+        outbound.Writer.TryWrite(smallBuf);
+        outbound.Writer.TryWrite(largeBuf2);
+        outbound.Writer.TryWrite(smallBuf2);
+        outbound.Writer.Complete();
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
+
+        Assert.True(capturedWrites.Count >= 3);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_not_invoke_on_writes_complete_on_error()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var callbackInvoked = false;
+        var stream = new FailingStream();
+        var state = new ClientState(stream, inbound, outbound)
+        {
+            OnWritesComplete = () => { callbackInvoked = true; }
+        };
+
+        var buf = NetworkBuffer.Rent(10);
+        buf.Length = 10;
+        outbound.Writer.TryWrite(buf);
+        outbound.Writer.Complete();
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
+
+        Assert.False(callbackInvoked);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_flush_coalesce_before_large_buffer()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var capturedWrites = new List<byte[]>();
+        var stream = new CapturingStream(capturedWrites);
+        var state = new ClientState(stream, inbound, outbound);
+
+        var smallBuf = NetworkBuffer.Rent(100);
+        smallBuf.Memory.Span.Fill(0x11);
+        smallBuf.Length = 100;
+
+        var largeBuf = NetworkBuffer.Rent(17 * 1024);
+        largeBuf.Memory.Span.Fill(0xAA);
+        largeBuf.Length = 17 * 1024;
+
+        outbound.Writer.TryWrite(smallBuf);
+        outbound.Writer.TryWrite(largeBuf);
+        outbound.Writer.Complete();
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
+
+        Assert.True(capturedWrites.Count >= 2);
+        Assert.Equal(100, capturedWrites[0].Length);
+        Assert.Equal(17 * 1024, capturedWrites[1].Length);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_not_invoke_on_writes_complete_on_cancellation()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var callbackInvoked = false;
+        var stream = new SlowStream();
+        var state = new ClientState(stream, inbound, outbound)
+        {
+            OnWritesComplete = () => { callbackInvoked = true; }
+        };
+
+        var buf = NetworkBuffer.Rent(10);
+        buf.Length = 10;
+        outbound.Writer.TryWrite(buf);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        await ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
+
+        Assert.False(callbackInvoked);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_handle_coalesce_buffer_overflow()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var capturedWrites = new List<byte[]>();
+        var stream = new CapturingStream(capturedWrites);
+        var state = new ClientState(stream, inbound, outbound);
+
+        for (var i = 0; i < 200; i++)
+        {
+            var smallBuf = NetworkBuffer.Rent(100);
+            smallBuf.Memory.Span.Fill((byte)(i % 256));
+            smallBuf.Length = 100;
+            outbound.Writer.TryWrite(smallBuf);
+        }
+
+        outbound.Writer.Complete();
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
+
+        var totalBytes = capturedWrites.Sum(w => w.Length);
+        Assert.Equal(20_000, totalBytes);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ClientByteMover_should_call_on_close_exactly_once_on_read_error()
+    {
+        var inbound = Channel.CreateUnbounded<NetworkBuffer>();
+        var outbound = Channel.CreateUnbounded<NetworkBuffer>();
+
+        var stream = new FailingStream();
+        var state = new ClientState(stream, inbound, outbound);
+
+        var closeCount = 0;
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await ClientByteMover.MoveStreamToChannel(state, () => Interlocked.Increment(ref closeCount), cts.Token);
+
+        Assert.Equal(1, closeCount);
+    }
+
     private sealed class CapturingStream(List<byte[]> writes) : Stream
     {
         public override bool CanRead => false;
@@ -245,6 +430,35 @@ public sealed class ClientByteMoverSpec
         {
             writes.Add(buffer.ToArray());
             await Task.CompletedTask;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+    }
+
+    private sealed class SlowStream : Stream
+    {
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken ct = default)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(30), ct);
         }
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();

@@ -492,6 +492,59 @@ public sealed class QuicConnectionManagerActorSpec : TestKit
     }
 
     [Fact(Timeout = 5000)]
+    public async Task Acquire_with_already_cancelled_token_should_be_ignored_by_actor()
+    {
+        var actor = CreateActor();
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint();
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // UnsafeRegister fires synchronously for already-cancelled tokens, so TCS is completed
+        // before actor.Tell. The actor receives a completed TCS and immediately returns.
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token));
+
+        // Actor must still be alive and functional
+        var lease = await QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(lease);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: false));
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Established_with_cancelled_caller_should_release_back_to_pool()
+    {
+        var slowFactory = new SlowQuicConnectionFactory(TimeSpan.FromMilliseconds(200));
+        var actor = Sys.ActorOf(Props.Create(() =>
+            new QuicConnectionManagerActor(slowFactory, TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan,
+                maxConnectionsPerHost: 1)));
+        var options = CreateOptions();
+        var endpoint = CreateEndpoint();
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(30));
+
+        // acquire1: cancelled before factory completes; establishing slot held
+        var task1 = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint, cts.Token);
+
+        // acquire2: queued (max=1, establishing=1) → served after OnEstablished cascades via OnRelease
+        var task2 = QuicConnectionManagerActor.AcquireAsync(actor, options, endpoint,
+            TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task1);
+
+        // When factory resolves, OnEstablished → TrySetResult(tcs1) fails →
+        // OnRelease → pending queue → ServeNextPending / direct handoff for task2
+        var lease = await task2;
+        Assert.NotNull(lease);
+        Assert.True(lease.IsAlive);
+
+        actor.Tell(new QuicConnectionManagerActor.Release(lease, CanReuse: false));
+    }
+
+    [Fact(Timeout = 5000)]
     public async Task Evicted_idle_connection_should_not_be_reused()
     {
         var actor = CreateActor(TimeSpan.FromMilliseconds(50));

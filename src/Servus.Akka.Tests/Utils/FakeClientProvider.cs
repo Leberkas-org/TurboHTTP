@@ -37,7 +37,8 @@ internal sealed class FakeClientProvider(bool blockGetStream = false, byte[]? in
     {
         if (inboundBytes is not null)
         {
-            return Task.FromResult<Stream>(new MemoryStream(inboundBytes));
+            var bytes = inboundBytes;
+            return Task.Run<Stream>(() => new MemoryStream(bytes), ct);
         }
 
         return Task.Delay(Timeout.Infinite, ct).ContinueWith<Stream>(_ =>
