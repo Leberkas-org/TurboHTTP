@@ -217,6 +217,8 @@ namespace TurboHTTP.Diagnostics
     }
     public static class TurboTraceExtensions
     {
+        public static OpenTelemetry.Metrics.MeterProviderBuilder AddTurboHttpInstrumentation(this OpenTelemetry.Metrics.MeterProviderBuilder builder) { }
+        public static OpenTelemetry.Trace.TracerProviderBuilder AddTurboHttpInstrumentation(this OpenTelemetry.Trace.TracerProviderBuilder builder) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.TurboTraceCategory categories = 118, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.ITurboTraceListener listener, TurboHTTP.Diagnostics.TurboTraceCategory categories = 118, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
     }

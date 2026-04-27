@@ -1,8 +1,6 @@
 using System.Threading.Channels;
 using Akka.Actor;
 
-#pragma warning disable CA1416
-
 namespace Servus.Akka.IO.Quic;
 
 public sealed class QuicPumpManager
@@ -15,6 +13,8 @@ public sealed class QuicPumpManager
     {
         _self = self;
     }
+
+    public bool IsAcceptLoopRunning => _inboundAcceptCts is { IsCancellationRequested: false };
 
     public void StartInboundPump(ConnectionHandle handle, long streamTypeValue,
         RequestEndpoint key, int connectionGen, long streamId)

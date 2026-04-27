@@ -4,13 +4,24 @@ internal static class BufferSearch
 {
     internal static int FindCrlfCrlf(ReadOnlySpan<byte> span)
     {
-        for (var i = 0; i <= span.Length - 4; i++)
+        var search = span;
+        var offset = 0;
+
+        while (search.Length >= 4)
         {
-            if (span[i] == '\r' && span[i + 1] == '\n' &&
-                span[i + 2] == '\r' && span[i + 3] == '\n')
+            var idx = search.IndexOf((byte)'\r');
+            if (idx < 0 || idx + 3 >= search.Length)
             {
-                return i;
+                return -1;
             }
+
+            if (search[idx + 1] == '\n' && search[idx + 2] == '\r' && search[idx + 3] == '\n')
+            {
+                return offset + idx;
+            }
+
+            search = search[(idx + 1)..];
+            offset += idx + 1;
         }
 
         return -1;
@@ -18,12 +29,24 @@ internal static class BufferSearch
 
     internal static int FindCrlf(ReadOnlySpan<byte> span, int start)
     {
-        for (var i = start; i < span.Length - 1; i++)
+        var search = span[start..];
+        var offset = start;
+
+        while (search.Length >= 2)
         {
-            if (span[i] == '\r' && span[i + 1] == '\n')
+            var idx = search.IndexOf((byte)'\r');
+            if (idx < 0 || idx + 1 >= search.Length)
             {
-                return i;
+                return -1;
             }
+
+            if (search[idx + 1] == '\n')
+            {
+                return offset + idx;
+            }
+
+            search = search[(idx + 1)..];
+            offset += idx + 1;
         }
 
         return -1;

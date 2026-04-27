@@ -155,28 +155,34 @@ internal static class WellKnownHeaders
             8 => name.SequenceEqual("If-Match"u8) ? "If-Match" :
                  name.SequenceEqual("If-Range"u8) ? "If-Range" :
                  name.SequenceEqual("Location"u8) ? "Location" : System.Text.Encoding.ASCII.GetString(name),
+            9 => name.SequenceEqual("Forwarded"u8) ? "Forwarded" : System.Text.Encoding.ASCII.GetString(name),
             10 => name.SequenceEqual("Connection"u8) ? "Connection" :
+                  name.SequenceEqual("Keep-Alive"u8) ? "Keep-Alive" :
                   name.SequenceEqual("Set-Cookie"u8) ? "Set-Cookie" :
                   name.SequenceEqual("User-Agent"u8) ? "User-Agent" : System.Text.Encoding.ASCII.GetString(name),
             11 => name.SequenceEqual("Retry-After"u8) ? "Retry-After" :
                   name.SequenceEqual("Set-Cookie2"u8) ? "Set-Cookie2" : System.Text.Encoding.ASCII.GetString(name),
             12 => name.SequenceEqual("Content-Type"u8) ? "Content-Type" :
-                  name.SequenceEqual("Last-Modified"u8) ? "Last-Modified" :
-                  name.SequenceEqual("Max-Forwards"u8) ? "Max-Forwards" : System.Text.Encoding.ASCII.GetString(name),
+                  name.SequenceEqual("Max-Forwards"u8) ? "Max-Forwards" :
+                  name.SequenceEqual("X-Request-Id"u8) ? "X-Request-Id" : System.Text.Encoding.ASCII.GetString(name),
             13 => name.SequenceEqual("Authorization"u8) ? "Authorization" :
                   name.SequenceEqual("Cache-Control"u8) ? "Cache-Control" :
-                  name.SequenceEqual("Content-Range"u8) ? "Content-Range" : System.Text.Encoding.ASCII.GetString(name),
+                  name.SequenceEqual("Content-Range"u8) ? "Content-Range" :
+                  name.SequenceEqual("Last-Modified"u8) ? "Last-Modified" :
+                  name.SequenceEqual("If-None-Match"u8) ? "If-None-Match" : System.Text.Encoding.ASCII.GetString(name),
             14 => name.SequenceEqual("Accept-Charset"u8) ? "Accept-Charset" :
                   name.SequenceEqual("Accept-Ranges"u8) ? "Accept-Ranges" :
                   name.SequenceEqual("Content-Length"u8) ? "Content-Length" : System.Text.Encoding.ASCII.GetString(name),
             15 => name.SequenceEqual("Accept-Encoding"u8) ? "Accept-Encoding" :
-                  name.SequenceEqual("Accept-Language"u8) ? "Accept-Language" : System.Text.Encoding.ASCII.GetString(name),
+                  name.SequenceEqual("Accept-Language"u8) ? "Accept-Language" :
+                  name.SequenceEqual("X-Forwarded-For"u8) ? "X-Forwarded-For" : System.Text.Encoding.ASCII.GetString(name),
             16 => name.SequenceEqual("Content-Encoding"u8) ? "Content-Encoding" :
                   name.SequenceEqual("Content-Language"u8) ? "Content-Language" :
                   name.SequenceEqual("Content-Location"u8) ? "Content-Location" :
                   name.SequenceEqual("WWW-Authenticate"u8) ? "WWW-Authenticate" : System.Text.Encoding.ASCII.GetString(name),
             17 => name.SequenceEqual("If-Modified-Since"u8) ? "If-Modified-Since" :
-                  name.SequenceEqual("Transfer-Encoding"u8) ? "Transfer-Encoding" : System.Text.Encoding.ASCII.GetString(name),
+                  name.SequenceEqual("Transfer-Encoding"u8) ? "Transfer-Encoding" :
+                  name.SequenceEqual("X-Forwarded-Proto"u8) ? "X-Forwarded-Proto" : System.Text.Encoding.ASCII.GetString(name),
             18 => name.SequenceEqual("Proxy-Authenticate"u8) ? "Proxy-Authenticate" : System.Text.Encoding.ASCII.GetString(name),
             19 => name.SequenceEqual("If-Unmodified-Since"u8) ? "If-Unmodified-Since" :
                   name.SequenceEqual("Proxy-Authorization"u8) ? "Proxy-Authorization" : System.Text.Encoding.ASCII.GetString(name),
@@ -216,6 +222,10 @@ internal static class WellKnownHeaders
                   value.SequenceEqual("no-store"u8) ? "no-store" :
                   value.SequenceEqual("trailers"u8) ? "trailers" : System.Text.Encoding.ASCII.GetString(value),
             10 => value.SequenceEqual("keep-alive"u8) ? "keep-alive" : System.Text.Encoding.ASCII.GetString(value),
+            11 => value.SequenceEqual("max-age=300"u8) ? "max-age=300" : System.Text.Encoding.ASCII.GetString(value),
+            14 => value.SequenceEqual("max-age=604800"u8) ? "max-age=604800" : System.Text.Encoding.ASCII.GetString(value),
+            16 => value.SequenceEqual("application/json"u8) ? "application/json" : System.Text.Encoding.ASCII.GetString(value),
+            24 => value.SequenceEqual("application/octet-stream"u8) ? "application/octet-stream" : System.Text.Encoding.ASCII.GetString(value),
             _ => System.Text.Encoding.ASCII.GetString(value),
         };
 

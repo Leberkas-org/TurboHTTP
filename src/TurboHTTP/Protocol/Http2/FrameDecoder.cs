@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Buffers.Binary;
 using Servus.Akka.IO;
 
@@ -323,8 +324,10 @@ internal sealed class FrameDecoder : IDisposable
                 Http2ErrorCode.FrameSizeError);
         }
 
-        var list = new List<(SettingsParameter, uint)>();
+        var entryCount = payload.Length / SettingsEntrySize;
+        var array = ArrayPool<(SettingsParameter, uint)>.Shared.Rent(Math.Max(entryCount, 1));
         var span = payload.Span;
+        var count = 0;
 
         for (var i = 0; i + SettingsEntrySize <= span.Length; i += SettingsEntrySize)
         {
@@ -333,13 +336,21 @@ internal sealed class FrameDecoder : IDisposable
 
             if (key == SettingsParameter.MaxFrameSize && value is < MinMaxFrameSize or > MaxMaxFrameSize)
             {
+                ArrayPool<(SettingsParameter, uint)>.Shared.Return(array);
                 throw new Http2Exception(
                     $"RFC 9113 §6.5.2: SETTINGS_MAX_FRAME_SIZE {value} is outside the valid range [{MinMaxFrameSize}, {MaxMaxFrameSize}].");
             }
 
-            list.Add((key, value));
+            array[count++] = (key, value);
         }
 
+        var list = new List<(SettingsParameter, uint)>(count);
+        for (var i = 0; i < count; i++)
+        {
+            list.Add(array[i]);
+        }
+
+        ArrayPool<(SettingsParameter, uint)>.Shared.Return(array);
         return new SettingsFrame(list, isAck);
     }
 

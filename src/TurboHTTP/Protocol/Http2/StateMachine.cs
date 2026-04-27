@@ -1,3 +1,4 @@
+using System.Buffers;
 using Servus.Akka.IO;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2.Hpack;
@@ -483,13 +484,17 @@ internal sealed class StateMachine
         }
 
         // Replay buffered requests with fresh stream IDs from reset tracker
-        var toReplay = _reconnectBuffer.ToList();
+        var toReplay = ArrayPool<HttpRequestMessage>.Shared.Rent(_reconnectBuffer.Count);
+        var replayCount = _reconnectBuffer.Count;
+        _reconnectBuffer.CopyTo(toReplay);
         _reconnectBuffer.Clear();
 
-        foreach (var request in toReplay)
+        for (var i = 0; i < replayCount; i++)
         {
-            EncodeRequest(request);
+            EncodeRequest(toReplay[i]);
         }
+
+        ArrayPool<HttpRequestMessage>.Shared.Return(toReplay, true);
     }
 
     /// <summary>

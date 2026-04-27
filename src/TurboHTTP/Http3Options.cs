@@ -67,6 +67,13 @@ public sealed class Http3Options
     public bool AllowConnectionMigration { get; set; } = true;
 
     /// <summary>
+    /// Maximum batch weight in bytes for HTTP/3 frame encoding.
+    /// Frames are accumulated into batches up to this weight before being serialized into a single buffer,
+    /// reducing QUIC write syscalls under concurrent load. Default is 262,144 bytes (256 KiB).
+    /// </summary>
+    public int MaxBatchWeight { get; set; } = 262_144;
+
+    /// <summary>
     /// Whether to allow the server to push resources via PUSH_PROMISE frames (RFC 9114 §7.2.5).
     /// When enabled, the client advertises a MAX_PUSH_ID and accepts server push promises.
     /// When disabled, received PUSH_PROMISE frames are rejected with CANCEL_PUSH.

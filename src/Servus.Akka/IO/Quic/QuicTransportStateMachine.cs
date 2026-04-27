@@ -130,6 +130,7 @@ public sealed class QuicTransportStateMachine
                     OriginalSyntheticStreamId = openItem.SyntheticStreamId,
                     IsOutbound = openItem.Outbound
                 };
+                _ops.OnSignalPullInput();
                 return;
 
             case ProtocolReadyItem:
@@ -147,6 +148,7 @@ public sealed class QuicTransportStateMachine
                     _pumpManager.StartInboundAcceptLoop(_currentConnectionLease.Handle);
                 }
 
+                _ops.OnSignalPullInput();
                 return;
         }
 
@@ -173,6 +175,7 @@ public sealed class QuicTransportStateMachine
         {
             case ConnectItem connect:
                 HandleConnectItem(connect);
+                _ops.OnSignalPullInput();
                 break;
 
             case RoutedNetworkBuffer tagged:
@@ -274,7 +277,11 @@ public sealed class QuicTransportStateMachine
     {
         _ops.Log.Debug("QuicConnectionStage: ConnectItem key={0}:{1}", connect.Key.Host, connect.Key.Port);
 
-        CleanupTransport();
+        if (_currentConnectionLease is not null || _acquireCts is not null)
+        {
+            CleanupTransport();
+        }
+
         var options = connect.Options!;
 
         if (options is not QuicOptions quicOptions)
@@ -292,9 +299,23 @@ public sealed class QuicTransportStateMachine
     {
         _currentConnectionLease = lease;
 
+        if (_protocolReady)
+        {
+            foreach (var (typeValue, state) in _typedStreams)
+            {
+                if (state.IsOutbound && state.Handle is null)
+                {
+                    OpenTypedStream(typeValue, state.StreamId);
+                }
+            }
+
+            _pumpManager.StartInboundAcceptLoop(lease.Handle);
+        }
+
         var streamId = _router.DequeueNextPendingStreamId();
         if (streamId < 0)
         {
+            _ops.OnSignalPullInput();
             return;
         }
 
@@ -326,13 +347,16 @@ public sealed class QuicTransportStateMachine
         {
             foreach (var (typeValue, state) in _typedStreams)
             {
-                if (state.IsOutbound)
+                if (state.IsOutbound && state.Handle is null)
                 {
                     OpenTypedStream(typeValue, state.StreamId);
                 }
             }
 
-            _pumpManager.StartInboundAcceptLoop(_currentConnectionLease!.Handle);
+            if (!_pumpManager.IsAcceptLoopRunning)
+            {
+                _pumpManager.StartInboundAcceptLoop(_currentConnectionLease!.Handle);
+            }
         }
     }
 

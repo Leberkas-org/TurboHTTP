@@ -21,29 +21,37 @@ public abstract class KestrelBaseClass : BenchmarkSuiteBase
     /// <summary>Port on which the HTTP/2 cleartext Kestrel listener is running. Set in GlobalSetup.</summary>
     protected int KestrelHttp20Port { get; private set; }
 
+    /// <summary>Port on which the HTTP/3 (QUIC+TLS) Kestrel listener is running. Set in GlobalSetup.</summary>
+    protected int KestrelHttp30Port { get; private set; }
+
     /// <summary>
     /// Returns the port for the current <see cref="BenchmarkSuiteBase.HttpVersion"/> parameter.
-    /// HTTP/2 benchmarks connect to the h2c-only listener; HTTP/1.1 benchmarks
-    /// to the HTTP/1.1 listener.
     /// </summary>
-    protected int KestrelPort => HttpVersion == "2.0" ? KestrelHttp20Port : KestrelHttp11Port;
+    protected int KestrelPort => HttpVersion switch
+    {
+        "3.0" => KestrelHttp30Port,
+        "2.0" => KestrelHttp20Port,
+        _ => KestrelHttp11Port,
+    };
+
+    private string Scheme => HttpVersion == "3.0" ? "https" : "http";
 
     /// <summary>
     /// Light endpoint: minimal GET returning ~3 bytes.
     /// Computed after the server starts and ports are known.
     /// </summary>
-    public Uri LightUri => new($"http://127.0.0.1:{KestrelPort}/benchmark/simple");
+    public Uri LightUri => new($"{Scheme}://127.0.0.1:{KestrelPort}/benchmark/simple");
 
     /// <summary>
     /// Heavy endpoint: POST with a 10 KB body.
     /// Computed after the server starts and ports are known.
     /// </summary>
-    public Uri HeavyUri => new($"http://127.0.0.1:{KestrelPort}/benchmark/payload");
+    public Uri HeavyUri => new($"{Scheme}://127.0.0.1:{KestrelPort}/benchmark/payload");
 
     /// <summary>
     /// Returns the base address for the Kestrel test server at the current HTTP version port.
     /// </summary>
-    public Uri BaseAddress => new($"http://127.0.0.1:{KestrelPort}");
+    public Uri BaseAddress => new($"{Scheme}://127.0.0.1:{KestrelPort}");
 
     /// <summary>
     /// Returns a deterministic byte array of exactly <paramref name="sizeBytes"/> bytes.
@@ -80,6 +88,7 @@ public abstract class KestrelBaseClass : BenchmarkSuiteBase
             _serverRefCount++;
             KestrelHttp11Port = _sharedServer.Http11Port;
             KestrelHttp20Port = _sharedServer.Http20Port;
+            KestrelHttp30Port = _sharedServer.Http30Port;
         }
         finally
         {

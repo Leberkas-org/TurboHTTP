@@ -18,10 +18,10 @@ internal static class UriSanitizer
         // IPv6 addresses must be enclosed in brackets
         if (uri.HostNameType == UriHostNameType.IPv6 && !host.StartsWith('['))
         {
-            host = $"[{host}]";
+            host = string.Concat("[", host, "]");
         }
 
-        return uri.IsDefaultPort ? host : $"{host}:{uri.Port}";
+        return uri.IsDefaultPort ? host : string.Concat(host, ":", uri.Port.ToString());
     }
 
     /// <summary>
@@ -37,11 +37,11 @@ internal static class UriSanitizer
         // IPv6 addresses must be enclosed in brackets
         if (uri.HostNameType == UriHostNameType.IPv6 && !host.StartsWith('['))
         {
-            host = $"[{host}]";
+            host = string.Concat("[", host, "]");
         }
 
         var port = uri.IsDefaultPort ? GetDefaultPort(uri.Scheme) : uri.Port;
-        return $"{host}:{port}";
+        return string.Concat(host, ":", port.ToString());
     }
 
     private static int GetDefaultPort(string scheme) => scheme switch

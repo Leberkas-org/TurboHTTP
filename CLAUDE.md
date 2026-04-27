@@ -7,8 +7,8 @@ High-performance HTTP client for .NET built on Akka.Streams. Implements HTTP/1.0
 All commands run from `src/` (where `global.json` lives). Restore/build use full paths from repo root.
 
 ```bash
-dotnet restore ./src/TurboHTTP.sln
-dotnet build --configuration Release ./src/TurboHTTP.sln
+dotnet restore ./src/TurboHTTP.slnx
+dotnet build --configuration Release ./src/TurboHTTP.slnx
 
 # Tests (xUnit v3 direct runner)
 dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj              # unit
@@ -73,6 +73,18 @@ Key vault guides: `Architecture/Guides/10-TEST_CONVENTIONS`, `11-STAGE_PORT_NAMI
 - `Task<T>` not Future, `TimeSpan` not Duration
 - Extend-only public APIs, preserve wire format compatibility
 - Include unit tests with all changes
+
+## Performance Patterns
+
+- **Snapshot semantics**: Decoder/FrameDecoder return values are held across calls by tests —
+  cannot return reused lists directly. Use `.ToArray()` or `new List<>(buffer)` for public APIs.
+  Akka back-pressure guarantees consumption in production, but test contracts require copies.
+- **List reuse pattern**: Http2/RequestEncoder has `_reusableHeaders`/`_reusableFrames` —
+  follow this pattern for any per-request collection (clear + repopulate, not new).
+- **`string.Concat` over `$""`** for simple 2-3 part joins (avoids handler alloc)
+- **`Span.IndexOf((byte)x)` over byte-by-byte loops** — delegates to SIMD `memchr`
+- **`ArrayPool<T>.Shared`** for temp arrays in reconnect/flush paths (rent, use, return)
+- **No `new List<T>` in per-request hot paths** — reuse via field + Clear()
 
 ## Test Conventions (Quick Reference)
 

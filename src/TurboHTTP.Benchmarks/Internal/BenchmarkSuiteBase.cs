@@ -11,8 +11,8 @@ namespace TurboHTTP.Benchmarks.Internal;
 [Config(typeof(EngineBenchmarkConfig))]
 public abstract class BenchmarkSuiteBase
 {
-    /// <summary>HTTP protocol version: "1.1" or "2.0".</summary>
-    [Params("1.1", "2.0")]
+    /// <summary>HTTP protocol version: "1.1", "2.0", or "3.0".</summary>
+    [Params("1.1", "2.0", "3.0")]
     public string HttpVersion { get; set; } = "1.1";
 
     /// <summary>
@@ -21,6 +21,7 @@ public abstract class BenchmarkSuiteBase
     /// </summary>
     public Version HttpVersionValue => HttpVersion switch
     {
+        "3.0" => System.Net.HttpVersion.Version30,
         "2.0" => System.Net.HttpVersion.Version20,
         _ => System.Net.HttpVersion.Version11
     };

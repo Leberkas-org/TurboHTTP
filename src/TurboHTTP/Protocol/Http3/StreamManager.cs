@@ -1,3 +1,4 @@
+using System.Buffers;
 using Servus.Akka.IO;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Protocol.Semantics;
@@ -98,14 +99,22 @@ internal sealed class StreamManager
     /// </summary>
     public void FlushAllPendingResponses()
     {
-        var streamIds = _streams.Keys.ToArray();
-        foreach (var streamId in streamIds)
+        var streamIds = ArrayPool<long>.Shared.Rent(_streams.Count);
+        var streamCount = 0;
+        foreach (var key in _streams.Keys)
         {
-            if (_streams.TryGetValue(streamId, out var state) && state.HasResponse)
+            streamIds[streamCount++] = key;
+        }
+
+        for (var i = 0; i < streamCount; i++)
+        {
+            if (_streams.TryGetValue(streamIds[i], out var state) && state.HasResponse)
             {
-                EmitResponse(streamId);
+                EmitResponse(streamIds[i]);
             }
         }
+
+        ArrayPool<long>.Shared.Return(streamIds);
     }
 
     /// <summary>
@@ -145,7 +154,8 @@ internal sealed class StreamManager
     /// </summary>
     public List<HttpRequestMessage> SnapshotAndClearCorrelations()
     {
-        var result = _correlationMap.Values.ToList();
+        var result = new List<HttpRequestMessage>(_correlationMap.Count);
+        result.AddRange(_correlationMap.Values);
         _correlationMap.Clear();
         return result;
     }

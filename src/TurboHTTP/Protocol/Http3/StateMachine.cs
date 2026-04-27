@@ -441,14 +441,17 @@ internal sealed class StateMachine : IDisposable
     private void ReplayBufferedFrames()
     {
         var oldCorrelations = _streamManager.SnapshotAndClearCorrelations();
-        var toReplay = _reconnectBuffer.ToList();
+        var replayArray = ArrayPool<Http3Frame>.Shared.Rent(_reconnectBuffer.Count);
+        var replayCount = _reconnectBuffer.Count;
+        _reconnectBuffer.CopyTo(replayArray);
         _reconnectBuffer.Clear();
 
         var correlationIndex = 0;
         long currentReplayStreamId = -1;
 
-        foreach (var frame in toReplay)
+        for (var i = 0; i < replayCount; i++)
         {
+            var frame = replayArray[i];
             if (frame is Http3HeadersFrame)
             {
                 currentReplayStreamId = Tracker.AllocateStreamId();
@@ -463,6 +466,8 @@ internal sealed class StateMachine : IDisposable
 
             EmitSerializedFrame(frame, currentReplayStreamId);
         }
+
+        ArrayPool<Http3Frame>.Shared.Return(replayArray, true);
     }
 
     private void EmitSerializedFrame(Http3Frame frame, long streamId = -1)

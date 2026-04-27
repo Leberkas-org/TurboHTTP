@@ -3,6 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.IO;
 using TurboHTTP.Streams.Stages;
+using TurboHTTP.Streams.Stages.Internal;
 
 namespace TurboHTTP.Streams;
 
@@ -21,13 +22,17 @@ internal sealed class Http30Engine : IHttpProtocolEngine
         {
             var connection = b.Add(new Http30ConnectionStage(_options));
 
+            var batchFlow = b.Add(new NetworkBufferBatchStage(_options.Http3.MaxBatchWeight));
+
+            b.From(connection.OutNetwork).Via(batchFlow);
+
             return new BidiShape<
                 HttpRequestMessage,
                 IOutputItem,
                 IInputItem,
                 HttpResponseMessage>(
                 connection.InApp,
-                connection.OutNetwork,
+                batchFlow.Outlet,
                 connection.InServer,
                 connection.OutResponse);
         }));

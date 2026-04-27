@@ -33,6 +33,7 @@ public class KestrelHttpClientConcurrentBenchmarks : KestrelBaseClass
             AllowAutoRedirect = false,
             EnableMultipleHttp2Connections = true,
             MaxConnectionsPerServer = 64,
+            SslOptions = { RemoteCertificateValidationCallback = (_, _, _, _) => true },
         };
 
         _httpClient = new HttpClient(handler)

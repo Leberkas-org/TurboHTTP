@@ -1,11 +1,7 @@
 
 
-// QUIC APIs are platform-guarded; usage is gated at runtime via QuicOptions.
-
 using Servus.Akka.Diagnostics;
 using Servus.Akka.IO.Tcp;
-
-#pragma warning disable CA1416
 
 namespace Servus.Akka.IO.Quic;
 
@@ -29,7 +25,10 @@ internal sealed class QuicConnectionFactory : IQuicConnectionFactory
         await provider.ConnectAsync(ct).ConfigureAwait(false);
 
         var handle = new QuicConnectionHandle(provider, options, endpoint);
-        var lease = new QuicConnectionLease(handle);
+        var lease = new QuicConnectionLease(handle)
+        {
+            MaxConcurrentStreams = options.MaxBidirectionalStreams,
+        };
 
         ServusTrace.Connection.Debug(Instance, "QUIC connected to {0}:{1}", endpoint.Host, endpoint.Port);
 

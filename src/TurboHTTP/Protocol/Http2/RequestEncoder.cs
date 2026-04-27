@@ -154,7 +154,7 @@ internal sealed class RequestEncoder(bool useHuffman = false, int maxFrameSize =
         var uri = request.RequestUri!;
         var pathAndQuery = string.IsNullOrEmpty(uri.Query)
             ? uri.AbsolutePath
-            : uri.AbsolutePath + uri.Query;
+            : string.Concat(uri.AbsolutePath, uri.Query);
 
         headers.Add(new(":method", request.Method.Method));
         headers.Add(new(":path", pathAndQuery));

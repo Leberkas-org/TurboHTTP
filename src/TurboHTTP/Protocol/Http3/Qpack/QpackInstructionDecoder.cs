@@ -309,7 +309,8 @@ internal sealed class QpackInstructionDecoder : IDisposable
     /// </summary>
     public EncoderInstruction[] DecodeAllEncoderInstructions(ReadOnlySpan<byte> data)
     {
-        var results = new List<EncoderInstruction>();
+        var rented = ArrayPool<EncoderInstruction>.Shared.Rent(16);
+        var count = 0;
         var first = true;
 
         while (true)
@@ -324,10 +325,21 @@ internal sealed class QpackInstructionDecoder : IDisposable
                 break;
             }
 
-            results.Add(instruction!);
+            if (count == rented.Length)
+            {
+                var larger = ArrayPool<EncoderInstruction>.Shared.Rent(rented.Length * 2);
+                Array.Copy(rented, larger, count);
+                ArrayPool<EncoderInstruction>.Shared.Return(rented, true);
+                rented = larger;
+            }
+
+            rented[count++] = instruction!;
         }
 
-        return results.ToArray();
+        var result = new EncoderInstruction[count];
+        Array.Copy(rented, result, count);
+        ArrayPool<EncoderInstruction>.Shared.Return(rented, true);
+        return result;
     }
 
     /// <summary>
@@ -336,7 +348,8 @@ internal sealed class QpackInstructionDecoder : IDisposable
     /// </summary>
     public DecoderInstruction[] DecodeAllDecoderInstructions(ReadOnlySpan<byte> data)
     {
-        var results = new List<DecoderInstruction>();
+        var rented = ArrayPool<DecoderInstruction>.Shared.Rent(16);
+        var count = 0;
         var first = true;
 
         while (true)
@@ -351,9 +364,20 @@ internal sealed class QpackInstructionDecoder : IDisposable
                 break;
             }
 
-            results.Add(instruction!);
+            if (count == rented.Length)
+            {
+                var larger = ArrayPool<DecoderInstruction>.Shared.Rent(rented.Length * 2);
+                Array.Copy(rented, larger, count);
+                ArrayPool<DecoderInstruction>.Shared.Return(rented, true);
+                rented = larger;
+            }
+
+            rented[count++] = instruction!;
         }
 
-        return results.ToArray();
+        var result = new DecoderInstruction[count];
+        Array.Copy(rented, result, count);
+        ArrayPool<DecoderInstruction>.Shared.Return(rented, true);
+        return result;
     }
 }

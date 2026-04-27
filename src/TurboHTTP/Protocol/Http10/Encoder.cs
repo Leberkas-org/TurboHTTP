@@ -187,9 +187,12 @@ internal static class Encoder
 
     private static void ValidateMethod(string method)
     {
-        if (method.Any(char.IsLower))
+        foreach (var c in method)
         {
-            throw new ArgumentException($"HTTP/1.0 method must be uppercase: {method}", nameof(method));
+            if (char.IsLower(c))
+            {
+                throw new ArgumentException($"HTTP/1.0 method must be uppercase: {method}", nameof(method));
+            }
         }
     }
 

@@ -21,6 +21,8 @@ internal sealed class RequestEncoder
     // disposed once the caller has consumed the frame list (contract: callers consume
     // frames before the next Encode() call).
     private readonly List<IMemoryOwner<byte>> _rentedOwners = new(4);
+    private readonly List<Http3Frame> _reusableFrames = new(4);
+    private readonly List<(string Name, string Value)> _reusableHeaders = new(16);
     private readonly QpackTableSync _tableSync;
 
     /// <summary>
@@ -66,22 +68,20 @@ internal sealed class RequestEncoder
         // RFC 9114 §10.3: Validate origin before encoding
         OriginValidator.Validate(request.RequestUri, isConnect: request.Method == HttpMethod.Connect);
 
-        var headers = BuildHeaderList(request);
-        ValidatePseudoHeaders(headers);
-        FieldValidator.Validate(headers);
+        _reusableHeaders.Clear();
+        BuildHeaderList(request, _reusableHeaders);
+        ValidatePseudoHeaders(_reusableHeaders);
+        FieldValidator.Validate(_reusableHeaders);
 
         // QPACK encode directly into a MemoryPool-rented buffer
         var qpackOwner = MemoryPool<byte>.Shared.Rent(8192);
         _rentedOwners.Add(qpackOwner);
         var qpackSpan = qpackOwner.Memory.Span;
-        var qpackBytesWritten = _tableSync.Encoder.Encode(headers, ref qpackSpan);
+        var qpackBytesWritten = _tableSync.Encoder.Encode(_reusableHeaders, ref qpackSpan);
         var headerBlock = qpackOwner.Memory[..qpackBytesWritten];
 
-        var frames = new List<Http3Frame>
-        {
-            // HEADERS frame carries the compressed header block
-            new Http3HeadersFrame(headerBlock)
-        };
+        _reusableFrames.Clear();
+        _reusableFrames.Add(new Http3HeadersFrame(headerBlock));
 
         // DATA frames carry the request body (if any)
         if (request.Content != null)
@@ -105,7 +105,7 @@ internal sealed class RequestEncoder
                 if (totalRead > 0)
                 {
                     _rentedOwners.Add(bodyOwner);
-                    frames.Add(new Http3DataFrame(bodyOwner.Memory[..totalRead]));
+                    _reusableFrames.Add(new Http3DataFrame(bodyOwner.Memory[..totalRead]));
                 }
                 else
                 {
@@ -131,7 +131,7 @@ internal sealed class RequestEncoder
                     if (chunkFilled > 0)
                     {
                         _rentedOwners.Add(chunkOwner);
-                        frames.Add(new Http3DataFrame(chunkOwner.Memory[..chunkFilled]));
+                        _reusableFrames.Add(new Http3DataFrame(chunkOwner.Memory[..chunkFilled]));
                     }
                     else
                     {
@@ -146,7 +146,7 @@ internal sealed class RequestEncoder
             }
         }
 
-        return frames;
+        return _reusableFrames;
     }
 
     /// <summary>
@@ -161,13 +161,14 @@ internal sealed class RequestEncoder
         OriginValidator.Validate(request.RequestUri,
             isConnect: request.Method == HttpMethod.Connect);
 
-        var headers = BuildHeaderList(request);
-        ValidatePseudoHeaders(headers);
-        FieldValidator.Validate(headers);
+        _reusableHeaders.Clear();
+        BuildHeaderList(request, _reusableHeaders);
+        ValidatePseudoHeaders(_reusableHeaders);
+        FieldValidator.Validate(_reusableHeaders);
 
         var owner = MemoryPool<byte>.Shared.Rent(8192);
         var span = owner.Memory.Span;
-        var n = _tableSync.Encoder.Encode(headers, ref span);
+        var n = _tableSync.Encoder.Encode(_reusableHeaders, ref span);
         return (owner, n);
     }
 
@@ -193,42 +194,32 @@ internal sealed class RequestEncoder
     /// For CONNECT requests (RFC 9114 §4.4), only :method and :authority are included.
     /// The :scheme and :path pseudo-headers MUST NOT be present.
     /// </summary>
-    private static List<(string Name, string Value)> BuildHeaderList(HttpRequestMessage request)
+    private static void BuildHeaderList(HttpRequestMessage request, List<(string Name, string Value)> headers)
     {
         var uri = request.RequestUri!;
 
-        List<(string Name, string Value)> headers;
-
         if (request.Method == HttpMethod.Connect)
         {
-            // RFC 9114 §4.4: CONNECT uses only :method and :authority
-            headers =
-            [
-                (":method", "CONNECT"),
-                (":authority", UriSanitizer.FormatAuthorityWithPort(uri)),
-            ];
+            headers.Add((":method", "CONNECT"));
+            headers.Add((":authority", UriSanitizer.FormatAuthorityWithPort(uri)));
         }
         else
         {
             var pathAndQuery = string.IsNullOrEmpty(uri.Query)
                 ? uri.AbsolutePath
-                : uri.AbsolutePath + uri.Query;
+                : string.Concat(uri.AbsolutePath, uri.Query);
 
-            headers =
-            [
-                (":method", request.Method.Method),
-                (":path", pathAndQuery),
-                (":scheme", uri.Scheme),
-                (":authority", UriSanitizer.FormatAuthority(uri)),
-            ];
+            headers.Add((":method", request.Method.Method));
+            headers.Add((":path", pathAndQuery));
+            headers.Add((":scheme", uri.Scheme));
+            headers.Add((":authority", UriSanitizer.FormatAuthority(uri)));
         }
 
-        // Regular headers (excluding connection-specific headers) — foreach avoids LINQ iterator allocs
         foreach (var h in request.Headers)
         {
             if (!IsForbidden(h.Key))
             {
-                headers.Add((h.Key.ToLowerInvariant(), string.Join(", ", h.Value)));
+                headers.Add((ToLower(h.Key), JoinValues(h.Value)));
             }
         }
 
@@ -236,11 +227,9 @@ internal sealed class RequestEncoder
         {
             foreach (var h in request.Content.Headers)
             {
-                headers.Add((h.Key.ToLowerInvariant(), string.Join(", ", h.Value)));
+                headers.Add((ToLower(h.Key), JoinValues(h.Value)));
             }
         }
-
-        return headers;
     }
 
     /// <summary>
@@ -376,4 +365,34 @@ internal sealed class RequestEncoder
         string.Equals(name, "upgrade", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(name, "proxy-connection", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(name, "keep-alive", StringComparison.OrdinalIgnoreCase);
+
+    private static string ToLower(string name)
+    {
+        foreach (var c in name)
+        {
+            if (c is >= 'A' and <= 'Z')
+            {
+                return name.ToLowerInvariant();
+            }
+        }
+
+        return name;
+    }
+
+    private static string JoinValues(IEnumerable<string> values)
+    {
+        string? first = null;
+        foreach (var v in values)
+        {
+            if (first is null)
+            {
+                first = v;
+                continue;
+            }
+
+            return string.Join(", ", values);
+        }
+
+        return first ?? string.Empty;
+    }
 }

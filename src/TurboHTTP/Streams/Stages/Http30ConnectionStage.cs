@@ -252,7 +252,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                 { StreamTypeValue: (long)StreamType.Control } => StreamType.Control,
                 { StreamTypeValue: (long)StreamType.QpackEncoder } => StreamType.QpackEncoder,
                 { StreamTypeValue: (long)StreamType.QpackDecoder } => StreamType.QpackDecoder,
-                { StreamTypeValue: null } => null,
+                { StreamTypeValue: null or < 0 } => null,
                 _ => throw new ArgumentOutOfRangeException(nameof(tagged), tagged, null)
             };
 
