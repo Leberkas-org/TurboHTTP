@@ -1,0 +1,10 @@
+{
+  "suppressions": [],
+
+  "globalSuppressions": [
+    {
+      "ruleId": "SW003",
+      "justification": "Empty catch blocks are intentional in transport layer and test expectations for network exceptions"
+    }
+  ]
+}
