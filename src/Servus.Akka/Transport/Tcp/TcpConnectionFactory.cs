@@ -26,9 +26,6 @@ internal sealed class TcpConnectionFactory : ITcpConnectionFactory
         var handle = new ConnectionHandle(state.OutboundWriter, state.InboundReader, cts.Token);
         var lease = new ConnectionLease(handle, state, cts);
 
-        _ = ClientByteMover.MoveStreamToChannel(state, () => { }, cts.Token);
-        _ = ClientByteMover.MoveChannelToStream(state, () => { }, cts.Token);
-
         return lease;
     }
 }

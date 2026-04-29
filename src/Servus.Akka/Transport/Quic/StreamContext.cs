@@ -56,7 +56,7 @@ internal sealed class StreamContext
 
     public StreamDirection Direction() => _direction;
 
-    public void DisposePendingWrites()
+    private void DisposePendingWrites()
     {
         while (_pendingWrites.TryDequeue(out var orphan))
         {

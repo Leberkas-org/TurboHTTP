@@ -186,6 +186,7 @@ public sealed class TcpTransportStateMachine
         _handle = lease.Handle;
 
         _pumpManager = new TcpPumpManager(_self);
+        _pumpManager.StartPumps(lease.State, _connectionGen);
 
         if (_isReconnecting)
         {
@@ -286,7 +287,10 @@ public sealed class TcpTransportStateMachine
         _acquireCts?.Dispose();
         _acquireCts = new CancellationTokenSource();
 
-        _connectionManager.Tell(connect);
+        TcpConnectionManagerActor.AcquireAsync(_connectionManager, connect.Options, _acquireCts.Token)
+            .PipeTo(_self,
+                success: lease => new LeaseAcquired(lease),
+                failure: ex => new AcquisitionFailed(ex));
 
         var timeout = connect.Options.ConnectTimeout;
         if (timeout <= TimeSpan.Zero)
@@ -305,6 +309,8 @@ public sealed class TcpTransportStateMachine
         }
 
         _leaseReturned = true;
+        var canReuse = action == PoolAction.Reuse;
+        _connectionManager.Tell(new TcpConnectionManagerActor.Release(_currentLease, canReuse));
     }
 
     private void CleanupTransport()

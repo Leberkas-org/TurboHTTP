@@ -54,6 +54,7 @@ internal sealed class QuicPumpManager
                 {
                     await result.Value.Stream.DisposeAsync().ConfigureAwait(false);
                 }
+
                 return;
             }
 
@@ -66,8 +67,7 @@ internal sealed class QuicPumpManager
         }
     }
 
-    private static async Task DirectStreamPumpAsync(
-        StreamHandle handle, long streamId, CancellationToken ct,
+    private static async Task DirectStreamPumpAsync(StreamHandle handle, long streamId, CancellationToken ct,
         IActorRef self, int gen)
     {
         var closeReason = DisconnectReason.Graceful;

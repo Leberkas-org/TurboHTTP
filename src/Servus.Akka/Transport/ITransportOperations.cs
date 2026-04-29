@@ -1,6 +1,6 @@
 using Akka.Event;
 
-namespace Servus.Akka.Transport.Tcp;
+namespace Servus.Akka.Transport;
 
 public interface ITransportOperations
 {

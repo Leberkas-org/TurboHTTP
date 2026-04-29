@@ -12,9 +12,9 @@ internal static class QuicVarInt
     /// <summary>Maximum encodable value: 2^62 - 1.</summary>
     public const long MaxValue = (1L << 62) - 1;
 
-    private const long OneByteMax = 63;               // 2^6 - 1
-    private const long TwoByteMax = 16383;             // 2^14 - 1
-    private const long FourByteMax = 1073741823;       // 2^30 - 1
+    private const long OneByteMax = 63; // 2^6 - 1
+    private const long TwoByteMax = 16383; // 2^14 - 1
+    private const long FourByteMax = 1073741823; // 2^30 - 1
 
     /// <summary>
     /// Returns the number of bytes needed to encode <paramref name="value"/>.
@@ -23,25 +23,17 @@ internal static class QuicVarInt
     {
         if ((ulong)value > MaxValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), value, "Value exceeds QUIC variable-length integer maximum (2^62 - 1).");
+            throw new ArgumentOutOfRangeException(nameof(value), value,
+                "Value exceeds QUIC variable-length integer maximum (2^62 - 1).");
         }
 
-        if (value <= OneByteMax)
+        return value switch
         {
-            return 1;
-        }
-
-        if (value <= TwoByteMax)
-        {
-            return 2;
-        }
-
-        if (value <= FourByteMax)
-        {
-            return 4;
-        }
-
-        return 8;
+            <= OneByteMax => 1,
+            <= TwoByteMax => 2,
+            <= FourByteMax => 4,
+            _ => 8
+        };
     }
 
     /// <summary>
@@ -52,7 +44,8 @@ internal static class QuicVarInt
     {
         if ((ulong)value > MaxValue)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), value, "Value exceeds QUIC variable-length integer maximum (2^62 - 1).");
+            throw new ArgumentOutOfRangeException(nameof(value), value,
+                "Value exceeds QUIC variable-length integer maximum (2^62 - 1).");
         }
 
         if (value <= OneByteMax)
@@ -148,7 +141,8 @@ internal static class QuicVarInt
     {
         if (!TryDecode(source, out var value, out bytesConsumed))
         {
-            throw new ArgumentException("Source buffer is too short to decode a QUIC variable-length integer.", nameof(source));
+            throw new ArgumentException("Source buffer is too short to decode a QUIC variable-length integer.",
+                nameof(source));
         }
 
         return value;

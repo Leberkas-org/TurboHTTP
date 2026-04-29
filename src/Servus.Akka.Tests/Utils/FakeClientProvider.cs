@@ -3,8 +3,7 @@ using Servus.Akka.IO;
 
 namespace Servus.Akka.Tests.Utils;
 
-internal sealed class FakeClientProvider(bool blockGetStream = false, byte[]? inboundBytes = null)
-    : IClientProvider
+internal sealed class FakeClientProvider(bool blockGetStream = false, byte[]? inboundBytes = null) : IClientProvider
 {
     private int _streamsOpened;
 

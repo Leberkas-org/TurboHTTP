@@ -19,9 +19,4 @@
         <ProjectReference Include="..\Servus.Akka\Servus.Akka.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <Compile Remove="IO/**/*.cs" />
-        <Compile Remove="Utils/**/*.cs" />
-    </ItemGroup>
-
 </Project>

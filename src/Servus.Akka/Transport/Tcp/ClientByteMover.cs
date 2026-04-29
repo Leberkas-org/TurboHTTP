@@ -33,20 +33,39 @@ internal static class ClientByteMover
                 {
                     bytesRead = await stream.ReadAsync(mem, ct).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) { return; }
-                catch (Exception) { error = new AbruptCloseException(); return; }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (Exception)
+                {
+                    error = new AbruptCloseException();
+                    return;
+                }
 
-                if (bytesRead == 0) { return; }
+                if (bytesRead == 0)
+                {
+                    return;
+                }
 
                 writer.Advance(bytesRead);
                 var flush = await writer.FlushAsync(ct).ConfigureAwait(false);
-                if (flush.IsCompleted || flush.IsCanceled) { break; }
+                if (flush.IsCompleted || flush.IsCanceled)
+                {
+                    break;
+                }
             }
         }
         finally
         {
-            try { writer.Complete(error); }
-            catch (InvalidOperationException) { _ = 0; }
+            try
+            {
+                writer.Complete(error);
+            }
+            catch (InvalidOperationException)
+            {
+                // noop
+            }
         }
     }
 
@@ -104,8 +123,15 @@ internal static class ClientByteMover
         }
         finally
         {
-            try { reader.Complete(); }
-            catch (InvalidOperationException) { _ = 0; }
+            try
+            {
+                reader.Complete();
+            }
+            catch (InvalidOperationException)
+            {
+                // noop
+            }
+
             if (abrupt)
             {
                 channel.TryComplete(new AbruptCloseException());
@@ -143,12 +169,24 @@ internal static class ClientByteMover
                 await writer.FlushAsync(ct).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) { _ = 0; }
-        catch (Exception) { _ = 0; }
+        catch (OperationCanceledException)
+        {
+            // noop
+        }
+        catch (Exception)
+        {
+            // noop
+        }
         finally
         {
-            try { writer.Complete(); }
-            catch (InvalidOperationException) { _ = 0; }
+            try
+            {
+                writer.Complete();
+            }
+            catch (InvalidOperationException)
+            {
+                // noop
+            }
         }
     }
 
@@ -164,8 +202,16 @@ internal static class ClientByteMover
                 {
                     result = await reader.ReadAsync(ct).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) { onClose(); return; }
-                catch (Exception) { onClose(); return; }
+                catch (OperationCanceledException)
+                {
+                    onClose();
+                    return;
+                }
+                catch (Exception)
+                {
+                    onClose();
+                    return;
+                }
 
                 var buffer = result.Buffer;
                 try
@@ -184,17 +230,36 @@ internal static class ClientByteMover
                         }
                     }
                 }
-                catch (OperationCanceledException) { reader.AdvanceTo(buffer.End); onClose(); return; }
-                catch (Exception) { reader.AdvanceTo(buffer.End); onClose(); return; }
+                catch (OperationCanceledException)
+                {
+                    reader.AdvanceTo(buffer.End);
+                    onClose();
+                    return;
+                }
+                catch (Exception)
+                {
+                    reader.AdvanceTo(buffer.End);
+                    onClose();
+                    return;
+                }
 
                 reader.AdvanceTo(buffer.End);
-                if (result.IsCompleted) { break; }
+                if (result.IsCompleted)
+                {
+                    break;
+                }
             }
         }
         finally
         {
-            try { reader.Complete(); }
-            catch (InvalidOperationException) { _ = 0; }
+            try
+            {
+                reader.Complete();
+            }
+            catch (InvalidOperationException)
+            {
+                // noop
+            }
         }
 
         onWritesComplete?.Invoke();

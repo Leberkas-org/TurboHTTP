@@ -1,14 +1,15 @@
 using System.Net;
 using Servus.Akka.Diagnostics;
-using Servus.Akka.IO.Quic;
+using StreamDirection = Servus.Akka.IO.Quic.StreamDirection;
 
 namespace Servus.Akka.IO.Tcp;
 
-public sealed class TcpConnectionFactory : IConnectionFactory<ConnectionLease>
+public sealed class TcpConnectionFactory : IConnectionFactory
 {
     public async Task<ConnectionLease> EstablishAsync(
-        TransportOptions options,
-        CancellationToken ct = default)
+        ITransportOptions options,
+        RequestEndpoint endpoint,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -19,7 +20,7 @@ public sealed class TcpConnectionFactory : IConnectionFactory<ConnectionLease>
             _ => throw new ArgumentException($"Unsupported options type: {options.GetType()}", nameof(options))
         };
 
-        var uri = new Uri($"{(options is TlsOptions ? "https" : "http")}://{endpoint.Host}:{endpoint.Port}/");
+        var uri = new Uri($"{(options is TlsOptions ? "https" : "http")}://{options.Host}:{options.Port}/");
         var connectActivity = ServusInstrumentation.StartConnect(uri);
         ServusTrace.Connection.Debug(this, "Connecting to {0}:{1}", options.Host, options.Port);
 

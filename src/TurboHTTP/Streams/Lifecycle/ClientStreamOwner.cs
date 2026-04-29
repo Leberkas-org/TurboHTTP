@@ -117,11 +117,11 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
                 "quic-pool");
 
             // Build transport registry and engine flow
-            var tcpFactory = new TcpTransportFactory(_tcpConnectionManager);
+
             var transports = new TransportRegistry()
-                .Register(new Version(1, 0), tcpFactory)
-                .Register(new Version(1, 1), tcpFactory)
-                .Register(new Version(2, 0), tcpFactory)
+                .Register(new Version(1, 0), new TcpTransportFactory(_tcpConnectionManager))
+                .Register(new Version(1, 1), new TcpTransportFactory(_tcpConnectionManager))
+                .Register(new Version(2, 0), new TcpTransportFactory(_tcpConnectionManager))
                 .Register(new Version(3, 0), new QuicTransportFactory(_quicConnectionManager,
                     create.ClientOptions.Http3.AllowConnectionMigration));
 
@@ -213,8 +213,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
             if (!_createRequester.IsNobody())
             {
-                _createRequester.Tell(new StreamInstanceFailed(
-                    _lastError!, _retryAttempts));
+                _createRequester.Tell(new StreamInstanceFailed(_lastError!, _retryAttempts));
             }
         }
     }
@@ -233,8 +232,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         {
             var backoff = CalculateBackoff(_retryAttempts);
             _retryAttempts++;
-            _log.Info("Scheduling retry attempt {0} after {1}ms backoff",
-                _retryAttempts, backoff.TotalMilliseconds);
+            _log.Info("Scheduling retry attempt {0} after {1}ms backoff", _retryAttempts, backoff.TotalMilliseconds);
 
             Timers.StartSingleTimer(RetryTimerKey, RetryCreateInstance.Instance, backoff);
         }
@@ -245,8 +243,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
             if (!_createRequester.IsNobody())
             {
-                _createRequester.Tell(new StreamInstanceFailed(
-                    _lastError!, _retryAttempts));
+                _createRequester.Tell(new StreamInstanceFailed(_lastError!, _retryAttempts));
             }
         }
     }

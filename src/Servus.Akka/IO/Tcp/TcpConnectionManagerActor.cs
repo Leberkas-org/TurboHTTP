@@ -1,22 +1,8 @@
-using System.Diagnostics;
 using Akka.Actor;
 using Servus.Akka.Diagnostics;
-using Servus.Akka.IO.Quic;
 
 namespace Servus.Akka.IO.Tcp;
 
-/// <summary>
-/// Single actor that manages ALL per-host TCP/TLS connection state: acquire, release, idle reuse,
-/// eviction, and HTTP version-specific slot limits. Every <see cref="TcpConnectionStage"/> talks
-/// to this same actor directly via <see cref="Acquire"/> / <see cref="Release"/>.
-/// <para>
-/// Per-host state (leases, idle queue, pending queue, establishing count) is kept in a
-/// <see cref="Dictionary{TKey,TValue}"/> of <see cref="HostState"/> instances — all accessed
-/// on the actor's single-threaded mailbox, so no locks needed.
-/// </para>
-/// Mirrors <see cref="QuicConnectionManagerActor"/> structurally — a senior dev who knows
-/// one immediately understands the other.
-/// </summary>
 public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
 {
     public sealed record Acquire(
@@ -59,7 +45,7 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     }
 
     private readonly Dictionary<RequestEndpoint, HostState> _hosts = new();
-    private readonly IConnectionFactory<ConnectionLease> _factory;
+    private readonly IConnectionFactory _factory;
     private readonly TimeSpan _idleTimeout;
     private readonly TimeSpan _connectionLifetime;
     private readonly int _maxConnectionsPerServer;
@@ -94,7 +80,7 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     {
     }
 
-    public TcpConnectionManagerActor(IConnectionFactory<ConnectionLease> factory, TimeSpan idleTimeout,
+    public TcpConnectionManagerActor(IConnectionFactory factory, TimeSpan idleTimeout,
         TimeSpan connectionLifetime,
         int maxConnectionsPerServer = 6)
     {
@@ -167,7 +153,8 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
                 }
                 else
                 {
-                    ServusTrace.Pool.Debug(this, "Idle connection reused for {0}:{1}", host.Endpoint.Host, host.Endpoint.Port);
+                    ServusTrace.Pool.Debug(this, "Idle connection reused for {0}:{1}", host.Endpoint.Host,
+                        host.Endpoint.Port);
                     ServusMetrics.OpenConnections.Add(-1,
                         new("http.connection.state", "idle"),
                         new("server.address", host.Endpoint.Host),

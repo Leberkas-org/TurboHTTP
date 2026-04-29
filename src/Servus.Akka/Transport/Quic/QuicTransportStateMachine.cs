@@ -180,20 +180,11 @@ public sealed class QuicTransportStateMachine
         ctx.SetSelf(_self);
         _streams[streamId] = ctx;
 
-        _ = _connectionHandle.OpenStreamAsync(direction)
-            .ContinueWith((t, state) =>
-            {
-                var (self, sid) = ((IActorRef, long))state!;
-                if (t.IsFaulted)
-                {
-                    self.Tell(new AcquisitionFailed(t.Exception!.GetBaseException()));
-                    return;
-                }
-
-                var (stream, _) = t.Result;
-                var handle = new StreamHandle(stream, null);
-                self.Tell(new StreamLeaseAcquired(handle, sid));
-            }, (_self, streamId), TaskScheduler.Default);
+        var sid = streamId;
+        _connectionHandle.OpenStreamAsync(direction)
+            .PipeTo(_self,
+                success: result => new StreamLeaseAcquired(new StreamHandle(result.Stream, null), sid),
+                failure: ex => new AcquisitionFailed(ex));
 
         _ops.OnSignalPullOutbound();
     }
@@ -372,6 +363,14 @@ public sealed class QuicTransportStateMachine
         _acquireCts?.Dispose();
         _acquireCts = new CancellationTokenSource();
 
+        if (connect.Options is QuicTransportOptions quicOpts)
+        {
+            QuicConnectionManagerActor.AcquireAsync(_connectionManager, quicOpts, _acquireCts.Token)
+                .PipeTo(_self,
+                    success: lease => new ConnectionLeaseAcquired(lease),
+                    failure: ex => new AcquisitionFailed(ex));
+        }
+
         var timeout = connect.Options.ConnectTimeout;
         if (timeout <= TimeSpan.Zero)
         {
@@ -390,6 +389,8 @@ public sealed class QuicTransportStateMachine
 
         var lease = _connectionLease;
         _connectionLease = null;
+
+        _connectionManager.Tell(new QuicConnectionManagerActor.Release(lease, canReuse));
 
         if (!canReuse)
         {

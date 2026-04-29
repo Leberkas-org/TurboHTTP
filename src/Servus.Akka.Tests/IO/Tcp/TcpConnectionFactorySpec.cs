@@ -9,6 +9,7 @@ namespace Servus.Akka.Tests.IO.Tcp;
 
 public sealed class TcpConnectionFactorySpec : IAsyncLifetime
 {
+    private readonly TcpConnectionFactory _factory = new();
     private TcpListener? _listener;
     private int _port;
 
@@ -47,7 +48,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var endpoint = CreateEndpoint(_port);
 
         using var lease =
-            await TcpConnectionFactory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken);
+            await _factory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken);
 
         Assert.NotNull(lease);
         Assert.True(lease.IsAlive);
@@ -62,7 +63,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var endpoint = CreateEndpoint(_port);
 
         using var lease =
-            await TcpConnectionFactory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken);
+            await _factory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken);
 
         Assert.Equal(ActorRefs.Nobody, lease.Handle.ConnectionActor);
     }
@@ -76,7 +77,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var acceptTask = _listener!.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
 
         using var lease =
-            await TcpConnectionFactory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken);
+            await _factory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken);
 
         using var serverClient = await acceptTask;
         var serverStream = serverClient.GetStream();
@@ -102,19 +103,19 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         // HTTP/1.0 → 1
         var endpoint10 = CreateEndpoint(_port, HttpVersion.Version10);
         using var lease10 =
-            await TcpConnectionFactory.EstablishAsync(options, endpoint10, TestContext.Current.CancellationToken);
+            await _factory.EstablishAsync(options, endpoint10, TestContext.Current.CancellationToken);
         Assert.Equal(1, lease10.MaxConcurrentStreams);
 
         // HTTP/1.1 → 6
         var endpoint11 = CreateEndpoint(_port, HttpVersion.Version11);
         using var lease11 =
-            await TcpConnectionFactory.EstablishAsync(options, endpoint11, TestContext.Current.CancellationToken);
+            await _factory.EstablishAsync(options, endpoint11, TestContext.Current.CancellationToken);
         Assert.Equal(6, lease11.MaxConcurrentStreams);
 
         // HTTP/2 → 100
         var endpoint20 = CreateEndpoint(_port, HttpVersion.Version20);
         using var lease20 =
-            await TcpConnectionFactory.EstablishAsync(options, endpoint20, TestContext.Current.CancellationToken);
+            await _factory.EstablishAsync(options, endpoint20, TestContext.Current.CancellationToken);
         Assert.Equal(100, lease20.MaxConcurrentStreams);
     }
 
@@ -127,7 +128,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            TcpConnectionFactory.EstablishAsync(options, endpoint, cts.Token));
+            _factory.EstablishAsync(options, endpoint, cts.Token));
     }
 
     [Fact(Timeout = 5000)]
@@ -145,7 +146,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            TcpConnectionFactory.EstablishAsync(options, endpoint, cts.Token));
+            _factory.EstablishAsync(options, endpoint, cts.Token));
     }
 
     [Fact(Timeout = 5000)]
@@ -158,7 +159,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var endpoint = CreateEndpoint(_port);
 
         await Assert.ThrowsAnyAsync<SocketException>(() =>
-            TcpConnectionFactory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken));
+            _factory.EstablishAsync(options, endpoint, TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 5000)]
@@ -167,7 +168,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(_port);
 
-        var lease = await TcpConnectionFactory.EstablishAsync(options, endpoint,
+        var lease = await _factory.EstablishAsync(options, endpoint,
             TestContext.Current.CancellationToken);
         var token = lease.Token;
 
@@ -184,7 +185,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var options = CreateOptions();
         var endpoint = CreateEndpoint(_port);
 
-        var lease = await TcpConnectionFactory.EstablishAsync(options, endpoint,
+        var lease = await _factory.EstablishAsync(options, endpoint,
             TestContext.Current.CancellationToken);
 
         Assert.True(lease.IsAlive);
@@ -202,7 +203,7 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
 
         var acceptTask = _listener!.AcceptTcpClientAsync(TestContext.Current.CancellationToken);
 
-        var lease = await TcpConnectionFactory.EstablishAsync(options, endpoint,
+        var lease = await _factory.EstablishAsync(options, endpoint,
             TestContext.Current.CancellationToken);
 
         using var serverClient = await acceptTask;
@@ -226,6 +227,6 @@ public sealed class TcpConnectionFactorySpec : IAsyncLifetime
         var endpoint = CreateEndpoint(80);
 
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            TcpConnectionFactory.EstablishAsync(null!, endpoint, TestContext.Current.CancellationToken));
+            _factory.EstablishAsync(null!, endpoint, TestContext.Current.CancellationToken));
     }
 }

@@ -16,6 +16,8 @@ public sealed class ConnectionLease : IDisposable
 
     public ConnectionHandle Handle { get; }
 
+    internal ClientState State => _state;
+
     public bool IsAlive() => _alive;
 
     public bool IsExpired(TimeSpan maxLifetime)

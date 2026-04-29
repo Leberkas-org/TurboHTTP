@@ -7,17 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Akka.Hosting" />
+        <PackageReference Include="Akka.Hosting"/>
     </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="Servus.Akka.Tests"/>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>
         <InternalsVisibleTo Include="TurboHTTP.StreamTests"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Remove="IO/**/*.cs" />
     </ItemGroup>
 
 </Project>
