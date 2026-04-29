@@ -5,7 +5,6 @@ namespace TurboHTTP.IntegrationTests.H3;
 
 [Collection("H3")]
 [Trait("Category", "Http3")]
-[Obsolete("Replaced by StreamTests.Acceptance.H3.RetrySpec")]
 public sealed class RetrySpec : IAsyncLifetime
 {
     private readonly ServerFixture _server;

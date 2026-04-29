@@ -5,7 +5,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.TLS;
 
 [Collection("TLS")]
-[Obsolete("Replaced by StreamTests.Acceptance.TLS.ExpectContinueSpec")]
 public sealed class ExpectContinueSpec
 {
     private readonly ServerFixture _server;

@@ -6,7 +6,6 @@ namespace TurboHTTP.IntegrationTests.H3;
 
 [Collection("H3")]
 [Trait("Category", "Http3")]
-[Obsolete("Replaced by StreamTests.Acceptance.H3.RedirectSpec")]
 public sealed class RedirectSpec : IAsyncLifetime
 {
     private readonly ServerFixture _server;

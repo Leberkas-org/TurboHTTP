@@ -5,7 +5,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.H2;
 
 [Collection("H2")]
-[Obsolete("Replaced by StreamTests.Acceptance.H2.CookieSpec")]
 public sealed class CookieSpec
 {
     private readonly ServerFixture _server;

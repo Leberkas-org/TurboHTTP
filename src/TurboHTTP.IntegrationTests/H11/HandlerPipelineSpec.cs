@@ -5,7 +5,6 @@ using TurboHTTP.Protocol.Cookies;
 namespace TurboHTTP.IntegrationTests.H11;
 
 [Collection("H11")]
-[Obsolete("Replaced by StreamTests.Acceptance.H11.HandlerPipelineSpec")]
 public sealed class HandlerPipelineSpec
 {
     private readonly ServerFixture _server;

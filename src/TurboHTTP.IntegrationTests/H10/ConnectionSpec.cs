@@ -4,7 +4,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.H10;
 
 [Collection("H10")]
-[Obsolete("Replaced by StreamTests.Acceptance.H10.ConnectionSpec")]
 public sealed class ConnectionSpec
 {
     private readonly ServerFixture _server;

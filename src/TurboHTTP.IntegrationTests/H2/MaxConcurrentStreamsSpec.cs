@@ -4,7 +4,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.H2;
 
 [Collection("H2")]
-[Obsolete("Replaced by StreamTests.Acceptance.H2.MaxConcurrentStreamsSpec")]
 public sealed class MaxConcurrentStreamsSpec : IAsyncLifetime
 {
     private readonly ServerFixture _server;

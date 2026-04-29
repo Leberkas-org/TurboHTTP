@@ -5,7 +5,6 @@ namespace TurboHTTP.IntegrationTests.H3;
 
 [Collection("H3")]
 [Trait("Category", "Http3")]
-[Obsolete("Replaced by StreamTests.Acceptance.H3.OptionsSpec")]
 public sealed class OptionsSpec
 {
     private readonly ServerFixture _server;

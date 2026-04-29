@@ -8,7 +8,6 @@ namespace TurboHTTP.IntegrationTests.TLS;
 /// Verifies Credentials and PreAuthenticate work correctly when TLS is involved.
 /// </summary>
 [Collection("TLS")]
-[Obsolete("Replaced by StreamTests.Acceptance.TLS.OptionsSpec")]
 public sealed class OptionsSpec : IAsyncLifetime
 {
     private readonly ServerFixture _server;

@@ -4,7 +4,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.H2;
 
 [Collection("H2")]
-[Obsolete("Replaced by StreamTests.Acceptance.H2.ErrorHandlingSpec")]
 public sealed class ErrorHandlingSpec
 {
     private readonly ServerFixture _server;

@@ -4,7 +4,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.H11;
 
 [Collection("H11")]
-[Obsolete("Replaced by StreamTests.Acceptance.H11.OptionsSpec")]
 public sealed class OptionsSpec
 {
     private readonly ServerFixture _server;

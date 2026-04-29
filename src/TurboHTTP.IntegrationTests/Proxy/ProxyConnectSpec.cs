@@ -4,7 +4,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.Proxy;
 
 [Collection("Proxy")]
-[Obsolete("Replaced by StreamTests.Acceptance.Proxy.ProxyConnectSpec")]
 public sealed class ProxyConnectSpec : IAsyncLifetime
 {
     private readonly ServerFixture _server;

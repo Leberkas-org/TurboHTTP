@@ -5,7 +5,6 @@ using TurboHTTP.IntegrationTests.Shared;
 namespace TurboHTTP.IntegrationTests.H11;
 
 [Collection("H11")]
-[Obsolete("Replaced by StreamTests.Acceptance.H11.ConcurrencySpec")]
 public sealed class ConcurrencySpec
 {
     private readonly ServerFixture _server;
