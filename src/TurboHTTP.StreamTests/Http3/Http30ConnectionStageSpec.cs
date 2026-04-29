@@ -1,7 +1,7 @@
-using Akka.Streams;
+﻿using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 
@@ -24,8 +24,8 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         var stage = new Http30ConnectionStage(new TurboClientOptions { Http3 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -80,8 +80,8 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -122,8 +122,8 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         var stage = new Http30ConnectionStage(new TurboClientOptions { Http3 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -157,3 +157,4 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }
+

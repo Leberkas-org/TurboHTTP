@@ -1,4 +1,3 @@
-using System.Net;
 using System.Runtime.Versioning;
 
 namespace Servus.Akka.Transport.Quic;

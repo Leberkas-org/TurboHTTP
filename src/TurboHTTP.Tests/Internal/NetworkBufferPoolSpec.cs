@@ -1,18 +1,18 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 
 namespace TurboHTTP.Tests.Internal;
 
-public sealed class NetworkBufferPoolSpec
+public sealed class TransportBufferPoolSpec
 {
     [Fact(Timeout = 5000)]
     public void Rent_should_return_usable_buffer_after_dispose_cycle()
     {
-        var buf1 = NetworkBuffer.Rent(128);
+        var buf1 = TransportBuffer.Rent(128);
         buf1.Length = 10;
         Assert.Equal(10, buf1.Length);
         buf1.Dispose();
 
-        var buf2 = NetworkBuffer.Rent(128);
+        var buf2 = TransportBuffer.Rent(128);
         Assert.True(buf2.Capacity >= 128);
         buf2.Dispose();
     }
@@ -20,7 +20,7 @@ public sealed class NetworkBufferPoolSpec
     [Fact(Timeout = 5000)]
     public void Dispose_should_be_idempotent()
     {
-        var buf = NetworkBuffer.Rent(64);
+        var buf = TransportBuffer.Rent(64);
         buf.Dispose();
         buf.Dispose();
     }
@@ -41,7 +41,7 @@ public sealed class NetworkBufferPoolSpec
             {
                 try
                 {
-                    var buf = NetworkBuffer.Rent(64);
+                    var buf = TransportBuffer.Rent(64);
                     buf.Length = 1;
                     buf.Dispose();
                 }
@@ -61,16 +61,16 @@ public sealed class NetworkBufferPoolSpec
     public void Pool_should_not_leak_when_disposed_from_multiple_threads_simultaneously()
     {
         const int count = 200;
-        var buffers = new NetworkBuffer[count];
+        var buffers = new TransportBuffer[count];
         for (var i = 0; i < count; i++)
         {
-            buffers[i] = NetworkBuffer.Rent(64);
+            buffers[i] = TransportBuffer.Rent(64);
             buffers[i].Length = 1;
         }
 
         Parallel.ForEach(buffers, buf => buf.Dispose());
 
-        var postBuf = NetworkBuffer.Rent(64);
+        var postBuf = TransportBuffer.Rent(64);
         Assert.True(postBuf.Capacity >= 64);
         postBuf.Dispose();
     }

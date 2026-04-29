@@ -1,6 +1,5 @@
 using Akka.Event;
 using Servus.Akka.Transport;
-using Servus.Akka.Transport.Tcp;
 
 namespace Servus.Akka.Tests.Transport.Tcp;
 

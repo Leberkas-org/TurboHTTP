@@ -97,9 +97,7 @@ internal sealed class ClientStreamManager : IDisposable
         // Create the Owner actor — it materializes the stream directly,
         // tracks pending work, and handles retry with exponential backoff.
         // Uses dedicated dispatcher if available; falls back to default for external ActorSystems.
-        _owner = system.ActorOf(
-            Props.Create(() => new ClientStreamOwner()),
-            $"stream-owner-{Guid.NewGuid():N}");
+        _owner = system.ActorOf(Props.Create(() => new ClientStreamOwner()), $"stream-owner-{Guid.NewGuid():N}");
 
         // Tell the Owner to create a stream instance. The instance will materialize
         // the Akka.Streams pipeline using our channels. Requests written to the channel

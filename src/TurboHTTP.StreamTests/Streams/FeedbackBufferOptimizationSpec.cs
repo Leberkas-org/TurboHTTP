@@ -1,7 +1,7 @@
-using System.Net;
+﻿using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
@@ -10,7 +10,7 @@ namespace TurboHTTP.StreamTests.Streams;
 
 public sealed class FeedbackBufferOptimizationSpec : EngineTestBase
 {
-    private static Flow<IOutputItem, IInputItem, NotUsed> SequentialFlow(params byte[][] responses)
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> SequentialFlow(params byte[][] responses)
     {
         var index = 0;
         return Flow.FromGraph(new EngineFakeConnectionStage(() =>
@@ -20,7 +20,7 @@ public sealed class FeedbackBufferOptimizationSpec : EngineTestBase
         }));
     }
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> NoOpH2Flow()
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
         => Flow.FromGraph(new H2EngineFakeConnectionStage());
 
     private static byte[] Redirect301(string location) =>
@@ -233,3 +233,5 @@ public sealed class FeedbackBufferOptimizationSpec : EngineTestBase
         Assert.Equal("OK", body);
     }
 }
+
+

@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.Security;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Quic;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests;
@@ -66,8 +64,8 @@ public sealed class OptionsFactorySpec
 
         var options = OptionsFactory.Build(endpoint, clientOptions);
 
-        Assert.IsType<TcpOptions>(options);
-        Assert.IsNotType<TlsOptions>(options);
+        Assert.IsType<TcpTransportOptions>(options);
+        Assert.IsNotType<TlsTransportOptions>(options);
         Assert.Equal("example.com", options.Host);
         Assert.Equal(80, options.Port);
     }
@@ -80,8 +78,8 @@ public sealed class OptionsFactorySpec
 
         var options = OptionsFactory.Build(endpoint, clientOptions);
 
-        Assert.IsType<TlsOptions>(options);
-        Assert.IsNotType<QuicOptions>(options);
+        Assert.IsType<TlsTransportOptions>(options);
+        Assert.IsNotType<QuicTransportOptions>(options);
         Assert.Equal("example.com", options.Host);
         Assert.Equal(443, options.Port);
     }
@@ -94,7 +92,7 @@ public sealed class OptionsFactorySpec
 
         var options = OptionsFactory.Build(endpoint, clientOptions);
 
-        Assert.IsType<QuicOptions>(options);
+        Assert.IsType<QuicTransportOptions>(options);
         Assert.Equal("example.com", options.Host);
         Assert.Equal(443, options.Port);
     }
@@ -156,7 +154,7 @@ public sealed class OptionsFactorySpec
         var endpoint = CreateHttpsEndpoint();
         var clientOptions = CreateClientOptions();
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.NotNull(options.ApplicationProtocols);
         Assert.Single(options.ApplicationProtocols);
@@ -169,7 +167,7 @@ public sealed class OptionsFactorySpec
         var endpoint = CreateHttp2Endpoint();
         var clientOptions = CreateClientOptions();
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.NotNull(options.ApplicationProtocols);
         Assert.Single(options.ApplicationProtocols);
@@ -182,7 +180,7 @@ public sealed class OptionsFactorySpec
         var endpoint = CreateHttp3Endpoint();
         var clientOptions = CreateClientOptions();
 
-        var options = (QuicOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (QuicTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.NotNull(options.ApplicationProtocols);
         Assert.Single(options.ApplicationProtocols);
@@ -201,7 +199,7 @@ public sealed class OptionsFactorySpec
         };
         var clientOptions = CreateClientOptions();
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.Null(options.ApplicationProtocols);
     }
@@ -216,7 +214,7 @@ public sealed class OptionsFactorySpec
             ServerCertificateValidationCallback = callback
         };
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.Same(callback, options.ServerCertificateValidationCallback);
     }
@@ -270,7 +268,7 @@ public sealed class OptionsFactorySpec
         var endpoint = CreateHttpsEndpoint();
         var clientOptions = CreateClientOptions();
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.Equal("example.com", options.TargetHost);
     }
@@ -284,7 +282,7 @@ public sealed class OptionsFactorySpec
             Http3 = new Http3Options { AllowEarlyData = true }
         };
 
-        var options = (QuicOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (QuicTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.True(options.AllowEarlyData);
     }
@@ -298,7 +296,7 @@ public sealed class OptionsFactorySpec
             Http3 = new Http3Options { AllowConnectionMigration = false }
         };
 
-        var options = (QuicOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (QuicTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.False(options.AllowConnectionMigration);
     }
@@ -318,7 +316,7 @@ public sealed class OptionsFactorySpec
         var options = OptionsFactory.Build(endpoint, clientOptions);
 
         // WSS should be treated as HTTPS and default port should be 443
-        Assert.IsType<TlsOptions>(options);
+        Assert.IsType<TlsTransportOptions>(options);
         Assert.Equal(443, options.Port);
     }
 
@@ -336,8 +334,8 @@ public sealed class OptionsFactorySpec
 
         var options = OptionsFactory.Build(endpoint, clientOptions);
 
-        Assert.IsType<TcpOptions>(options);
-        Assert.IsNotType<TlsOptions>(options);
+        Assert.IsType<TcpTransportOptions>(options);
+        Assert.IsNotType<TlsTransportOptions>(options);
         Assert.Equal(80, options.Port);
     }
 
@@ -356,9 +354,11 @@ public sealed class OptionsFactorySpec
 
         var options = OptionsFactory.Build(endpoint, clientOptions);
 
-        Assert.True(options.UseProxy);
-        Assert.Same(proxy, options.Proxy);
-        Assert.Same(credentials, options.DefaultProxyCredentials);
+        Assert.IsType<TcpTransportOptions>(options);
+        var tcpOptions = (TcpTransportOptions)options;
+        Assert.True(tcpOptions.UseProxy);
+        Assert.Same(proxy, tcpOptions.Proxy);
+        Assert.Same(credentials, tcpOptions.DefaultProxyCredentials);
     }
 
     [Fact(Timeout = 5000)]
@@ -376,7 +376,7 @@ public sealed class OptionsFactorySpec
                 Version = HttpVersion.Version10
             },
             clientOptions);
-        Assert.IsType<TcpOptions>(options10);
+        Assert.IsType<TcpTransportOptions>(options10);
 
         // HTTP/1.1
         var options11 = OptionsFactory.Build(
@@ -388,7 +388,7 @@ public sealed class OptionsFactorySpec
                 Version = HttpVersion.Version11
             },
             clientOptions);
-        Assert.IsType<TcpOptions>(options11);
+        Assert.IsType<TcpTransportOptions>(options11);
 
         // HTTP/2.0
         var options20 = OptionsFactory.Build(
@@ -400,7 +400,7 @@ public sealed class OptionsFactorySpec
                 Version = HttpVersion.Version20
             },
             clientOptions);
-        Assert.IsType<TlsOptions>(options20);
+        Assert.IsType<TlsTransportOptions>(options20);
 
         // HTTP/3.0
         var options30 = OptionsFactory.Build(
@@ -412,7 +412,7 @@ public sealed class OptionsFactorySpec
                 Version = new Version(3, 0)
             },
             clientOptions);
-        Assert.IsType<QuicOptions>(options30);
+        Assert.IsType<QuicTransportOptions>(options30);
     }
 
     [Fact(Timeout = 5000)]
@@ -444,7 +444,7 @@ public sealed class OptionsFactorySpec
         };
         var clientOptions = CreateClientOptions();
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.Equal("localhost", options.Host);
         Assert.Equal(8443, options.Port);
@@ -463,7 +463,7 @@ public sealed class OptionsFactorySpec
         };
         var clientOptions = CreateClientOptions();
 
-        var options = (TlsOptions)OptionsFactory.Build(endpoint, clientOptions);
+        var options = (TlsTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
 
         Assert.Equal("192.168.1.1", options.Host);
     }

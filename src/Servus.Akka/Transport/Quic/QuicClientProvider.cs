@@ -1,15 +1,9 @@
 using System.Net;
 using System.Net.Quic;
 using System.Net.Security;
-using System.Runtime.Versioning;
 
 namespace Servus.Akka.Transport.Quic;
 
-#pragma warning disable CA1416
-
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
 internal sealed class QuicClientProvider : IAsyncDisposable
 {
     private readonly QuicTransportOptions _options;
@@ -98,8 +92,7 @@ internal sealed class QuicClientProvider : IAsyncDisposable
         {
             await connection.DisposeAsync().ConfigureAwait(false);
         }
+
         _connectLock.Dispose();
     }
 }
-
-#pragma warning restore CA1416

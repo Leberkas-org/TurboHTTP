@@ -1,9 +1,9 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Features;
@@ -27,21 +27,21 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         return payload;
     }
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateCompressionEngine(string encoding)
     {
         var stage = new ContentEncodingBidiStage(true, new CompressionPolicy { Encoding = encoding });
         return BidiFlow.FromGraph(stage).Atop(Engine.CreateFlow());
     }
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateDefaultCompressionEngine()
     {
         var stage = new ContentEncodingBidiStage(true, CompressionPolicy.Default);
         return BidiFlow.FromGraph(stage).Atop(Engine.CreateFlow());
     }
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateDecompressingAndCompressingEngine(string encoding)
     {
         var stage = new ContentEncodingBidiStage(true, new CompressionPolicy { Encoding = encoding });
@@ -106,12 +106,12 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
     }
 
     private async Task<(HttpResponseMessage Response, ScriptedFakeConnectionStage Fake)> SendCompressedAsync(
-        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -316,7 +316,7 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
 
         var fake2 = new ScriptedFakeConnectionStage((_, _) => gzipResponse);
         var flow2 = CreateDecompressingAndCompressingEngine("gzip")
-            .Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake2));
+            .Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake2));
 
         var tcs2 = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(getRequest)
@@ -329,3 +329,4 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         Assert.Equal(1024, decompressedBody.Length);
     }
 }
+

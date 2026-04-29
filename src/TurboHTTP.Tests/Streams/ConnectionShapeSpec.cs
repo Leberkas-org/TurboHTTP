@@ -1,5 +1,5 @@
 using Akka.Streams;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Streams;
@@ -9,10 +9,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_initialize_with_correct_ports()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -25,10 +25,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_report_correct_inlets()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -41,10 +41,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_report_correct_outlets()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -57,10 +57,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_create_deep_copy()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
         var copy = shape.DeepCopy();
@@ -83,10 +83,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_copy_from_ports()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -105,10 +105,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_maintain_port_order_in_inlets()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -120,10 +120,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_maintain_port_order_in_outlets()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -135,10 +135,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_should_implement_shape_interface()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -148,10 +148,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_deep_copy_should_create_independent_instances()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape1 = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
         var shape2 = shape1.DeepCopy();
@@ -168,10 +168,10 @@ public sealed class ConnectionShapeSpec
     [Fact(Timeout = 5000)]
     public void ConnectionShape_copy_from_ports_should_preserve_port_types()
     {
-        var inServer = new Inlet<IInputItem>("InServer");
+        var inServer = new Inlet<ITransportInbound>("InServer");
         var outResponse = new Outlet<HttpResponseMessage>("OutResponse");
         var inApp = new Inlet<HttpRequestMessage>("InApp");
-        var outNetwork = new Outlet<IOutputItem>("OutNetwork");
+        var outNetwork = new Outlet<ITransportOutbound>("OutNetwork");
 
         var shape = new ConnectionShape(inServer, outResponse, inApp, outNetwork);
 
@@ -181,9 +181,9 @@ public sealed class ConnectionShapeSpec
         var copiedShape = shape.CopyFromPorts([.. newInlets], [.. newOutlets]);
         var result = (ConnectionShape)copiedShape;
 
-        Assert.IsType<Inlet<IInputItem>>(result.InServer);
+        Assert.IsType<Inlet<ITransportInbound>>(result.InServer);
         Assert.IsType<Outlet<HttpResponseMessage>>(result.OutResponse);
         Assert.IsType<Inlet<HttpRequestMessage>>(result.InApp);
-        Assert.IsType<Outlet<IOutputItem>>(result.OutNetwork);
+        Assert.IsType<Outlet<ITransportOutbound>>(result.OutNetwork);
     }
 }

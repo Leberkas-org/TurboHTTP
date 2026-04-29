@@ -1,50 +1,29 @@
 using System.Threading.Channels;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 
 namespace TurboHTTP.Tests.Shared;
 
-/// <summary>
-/// Fake TCP connection stage that routes responses through a caller-supplied factory
-/// receiving the request index and raw outbound bytes.
-/// Supports multi-response sequences (connection reuse) and error injection
-/// (truncated body, abort, corrupt bytes) via the response factory.
-/// Optionally accepts a BehaviorStack to override the factory and an ActivityLog to record events.
-/// </summary>
-internal sealed class ScriptedFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
+internal sealed class ScriptedFakeConnectionStage : GraphStage<FlowShape<ITransportOutbound, ITransportInbound>>
 {
     private readonly Func<int, byte[], byte[]?> _responseFactory;
     private readonly BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>? _behaviorStack;
     private readonly ActivityLog? _activityLog;
 
-    public Channel<NetworkBuffer> OutboundChannel { get; } = Channel.CreateUnbounded<NetworkBuffer>();
+    public Channel<TransportBuffer> OutboundChannel { get; } = Channel.CreateUnbounded<TransportBuffer>();
 
-    public Inlet<IOutputItem> In { get; } = new("ScriptedFakeConnection.In");
-    public Outlet<IInputItem> Out { get; } = new("ScriptedFakeConnection.Out");
+    public Inlet<ITransportOutbound> In { get; } = new("ScriptedFakeConnection.In");
+    public Outlet<ITransportInbound> Out { get; } = new("ScriptedFakeConnection.Out");
 
-    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
+    public override FlowShape<ITransportOutbound, ITransportInbound> Shape { get; }
 
-    /// <summary>
-    /// Creates a scripted fake connection stage.
-    /// </summary>
-    /// <param name="responseFactory">
-    /// Factory that receives (requestIndex, outboundBytes) and returns response bytes.
-    /// Return <c>null</c> to abort the connection (simulates server closing mid-stream).
-    /// Return a truncated or corrupt byte array to simulate error conditions.
-    /// </param>
     public ScriptedFakeConnectionStage(Func<int, byte[], byte[]?> responseFactory)
     {
         _responseFactory = responseFactory;
-        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
+        Shape = new FlowShape<ITransportOutbound, ITransportInbound>(In, Out);
     }
 
-    /// <summary>
-    /// Creates a scripted fake connection stage with optional behavior override and activity observation.
-    /// </summary>
-    /// <param name="responseFactory">Default factory used when the BehaviorStack is empty.</param>
-    /// <param name="behaviorStack">When provided, its topmost behavior handles each request instead of the factory.</param>
-    /// <param name="activityLog">When provided, records WriteAttempt, ResponseDelivered, and ConnectionAbort events.</param>
     public ScriptedFakeConnectionStage(
         Func<int, byte[], byte[]?> responseFactory,
         BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>? behaviorStack,
@@ -53,7 +32,7 @@ internal sealed class ScriptedFakeConnectionStage : GraphStage<FlowShape<IOutput
         _responseFactory = responseFactory;
         _behaviorStack = behaviorStack;
         _activityLog = activityLog;
-        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
+        Shape = new FlowShape<ITransportOutbound, ITransportInbound>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -61,7 +40,7 @@ internal sealed class ScriptedFakeConnectionStage : GraphStage<FlowShape<IOutput
     private sealed class Logic : GraphStageLogic
     {
         private readonly ScriptedFakeConnectionStage _stage;
-        private readonly Queue<NetworkBuffer> _buffer = new();
+        private readonly Queue<ITransportInbound> _buffer = new();
         private bool _downstreamWaiting;
         private int _requestIndex;
 
@@ -73,11 +52,11 @@ internal sealed class ScriptedFakeConnectionStage : GraphStage<FlowShape<IOutput
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is NetworkBuffer dataChunk)
+                    if (item is TransportData { Buffer: var dataChunk })
                     {
                         var copy = new byte[dataChunk.Length];
                         dataChunk.Span.CopyTo(copy);
-                        stage.OutboundChannel.Writer.TryWrite(NetworkBufferTestExtensions.FromArray(copy));
+                        stage.OutboundChannel.Writer.TryWrite(TransportBufferTestExtensions.FromArray(copy));
                         dataChunk.Dispose();
 
                         var index = _requestIndex++;
@@ -105,11 +84,11 @@ internal sealed class ScriptedFakeConnectionStage : GraphStage<FlowShape<IOutput
                         if (_downstreamWaiting)
                         {
                             _downstreamWaiting = false;
-                            Push(stage.Out, NetworkBufferTestExtensions.FromArray(responseBytes));
+                            Push(stage.Out, new TransportData(TransportBufferTestExtensions.FromArray(responseBytes)));
                         }
                         else
                         {
-                            _buffer.Enqueue(NetworkBufferTestExtensions.FromArray(responseBytes));
+                            _buffer.Enqueue(new TransportData(TransportBufferTestExtensions.FromArray(responseBytes)));
                         }
                     }
 

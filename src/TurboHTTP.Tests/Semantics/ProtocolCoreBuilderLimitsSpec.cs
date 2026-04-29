@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using TurboHTTP.Internal;
 using TurboHTTP.Streams;
 
 namespace TurboHTTP.Tests.Semantics;

@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages.Internal;
 using TurboHTTP.Tests.Shared;
 

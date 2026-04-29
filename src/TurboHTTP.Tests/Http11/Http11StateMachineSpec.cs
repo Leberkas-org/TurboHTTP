@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Tests.Shared;
 
@@ -30,10 +30,10 @@ public sealed class Http11StateMachineSpec
         return req;
     }
 
-    private static NetworkBuffer CreateResponseBuffer(string response)
+    private static TransportBuffer CreateResponseBuffer(string response)
     {
         var bytes = Encoding.ASCII.GetBytes(response);
-        var buffer = NetworkBuffer.Rent(bytes.Length);
+        var buffer = TransportBuffer.Rent(bytes.Length);
         bytes.CopyTo(buffer.FullMemory.Span);
         buffer.Length = bytes.Length;
         return buffer;
@@ -49,7 +49,6 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         Assert.True(sm.HasInFlightRequests);
-        Assert.Single(ops.Outbound.OfType<StreamAcquireItem>());
     }
 
     [Fact(Timeout = 5000)]
@@ -61,7 +60,7 @@ public sealed class Http11StateMachineSpec
 
         sm.EncodeRequest(MakeRequest());
 
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         Assert.True(buffer.Length > 0);
         buffer.Dispose();
@@ -103,8 +102,8 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest("/", "POST", content));
 
         Assert.True(sm.HasInFlightRequests);
-        Assert.NotEmpty(ops.Outbound.OfType<NetworkBuffer>());
-        foreach (var buf in ops.Outbound.OfType<NetworkBuffer>())
+        Assert.NotEmpty(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
+        foreach (var buf in ops.Outbound.OfType<TransportData>().Select(d => d.Buffer))
         {
             buf.Dispose();
         }
@@ -122,7 +121,7 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest("/3"));
 
         Assert.Equal(3, sm.PendingRequestCount);
-        var buffers = ops.Outbound.OfType<NetworkBuffer>().ToList();
+        var buffers = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).ToList();
         Assert.Equal(3, buffers.Count);
         foreach (var buf in buffers)
         {
@@ -140,7 +139,7 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest("/", "GET"));
 
         Assert.True(sm.HasInFlightRequests);
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         buffer.Dispose();
     }
@@ -155,7 +154,7 @@ public sealed class Http11StateMachineSpec
 
         sm.EncodeRequest(MakeRequest("/", "POST", content));
 
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         Assert.True(buffer.Capacity <= 2048);
         buffer.Dispose();
@@ -170,7 +169,7 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.Single(ops.Responses);
         Assert.Equal((int)System.Net.HttpStatusCode.OK, (int)ops.Responses[0].StatusCode);
@@ -185,9 +184,8 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
-        Assert.Single(ops.Outbound.OfType<ConnectionReuseItem>());
     }
 
     [Fact(Timeout = 5000)]
@@ -202,7 +200,7 @@ public sealed class Http11StateMachineSpec
         var buffer = CreateResponseBuffer(
             "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK" +
             "HTTP/1.1 201 Created\r\nContent-Length: 7\r\n\r\nCreated");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.Equal(2, ops.Responses.Count);
         Assert.Equal((int)System.Net.HttpStatusCode.OK, (int)ops.Responses[0].StatusCode);
@@ -219,7 +217,7 @@ public sealed class Http11StateMachineSpec
 
         // Response with no Content-Length or Transfer-Encoding (close-delimited)
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
-        var shouldPull = sm.DecodeServerData(buffer);
+        var shouldPull = sm.DecodeServerData(new TransportData(buffer));
 
         // Should not complete response yet, waiting for close
         Assert.Empty(ops.Responses);
@@ -236,11 +234,11 @@ public sealed class Http11StateMachineSpec
 
         // First chunk: headers without Content-Length
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
-        sm.DecodeServerData(buffer1);
+        sm.DecodeServerData(new TransportData(buffer1));
 
         // Second chunk: body data
         var buffer2 = CreateResponseBuffer("response body");
-        sm.DecodeServerData(buffer2);
+        sm.DecodeServerData(new TransportData(buffer2));
 
         // Still waiting for close signal
         Assert.Empty(ops.Responses);
@@ -257,7 +255,7 @@ public sealed class Http11StateMachineSpec
 
         // Response with Connection: close (disables pipelining)
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.Single(ops.Responses);
         // Check that effective pipeline depth was reduced
@@ -272,11 +270,11 @@ public sealed class Http11StateMachineSpec
         var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         // Pass a CloseSignalItem (handled separately)
         // DecodeServerData returns false after handling CloseSignalItem
-        var shouldPull = sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.CleanClose });
+        var shouldPull = sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Graceful));
 
         Assert.False(shouldPull);
     }
@@ -292,7 +290,7 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest("/3"));
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\nOK");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         // Should warn about pipelined requests
         Assert.Contains("pipelined", ops.Warnings.FirstOrDefault() ?? "");
@@ -308,7 +306,7 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(req);
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.NotNull(ops.Responses[0].RequestMessage);
     }
@@ -323,12 +321,12 @@ public sealed class Http11StateMachineSpec
 
         // Setup close-delimited response
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
-        sm.DecodeServerData(buffer1);
+        sm.DecodeServerData(new TransportData(buffer1));
         var buffer2 = CreateResponseBuffer("body content");
-        sm.DecodeServerData(buffer2);
+        sm.DecodeServerData(new TransportData(buffer2));
 
         // Send clean close
-        sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.CleanClose });
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Graceful));
 
         Assert.Single(ops.Responses);
         Assert.Equal((int)System.Net.HttpStatusCode.OK, (int)ops.Responses[0].StatusCode);
@@ -343,10 +341,10 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         var ex = Assert.Throws<HttpRequestException>(() =>
-            sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.AbruptClose }));
+            sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)));
 
         Assert.Contains("aborted", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -361,10 +359,10 @@ public sealed class Http11StateMachineSpec
 
         // Incomplete response (no final headers delimiter)
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         // Send clean close
-        sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.CleanClose });
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Graceful));
 
         Assert.Single(ops.Responses);
     }
@@ -378,9 +376,9 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
-        sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.AbruptClose });
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         Assert.Contains("Abrupt", ops.Warnings.FirstOrDefault() ?? "");
     }
@@ -394,12 +392,12 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
-        sm.DecodeServerData(buffer1);
+        sm.DecodeServerData(new TransportData(buffer1));
         var buffer2 = CreateResponseBuffer("body");
-        sm.DecodeServerData(buffer2);
+        sm.DecodeServerData(new TransportData(buffer2));
 
         var ex = Assert.Throws<HttpRequestException>(() =>
-            sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.AbruptClose }));
+            sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)));
 
         Assert.NotNull(ex);
     }
@@ -413,9 +411,9 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
-        sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.CleanClose });
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Graceful));
 
         Assert.Single(ops.Responses);
     }
@@ -442,7 +440,7 @@ public sealed class Http11StateMachineSpec
 
         // Use a response without final \r\n to leave incomplete data in decoder buffer
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhel");
-        sm.DecodeServerData(buffer); // Incomplete response, data buffered
+        sm.DecodeServerData(new TransportData(buffer)); // Incomplete response, data buffered
 
         var result = sm.TryDecodeEof();
 
@@ -472,7 +470,7 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         sm.TryDecodeEof();
 
@@ -613,9 +611,9 @@ public sealed class Http11StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
-        sm.DecodeServerData(buffer1);
+        sm.DecodeServerData(new TransportData(buffer1));
         var buffer2 = CreateResponseBuffer("body");
-        sm.DecodeServerData(buffer2);
+        sm.DecodeServerData(new TransportData(buffer2));
 
         sm.Cleanup();
 
@@ -637,7 +635,7 @@ public sealed class Http11StateMachineSpec
             "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK" +
             "HTTP/1.1 201 Created\r\nContent-Length: 7\r\n\r\nCreated" +
             "HTTP/1.1 202 Accepted\r\nContent-Length: 8\r\n\r\nAccepted");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.Equal(3, ops.Responses.Count);
         Assert.NotNull(ops.Responses[0].RequestMessage);
@@ -655,14 +653,14 @@ public sealed class Http11StateMachineSpec
 
         // Response headers and partial body in one buffer
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\nstart");
-        sm.DecodeServerData(buffer1);
+        sm.DecodeServerData(new TransportData(buffer1));
 
         // More body data
         var buffer2 = CreateResponseBuffer("more");
-        sm.DecodeServerData(buffer2);
+        sm.DecodeServerData(new TransportData(buffer2));
 
         // Close signal completes the response
-        sm.DecodeServerData(new CloseSignalItem { CloseKind = TlsCloseKind.CleanClose });
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Graceful));
 
         Assert.Single(ops.Responses);
         Assert.Equal((int)System.Net.HttpStatusCode.OK, (int)ops.Responses[0].StatusCode);
@@ -678,7 +676,7 @@ public sealed class Http11StateMachineSpec
 
         // 204 No Content (should complete immediately)
         var buffer = CreateResponseBuffer("HTTP/1.1 204 No Content\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.Single(ops.Responses);
         Assert.Equal((int)System.Net.HttpStatusCode.NoContent, (int)ops.Responses[0].StatusCode);
@@ -694,7 +692,7 @@ public sealed class Http11StateMachineSpec
 
         // 304 Not Modified (should complete immediately)
         var buffer = CreateResponseBuffer("HTTP/1.1 304 Not Modified\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         Assert.Single(ops.Responses);
         Assert.Equal((int)System.Net.HttpStatusCode.NotModified, (int)ops.Responses[0].StatusCode);
@@ -710,7 +708,7 @@ public sealed class Http11StateMachineSpec
 
         // Response with chunked encoding (not close-delimited)
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         // Should not wait for close
         Assert.Empty(ops.Responses); // Chunked response body comes next
@@ -728,7 +726,7 @@ public sealed class Http11StateMachineSpec
 
         // First response with Connection: close
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(buffer);
+        sm.DecodeServerData(new TransportData(buffer));
 
         // Should warn about pipelined requests being at risk
         var hasWarning = ops.Warnings.Any(w => w.Contains("pipelined"));

@@ -1,8 +1,9 @@
+﻿using System.Net;
 using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 
@@ -16,10 +17,10 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
             Version = new Version(1, 1)
         };
 
-    private static NetworkBuffer MakeResponseBuffer(string raw)
+    private static TransportBuffer MakeResponseBuffer(string raw)
     {
         var bytes = Encoding.ASCII.GetBytes(raw);
-        var buf = NetworkBuffer.Rent(bytes.Length);
+        var buf = TransportBuffer.Rent(bytes.Length);
         bytes.CopyTo(buf.FullMemory.Span);
         buf.Length = bytes.Length;
         return buf;
@@ -33,8 +34,8 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -58,33 +59,32 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         // Send a request
         appSub.SendNext(MakeRequest());
 
-        // Consume ConnectItem + StreamAcquireItem + NetworkBuffer
+        // Consume ConnectTransport + TransportData
         var item0 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<ConnectItem>(item0);
+        Assert.IsType<ConnectTransport>(item0);
         var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<StreamAcquireItem>(item1);
-        var item2 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<NetworkBuffer>(item2);
+        var td = Assert.IsType<TransportData>(item1);
+        td.Buffer.Dispose();
 
         // Connection drops while request is in-flight
-        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
+        serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));
 
-        // Stage must emit ConnectItem with IsReconnect
+        // Stage must emit ConnectTransport
         var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var reconnect = Assert.IsType<ConnectItem>(reconnectRaw);
-        Assert.True(reconnect.IsReconnect);
+        var reconnect = Assert.IsType<ConnectTransport>(reconnectRaw);
 
-        // Simulate reconnect success → sends ConnectedSignalItem
-        serverSub.SendNext(new ConnectedSignalItem { Key = reconnect.Key });
+        // Simulate reconnect success → sends TransportConnected
+        var remoteEndPoint = new IPEndPoint(IPAddress.Loopback, reconnect.Options.Port);
+        var localEndPoint = new IPEndPoint(IPAddress.Loopback, 0);
+        serverSub.SendNext(new TransportConnected(new ConnectionInfo(localEndPoint, remoteEndPoint, null, null)));
 
-        // Stage must replay the request — expect StreamAcquireItem + NetworkBuffer again
-        var item3 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<StreamAcquireItem>(item3);
-        var item4 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<NetworkBuffer>(item4);
+        // Stage must replay the request — expect TransportData again
+        var item2Retry = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        var tdRetry = Assert.IsType<TransportData>(item2Retry);
+        tdRetry.Buffer.Dispose();
 
         // Now respond normally
-        serverSub.SendNext(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"));
+        serverSub.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello")));
 
         var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
@@ -98,8 +98,8 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -121,18 +121,17 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         resSub.Request(10);
 
         appSub.SendNext(MakeRequest());
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // ConnectItem
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // StreamAcquireItem
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // NetworkBuffer
+        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // ConnectTransport
+        var item = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken); // TransportData
+        Assert.IsType<TransportData>(item);
 
         // First drop → reconnect attempt 1 (hits max immediately)
-        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
+        serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));
         var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var reconnectItem2 = Assert.IsType<ConnectItem>(reconnectRaw);
-        Assert.True(reconnectItem2.IsReconnect);
+        var reconnectItem2 = Assert.IsType<ConnectTransport>(reconnectRaw);
 
-        // Reconnect fails → CloseSignalItem again (attempt 2 exceeds max of 1)
-        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.AbruptClose));
+        // Reconnect fails → TransportDisconnected again (attempt 2 exceeds max of 1)
+        serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));
 
         // Stage should complete
         await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
@@ -146,8 +145,8 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         { Http1 = { MaxPipelineDepth = 1, MaxReconnectAttempts = 1 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -169,9 +168,10 @@ public sealed class Http11ConnectionStageReconnectSpec : StreamTestBase
         resSub.Request(10);
 
         // No requests sent — connection just closes cleanly
-        serverSub.SendNext(new CloseSignalItem(TlsCloseKind.CleanClose));
+        serverSub.SendNext(new TransportDisconnected(DisconnectReason.Graceful));
 
         // Stage completes immediately (no in-flight requests → no reconnect, just CompleteStage)
         await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }
+

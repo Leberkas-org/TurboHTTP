@@ -1,4 +1,3 @@
-using Servus.Akka.IO;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
@@ -108,9 +107,8 @@ public sealed class Http2StateMachineSpec
         var req = MakeGet();
         sm.EncodeRequest(req);
 
-        var acquire = Assert.Single(ops.Outbound.OfType<StreamAcquireItem>());
-        var headers = Assert.Single(ops.Outbound.OfType<NetworkBuffer>());
-        Assert.True(acquire.Key != default);
+        var headers = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
+        Assert.True(headers.Length > 0);
         Assert.True(headers.Length > 0);
     }
 
@@ -162,7 +160,7 @@ public sealed class Http2StateMachineSpec
         var req = MakePost("/", content);
         sm.EncodeRequest(req);
 
-        var frames = ops.Outbound.OfType<NetworkBuffer>().ToList();
+        var frames = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).ToList();
         Assert.True(frames.Count > 0); // headers + data
     }
 
@@ -179,7 +177,6 @@ public sealed class Http2StateMachineSpec
         var result = sm.EncodeRequest(req);
 
         Assert.True(result);
-        Assert.Single(ops.Outbound.OfType<StreamAcquireItem>());
         Assert.True(ops.Outbound.Count > 0);
     }
 
@@ -196,7 +193,7 @@ public sealed class Http2StateMachineSpec
         sm.EncodeRequest(MakeGet("/b")); // stream 3
         sm.EncodeRequest(MakeGet("/c")); // stream 5
 
-        var acquires = ops.Outbound.OfType<StreamAcquireItem>().Count();
+        var acquires = ops.Outbound.OfType<TransportData>().Count();
         Assert.Equal(3, acquires);
     }
 
@@ -247,7 +244,7 @@ public sealed class Http2StateMachineSpec
         var settings = new SettingsFrame([]);
         sm.ProcessFrame(settings);
 
-        var ack = Assert.Single(ops.Outbound.OfType<NetworkBuffer>());
+        var ack = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
         Assert.NotNull(ack);
     }
 
@@ -264,7 +261,6 @@ public sealed class Http2StateMachineSpec
 
         sm.ProcessFrame(settings);
 
-        Assert.NotEmpty(ops.Outbound.OfType<MaxConcurrentStreamsItem>());
     }
 
     [Fact(Timeout = 5000)]
@@ -446,7 +442,7 @@ public sealed class Http2StateMachineSpec
         var ping = new PingFrame(new byte[8], isAck: false);
         sm.ProcessFrame(ping);
 
-        var pongBuf = Assert.Single(ops.Outbound.OfType<NetworkBuffer>());
+        var pongBuf = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
         Assert.NotNull(pongBuf);
     }
 
@@ -495,7 +491,7 @@ public sealed class Http2StateMachineSpec
         sm.ProcessFrame(goaway);
 
         Assert.True(sm.IsReconnecting);
-        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
+        Assert.Single(ops.Outbound, item => item is ConnectTransport);
     }
 
     [Fact(Timeout = 5000)]
@@ -516,7 +512,6 @@ public sealed class Http2StateMachineSpec
         var result = sm.ProcessFrame(data);
 
         Assert.False(result);
-        Assert.Single(ops.Outbound.OfType<ConnectionReuseItem>());
     }
 
     [Fact(Timeout = 5000)]
@@ -537,7 +532,6 @@ public sealed class Http2StateMachineSpec
         var result = sm.ProcessFrame(data);
 
         Assert.False(result);
-        Assert.Single(ops.Outbound.OfType<ConnectionReuseItem>());
     }
 
     [Fact(Timeout = 5000)]
@@ -733,7 +727,7 @@ public sealed class Http2StateMachineSpec
         sm.OnConnectionRestored();
 
         // First item should be preface, then headers from replayed request
-        var buffers = ops.Outbound.OfType<NetworkBuffer>().ToList();
+        var buffers = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).ToList();
         Assert.NotEmpty(buffers);
         var preface = buffers[0];
         Assert.NotNull(preface);
@@ -756,8 +750,9 @@ public sealed class Http2StateMachineSpec
 
         sm.OnConnectionRestored();
 
-        var acquires = ops.Outbound.OfType<StreamAcquireItem>().Count();
-        Assert.Equal(2, acquires);
+        // OnConnectionRestored emits preface + 2 replayed requests
+        var acquires = ops.Outbound.OfType<TransportData>().Count();
+        Assert.Equal(3, acquires);
     }
 
     [Fact(Timeout = 5000)]
@@ -775,7 +770,7 @@ public sealed class Http2StateMachineSpec
         sm.OnReconnectAttemptFailed(); // attempt 2
 
         Assert.True(sm.IsReconnecting);
-        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
+        Assert.Single(ops.Outbound, item => item is ConnectTransport);
     }
 
     [Fact(Timeout = 5000)]

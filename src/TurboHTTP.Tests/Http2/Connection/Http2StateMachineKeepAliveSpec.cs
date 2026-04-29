@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Tests.Shared;
 
@@ -19,7 +19,7 @@ public sealed class Http2StateMachineKeepAliveSpec
 
         sm.SendKeepAlivePing();
 
-        var ping = Assert.Single(ops.Outbound.OfType<NetworkBuffer>());
+        var ping = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
         Assert.True(ping.Length > 0);
     }
 
@@ -35,7 +35,7 @@ public sealed class Http2StateMachineKeepAliveSpec
         sm.SendKeepAlivePing();
         sm.SendKeepAlivePing(); // duplicate — should be ignored
 
-        Assert.Single(ops.Outbound.OfType<NetworkBuffer>());
+        Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
     }
 
     [Fact(Timeout = 5000)]

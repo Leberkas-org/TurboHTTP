@@ -1,8 +1,8 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
@@ -22,14 +22,14 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         return payload;
     }
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateCompressionEngine(string encoding)
     {
         var stage = new ContentEncodingBidiStage(true, new CompressionPolicy { Encoding = encoding });
         return BidiFlow.FromGraph(stage).Atop(CreateHttp30Engine().CreateFlow());
     }
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateDefaultCompressionEngine()
     {
         var stage = new ContentEncodingBidiStage(true, CompressionPolicy.Default);
@@ -218,3 +218,4 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         Assert.Single(decompressedBody);
     }
 }
+

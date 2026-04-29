@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http10;
 using TurboHTTP.Tests.Shared;
 
@@ -20,10 +20,10 @@ public sealed class Http10StateMachineSpec
         return request;
     }
 
-    private static NetworkBuffer CreateResponseBuffer(string responseText)
+    private static TransportBuffer CreateResponseBuffer(string responseText)
     {
         var bytes = System.Text.Encoding.ASCII.GetBytes(responseText);
-        var buffer = NetworkBuffer.Rent(bytes.Length);
+        var buffer = TransportBuffer.Rent(bytes.Length);
         bytes.CopyTo(buffer.FullMemory.Span);
         buffer.Length = bytes.Length;
         return buffer;
@@ -50,7 +50,6 @@ public sealed class Http10StateMachineSpec
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
 
-        RequestEndpoint.FromRequest(MakeRequest("http://example.com:8080/"));
         sm.EncodeRequest(MakeRequest("http://example.com:8080/"));
         var capturedEndpoint = sm.Endpoint;
 
@@ -61,26 +60,26 @@ public sealed class Http10StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void EncodeRequest_should_emit_stream_acquire_item()
+    public void EncodeRequest_should_emit_transport_data()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest());
 
-        Assert.Contains(ops.Outbound, o => o is StreamAcquireItem);
+        Assert.Contains(ops.Outbound, o => o is TransportData);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void EncodeRequest_should_emit_network_buffer_with_encoded_data()
+    public void EncodeRequest_should_emit_transport_data_with_encoded_data()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
 
         sm.EncodeRequest(MakeRequest("http://example.com/test"));
 
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         Assert.True(buffer.Length > 0);
 
@@ -112,7 +111,7 @@ public sealed class Http10StateMachineSpec
 
         sm.EncodeRequest(request);
 
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         var text = System.Text.Encoding.ASCII.GetString(buffer.Span);
         Assert.Contains("Content-Length:", text);
@@ -131,7 +130,7 @@ public sealed class Http10StateMachineSpec
 
         sm.EncodeRequest(request);
 
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         // Buffer should be at least minBufferSize
         Assert.True(buffer.Capacity >= minBufferSize);
@@ -147,7 +146,7 @@ public sealed class Http10StateMachineSpec
 
         sm.EncodeRequest(MakeRequest()); // Minimal request
 
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         Assert.True(buffer.Capacity >= minBufferSize);
     }
@@ -166,8 +165,7 @@ public sealed class Http10StateMachineSpec
         sm.EncodeRequest(request);
 
         Assert.True(sm.HasInFlightRequest);
-        Assert.Single(ops.Outbound.OfType<StreamAcquireItem>());
-        Assert.Single(ops.Outbound.OfType<NetworkBuffer>());
+        Assert.Single(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
@@ -182,7 +180,7 @@ public sealed class Http10StateMachineSpec
         sm.EncodeRequest(request);
 
         Assert.True(sm.HasInFlightRequest);
-        var buffer = ops.Outbound.OfType<NetworkBuffer>().FirstOrDefault();
+        var buffer = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).FirstOrDefault();
         Assert.NotNull(buffer);
         var text = System.Text.Encoding.ASCII.GetString(buffer.Span);
         Assert.Contains("HEAD / HTTP/1.0", text);
@@ -196,7 +194,7 @@ public sealed class Http10StateMachineSpec
         var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
-        var closeSignal = new CloseSignalItem(TlsCloseKind.CleanClose);
+        var closeSignal = new TransportDisconnected(DisconnectReason.Graceful);
 
         sm.DecodeServerData(closeSignal);
 
@@ -206,12 +204,12 @@ public sealed class Http10StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void DecodeServerData_should_ignore_non_network_buffer_items()
+    public void DecodeServerData_should_ignore_non_transport_data_items()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
 
-        var item = new ConnectedSignalItem { Key = default };
+        var item = new TransportConnected(default);
 
         // Should return early without crashing
         sm.DecodeServerData(item);
@@ -229,7 +227,7 @@ public sealed class Http10StateMachineSpec
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.Single(ops.Responses);
         Assert.Equal(HttpStatusCode.OK, ops.Responses[0].StatusCode);
@@ -237,18 +235,18 @@ public sealed class Http10StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-6")]
-    public void DecodeServerData_should_emit_connection_reuse_item_on_successful_decode()
+    public void DecodeServerData_should_complete_response_on_successful_decode()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
-        ops.Outbound.Clear(); // Clear encode output
+        ops.Responses.Clear();
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
-        Assert.Single(ops.Outbound.OfType<ConnectionReuseItem>());
+        Assert.Single(ops.Responses);
     }
 
     [Fact(Timeout = 5000)]
@@ -262,7 +260,7 @@ public sealed class Http10StateMachineSpec
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.Single(ops.Responses);
         Assert.NotNull(ops.Responses[0].RequestMessage);
@@ -279,7 +277,7 @@ public sealed class Http10StateMachineSpec
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.False(sm.HasInFlightRequest);
     }
@@ -295,7 +293,7 @@ public sealed class Http10StateMachineSpec
         // Send incomplete response (missing body)
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 10\r\n\r\nhell");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.Empty(ops.Responses); // Not decoded yet
         Assert.True(sm.HasInFlightRequest); // Still waiting
@@ -311,7 +309,7 @@ public sealed class Http10StateMachineSpec
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         // Buffer should be disposed (no way to verify directly, but no exception should occur)
         Assert.True(true);
@@ -328,7 +326,7 @@ public sealed class Http10StateMachineSpec
         // HTTP/0.9 responses don't have status line — just body
         var responseBuffer = CreateResponseBuffer("This is HTTP/0.9 body data");
 
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         // Data is buffered but not yet complete (needs EOF to finalize)
         Assert.False(sm.HasInFlightRequest == false); // Decoder is still waiting for EOF
@@ -344,13 +342,13 @@ public sealed class Http10StateMachineSpec
 
         // Send response in fragments
         var fragment1 = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-");
-        sm.DecodeServerData(fragment1);
+        sm.DecodeServerData(new TransportData(fragment1));
         Assert.Empty(ops.Responses); // Not complete yet
 
         // Send rest of response
         sm.EncodeRequest(MakeRequest()); // New request for next response
         var fragment2 = CreateResponseBuffer("Length: 0\r\n\r\n");
-        sm.DecodeServerData(fragment2);
+        sm.DecodeServerData(new TransportData(fragment2));
 
         // Now we should have responses
         Assert.True(ops.Responses.Count >= 0); // Behavior depends on decoder buffering
@@ -366,9 +364,9 @@ public sealed class Http10StateMachineSpec
 
         // First, start receiving data with Content-Length
         var partialBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nhello");
-        sm.DecodeServerData(partialBuffer); // Decoder is now waiting for 100 bytes
+        sm.DecodeServerData(new TransportData(partialBuffer)); // Decoder is now waiting for 100 bytes
 
-        var closeSignal = new CloseSignalItem(TlsCloseKind.AbruptClose);
+        var closeSignal = new TransportDisconnected(DisconnectReason.Error);
 
         var ex = Assert.Throws<HttpRequestException>(() => sm.DecodeServerData(closeSignal));
         Assert.Contains("Content-Length mismatch", ex.Message);
@@ -382,7 +380,7 @@ public sealed class Http10StateMachineSpec
         var sm = new StateMachine(ops, MakeConfig());
         sm.EncodeRequest(MakeRequest());
 
-        var closeSignal = new CloseSignalItem(TlsCloseKind.AbruptClose);
+        var closeSignal = new TransportDisconnected(DisconnectReason.Error);
 
         var ex = Assert.Throws<HttpRequestException>(() => sm.DecodeServerData(closeSignal));
         Assert.Contains("Connection was aborted", ex.Message);
@@ -398,7 +396,7 @@ public sealed class Http10StateMachineSpec
 
         try
         {
-            var closeSignal = new CloseSignalItem(TlsCloseKind.AbruptClose);
+            var closeSignal = new TransportDisconnected(DisconnectReason.Error);
             sm.DecodeServerData(closeSignal);
         }
         catch (HttpRequestException)
@@ -420,11 +418,11 @@ public sealed class Http10StateMachineSpec
 
         // Send complete response
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
         ops.Responses.Clear(); // Clear previous response
 
         // Now handle clean close
-        var closeSignal = new CloseSignalItem(TlsCloseKind.CleanClose);
+        var closeSignal = new TransportDisconnected(DisconnectReason.Graceful);
         sm.DecodeServerData(closeSignal);
 
         // Should complete without error
@@ -441,12 +439,12 @@ public sealed class Http10StateMachineSpec
 
         // Send partial response that's buffered by decoder
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\n");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         ops.Responses.Clear();
 
         // Clean close triggers EOF decode
-        var closeSignal = new CloseSignalItem(TlsCloseKind.CleanClose);
+        var closeSignal = new TransportDisconnected(DisconnectReason.Graceful);
         sm.DecodeServerData(closeSignal);
 
         // May or may not have a response depending on whether headers-only is valid
@@ -462,7 +460,7 @@ public sealed class Http10StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         // Send no response data, then clean close
-        var closeSignal = new CloseSignalItem(TlsCloseKind.CleanClose);
+        var closeSignal = new TransportDisconnected(DisconnectReason.Graceful);
         sm.DecodeServerData(closeSignal);
 
         Assert.Empty(ops.Responses);
@@ -478,7 +476,7 @@ public sealed class Http10StateMachineSpec
 
         // Send incomplete response without Content-Length (waiting for EOF)
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\n\r\nhello");
-        sm.DecodeServerData(responseBuffer); // Decoder keeps this buffered (no Content-Length)
+        sm.DecodeServerData(new TransportData(responseBuffer)); // Decoder keeps this buffered (no Content-Length)
         ops.Responses.Clear();
 
         // Now EOF arrives
@@ -511,7 +509,7 @@ public sealed class Http10StateMachineSpec
 
         // HTTP/0.9 response (no HTTP status line)
         var http09Buffer = CreateResponseBuffer("just some body content");
-        sm.DecodeServerData(http09Buffer);
+        sm.DecodeServerData(new TransportData(http09Buffer));
 
         // When EOF is encountered, HTTP/0.9 decoder completes
         var result = sm.TryDecodeEof();
@@ -531,7 +529,7 @@ public sealed class Http10StateMachineSpec
 
         // HTTP/0.9 body data (no HTTP status line — plain text response)
         var http09 = CreateResponseBuffer("plain text body without HTTP status");
-        sm.DecodeServerData(http09);
+        sm.DecodeServerData(new TransportData(http09));
         ops.Responses.Clear();
 
         // EOF triggers completion
@@ -691,14 +689,14 @@ public sealed class Http10StateMachineSpec
 
         // Partially receive response
         var partialBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\npart");
-        sm.DecodeServerData(partialBuffer);
+        sm.DecodeServerData(new TransportData(partialBuffer));
 
         sm.Cleanup();
 
         // After cleanup, decoder should be reset; new request should work
         sm.EncodeRequest(MakeRequest());
         var validBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(validBuffer);
+        sm.DecodeServerData(new TransportData(validBuffer));
 
         Assert.Single(ops.Responses);
     }
@@ -715,19 +713,17 @@ public sealed class Http10StateMachineSpec
         sm.EncodeRequest(request);
 
         Assert.True(sm.HasInFlightRequest);
-        Assert.Contains(ops.Outbound, o => o is StreamAcquireItem);
-        Assert.Contains(ops.Outbound, o => o is NetworkBuffer);
+        Assert.Contains(ops.Outbound, o => o is TransportData);
 
         ops.Outbound.Clear();
 
         // Decode response
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.False(sm.HasInFlightRequest);
         Assert.Single(ops.Responses);
         Assert.Equal(HttpStatusCode.OK, ops.Responses[0].StatusCode);
-        Assert.Contains(ops.Outbound, o => o is ConnectionReuseItem);
     }
 
     [Fact(Timeout = 5000)]
@@ -742,7 +738,7 @@ public sealed class Http10StateMachineSpec
         Assert.True(sm.HasInFlightRequest);
 
         var response1 = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(response1);
+        sm.DecodeServerData(new TransportData(response1));
 
         Assert.False(sm.HasInFlightRequest);
         Assert.Single(ops.Responses);
@@ -753,7 +749,7 @@ public sealed class Http10StateMachineSpec
 
         ops.Responses.Clear();
         var response2 = CreateResponseBuffer("HTTP/1.0 404 Not Found\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(response2);
+        sm.DecodeServerData(new TransportData(response2));
 
         Assert.False(sm.HasInFlightRequest);
         Assert.Single(ops.Responses);
@@ -771,7 +767,7 @@ public sealed class Http10StateMachineSpec
             : "http://example.com/"));
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 204 No Content\r\n\r\n");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.Single(ops.Responses);
         Assert.Equal(HttpStatusCode.NoContent, ops.Responses[0].StatusCode);
@@ -786,7 +782,7 @@ public sealed class Http10StateMachineSpec
         sm.EncodeRequest(MakeRequest());
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 304 Not Modified\r\n\r\n");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.Single(ops.Responses);
         Assert.Equal(HttpStatusCode.NotModified, ops.Responses[0].StatusCode);
@@ -801,7 +797,7 @@ public sealed class Http10StateMachineSpec
 
         sm.EncodeRequest(MakeRequest());
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.True(sm.CanAcceptRequest); // Should be able to accept new request
     }
@@ -817,7 +813,7 @@ public sealed class Http10StateMachineSpec
         sm.EncodeRequest(request1);
 
         var responseBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
-        sm.DecodeServerData(responseBuffer);
+        sm.DecodeServerData(new TransportData(responseBuffer));
 
         Assert.Single(ops.Responses);
         Assert.NotNull(ops.Responses[0].RequestMessage);

@@ -1,13 +1,7 @@
 using System.Net;
-using System.Runtime.Versioning;
 
 namespace Servus.Akka.Transport.Quic;
 
-#pragma warning disable CA1416
-
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
 public sealed class QuicConnectionHandle : IAsyncDisposable
 {
     private readonly Func<StreamDirection, CancellationToken, Task<(Stream, long)>> _openStream;
@@ -39,5 +33,3 @@ public sealed class QuicConnectionHandle : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _dispose();
 }
-
-#pragma warning restore CA1416

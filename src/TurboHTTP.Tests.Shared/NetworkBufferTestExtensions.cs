@@ -1,17 +1,13 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 
 namespace TurboHTTP.Tests.Shared;
 
-/// <summary>
-/// Test-only helper that replicates the removed <c>NetworkBuffer.FromArray</c> convenience method.
-/// Wraps a byte array in a <see cref="NetworkBuffer"/> without copying, using a non-disposing owner.
-/// </summary>
-internal static class NetworkBufferTestExtensions
+internal static class TransportBufferTestExtensions
 {
-    internal static NetworkBuffer FromArray(byte[] data, int length = -1)
+    internal static TransportBuffer FromArray(byte[] data, int length = -1)
     {
         var len = length < 0 ? data.Length : length;
-        var buf = NetworkBuffer.Rent(len);
+        var buf = TransportBuffer.Rent(len);
         data.AsSpan(0, len).CopyTo(buf.FullMemory.Span);
         buf.Length = len;
         return buf;

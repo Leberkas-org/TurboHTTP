@@ -1,19 +1,18 @@
 using Akka.Event;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 
 namespace TurboHTTP.Tests.Shared;
 
 internal sealed class MockTransportOperations : ITransportOperations
 {
-    public List<IInputItem> PushedOutputs { get; } = [];
-    public int PullInputCount { get; set; }
+    public List<ITransportInbound> PushedOutputs { get; } = [];
+    public int PullOutputCount { get; set; }
     public int CompleteStageCount { get; private set; }
     public List<(string Key, TimeSpan Delay)> ScheduledTimers { get; } = [];
     public List<string> CancelledTimers { get; } = [];
 
-    public void OnPushOutput(IInputItem item) => PushedOutputs.Add(item);
-    public void OnSignalPullInput() => PullInputCount++;
+    public void OnPushInbound(ITransportInbound item) => PushedOutputs.Add(item);
+    public void OnSignalPullOutbound() => PullOutputCount++;
     public void OnCompleteStage() => CompleteStageCount++;
     public void OnScheduleTimer(string key, TimeSpan delay) => ScheduledTimers.Add((key, delay));
     public void OnCancelTimer(string key) => CancelledTimers.Add(key);

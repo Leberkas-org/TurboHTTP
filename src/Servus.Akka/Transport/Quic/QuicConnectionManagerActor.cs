@@ -1,13 +1,7 @@
-using System.Runtime.Versioning;
 using Akka.Actor;
 
 namespace Servus.Akka.Transport.Quic;
 
-#pragma warning disable CA1416
-
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
 public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 {
     public sealed record Acquire(
@@ -64,8 +58,8 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     {
         _factory = factory;
         Receive<Acquire>(OnAcquire);
-        Receive<Release>(OnRelease);
-        Receive<Established>(OnEstablished);
+        ReceiveAsync<Release>(OnRelease);
+        ReceiveAsync<Established>(OnEstablished);
         Receive<EstablishFailed>(OnFailed);
         Receive<Evict>(_ => OnEvict());
     }
@@ -108,7 +102,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         }
     }
 
-    private void OnRelease(Release msg)
+    private async Task OnRelease(Release msg)
     {
         msg.Lease.MarkIdle();
 
@@ -124,14 +118,12 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 
             if (msg.Lease.ActiveStreams == 0)
             {
-                msg.Lease.Dispose();
+                await msg.Lease.DisposeAsync();
             }
-
-            return;
         }
     }
 
-    private void OnEstablished(Established msg)
+    private async Task OnEstablished(Established msg)
     {
         var host = GetOrCreateHost(msg.Original.Options);
         host.Establishing--;
@@ -140,7 +132,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 
         if (!msg.Original.Tcs.TrySetResult(msg.Lease))
         {
-            OnRelease(new Release(msg.Lease, CanReuse: true));
+            await OnRelease(new Release(msg.Lease, CanReuse: true));
         }
     }
 
@@ -161,7 +153,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         }
     }
 
-    private void OnEvict()
+    private async Task OnEvict()
     {
         foreach (var host in _hosts.Values)
         {
@@ -172,7 +164,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
             foreach (var lease in toRemove)
             {
                 host.Leases.Remove(lease);
-                lease.Dispose();
+                await lease.DisposeAsync();
             }
         }
     }
@@ -189,7 +181,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 
             foreach (var lease in host.Leases)
             {
-                lease.Dispose();
+                _ = lease.DisposeAsync();
             }
         }
 
@@ -216,5 +208,3 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
                 failure: ex => new EstablishFailed(ex, msg));
     }
 }
-
-#pragma warning restore CA1416

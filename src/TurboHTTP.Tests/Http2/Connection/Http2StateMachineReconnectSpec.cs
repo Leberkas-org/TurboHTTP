@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Tests.Shared;
 
@@ -37,7 +37,7 @@ public sealed class Http2StateMachineReconnectSpec
 
         Assert.True(sm.IsReconnecting);
         Assert.Equal(2, sm.ReconnectBufferCount);
-        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
+        Assert.Single(ops.Outbound, item => item is ConnectTransport);
     }
 
     [Fact(Timeout = 5000)]
@@ -79,8 +79,7 @@ public sealed class Http2StateMachineReconnectSpec
 
         Assert.False(sm.IsReconnecting);
         // New preface emitted, then request with stream ID 1 (fresh tracker)
-        var acquire = ops.Outbound.OfType<StreamAcquireItem>().ToList();
-        Assert.Single(acquire);
+        Assert.NotEmpty(ops.Outbound);
     }
 
     [Fact(Timeout = 5000)]

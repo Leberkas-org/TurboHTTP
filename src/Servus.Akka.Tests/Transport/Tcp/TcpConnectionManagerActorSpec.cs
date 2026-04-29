@@ -127,6 +127,9 @@ public sealed class TcpConnectionManagerActorSpec : TestKit
         actor.Tell(new TcpConnectionManagerActor.Release(lease1, CanReuse: true));
         actor.Tell(new TcpConnectionManagerActor.Release(lease2, CanReuse: true));
 
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        actor.Tell(TcpConnectionManagerActor.Evict.Instance);
+
         AwaitCondition(() => !lease1.IsAlive() || !lease2.IsAlive(), TimeSpan.FromSeconds(2),
             TestContext.Current.CancellationToken);
 

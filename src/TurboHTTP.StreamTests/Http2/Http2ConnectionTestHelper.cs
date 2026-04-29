@@ -1,11 +1,11 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 
 namespace TurboHTTP.StreamTests.Http2;
 
 internal static class Http2ConnectionTestHelper
 {
-    public static IInputItem FramesToInput(params Http2Frame[] frames)
+    public static ITransportInbound FramesToInput(params Http2Frame[] frames)
     {
         var totalSize = 0;
         foreach (var f in frames)
@@ -13,7 +13,7 @@ internal static class Http2ConnectionTestHelper
             totalSize += f.SerializedSize;
         }
 
-        var buf = NetworkBuffer.Rent(totalSize);
+        var buf = TransportBuffer.Rent(totalSize);
         var span = buf.FullMemory.Span;
         foreach (var f in frames)
         {
@@ -21,10 +21,10 @@ internal static class Http2ConnectionTestHelper
         }
 
         buf.Length = totalSize;
-        return buf;
+        return new TransportData(buf);
     }
 
-    public static IEnumerable<IInputItem> FramesToInputs(IEnumerable<Http2Frame> frames)
+    public static IEnumerable<ITransportInbound> FramesToInputs(IEnumerable<Http2Frame> frames)
     {
         foreach (var f in frames)
         {
@@ -32,14 +32,14 @@ internal static class Http2ConnectionTestHelper
         }
     }
 
-    public static IReadOnlyList<Http2Frame> DecodeFrames(IEnumerable<IOutputItem> items, bool skipPreface = false)
+    public static IReadOnlyList<Http2Frame> DecodeFrames(IEnumerable<ITransportOutbound> items, bool skipPreface = false)
     {
         var decoder = new FrameDecoder();
         var result = new List<Http2Frame>();
         var skippedFirst = false;
         foreach (var item in items)
         {
-            if (item is NetworkBuffer buffer)
+            if (item is TransportData { Buffer: var buffer })
             {
                 if (skipPreface && !skippedFirst)
                 {
@@ -55,14 +55,15 @@ internal static class Http2ConnectionTestHelper
         return result;
     }
 
-    public static IReadOnlyList<IControlItem> ExtractSignals(IEnumerable<IOutputItem> items)
+    public static IReadOnlyList<ITransportOutbound> ExtractSignals(IEnumerable<ITransportOutbound> items)
     {
-        var result = new List<IControlItem>();
+        var result = new List<ITransportOutbound>();
         foreach (var item in items)
         {
-            if (item is IControlItem signal)
+            // Exclude data items, include control messages (Connect, Disconnect, OpenStream, CloseStream, etc.)
+            if (item is not TransportData)
             {
-                result.Add(signal);
+                result.Add(item);
             }
         }
 

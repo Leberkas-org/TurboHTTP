@@ -15,7 +15,7 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
 
     private sealed record EstablishFailed(Exception Ex, Acquire Original);
 
-    private sealed class Evict
+    internal sealed class Evict
     {
         public static readonly Evict Instance = new();
     }
@@ -58,7 +58,7 @@ public sealed class TcpConnectionManagerActor : ReceiveActor, IWithTimers
     {
     }
 
-    internal TcpConnectionManagerActor(ITcpConnectionFactory factory, PoolConfigRegistry registry)
+    public TcpConnectionManagerActor(ITcpConnectionFactory factory, PoolConfigRegistry registry)
     {
         _factory = factory;
         _registry = registry;

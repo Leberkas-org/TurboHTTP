@@ -93,12 +93,11 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         {
             var opts = create.ClientOptions;
 
-            var poolRegistry = new PoolConfigRegistry(
-                    new TcpPoolConfig(
-                        opts.Http1.MaxConnectionsPerServer,
-                        opts.PooledConnectionIdleTimeout,
-                        opts.PooledConnectionLifetime,
-                        ReuseOnUpstreamFinish: true))
+            var poolRegistry = new PoolConfigRegistry(new TcpPoolConfig(
+                    1,
+                    opts.PooledConnectionIdleTimeout,
+                    opts.PooledConnectionLifetime,
+                    ReuseOnUpstreamFinish: true))
                 .Register(PoolKeys.Http10, new TcpPoolConfig(
                     MaxConnectionsPerHost: int.MaxValue,
                     IdleTimeout: TimeSpan.Zero,
@@ -121,8 +120,10 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
             _quicConnectionManager = Context.ActorOf(Props.Create(() => new QuicConnectionManagerActor()), "quic-pool");
 
             var transports = new TransportRegistry()
-                .Register(new Version(1, 0), new TcpTransportFactory(_tcpConnectionManager, new Http10PoolingStrategy()))
-                .Register(new Version(1, 1), new TcpTransportFactory(_tcpConnectionManager, new Http11PoolingStrategy()))
+                .Register(new Version(1, 0),
+                    new TcpTransportFactory(_tcpConnectionManager, new Http10PoolingStrategy()))
+                .Register(new Version(1, 1),
+                    new TcpTransportFactory(_tcpConnectionManager, new Http11PoolingStrategy()))
                 .Register(new Version(2, 0), new TcpTransportFactory(_tcpConnectionManager, new Http2PoolingStrategy()))
                 .Register(new Version(3, 0), new QuicTransportFactory(_quicConnectionManager));
 

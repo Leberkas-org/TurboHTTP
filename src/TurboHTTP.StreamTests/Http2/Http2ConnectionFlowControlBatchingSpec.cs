@@ -1,6 +1,6 @@
-using Akka.Streams;
+﻿using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
@@ -18,7 +18,7 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
         params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -141,3 +141,4 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
         Assert.Contains(windowUpdates, f => f is { StreamId: 3, Increment: 8192 });
     }
 }
+

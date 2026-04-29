@@ -1,6 +1,6 @@
-using Akka.Streams;
+﻿using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
@@ -11,11 +11,11 @@ namespace TurboHTTP.StreamTests.Http2;
 public sealed class Http2ConnectionPingSpec : StreamTestBase
 {
     private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound,
-        IReadOnlyList<IControlItem> Signals)> RunAsync(
+        IReadOnlyList<ITransportOutbound> Signals)> RunAsync(
         params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -95,3 +95,5 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
         Assert.True(pingAck.IsAck);
     }
 }
+
+

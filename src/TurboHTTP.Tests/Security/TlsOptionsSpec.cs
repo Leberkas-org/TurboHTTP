@@ -2,9 +2,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Quic;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
 
@@ -146,7 +144,7 @@ public sealed class TlsOptionsSpec
         var uri = new Uri("https://secure.example.com/path");
 
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         Assert.Equal("secure.example.com", tlsOptions.TargetHost);
     }
@@ -162,7 +160,7 @@ public sealed class TlsOptionsSpec
 
         var uri = new Uri("https://mtls.example.com/");
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         Assert.Same(certs, tlsOptions.ClientCertificates);
     }
@@ -177,7 +175,7 @@ public sealed class TlsOptionsSpec
 
         var uri = new Uri("https://example.com/");
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         Assert.Equal(SslProtocols.Tls12 | SslProtocols.Tls13, tlsOptions.EnabledSslProtocols);
     }
@@ -189,7 +187,7 @@ public sealed class TlsOptionsSpec
         var uri = new Uri("https://example.com/");
 
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         // SslProtocols.None lets the OS negotiate the best available protocol
         Assert.Equal(SslProtocols.None, tlsOptions.EnabledSslProtocols);
@@ -203,8 +201,8 @@ public sealed class TlsOptionsSpec
 
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
 
-        Assert.IsType<TcpOptions>(tcpOptions);
-        Assert.IsNotType<TlsOptions>(tcpOptions);
+        Assert.IsType<TcpTransportOptions>(tcpOptions);
+        Assert.IsNotType<TlsTransportOptions>(tcpOptions);
     }
 
     [Fact(Timeout = 5000)]
@@ -215,7 +213,7 @@ public sealed class TlsOptionsSpec
 
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
 
-        Assert.IsType<TlsOptions>(tcpOptions);
+        Assert.IsType<TlsTransportOptions>(tcpOptions);
     }
 
     [Fact(Timeout = 5000)]
@@ -225,7 +223,7 @@ public sealed class TlsOptionsSpec
         var uri = new Uri("https://example.com:8443/");
 
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         Assert.Equal(8443, tlsOptions.Port);
         Assert.Equal("example.com", tlsOptions.TargetHost);
@@ -246,7 +244,7 @@ public sealed class TlsOptionsSpec
 
         var uri = new Uri("https://example.com/");
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri, new Version(3, 0)), options);
-        var quicOptions = Assert.IsType<QuicOptions>(tcpOptions);
+        var quicOptions = Assert.IsType<QuicTransportOptions>(tcpOptions);
 
         Assert.NotNull(quicOptions.ServerCertificateValidationCallback);
         quicOptions.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.None);
@@ -262,7 +260,7 @@ public sealed class TlsOptionsSpec
 
         var uri = new Uri("https://example.com/");
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         Assert.Null(tlsOptions.ClientCertificates);
     }

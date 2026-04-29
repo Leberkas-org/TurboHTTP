@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Security;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Semantics;
@@ -108,10 +107,10 @@ public sealed class CertificateValidationSpec
         var uri = new Uri("https://example.com/path");
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
 
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
 
-        // DangerousAcceptAny was set, so TlsOptions callback should accept anything
+        // DangerousAcceptAny was set, so TlsTransportOptions callback should accept anything
         Assert.True(tlsOptions.ServerCertificateValidationCallback!(null!, null, null,
             SslPolicyErrors.RemoteCertificateNameMismatch));
     }
@@ -125,7 +124,7 @@ public sealed class CertificateValidationSpec
         var uri = new Uri("https://example.com/");
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
 
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
 
         // Default should accept only SslPolicyErrors.None
@@ -143,7 +142,7 @@ public sealed class CertificateValidationSpec
 
         var tcpOptions = OptionsFactory.Build(ToEndpoint(uri), options);
 
-        Assert.IsType<TcpOptions>(tcpOptions);
-        Assert.IsNotType<TlsOptions>(tcpOptions);
+        Assert.IsType<TcpTransportOptions>(tcpOptions);
+        Assert.IsNotType<TlsTransportOptions>(tcpOptions);
     }
 }

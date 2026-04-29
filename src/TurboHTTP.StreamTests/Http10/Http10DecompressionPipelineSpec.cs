@@ -1,9 +1,9 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
@@ -14,7 +14,7 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
 {
     private static readonly Http10Engine Engine = new(new TurboClientOptions());
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateDecompressingEngine()
     {
         var decomp = BidiFlow.FromGraph(new ContentEncodingBidiStage());
@@ -231,3 +231,4 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
             response.Content.Headers.ContentType?.ToString() ?? "");
     }
 }
+

@@ -33,6 +33,7 @@
         <PackageReference Include="Akka.Hosting"/>
         <PackageReference Include="Akka.Streams"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream"/>
+        <PackageReference Include="Servus.Akka" />
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>

@@ -1,26 +1,26 @@
 using System.Threading.Channels;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 
 namespace TurboHTTP.Tests.Shared;
 
-internal sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
+internal sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<ITransportOutbound, ITransportInbound>>
 {
     private readonly IReadOnlyList<byte[]> _serverFrames;
 
-    public Channel<NetworkBuffer> OutboundChannel { get; } =
-        Channel.CreateUnbounded<NetworkBuffer>();
+    public Channel<TransportBuffer> OutboundChannel { get; } =
+        Channel.CreateUnbounded<TransportBuffer>();
 
-    public Inlet<IOutputItem> In { get; } = new("h2-engine-fake.in");
-    public Outlet<IInputItem> Out { get; } = new("h2-engine-fake.out");
+    public Inlet<ITransportOutbound> In { get; } = new("h2-engine-fake.in");
+    public Outlet<ITransportInbound> Out { get; } = new("h2-engine-fake.out");
 
-    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
+    public override FlowShape<ITransportOutbound, ITransportInbound> Shape { get; }
 
     public H2EngineFakeConnectionStage(params byte[][] serverFrames)
     {
         _serverFrames = serverFrames;
-        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
+        Shape = new FlowShape<ITransportOutbound, ITransportInbound>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -42,11 +42,11 @@ internal sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is ConnectItem)
+                    if (item is ConnectTransport)
                     {
                         Unlock();
                     }
-                    else if (item is NetworkBuffer dataChunk)
+                    else if (item is TransportData { Buffer: var dataChunk })
                     {
                         var span = dataChunk.Span;
                         if (span.Length >= 24 && span[..24].SequenceEqual(H2Preface))
@@ -54,12 +54,12 @@ internal sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
                             var remainder = span[24..];
                             if (remainder.Length > 0)
                             {
-                                stage.OutboundChannel.Writer.TryWrite(NetworkBufferTestExtensions.FromArray(remainder.ToArray()));
+                                stage.OutboundChannel.Writer.TryWrite(TransportBufferTestExtensions.FromArray(remainder.ToArray()));
                             }
                         }
                         else
                         {
-                            stage.OutboundChannel.Writer.TryWrite(NetworkBufferTestExtensions.FromArray(span.ToArray()));
+                            stage.OutboundChannel.Writer.TryWrite(TransportBufferTestExtensions.FromArray(span.ToArray()));
                         }
 
                         dataChunk.Dispose();
@@ -103,7 +103,7 @@ internal sealed class H2EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
         private void PushNextFrame()
         {
             var frameBytes = _stage._serverFrames[_serverFrameIndex++];
-            Push(_stage.Out, NetworkBufferTestExtensions.FromArray(frameBytes));
+            Push(_stage.Out, new TransportData(TransportBufferTestExtensions.FromArray(frameBytes)));
         }
 
         public override void PreStart() => Pull(_stage.In);

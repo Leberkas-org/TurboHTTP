@@ -1,19 +1,10 @@
-using System.Runtime.Versioning;
-
 namespace Servus.Akka.Transport.Quic;
 
-#pragma warning disable CA1416
-
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
-public sealed class QuicConnectionLease : IDisposable
+public sealed class QuicConnectionLease : IAsyncDisposable
 {
     private readonly long _createdTicks = Environment.TickCount64;
     private bool _alive = true;
-    private int _activeStreams;
     private int _maxConcurrentStreams;
-    private DateTime _lastActivity = DateTime.UtcNow;
 
     public QuicConnectionLease(QuicConnectionHandle handle, int maxConcurrentStreams)
     {
@@ -22,6 +13,10 @@ public sealed class QuicConnectionLease : IDisposable
     }
 
     public QuicConnectionHandle Handle { get; }
+
+    public int ActiveStreams { get; private set; }
+
+    public DateTime LastActivity { get; private set; } = DateTime.UtcNow;
 
     public bool IsAlive() => _alive;
 
@@ -35,25 +30,22 @@ public sealed class QuicConnectionLease : IDisposable
         return Environment.TickCount64 - _createdTicks > (long)maxLifetime.TotalMilliseconds;
     }
 
-    public bool CanAcceptStream() => _alive && _activeStreams < _maxConcurrentStreams;
+    public bool CanAcceptStream() => _alive && ActiveStreams < _maxConcurrentStreams;
 
     public void MarkBusy()
     {
-        _activeStreams++;
-        _lastActivity = DateTime.UtcNow;
+        ActiveStreams++;
+        LastActivity = DateTime.UtcNow;
     }
 
     public void MarkIdle()
     {
-        _activeStreams--;
-        _lastActivity = DateTime.UtcNow;
+        ActiveStreams--;
+        LastActivity = DateTime.UtcNow;
     }
 
-    public int ActiveStreams => _activeStreams;
 
-    public DateTime LastActivity => _lastActivity;
-
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (!_alive)
         {
@@ -61,8 +53,6 @@ public sealed class QuicConnectionLease : IDisposable
         }
 
         _alive = false;
-        _ = Handle.DisposeAsync().AsTask();
+        await Handle.DisposeAsync().ConfigureAwait(false);
     }
 }
-
-#pragma warning restore CA1416

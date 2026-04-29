@@ -1,7 +1,7 @@
-using System.Net;
+﻿using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.H2;
@@ -22,7 +22,7 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             .Build();
 
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

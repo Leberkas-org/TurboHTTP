@@ -1,8 +1,8 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Caching;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;
@@ -81,13 +81,13 @@ public sealed class StageOrderingSpec : EngineTestBase
         return output.ToArray();
     }
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> Http11Flow(Func<byte[]> responseFactory)
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> Http11Flow(Func<byte[]> responseFactory)
         => Flow.FromGraph(new EngineFakeConnectionStage(responseFactory));
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> Http10Flow(Func<byte[]> responseFactory)
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> Http10Flow(Func<byte[]> responseFactory)
         => Flow.FromGraph(new EngineFakeConnectionStage(responseFactory));
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> NoOpH2Flow()
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
         => Flow.FromGraph(new H2EngineFakeConnectionStage());
 
     private static byte[] Ok11Response()
@@ -433,3 +433,4 @@ public sealed class StageOrderingSpec : EngineTestBase
         Assert.True(cacheResult.Body.Span.SequenceEqual(plainBody));
     }
 }
+

@@ -1,8 +1,8 @@
-using System.Text;
+﻿using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 
@@ -18,10 +18,10 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         };
     }
 
-    private static NetworkBuffer MakeResponseBuffer(string raw)
+    private static TransportBuffer MakeResponseBuffer(string raw)
     {
         var bytes = Encoding.ASCII.GetBytes(raw);
-        var buf = NetworkBuffer.Rent(bytes.Length);
+        var buf = TransportBuffer.Rent(bytes.Length);
         bytes.CopyTo(buf.FullMemory.Span);
         buf.Length = bytes.Length;
         return buf;
@@ -35,8 +35,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -65,10 +65,10 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
 
         // First item should be HTTP/2 preface (connection preface)
         var preface = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var buffer = Assert.IsType<NetworkBuffer>(preface);
-        var data = Encoding.ASCII.GetString(buffer.Span);
+        var prefaceData = Assert.IsType<TransportData>(preface);
+        var data = Encoding.ASCII.GetString(prefaceData.Buffer.Span);
         Assert.StartsWith("PRI * HTTP/2.0", data);
-        buffer.Dispose();
+        prefaceData.Buffer.Dispose();
     }
 
     [Fact(Timeout = 10_000)]
@@ -79,8 +79,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -109,20 +109,17 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
 
         // Consume preface
         var preface = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<NetworkBuffer>(preface);
+        Assert.IsType<TransportData>(preface);
 
         // Send request
         appSubscription.SendNext(MakeRequest("/test"));
 
-        // First request: ConnectItem (transport connect) + StreamAcquireItem + HEADERS frame (as NetworkBuffer)
+        // First request: ConnectTransport (transport connect) + HEADERS frame (as TransportData)
         var connect = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<ConnectItem>(connect);
-
-        var acquire = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<StreamAcquireItem>(acquire);
+        Assert.IsType<ConnectTransport>(connect);
 
         var headers = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<NetworkBuffer>(headers);
+        Assert.IsType<TransportData>(headers);
     }
 
     [Fact(Timeout = 10_000)]
@@ -132,8 +129,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -167,8 +164,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         appSubscription.SendNext(MakeRequest("/req1"));
         appSubscription.SendNext(MakeRequest("/req2"));
 
-        // Both should be encoded
-        for (var i = 0; i < 4; i++)
+        // Both should be encoded: first ConnectTransport + TransportData, then TransportData
+        for (var i = 0; i < 3; i++)
         {
             await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         }
@@ -184,8 +181,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -216,7 +213,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         // Server sends SETTINGS frame (normally part of handshake but can be sent at any time)
-        serverSubscription.SendNext(MakeResponseBuffer("\x00\x00\x00\x04\x00\x00\x00\x00\x00"));
+        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("\x00\x00\x00\x04\x00\x00\x00\x00\x00")));
 
         // Stage should handle it gracefully (no immediate response expected from app)
         // Can send request after SETTINGS
@@ -230,8 +227,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -262,7 +259,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         // Server sends GOAWAY
-        serverSubscription.SendNext(new CloseSignalItem(TlsCloseKind.CleanClose));
+        serverSubscription.SendNext(new TransportDisconnected(DisconnectReason.Graceful));
 
         // Stage should complete
         await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
@@ -275,8 +272,8 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         var stage = new Http20ConnectionStage(new TurboClientOptions { Http2 = { MaxReconnectAttempts = 3 } });
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -313,3 +310,4 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }
+

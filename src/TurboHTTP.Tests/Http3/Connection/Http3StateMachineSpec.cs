@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Tests.Shared;
 
@@ -124,7 +124,7 @@ public sealed class Http3StateMachineSpec
 
         Assert.Null(result);
         Assert.Single(_ops.Outbound); // serialized CANCEL_PUSH frame
-        Assert.IsType<RoutedNetworkBuffer>(_ops.Outbound[0]);
+        Assert.IsType<TransportData>(_ops.Outbound[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -559,17 +559,12 @@ public sealed class Http3StateMachineSpec
 
         sm.EncodeRequest(CreateGetRequest());
 
-        // All request frames should be tagged as RoutedNetworkBuffer with stream ID 0
+        // All request frames should be tagged as MultiplexedData with stream ID 0
         var tagged = _ops.Outbound
-            .OfType<RoutedNetworkBuffer>()
-            .Where(t => t.StreamTypeValue is null)
+            .OfType<MultiplexedData>()
             .ToList();
         Assert.NotEmpty(tagged);
         Assert.All(tagged, t => Assert.Equal(0L, t.StreamId));
-
-        // Stream-finished marker should carry the same stream ID
-        var endItem = _ops.Outbound.OfType<StreamFinishedItem>().Single();
-        Assert.Equal(0L, endItem.StreamId);
     }
 
     [Fact(Timeout = 5000)]
@@ -581,9 +576,10 @@ public sealed class Http3StateMachineSpec
         sm.EncodeRequest(CreateGetRequest("https://example.com/a"));
         sm.EncodeRequest(CreateGetRequest("https://example.com/b"));
 
-        var endItems = _ops.Outbound.OfType<StreamFinishedItem>().ToList();
-        Assert.Equal(2, endItems.Count);
-        Assert.NotEqual(endItems[0].StreamId, endItems[1].StreamId);
+        var tagged = _ops.Outbound.OfType<MultiplexedData>().ToList();
+        Assert.NotEmpty(tagged);
+        var streamIds = tagged.Select(t => t.StreamId).Distinct().ToList();
+        Assert.Equal(2, streamIds.Count);
     }
 
     private static HttpRequestMessage CreateGetRequest(string url = "https://example.com/")

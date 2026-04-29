@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Tests.Shared;
@@ -22,7 +22,7 @@ public sealed class Http3StreamRoutingSpec
         return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
 
-    private NetworkBuffer BuildResponseBuffer(byte fillByte, int bodySize)
+    private TransportBuffer BuildResponseBuffer(byte fillByte, int bodySize)
     {
         var headersFrame = EncodeHeaders((":status", "200"));
         var body = new byte[bodySize];
@@ -30,7 +30,7 @@ public sealed class Http3StreamRoutingSpec
         var dataFrame = new Http3DataFrame(body);
 
         var totalSize = headersFrame.SerializedSize + dataFrame.SerializedSize;
-        var buf = NetworkBuffer.Rent(totalSize);
+        var buf = TransportBuffer.Rent(totalSize);
         var span = buf.FullMemory.Span;
         headersFrame.WriteTo(ref span);
         dataFrame.WriteTo(ref span);
@@ -38,13 +38,13 @@ public sealed class Http3StreamRoutingSpec
         return buf;
     }
 
-    private static NetworkBuffer BuildDataBuffer(byte fillByte, int bodySize)
+    private static TransportBuffer BuildDataBuffer(byte fillByte, int bodySize)
     {
         var body = new byte[bodySize];
         Array.Fill(body, fillByte);
         var dataFrame = new Http3DataFrame(body);
 
-        var buf = NetworkBuffer.Rent(dataFrame.SerializedSize);
+        var buf = TransportBuffer.Rent(dataFrame.SerializedSize);
         var span = buf.FullMemory.Span;
         dataFrame.WriteTo(ref span);
         buf.Length = dataFrame.SerializedSize;
@@ -169,11 +169,11 @@ public sealed class Http3StreamRoutingSpec
         var serialized = dataFrame.Serialize();
 
         // Split at byte 10 (mid-frame)
-        var part1 = NetworkBuffer.Rent(10);
+        var part1 = TransportBuffer.Rent(10);
         serialized.AsSpan(0, 10).CopyTo(part1.FullMemory.Span);
         part1.Length = 10;
 
-        var part2 = NetworkBuffer.Rent(serialized.Length - 10);
+        var part2 = TransportBuffer.Rent(serialized.Length - 10);
         serialized.AsSpan(10).CopyTo(part2.FullMemory.Span);
         part2.Length = serialized.Length - 10;
 
@@ -183,7 +183,7 @@ public sealed class Http3StreamRoutingSpec
 
         // Feed unrelated data to stream 4 — should NOT interfere with stream 0's remainder
         var headersFrame = EncodeHeaders((":status", "200"));
-        var hdrBuf = NetworkBuffer.Rent(headersFrame.SerializedSize);
+        var hdrBuf = TransportBuffer.Rent(headersFrame.SerializedSize);
         var hdrSpan = hdrBuf.FullMemory.Span;
         headersFrame.WriteTo(ref hdrSpan);
         hdrBuf.Length = headersFrame.SerializedSize;
@@ -210,7 +210,7 @@ public sealed class Http3StreamRoutingSpec
 
         // Feed SETTINGS on control stream
         var settings = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192)]);
-        var settingsBuf = NetworkBuffer.Rent(settings.SerializedSize);
+        var settingsBuf = TransportBuffer.Rent(settings.SerializedSize);
         var settingsSpan = settingsBuf.FullMemory.Span;
         settings.WriteTo(ref settingsSpan);
         settingsBuf.Length = settings.SerializedSize;

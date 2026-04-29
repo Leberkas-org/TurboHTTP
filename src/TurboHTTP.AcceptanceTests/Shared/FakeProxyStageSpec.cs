@@ -1,29 +1,18 @@
-using System.Net;
-using System.Text;
+﻿using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.Shared;
 
 public sealed class FakeProxyStageSpec : EngineTestBase
 {
-    private static ConnectItem MakeConnectItem() => new(new TcpOptions
+    private static ConnectTransport MakeConnectTransport() => new(new TcpTransportOptions
     {
         Host = "target.example.com",
         Port = 443
-    })
-    {
-        Key = new RequestEndpoint
-        {
-            Host = "target.example.com",
-            Port = 443,
-            Scheme = "https",
-            Version = HttpVersion.Version11
-        }
-    };
+    });
 
     [Fact(Timeout = 5000)]
     public async Task FakeProxy_should_respond_with_200_connection_established_when_connect_item_arrives()
@@ -34,20 +23,20 @@ public sealed class FakeProxyStageSpec : EngineTestBase
             $"HTTP/1.1 200 OK\r\nContent-Length: {responseBody.Length}\r\n\r\n{responseBody}");
 
         var fake = new FakeProxyStage((_, _) => tunnelResponseBytes);
-        var flow = Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake);
+        var flow = Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake);
 
-        var items = new IOutputItem[]
+        var items = new ITransportOutbound[]
         {
-            MakeConnectItem(),
-            NetworkBufferTestExtensions.FromArray(requestBytes)
+            MakeConnectTransport(),
+            new TransportData(TransportBufferTestExtensions.FromArray(requestBytes))
         };
 
-        var results = new List<IInputItem>();
+        var results = new List<ITransportInbound>();
         var tcs = new TaskCompletionSource();
 
         _ = Source.From(items)
             .Via(flow)
-            .RunWith(Sink.ForEach<IInputItem>(item =>
+            .RunWith(Sink.ForEach<ITransportInbound>(item =>
             {
                 results.Add(item);
                 if (results.Count == 2)
@@ -60,12 +49,12 @@ public sealed class FakeProxyStageSpec : EngineTestBase
 
         Assert.Equal(2, results.Count);
 
-        var connectResponse = Assert.IsType<NetworkBuffer>(results[0]);
-        var connectResponseText = Encoding.Latin1.GetString(connectResponse.Span);
+        var connectResponse = Assert.IsType<TransportData>(results[0]);
+        var connectResponseText = Encoding.Latin1.GetString(connectResponse.Buffer.Span);
         Assert.Contains("200 Connection Established", connectResponseText);
 
-        var tunnelResponse = Assert.IsType<NetworkBuffer>(results[1]);
-        var tunnelResponseText = Encoding.Latin1.GetString(tunnelResponse.Span);
+        var tunnelResponse = Assert.IsType<TransportData>(results[1]);
+        var tunnelResponseText = Encoding.Latin1.GetString(tunnelResponse.Buffer.Span);
         Assert.Contains("Hello Tunnel", tunnelResponseText);
     }
 
@@ -76,19 +65,19 @@ public sealed class FakeProxyStageSpec : EngineTestBase
         var responseBytes = Encoding.Latin1.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok");
 
         var fake = new FakeProxyStage((_, _) => responseBytes);
-        var flow = Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake);
+        var flow = Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake);
 
-        var items = new IOutputItem[]
+        var items = new ITransportOutbound[]
         {
-            MakeConnectItem(),
-            NetworkBufferTestExtensions.FromArray(requestBytes)
+            MakeConnectTransport(),
+            new TransportData(TransportBufferTestExtensions.FromArray(requestBytes))
         };
 
         var tcs = new TaskCompletionSource();
 
         _ = Source.From(items)
             .Via(flow)
-            .RunWith(Sink.ForEach<IInputItem>(_ =>
+            .RunWith(Sink.ForEach<ITransportInbound>(_ =>
             {
                 if (fake.OutboundChannel.Reader.Count >= 1)
                 {
@@ -123,21 +112,21 @@ public sealed class FakeProxyStageSpec : EngineTestBase
             return null;
         });
 
-        var flow = Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake);
+        var flow = Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake);
 
-        var items = new IOutputItem[]
+        var items = new ITransportOutbound[]
         {
-            MakeConnectItem(),
-            NetworkBufferTestExtensions.FromArray(firstRequest),
-            NetworkBufferTestExtensions.FromArray(secondRequest)
+            MakeConnectTransport(),
+            new TransportData(TransportBufferTestExtensions.FromArray(firstRequest)),
+            new TransportData(TransportBufferTestExtensions.FromArray(secondRequest))
         };
 
-        var results = new List<IInputItem>();
+        var results = new List<ITransportInbound>();
         var completionTcs = new TaskCompletionSource();
 
         _ = Source.From(items)
             .Via(flow)
-            .RunWith(Sink.ForEach<IInputItem>(item => results.Add(item)), Materializer)
+            .RunWith(Sink.ForEach<ITransportInbound>(item => results.Add(item)), Materializer)
             .ContinueWith(_ => completionTcs.TrySetResult());
 
         await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -145,10 +134,11 @@ public sealed class FakeProxyStageSpec : EngineTestBase
         // ConnectItem response + first tunneled response; second request aborts the stage
         Assert.Equal(2, results.Count);
 
-        var connectResponse = Assert.IsType<NetworkBuffer>(results[0]);
-        Assert.Contains("200 Connection Established", Encoding.Latin1.GetString(connectResponse.Span));
+        var connectResponse = Assert.IsType<TransportData>(results[0]);
+        Assert.Contains("200 Connection Established", Encoding.Latin1.GetString(connectResponse.Buffer.Span));
 
-        var firstResponse = Assert.IsType<NetworkBuffer>(results[1]);
-        Assert.Contains("ok", Encoding.Latin1.GetString(firstResponse.Span));
+        var firstResponse = Assert.IsType<TransportData>(results[1]);
+        Assert.Contains("ok", Encoding.Latin1.GetString(firstResponse.Buffer.Span));
     }
 }
+

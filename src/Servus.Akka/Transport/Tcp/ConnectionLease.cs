@@ -27,7 +27,9 @@ public sealed class ConnectionLease : IDisposable
             return false;
         }
 
-        return Environment.TickCount64 - _createdTicks > (long)maxLifetime.TotalMilliseconds;
+        var elapsed = Environment.TickCount64 - _createdTicks;
+        var lifetimeMs = (long)maxLifetime.TotalMilliseconds;
+        return lifetimeMs <= 0 || elapsed > lifetimeMs;
     }
 
     public void Dispose()

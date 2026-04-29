@@ -1,4 +1,3 @@
-using Servus.Akka.Transport;
 using Servus.Akka.Transport.Tcp;
 
 namespace Servus.Akka.Tests.Transport.Tcp;
@@ -84,7 +83,7 @@ public sealed class ConnectionLeaseSpec
     {
         var (lease, _) = CreateLease();
 
-        await Task.Delay(15, TestContext.Current.CancellationToken);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.True(lease.IsExpired(TimeSpan.FromMilliseconds(1)));
     }
 

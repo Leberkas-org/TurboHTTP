@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http3;
 using TurboHTTP.Tests.Shared;
 
@@ -21,8 +21,7 @@ public sealed class Http3DecoderStreamSpec
         sm.FlushDecoderInstructions();
 
         var decoderItems = _ops.Outbound
-            .OfType<RoutedNetworkBuffer>()
-            .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
+            .OfType<MultiplexedData>()
             .ToList();
         Assert.Empty(decoderItems);
     }
@@ -40,15 +39,13 @@ public sealed class Http3DecoderStreamSpec
         sm.FlushDecoderInstructions();
 
         var decoderItems = _ops.Outbound
-            .OfType<RoutedNetworkBuffer>()
-            .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
+            .OfType<MultiplexedData>()
             .ToList();
         Assert.Single(decoderItems);
 
         var buf = decoderItems[0];
         // First byte should be 0x03 (decoder stream type)
-        Assert.Equal(0x03, buf.Span[0]);
-        buf.Dispose();
+        Assert.Equal(0x03, buf.Buffer.Span[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -60,8 +57,7 @@ public sealed class Http3DecoderStreamSpec
         sm.TableSync.ApplyEncoderInstructions(BuildInsertInstruction("x-first", "v1"));
         sm.FlushDecoderInstructions();
         var first = ExtractDecoderBuffer(_ops, 0);
-        Assert.Equal(0x03, first.Span[0]);
-        first.Dispose();
+        Assert.Equal(0x03, first.Buffer.Span[0]);
 
         // Second emission — no preface
         _ops.Outbound.Clear();
@@ -70,8 +66,7 @@ public sealed class Http3DecoderStreamSpec
 
         var second = ExtractDecoderBuffer(_ops, 0);
         // Should NOT start with 0x03 (no preface on second emission)
-        Assert.NotEqual(0x03, second.Span[0]);
-        second.Dispose();
+        Assert.NotEqual(0x03, second.Buffer.Span[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -87,14 +82,18 @@ public sealed class Http3DecoderStreamSpec
         // Reconnect cycle
         sm.EncodeRequest(new HttpRequestMessage(HttpMethod.Get, "https://example.com/"));
         sm.OnConnectionLost();
+        sm.OnConnectionRestored();
 
         // After reconnect, preface should be re-emitted
         sm.TableSync.ApplyEncoderInstructions(BuildInsertInstruction("x-test2", "value2"));
         sm.FlushDecoderInstructions();
 
+        // Extract decoder stream data (StreamId == -4), not control stream (StreamId == -2)
         var buf = ExtractDecoderBuffer(_ops, 0);
-        Assert.Equal(0x03, buf.Span[0]);
-        buf.Dispose();
+        var decoderBuf = _ops.Outbound.OfType<MultiplexedData>()
+            .Where(b => b.StreamId == -4)
+            .First();
+        Assert.Equal(0x03, decoderBuf.Buffer.Span[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -124,22 +123,19 @@ public sealed class Http3DecoderStreamSpec
         sm.ProcessQpackEncoderBytes(encoderInstr);
 
         var decoderItems = _ops.Outbound
-            .OfType<RoutedNetworkBuffer>()
-            .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
+            .OfType<MultiplexedData>()
             .ToList();
         Assert.Single(decoderItems);
 
         var buf = decoderItems[0];
-        Assert.True(buf.Length > 1); // preface (0x03) + at least 1 ICR byte
-        Assert.Equal(0x03, buf.Span[0]);
-        buf.Dispose();
+        Assert.True(buf.Buffer.Length > 1); // preface (0x03) + at least 1 ICR byte
+        Assert.Equal(0x03, buf.Buffer.Span[0]);
     }
 
-    private static NetworkBuffer ExtractDecoderBuffer(FakeOps ops, int index)
+    private static MultiplexedData ExtractDecoderBuffer(FakeOps ops, int index)
     {
         var items = ops.Outbound
-            .OfType<RoutedNetworkBuffer>()
-            .Where(t => t.StreamTypeValue == (long)StreamType.QpackDecoder)
+            .OfType<MultiplexedData>()
             .ToList();
         return items[index];
     }

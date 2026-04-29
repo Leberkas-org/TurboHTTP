@@ -1,7 +1,6 @@
 using Akka;
 using Akka.Actor;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
 
 namespace Servus.Akka.Transport.Tcp;
 

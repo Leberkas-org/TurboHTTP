@@ -1,6 +1,6 @@
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 
 namespace TurboHTTP.Tests.Streams;
@@ -9,7 +9,7 @@ public sealed class EngineSpec
 {
     private sealed class TestTransportFactory : ITransportFactory
     {
-        public Flow<IOutputItem, IInputItem, NotUsed> Create()
+        public Flow<ITransportOutbound, ITransportInbound, NotUsed> Create()
         {
             throw new NotImplementedException("This factory should not be called in unit tests");
         }

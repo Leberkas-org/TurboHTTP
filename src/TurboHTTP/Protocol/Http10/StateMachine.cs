@@ -1,6 +1,5 @@
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
-using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Protocol.Http10;
@@ -17,26 +16,20 @@ internal sealed class StateMachine
     private HttpRequestMessage? _inFlightRequest;
     private bool _closed;
     private HttpRequestMessage? _reconnectBufferedRequest;
-    private bool _reconnecting;
     private int _reconnectAttempts;
 
-    /// <summary>Whether a new request can be accepted (no in-flight request, not closed, not reconnecting).</summary>
-    public bool CanAcceptRequest => _inFlightRequest is null && !_closed && !_reconnecting;
+    public bool CanAcceptRequest => _inFlightRequest is null && !_closed && !IsReconnecting;
 
-    /// <summary>Whether there is an in-flight request waiting for a response.</summary>
     public bool HasInFlightRequest => _inFlightRequest is not null;
 
-    /// <summary>Whether the state machine is currently in reconnect state.</summary>
-    public bool IsReconnecting => _reconnecting;
+    public bool IsReconnecting { get; private set; }
 
-    /// <summary>Number of requests currently buffered or in-flight (used for discard logging).</summary>
-    public int PendingRequestCount => _reconnecting
+    public int PendingRequestCount => IsReconnecting
         ? _reconnectBufferedRequest is not null ? 1 : 0
         : _inFlightRequest is not null
             ? 1
             : 0;
 
-    /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
 
     public StateMachine(
@@ -122,10 +115,6 @@ internal sealed class StateMachine
         }
     }
 
-    /// <summary>
-    /// Attempts to decode any remaining buffered data on EOF (upstream finish).
-    /// Returns true if a response was emitted.
-    /// </summary>
     public bool TryDecodeEof()
     {
         try
@@ -147,10 +136,6 @@ internal sealed class StateMachine
         }
     }
 
-    /// <summary>
-    /// Logs and discards any orphaned in-flight request.
-    /// Called when the upstream (server connection) finishes or fails.
-    /// </summary>
     public void HandleOrphanedRequest()
     {
         if (_inFlightRequest is not null)
@@ -160,9 +145,6 @@ internal sealed class StateMachine
         }
     }
 
-    /// <summary>
-    /// Marks the state machine as closed. No more requests will be accepted.
-    /// </summary>
     public void MarkClosed()
     {
         _closed = true;
@@ -172,14 +154,14 @@ internal sealed class StateMachine
     {
         _reconnectBufferedRequest = _inFlightRequest;
         _inFlightRequest = null;
-        _reconnecting = true;
+        IsReconnecting = true;
         _reconnectAttempts = 1;
         _ops.OnOutbound(new ConnectTransport(_transportOptions!));
     }
 
     public void OnConnectionRestored()
     {
-        _reconnecting = false;
+        IsReconnecting = false;
         _reconnectAttempts = 0;
         _decoder.Reset();
 

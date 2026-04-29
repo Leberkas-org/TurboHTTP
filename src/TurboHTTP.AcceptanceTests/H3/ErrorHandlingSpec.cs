@@ -1,7 +1,7 @@
-using System.Net;
+﻿using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.H3;
@@ -79,7 +79,7 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Build();
 
         var fake = new H3EngineFakeConnectionStage(controlFrames, responseFrames);
-        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -128,7 +128,7 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
         var controlFrames = new H3ResponseBuilder().Settings().Build();
 
         var fake = new H3EngineFakeConnectionStage(controlFrames);
-        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -154,7 +154,7 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Build();
 
         var fake = new H3EngineFakeConnectionStage(controlFrames, responseFrames);
-        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

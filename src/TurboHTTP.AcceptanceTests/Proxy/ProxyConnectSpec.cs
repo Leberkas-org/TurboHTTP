@@ -1,8 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
@@ -26,16 +26,16 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         var fake = new FakeProxyStage(responseFactory);
 
         var connectResponseConsumed = false;
-        var tunnelFlow = Flow.Create<IOutputItem>()
-            .Via(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake))
+        var tunnelFlow = Flow.Create<ITransportOutbound>()
+            .Via(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake))
             .Where(item =>
             {
                 if (!connectResponseConsumed)
                 {
                     connectResponseConsumed = true;
-                    if (item is NetworkBuffer nb)
+                    if (item is TransportData td)
                     {
-                        nb.Dispose();
+                        td.Buffer.Dispose();
                     }
 
                     return false;
@@ -67,7 +67,7 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         Func<int, byte[], byte[]?> responseFactory)
     {
         var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -167,3 +167,4 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         Assert.Contains("GET /auth HTTP/1.1", tunneledRequest);
     }
 }
+

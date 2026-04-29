@@ -1,8 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Features;
@@ -15,7 +15,7 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
     private static Http11Engine Engine =>
         new(new TurboClientOptions());
 
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateExpectContinueEngine()
     {
         var stage = new ExpectContinueBidiStage(Expect100Policy.Default);
@@ -36,7 +36,7 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
         Func<int, byte[], byte[]?> factory)
     {
         var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = CreateExpectContinueEngine().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateExpectContinueEngine().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -99,3 +99,4 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
         Assert.Equal(HttpStatusCode.ExpectationFailed, response.StatusCode);
     }
 }
+

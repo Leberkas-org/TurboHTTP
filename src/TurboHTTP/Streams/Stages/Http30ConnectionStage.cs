@@ -95,11 +95,21 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
 
         public override void PreStart()
         {
-            EmitMultiple<ITransportOutbound>(_stage._outNetwork, [
+            var preface = _sm.TryBuildControlPreface();
+            var itemsToEmit = new List<ITransportOutbound>();
+
+            if (preface is not null)
+            {
+                itemsToEmit.Add(preface);
+            }
+
+            itemsToEmit.AddRange([
                 new OpenStream(-2, StreamDirection.Bidirectional),
                 new OpenStream(-3, StreamDirection.Bidirectional),
                 new OpenStream(-4, StreamDirection.Unidirectional),
             ]);
+
+            EmitMultiple<ITransportOutbound>(_stage._outNetwork, itemsToEmit);
             ScheduleIdleCheck();
         }
 

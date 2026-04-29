@@ -1,4 +1,4 @@
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http10;
 using TurboHTTP.Tests.Shared;
 
@@ -17,13 +17,15 @@ public sealed class Http10StateMachineReconnectSpec
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         var request = MakeRequest();
         sm.EncodeRequest(request);
+        var initialConnectCount = ops.Outbound.OfType<ConnectTransport>().Count();
         ops.Outbound.Clear(); // ignore encode output
 
         sm.StartReconnect();
 
         Assert.True(sm.IsReconnecting);
         Assert.False(sm.HasInFlightRequest);
-        Assert.Single(ops.Outbound, item => item is ConnectItem c && c.IsReconnect);
+        var newConnectCount = ops.Outbound.OfType<ConnectTransport>().Count();
+        Assert.Equal(1, newConnectCount); // Should emit a reconnect ConnectTransport
     }
 
     [Fact(Timeout = 5000)]
@@ -47,15 +49,14 @@ public sealed class Http10StateMachineReconnectSpec
         sm.EncodeRequest(MakeRequest());
         ops.Outbound.Clear();
         sm.StartReconnect();
-        ops.Outbound.Clear(); // ignore ConnectItem (reconnect)
+        ops.Outbound.Clear(); // ignore ConnectTransport (reconnect)
 
         sm.OnConnectionRestored();
 
         Assert.False(sm.IsReconnecting);
         Assert.True(sm.HasInFlightRequest); // re-encoded, back in flight
-        // Should have emitted StreamAcquireItem + NetworkBuffer for the replayed request
-        Assert.Contains(ops.Outbound, o => o is StreamAcquireItem);
-        Assert.Contains(ops.Outbound, o => o is NetworkBuffer);
+        // Should have emitted TransportData for the replayed request
+        Assert.Contains(ops.Outbound, o => o is TransportData);
     }
 
     [Fact(Timeout = 5000)]
@@ -80,11 +81,11 @@ public sealed class Http10StateMachineReconnectSpec
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         sm.EncodeRequest(MakeRequest());
         sm.StartReconnect(); // attempt 1
-        var countAfterFirst = ops.Outbound.OfType<ConnectItem>().Count(c => c.IsReconnect);
+        var countAfterFirst = ops.Outbound.OfType<ConnectTransport>().Count();
 
         sm.OnReconnectAttemptFailed(); // attempt 2
 
         Assert.False(ops.ReconnectFailed);
-        Assert.Equal(countAfterFirst + 1, ops.Outbound.OfType<ConnectItem>().Count(c => c.IsReconnect));
+        Assert.Equal(countAfterFirst + 1, ops.Outbound.OfType<ConnectTransport>().Count());
     }
 }

@@ -4,6 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <NoWarn>CA1416</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,8 +13,6 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Servus.Akka.Tests"/>
-        <InternalsVisibleTo Include="TurboHTTP.Tests"/>
-        <InternalsVisibleTo Include="TurboHTTP.StreamTests"/>
     </ItemGroup>
 
 </Project>

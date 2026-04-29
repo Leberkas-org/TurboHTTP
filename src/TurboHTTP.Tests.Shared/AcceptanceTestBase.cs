@@ -1,7 +1,7 @@
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using Xunit;
 
@@ -43,7 +43,7 @@ public abstract class AcceptanceTestBase : EngineTestBase
         Func<int, byte[], byte[]?> responseFactory)
     {
         var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -59,7 +59,7 @@ public abstract class AcceptanceTestBase : EngineTestBase
         Func<int, byte[], byte[]?> responseFactory)
     {
         var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = engine.CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

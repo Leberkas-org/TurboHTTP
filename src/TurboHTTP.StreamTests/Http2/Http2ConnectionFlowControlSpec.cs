@@ -1,7 +1,7 @@
-using Akka;
+﻿using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
@@ -21,7 +21,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
             params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -138,7 +138,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -176,7 +176,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         var data = new DataFrame(streamId: 1, data: new byte[65536], endStream: true);
 
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -214,7 +214,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -223,7 +223,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
                     { Http2 = { InitialConnectionWindowSize = 65535, InitialStreamWindowSize = 65535 } }));
-                    var serverSource = b.Add(Source.Never<IInputItem>());
+                    var serverSource = b.Add(Source.Never<ITransportInbound>());
                     var requestSource = b.Add(Source.Single(request));
 
                     b.From(serverSource).To(stage.InServer);
@@ -251,7 +251,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
-        var networkSink = Sink.First<IOutputItem>();
+        var networkSink = Sink.First<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(networkSink,
@@ -259,7 +259,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions
                     { Http2 = { InitialConnectionWindowSize = 65535, InitialStreamWindowSize = 65535 } }));
-                    var serverSource = b.Add(Source.Never<IInputItem>());
+                    var serverSource = b.Add(Source.Never<ITransportInbound>());
                     var requestSource = b.Add(Source.Single(request));
                     var ignoreSink =
                         b.Add(Sink.Ignore<HttpResponseMessage>().MapMaterializedValue(_ => NotUsed.Instance));
@@ -277,8 +277,9 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         var firstItem = await networkTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // The combined stage emits the connection preface as its first output on OutNetwork.
-        // Sink.First captures only this first item — a NetworkBuffer containing magic + SETTINGS + WINDOW_UPDATE.
-        Assert.IsType<NetworkBuffer>(firstItem);
+        // Sink.First captures only this first item — a TransportData containing magic + SETTINGS + WINDOW_UPDATE.
+        var td = Assert.IsType<TransportData>(firstItem);
+        td.Buffer.Dispose();
     }
 
     [Fact(Timeout = 10_000)]
@@ -289,7 +290,7 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         var streamWindowUpdate = new WindowUpdateFrame(streamId: 1, increment: 10000);
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(networkSink,
@@ -363,3 +364,4 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         Assert.Empty(downstream);
     }
 }
+

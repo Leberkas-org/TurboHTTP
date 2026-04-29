@@ -1,32 +1,25 @@
 using System.Threading.Channels;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 
 namespace TurboHTTP.Tests.Shared;
 
-/// <summary>
-/// Fake TCP connection stage for HTTP/1.x engine tests.
-/// Intercepts outbound serialised bytes and injects a synthetic response produced by a caller-supplied factory.
-/// </summary>
-/// <remarks>
-/// Exposes <see cref="EngineFakeConnectionStage.OutboundChannel"/> so tests can inspect the raw bytes sent by the encoder.
-/// </remarks>
-internal sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
+internal sealed class EngineFakeConnectionStage : GraphStage<FlowShape<ITransportOutbound, ITransportInbound>>
 {
     private readonly Func<byte[]> _responseFactory;
 
-    public Channel<NetworkBuffer> OutboundChannel { get; } = Channel.CreateUnbounded<NetworkBuffer>();
+    public Channel<TransportBuffer> OutboundChannel { get; } = Channel.CreateUnbounded<TransportBuffer>();
 
-    public Inlet<IOutputItem> In { get; } = new("fake-tcp.in");
-    public Outlet<IInputItem> Out { get; } = new("fake-tcp.out");
+    public Inlet<ITransportOutbound> In { get; } = new("fake-tcp.in");
+    public Outlet<ITransportInbound> Out { get; } = new("fake-tcp.out");
 
-    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
+    public override FlowShape<ITransportOutbound, ITransportInbound> Shape { get; }
 
     public EngineFakeConnectionStage(Func<byte[]> responseFactory)
     {
         _responseFactory = responseFactory;
-        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
+        Shape = new FlowShape<ITransportOutbound, ITransportInbound>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -34,7 +27,7 @@ internal sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
     private sealed class Logic : GraphStageLogic
     {
         private readonly EngineFakeConnectionStage _stage;
-        private readonly Queue<NetworkBuffer> _buffer = new();
+        private readonly Queue<ITransportInbound> _buffer = new();
         private bool _downstreamWaiting;
 
         public Logic(EngineFakeConnectionStage stage) : base(stage.Shape)
@@ -45,11 +38,11 @@ internal sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
                 onPush: () =>
                 {
                     var item = Grab(stage.In);
-                    if (item is NetworkBuffer dataChunk)
+                    if (item is TransportData { Buffer: var dataChunk })
                     {
                         var copy = new byte[dataChunk.Length];
                         dataChunk.Span.CopyTo(copy);
-                        stage.OutboundChannel.Writer.TryWrite(NetworkBufferTestExtensions.FromArray(copy));
+                        stage.OutboundChannel.Writer.TryWrite(TransportBufferTestExtensions.FromArray(copy));
                         dataChunk.Dispose();
 
                         var responseBytes = _stage._responseFactory();
@@ -57,11 +50,11 @@ internal sealed class EngineFakeConnectionStage : GraphStage<FlowShape<IOutputIt
                         if (_downstreamWaiting)
                         {
                             _downstreamWaiting = false;
-                            Push(stage.Out, NetworkBufferTestExtensions.FromArray(responseBytes));
+                            Push(stage.Out, new TransportData(TransportBufferTestExtensions.FromArray(responseBytes)));
                         }
                         else
                         {
-                            _buffer.Enqueue(NetworkBufferTestExtensions.FromArray(responseBytes));
+                            _buffer.Enqueue(new TransportData(TransportBufferTestExtensions.FromArray(responseBytes)));
                         }
                     }
 

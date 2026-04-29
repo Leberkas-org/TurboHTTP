@@ -1,10 +1,7 @@
 using System.Net;
 using Akka.Actor;
-using Servus.Akka.Transport.Tcp;
 
 namespace Servus.Akka.Transport.Quic;
-
-#pragma warning disable CA1416
 
 public sealed class QuicTransportStateMachine
 {
@@ -61,6 +58,7 @@ public sealed class QuicTransportStateMachine
                 {
                     e.Buffer.Dispose();
                 }
+
                 break;
             case InboundStreamAccepted e:
                 OnInboundStreamAccepted(e.Stream, e.StreamId);
@@ -70,6 +68,7 @@ public sealed class QuicTransportStateMachine
                 {
                     OnInboundComplete(e.Reason, e.StreamId);
                 }
+
                 break;
             case InboundPumpFailed e:
                 OnInboundComplete(DisconnectReason.Error, e.StreamId);
@@ -311,6 +310,7 @@ public sealed class QuicTransportStateMachine
             _ops.OnPushInbound(new StreamClosed(streamId, reason));
             _ = ctx.DisposeAsync();
         }
+
         _streams.Clear();
 
         if (_autoReconnect && !_upstreamFinished)
@@ -394,7 +394,7 @@ public sealed class QuicTransportStateMachine
 
         if (!canReuse)
         {
-            lease.Dispose();
+            _ = lease.DisposeAsync();
         }
     }
 
@@ -411,6 +411,7 @@ public sealed class QuicTransportStateMachine
         {
             _ = ctx.DisposeAsync();
         }
+
         _streams.Clear();
         _pendingStreamOpens.Clear();
 

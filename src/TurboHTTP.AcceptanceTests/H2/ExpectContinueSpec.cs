@@ -1,8 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
@@ -11,7 +11,7 @@ namespace TurboHTTP.AcceptanceTests.H2;
 
 public sealed class ExpectContinueSpec : AcceptanceTestBase
 {
-    private static BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed>
+    private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
         CreateExpectContinueEngine()
     {
         var stage = new ExpectContinueBidiStage(Expect100Policy.Default);
@@ -90,3 +90,4 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
         Assert.Equal(HttpStatusCode.ExpectationFailed, response.StatusCode);
     }
 }
+

@@ -3,7 +3,7 @@ using System.Text;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 
@@ -19,10 +19,10 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         };
     }
 
-    private static NetworkBuffer MakeResponseBuffer(string raw)
+    private static TransportBuffer MakeResponseBuffer(string raw)
     {
         var bytes = Encoding.ASCII.GetBytes(raw);
-        var buf = NetworkBuffer.Rent(bytes.Length);
+        var buf = TransportBuffer.Rent(bytes.Length);
         bytes.CopyTo(buf.FullMemory.Span);
         buf.Length = bytes.Length;
         return buf;
@@ -35,8 +35,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -70,15 +70,12 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         // ConnectItem emitted first when endpoint is known from the first request
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
-        // Should get StreamAcquireItem + NetworkBuffer on network outlet
-        var item1 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.IsType<StreamAcquireItem>(item1);
-
-        var item2 = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var buffer = Assert.IsType<NetworkBuffer>(item2);
-        var encoded = Encoding.ASCII.GetString(buffer.Span);
+        // Should get TransportBuffer on network outlet
+        var item = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        var buffer = Assert.IsType<TransportData>(item);
+        var encoded = Encoding.ASCII.GetString(buffer.Buffer.Span);
         Assert.StartsWith("GET /test HTTP/1.0\r\n", encoded);
-        buffer.Dispose();
+        buffer.Buffer.Dispose();
     }
 
     [Fact(Timeout = 10_000)]
@@ -88,8 +85,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -119,14 +116,13 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         // Send request
         appSubscription.SendNext(MakeRequest("/hello"));
 
-        // Consume outbound items (ConnectItem + StreamAcquire + NetworkBuffer)
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        // Consume outbound items (ConnectTransport + TransportData)
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         // Send response from server
         var responseRaw = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nhello";
-        serverSubscription.SendNext(MakeResponseBuffer(responseRaw));
+        serverSubscription.SendNext(new TransportData(MakeResponseBuffer(responseRaw)));
 
         // Should get correlated response
         var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
@@ -142,8 +138,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -173,21 +169,14 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         // Send request + response
         appSubscription.SendNext(MakeRequest());
 
-        // ConnectItem + StreamAcquire + NetworkBuffer
-        await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
+        // ConnectTransport + TransportBuffer
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
-        serverSubscription.SendNext(MakeResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nOK"));
+        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nOK")));
 
         // Response
         await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-
-        // ConnectionReuseItem should follow on network outlet
-        var reuseItem = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var connectionReuse = Assert.IsType<ConnectionReuseItem>(reuseItem);
-        // HTTP/1.0 default is close (RFC 1945)
-        Assert.False(connectionReuse.CanReuse);
     }
 
 
@@ -198,8 +187,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>
@@ -240,8 +229,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         var stage = new Http10ConnectionStage(new TurboClientOptions());
 
         var appProbe = this.CreateManualPublisherProbe<HttpRequestMessage>();
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkSub = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkSub = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var responseSub = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         RunnableGraph.FromGraph(GraphDsl.Create(b =>

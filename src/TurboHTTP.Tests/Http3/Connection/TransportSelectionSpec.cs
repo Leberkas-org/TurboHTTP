@@ -1,7 +1,5 @@
 using System.Net;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Quic;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Http3.Connection;
@@ -28,7 +26,7 @@ public sealed class TransportSelectionSpec
 
         var result = OptionsFactory.Build(ToEndpoint(uri, HttpVersion.Version30), clientOptions);
 
-        var quicOptions = Assert.IsType<QuicOptions>(result);
+        var quicOptions = Assert.IsType<QuicTransportOptions>(result);
         Assert.Equal("example.com", quicOptions.Host);
         Assert.Equal(443, quicOptions.Port);
     }
@@ -42,9 +40,9 @@ public sealed class TransportSelectionSpec
 
         var result = OptionsFactory.Build(ToEndpoint(uri, HttpVersion.Version11), clientOptions);
 
-        Assert.IsType<TcpOptions>(result);
-        Assert.IsNotType<TlsOptions>(result);
-        Assert.IsNotType<QuicOptions>(result);
+        Assert.IsType<TcpTransportOptions>(result);
+        Assert.IsNotType<TlsTransportOptions>(result);
+        Assert.IsNotType<QuicTransportOptions>(result);
     }
 
     [Fact(Timeout = 5000)]
@@ -56,7 +54,7 @@ public sealed class TransportSelectionSpec
 
         var result = OptionsFactory.Build(ToEndpoint(uri, HttpVersion.Version11), clientOptions);
 
-        Assert.IsType<TlsOptions>(result);
+        Assert.IsType<TlsTransportOptions>(result);
     }
 
     [Fact(Timeout = 5000)]
@@ -71,7 +69,7 @@ public sealed class TransportSelectionSpec
 
         var result = OptionsFactory.Build(ToEndpoint(uri, HttpVersion.Version30), clientOptions);
 
-        var quicOptions = Assert.IsType<QuicOptions>(result);
+        var quicOptions = Assert.IsType<QuicTransportOptions>(result);
         Assert.NotNull(quicOptions.ServerCertificateValidationCallback);
     }
 
@@ -86,9 +84,9 @@ public sealed class TransportSelectionSpec
         var httpsResult = OptionsFactory.Build(ToEndpoint(httpsUri, null), clientOptions);
         var httpResult = OptionsFactory.Build(ToEndpoint(httpUri, null), clientOptions);
 
-        Assert.IsType<TlsOptions>(httpsResult);
-        Assert.IsType<TcpOptions>(httpResult);
-        Assert.IsNotType<QuicOptions>(httpsResult);
+        Assert.IsType<TlsTransportOptions>(httpsResult);
+        Assert.IsType<TcpTransportOptions>(httpResult);
+        Assert.IsNotType<QuicTransportOptions>(httpsResult);
     }
 
     [Fact(Timeout = 5000)]
@@ -100,7 +98,7 @@ public sealed class TransportSelectionSpec
 
         var result = OptionsFactory.Build(ToEndpoint(uri, HttpVersion.Version30), clientOptions);
 
-        var quicOptions = Assert.IsType<QuicOptions>(result);
+        var quicOptions = Assert.IsType<QuicTransportOptions>(result);
         Assert.Equal(4433, quicOptions.Port);
     }
 
@@ -108,19 +106,13 @@ public sealed class TransportSelectionSpec
     [Trait("RFC", "RFC9114-3.2")]
     public void Should_CreateQuicProvider_When_QuicOptions()
     {
-        // Verify the pattern match works by checking that QuicOptions is matched
-        // before the default TcpOptions case. We can't instantiate the actor in a unit test,
+        // Verify the pattern match works by checking that QuicTransportOptions is matched
+        // before the default TcpTransportOptions case. We can't instantiate the actor in a unit test,
         // but we can verify the type hierarchy that makes the switch work.
-        var quicOptions = new QuicOptions { Host = "example.com", Port = 443 };
+        var quicOptions = new QuicTransportOptions { Host = "example.com", Port = 443 };
 
-        // QuicOptions must be matched before TcpOptions in the switch
-        Assert.IsAssignableFrom<TcpOptions>(quicOptions);
-        Assert.IsNotType<TlsOptions>(quicOptions);
-
-        // Verify QuicClientProvider can be constructed from QuicOptions
-#pragma warning disable CA1416 // Platform compatibility verified at test runner level
-        var provider = new QuicClientProvider(quicOptions);
-#pragma warning restore CA1416
-        Assert.IsAssignableFrom<IClientProvider>(provider);
+        // QuicTransportOptions is its own type
+        Assert.IsType<QuicTransportOptions>(quicOptions);
+        Assert.IsNotType<TlsTransportOptions>(quicOptions);
     }
 }

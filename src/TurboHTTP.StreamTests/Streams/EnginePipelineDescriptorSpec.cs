@@ -1,8 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
@@ -21,7 +21,7 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     private static byte[] Response301() =>
         "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com/new\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> NoOpH2Flow()
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
         => Flow.FromGraph(new H2EngineFakeConnectionStage());
 
     private async Task<HttpResponseMessage> RunSingleAsync(
@@ -234,3 +234,4 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
         Assert.Equal(2, callCount);
     }
 }
+

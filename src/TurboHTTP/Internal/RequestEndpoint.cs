@@ -2,7 +2,7 @@ using System.Net;
 
 namespace TurboHTTP.Internal;
 
-public readonly record struct RequestEndpoint
+internal readonly record struct RequestEndpoint
 {
     public static RequestEndpoint FromRequest(HttpRequestMessage request)
     {

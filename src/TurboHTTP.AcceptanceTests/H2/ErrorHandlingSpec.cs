@@ -1,7 +1,7 @@
-using System.Net;
+﻿using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Tests.Shared;
 
@@ -25,7 +25,7 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Build();
 
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -71,13 +71,13 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             Version = HttpVersion.Version20
         };
 
-        // Server sends SETTINGS but never responds with HEADERS — simulates timeout
+        // Server sends SETTINGS but never responds with HEADERS â€” simulates timeout
         var serverFrames = new H2ResponseBuilder()
             .Settings()
             .Build();
 
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

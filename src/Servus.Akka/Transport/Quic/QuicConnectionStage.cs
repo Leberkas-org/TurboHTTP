@@ -2,11 +2,8 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using Servus.Akka.Transport.Tcp;
 
 namespace Servus.Akka.Transport.Quic;
-
-#pragma warning disable CA1416
 
 public sealed class QuicConnectionStage : GraphStage<FlowShape<ITransportOutbound, ITransportInbound>>
 {
@@ -105,5 +102,3 @@ public sealed class QuicConnectionStage : GraphStage<FlowShape<ITransportOutboun
         ILoggingAdapter ITransportOperations.Log => Log;
     }
 }
-
-#pragma warning restore CA1416

@@ -1,31 +1,27 @@
 using System.Threading.Channels;
 using Akka.Streams;
 using Akka.Streams.Stage;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http3;
 
 namespace TurboHTTP.Tests.Shared;
 
-/// <summary>
-/// Fake TCP connection stage for HTTP/3 engine tests.
-/// Intercepts outbound H3 frames and injects pre-queued server frames one per outbound push.
-/// </summary>
-internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutputItem, IInputItem>>
+internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<ITransportOutbound, ITransportInbound>>
 {
     private readonly IReadOnlyList<byte[]> _serverFrames;
 
-    public Channel<(NetworkBuffer Buffer, long? StreamType)> OutboundChannel { get; } =
-        Channel.CreateUnbounded<(NetworkBuffer, long?)>();
+    public Channel<(TransportBuffer Buffer, long? StreamType)> OutboundChannel { get; } =
+        Channel.CreateUnbounded<(TransportBuffer, long?)>();
 
-    public Inlet<IOutputItem> In { get; } = new("h3-engine-fake.in");
-    public Outlet<IInputItem> Out { get; } = new("h3-engine-fake.out");
+    public Inlet<ITransportOutbound> In { get; } = new("h3-engine-fake.in");
+    public Outlet<ITransportInbound> Out { get; } = new("h3-engine-fake.out");
 
-    public override FlowShape<IOutputItem, IInputItem> Shape { get; }
+    public override FlowShape<ITransportOutbound, ITransportInbound> Shape { get; }
 
     public H3EngineFakeConnectionStage(params byte[][] serverFrames)
     {
         _serverFrames = serverFrames;
-        Shape = new FlowShape<IOutputItem, IInputItem>(In, Out);
+        Shape = new FlowShape<ITransportOutbound, ITransportInbound>(In, Out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -46,20 +42,19 @@ internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
                 {
                     var item = Grab(stage.In);
 
-                    // Extract stream type from RoutedNetworkBuffer (control preface, QPACK encoder, etc.)
                     long? streamType = null;
-                    if (item is RoutedNetworkBuffer h3Buf)
+                    if (item is MultiplexedData h3Data)
                     {
-                        streamType = h3Buf.StreamTypeValue;
+                        streamType = h3Data.StreamId;
                     }
 
-                    if (item is NetworkBuffer dataChunk)
+                    if (item is TransportData { Buffer: var dataChunk } || item is MultiplexedData { Buffer: var buf })
                     {
+                        var buffer = item is TransportData { Buffer: var d } ? d : (item as MultiplexedData)!.Buffer;
                         stage.OutboundChannel.Writer.TryWrite((
-                            NetworkBufferTestExtensions.FromArray(dataChunk.Span.ToArray()), streamType));
-                        dataChunk.Dispose();
+                            TransportBufferTestExtensions.FromArray(buffer.Span.ToArray()), streamType));
+                        buffer.Dispose();
 
-                        // Only actual data unlocks a server frame — control metadata items do not.
                         Unlock();
                     }
 
@@ -115,30 +110,21 @@ internal sealed class H3EngineFakeConnectionStage : GraphStage<FlowShape<IOutput
         private void PushNextFrame()
         {
             var frameBytes = _stage._serverFrames[_serverFrameIndex++];
-            var buf = NetworkBufferTestExtensions.FromArray(frameBytes);
+            var buf = TransportBufferTestExtensions.FromArray(frameBytes);
 
-            // First frame is the control stream (SETTINGS), remaining are request stream data.
-            var h3Buf = RoutedNetworkBuffer.Rent(buf.Length);
-            buf.Span.CopyTo(h3Buf.FullMemory.Span);
-            h3Buf.Length = buf.Length;
-            buf.Dispose();
-
+            long streamId;
             if (_serverFrameIndex == 1)
             {
-                h3Buf.StreamTypeValue = (long)StreamType.Control;
+                streamId = (long)StreamType.Control;
             }
             else
             {
-                h3Buf.StreamId = 0;
+                streamId = 0;
             }
 
-            IInputItem item = h3Buf;
-
+            ITransportInbound item = new MultiplexedData(buf, streamId);
             Push(_stage.Out, item);
 
-            // HTTP/3 relies on QUIC FIN (upstream completion) to signal stream end.
-            // After all server frames are delivered, complete the output to propagate
-            // through the decoder → connection → stream pipeline.
             if (_serverFrameIndex >= _stage._serverFrames.Count)
             {
                 Complete(_stage.Out);

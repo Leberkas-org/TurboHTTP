@@ -3,7 +3,7 @@ using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http3;
 using Xunit;
@@ -25,13 +25,13 @@ public abstract class EngineTestBase
     }
 
     internal async Task<(HttpResponseMessage Response, string RawRequest)> SendAsync(
-        BidiFlow<HttpRequestMessage, IOutputItem,
-            IInputItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, ITransportOutbound,
+            ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         Func<byte[]> responseFactory)
     {
         var fake = new EngineFakeConnectionStage(responseFactory);
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -51,13 +51,13 @@ public abstract class EngineTestBase
     }
 
     internal async Task<(List<HttpResponseMessage> Responses, string RawRequests)> SendManyAsync(
-        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         IEnumerable<HttpRequestMessage> requests,
         Func<byte[]> responseFactory,
         int expectedCount)
     {
         var fake = new EngineFakeConnectionStage(responseFactory);
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -85,12 +85,12 @@ public abstract class EngineTestBase
     }
 
     internal async Task<(HttpResponseMessage Response, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2EngineAsync(
-        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         params byte[][] serverFrames)
     {
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -111,13 +111,13 @@ public abstract class EngineTestBase
 
     internal async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
         SendH2EngineAsyncMany(
-            BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
+            BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
             IEnumerable<HttpRequestMessage> requests,
             int expectedCount,
             params byte[][] serverFrames)
     {
         var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -145,12 +145,12 @@ public abstract class EngineTestBase
     }
 
     internal async Task<(HttpResponseMessage Response, IReadOnlyList<Http3Frame> OutboundFrames)> SendH3EngineAsync(
-        BidiFlow<HttpRequestMessage, IOutputItem, IInputItem, HttpResponseMessage, NotUsed> engine,
+        BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         params byte[][] serverFrames)
     {
         var fake = new H3EngineFakeConnectionStage(serverFrames);
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -165,13 +165,15 @@ public abstract class EngineTestBase
         while (fake.OutboundChannel.Reader.TryRead(out var chunk))
         {
             var bytes = chunk.Buffer.Span.ToArray();
+            // StreamId -2, -3, -4 are HTTP/3 control, QPACK encoder, QPACK decoder streams
             switch (chunk.StreamType)
             {
-                case (long)StreamType.Control:
+                case -2:  // Control stream (SETTINGS, GOAWAY, etc.)
                     controlBytes.AddRange(bytes);
                     break;
-                case (long)StreamType.QpackEncoder:
-                    // QPACK encoder instructions — not HTTP/3 frames, skip.
+                case -4:  // QPACK decoder stream
+                    break;
+                case -3:  // QPACK encoder stream
                     break;
                 default:
                     requestBytes.AddRange(bytes);
@@ -189,6 +191,7 @@ public abstract class EngineTestBase
         if (controlBytes.Count > 0)
         {
             var controlSpan = controlBytes.ToArray().AsSpan();
+            // Strip the leading StreamType byte (0x00 for Control)
             if (controlSpan.Length > 0 && controlSpan[0] == 0x00)
             {
                 controlSpan = controlSpan[1..];

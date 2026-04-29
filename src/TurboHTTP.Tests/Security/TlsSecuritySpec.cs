@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Security;
-using Servus.Akka.IO;
-using Servus.Akka.IO.Tcp;
+using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
 
@@ -157,7 +156,7 @@ public sealed class TlsSecuritySpec
             Scheme = uri.Scheme,
             Version = HttpVersion.Version11
         }, options);
-        var tlsOptions = Assert.IsType<TlsOptions>(tcpOptions);
+        var tlsOptions = Assert.IsType<TlsTransportOptions>(tcpOptions);
 
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
         tlsOptions.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.None);

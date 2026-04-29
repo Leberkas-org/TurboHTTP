@@ -1,8 +1,8 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Caching;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;
@@ -25,7 +25,7 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
     private static byte[] Response200WithSetCookie() =>
         "HTTP/1.1 200 OK\r\nSet-Cookie: token=xyz; Domain=example.com; Path=/\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> NoOpH2Flow()
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
         => Flow.FromGraph(new H2EngineFakeConnectionStage());
 
     private async Task<HttpResponseMessage> RunSingleAsync(
@@ -358,3 +358,4 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         return output.ToArray();
     }
 }
+

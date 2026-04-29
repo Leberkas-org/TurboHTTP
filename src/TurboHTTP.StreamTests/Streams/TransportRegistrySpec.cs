@@ -1,7 +1,7 @@
 using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 
 namespace TurboHTTP.StreamTests.Streams;
@@ -76,10 +76,10 @@ public sealed class TransportRegistrySpec
             registry.Register(HttpVersion.Version11, null!));
     }
 
-    private static Flow<IOutputItem, IInputItem, NotUsed> MockTransport()
+    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> MockTransport()
     {
         // Return a flow that discards output items and emits nothing (for testing registration only)
-        return Flow.Create<IOutputItem>()
-            .SelectMany(_ => new List<IInputItem>());
+        return Flow.Create<ITransportOutbound>()
+            .SelectMany(_ => new List<ITransportInbound>());
     }
 }

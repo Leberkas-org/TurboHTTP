@@ -1,6 +1,6 @@
-using Akka.Streams;
+﻿using Akka.Streams;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
@@ -14,7 +14,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
         params Http2Frame[] serverFrames)
     {
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -63,7 +63,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
         var request = (new HttpRequestMessage(HttpMethod.Get, "http://example.com/"), 3);
 
         var downstreamSink = Sink.Seq<HttpResponseMessage>();
-        var networkSink = Sink.Seq<IOutputItem>();
+        var networkSink = Sink.Seq<ITransportOutbound>();
 
         var graph = RunnableGraph.FromGraph(
             GraphDsl.Create(downstreamSink, networkSink,
@@ -75,7 +75,7 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
 
                     // Server sends GOAWAY then stays open (never finishes)
                     var serverSource = b.Add(
-                        Source.From(FramesToInputs([goAway])).Concat(Source.Never<IInputItem>()));
+                        Source.From(FramesToInputs([goAway])).Concat(Source.Never<ITransportInbound>()));
 
                     // Client sends a request after GOAWAY is processed
                     var requestSource = b.Add(
@@ -102,3 +102,4 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
             "Network task must not fault after GOAWAY + dropped request");
     }
 }
+

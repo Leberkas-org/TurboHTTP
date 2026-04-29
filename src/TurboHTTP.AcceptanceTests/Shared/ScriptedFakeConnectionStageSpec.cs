@@ -1,8 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 
@@ -27,7 +27,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             Encoding.Latin1.GetBytes(responses[index]));
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -69,7 +69,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         });
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -96,7 +96,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"));
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -135,7 +135,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         var fake = new ScriptedFakeConnectionStage((_, _) => corruptResponse);
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -174,7 +174,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         });
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -218,7 +218,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         });
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var completionTcs = new TaskCompletionSource();
@@ -244,7 +244,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_suppress_response_when_behaviorStack_overrides_factory_with_error()
     {
-        // BehaviorStack overrides the factory; PushConstant(null) → ConnectionAbort path → no response delivered
+        // BehaviorStack overrides the factory; PushConstant(null) â†’ ConnectionAbort path â†’ no response delivered
         var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>(_ =>
             Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"));
         stack.PushConstant(null);
@@ -254,7 +254,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             stack);
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var results = new List<HttpResponseMessage>();
         var completionTcs = new TaskCompletionSource();
@@ -271,7 +271,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
 
         await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // BehaviorStack returned null → factory was bypassed → no response delivered
+        // BehaviorStack returned null â†’ factory was bypassed â†’ no response delivered
         Assert.Empty(results);
     }
 
@@ -280,14 +280,14 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
     {
         var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>((t) =>
             Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 7\r\n\r\nsuccess"));
-        stack.PushOnce(_ => null); // first request → null = abort
+        stack.PushOnce(_ => null); // first request â†’ null = abort
 
         var fake = new ScriptedFakeConnectionStage(
             (_, _) => Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 7\r\n\r\nsuccess"),
             stack);
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var completionTcs = new TaskCompletionSource();
         var results = new List<HttpResponseMessage>();
@@ -311,7 +311,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
 
         await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // The once-behavior returns null → ConnectionAbort → stage completes with no responses
+        // The once-behavior returns null â†’ ConnectionAbort â†’ stage completes with no responses
         Assert.Empty(results);
     }
 
@@ -326,7 +326,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             log);
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -364,7 +364,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             log);
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<IOutputItem, IInputItem, NotUsed>(fake));
+        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
 
         var completionTcs = new TaskCompletionSource();
 

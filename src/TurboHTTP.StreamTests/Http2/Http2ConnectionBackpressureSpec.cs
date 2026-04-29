@@ -1,7 +1,7 @@
-using Akka.Streams;
+﻿using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
-using Servus.Akka.IO;
+using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
@@ -13,13 +13,13 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
 {
     private (
         ISourceQueueWithComplete<HttpRequestMessage> RequestQueue,
-        TestPublisher.ManualProbe<IInputItem> ServerProbe,
-        TestSubscriber.ManualProbe<IOutputItem> NetworkProbe,
+        TestPublisher.ManualProbe<ITransportInbound> ServerProbe,
+        TestSubscriber.ManualProbe<ITransportOutbound> NetworkProbe,
         TestSubscriber.ManualProbe<HttpResponseMessage> AppOutProbe)
         CreateProbes(int maxConcurrentStreams)
     {
-        var serverProbe = this.CreateManualPublisherProbe<IInputItem>();
-        var networkProbe = this.CreateManualSubscriberProbe<IOutputItem>();
+        var serverProbe = this.CreateManualPublisherProbe<ITransportInbound>();
+        var networkProbe = this.CreateManualSubscriberProbe<ITransportOutbound>();
         var appOutProbe = this.CreateManualSubscriberProbe<HttpResponseMessage>();
 
         var graph = RunnableGraph.FromGraph(
@@ -51,8 +51,8 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         Assert.IsType<QueueOfferResult.Enqueued>(result);
     }
 
-    private static void ExpectRequestOutput(TestSubscriber.ManualProbe<IOutputItem> networkProbe,
-        int expectedItems = 2)
+    private static void ExpectRequestOutput(TestSubscriber.ManualProbe<ITransportOutbound> networkProbe,
+        int expectedItems = 1)
     {
         for (var i = 0; i < expectedItems; i++)
         {
@@ -61,7 +61,7 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
     }
 
     private static async Task FillStreamsAsync(ISourceQueueWithComplete<HttpRequestMessage> queue,
-        TestSubscriber.ManualProbe<IOutputItem> networkProbe,
+        TestSubscriber.ManualProbe<ITransportOutbound> networkProbe,
         int count)
     {
         for (var i = 0; i < count; i++)
@@ -69,19 +69,20 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
             await OfferAsync(queue, new HttpRequestMessage(HttpMethod.Get, "http://example.com/"));
             if (i == 0)
             {
-                // First request also emits ConnectItem before StreamAcquireItem and NetworkBuffer
+                // First request also emits ConnectTransport before TransportData
                 networkProbe.ExpectNext(TestContext.Current.CancellationToken);
             }
 
-            // Each request produces StreamAcquireItem (signal) + NetworkBuffer (frame data)
+            // Each request produces TransportData (frame data)
             ExpectRequestOutput(networkProbe);
         }
     }
 
-    private static void DrainPreface(TestSubscriber.ManualProbe<IOutputItem> networkProbe)
+    private static void DrainPreface(TestSubscriber.ManualProbe<ITransportOutbound> networkProbe)
     {
         var preface = networkProbe.ExpectNext(TestContext.Current.CancellationToken);
-        Assert.IsType<NetworkBuffer>(preface);
+        var td = Assert.IsType<TransportData>(preface);
+        td.Buffer.Dispose();
     }
 
     [Fact(Timeout = 10_000)]
@@ -131,7 +132,7 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         // CloseStream still decrements _activeStreams and TryPullRequest resumes the gate.
         srvSub.SendNext(FramesToInput(new DataFrame(streamId: 1, data: Array.Empty<byte>(), endStream: true)));
 
-        // After stream close: new request produces NetworkBuffer + StreamAcquireItem
+        // After stream close: new request produces TransportData
         ExpectRequestOutput(networkProbe);
     }
 
@@ -158,7 +159,7 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
 
         srvSub.SendNext(FramesToInput(new RstStreamFrame(streamId: 3, Http2ErrorCode.Cancel)));
 
-        // After RST_STREAM: new request produces NetworkBuffer + StreamAcquireItem
+        // After RST_STREAM: new request produces TransportData
         ExpectRequestOutput(networkProbe);
     }
 
@@ -184,9 +185,9 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         srvSub.SendNext(FramesToInput(new SettingsFrame(
             [(SettingsParameter.MaxConcurrentStreams, 2u)])));
 
-        // SETTINGS ACK (NetworkBuffer) + MaxConcurrentStreamsItem signal — both on OutNetwork
-        await networkProbe.ExpectNextAsync(TestContext.Current.CancellationToken);
-        await networkProbe.ExpectNextAsync(TestContext.Current.CancellationToken);
+        // SETTINGS ACK (TransportData) — emitted on OutNetwork
+        var settingsAck = await networkProbe.ExpectNextAsync(TestContext.Current.CancellationToken);
+        Assert.IsType<TransportData>(settingsAck);
 
         // The stage had an outstanding pull from when limit was 100.
         // That in-flight pull will be satisfied by the next offered element regardless of the new limit.
@@ -205,3 +206,4 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         ExpectRequestOutput(networkProbe);
     }
 }
+
