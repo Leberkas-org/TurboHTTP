@@ -20,9 +20,8 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         public static readonly Evict Instance = new();
     }
 
-    private sealed class HostState(TransportOptions options, int maxConnections)
+    private sealed class HostState(int maxConnections)
     {
-        public readonly TransportOptions Options = options;
         public readonly int MaxConnections = maxConnections;
         public readonly List<QuicConnectionLease> Leases = [];
         public readonly Queue<Acquire> Pending = new();
@@ -54,14 +53,14 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     {
     }
 
-    internal QuicConnectionManagerActor(IQuicConnectionFactory factory)
+    public QuicConnectionManagerActor(IQuicConnectionFactory factory)
     {
         _factory = factory;
         Receive<Acquire>(OnAcquire);
         ReceiveAsync<Release>(OnRelease);
         ReceiveAsync<Established>(OnEstablished);
         Receive<EstablishFailed>(OnFailed);
-        Receive<Evict>(_ => OnEvict());
+        ReceiveAsync<Evict>(_ => OnEvict());
     }
 
     protected override void PreStart()
@@ -192,7 +191,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
     {
         if (!_hosts.TryGetValue(options, out var state))
         {
-            state = new HostState(options, options.MaxConnectionsPerHost);
+            state = new HostState(options.MaxConnectionsPerHost);
             _hosts[options] = state;
         }
 

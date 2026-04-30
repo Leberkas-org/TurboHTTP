@@ -7,13 +7,7 @@ internal static class DnsCache
 {
     private static readonly ConcurrentDictionary<string, DnsEntry> Cache = new(StringComparer.OrdinalIgnoreCase);
 
-    private static TimeSpan _ttl = TimeSpan.FromSeconds(120);
-
-    public static TimeSpan Ttl
-    {
-        get => _ttl;
-        set => _ttl = value;
-    }
+    public static TimeSpan Ttl { get; set; } = TimeSpan.FromSeconds(120);
 
     public static async Task<IPAddress[]> ResolveAsync(string host, CancellationToken ct)
     {
@@ -22,7 +16,7 @@ internal static class DnsCache
             return [literal];
         }
 
-        if (Cache.TryGetValue(host, out var entry) && !entry.IsExpired(_ttl))
+        if (Cache.TryGetValue(host, out var entry) && !entry.IsExpired(Ttl))
         {
             return entry.Addresses;
         }
@@ -41,7 +35,6 @@ internal static class DnsCache
 
     private readonly record struct DnsEntry(IPAddress[] Addresses, long TimestampMs)
     {
-        public bool IsExpired(TimeSpan ttl)
-            => Environment.TickCount64 - TimestampMs > (long)ttl.TotalMilliseconds;
+        public bool IsExpired(TimeSpan ttl) => Environment.TickCount64 - TimestampMs > (long)ttl.TotalMilliseconds;
     }
 }

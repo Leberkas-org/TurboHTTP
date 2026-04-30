@@ -1,0 +1,391 @@
+using System.Net;
+using System.Security.Authentication;
+using System.Text;
+using Servus.Akka.Transport;
+using Servus.Akka.Transport.Tcp;
+
+namespace Servus.Akka.Tests.Transport.Tcp;
+
+public sealed class TlsClientProviderSpec
+{
+    [Fact(Timeout = 5000)]
+    public void TlsClientProvider_should_initialize_with_options()
+    {
+        var options = new TlsTransportOptions
+        {
+            Host = "example.com",
+            Port = 443,
+            EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+        };
+
+        var provider = new TlsClientProvider(options);
+
+        Assert.NotNull(provider);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task TlsClientProvider_should_dispose_without_connection()
+    {
+        var options = new TlsTransportOptions
+        {
+            Host = "example.com",
+            Port = 443
+        };
+
+        var provider = new TlsClientProvider(options);
+
+        await provider.DisposeAsync();
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task TlsClientProvider_should_handle_double_dispose()
+    {
+        var options = new TlsTransportOptions
+        {
+            Host = "example.com",
+            Port = 443
+        };
+
+        var provider = new TlsClientProvider(options);
+
+        await provider.DisposeAsync();
+        await provider.DisposeAsync();
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_send_correct_request()
+    {
+        var targetHost = "example.com";
+        var targetPort = 443;
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            targetHost,
+            targetPort,
+            new TestProxy(new Uri("http://proxy.local:8080")),
+            defaultProxyCredentials: null,
+            CancellationToken.None
+        );
+
+        var requestContent = proxyStream.GetRequestContent();
+        Assert.NotNull(requestContent);
+        Assert.Contains($"CONNECT {targetHost}:{targetPort} HTTP/1.1", requestContent);
+        Assert.Contains($"Host: {targetHost}:{targetPort}", requestContent);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_succeed_on_200_response()
+    {
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080")),
+            defaultProxyCredentials: null,
+            CancellationToken.None
+        );
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_succeed_on_HTTP10_200()
+    {
+        var proxyStream = new MockProxyStream("HTTP/1.0 200 OK\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080")),
+            defaultProxyCredentials: null,
+            CancellationToken.None
+        );
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_throw_on_407_response()
+    {
+        var proxyStream = new MockProxyStream("HTTP/1.1 407 Proxy Authentication Required\r\n\r\n");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => TlsClientProvider.EstablishConnectTunnelAsync(
+                proxyStream,
+                "example.com",
+                443,
+                new TestProxy(new Uri("http://proxy.local:8080")),
+                defaultProxyCredentials: null,
+                CancellationToken.None
+            )
+        );
+
+        Assert.Contains("407 Proxy Authentication Required", ex.Message);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_throw_on_non_200()
+    {
+        var proxyStream = new MockProxyStream("HTTP/1.1 503 Service Unavailable\r\n\r\n");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => TlsClientProvider.EstablishConnectTunnelAsync(
+                proxyStream,
+                "example.com",
+                443,
+                new TestProxy(new Uri("http://proxy.local:8080")),
+                defaultProxyCredentials: null,
+                CancellationToken.None
+            )
+        );
+
+        Assert.Contains("503 Service Unavailable", ex.Message);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_include_proxy_auth_header()
+    {
+        var credentials = new NetworkCredential("testuser", "testpass");
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080"), credentials: credentials),
+            defaultProxyCredentials: null,
+            CancellationToken.None
+        );
+
+        var requestContent = proxyStream.GetRequestContent();
+        Assert.NotNull(requestContent);
+
+        var expectedEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("testuser:testpass"));
+        Assert.Contains($"Proxy-Authorization: Basic {expectedEncoded}", requestContent);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_not_include_auth_when_no_credentials()
+    {
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080")),
+            defaultProxyCredentials: null,
+            CancellationToken.None
+        );
+
+        var requestContent = proxyStream.GetRequestContent();
+        Assert.NotNull(requestContent);
+        Assert.DoesNotContain("Proxy-Authorization", requestContent);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_use_default_proxy_credentials()
+    {
+        var defaultCredentials = new NetworkCredential("defaultuser", "defaultpass");
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080")),
+            defaultProxyCredentials: defaultCredentials,
+            CancellationToken.None
+        );
+
+        var requestContent = proxyStream.GetRequestContent();
+        Assert.NotNull(requestContent);
+
+        var expectedEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("defaultuser:defaultpass"));
+        Assert.Contains($"Proxy-Authorization: Basic {expectedEncoded}", requestContent);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_prefer_proxy_credentials_over_defaults()
+    {
+        var proxyCredentials = new NetworkCredential("proxyuser", "proxypass");
+        var defaultCredentials = new NetworkCredential("defaultuser", "defaultpass");
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080"), credentials: proxyCredentials),
+            defaultProxyCredentials: defaultCredentials,
+            CancellationToken.None
+        );
+
+        var requestContent = proxyStream.GetRequestContent();
+        Assert.NotNull(requestContent);
+
+        var proxyEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("proxyuser:proxypass"));
+        var defaultEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("defaultuser:defaultpass"));
+
+        Assert.Contains($"Proxy-Authorization: Basic {proxyEncoded}", requestContent);
+        Assert.DoesNotContain($"Proxy-Authorization: Basic {defaultEncoded}", requestContent);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_throw_on_empty_response()
+    {
+        var proxyStream = new MockProxyStream("");
+
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(
+            () => TlsClientProvider.EstablishConnectTunnelAsync(
+                proxyStream,
+                "example.com",
+                443,
+                new TestProxy(new Uri("http://proxy.local:8080")),
+                defaultProxyCredentials: null,
+                CancellationToken.None
+            )
+        );
+
+        Assert.Contains("Proxy closed connection", ex.Message);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_handle_large_response_buffer()
+    {
+        var largeHeaders = string.Concat(Enumerable.Range(0, 10).Select(i => $"X-Custom-Header-{i}: value-{i}\r\n"));
+        var response = $"HTTP/1.1 200 Connection Established\r\n{largeHeaders}\r\n";
+        var proxyStream = new MockProxyStream(response);
+
+        await TlsClientProvider.EstablishConnectTunnelAsync(
+            proxyStream,
+            "example.com",
+            443,
+            new TestProxy(new Uri("http://proxy.local:8080")),
+            defaultProxyCredentials: null,
+            CancellationToken.None
+        );
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task ConnectTunnel_should_respect_cancellation_token()
+    {
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var proxyStream = new MockProxyStream("HTTP/1.1 200 Connection Established\r\n\r\n");
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => TlsClientProvider.EstablishConnectTunnelAsync(
+                proxyStream,
+                "example.com",
+                443,
+                new TestProxy(new Uri("http://proxy.local:8080")),
+                defaultProxyCredentials: null,
+                cts.Token
+            )
+        );
+    }
+
+    private sealed class MockProxyStream : Stream
+    {
+        private readonly byte[] _responseBytes;
+        private readonly MemoryStream _writeBuffer = new();
+        private int _readPosition;
+        private bool _responseWritten;
+
+        public MockProxyStream(string response)
+        {
+            _responseBytes = Encoding.ASCII.GetBytes(response);
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override void Flush()
+        {
+        }
+
+        public override async Task FlushAsync(CancellationToken cancellationToken)
+        {
+            _responseWritten = true;
+            _readPosition = 0;
+            await Task.CompletedTask;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException("Use ReadAsync instead");
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!_responseWritten)
+            {
+                await Task.Yield();
+                return 0;
+            }
+
+            if (_readPosition >= _responseBytes.Length)
+            {
+                return 0;
+            }
+
+            var bytesToRead = Math.Min(buffer.Length, _responseBytes.Length - _readPosition);
+            _responseBytes.AsMemory(_readPosition, bytesToRead).CopyTo(buffer);
+            _readPosition += bytesToRead;
+
+            return bytesToRead;
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException("Use WriteAsync instead");
+        }
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await _writeBuffer.WriteAsync(buffer, cancellationToken);
+            await Task.CompletedTask;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
+
+        public string GetRequestContent()
+        {
+            return Encoding.ASCII.GetString(_writeBuffer.ToArray());
+        }
+    }
+
+    private sealed class TestProxy(Uri? proxyUri, string? bypassedHost = null, ICredentials? credentials = null)
+        : IWebProxy
+    {
+        public ICredentials? Credentials { get; set; } = credentials;
+
+        public Uri? GetProxy(Uri destination) => proxyUri;
+
+        public bool IsBypassed(Uri host)
+        {
+            if (bypassedHost is null)
+            {
+                return false;
+            }
+
+            return host.Host == bypassedHost;
+        }
+    }
+}

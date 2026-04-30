@@ -87,7 +87,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
         serverSub.SendNext(new TransportData(responseBuffer));
 
         var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact(Timeout = 10000)]

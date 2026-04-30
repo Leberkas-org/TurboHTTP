@@ -1,3 +1,4 @@
+using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages;
 
@@ -14,4 +15,5 @@ internal sealed class FakeOps : IStageOperations
     public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
     public void OnWarning(string msg) => Warnings.Add(msg);
     public void OnReconnectFailed() => ReconnectFailed = true;
+    public ILoggingAdapter Log => NoLogger.Instance;
 }

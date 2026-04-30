@@ -61,6 +61,7 @@ internal sealed class ClientState : IDisposable
         {
             buf.Dispose();
         }
+
         while (_outboundChannel.Reader.TryRead(out var buf))
         {
             buf.Dispose();
@@ -72,31 +73,34 @@ internal sealed class ClientState : IDisposable
         }
         catch (InvalidOperationException)
         {
-            _ = 0;
+            // noop
         }
+
         try
         {
             InboundPipe.Reader.Complete();
         }
         catch (InvalidOperationException)
         {
-            _ = 0;
+            // noop
         }
+
         try
         {
             OutboundPipe.Writer.Complete();
         }
         catch (InvalidOperationException)
         {
-            _ = 0;
+            // noop
         }
+
         try
         {
             OutboundPipe.Reader.Complete();
         }
         catch (InvalidOperationException)
         {
-            _ = 0;
+            // noop
         }
 
         Stream.Dispose();

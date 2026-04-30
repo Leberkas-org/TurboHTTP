@@ -47,22 +47,24 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         var netSubscription = await networkSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var resSubscription = await responseSub.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
         var appSubscription = await appProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
-        await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
+        var serverSubscription = await serverProbe.ExpectSubscriptionAsync(TestContext.Current.CancellationToken);
 
         netSubscription.Request(20);
         resSubscription.Request(10);
+
+        serverSubscription.SendNext(new TransportConnected(default!));
 
         // Send two requests — each should be routed to a different QUIC stream
         appSubscription.SendNext(MakeRequest("/stream1"));
         appSubscription.SendNext(MakeRequest("/stream2"));
 
-        // Both requests should be encoded with different stream identifiers
-        for (var i = 0; i < 4; i++)
+        // After TransportConnected: PreStart items (3x OpenStream + preface) are flushed,
+        // then request encoding emits ConnectTransport + OpenStream + MultiplexedData + CompleteWrites per request.
+        // Verify we get at least the PreStart batch + first request items.
+        for (var i = 0; i < 8; i++)
         {
             await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         }
-
-        Assert.True(true);
     }
 
 
@@ -157,4 +159,3 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }
-

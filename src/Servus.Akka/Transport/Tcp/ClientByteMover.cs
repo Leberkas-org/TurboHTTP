@@ -69,8 +69,8 @@ internal static class ClientByteMover
         }
     }
 
-    private static async Task DrainPipeToChannel(
-        PipeReader reader, ChannelWriter<TransportBuffer> channel, Action onClose, CancellationToken ct)
+    private static async Task DrainPipeToChannel(PipeReader reader, ChannelWriter<TransportBuffer> channel,
+        Action onClose, CancellationToken ct)
     {
         var abrupt = false;
         try
@@ -145,8 +145,8 @@ internal static class ClientByteMover
         onClose();
     }
 
-    private static async Task FillPipeFromChannel(
-        ChannelReader<TransportBuffer> channel, PipeWriter writer, CancellationToken ct)
+    private static async Task FillPipeFromChannel(ChannelReader<TransportBuffer> channel, PipeWriter writer,
+        CancellationToken ct)
     {
         try
         {
@@ -190,8 +190,8 @@ internal static class ClientByteMover
         }
     }
 
-    private static async Task DrainPipeToStream(
-        PipeReader reader, Stream stream, Action? onWritesComplete, Action onClose, CancellationToken ct)
+    private static async Task DrainPipeToStream(PipeReader reader, Stream stream, Action? onWritesComplete,
+        Action onClose, CancellationToken ct)
     {
         try
         {

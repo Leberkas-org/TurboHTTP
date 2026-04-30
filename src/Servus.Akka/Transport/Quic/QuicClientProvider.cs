@@ -72,6 +72,8 @@ internal sealed class QuicClientProvider : IAsyncDisposable
                     TargetHost = _options.TargetHost ?? _options.Host,
                     ApplicationProtocols = _options.ApplicationProtocols,
                     RemoteCertificateValidationCallback = _options.ServerCertificateValidationCallback,
+                    EnabledSslProtocols = _options.EnabledSslProtocols,
+                    ClientCertificates = _options.ClientCertificates
                 }
             };
 

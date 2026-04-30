@@ -159,6 +159,92 @@ public sealed class QuicMultiStreamSpec
         Assert.Contains("no longer usable", ex.Message);
     }
 
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
+    public async Task QuicClientProvider_DisposeAsync_should_be_idempotent()
+    {
+#pragma warning disable CA1416
+        var provider = new QuicClientProvider(new QuicTransportOptions { Host = "example.com", Port = 443 });
+
+        // Should not throw on first dispose
+        await provider.DisposeAsync();
+
+        // Should not throw on second dispose
+        await provider.DisposeAsync();
+#pragma warning restore CA1416
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
+    public async Task QuicClientProvider_DisposeAsync_without_connection_should_complete()
+    {
+#pragma warning disable CA1416
+        var provider = new QuicClientProvider(new QuicTransportOptions { Host = "example.com", Port = 443 });
+
+        // Dispose without ever calling GetStreamAsync (no connection established)
+        await provider.DisposeAsync();
+#pragma warning restore CA1416
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
+    public void QuicClientProvider_LocalEndPoint_should_be_null_before_connect()
+    {
+#pragma warning disable CA1416
+        var provider = new QuicClientProvider(new QuicTransportOptions { Host = "example.com", Port = 443 });
+
+        Assert.Null(provider.LocalEndPoint);
+#pragma warning restore CA1416
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
+    public async Task QuicClientProvider_GetStreamAsync_with_empty_host_should_throw_InvalidOperationException()
+    {
+#pragma warning disable CA1416
+        var provider = new QuicClientProvider(new QuicTransportOptions { Host = "", Port = 443 });
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GetStreamAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("SNI", ex.Message);
+#pragma warning restore CA1416
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
+    public async Task QuicClientProvider_ConcurrentDispose_should_be_safe()
+    {
+#pragma warning disable CA1416
+        var provider = new QuicClientProvider(new QuicTransportOptions { Host = "example.com", Port = 443 });
+
+        // Launch concurrent dispose calls
+        var tasks = new Task[5];
+        for (var i = 0; i < tasks.Length; i++)
+        {
+            tasks[i] = provider.DisposeAsync().AsTask();
+        }
+
+        // Should complete without throwing
+        await Task.WhenAll(tasks);
+#pragma warning restore CA1416
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
+    public async Task QuicClientProvider_GetStreamAsync_should_respect_cancellation()
+    {
+#pragma warning disable CA1416
+        var provider = new QuicClientProvider(new QuicTransportOptions { Host = "example.com", Port = 443 });
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Should throw TaskCanceledException due to pre-cancelled token
+        await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            provider.GetStreamAsync(cts.Token));
+#pragma warning restore CA1416
+    }
+
     private sealed class MinimalClientProvider : IClientProvider
     {
         public EndPoint? RemoteEndPoint => null;

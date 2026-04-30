@@ -13,7 +13,6 @@ internal sealed class QuicStreamState
 {
     private StreamHandle? _handle;
     private Queue<TransportBuffer>? _openingBuffer = new();
-    private bool _completeWritesDeferred;
 
     public QuicStreamState(StreamDirection direction)
     {
@@ -25,7 +24,7 @@ internal sealed class QuicStreamState
     public StreamDirection Direction { get; }
     public bool HasHandle => _handle is not null;
     public int PendingWriteCount => _openingBuffer?.Count ?? 0;
-    public bool IsCompleteWritesDeferred => _completeWritesDeferred;
+    public bool IsCompleteWritesDeferred { get; private set; }
 
     public void AttachHandle(StreamHandle handle)
     {
@@ -41,9 +40,9 @@ internal sealed class QuicStreamState
             _openingBuffer = null;
         }
 
-        if (_completeWritesDeferred)
+        if (IsCompleteWritesDeferred)
         {
-            _completeWritesDeferred = false;
+            IsCompleteWritesDeferred = false;
             _handle.CompleteWrites();
             Phase = StreamPhase.HalfClosedWrite;
         }
@@ -69,7 +68,7 @@ internal sealed class QuicStreamState
         switch (Phase)
         {
             case StreamPhase.Opening:
-                _completeWritesDeferred = true;
+                IsCompleteWritesDeferred = true;
                 return;
             case StreamPhase.Active:
                 _handle?.CompleteWrites();
@@ -94,7 +93,7 @@ internal sealed class QuicStreamState
         Phase = StreamPhase.Closed;
     }
 
-    public void DisposePendingWrites()
+    private void DisposePendingWrites()
     {
         if (_openingBuffer is null)
         {

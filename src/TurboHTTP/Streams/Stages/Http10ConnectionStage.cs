@@ -124,6 +124,8 @@ internal sealed class Http10ConnectionStage : GraphStage<ConnectionShape>
             _reconnectFailed = true;
         }
 
+        ILoggingAdapter IStageOperations.Log => Log;
+
         private void OnServerPush()
         {
             var item = Grab(_stage._inServer);

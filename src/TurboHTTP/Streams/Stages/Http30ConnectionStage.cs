@@ -152,6 +152,8 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             _reconnectFailed = true;
         }
 
+        ILoggingAdapter IStageOperations.Log => Log;
+
         private void OnServerPush()
         {
             var item = Grab(_stage._inServer);
@@ -191,68 +193,68 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             switch (item)
             {
                 case TransportConnected:
+                {
+                    _transportConnected = true;
+                    _sm.OnConnectionRestored();
+                    FlushOutbound();
+                    TryPullRequest();
+                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        _transportConnected = true;
-                        _sm.OnConnectionRestored();
-                        FlushOutbound();
-                        TryPullRequest();
-                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
-                        {
-                            Pull(_stage._inServer);
-                        }
-
-                        return;
+                        Pull(_stage._inServer);
                     }
+
+                    return;
+                }
                 case StreamReadCompleted { StreamId: >= 0 } readCompleted:
-                    {
-                        _sm.FlushPendingResponse(readCompleted.StreamId);
-                        FlushResponses();
-                        TryPullRequest();
-                        return;
-                    }
+                {
+                    _sm.FlushPendingResponse(readCompleted.StreamId);
+                    FlushResponses();
+                    TryPullRequest();
+                    return;
+                }
                 case StreamClosed { StreamId: >= 0 } streamClosed:
-                    {
-                        _sm.FlushPendingResponse(streamClosed.StreamId);
-                        FlushResponses();
-                        TryPullRequest();
-                        return;
-                    }
+                {
+                    _sm.FlushPendingResponse(streamClosed.StreamId);
+                    FlushResponses();
+                    TryPullRequest();
+                    return;
+                }
                 case StreamClosed:
-                    {
-                        _sm.FlushPendingResponse();
-                        FlushResponses();
-                        TryPullRequest();
-                        return;
-                    }
+                {
+                    _sm.FlushPendingResponse();
+                    FlushResponses();
+                    TryPullRequest();
+                    return;
+                }
                 case TransportDisconnected when _sm.IsReconnecting:
+                {
+                    _sm.OnReconnectAttemptFailed();
+                    if (_reconnectFailed)
                     {
-                        _sm.OnReconnectAttemptFailed();
-                        if (_reconnectFailed)
-                        {
-                            FailStage(new HttpRequestException(
-                                "TurboHTTP: HTTP/3 reconnect failed after max attempts."));
-                            return;
-                        }
-
-                        FlushOutbound();
-                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
-                        {
-                            Pull(_stage._inServer);
-                        }
-
+                        FailStage(new HttpRequestException(
+                            "TurboHTTP: HTTP/3 reconnect failed after max attempts."));
                         return;
                     }
+
+                    FlushOutbound();
+                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
+                    {
+                        Pull(_stage._inServer);
+                    }
+
+                    return;
+                }
                 case TransportDisconnected when _sm.HasInFlightRequests:
+                {
+                    _sm.OnConnectionLost();
+                    FlushOutbound();
+                    if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
                     {
-                        _sm.OnConnectionLost();
-                        FlushOutbound();
-                        if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
-                        {
-                            Pull(_stage._inServer);
-                        }
-
-                        return;
+                        Pull(_stage._inServer);
                     }
+
+                    return;
+                }
                 case TransportDisconnected:
                     CompleteStage();
                     return;
@@ -272,27 +274,27 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             switch (streamId)
             {
                 case -4:
-                    {
-                        _sm.ProcessQpackDecoderBytes(buffer.Memory);
-                        buffer.Dispose();
-                        Pull(_stage._inServer);
-                        return;
-                    }
+                {
+                    _sm.ProcessQpackDecoderBytes(buffer.Memory);
+                    buffer.Dispose();
+                    Pull(_stage._inServer);
+                    return;
+                }
                 case -3:
-                    {
-                        _sm.ProcessQpackEncoderBytes(buffer.Memory);
-                        buffer.Dispose();
-                        Pull(_stage._inServer);
-                        return;
-                    }
+                {
+                    _sm.ProcessQpackEncoderBytes(buffer.Memory);
+                    buffer.Dispose();
+                    Pull(_stage._inServer);
+                    return;
+                }
                 case -2:
                     ProcessFrameData(buffer, streamId: ControlStreamDecoderId);
                     return;
                 default:
-                    {
-                        ProcessFrameData(buffer, streamId);
-                        return;
-                    }
+                {
+                    ProcessFrameData(buffer, streamId);
+                    return;
+                }
             }
         }
 

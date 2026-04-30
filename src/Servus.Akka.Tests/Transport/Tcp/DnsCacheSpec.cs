@@ -58,7 +58,7 @@ public sealed class DnsCacheSpec : IDisposable
         DnsCache.Ttl = TimeSpan.FromMilliseconds(1);
 
         var first = await DnsCache.ResolveAsync("localhost", CancellationToken.None);
-        await Task.Delay(10, TestContext.Current.CancellationToken);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         var second = await DnsCache.ResolveAsync("localhost", CancellationToken.None);
 
         Assert.NotSame(first, second);

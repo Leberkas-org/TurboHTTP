@@ -1,3 +1,4 @@
+using Akka.Event;
 using Servus.Akka.Transport;
 
 namespace TurboHTTP.Streams.Stages;
@@ -8,4 +9,5 @@ internal interface IStageOperations
     void OnOutbound(ITransportOutbound item);
     void OnWarning(string message);
     void OnReconnectFailed();
+    ILoggingAdapter Log { get; }
 }
