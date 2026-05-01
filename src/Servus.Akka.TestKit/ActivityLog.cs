@@ -30,3 +30,5 @@ public sealed class ActivityLog
 
     public void Clear() => _entries.Clear();
 }
+
+public sealed record ListenerConnectionAccepted(int Index, bool FromFactory) : Activity;

@@ -1,19 +1,14 @@
 using System.Net;
 using System.Net.Quic;
 using System.Net.Security;
-using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Servus.Akka.Tests.Transport.Quic;
 
 namespace Servus.Akka.Tests.Utils;
 
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
 public sealed class LoopbackQuicServer : IAsyncDisposable
 {
-    public static SslApplicationProtocol Alpn => QuicTestAlpn.Instance;
+    public static SslApplicationProtocol Alpn => new("h3");
     private readonly QuicListener _listener;
     private readonly X509Certificate2 _cert;
     public int Port { get; }

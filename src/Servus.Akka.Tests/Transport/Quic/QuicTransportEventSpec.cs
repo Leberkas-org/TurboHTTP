@@ -5,7 +5,6 @@ using QuicInboundStreamAccepted = Servus.Akka.Transport.Quic.InboundStreamAccept
 
 namespace Servus.Akka.Tests.Transport.Quic;
 
-[Collection("TransportBuffer")]
 public sealed class QuicTransportEventSpec
 {
     private QuicConnectionHandle CreateTestConnectionHandle() =>

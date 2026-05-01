@@ -4,7 +4,6 @@ using Servus.Akka.Transport.Tcp;
 
 namespace Servus.Akka.Tests.Transport.Tcp;
 
-[Collection("TransportBuffer")]
 public sealed class ClientByteMoverSpec
 {
     [Fact(Timeout = 5000)]
@@ -403,6 +402,4 @@ public sealed class ClientByteMoverSpec
         buf.Length = size;
         state.OutboundWriter.TryWrite(buf);
     }
-
-    
 }

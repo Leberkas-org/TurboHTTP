@@ -47,29 +47,19 @@ public sealed class TestConnectionStage : GraphStage<FlowShape<ITransportOutboun
     }
 
     internal void EnqueueInitial(ITransportInbound message)
-    {
-        _initialInbound.Enqueue(message);
-    }
+        => _initialInbound.Enqueue(message);
 
     public void PushOnce(ITransportInbound message)
-    {
-        _inboundChannel.Writer.TryWrite(message);
-    }
+        => _inboundChannel.Writer.TryWrite(message);
 
     public void PushInbound(ITransportInbound message)
-    {
-        _inboundChannel.Writer.TryWrite(message);
-    }
+        => _inboundChannel.Writer.TryWrite(message);
 
     public async Task<ITransportOutbound> WaitForOutbound(CancellationToken ct = default)
-    {
-        return await _outboundChannel.Reader.ReadAsync(ct).ConfigureAwait(false);
-    }
+        => await _outboundChannel.Reader.ReadAsync(ct).ConfigureAwait(false);
 
     public bool TryGetOutbound(out ITransportOutbound? message)
-    {
-        return _outboundChannel.Reader.TryRead(out message);
-    }
+        => _outboundChannel.Reader.TryRead(out message);
 
     public IReadOnlyCollection<ITransportOutbound> ReceivedOutbound => _receivedOutbound;
 
@@ -91,8 +81,7 @@ public sealed class TestConnectionStage : GraphStage<FlowShape<ITransportOutboun
     public void PopResponse()
         => _responses.Pop();
 
-    public static implicit operator Flow<ITransportOutbound, ITransportInbound, NotUsed>(
-        TestConnectionStage stage)
+    public static implicit operator Flow<ITransportOutbound, ITransportInbound, NotUsed>(TestConnectionStage stage)
         => Flow.FromGraph(stage);
 
     public Flow<ITransportOutbound, ITransportInbound, NotUsed> AsFlow()
@@ -257,25 +246,15 @@ public sealed class TestConnectionStage : GraphStage<FlowShape<ITransportOutboun
             FailStage(ex);
         }
 
-        void IStageContext.ScheduleTimer(string key, TimeSpan delay)
-            => ScheduleOnce(key, delay);
+        void IStageContext.ScheduleTimer(string key, TimeSpan delay) => ScheduleOnce(key, delay);
 
-        void IStageContext.CancelTimer(string key)
-            => CancelTimer(key);
+        void IStageContext.CancelTimer(string key) => CancelTimer(key);
     }
 
-    internal sealed class OutboundHandler
+    internal sealed class OutboundHandler(Type messageType, Action<ITransportOutbound, IStageContext> handler)
     {
-        public Type MessageType { get; }
-        private readonly Action<ITransportOutbound, IStageContext> _handler;
+        public Type MessageType { get; } = messageType;
 
-        public OutboundHandler(Type messageType, Action<ITransportOutbound, IStageContext> handler)
-        {
-            MessageType = messageType;
-            _handler = handler;
-        }
-
-        public void Invoke(ITransportOutbound message, IStageContext context)
-            => _handler(message, context);
+        public void Invoke(ITransportOutbound message, IStageContext context) => handler(message, context);
     }
 }

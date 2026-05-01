@@ -1,11 +1,8 @@
-using Akka;
 using Akka.Streams;
-using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
 
 namespace Servus.Akka.TestKit.Tests;
 
-[Collection("TransportBuffer")]
 public sealed class TestPipelineSpec : global::Akka.TestKit.Xunit.TestKit
 {
     private readonly IMaterializer _materializer;
@@ -25,7 +22,7 @@ public sealed class TestPipelineSpec : global::Akka.TestKit.Xunit.TestKit
 
         var result = await TestPipeline.RunAsync(
             stage.AsFlow(),
-            (ITransportOutbound)new ConnectTransport(new TcpTransportOptions { Host = "localhost", Port = 80 }),
+            new ConnectTransport(new TcpTransportOptions { Host = "localhost", Port = 80 }),
             _materializer, ct);
 
         Assert.IsType<TransportConnected>(result);

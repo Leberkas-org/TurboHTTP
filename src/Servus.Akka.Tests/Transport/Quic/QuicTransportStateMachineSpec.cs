@@ -5,7 +5,6 @@ using Servus.Akka.Transport.Quic;
 
 namespace Servus.Akka.Tests.Transport.Quic;
 
-[Collection("TransportBuffer")]
 public sealed class QuicTransportStateMachineSpec
 {
     private static QuicConnectionHandle CreateMockHandle()

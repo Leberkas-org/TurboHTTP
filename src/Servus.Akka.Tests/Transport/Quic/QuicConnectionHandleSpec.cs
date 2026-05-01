@@ -4,7 +4,6 @@ using Servus.Akka.Transport.Quic;
 
 namespace Servus.Akka.Tests.Transport.Quic;
 
-[Collection("TransportBuffer")]
 public sealed class QuicConnectionHandleSpec
 {
     [Fact(Timeout = 5000)]

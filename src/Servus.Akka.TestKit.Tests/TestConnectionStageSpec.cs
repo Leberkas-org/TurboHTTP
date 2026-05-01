@@ -2,11 +2,9 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
-using Xunit;
 
 namespace Servus.Akka.TestKit.Tests;
 
-[Collection("TransportBuffer")]
 public sealed class TestConnectionStageSpec : global::Akka.TestKit.Xunit.TestKit
 {
     private readonly IMaterializer _materializer;
