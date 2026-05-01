@@ -1,6 +1,6 @@
 using System.Buffers;
 using Akka.Actor;
-using Servus.Akka.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace Servus.Akka.Transport.Tcp.Client;
 
@@ -188,7 +188,7 @@ public sealed class TcpTransportStateMachine
 
         _pumpManager = new TcpPumpManager(_self);
         _pumpManager.StartPumps(lease.State, _connectionGen);
-        ServusTrace.Connection.Debug(this, "Transport ready");
+        Tracing.For("Connection").Debug(this, "Transport ready");
 
         if (_isReconnecting)
         {
@@ -207,7 +207,7 @@ public sealed class TcpTransportStateMachine
         }
 
         _ops.OnCancelTimer(ConnectTimerKey);
-        ServusTrace.Connection.Warning(this, "Acquisition failed: {0}", ex.Message);
+        Tracing.For("Connection").Warning(this, "Acquisition failed: {0}", ex.Message);
 
         if (_pendingConnect is null)
         {
@@ -232,7 +232,7 @@ public sealed class TcpTransportStateMachine
 
     private void OnInboundComplete(DisconnectReason reason)
     {
-        ServusTrace.Connection.Debug(this, "Disconnected: {0}", reason);
+        Tracing.For("Connection").Debug(this, "Disconnected: {0}", reason);
         var poolAction = _poolingStrategy.OnDisconnect(_currentLease!, reason);
 
         if (_autoReconnect && _pendingConnect is null && !_upstreamFinished)
@@ -274,7 +274,7 @@ public sealed class TcpTransportStateMachine
 
     private void OnOutboundWriteFailed(Exception ex)
     {
-        ServusTrace.Connection.Warning(this, "Write failed: {0}", ex.Message);
+        Tracing.For("Connection").Warning(this, "Write failed: {0}", ex.Message);
         _leaseReturned = false;
         ReturnLeaseToPool(_poolingStrategy.OnDisconnect(_currentLease!, DisconnectReason.Error));
 

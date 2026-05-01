@@ -250,15 +250,6 @@
         "resolved": "1.0.4",
         "contentHash": "k5lcLBmVAcc1OMGsLa5cxdzJazNx9haOb9GUINx+DulBqEvRAHCgxhDWcJjm44Pe633xwdKOOYGQhPSdj944IA=="
       },
-      "Servus.Core": {
-        "type": "Transitive",
-        "resolved": "0.33.9",
-        "contentHash": "Pwfq11gY3boG5nbav0tKKGwb2b2Ue9olQiOUFmbHY1ENy+cPHSNHW1GWZDpGvPGHzuEwg9+jiSBWYuuRZ2jQkw==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.15",
-          "Microsoft.Extensions.Hosting.Abstractions": "9.0.15"
-        }
-      },
       "System.Configuration.ConfigurationManager": {
         "type": "Transitive",
         "resolved": "6.0.1",
@@ -301,7 +292,17 @@
         "type": "Project",
         "dependencies": {
           "Akka.Hosting": "[1.5.65, )",
-          "Servus.Core": "[0.33.9, )"
+          "Servus.Core": "[0.33.10, )"
+        }
+      },
+      "Servus.Core": {
+        "type": "CentralTransitive",
+        "requested": "[0.33.10, )",
+        "resolved": "0.33.10",
+        "contentHash": "31KtCHbrqw6IXPaMqdVPUqQmZwDHtDL9SPWgqYUnmk6hoSi8FgoUOjv6GiMoUGDlJHiCtaNbW+UADjpCl8tv0A==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.15",
+          "Microsoft.Extensions.Hosting.Abstractions": "9.0.15"
         }
       }
     }

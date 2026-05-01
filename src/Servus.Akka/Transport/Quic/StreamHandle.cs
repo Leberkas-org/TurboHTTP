@@ -9,19 +9,6 @@ internal sealed class StreamHandle : IAsyncDisposable
         _stream = stream;
     }
 
-    public ValueTask WriteAsync(TransportBuffer buffer)
-    {
-        var memory = buffer.Memory;
-        var task = _stream.WriteAsync(memory);
-        if (task.IsCompletedSuccessfully)
-        {
-            buffer.Dispose();
-            return default;
-        }
-
-        return AwaitAndDispose(task, buffer);
-    }
-
     public void Write(TransportBuffer buffer)
     {
         var memory = buffer.Memory;
@@ -51,16 +38,4 @@ internal sealed class StreamHandle : IAsyncDisposable
     }
 
     public ValueTask DisposeAsync() => _stream.DisposeAsync();
-
-    private static async ValueTask AwaitAndDispose(ValueTask writeTask, TransportBuffer buffer)
-    {
-        try
-        {
-            await writeTask.ConfigureAwait(false);
-        }
-        finally
-        {
-            buffer.Dispose();
-        }
-    }
 }

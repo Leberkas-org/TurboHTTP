@@ -11,17 +11,12 @@ using Akka.Streams.Stage;
 
 namespace Servus.Akka.Transport.Quic.Listener;
 
-#pragma warning disable CA1416
-
 internal sealed record QuicConnectionAccepted(QuicConnection Connection);
 
 internal sealed record QuicAcceptFailed(Exception Error);
 
 internal sealed record QuicListenerBound(QuicListener Listener);
 
-[SupportedOSPlatform("linux")]
-[SupportedOSPlatform("macOS")]
-[SupportedOSPlatform("windows")]
 internal sealed class QuicListenerStage
     : GraphStage<SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>>
 {
@@ -182,7 +177,7 @@ internal sealed class QuicListenerStage
                     try
                     {
                         var stream = await connection.AcceptInboundStreamAsync(token).ConfigureAwait(false);
-                        return ((Stream)stream, stream.Id);
+                        return (stream, stream.Id);
                     }
                     catch (OperationCanceledException)
                     {
@@ -223,5 +218,3 @@ internal sealed class QuicListenerStage
         }
     }
 }
-
-#pragma warning restore CA1416

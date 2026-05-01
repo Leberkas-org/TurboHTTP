@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using Servus.Akka.Diagnostics;
 
 namespace Servus.Akka.Transport.Tcp.Client;
 
@@ -42,7 +41,7 @@ internal class TcpClientProvider(TcpTransportOptions options) : IAsyncDisposable
             // ServusMetrics.DnsLookupDuration.Record(dnsDuration,
             //     new KeyValuePair<string, object?>("dns.question.name", connectHost));
             // dnsActivity?.Stop();
-            ServusTrace.Dns.Debug(this, "Resolved {0} → {1} address(es)", connectHost, addresses.Length);
+            Core.Servus.Tracing.For("Dns").Debug(this, "Resolved {0} → {1} address(es)", connectHost, addresses.Length);
         }
         catch (Exception ex)
         {
@@ -52,7 +51,7 @@ internal class TcpClientProvider(TcpTransportOptions options) : IAsyncDisposable
             //     dnsActivity.Stop();
             // }
 
-            ServusTrace.Dns.Warning(this, "DNS '{0}' failed: {1}", connectHost, ex.Message);
+            Core.Servus.Tracing.For("Dns").Warning(this, "DNS '{0}' failed: {1}", connectHost, ex.Message);
             throw;
         }
 
@@ -65,7 +64,7 @@ internal class TcpClientProvider(TcpTransportOptions options) : IAsyncDisposable
         {
             await _socket.ConnectAsync(addresses, connectPort, ct).ConfigureAwait(false);
             // socketActivity?.Stop();
-            ServusTrace.Connection.Debug(this, "TCP connected to {0}:{1}", addresses[0], connectPort);
+            Core.Servus.Tracing.For("Connection").Debug(this, "TCP connected to {0}:{1}", addresses[0], connectPort);
         }
         catch (Exception ex)
         {
@@ -75,7 +74,7 @@ internal class TcpClientProvider(TcpTransportOptions options) : IAsyncDisposable
             //     socketActivity.Stop();
             // }
 
-            ServusTrace.Connection.Warning(this, "TCP connect to {0}:{1} failed: {2}", addresses[0], connectPort, ex.Message);
+            Core.Servus.Tracing.For("Connection").Warning(this, "TCP connect to {0}:{1} failed: {2}", addresses[0], connectPort, ex.Message);
             throw;
         }
 

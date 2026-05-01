@@ -1,5 +1,5 @@
 using Akka.Actor;
-using Servus.Akka.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace Servus.Akka.Transport.Quic.Client;
 
@@ -75,7 +75,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         if (msg.Tcs.Task.IsCompleted) return;
 
         var host = GetOrCreateHost(msg.Options);
-        ServusTrace.Pool.Trace(this, "Acquire {0}:{1}", msg.Options.Host, msg.Options.Port);
+        Tracing.For("Pool").Trace(this, "Acquire {0}:{1}", msg.Options.Host, msg.Options.Port);
 
         foreach (var lease in host.Leases)
         {
@@ -87,7 +87,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
             lease.MarkBusy();
             if (msg.Tcs.TrySetResult(lease))
             {
-                ServusTrace.Pool.Debug(this, "Reused connection to {0}:{1}", msg.Options.Host, msg.Options.Port);
+                Tracing.For("Pool").Debug(this, "Reused connection to {0}:{1}", msg.Options.Host, msg.Options.Port);
                 return;
             }
 
@@ -96,7 +96,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 
         if (host.Leases.Count + host.Establishing < host.MaxConnections)
         {
-            ServusTrace.Pool.Debug(this, "Creating connection to {0}:{1}", msg.Options.Host, msg.Options.Port);
+            Tracing.For("Pool").Debug(this, "Creating connection to {0}:{1}", msg.Options.Host, msg.Options.Port);
             Establish(host, msg);
         }
         else
@@ -107,7 +107,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
 
     private async Task OnRelease(Release msg)
     {
-        ServusTrace.Pool.Trace(this, "Released {0}", msg.Lease);
+        Tracing.For("Pool").Trace(this, "Released {0}", msg.Lease);
         msg.Lease.MarkIdle();
 
         if (!msg.CanReuse || !msg.Lease.IsAlive())
@@ -133,7 +133,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
         host.Establishing--;
         host.Leases.Add(msg.Lease);
         msg.Lease.MarkBusy();
-        ServusTrace.Pool.Debug(this, "Established to {0}:{1}", msg.Original.Options.Host, msg.Original.Options.Port);
+        Tracing.For("Pool").Debug(this, "Established to {0}:{1}", msg.Original.Options.Host, msg.Original.Options.Port);
 
         if (!msg.Original.Tcs.TrySetResult(msg.Lease))
         {
@@ -148,7 +148,7 @@ public sealed class QuicConnectionManagerActor : ReceiveActor, IWithTimers
             host.Establishing--;
         }
 
-        ServusTrace.Pool.Warning(this, "Failed to {0}:{1}: {2}", msg.Original.Options.Host, msg.Original.Options.Port, msg.Ex.Message);
+        Tracing.For("Pool").Warning(this, "Failed to {0}:{1}: {2}", msg.Original.Options.Host, msg.Original.Options.Port, msg.Ex.Message);
 
         if (msg.Ex is OperationCanceledException oce)
         {

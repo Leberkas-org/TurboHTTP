@@ -1,4 +1,3 @@
-using Servus.Akka.Tests.Utils;
 using Servus.Akka.Transport;
 using Servus.Akka.Transport.Quic;
 
@@ -7,7 +6,7 @@ namespace Servus.Akka.Tests.Transport.Quic;
 public sealed class StreamHandleSpec
 {
     [Fact(Timeout = 5000)]
-    public void WriteAsync_should_write_buffer_to_stream()
+    public void Write_should_write_buffer_to_stream()
     {
         var ms = new MemoryStream();
         var handle = new StreamHandle(ms);
@@ -45,7 +44,7 @@ public sealed class StreamHandleSpec
     }
 
     [Fact(Timeout = 5000)]
-    public async Task WriteAsync_should_write_and_dispose_buffer()
+    public void Write_should_write_and_dispose_buffer()
     {
         var ms = new MemoryStream();
         var handle = new StreamHandle(ms);
@@ -57,7 +56,7 @@ public sealed class StreamHandleSpec
         buffer.FullMemory.Span[3] = 0x44;
         buffer.Length = 4;
 
-        await handle.WriteAsync(buffer);
+        handle.Write(buffer);
 
         Assert.Equal(4, ms.Length);
         Assert.Equal(0x11, ms.GetBuffer()[0]);
@@ -65,36 +64,11 @@ public sealed class StreamHandleSpec
         Assert.Equal(0x33, ms.GetBuffer()[2]);
         Assert.Equal(0x44, ms.GetBuffer()[3]);
 
-        // Buffer should be disposed after WriteAsync
         Assert.Throws<NullReferenceException>(() => _ = buffer.Memory);
     }
 
     [Fact(Timeout = 5000)]
-    public async Task WriteAsync_should_dispose_buffer_on_sync_completion()
-    {
-        // Use a sync-completing stream (MemoryStream completes synchronously)
-        var ms = new MemoryStream();
-        var handle = new StreamHandle(ms);
-
-        var buffer = TransportBuffer.Rent(16);
-        buffer.FullMemory.Span[0] = 0xAA;
-        buffer.FullMemory.Span[1] = 0xBB;
-        buffer.Length = 2;
-
-        var task = handle.WriteAsync(buffer);
-
-        // Fast-path completion: buffer disposed synchronously
-        Assert.True(task.IsCompletedSuccessfully);
-        Assert.Equal(2, ms.Length);
-
-        // Verify buffer is disposed
-        Assert.Throws<NullReferenceException>(() => _ = buffer.Memory);
-
-        await task;
-    }
-
-    [Fact(Timeout = 5000)]
-    public void Write_sync_should_write_and_dispose_buffer()
+    public void Write_should_write_multiple_bytes_and_dispose_buffer()
     {
         var ms = new MemoryStream();
         var handle = new StreamHandle(ms);
@@ -112,7 +86,6 @@ public sealed class StreamHandleSpec
         Assert.Equal(0x66, ms.GetBuffer()[1]);
         Assert.Equal(0x77, ms.GetBuffer()[2]);
 
-        // Buffer should be disposed after Write
         Assert.Throws<NullReferenceException>(() => _ = buffer.Memory);
     }
 
@@ -122,7 +95,6 @@ public sealed class StreamHandleSpec
         var ms = new MemoryStream();
         var handle = new StreamHandle(ms);
 
-        // Should not throw when stream is not QuicStream
         handle.Abort(0);
         handle.Abort(42);
     }
@@ -133,7 +105,6 @@ public sealed class StreamHandleSpec
         var ms = new MemoryStream();
         var handle = new StreamHandle(ms);
 
-        // Should not throw when stream is not QuicStream
         handle.CompleteWrites();
     }
 
@@ -145,7 +116,6 @@ public sealed class StreamHandleSpec
 
         await handle.DisposeAsync();
 
-        // MemoryStream should be disposed and reading should throw
         Assert.Throws<ObjectDisposedException>(() => _ = ms.ReadByte());
     }
 
@@ -161,51 +131,4 @@ public sealed class StreamHandleSpec
 
         Assert.Equal(0, read);
     }
-
-    [Fact(Timeout = 5000)]
-    public async Task WriteAsync_should_dispose_buffer_on_slow_async_path()
-    {
-        var slowStream = new SlowCompletingWriteStream();
-        var handle = new StreamHandle(slowStream);
-
-        var buffer = TransportBuffer.Rent(8);
-        buffer.FullMemory.Span[0] = 0xCC;
-        buffer.FullMemory.Span[1] = 0xDD;
-        buffer.Length = 2;
-
-        var task = handle.WriteAsync(buffer);
-
-        // Task should not be completed synchronously due to slow stream
-        Assert.False(task.IsCompleted);
-
-        // Await completion
-        await task;
-
-        // Verify the buffer is disposed after async completion
-        Assert.Throws<NullReferenceException>(() => _ = buffer.Memory);
-        Assert.Equal(2, slowStream.WrittenBytes);
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task WriteAsync_slow_path_should_await_underlying_write()
-    {
-        var completedCount = 0;
-        var slowStream = new CountingSlowWriteStream(() => completedCount++);
-        var handle = new StreamHandle(slowStream);
-
-        var buffer = TransportBuffer.Rent(4);
-        buffer.FullMemory.Span[0] = 0x11;
-        buffer.Length = 1;
-
-        await handle.WriteAsync(buffer);
-
-        // Verify the write actually completed
-        Assert.Equal(1, completedCount);
-        Assert.Equal(1, slowStream.WrittenBytes);
-
-        // Verify buffer is disposed
-        Assert.Throws<NullReferenceException>(() => _ = buffer.Memory);
-    }
-
-
 }

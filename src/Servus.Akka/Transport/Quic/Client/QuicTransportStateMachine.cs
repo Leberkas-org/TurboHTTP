@@ -1,6 +1,6 @@
 using System.Net;
 using Akka.Actor;
-using Servus.Akka.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace Servus.Akka.Transport.Quic.Client;
 
@@ -236,7 +236,7 @@ public sealed class QuicTransportStateMachine
 
         _pumpManager = new QuicPumpManager(_self);
         _pumpManager.StartAcceptLoop(_connectionHandle);
-        ServusTrace.Connection.Debug(this, "QUIC transport ready");
+        Tracing.For("Connection").Debug(this, "QUIC transport ready");
 
         if (_isReconnecting)
         {
@@ -299,7 +299,7 @@ public sealed class QuicTransportStateMachine
 
     private void OnOutboundWriteFailed(Exception ex)
     {
-        ServusTrace.Connection.Warning(this, "QUIC write failed: {0}", ex.Message);
+        Tracing.For("Connection").Warning(this, "QUIC write failed: {0}", ex.Message);
         HandleConnectionFailure(DisconnectReason.Error);
     }
 
@@ -311,7 +311,7 @@ public sealed class QuicTransportStateMachine
         }
 
         _ops.OnCancelTimer(ConnectTimerKey);
-        ServusTrace.Connection.Warning(this, "QUIC acquisition failed: {0}", ex.Message);
+        Tracing.For("Connection").Warning(this, "QUIC acquisition failed: {0}", ex.Message);
 
         if (_pendingConnect is null)
         {
@@ -325,7 +325,7 @@ public sealed class QuicTransportStateMachine
 
     private void HandleConnectionFailure(DisconnectReason reason)
     {
-        ServusTrace.Connection.Debug(this, "QUIC disconnected: {0}", reason);
+        Tracing.For("Connection").Debug(this, "QUIC disconnected: {0}", reason);
         foreach (var (streamId, state) in _streams)
         {
             _ops.OnPushInbound(new StreamClosed(streamId, reason));
