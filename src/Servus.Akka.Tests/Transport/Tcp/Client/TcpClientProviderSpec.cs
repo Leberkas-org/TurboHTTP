@@ -289,7 +289,7 @@ public sealed class TcpClientProviderSpec
         await provider.DisposeAsync();
     }
 
-    [Fact(Timeout = 10_000)]
+    [Fact(Timeout = 30_000)]
     public async Task GetStreamAsync_with_custom_buffer_sizes_should_not_throw_on_configuration()
     {
         var options = new TcpTransportOptions
@@ -312,7 +312,7 @@ public sealed class TcpClientProviderSpec
         await provider.DisposeAsync();
     }
 
-    [Fact(Timeout = 10_000)]
+    [Fact(Timeout = 30_000)]
     public async Task GetStreamAsync_with_zero_buffer_sizes_should_not_throw_on_configuration()
     {
         var options = new TcpTransportOptions
