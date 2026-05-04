@@ -32,7 +32,7 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        TurboTrace.Disable();
+        Servus.Core.Servus.Tracing.Disable();
         await _serverCts.CancelAsync();
         _serverCts.Dispose();
 
@@ -111,7 +111,7 @@ public sealed class LoggingBridgeSpec : IAsyncLifetime
         // before the stream materializes on the first request.
         if (withTurboTrace)
         {
-            _ = _provider.GetRequiredService<ITurboTraceListener>();
+            _ = _provider.GetRequiredService<Servus.Core.Diagnostics.IServusTraceListener>();
         }
 
         var factory = _provider.GetRequiredService<ITurboHttpClientFactory>();

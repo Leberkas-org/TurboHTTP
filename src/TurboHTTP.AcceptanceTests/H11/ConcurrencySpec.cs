@@ -26,8 +26,8 @@ public sealed class ConcurrencySpec : AcceptanceTestBase
     private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

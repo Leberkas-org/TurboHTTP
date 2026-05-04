@@ -3,6 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Streams.Stages;
+using static Servus.Core.Servus;
 using TurboHTTP.Streams.Stages.Features;
 
 namespace TurboHTTP.Streams;
@@ -85,7 +86,7 @@ internal static class FeaturePipelineBuilder
         }
 
         // Tracing is the absolute outermost layer — only when a listener is active.
-        if (TurboHttpInstrumentation.IsTracingActive)
+        if (Tracing.IsHttpTracingActive())
         {
             layers.Add(new TracingBidiStage());
         }

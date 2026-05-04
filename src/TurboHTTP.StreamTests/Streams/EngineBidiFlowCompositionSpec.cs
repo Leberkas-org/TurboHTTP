@@ -26,7 +26,7 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         "HTTP/1.1 200 OK\r\nSet-Cookie: token=xyz; Domain=example.com; Path=/\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => Flow.FromGraph(new H2EngineFakeConnectionStage());
+        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
 
     private async Task<HttpResponseMessage> RunSingleAsync(
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> flow,
@@ -47,8 +47,8 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         http11ResponseFactory ??= Ok200;
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Ok200)))
-            .Register(new Version(1, 1), Flow.FromGraph(new EngineFakeConnectionStage(http11ResponseFactory)))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Ok200))
+            .Register(new Version(1, 1), CreateFakeConnectionFlow(http11ResponseFactory))
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         return engine.CreateFlow(transports, descriptor);

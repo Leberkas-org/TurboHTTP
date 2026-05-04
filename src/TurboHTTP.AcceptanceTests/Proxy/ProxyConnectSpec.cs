@@ -23,11 +23,11 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {
-        var fake = new FakeProxyStage(responseFactory);
+        var fake = CreateProxyConnection(responseFactory);
 
         var connectResponseConsumed = false;
         var tunnelFlow = Flow.Create<ITransportOutbound>()
-            .Via(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake))
+            .Via(fake.AsFlow())
             .Where(item =>
             {
                 if (!connectResponseConsumed)
@@ -54,9 +54,12 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         var response = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         var rawBuilder = new StringBuilder();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        foreach (var outbound in fake.ReceivedOutbound)
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
+            if (outbound is TransportData { Buffer: var buf })
+            {
+                rawBuilder.Append(Encoding.Latin1.GetString(buf.Span));
+            }
         }
 
         return (response, rawBuilder.ToString());
@@ -66,8 +69,8 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {
-        var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(responseFactory);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

@@ -1,15 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
+        <!-- slopwatch-ignore: SW005 QUIC APIs are platform-guarded at runtime; CA1416 false-positives on conditional usage -->
         <NoWarn>CA1416</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka.Hosting"/>
+        <PackageReference Include="Akka.Hosting" />
         <PackageReference Include="Servus.Core" />
     </ItemGroup>
 

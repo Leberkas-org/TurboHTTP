@@ -6,6 +6,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Protocol.Caching;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages.Features;
 
@@ -360,18 +361,18 @@ internal sealed class CacheStateMachine
 
     private void EmitCacheTelemetry(HttpRequestMessage request, bool isHit)
     {
-        if (request.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity)
+        if (request.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey, out var rootActivity)
             && request.RequestUri is not null)
         {
-            TurboHttpInstrumentation.AddCacheLookupEvent(rootActivity, request.RequestUri, isHit);
+            Tracing.AddCacheLookupEvent(rootActivity, request.RequestUri, isHit);
         }
 
         var result = isHit ? "hit" : "miss";
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", result));
 
         var uri = request.RequestUri?.OriginalString ?? "";
-        TurboTrace.Cache.Info(_ops, "Cache {0}: {1}", result, uri);
+        Tracing.For("Cache").Info(_ops, "Cache {0}: {1}", result, uri);
     }
 
     private void HandleCacheHit(HttpRequestMessage request, CacheLookupResult result)

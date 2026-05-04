@@ -1,63 +1,60 @@
 using Microsoft.Extensions.Logging;
+using Servus.Core.Diagnostics;
 
 namespace TurboHTTP.Diagnostics;
 
-/// <summary>
-/// Routes <see cref="TraceEvent"/> instances to <see cref="ILoggerFactory"/>,
-/// creating one <see cref="ILogger"/> per <see cref="TurboTraceCategory"/>.
-/// Logger names follow the pattern <c>TurboHttp.Trace.{Category}</c>.
-/// </summary>
-internal sealed class LoggerTraceListener : ITurboTraceListener
+internal sealed class LoggerTraceListener : IServusTraceListener
 {
-    private readonly Dictionary<TurboTraceCategory, ILogger> _loggers;
-    private readonly TurboTraceCategory _enabledCategories;
-    private readonly TurboTraceLevel _minimumLevel;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly Dictionary<string, ILogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Creates a new listener that routes trace events to loggers from the given factory.
-    /// </summary>
-    /// <param name="loggerFactory">The logger factory to create category loggers from.</param>
-    /// <param name="categories">Bitwise combination of categories to enable.</param>
-    /// <param name="minimumLevel">Minimum trace level to accept.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="loggerFactory"/> is null.</exception>
-    public LoggerTraceListener(
-        ILoggerFactory loggerFactory,
-        TurboTraceCategory categories = TurboTraceCategory.All,
-        TurboTraceLevel minimumLevel = TurboTraceLevel.Debug)
+    public LoggerTraceListener(ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
-
-        _enabledCategories = categories;
-        _minimumLevel = minimumLevel;
-        _loggers = CreateLoggers(loggerFactory);
+        _loggerFactory = loggerFactory;
     }
 
-    /// <inheritdoc />
-    public bool IsEnabled(TurboTraceLevel level, TurboTraceCategory category)
+    public bool IsEnabled(TraceLevel level, string category)
     {
-        return level >= _minimumLevel && (category & _enabledCategories) != 0;
+        var logger = GetOrCreateLogger(category);
+        return logger.IsEnabled(MapLevel(level));
     }
 
-    /// <inheritdoc />
     public void Write(in TraceEvent evt)
     {
-        if (!_loggers.TryGetValue(evt.Category, out var logger)) return;
-        var logLevel = (LogLevel)evt.Level;
-        if (!logger.IsEnabled(logLevel)) return;
+        var logger = GetOrCreateLogger(evt.Category);
+        var logLevel = MapLevel(evt.Level);
+        if (!logger.IsEnabled(logLevel))
+        {
+            return;
+        }
+
         var message = evt.FormatMessage();
         logger.Log(logLevel, "[{SourceType}#{SourceHash:X8}] {Message}",
             evt.SourceType, evt.SourceHash, message);
     }
 
-    private static Dictionary<TurboTraceCategory, ILogger> CreateLoggers(ILoggerFactory loggerFactory)
+    private ILogger GetOrCreateLogger(string category)
     {
-        return new Dictionary<TurboTraceCategory, ILogger>
+        if (!_loggers.TryGetValue(category, out var logger))
         {
-            [TurboTraceCategory.Protocol] = loggerFactory.CreateLogger("TurboHTTP.Trace.Protocol"),
-            [TurboTraceCategory.Request] = loggerFactory.CreateLogger("TurboHTTP.Trace.Request"),
-            [TurboTraceCategory.Cache] = loggerFactory.CreateLogger("TurboHTTP.Trace.Cache"),
-            [TurboTraceCategory.Redirect] = loggerFactory.CreateLogger("TurboHTTP.Trace.Redirect"),
-            [TurboTraceCategory.Retry] = loggerFactory.CreateLogger("TurboHTTP.Trace.Retry"),
+            logger = _loggerFactory.CreateLogger(string.Concat("TurboHTTP.Trace.", category));
+            _loggers[category] = logger;
+        }
+
+        return logger;
+    }
+
+    private static LogLevel MapLevel(TraceLevel level)
+    {
+        return level switch
+        {
+            TraceLevel.Trace => LogLevel.Trace,
+            TraceLevel.Debug => LogLevel.Debug,
+            TraceLevel.Info => LogLevel.Information,
+            TraceLevel.Warning => LogLevel.Warning,
+            TraceLevel.Error => LogLevel.Error,
+            _ => LogLevel.None,
         };
     }
 }

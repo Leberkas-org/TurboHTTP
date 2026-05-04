@@ -1,4 +1,4 @@
-using TurboHTTP.Tests.Shared;
+using Servus.Akka.TestKit;
 
 namespace TurboHTTP.AcceptanceTests.Shared;
 

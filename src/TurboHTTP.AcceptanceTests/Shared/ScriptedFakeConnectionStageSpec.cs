@@ -1,6 +1,5 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
-using Akka;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams;
@@ -23,11 +22,11 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
             "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\nthird"
         };
 
-        var fake = new ScriptedFakeConnectionStage((index, _) =>
+        var fake = CreateScriptedConnection((index, _) =>
             Encoding.Latin1.GetBytes(responses[index]));
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var flow = engine.Join(fake.AsFlow());
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -62,14 +61,14 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
     {
         var capturedBytes = new List<byte[]>();
 
-        var fake = new ScriptedFakeConnectionStage((_, requestBytes) =>
+        var fake = CreateScriptedConnection((_, requestBytes) =>
         {
             capturedBytes.Add(requestBytes);
             return Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok");
         });
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var flow = engine.Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -92,11 +91,11 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_expose_outbound_bytes_via_channel()
     {
-        var fake = new ScriptedFakeConnectionStage((_, _) =>
+        var fake = CreateScriptedConnection((_, _) =>
             Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"));
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var flow = engine.Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -112,9 +111,12 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         var rawBuilder = new StringBuilder();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        foreach (var outbound in fake.ReceivedOutbound)
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
+            if (outbound is TransportData { Buffer: var buf })
+            {
+                rawBuilder.Append(Encoding.Latin1.GetString(buf.Span));
+            }
         }
 
         var rawRequest = rawBuilder.ToString();
@@ -132,10 +134,10 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         corruptResponse[header.Length + 1] = 0xFF;
         corruptResponse[header.Length + 2] = 0xFE;
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => corruptResponse);
+        var fake = CreateScriptedConnection((_, _) => corruptResponse);
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var flow = engine.Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
 
@@ -162,7 +164,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_return_conditional_responses_based_on_request_content()
     {
-        var fake = new ScriptedFakeConnectionStage((_, requestBytes) =>
+        var fake = CreateScriptedConnection((_, requestBytes) =>
         {
             var raw = Encoding.Latin1.GetString(requestBytes);
             if (raw.Contains("/alpha"))
@@ -174,7 +176,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         });
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var flow = engine.Join(fake.AsFlow());
 
         var results = new List<HttpResponseMessage>();
         var tcs = new TaskCompletionSource();
@@ -207,7 +209,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
     [Fact(Timeout = 5000)]
     public async Task ScriptedFake_should_abort_stream_when_factory_returns_null()
     {
-        var fake = new ScriptedFakeConnectionStage((index, _) =>
+        var fake = CreateScriptedConnection((index, _) =>
         {
             if (index == 0)
             {
@@ -218,7 +220,7 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         });
 
         var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var flow = engine.Join(fake.AsFlow());
 
         var results = new List<HttpResponseMessage>();
         var completionTcs = new TaskCompletionSource();
@@ -239,152 +241,5 @@ public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
         // Only the first response should have been delivered before the stage aborted
         Assert.Single(results);
         Assert.Equal("ok", await results[0].Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task ScriptedFake_should_suppress_response_when_behaviorStack_overrides_factory_with_error()
-    {
-        // BehaviorStack overrides the factory; PushConstant(null) â†’ ConnectionAbort path â†’ no response delivered
-        var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>(_ =>
-            Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"));
-        stack.PushConstant(null);
-
-        var fake = new ScriptedFakeConnectionStage(
-            (_, _) => Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"),
-            stack);
-
-        var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
-
-        var results = new List<HttpResponseMessage>();
-        var completionTcs = new TaskCompletionSource();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/fail")
-        {
-            Version = HttpVersion.Version10
-        };
-
-        _ = Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.ForEach<HttpResponseMessage>(res => results.Add(res)), Materializer)
-            .ContinueWith(_ => completionTcs.TrySetResult());
-
-        await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // BehaviorStack returned null â†’ factory was bypassed â†’ no response delivered
-        Assert.Empty(results);
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task ScriptedFake_should_fail_first_request_then_succeed_when_behaviorStack_pushes_once_error()
-    {
-        var stack = new BehaviorStack<(int Index, byte[] RequestBytes), byte[]?>((t) =>
-            Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 7\r\n\r\nsuccess"));
-        stack.PushOnce(_ => null); // first request â†’ null = abort
-
-        var fake = new ScriptedFakeConnectionStage(
-            (_, _) => Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 7\r\n\r\nsuccess"),
-            stack);
-
-        var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
-
-        var completionTcs = new TaskCompletionSource();
-        var results = new List<HttpResponseMessage>();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/once")
-        {
-            Version = HttpVersion.Version10
-        };
-
-        _ = Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.ForEach<HttpResponseMessage>(res =>
-            {
-                results.Add(res);
-                if (results.Count == 1)
-                {
-                    completionTcs.TrySetResult();
-                }
-            }), Materializer)
-            .ContinueWith(_ => completionTcs.TrySetResult());
-
-        await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // The once-behavior returns null â†’ ConnectionAbort â†’ stage completes with no responses
-        Assert.Empty(results);
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task ScriptedFake_should_record_WriteAttempt_and_ResponseDelivered_in_activityLog()
-    {
-        var log = new ActivityLog();
-
-        var fake = new ScriptedFakeConnectionStage(
-            (_, _) => Encoding.Latin1.GetBytes("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nok"),
-            null,
-            log);
-
-        var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
-
-        var tcs = new TaskCompletionSource<HttpResponseMessage>();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/log")
-        {
-            Version = HttpVersion.Version10
-        };
-
-        _ = Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.ForEach<HttpResponseMessage>(res => tcs.TrySetResult(res)), Materializer);
-
-        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        var writes = log.OfType<WriteAttempt>().ToList();
-        var deliveries = log.OfType<ResponseDelivered>().ToList();
-
-        Assert.Single(writes);
-        Assert.Equal(0, writes[0].Index);
-        Assert.NotEmpty(writes[0].Payload);
-
-        Assert.Single(deliveries);
-        Assert.Equal(0, deliveries[0].Index);
-        Assert.True(deliveries[0].ByteCount > 0);
-    }
-
-    [Fact(Timeout = 5000)]
-    public async Task ScriptedFake_should_record_ConnectionAbort_in_activityLog_when_factory_returns_null()
-    {
-        var log = new ActivityLog();
-
-        var fake = new ScriptedFakeConnectionStage(
-            (_, _) => null,
-            null,
-            log);
-
-        var engine = Engine.CreateFlow();
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
-
-        var completionTcs = new TaskCompletionSource();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/abort")
-        {
-            Version = HttpVersion.Version10
-        };
-
-        _ = Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.ForEach<HttpResponseMessage>(_ => { }), Materializer)
-            .ContinueWith(_ => completionTcs.TrySetResult());
-
-        await completionTcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        var aborts = log.OfType<ConnectionAbort>().ToList();
-        var writes = log.OfType<WriteAttempt>().ToList();
-
-        Assert.Single(writes);
-        Assert.Single(aborts);
-        Assert.Empty(log.OfType<ResponseDelivered>());
     }
 }

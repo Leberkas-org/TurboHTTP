@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
+using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
@@ -105,13 +106,13 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         return output.ToArray();
     }
 
-    private async Task<(HttpResponseMessage Response, ScriptedFakeConnectionStage Fake)> SendCompressedAsync(
+    private async Task<(HttpResponseMessage Response, TestConnectionStage Fake)> SendCompressedAsync(
         BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = engine.Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = engine.Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -321,9 +322,9 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         headerBytes.CopyTo(gzipResponse, 0);
         compressedPayload.CopyTo(gzipResponse, headerBytes.Length);
 
-        var fake2 = new ScriptedFakeConnectionStage((_, _) => gzipResponse);
+        var fake2 = CreateScriptedConnection((_, _) => gzipResponse);
         var flow2 = CreateDecompressingAndCompressingEngine("gzip")
-            .Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake2));
+            .Join(fake2.AsFlow());
 
         var tcs2 = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(getRequest)

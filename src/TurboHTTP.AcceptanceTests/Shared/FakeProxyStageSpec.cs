@@ -1,6 +1,6 @@
 ﻿using System.Text;
-using Akka;
 using Akka.Streams.Dsl;
+using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Tests.Shared;
 
@@ -22,13 +22,13 @@ public sealed class FakeProxyStageSpec : EngineTestBase
         var tunnelResponseBytes = Encoding.Latin1.GetBytes(
             $"HTTP/1.1 200 OK\r\nContent-Length: {responseBody.Length}\r\n\r\n{responseBody}");
 
-        var fake = new FakeProxyStage((_, _) => tunnelResponseBytes);
-        var flow = Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake);
+        var fake = CreateProxyConnection((_, _) => tunnelResponseBytes);
+        var flow = fake.AsFlow();
 
         var items = new ITransportOutbound[]
         {
             MakeConnectTransport(),
-            new TransportData(TransportBufferTestExtensions.FromArray(requestBytes))
+            new TransportData(requestBytes)
         };
 
         var results = new List<ITransportInbound>();
@@ -64,22 +64,24 @@ public sealed class FakeProxyStageSpec : EngineTestBase
         var requestBytes = Encoding.Latin1.GetBytes("GET /inspect HTTP/1.1\r\nHost: target.example.com\r\n\r\n");
         var responseBytes = Encoding.Latin1.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok");
 
-        var fake = new FakeProxyStage((_, _) => responseBytes);
-        var flow = Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake);
+        var fake = CreateProxyConnection((_, _) => responseBytes);
+        var flow = fake.AsFlow();
 
         var items = new ITransportOutbound[]
         {
             MakeConnectTransport(),
-            new TransportData(TransportBufferTestExtensions.FromArray(requestBytes))
+            new TransportData(requestBytes)
         };
 
+        var results = new List<ITransportInbound>();
         var tcs = new TaskCompletionSource();
 
         _ = Source.From(items)
             .Via(flow)
-            .RunWith(Sink.ForEach<ITransportInbound>(_ =>
+            .RunWith(Sink.ForEach<ITransportInbound>(item =>
             {
-                if (fake.OutboundChannel.Reader.Count >= 1)
+                results.Add(item);
+                if (results.Count == 2)
                 {
                     tcs.TrySetResult();
                 }
@@ -88,9 +90,12 @@ public sealed class FakeProxyStageSpec : EngineTestBase
         await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         var rawBuilder = new StringBuilder();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        foreach (var outbound in fake.ReceivedOutbound)
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
+            if (outbound is TransportData { Buffer: var buf })
+            {
+                rawBuilder.Append(Encoding.Latin1.GetString(buf.Span));
+            }
         }
 
         Assert.Contains("GET /inspect HTTP/1.1", rawBuilder.ToString());
@@ -102,7 +107,7 @@ public sealed class FakeProxyStageSpec : EngineTestBase
         var firstRequest = Encoding.Latin1.GetBytes("GET /first HTTP/1.1\r\nHost: target.example.com\r\n\r\n");
         var secondRequest = Encoding.Latin1.GetBytes("GET /second HTTP/1.1\r\nHost: target.example.com\r\n\r\n");
 
-        var fake = new FakeProxyStage((index, _) =>
+        var fake = CreateProxyConnection((index, _) =>
         {
             if (index == 0)
             {
@@ -112,13 +117,13 @@ public sealed class FakeProxyStageSpec : EngineTestBase
             return null;
         });
 
-        var flow = Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake);
+        var flow = fake.AsFlow();
 
         var items = new ITransportOutbound[]
         {
             MakeConnectTransport(),
-            new TransportData(TransportBufferTestExtensions.FromArray(firstRequest)),
-            new TransportData(TransportBufferTestExtensions.FromArray(secondRequest))
+            new TransportData(firstRequest),
+            new TransportData(secondRequest)
         };
 
         var results = new List<ITransportInbound>();

@@ -18,8 +18,8 @@ public sealed class TestConnectionStageBuilder
 
     public TestConnectionStageBuilder AutoDisconnect()
     {
-        return OnOutbound<DisconnectTransport>((msg, ctx) =>
-            ctx.Push(new TransportDisconnected(msg.Reason)));
+        return OnOutbound<DisconnectTransport>((msg, ctx) 
+            => ctx.Push(new TransportDisconnected(msg.Reason)));
     }
 
     public TestConnectionStageBuilder OnOutbound<T>(Action<T, IStageContext> handler)
@@ -39,9 +39,7 @@ public sealed class TestConnectionStageBuilder
 
     public TestConnectionStage Build()
     {
-        var stage = new TestConnectionStage(
-            new List<TestConnectionStage.OutboundHandler>(_handlers),
-            _activityLog);
+        var stage = new TestConnectionStage([.._handlers], _activityLog);
 
         if (_autoConnect)
         {

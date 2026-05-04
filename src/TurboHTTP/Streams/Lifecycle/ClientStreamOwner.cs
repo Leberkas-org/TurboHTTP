@@ -7,6 +7,7 @@ using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
+using static Servus.Core.Servus;
 using TurboHTTP.Streams.Pooling;
 
 namespace TurboHTTP.Streams.Lifecycle;
@@ -83,7 +84,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
     private void MaterializeStream(CreateStreamInstance create)
     {
-        TurboTrace.Request.Info(this, "Materializing pipeline");
+        Tracing.For("Request").Info(this, "Materializing pipeline");
         _log.Debug("Materializing stream pipeline (BaseAddress={0})",
             create.ClientOptions.BaseAddress);
 
@@ -168,7 +169,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
                 ex => new StreamSinkCompleted(ex.GetBaseException()));
 
             _streamRunning = true;
-            TurboTrace.Request.Debug(this, "Pipeline ready");
+            Tracing.For("Request").Debug(this, "Pipeline ready");
             _log.Debug("Stream pipeline materialized successfully");
 
             // Notify requester of successful materialization
@@ -179,7 +180,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         }
         catch (Exception ex)
         {
-            TurboTrace.Request.Warning(this, "Pipeline failed: {0}", ex.Message);
+            Tracing.For("Request").Warning(this, "Pipeline failed: {0}", ex.Message);
             _log.Error(ex, "Failed to materialize stream pipeline");
             CleanupResources();
             HandleMaterializationFailed(ex);
@@ -251,7 +252,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
             return;
         }
 
-        TurboTrace.Request.Debug(this, "Pipeline retry {0}/{1}", _retryAttempts, MaxRetryAttempts);
+        Tracing.For("Request").Debug(this, "Pipeline retry {0}/{1}", _retryAttempts, MaxRetryAttempts);
         _log.Info("Executing retry attempt {0}/{1}", _retryAttempts, MaxRetryAttempts);
         CleanupForRetry();
         MaterializeStream(_createRequest);
@@ -265,7 +266,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         }
 
         _shuttingDown = true;
-        TurboTrace.Request.Debug(this, "Pipeline shutdown");
+        Tracing.For("Request").Debug(this, "Pipeline shutdown");
 
         if (_killSwitch is not null)
         {

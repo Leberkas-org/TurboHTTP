@@ -24,8 +24,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .RstStream(1, Http2ErrorCode.Cancel)
             .Build();
 
-        var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateH2Connection(serverFrames);
+        var flow = CreateHttp20Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -76,8 +76,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             .Settings()
             .Build();
 
-        var fake = new H2EngineFakeConnectionStage(serverFrames);
-        var flow = CreateHttp20Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateH2Connection(serverFrames);
+        var flow = CreateHttp20Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

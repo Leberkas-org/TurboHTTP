@@ -88,8 +88,8 @@ public sealed class CompressionSpec : AcceptanceTestBase
     private async Task<HttpResponseMessage> SendDecompressingAsync(HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = CreateDecompressingEngine().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = CreateDecompressingEngine().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

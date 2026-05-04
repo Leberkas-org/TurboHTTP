@@ -1,6 +1,7 @@
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
+using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using Xunit;
@@ -42,8 +43,8 @@ public abstract class AcceptanceTestBase : EngineTestBase
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {
-        var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var stage = CreateScriptedConnection(responseFactory);
+        var flow = engine.CreateFlow().Join(stage.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -58,8 +59,8 @@ public abstract class AcceptanceTestBase : EngineTestBase
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {
-        var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var stage = CreateScriptedConnection(responseFactory);
+        var flow = engine.CreateFlow().Join(stage.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -69,9 +70,12 @@ public abstract class AcceptanceTestBase : EngineTestBase
         var response = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         var rawBuilder = new StringBuilder();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        foreach (var outbound in stage.ReceivedOutbound)
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
+            if (outbound is TransportData { Buffer: var buf })
+            {
+                rawBuilder.Append(Encoding.Latin1.GetString(buf.Span));
+            }
         }
 
         return (response, rawBuilder.ToString());

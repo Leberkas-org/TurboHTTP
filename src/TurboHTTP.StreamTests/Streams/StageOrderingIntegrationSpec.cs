@@ -13,13 +13,13 @@ namespace TurboHTTP.StreamTests.Streams;
 public sealed class StageOrderingIntegrationSpec : EngineTestBase
 {
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> Http11Flow(Func<byte[]> responseFactory)
-        => Flow.FromGraph(new EngineFakeConnectionStage(responseFactory));
+        => CreateFakeConnectionFlow(responseFactory);
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> Http10Flow(Func<byte[]> responseFactory)
-        => Flow.FromGraph(new EngineFakeConnectionStage(responseFactory));
+        => CreateFakeConnectionFlow(responseFactory);
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => Flow.FromGraph(new H2EngineFakeConnectionStage());
+        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
 
     private static byte[] Ok11Response()
         => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();

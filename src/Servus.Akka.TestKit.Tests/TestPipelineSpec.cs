@@ -23,7 +23,7 @@ public sealed class TestPipelineSpec : global::Akka.TestKit.Xunit.TestKit
         var result = await TestPipeline.RunAsync(
             stage.AsFlow(),
             new ConnectTransport(new TcpTransportOptions { Host = "localhost", Port = 80 }),
-            _materializer, ct);
+            _materializer, ct: ct);
 
         Assert.IsType<TransportConnected>(result);
     }
@@ -46,7 +46,7 @@ public sealed class TestPipelineSpec : global::Akka.TestKit.Xunit.TestKit
         };
 
         var results = await TestPipeline.RunManyAsync(
-            stage.AsFlow(), inputs, 3, _materializer, ct);
+            stage.AsFlow(), inputs, 3, _materializer, ct: ct);
 
         Assert.Equal(3, results.Count);
         Assert.IsType<TransportConnected>(results[0]);

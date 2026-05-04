@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using TurboHTTP.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Tests.Diagnostics;
 
@@ -16,10 +17,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
 
     public TurboHttpMetricsSpec()
     {
+        var meterName = Metrics.Meter.Name;
         _listener = new MeterListener();
         _listener.InstrumentPublished = (instrument, listener) =>
         {
-            if (instrument.Meter.Name == TurboHttpMetrics.MeterName)
+            if (instrument.Meter.Name == meterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
@@ -44,13 +46,13 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void Meter_should_have_correct_name()
     {
-        Assert.Equal("TurboHTTP", TurboHttpMetrics.Meter.Name);
+        Assert.Equal("Servus", Metrics.Meter.Name);
     }
 
     [Fact(Timeout = 5000)]
     public void Meter_should_have_version()
     {
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.Meter.Version));
+        Assert.False(string.IsNullOrEmpty(Metrics.Meter.Version));
     }
 
     [Fact(Timeout = 5000)]
@@ -58,12 +60,12 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RequestCount.Add(1,
+        Metrics.RequestCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "GET"),
             new KeyValuePair<string, object?>("http.response.status_code", 200),
             new KeyValuePair<string, object?>("server.address", "example.com"));
 
-        TurboHttpMetrics.RequestCount.Add(1,
+        Metrics.RequestCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "POST"),
             new KeyValuePair<string, object?>("http.response.status_code", 201),
             new KeyValuePair<string, object?>("server.address", "api.example.com"));
@@ -79,7 +81,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RequestCount.Add(1,
+        Metrics.RequestCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "PUT"),
             new KeyValuePair<string, object?>("http.response.status_code", 200),
             new KeyValuePair<string, object?>("server.address", "example.com"));
@@ -95,7 +97,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RequestCount.Add(1,
+        Metrics.RequestCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "GET"),
             new KeyValuePair<string, object?>("http.response.status_code", 404),
             new KeyValuePair<string, object?>("server.address", "api.test.com"));
@@ -112,7 +114,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "hit"));
 
         _listener.RecordObservableInstruments();
@@ -127,7 +129,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "miss"));
 
         _listener.RecordObservableInstruments();
@@ -142,11 +144,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "hit"));
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "hit"));
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "miss"));
 
         _listener.RecordObservableInstruments();
@@ -160,11 +162,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "hit"));
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "miss"));
-        TurboHttpMetrics.CacheLookup.Add(1,
+        Metrics.CacheLookup().Add(1,
             new KeyValuePair<string, object?>("cache.result", "miss"));
 
         _listener.RecordObservableInstruments();
@@ -179,7 +181,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RetryCount.Add(1,
+        Metrics.RetryCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "GET"),
             new KeyValuePair<string, object?>("server.address", "example.com"));
 
@@ -194,7 +196,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RetryCount.Add(1,
+        Metrics.RetryCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "POST"),
             new KeyValuePair<string, object?>("server.address", "retry.example.com"));
 
@@ -213,7 +215,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RetryCount.Add(1,
+        Metrics.RetryCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", method),
             new KeyValuePair<string, object?>("server.address", "example.com"));
 
@@ -228,7 +230,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RedirectCount.Add(1,
+        Metrics.RedirectCount().Add(1,
             new KeyValuePair<string, object?>("http.response.status_code", 301));
 
         _listener.RecordObservableInstruments();
@@ -243,7 +245,7 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.RequestDuration.Record(0.125,
+        Metrics.RequestDuration().Record(0.125,
             new KeyValuePair<string, object?>("http.request.method", "GET"),
             new KeyValuePair<string, object?>("http.response.status_code", 200));
 
@@ -260,13 +262,13 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     {
         ClearMeasurements();
 
-        TurboHttpMetrics.ActiveRequests.Add(1,
+        Metrics.ActiveRequests().Add(1,
             new KeyValuePair<string, object?>("http.request.method", "GET"),
             new KeyValuePair<string, object?>("server.address", "example.com"),
             new KeyValuePair<string, object?>("server.port", 443),
             new KeyValuePair<string, object?>("url.scheme", "https"));
 
-        TurboHttpMetrics.ActiveRequests.Add(-1,
+        Metrics.ActiveRequests().Add(-1,
             new KeyValuePair<string, object?>("http.request.method", "GET"),
             new KeyValuePair<string, object?>("server.address", "example.com"),
             new KeyValuePair<string, object?>("server.port", 443),
@@ -282,23 +284,23 @@ public sealed class TurboHttpMetricsSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void Instruments_should_have_correct_units()
     {
-        Assert.Equal("{request}", TurboHttpMetrics.RequestCount.Unit);
-        Assert.Equal("s", TurboHttpMetrics.RequestDuration.Unit);
-        Assert.Equal("{lookup}", TurboHttpMetrics.CacheLookup.Unit);
-        Assert.Equal("{retry}", TurboHttpMetrics.RetryCount.Unit);
-        Assert.Equal("{redirect}", TurboHttpMetrics.RedirectCount.Unit);
-        Assert.Equal("{request}", TurboHttpMetrics.ActiveRequests.Unit);
+        Assert.Equal("{request}", Metrics.RequestCount().Unit);
+        Assert.Equal("s", Metrics.RequestDuration().Unit);
+        Assert.Equal("{lookup}", Metrics.CacheLookup().Unit);
+        Assert.Equal("{retry}", Metrics.RetryCount().Unit);
+        Assert.Equal("{redirect}", Metrics.RedirectCount().Unit);
+        Assert.Equal("{request}", Metrics.ActiveRequests().Unit);
     }
 
     [Fact(Timeout = 5000)]
     public void Instruments_should_have_descriptions()
     {
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RequestCount.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RequestDuration.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.CacheLookup.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RetryCount.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.RedirectCount.Description));
-        Assert.False(string.IsNullOrEmpty(TurboHttpMetrics.ActiveRequests.Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.RequestCount().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.RequestDuration().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.CacheLookup().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.RetryCount().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.RedirectCount().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.ActiveRequests().Description));
     }
 
     private void ClearMeasurements()

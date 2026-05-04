@@ -13,15 +13,15 @@ public sealed class FeedbackBufferOptimizationSpec : EngineTestBase
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> SequentialFlow(params byte[][] responses)
     {
         var index = 0;
-        return Flow.FromGraph(new EngineFakeConnectionStage(() =>
+        return CreateFakeConnectionFlow(() =>
         {
             var i = Interlocked.Increment(ref index) - 1;
             return i < responses.Length ? responses[i] : responses[^1];
-        }));
+        });
     }
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => Flow.FromGraph(new H2EngineFakeConnectionStage());
+        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
 
     private static byte[] Redirect301(string location) =>
         System.Text.Encoding.Latin1.GetBytes(

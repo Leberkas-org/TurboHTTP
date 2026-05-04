@@ -2,6 +2,7 @@
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
+using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;
@@ -21,8 +22,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     private static byte[] Response301() =>
         "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com/new\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
-    private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => Flow.FromGraph(new H2EngineFakeConnectionStage());
+    private Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
+        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
 
     private async Task<HttpResponseMessage> RunSingleAsync(
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> flow,
@@ -41,11 +42,11 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     [Fact(Timeout = 10_000)]
     public async Task EnginePipelineDescriptor_should_not_inject_cookie_header_when_cookie_jar_is_null()
     {
-        var fake = new EngineFakeConnectionStage(Ok200);
+        var fake = CreateFakeConnection(Ok200);
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Ok200)))
-            .Register(new Version(1, 1), Flow.FromGraph(fake))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Ok200))
+            .Register(new Version(1, 1), fake.AsFlow())
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         var flow = engine.CreateFlow(transports, PipelineDescriptor.Empty);
@@ -58,9 +59,12 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
         await RunSingleAsync(flow, request);
 
         var rawBuilder = new StringBuilder();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        foreach (var outbound in fake.ReceivedOutbound)
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
+            if (outbound is TransportData { Buffer: var buf })
+            {
+                rawBuilder.Append(Encoding.Latin1.GetString(buf.Span));
+            }
         }
 
         Assert.DoesNotContain("Cookie:", rawBuilder.ToString());
@@ -71,8 +75,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     {
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Response503)))
-            .Register(new Version(1, 1), Flow.FromGraph(new EngineFakeConnectionStage(Response503)))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Response503))
+            .Register(new Version(1, 1), CreateFakeConnectionFlow(Response503))
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         var flow = engine.CreateFlow(transports, PipelineDescriptor.Empty);
@@ -92,8 +96,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
     {
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Response301)))
-            .Register(new Version(1, 1), Flow.FromGraph(new EngineFakeConnectionStage(Response301)))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Response301))
+            .Register(new Version(1, 1), CreateFakeConnectionFlow(Response301))
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         var flow = engine.CreateFlow(transports, PipelineDescriptor.Empty);
@@ -117,7 +121,7 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
         seedResponse.Headers.Add("Set-Cookie", "session=abc; Path=/; Domain=example.com");
         cookieJar.ProcessResponse(new Uri("http://example.com/"), seedResponse);
 
-        var fake = new EngineFakeConnectionStage(Ok200);
+        var fake = CreateFakeConnection(Ok200);
         var descriptor = new PipelineDescriptor(
             RedirectPolicy: null,
             RetryPolicy: null,
@@ -130,8 +134,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Ok200)))
-            .Register(new Version(1, 1), Flow.FromGraph(fake))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Ok200))
+            .Register(new Version(1, 1), fake.AsFlow())
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         var flow = engine.CreateFlow(transports, descriptor);
@@ -144,9 +148,12 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
         await RunSingleAsync(flow, request);
 
         var rawBuilder = new StringBuilder();
-        while (fake.OutboundChannel.Reader.TryRead(out var chunk))
+        foreach (var outbound in fake.ReceivedOutbound)
         {
-            rawBuilder.Append(Encoding.Latin1.GetString(chunk.Span));
+            if (outbound is TransportData { Buffer: var buf })
+            {
+                rawBuilder.Append(Encoding.Latin1.GetString(buf.Span));
+            }
         }
 
         var rawText = rawBuilder.ToString();
@@ -172,8 +179,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Ok200)))
-            .Register(new Version(1, 1), Flow.FromGraph(new EngineFakeConnectionStage(StatefulFactory)))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Ok200))
+            .Register(new Version(1, 1), CreateFakeConnectionFlow(StatefulFactory))
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         var flow = engine.CreateFlow(transports, descriptor);
@@ -207,8 +214,8 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
 
         var engine = new Engine();
         var transports = new TransportRegistry()
-            .Register(new Version(1, 0), Flow.FromGraph(new EngineFakeConnectionStage(Ok200)))
-            .Register(new Version(1, 1), Flow.FromGraph(new EngineFakeConnectionStage(StatefulFactory)))
+            .Register(new Version(1, 0), CreateFakeConnectionFlow(Ok200))
+            .Register(new Version(1, 1), CreateFakeConnectionFlow(StatefulFactory))
             .Register(new Version(2, 0), NoOpH2Flow())
             .Register(new Version(3, 0), NoOpH2Flow());
         var flow = engine.CreateFlow(transports, descriptor);

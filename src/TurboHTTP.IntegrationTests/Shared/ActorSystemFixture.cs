@@ -3,6 +3,7 @@ using Akka.Configuration;
 using Akka.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Servus.Core.Diagnostics;
 using TurboHTTP.Diagnostics;
 
 namespace TurboHTTP.IntegrationTests.Shared;
@@ -26,11 +27,10 @@ public sealed class ActorSystemFixture : IAsyncLifetime
             b.AddConsole();
             b.SetMinimumLevel(LogLevel.Information);
         });
+        
 
-        TurboTrace.Configure(
-            new LoggerTraceListener(loggerFactory, TurboTraceCategory.All, TurboTraceLevel.Info),
-            TurboTraceCategory.All,
-            TurboTraceLevel.Info);
+        var traceListener = new LoggerTraceListener(loggerFactory);
+        Servus.Core.Servus.Tracing.Configure(traceListener, TraceLevel.Info);
 
         var services = new ServiceCollection();
         var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());

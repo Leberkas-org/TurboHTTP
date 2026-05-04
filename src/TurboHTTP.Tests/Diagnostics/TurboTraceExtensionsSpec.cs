@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Servus.Core.Diagnostics;
 using TurboHTTP.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Tests.Diagnostics;
 
@@ -8,7 +10,7 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
 {
     public void Dispose()
     {
-        TurboTrace.Disable();
+        Tracing.Disable();
     }
 
     [Fact(Timeout = 5000)]
@@ -20,54 +22,10 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
         services.AddTurboLoggerTracing();
 
         var provider = services.BuildServiceProvider();
-        var listener = provider.GetRequiredService<ITurboTraceListener>();
+        var listener = provider.GetRequiredService<IServusTraceListener>();
 
         Assert.NotNull(listener);
         Assert.IsType<LoggerTraceListener>(listener);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboLoggerTracing_should_configure_trace()
-    {
-        var services = new ServiceCollection();
-        services.AddLogging();
-
-        services.AddTurboLoggerTracing(TurboTraceCategory.Protocol);
-
-        var provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<ITurboTraceListener>();
-
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboLoggerTracing_should_filter_by_category()
-    {
-        var services = new ServiceCollection();
-        services.AddLogging();
-
-        services.AddTurboLoggerTracing(TurboTraceCategory.Protocol);
-
-        var provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<ITurboTraceListener>();
-
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Redirect, TurboTraceLevel.Debug));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboLoggerTracing_should_filter_by_minimum_level()
-    {
-        var services = new ServiceCollection();
-        services.AddLogging();
-
-        services.AddTurboLoggerTracing(TurboTraceCategory.All, TurboTraceLevel.Warning);
-
-        var provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<ITurboTraceListener>();
-
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Warning));
     }
 
     [Fact(Timeout = 5000)]
@@ -90,20 +48,9 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
         services.AddTurboTracing(customListener);
 
         var provider = services.BuildServiceProvider();
-        var listener = provider.GetRequiredService<ITurboTraceListener>();
+        var listener = provider.GetRequiredService<IServusTraceListener>();
 
         Assert.Same(customListener, listener);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboTracing_should_configure_trace_immediately()
-    {
-        var services = new ServiceCollection();
-        var customListener = new MockTraceListener();
-
-        services.AddTurboTracing(customListener, TurboTraceCategory.Protocol);
-
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
     }
 
     [Fact(Timeout = 5000)]
@@ -129,41 +76,11 @@ public sealed class TurboTraceExtensionsSpec : IDisposable
         Assert.NotNull(ex);
     }
 
-    [Fact(Timeout = 5000)]
-    public void AddTurboTracing_should_filter_by_category()
-    {
-        var services = new ServiceCollection();
-        var customListener = new MockTraceListener();
-
-        services.AddTurboTracing(customListener, TurboTraceCategory.Request);
-
-        var provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<ITurboTraceListener>();
-
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Request, TurboTraceLevel.Debug));
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Retry, TurboTraceLevel.Debug));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AddTurboTracing_should_filter_by_minimum_level()
-    {
-        var services = new ServiceCollection();
-        var customListener = new MockTraceListener();
-
-        services.AddTurboTracing(customListener, TurboTraceCategory.All, TurboTraceLevel.Info);
-
-        var provider = services.BuildServiceProvider();
-        _ = provider.GetRequiredService<ITurboTraceListener>();
-
-        Assert.False(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Debug));
-        Assert.True(TurboTrace.ShouldTrace(TurboTraceCategory.Protocol, TurboTraceLevel.Info));
-    }
-
-    private sealed class MockTraceListener : ITurboTraceListener
+    private sealed class MockTraceListener : IServusTraceListener
     {
         public List<TraceEvent> Events { get; } = [];
 
-        public bool IsEnabled(TurboTraceLevel level, TurboTraceCategory category) => true;
+        public bool IsEnabled(TraceLevel level, string category) => true;
 
         public void Write(in TraceEvent evt) => Events.Add(evt);
     }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using static Servus.Core.Servus;
 
 namespace Servus.Akka.Transport.Tcp.Client;
 
@@ -19,7 +20,7 @@ internal class TcpClientProvider(TcpTransportOptions options) : IAsyncDisposable
 
         _socket = CreateSocket(options.SocketSendBufferSize, options.SocketReceiveBufferSize);
 
-        //var dnsActivity = ServusInstrumentation.StartDnsLookup(connectHost);
+        var dnsActivity = Tracing.StartDnsLookup(connectHost);
         IPAddress[] addresses;
         try
         {
@@ -32,49 +33,49 @@ internal class TcpClientProvider(TcpTransportOptions options) : IAsyncDisposable
                 throw new InvalidOperationException($"Could not resolve any IP addresses for host '{connectHost}'.");
             }
 
-            // if (dnsActivity is not null)
-            // {
-            //     ServusInstrumentation.SetDnsAnswers(dnsActivity,
-            //         Array.ConvertAll(addresses, a => a.ToString()));
-            // }
-            //
-            // ServusMetrics.DnsLookupDuration.Record(dnsDuration,
-            //     new KeyValuePair<string, object?>("dns.question.name", connectHost));
-            // dnsActivity?.Stop();
-            Core.Servus.Tracing.For("Dns").Debug(this, "Resolved {0} → {1} address(es)", connectHost, addresses.Length);
+            if (dnsActivity is not null)
+            {
+                Tracing.SetDnsAnswers(dnsActivity,
+                    Array.ConvertAll(addresses, a => a.ToString()));
+            }
+
+            Metrics.DnsLookupDuration().Record(dnsDuration,
+                new KeyValuePair<string, object?>("dns.question.name", connectHost));
+            dnsActivity?.Stop();
+            Tracing.For("Dns").Debug(this, "Resolved {0} → {1} address(es)", connectHost, addresses.Length);
         }
         catch (Exception ex)
         {
-            // if (dnsActivity is not null)
-            // {
-            //     ServusInstrumentation.SetError(dnsActivity, ex);
-            //     dnsActivity.Stop();
-            // }
+            if (dnsActivity is not null)
+            {
+                Tracing.SetError(dnsActivity, ex);
+                dnsActivity.Stop();
+            }
 
-            Core.Servus.Tracing.For("Dns").Warning(this, "DNS '{0}' failed: {1}", connectHost, ex.Message);
+            Tracing.For("Dns").Warning(this, "DNS '{0}' failed: {1}", connectHost, ex.Message);
             throw;
         }
 
         var networkType = addresses[0].AddressFamily == AddressFamily.InterNetworkV6
             ? "ipv6"
             : "ipv4";
-        // var socketActivity = ServusInstrumentation.StartSocketConnect(
-        //     addresses[0].ToString(), connectPort, "tcp", networkType);
+        var socketActivity = Tracing.StartSocketConnect(
+            addresses[0].ToString(), connectPort, "tcp", networkType);
         try
         {
             await _socket.ConnectAsync(addresses, connectPort, ct).ConfigureAwait(false);
-            // socketActivity?.Stop();
-            Core.Servus.Tracing.For("Connection").Debug(this, "TCP connected to {0}:{1}", addresses[0], connectPort);
+            socketActivity?.Stop();
+            Tracing.For("Connection").Debug(this, "TCP connected to {0}:{1}", addresses[0], connectPort);
         }
         catch (Exception ex)
         {
-            // if (socketActivity is not null)
-            // {
-            //     ServusInstrumentation.SetError(socketActivity, ex);
-            //     socketActivity.Stop();
-            // }
+            if (socketActivity is not null)
+            {
+                Tracing.SetError(socketActivity, ex);
+                socketActivity.Stop();
+            }
 
-            Core.Servus.Tracing.For("Connection").Warning(this, "TCP connect to {0}:{1} failed: {2}", addresses[0], connectPort, ex.Message);
+            Tracing.For("Connection").Warning(this, "TCP connect to {0}:{1} failed: {2}", addresses[0], connectPort, ex.Message);
             throw;
         }
 

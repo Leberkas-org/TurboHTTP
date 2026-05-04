@@ -28,8 +28,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
     private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = CreateHttp10Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -64,8 +64,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
             Version = HttpVersion.Version10
         };
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => null);
-        var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => null);
+        var flow = CreateHttp10Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -88,8 +88,8 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
         // Content-Length says 10000, but we only send 7 bytes then abort
         var raw = "HTTP/1.0 200 OK\r\nContent-Length: 10000\r\n\r\npartial";
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => Encoding.Latin1.GetBytes(raw));
-        var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => Encoding.Latin1.GetBytes(raw));
+        var flow = CreateHttp10Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

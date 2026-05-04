@@ -4,6 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Protocol.Semantics;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages.Features;
 
@@ -285,16 +286,16 @@ internal sealed class RedirectStateMachine
             var newRequest = handler.BuildRedirectRequest(original, response);
 
             Activity? rootActivity = null;
-            if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey,
+            if (original.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey,
                     out rootActivity))
             {
-                TurboHttpInstrumentation.AddRedirectEvent(
+                Tracing.AddRedirectEvent(
                     rootActivity, newRequest.RequestUri!, (int)response.StatusCode);
             }
 
-            TurboHttpMetrics.RedirectCount.Add(1,
+            Metrics.RedirectCount().Add(1,
                 new KeyValuePair<string, object?>("http.response.status_code", (int)response.StatusCode));
-            TurboTrace.Redirect.Info(_ops, "Redirect followed: {0} → {2} (HTTP {1})",
+            Tracing.For("Redirect").Info(_ops, "Redirect followed: {0} → {2} (HTTP {1})",
                 original.RequestUri?.OriginalString ?? "",
                 (int)response.StatusCode,
                 newRequest.RequestUri?.OriginalString ?? "");
@@ -303,7 +304,7 @@ internal sealed class RedirectStateMachine
 
             if (rootActivity is not null)
             {
-                newRequest.Options.Set(TurboHttpInstrumentation.RequestActivityKey, rootActivity);
+                newRequest.Options.Set(TurboHttpInstrumentationExtensions.RequestActivityKey, rootActivity);
             }
 
             response.Dispose();
@@ -315,7 +316,7 @@ internal sealed class RedirectStateMachine
         }
         catch (RedirectException)
         {
-            TurboTrace.Redirect.Warning(_ops, "Max redirects exceeded for {0}", original.RequestUri);
+            Tracing.For("Redirect").Warning(_ops, "Max redirects exceeded for {0}", original.RequestUri);
             _inFlightCount--;
             _ops.OnPushResponse(response);
         }

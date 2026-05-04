@@ -23,8 +23,8 @@ public sealed class ProxyRelaySpec : AcceptanceTestBase
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {
-        var fake = new ScriptedFakeConnectionStage(responseFactory);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(responseFactory);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

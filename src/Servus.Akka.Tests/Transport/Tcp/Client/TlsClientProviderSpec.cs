@@ -8,6 +8,7 @@ using Servus.Akka.Transport.Tcp.Client;
 
 namespace Servus.Akka.Tests.Transport.Tcp.Client;
 
+[Collection("ClientProvider")]
 public sealed class TlsClientProviderSpec
 {
     [Fact(Timeout = 5000)]

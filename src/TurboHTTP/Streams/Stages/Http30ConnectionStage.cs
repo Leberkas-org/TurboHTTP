@@ -4,6 +4,7 @@ using Akka.Streams.Stage;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Protocol.Http3;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages;
 
@@ -135,7 +136,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
 
         void IStageOperations.OnResponse(HttpResponseMessage response)
         {
-            TurboTrace.Protocol.Debug(this, "H3 ← {0}", (int)response.StatusCode);
+            Tracing.For("Protocol").Debug(this, "H3 ← {0}", (int)response.StatusCode);
             _pendingResponses.Add(response);
         }
 
@@ -196,7 +197,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
             {
                 case TransportConnected:
                 {
-                    TurboTrace.Protocol.Debug(this, "H3 connected");
+                    Tracing.For("Protocol").Debug(this, "H3 connected");
                     _transportConnected = true;
                     _sm.OnConnectionRestored();
                     FlushOutbound();
@@ -258,7 +259,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                 }
                 case TransportDisconnected when _sm.HasInFlightRequests:
                 {
-                    TurboTrace.Protocol.Warning(this, "H3 closed, in-flight requests");
+                    Tracing.For("Protocol").Warning(this, "H3 closed, in-flight requests");
                     _sm.OnConnectionLost();
                     FlushOutbound();
                     if (!HasBeenPulled(_stage._inServer) && !IsClosed(_stage._inServer))
@@ -342,7 +343,7 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
         private void OnAppPush()
         {
             var request = Grab(_stage._inApp);
-            TurboTrace.Protocol.Debug(this, "H3 → {0} {1}", request.Method, request.RequestUri);
+            Tracing.For("Protocol").Debug(this, "H3 → {0} {1}", request.Method, request.RequestUri);
             _sm.EncodeRequest(request);
             FlushOutbound();
             TryPullRequest();

@@ -22,8 +22,8 @@ public sealed class SmokeSpec : AcceptanceTestBase
         var raw = $"HTTP/1.0 200 OK\r\nContent-Length: {body.Length}\r\n\r\n{body}";
         var responseBytes = Encoding.Latin1.GetBytes(raw);
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => responseBytes);
-        var flow = CreateHttp10Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => responseBytes);
+        var flow = CreateHttp10Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

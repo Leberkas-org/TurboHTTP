@@ -187,46 +187,12 @@ namespace TurboHTTP
 }
 namespace TurboHTTP.Diagnostics
 {
-    public interface ITurboTraceListener
-    {
-        bool IsEnabled(TurboHTTP.Diagnostics.TurboTraceLevel level, TurboHTTP.Diagnostics.TurboTraceCategory category);
-        void Write(in TurboHTTP.Diagnostics.TraceEvent evt);
-    }
-    public readonly struct TraceEvent
-    {
-        public TurboHTTP.Diagnostics.TurboTraceCategory Category { get; }
-        public TurboHTTP.Diagnostics.TurboTraceLevel Level { get; }
-        public int SourceHash { get; }
-        public string SourceType { get; }
-        public string Template { get; }
-        public long TimestampTicks { get; }
-        public string FormatMessage() { }
-    }
-    [System.Flags]
-    public enum TurboTraceCategory : ushort
-    {
-        None = 0,
-        Protocol = 2,
-        Request = 4,
-        Cache = 16,
-        Redirect = 32,
-        Retry = 64,
-        All = 118,
-    }
     public static class TurboTraceExtensions
     {
         public static OpenTelemetry.Metrics.MeterProviderBuilder AddTurboHttpInstrumentation(this OpenTelemetry.Metrics.MeterProviderBuilder builder) { }
         public static OpenTelemetry.Trace.TracerProviderBuilder AddTurboHttpInstrumentation(this OpenTelemetry.Trace.TracerProviderBuilder builder) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.TurboTraceCategory categories = 118, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, TurboHTTP.Diagnostics.ITurboTraceListener listener, TurboHTTP.Diagnostics.TurboTraceCategory categories = 118, TurboHTTP.Diagnostics.TurboTraceLevel minimumLevel = 1) { }
-    }
-    public enum TurboTraceLevel : byte
-    {
-        Trace = 0,
-        Debug = 1,
-        Info = 2,
-        Warning = 3,
-        Error = 4,
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Servus.Core.Diagnostics.TraceLevel minimumLevel = 1, System.Func<string, bool>? categoryFilter = null) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Servus.Core.Diagnostics.IServusTraceListener listener, Servus.Core.Diagnostics.TraceLevel minimumLevel = 1, System.Func<string, bool>? categoryFilter = null) { }
     }
 }
 namespace TurboHTTP.Protocol.Caching

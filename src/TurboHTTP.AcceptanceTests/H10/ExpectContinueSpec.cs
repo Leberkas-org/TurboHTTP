@@ -31,8 +31,8 @@ public sealed class ExpectContinueSpec : AcceptanceTestBase
     private async Task<HttpResponseMessage> SendExpectAsync(HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = CreateExpectContinueEngine().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = CreateExpectContinueEngine().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

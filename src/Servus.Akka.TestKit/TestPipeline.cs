@@ -12,8 +12,8 @@ public static class TestPipeline
         Flow<TIn, TOut, NotUsed> flow,
         TIn input,
         IMaterializer materializer,
-        CancellationToken ct = default,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        CancellationToken ct = default)
     {
         var result = Source.Single(input)
             .Via(flow)
@@ -27,8 +27,8 @@ public static class TestPipeline
         IEnumerable<TIn> inputs,
         int expectedCount,
         IMaterializer materializer,
-        CancellationToken ct = default,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        CancellationToken ct = default)
     {       
         var result = Source.From(inputs)
             .Via(flow)

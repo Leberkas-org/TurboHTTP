@@ -19,8 +19,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
 
         var controlFrames = new H3ResponseBuilder().Settings().Build();
 
-        var fake = new H3EngineFakeConnectionStage(controlFrames);
-        var flow = CreateHttp30Engine().CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateH3Connection(controlFrames);
+        var flow = CreateHttp30Engine().CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

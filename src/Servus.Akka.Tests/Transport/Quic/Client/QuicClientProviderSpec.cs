@@ -8,7 +8,7 @@ using Servus.Akka.Transport.Quic.Client;
 
 namespace Servus.Akka.Tests.Transport.Quic.Client;
 
-[Collection("TransportBuffer")]
+[Collection("ClientProvider")]
 public sealed class QuicClientProviderSpec
 {
     private static async Task<Stream> GetStreamOrSkipAsync(QuicClientProvider provider, CancellationToken ct)

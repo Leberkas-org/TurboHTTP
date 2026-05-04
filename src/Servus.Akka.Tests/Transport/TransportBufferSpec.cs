@@ -2,6 +2,9 @@ using Servus.Akka.Transport;
 
 namespace Servus.Akka.Tests.Transport;
 
+[CollectionDefinition("TransportBuffer", DisableParallelization = true)]
+public class TransportBufferCollection;
+
 [Collection("TransportBuffer")]
 public sealed class TransportBufferSpec
 {

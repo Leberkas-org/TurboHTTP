@@ -3,6 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Protocol.Semantics;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages.Features;
 
@@ -352,15 +353,15 @@ internal sealed class RetryStateMachine
 
     private void EmitRetryTelemetry(HttpRequestMessage original, int attemptCount)
     {
-        if (original.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var rootActivity))
+        if (original.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey, out var rootActivity))
         {
-            TurboHttpInstrumentation.AddRetryEvent(rootActivity, attemptCount);
+            Tracing.AddRetryEvent(rootActivity, attemptCount);
         }
 
-        TurboHttpMetrics.RetryCount.Add(1,
+        Metrics.RetryCount().Add(1,
             new KeyValuePair<string, object?>("http.request.method", original.Method.Method),
             new KeyValuePair<string, object?>("server.address", original.RequestUri?.Host ?? "unknown"));
-        TurboTrace.Retry.Warning(_ops, "Retry attempt: {0} {1} (attempt {2})",
+        Tracing.For("Retry").Warning(_ops, "Retry attempt: {0} {1} (attempt {2})",
             original.Method.Method,
             original.RequestUri?.OriginalString ?? "",
             attemptCount + 1);

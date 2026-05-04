@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Servus.Core.Diagnostics;
 
 namespace TurboHTTP.Diagnostics;
 
@@ -10,46 +11,29 @@ namespace TurboHTTP.Diagnostics;
 /// </summary>
 public static class TurboTraceExtensions
 {
-    /// <summary>
-    /// Registers a <see cref="LoggerTraceListener"/> as a singleton <see cref="ITurboTraceListener"/>
-    /// and configures <see cref="TurboTrace"/> when the listener is first resolved.
-    /// </summary>
-    /// <param name="services">The service collection to add to.</param>
-    /// <param name="categories">Bitwise combination of categories to enable.</param>
-    /// <param name="minimumLevel">Minimum trace level to accept.</param>
-    /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
     public static IServiceCollection AddTurboLoggerTracing(
         this IServiceCollection services,
-        TurboTraceCategory categories = TurboTraceCategory.All,
-        TurboTraceLevel minimumLevel = TurboTraceLevel.Debug)
+        TraceLevel minimumLevel = TraceLevel.Debug,
+        Func<string, bool>? categoryFilter = null)
     {
-        services.AddSingleton<ITurboTraceListener>(sp =>
+        services.AddSingleton<IServusTraceListener>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var listener = new LoggerTraceListener(loggerFactory, categories, minimumLevel);
-            TurboTrace.Configure(listener, categories, minimumLevel);
+            var listener = new LoggerTraceListener(loggerFactory);
+            Servus.Core.Servus.Tracing.Configure(listener, minimumLevel, categoryFilter);
             return listener;
         });
         return services;
     }
 
-    /// <summary>
-    /// Registers a custom <see cref="ITurboTraceListener"/> as a singleton and
-    /// configures <see cref="TurboTrace"/> immediately.
-    /// </summary>
-    /// <param name="services">The service collection to add to.</param>
-    /// <param name="listener">The custom trace listener to register.</param>
-    /// <param name="categories">Bitwise combination of categories to enable.</param>
-    /// <param name="minimumLevel">Minimum trace level to accept.</param>
-    /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
     public static IServiceCollection AddTurboTracing(
         this IServiceCollection services,
-        ITurboTraceListener listener,
-        TurboTraceCategory categories = TurboTraceCategory.All,
-        TurboTraceLevel minimumLevel = TurboTraceLevel.Debug)
+        IServusTraceListener listener,
+        TraceLevel minimumLevel = TraceLevel.Debug,
+        Func<string, bool>? categoryFilter = null)
     {
         ArgumentNullException.ThrowIfNull(listener);
-        TurboTrace.Configure(listener, categories, minimumLevel);
+        Servus.Core.Servus.Tracing.Configure(listener, minimumLevel, categoryFilter);
         services.AddSingleton(listener);
         return services;
     }
@@ -57,14 +41,12 @@ public static class TurboTraceExtensions
     public static TracerProviderBuilder AddTurboHttpInstrumentation(this TracerProviderBuilder builder)
     {
         return builder
-            .AddSource(TurboHttpInstrumentation.SourceName);
-            // .AddSource(ServusInstrumentation.SourceName);
+            .AddSource(Servus.Core.Servus.Tracing.Source.Name);
     }
 
     public static MeterProviderBuilder AddTurboHttpInstrumentation(this MeterProviderBuilder builder)
     {
         return builder
-            .AddMeter(TurboHttpMetrics.MeterName);
-        // .AddMeter(ServusMetrics.MeterName);
+            .AddMeter(Servus.Core.Servus.Metrics.Meter.Name);
     }
 }

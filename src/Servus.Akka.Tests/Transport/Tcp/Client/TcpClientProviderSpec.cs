@@ -6,6 +6,10 @@ using Servus.Akka.Transport.Tcp.Client;
 
 namespace Servus.Akka.Tests.Transport.Tcp.Client;
 
+[CollectionDefinition("ClientProvider", DisableParallelization = true)]
+public class ClientProviderCollection;
+
+[Collection("ClientProvider")]
 public sealed class TcpClientProviderSpec
 {
     [Fact(Timeout = 5000)]

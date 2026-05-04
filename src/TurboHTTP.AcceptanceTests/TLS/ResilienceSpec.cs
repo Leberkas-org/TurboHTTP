@@ -24,8 +24,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
     private async Task<HttpResponseMessage> SendScriptedAsync(HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -38,8 +38,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
     private async Task<HttpResponseMessage> SendDecompressingAsync(HttpRequestMessage request,
         Func<int, byte[], byte[]?> factory)
     {
-        var fake = new ScriptedFakeConnectionStage(factory);
-        var flow = CreateDecompressingEngine().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection(factory);
+        var flow = CreateDecompressingEngine().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -60,8 +60,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
 
         var raw = "HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\nhello";
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => Encoding.Latin1.GetBytes(raw));
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => Encoding.Latin1.GetBytes(raw));
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -147,8 +147,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
         headerBytes.CopyTo(responseBytes, 0);
         truncatedBody.CopyTo(responseBytes, headerBytes.Length);
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => responseBytes);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => responseBytes);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -208,8 +208,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             Version = HttpVersion.Version11
         };
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => null);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => null);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)
@@ -229,8 +229,8 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             Version = HttpVersion.Version11
         };
 
-        var fake = new ScriptedFakeConnectionStage((_, _) => null);
-        var flow = Engine.CreateFlow().Join(Flow.FromGraph<ITransportOutbound, ITransportInbound, NotUsed>(fake));
+        var fake = CreateScriptedConnection((_, _) => null);
+        var flow = Engine.CreateFlow().Join(fake.AsFlow());
 
         var tcs = new TaskCompletionSource<HttpResponseMessage>();
         _ = Source.Single(request)

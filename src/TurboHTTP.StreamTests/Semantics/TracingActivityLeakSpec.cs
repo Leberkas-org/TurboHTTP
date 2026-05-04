@@ -4,6 +4,7 @@ using Akka.Streams.TestKit;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
+using static Servus.Core.Servus;
 using Activity = System.Diagnostics.Activity;
 using ActivityListener = System.Diagnostics.ActivityListener;
 using ActivitySamplingResult = System.Diagnostics.ActivitySamplingResult;
@@ -20,8 +21,9 @@ public sealed class TracingActivityLeakSpec : StreamTestBase
         var stoppedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         Activity? capturedActivity = null;
 
+        var sourceName = Tracing.Source.Name;
         using var listener = new ActivityListener();
-        listener.ShouldListenTo = source => source.Name == TurboHttpInstrumentation.SourceName;
+        listener.ShouldListenTo = source => source.Name == sourceName;
         listener.Sample = (ref _) => ActivitySamplingResult.AllData;
         // Wire ActivityStopped before AddActivityListener so the callback is always
         // registered before the Akka dispatch thread can call PostStop.
@@ -63,7 +65,7 @@ public sealed class TracingActivityLeakSpec : StreamTestBase
         reqInSub.SendNext(request);
         var forwarded = await reqOutProbe.ExpectNextAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(forwarded.Options.TryGetValue(TurboHttpInstrumentation.RequestActivityKey, out var activity));
+        Assert.True(forwarded.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey, out var activity));
         Assert.NotNull(activity);
 
         capturedActivity = activity;

@@ -5,6 +5,7 @@ using Akka.Streams.Dsl;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
+using static Servus.Core.Servus;
 using ActivityListener = System.Diagnostics.ActivityListener;
 using ActivitySamplingResult = System.Diagnostics.ActivitySamplingResult;
 using ActivitySource = System.Diagnostics.ActivitySource;
@@ -18,9 +19,10 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
 
     public TracingBidiStageSpec()
     {
+        var sourceName = Tracing.Source.Name;
         _listener = new ActivityListener
         {
-            ShouldListenTo = source => source.Name == TurboHttpInstrumentation.SourceName,
+            ShouldListenTo = source => source.Name == sourceName,
             Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStarted = activity => _activities.Add(activity)
         };
@@ -134,7 +136,7 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
 
         var result = Assert.Single(results);
         Assert.True(result.Options.TryGetValue(
-            TurboHttpInstrumentation.RequestActivityKey, out var activity));
+            TurboHttpInstrumentationExtensions.RequestActivityKey, out var activity));
         Assert.NotNull(activity);
     }
 
@@ -162,9 +164,9 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
 
         Assert.Equal(2, results.Count);
         Assert.True(results[0].Options.TryGetValue(
-            TurboHttpInstrumentation.RequestActivityKey, out var act1));
+            TurboHttpInstrumentationExtensions.RequestActivityKey, out var act1));
         Assert.True(results[1].Options.TryGetValue(
-            TurboHttpInstrumentation.RequestActivityKey, out var act2));
+            TurboHttpInstrumentationExtensions.RequestActivityKey, out var act2));
         Assert.NotNull(act1);
         Assert.NotNull(act2);
     }
