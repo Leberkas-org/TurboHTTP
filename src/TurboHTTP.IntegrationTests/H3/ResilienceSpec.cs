@@ -150,4 +150,27 @@ public sealed class ResilienceSpec : IAsyncLifetime
         Assert.Contains("slow-body-first-half", body);
         Assert.Contains("slow-body-second-half", body);
     }
+
+    [Fact(Timeout = 30000)]
+    public async Task Sustained_throughput_should_not_abort_control_streams()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+        await using var helper = CreateClient();
+
+        for (var batch = 0; batch < 10; batch++)
+        {
+            var tasks = Enumerable.Range(0, 20)
+                .Select(_ =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, "/ping");
+                    return helper.Client.SendAsync(request, cts.Token);
+                })
+                .ToArray();
+
+            var responses = await Task.WhenAll(tasks);
+            Assert.All(responses, r => Assert.Equal(HttpStatusCode.OK, r.StatusCode));
+
+            await Task.Delay(100, cts.Token);
+        }
+    }
 }

@@ -263,7 +263,11 @@ public sealed class QuicTransportStateMachine
         }
 
         state.AttachHandle(handle);
-        _pumpManager?.StartInboundPump(handle, streamId, _connectionGen);
+        if (state.Direction == StreamDirection.Bidirectional)
+        {
+            _pumpManager?.StartInboundPump(handle, streamId, _connectionGen);
+        }
+
         _ops.OnPushInbound(new StreamOpened(streamId, state.Direction));
     }
 

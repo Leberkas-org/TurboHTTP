@@ -770,6 +770,47 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    public void Dispatch_StreamLeaseAcquired_for_unidirectional_should_not_start_inbound_pump()
+    {
+        var (ops, sm) = CreateConnectedStateMachine();
+
+        const long streamId = 42L;
+        sm.HandlePush(new OpenStream(streamId, StreamDirection.Unidirectional));
+
+        var handle = new StreamHandle(new MemoryStream());
+        sm.Dispatch(new StreamLeaseAcquired(handle, streamId));
+
+        var streamOpened = ops.PushedInbound.OfType<StreamOpened>().FirstOrDefault();
+        Assert.NotNull(streamOpened);
+        Assert.Equal(streamId, streamOpened.StreamId);
+        Assert.Equal(StreamDirection.Unidirectional, streamOpened.Direction);
+
+        // Wait briefly to ensure no InboundPumpFailed is dispatched.
+        // If a pump was started on a write-only MemoryStream, ReadAsync would
+        // return 0 immediately and trigger InboundComplete — which must NOT happen
+        // for client-initiated unidirectional control streams.
+        Thread.Sleep(50);
+        Assert.DoesNotContain(ops.PushedInbound, item => item is StreamClosed);
+        Assert.DoesNotContain(ops.PushedInbound, item => item is StreamReadCompleted);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Dispatch_StreamLeaseAcquired_for_bidirectional_should_start_inbound_pump()
+    {
+        var (ops, sm) = CreateConnectedStateMachine();
+
+        const long streamId = 50L;
+        sm.HandlePush(new OpenStream(streamId, StreamDirection.Bidirectional));
+
+        var handle = new StreamHandle(new MemoryStream());
+        sm.Dispatch(new StreamLeaseAcquired(handle, streamId));
+
+        var streamOpened = ops.PushedInbound.OfType<StreamOpened>().FirstOrDefault();
+        Assert.NotNull(streamOpened);
+        Assert.Equal(StreamDirection.Bidirectional, streamOpened.Direction);
+    }
+
+    [Fact(Timeout = 5000)]
     public void Dispatch_MigrationDetected_should_push_ConnectionMigrationDetected()
     {
         var ops = new StubOps();

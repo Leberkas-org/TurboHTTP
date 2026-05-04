@@ -216,6 +216,11 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                     TryPullRequest();
                     return;
                 }
+                case StreamReadCompleted:
+                {
+                    TryPullServer();
+                    return;
+                }
                 case StreamClosed { StreamId: >= 0 } streamClosed:
                 {
                     if (streamClosed.Reason == DisconnectReason.Error)
