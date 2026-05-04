@@ -14,9 +14,22 @@ name: "CodeQL"
 on:
   push:
     branches: [ "main", feature/*, ]
+    paths:
+      - "src/**/*.cs"
+      - "src/**/*.csproj"
+      - "src/**/*.sln"
+      - "src/**/*.slnx"
+      - "src/Directory.Build.props"
+      - "src/Directory.Packages.props"
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "main" ]
+    paths:
+      - "src/**/*.cs"
+      - "src/**/*.csproj"
+      - "src/**/*.sln"
+      - "src/**/*.slnx"
+      - "src/Directory.Build.props"
+      - "src/Directory.Packages.props"
   schedule:
     - cron: '38 2 * * 2'
 
