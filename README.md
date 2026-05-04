@@ -2,7 +2,8 @@
   <img src="docs/logo/logo.svg" alt="TurboHTTP" width="200" />
   <p><strong>High-performance HTTP client for .NET — built on Akka.Streams with automatic retries, caching, cookies, HTTP/2 multiplexing, and HTTP/3 (QUIC).</strong></p>
 
-  [![Build](https://github.com/st0o0/TurboHTTP/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/st0o0/TurboHTTP/actions/workflows/build-and-release.yml)
+  [![CI](https://img.shields.io/github/actions/workflow/status/st0o0/TurboHTTP/ci.yml?label=CI)](https://github.com/st0o0/TurboHTTP/actions/workflows/ci.yml)
+  [![Release](https://img.shields.io/github/actions/workflow/status/st0o0/TurboHTTP/release.yml?label=Release)](https://github.com/st0o0/TurboHTTP/actions/workflows/release.yml)
   [![NuGet](https://img.shields.io/nuget/v/TurboHTTP.svg)](https://www.nuget.org/packages/TurboHTTP)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 </div>
