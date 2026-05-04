@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  GLOBAL_JSON_PATH: "./src/global.json"
+  PROJECT_PATH: "./src/TurboHTTP.slnx"
+  TEST_OUTPUT_DIRECTORY: "${{ github.workspace }}/testresults"
+  COVERAGE_REPORT_DIRECTORY: "./coveragereport"
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: ${{ env.GLOBAL_JSON_PATH }}
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: >
+          dotnet build
+          --configuration Release
+          --no-restore
+          ${{ env.PROJECT_PATH }}
+
+      - name: Install libmsquic
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmsquic
+
+      - name: Run tests
+        working-directory: "./src"
+        run: >
+          dotnet test
+          --configuration Release
+          --no-ansi
+          --no-build
+          --coverage
+          --coverage-output-format cobertura
+          --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }}
+          --solution *.slnx
+
+      - name: Report Code Coverage
+        if: always()
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: "${{ env.TEST_OUTPUT_DIRECTORY }}/*cobertura.xml"
+          targetdir: "${{ env.COVERAGE_REPORT_DIRECTORY }}"
+          reporttypes: "MarkdownSummaryGithub"
+
+      - name: Add Coverage Summary to Job Summary
+        if: always()
+        run: cat ${{ env.COVERAGE_REPORT_DIRECTORY }}/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
