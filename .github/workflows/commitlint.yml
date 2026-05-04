@@ -29,6 +29,7 @@ jobs:
             test
             ci
             build
+            deps
 
   lint-commits:
     runs-on: ubuntu-latest

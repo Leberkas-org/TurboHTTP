@@ -16,7 +16,8 @@
         { "type": "refactor", "hidden": true },
         { "type": "test", "hidden": true },
         { "type": "ci", "hidden": true },
-        { "type": "build", "hidden": true }
+        { "type": "build", "hidden": true },
+        { "type": "deps", "section": "Dependencies" }
       ]
     }
   }
