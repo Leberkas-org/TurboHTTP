@@ -1,3 +1,4 @@
+using System.Buffers;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
@@ -443,8 +444,13 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                 return;
             }
 
-            EmitMultiple<ITransportOutbound>(_stage._outNetwork, _pendingOutbound.ToArray());
+            var outCount = _pendingOutbound.Count;
+            var outRented = ArrayPool<ITransportOutbound>.Shared.Rent(outCount);
+            _pendingOutbound.CopyTo(outRented);
             _pendingOutbound.Clear();
+            EmitMultiple<ITransportOutbound>(_stage._outNetwork,
+                new ArraySegment<ITransportOutbound>(outRented, 0, outCount),
+                () => ArrayPool<ITransportOutbound>.Shared.Return(outRented, clearArray: true));
         }
 
         private void TryPullServer()
