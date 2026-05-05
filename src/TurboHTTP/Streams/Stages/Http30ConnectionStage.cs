@@ -398,9 +398,16 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                 return;
             }
 
-            EmitMultiple(_stage._outResponse, _pendingResponses.ToArray(),
+            var respCount = _pendingResponses.Count;
+            var respRented = ArrayPool<HttpResponseMessage>.Shared.Rent(respCount);
+            _pendingResponses.CopyTo(respRented);
+            _pendingResponses.Clear();
+            EmitMultiple(_stage._outResponse,
+                new ArraySegment<HttpResponseMessage>(respRented, 0, respCount),
                 () =>
                 {
+                    ArrayPool<HttpResponseMessage>.Shared.Return(respRented, clearArray: true);
+
                     if (IsClosed(_stage._inApp) && !_sm.HasInFlightRequests)
                     {
                         CompleteStage();
@@ -410,7 +417,6 @@ internal sealed class Http30ConnectionStage : GraphStage<ConnectionShape>
                     TryPullRequest();
                     TryPullServer();
                 });
-            _pendingResponses.Clear();
         }
 
         private void FlushOutbound()
