@@ -8,6 +8,17 @@ public sealed class QuicTransportFactory(IActorRef connectionManager) : ITranspo
 {
     public Flow<ITransportOutbound, ITransportInbound, NotUsed> Create()
     {
-        return Flow.FromGraph(new QuicConnectionStage(connectionManager));
+        var conflate = Flow.Create<ITransportOutbound>()
+            .ConflateWithSeed(
+                seed: item => new List<ITransportOutbound> { item },
+                aggregate: (list, item) =>
+                {
+                    list.Add(item);
+                    return list;
+                });
+
+        var stage = Flow.FromGraph(new QuicConnectionStage(connectionManager));
+
+        return conflate.Via(stage);
     }
 }

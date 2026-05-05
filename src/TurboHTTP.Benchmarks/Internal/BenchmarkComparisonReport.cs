@@ -80,7 +80,7 @@ public static class BenchmarkComparisonReport
         IReadOnlyList<BenchmarkResult> sendResults,
         IReadOnlyList<BenchmarkResult> streamResults)
     {
-        foreach (var version in new[] { "1.1", "2.0" })
+        foreach (var version in new[] { "1.1", "2.0", "3.0" })
         {
             var httpAll = FilterByVersion(httpResults, version);
             var sendAll = FilterByVersion(sendResults, version);
@@ -124,7 +124,7 @@ public static class BenchmarkComparisonReport
         sb.AppendLine("|---|---|");
         sb.AppendLine($"| **Report date** | {reportDate:yyyy-MM-dd HH:mm} UTC |");
         sb.AppendLine("| **Server** | binkraken.com (GitHub Pages CDN) |");
-        sb.AppendLine("| **Protocol** | HTTPS — HTTP/1.1 and HTTP/2 (ALPN) |");
+        sb.AppendLine("| **Protocol** | HTTPS — HTTP/1.1, HTTP/2 (ALPN), HTTP/3 (QUIC) |");
         sb.AppendLine("| **Light endpoint** | `GET /` (~3 KB HTML) |");
         sb.AppendLine("| **Heavy endpoint** | `GET /assets/…plugin-vue_export-helper….js` (~159 KB) |");
         sb.AppendLine();
@@ -143,7 +143,7 @@ public static class BenchmarkComparisonReport
         sb.AppendLine("- All requests target binkraken.com over real internet (HTTPS/TLS).");
         sb.AppendLine("- Results include DNS resolution, TLS handshake (first request), and network latency.");
         sb.AppendLine("- Light: `GET /` returns the SPA index (~3 KB). Heavy: `GET /assets/…` returns a JS bundle (~159 KB).");
-        sb.AppendLine("- HTTP/2 is negotiated via ALPN over TLS — no cleartext h2c.");
+        sb.AppendLine("- HTTP/2 is negotiated via ALPN over TLS — no cleartext h2c. HTTP/3 uses QUIC when server supports Alt-Svc.");
         sb.AppendLine("- Variance may be higher than loopback benchmarks due to network jitter and CDN caching.");
         sb.AppendLine("- Memory figures reflect managed allocations only; native/pooled buffers are not included.");
         sb.AppendLine("- **Streaming** uses the channel API (`Requests` writer / `Responses` reader).");
@@ -159,7 +159,7 @@ public static class BenchmarkComparisonReport
         sb.AppendLine("|---|---|");
         sb.AppendLine($"| **Report date** | {reportDate:yyyy-MM-dd HH:mm} UTC |");
         sb.AppendLine("| **Server** | localhost Kestrel (127.0.0.1, dynamic port) |");
-        sb.AppendLine("| **Protocol** | HTTP cleartext — HTTP/1.1 and HTTP/2 (h2c prior knowledge) |");
+        sb.AppendLine("| **Protocol** | HTTP/1.1 cleartext, HTTP/2 (h2c prior knowledge), HTTP/3 (QUIC+TLS) |");
         sb.AppendLine("| **Light endpoint** | `GET /benchmark/simple` (~3 B text/plain) |");
         sb.AppendLine("| **Heavy endpoint** | `POST /benchmark/payload` (10 KB request body) |");
         sb.AppendLine();
@@ -176,9 +176,9 @@ public static class BenchmarkComparisonReport
         sb.AppendLine("## Notes");
         sb.AppendLine();
         sb.AppendLine("- All requests target a localhost Kestrel server over loopback (127.0.0.1).");
-        sb.AppendLine("- No TLS overhead — HTTP cleartext for both HTTP/1.1 and HTTP/2 (h2c).");
+        sb.AppendLine("- HTTP/1.1 and HTTP/2 use cleartext (no TLS overhead). HTTP/3 requires TLS (QUIC mandates TLS 1.3).");
         sb.AppendLine("- Light: `GET /benchmark/simple` returns `OK\\n` (~3 B). Heavy: `POST /benchmark/payload` with 10 KB body.");
-        sb.AppendLine("- HTTP/2 uses h2c prior knowledge on a dedicated listener port.");
+        sb.AppendLine("- HTTP/2 uses h2c prior knowledge on a dedicated listener port. HTTP/3 uses QUIC+TLS with a self-signed certificate.");
         sb.AppendLine("- Loopback eliminates network jitter — results reflect pure client+server overhead.");
         sb.AppendLine("- Memory figures reflect managed allocations only; native/pooled buffers are not included.");
         sb.AppendLine("- **Streaming** uses the channel API (`Requests` writer / `Responses` reader).");
