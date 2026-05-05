@@ -56,15 +56,6 @@ public sealed class Http3Options
     public int MaxReconnectAttempts { get; set; } = 3;
 
     /// <summary>
-    /// Whether to allow QUIC 0-RTT early data for idempotent requests (GET, HEAD, OPTIONS, TRACE, DELETE).
-    /// When enabled, repeat connections to known servers can send the first request before the TLS
-    /// handshake completes, reducing latency. Non-idempotent requests are never sent as early data.
-    /// If the server rejects 0-RTT, the request is automatically re-sent after full handshake.
-    /// Default is false. RFC 9114 §A.1.
-    /// </summary>
-    public bool AllowEarlyData { get; set; }
-
-    /// <summary>
     /// Whether to allow QUIC connection migration when the client's local IP address or port changes
     /// (e.g., switching from Wi-Fi to cellular). When enabled, the QUIC connection continues
     /// transparently after the address change. When disabled, the connection is closed and a new
@@ -72,14 +63,6 @@ public sealed class Http3Options
     /// Default is true. RFC 9000 §9.
     /// </summary>
     public bool AllowConnectionMigration { get; set; } = true;
-
-    /// <summary>
-    /// Whether to allow the server to push resources via PUSH_PROMISE frames (RFC 9114 §7.2.5).
-    /// When enabled, the client advertises a MAX_PUSH_ID and accepts server push promises.
-    /// When disabled, received PUSH_PROMISE frames are rejected with CANCEL_PUSH.
-    /// Default is false.
-    /// </summary>
-    public bool AllowServerPush { get; set; }
 
     /// <summary>
     /// Whether to automatically discover HTTP/3 availability via Alt-Svc headers (RFC 7838)

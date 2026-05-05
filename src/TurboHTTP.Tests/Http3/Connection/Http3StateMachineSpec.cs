@@ -115,58 +115,26 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void ProcessFrame_should_reject_push_promise_when_push_disabled()
+    public void ProcessFrame_should_reject_push_promise_with_cancel_push()
     {
-        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = false } });
+        var sm = CreateMachine();
         var push = new Http3PushPromiseFrame(1, new byte[] { 0x01 });
 
         var result = sm.ProcessFrame(push);
 
         Assert.Null(result);
-        Assert.Single(_ops.Outbound); // serialized CANCEL_PUSH frame
+        Assert.Single(_ops.Outbound);
         Assert.IsType<TransportData>(_ops.Outbound[0]);
     }
 
     [Fact(Timeout = 5000)]
     public void ProcessFrame_should_warn_when_push_rejected()
     {
-        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = false } });
+        var sm = CreateMachine();
 
         sm.ProcessFrame(new Http3PushPromiseFrame(42, new byte[] { 0x01 }));
 
         Assert.Contains(_ops.Warnings, w => w.Contains("push promise rejected") && w.Contains("42"));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void ProcessFrame_should_forward_push_promise_to_app_when_push_enabled()
-    {
-        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = true } });
-        var push = new Http3PushPromiseFrame(1, new byte[] { 0x01 });
-
-        var result = sm.ProcessFrame(push);
-
-        Assert.Same(push, result); // forwarded to app layer
-        Assert.Empty(_ops.Outbound); // no CANCEL_PUSH sent
-    }
-
-    [Fact(Timeout = 5000)]
-    public void ProcessFrame_should_enforce_push_limit_when_push_enabled()
-    {
-        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = true } });
-
-        // The default maxPushCount is 100 when AllowServerPush = true.
-        // Push 100 times to hit the limit, then one more should warn.
-        for (var i = 0; i < 100; i++)
-        {
-            var forwarded = sm.ProcessFrame(new Http3PushPromiseFrame(i, new byte[] { 0x01 }));
-            Assert.NotNull(forwarded); // each push is forwarded to app
-        }
-
-        _ops.Warnings.Clear();
-        var exceeded = sm.ProcessFrame(new Http3PushPromiseFrame(100, new byte[] { 0x01 }));
-
-        Assert.Null(exceeded); // push limit exceeded — not forwarded
-        Assert.Contains(_ops.Warnings, w => w.Contains("Push limit exceeded"));
     }
 
     [Fact(Timeout = 5000)]

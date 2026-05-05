@@ -140,19 +140,4 @@ public sealed class QuicTransportEventSpec
         Assert.Same(newEndPoint, evt.NewEndPoint);
     }
 
-    [Fact(Timeout = 5000)]
-    public void EarlyDataRejected_should_implement_IQuicTransportEvent()
-    {
-        var buffer = TransportBuffer.Rent(32);
-        try
-        {
-            var evt = new EarlyDataRejected(buffer);
-
-            Assert.NotNull(evt.Buffer);
-        }
-        finally
-        {
-            buffer.Dispose();
-        }
-    }
 }

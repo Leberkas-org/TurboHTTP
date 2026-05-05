@@ -122,16 +122,6 @@ internal sealed class Http3HeadersFrame : Http3Frame, IDisposable
     public override FrameType Type => FrameType.Headers;
     public ReadOnlyMemory<byte> HeaderBlock { get; }
 
-    /// <summary>
-    /// When true, indicates this request may be sent as QUIC 0-RTT early data.
-    /// Only set for idempotent HTTP methods (GET, HEAD, OPTIONS, TRACE, DELETE)
-    /// when <see cref="Http3Options.AllowEarlyData"/> is enabled.
-    /// The transport layer uses this flag to decide whether to send the request
-    /// before the TLS handshake completes. RFC 9114 §A.1.
-    /// </summary>
-    // TODO: Not yet wired to transport layer — requires QUIC 0-RTT stream coordination
-    public bool EarlyData { get; set; }
-
     public Http3HeadersFrame(ReadOnlyMemory<byte> headerBlock)
     {
         HeaderBlock = headerBlock;

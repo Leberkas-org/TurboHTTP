@@ -22,18 +22,6 @@ internal sealed class StateMachine : IDisposable
 {
     private static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromSeconds(30);
 
-    /// <summary>
-    /// HTTP methods that are safe for 0-RTT early data per RFC 9114 §A.1.
-    /// </summary>
-    private static readonly HashSet<HttpMethod> IdempotentMethods =
-    [
-        HttpMethod.Get,
-        HttpMethod.Head,
-        HttpMethod.Options,
-        HttpMethod.Trace,
-        HttpMethod.Delete,
-    ];
-
     private readonly TurboClientOptions _options;
     private readonly IStageOperations _ops;
     private TransportOptions? _transportOptions;
@@ -116,7 +104,7 @@ internal sealed class StateMachine : IDisposable
             ? DefaultIdleTimeout
             : options.Http3.IdleTimeout;
 
-        Connection = new ConnectionState(idleTimeout, options.Http3.AllowServerPush ? 100 : 0);
+        Connection = new ConnectionState(idleTimeout);
     }
 
     /// <summary>
@@ -143,21 +131,12 @@ internal sealed class StateMachine : IDisposable
         var frameSize = settingsFrame.SerializedSize;
         var totalSize = streamTypeSize + frameSize;
 
-        Http3MaxPushIdFrame? maxPushIdFrame = null;
-        if (_options.Http3.AllowServerPush)
-        {
-            maxPushIdFrame = new Http3MaxPushIdFrame(99);
-            totalSize += maxPushIdFrame.SerializedSize;
-        }
-
         using var owner = MemoryPool<byte>.Shared.Rent(totalSize);
         var span = owner.Memory.Span;
 
         var written = QuicVarInt.Encode((long)StreamType.Control, span);
         span = span[written..];
         settingsFrame.WriteTo(ref span);
-
-        maxPushIdFrame?.WriteTo(ref span);
 
         var buf = TransportBuffer.Rent(totalSize);
         owner.Memory.Span[..totalSize].CopyTo(buf.FullMemory.Span);
@@ -193,6 +172,13 @@ internal sealed class StateMachine : IDisposable
             if (!QuicVarInt.TryDecode(span, out var rawType, out var typeBytes))
             {
                 return (quicStreamId, buffer);
+            }
+
+            if ((StreamType)rawType == StreamType.Push)
+            {
+                HandleIncomingPushStream(quicStreamId, span[typeBytes..]);
+                buffer.Dispose();
+                return (quicStreamId, null!);
             }
 
             var logicalId = (StreamType)rawType switch
@@ -527,18 +513,6 @@ internal sealed class StateMachine : IDisposable
         OriginValidator.Validate(request.RequestUri!, request.Method == HttpMethod.Connect);
         var frames = _requestEncoder.Encode(request);
 
-        // TODO: EarlyData flag is set but not yet consumed by transport layer
-        if (_options.Http3.AllowEarlyData && IdempotentMethods.Contains(request.Method))
-        {
-            foreach (var f in frames)
-            {
-                if (f is Http3HeadersFrame headers)
-                {
-                    headers.EarlyData = true;
-                }
-            }
-        }
-
         return frames;
     }
 
@@ -644,25 +618,31 @@ internal sealed class StateMachine : IDisposable
 
     private Http3PushPromiseFrame? HandlePushPromise(Http3PushPromiseFrame pushPromise)
     {
-        if (!_options.Http3.AllowServerPush)
+        var cancelFrame = new Http3CancelPushFrame(pushPromise.PushId);
+        EmitSerializedFrame(cancelFrame);
+        _ops.OnWarning(
+            string.Concat("RFC 9114 §7.2.5 — push promise rejected (pushId=",
+                pushPromise.PushId.ToString(), "); server push not supported"));
+        return null;
+    }
+
+    private void HandleIncomingPushStream(long quicStreamId, ReadOnlySpan<byte> remaining)
+    {
+        long pushId = -1;
+        if (QuicVarInt.TryDecode(remaining, out var id, out _))
         {
-            var cancelFrame = new Http3CancelPushFrame(pushPromise.PushId);
-            EmitSerializedFrame(cancelFrame);
-            _ops.OnWarning(
-                $"RFC 9114 §7.2.5 — push promise rejected (pushId={pushPromise.PushId}); AllowServerPush=false.");
-            return null;
+            pushId = id;
         }
 
-        try
+        if (pushId >= 0)
         {
-            Connection.RecordPush();
-        }
-        catch (Http3Exception ex)
-        {
-            _ops.OnWarning($"Push limit exceeded — {ex.Message}");
-            return null;
+            var cancel = new Http3CancelPushFrame(pushId);
+            EmitSerializedFrame(cancel);
         }
 
-        return pushPromise;
+        _ops.OnOutbound(new ResetStream(quicStreamId));
+        _ops.OnWarning(
+            string.Concat("RFC 9114 §4.6 — push stream ", quicStreamId.ToString(),
+                " (pushId=", pushId.ToString(), ") reset (push response delivery not implemented)"));
     }
 }

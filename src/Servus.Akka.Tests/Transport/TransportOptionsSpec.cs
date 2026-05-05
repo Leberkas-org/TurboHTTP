@@ -114,7 +114,6 @@ public sealed class TransportOptionsSpec
         Assert.Equal(TimeSpan.FromSeconds(30), opts.IdleTimeout);
         Assert.Equal(100, opts.MaxBidirectionalStreams);
         Assert.Equal(3, opts.MaxUnidirectionalStreams);
-        Assert.False(opts.AllowEarlyData);
         Assert.True(opts.AllowConnectionMigration);
     }
 

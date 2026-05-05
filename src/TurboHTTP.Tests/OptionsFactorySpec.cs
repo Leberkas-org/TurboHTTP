@@ -274,20 +274,6 @@ public sealed class OptionsFactorySpec
     }
 
     [Fact(Timeout = 5000)]
-    public void OptionsFactory_should_preserve_http3_early_data_setting()
-    {
-        var endpoint = CreateHttp3Endpoint();
-        var clientOptions = new TurboClientOptions
-        {
-            Http3 = new Http3Options { AllowEarlyData = true }
-        };
-
-        var options = (QuicTransportOptions)OptionsFactory.Build(endpoint, clientOptions);
-
-        Assert.True(options.AllowEarlyData);
-    }
-
-    [Fact(Timeout = 5000)]
     public void OptionsFactory_should_preserve_http3_connection_migration_setting()
     {
         var endpoint = CreateHttp3Endpoint();

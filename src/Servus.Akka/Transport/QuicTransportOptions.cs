@@ -10,7 +10,6 @@ public sealed record QuicTransportOptions : TransportOptions
     public TimeSpan IdleTimeout { get; init; } = TimeSpan.FromSeconds(30);
     public int MaxBidirectionalStreams { get; init; } = 100;
     public int MaxUnidirectionalStreams { get; init; } = 3;
-    public bool AllowEarlyData { get; init; }
     public bool AllowConnectionMigration { get; init; } = true;
     public X509CertificateCollection? ClientCertificates { get; init; }
     public RemoteCertificateValidationCallback? ServerCertificateValidationCallback { get; init; }

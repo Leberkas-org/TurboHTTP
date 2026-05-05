@@ -25,4 +25,4 @@ internal readonly record struct OutboundWriteFailed(Exception Error, long Stream
 
 internal readonly record struct MigrationDetected(EndPoint OldEndPoint, EndPoint NewEndPoint) : IQuicTransportEvent;
 
-internal readonly record struct EarlyDataRejected(TransportBuffer Buffer) : IQuicTransportEvent;
+

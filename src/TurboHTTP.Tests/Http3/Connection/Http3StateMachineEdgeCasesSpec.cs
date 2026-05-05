@@ -47,31 +47,14 @@ public sealed class Http3StateMachineEdgeCasesSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]
-    public void TryBuildControlPreface_should_include_max_push_id_when_push_enabled()
+    public void TryBuildControlPreface_should_not_include_max_push_id()
     {
-        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = true } });
+        var sm = CreateMachine();
 
         var preface = sm.TryBuildControlPreface();
 
         Assert.NotNull(preface);
         var buf = (MultiplexedData)preface;
-        // Preface contains: StreamType VarInt + Settings frame + MaxPushIdFrame
-        // With MAX_PUSH_ID, size should be larger than without it
-
-        Assert.True(buf.Buffer.Length > 0);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9114-6.2")]
-    public void TryBuildControlPreface_should_not_include_max_push_id_when_push_disabled()
-    {
-        var sm = CreateMachine(new TurboClientOptions { Http3 = new Http3Options { AllowServerPush = false } });
-
-        var preface = sm.TryBuildControlPreface();
-
-        Assert.NotNull(preface);
-        var buf = (MultiplexedData)preface;
-        // Without MaxPushIdFrame, still contains StreamType VarInt + Settings frame
         Assert.Equal(-2, buf.StreamId);
         Assert.True(buf.Buffer.Length > 0);
     }

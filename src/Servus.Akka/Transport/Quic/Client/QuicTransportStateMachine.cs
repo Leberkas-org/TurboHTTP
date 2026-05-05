@@ -90,9 +90,6 @@ public sealed class QuicTransportStateMachine
             case MigrationDetected e:
                 _ops.OnPushInbound(new ConnectionMigrationDetected(e.OldEndPoint, e.NewEndPoint));
                 break;
-            case EarlyDataRejected e:
-                _ops.OnPushInbound(new DataRejected(e.Buffer));
-                break;
         }
     }
 

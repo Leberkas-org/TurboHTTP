@@ -37,7 +37,6 @@ internal static class OptionsFactory
                 SocketSendBufferSize = clientOptions.SocketSendBufferSize,
                 SocketReceiveBufferSize = clientOptions.SocketReceiveBufferSize,
                 AllowConnectionMigration = clientOptions.Http3.AllowConnectionMigration,
-                AllowEarlyData = clientOptions.Http3.AllowEarlyData,
                 IdleTimeout = clientOptions.Http3.IdleTimeout,
                 ApplicationProtocols = alpn,
                 AutoReconnect = true,

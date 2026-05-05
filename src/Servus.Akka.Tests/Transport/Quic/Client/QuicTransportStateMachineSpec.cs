@@ -141,21 +141,6 @@ public sealed class QuicTransportStateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void Dispatch_EarlyDataRejected_should_push_DataRejected()
-    {
-        var ops = new StubOps();
-        var sm = new QuicTransportStateMachine(ops, ActorRefs.Nobody, ActorRefs.Nobody);
-
-        var buffer = TransportBuffer.Rent(16);
-        buffer.Length = 4;
-
-        sm.Dispatch(new EarlyDataRejected(buffer));
-
-        Assert.Single(ops.PushedInbound);
-        Assert.IsType<DataRejected>(ops.PushedInbound[0]);
-    }
-
-    [Fact(Timeout = 5000)]
     public void HandlePush_DisconnectTransport_should_signal_pull()
     {
         var ops = new StubOps();
