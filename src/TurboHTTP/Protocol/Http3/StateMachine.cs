@@ -98,7 +98,7 @@ internal sealed class StateMachine : IDisposable
         // after receiving peer SETTINGS (see HandleSettings).
         TableSync = new QpackTableSync(
             encoderMaxCapacity: 0,
-            decoderMaxCapacity: 4096,
+            decoderMaxCapacity: options.Http3.QpackMaxTableCapacity,
             maxBlockedStreams: options.Http3.QpackBlockedStreams,
             configuredEncoderLimit: options.Http3.QpackMaxTableCapacity);
         _requestEncoder = new RequestEncoder(TableSync);
@@ -133,6 +133,9 @@ internal sealed class StateMachine : IDisposable
         _controlPrefaceSent = true;
 
         var settings = new Settings();
+        settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, _options.Http3.QpackMaxTableCapacity);
+        settings.Set(Http3SettingsIdentifier.QpackBlockedStreams, _options.Http3.QpackBlockedStreams);
+        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, _options.Http3.MaxFieldSectionSize);
         var settingsFrame = settings.ToFrame();
 
         var streamTypeSize = QuicVarInt.EncodedLength((long)StreamType.Control);
