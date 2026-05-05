@@ -42,12 +42,18 @@ internal sealed class ClientHelper : IAsyncDisposable
             Http1 = new Http1Options { MaxConnectionsPerServer = 512, MaxPipelineDepth = 2 },
             // H2: 16 connections × 1000 streams = 16 000 in-flight capacity.
             Http2 = new Http2Options { MaxConnectionsPerServer = 16, MaxConcurrentStreams = 1000 },
-            // H3: fewer connections (QUIC multiplexes natively), high reconnect tolerance for benchmarks.
+            // H3: 8 connections × 1000 streams = 8000 in-flight capacity.
+            // QPACK dynamic table at 32 KiB for better header compression on repeated requests.
             Http3 = new Http3Options
             {
-                MaxConnectionsPerServer = 4,
+                MaxConnectionsPerServer = 8,
+                MaxConcurrentStreams = 1000,
+                QpackMaxTableCapacity = 32_768,
+                QpackBlockedStreams = 200,
+                MaxFieldSectionSize = 65_536,
                 IdleTimeout = TimeSpan.FromMinutes(5),
                 MaxReconnectAttempts = 10,
+                MaxReconnectBufferSize = 256,
             },
         };
 
@@ -70,12 +76,17 @@ internal sealed class ClientHelper : IAsyncDisposable
             Http1 = new Http1Options { MaxConnectionsPerServer = 4, MaxPipelineDepth = 2048 },
             // H2: 16 connections × 1000 streams for high-CL streaming.
             Http2 = new Http2Options { MaxConnectionsPerServer = 16, MaxConcurrentStreams = 1000 },
-            // H3: fewer connections (QUIC multiplexes natively), high reconnect tolerance for benchmarks.
+            // H3: 8 connections × 1000 streams, larger QPACK table for repeated header patterns.
             Http3 = new Http3Options
             {
-                MaxConnectionsPerServer = 4,
+                MaxConnectionsPerServer = 8,
+                MaxConcurrentStreams = 1000,
+                QpackMaxTableCapacity = 32_768,
+                QpackBlockedStreams = 200,
+                MaxFieldSectionSize = 65_536,
                 IdleTimeout = TimeSpan.FromMinutes(5),
                 MaxReconnectAttempts = 10,
+                MaxReconnectBufferSize = 256,
             },
             MaxEndpointSubstreams = 16384,
         };
