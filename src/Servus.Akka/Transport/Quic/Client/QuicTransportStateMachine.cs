@@ -7,6 +7,8 @@ namespace Servus.Akka.Transport.Quic.Client;
 public sealed class QuicTransportStateMachine
 {
     private const string ConnectTimerKey = "connect-timeout";
+    private const string MigrationCheckTimerKey = "migration-check";
+    private static readonly TimeSpan MigrationCheckInterval = TimeSpan.FromSeconds(5);
 
     private readonly ITransportOperations _ops;
     private readonly IActorRef _connectionManager;
@@ -51,7 +53,6 @@ public sealed class QuicTransportStateMachine
             case InboundData e:
                 if (e.Gen == _connectionGen)
                 {
-                    CheckForConnectionMigration();
                     _ops.OnPushInbound(new MultiplexedData(e.Buffer, e.StreamId));
                 }
                 else
@@ -139,6 +140,13 @@ public sealed class QuicTransportStateMachine
 
     public void OnTimer(string? timerKey)
     {
+        if (timerKey == MigrationCheckTimerKey)
+        {
+            CheckForConnectionMigration();
+            _ops.OnScheduleTimer(MigrationCheckTimerKey, MigrationCheckInterval);
+            return;
+        }
+
         if (timerKey != ConnectTimerKey || _pendingConnect is null)
         {
             return;
@@ -153,6 +161,7 @@ public sealed class QuicTransportStateMachine
     public void PostStop()
     {
         _ops.OnCancelTimer(ConnectTimerKey);
+        _ops.OnCancelTimer(MigrationCheckTimerKey);
         CleanupTransport();
     }
 
@@ -238,6 +247,7 @@ public sealed class QuicTransportStateMachine
         _connectionLease = lease;
         _connectionHandle = lease.Handle;
         _lastLocalEndPoint = _connectionHandle.LocalEndPoint();
+        _ops.OnScheduleTimer(MigrationCheckTimerKey, MigrationCheckInterval);
 
         _pumpManager = new QuicPumpManager(_self);
         _pumpManager.StartAcceptLoop(_connectionHandle);

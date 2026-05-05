@@ -74,7 +74,7 @@ internal sealed class QuicServerConnectionStage : GraphStage<FlowShape<ITranspor
             }
         }
 
-        protected override void OnTimer(object timerKey) { }
+        protected override void OnTimer(object timerKey) => _sm.OnTimer(timerKey as string);
 
         public override void PostStop() => _sm.PostStop();
 
