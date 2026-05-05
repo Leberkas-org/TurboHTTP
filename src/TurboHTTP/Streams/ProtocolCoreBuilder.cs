@@ -45,7 +45,7 @@ internal static class ProtocolCoreBuilder
         return core.WithAttributes(highThroughputBuffer);
 
         int MaxConcurrencyPerSlot(RequestEndpoint endpoint)
-            => GetMaxConcurrencyPerSlot(endpoint, h2Streams, clientOptions.Http1.MaxPipelineDepth, h3Streams);
+            => GetMaxConcurrencyPerSlot(endpoint, clientOptions.Http1.MaxPipelineDepth, h2Streams, h3Streams);
 
         int MaxSubstreamsPerKey(RequestEndpoint endpoint)
             => GetMaxSubstreamsPerKey(endpoint, maxConnsH1, maxConnsH2, maxConnsH3);
@@ -72,7 +72,7 @@ internal static class ProtocolCoreBuilder
         }
     }
 
-    internal static int GetMaxConcurrencyPerSlot(RequestEndpoint endpoint, int h2Streams, int h1Streams, int h3Streams)
+    internal static int GetMaxConcurrencyPerSlot(RequestEndpoint endpoint, int h1Streams, int h2Streams, int h3Streams)
     {
         return endpoint.Version switch
         {

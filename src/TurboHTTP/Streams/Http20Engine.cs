@@ -6,20 +6,13 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Streams;
 
-internal class Http20Engine : IHttpProtocolEngine
+internal class Http20Engine(TurboClientOptions options) : IHttpProtocolEngine
 {
-    private readonly TurboClientOptions _options;
-
-    public Http20Engine(TurboClientOptions options)
-    {
-        _options = options;
-    }
-
     public BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> CreateFlow()
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            var connection = b.Add(new Http20ConnectionStage(_options));
+            var connection = b.Add(new Http20ConnectionStage(options));
 
             return new BidiShape<
                 HttpRequestMessage,

@@ -30,13 +30,13 @@ public sealed class TurboClientOptions
     public Uri? BaseAddress { get; set; }
 
     /// <summary>HTTP/1.x-specific configuration.</summary>
-    public Http1Options Http1 { get; set; } = new();
+    public Http1Options Http1 { get; init; } = new();
 
     /// <summary>HTTP/2-specific configuration.</summary>
-    public Http2Options Http2 { get; set; } = new();
+    public Http2Options Http2 { get; init; } = new();
 
     /// <summary>HTTP/3-specific configuration.</summary>
-    public Http3Options Http3 { get; set; } = new();
+    public Http3Options Http3 { get; init; } = new();
 
     /// <summary>
     /// Timeout for establishing a new TCP connection.

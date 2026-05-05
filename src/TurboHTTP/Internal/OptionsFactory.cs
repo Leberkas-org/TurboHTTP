@@ -38,6 +38,8 @@ internal static class OptionsFactory
                 SocketReceiveBufferSize = clientOptions.SocketReceiveBufferSize,
                 AllowConnectionMigration = clientOptions.Http3.AllowConnectionMigration,
                 IdleTimeout = clientOptions.Http3.IdleTimeout,
+                MaxConnectionsPerHost = clientOptions.Http3.MaxConnectionsPerServer,
+                MaxBidirectionalStreams = clientOptions.Http3.MaxConcurrentStreams,
                 ApplicationProtocols = alpn,
                 AutoReconnect = true,
                 ConnectionLifetime = clientOptions.PooledConnectionLifetime
