@@ -14,6 +14,13 @@ public sealed class Http3Options
     public int MaxConnectionsPerServer { get; set; } = 4;
 
     /// <summary>
+    /// Maximum number of concurrent streams per HTTP/3 connection.
+    /// Controls both the GroupBy slot capacity and the per-connection stream budget.
+    /// Default is 100.
+    /// </summary>
+    public int MaxConcurrentStreams { get; set; } = 100;
+
+    /// <summary>
     /// Maximum capacity of the QPACK dynamic table in bytes.
     /// Controls the size of the dynamic table used for header compression.
     /// Larger values improve compression ratio at the cost of memory.
