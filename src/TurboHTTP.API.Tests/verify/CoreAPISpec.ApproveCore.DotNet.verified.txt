@@ -54,8 +54,6 @@ namespace TurboHTTP
     {
         public Http3Options() { }
         public bool AllowConnectionMigration { get; set; }
-        public bool AllowEarlyData { get; set; }
-        public bool AllowServerPush { get; set; }
         public bool EnableAltSvcDiscovery { get; set; }
         public System.TimeSpan IdleTimeout { get; set; }
         public int MaxConcurrentStreams { get; set; }
