@@ -53,6 +53,7 @@ internal sealed class StateMachine : IDisposable
     // Server-initiated stream mapping (QUIC stream ID → logical stream ID)
     private readonly Dictionary<long, long> _serverStreamMap = new();
     private readonly HashSet<long> _pendingStreamType = [];
+    private readonly HashSet<long> _assignedCriticalStreams = [];
 
     /// <summary>Whether a new request can be accepted (no GOAWAY + not reconnecting + concurrency budget).</summary>
     public bool CanAcceptRequest => !Connection.GoAwayReceived && !IsReconnecting && Tracker.CanOpenStream();
@@ -201,6 +202,15 @@ internal sealed class StateMachine : IDisposable
                 StreamType.QpackDecoder => -4L,
                 _ => quicStreamId
             };
+
+            if (logicalId is -2 or -3 or -4)
+            {
+                if (!_assignedCriticalStreams.Add(logicalId))
+                {
+                    throw new Http3Exception(Http3ErrorCode.ClosedCriticalStream,
+                        string.Concat("RFC 9114 §6.2.1: Duplicate stream type ", ((StreamType)rawType).ToString()));
+                }
+            }
 
             _serverStreamMap[quicStreamId] = logicalId;
 
@@ -404,6 +414,7 @@ internal sealed class StateMachine : IDisposable
         TableSync.Reset();
         _serverStreamMap.Clear();
         _pendingStreamType.Clear();
+        _assignedCriticalStreams.Clear();
 
         if (_transportOptions is not null)
         {
