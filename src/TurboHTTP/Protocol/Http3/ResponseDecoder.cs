@@ -74,6 +74,12 @@ internal sealed class ResponseDecoder
             {
                 response.Headers.TryAddWithoutValidation(h.Name, h.Value);
 
+                if (string.Equals(h.Name, "content-length", StringComparison.OrdinalIgnoreCase) &&
+                    long.TryParse(h.Value, out var cl))
+                {
+                    state.ExpectedContentLength = cl;
+                }
+
                 if (IsContentHeader(h.Name))
                 {
                     state.AddContentHeader(h.Name, h.Value);
@@ -110,6 +116,15 @@ internal sealed class ResponseDecoder
     /// </summary>
     public HttpResponseMessage CompleteResponse(StreamState state)
     {
+        if (state.ExpectedContentLength.HasValue &&
+            state.AccumulatedBodyLength != state.ExpectedContentLength.Value)
+        {
+            throw new Http3Exception(Http3ErrorCode.MessageError,
+                string.Concat("RFC 9114 §4.1.2: Content-Length mismatch — expected ",
+                    state.ExpectedContentLength.Value.ToString(), ", received ",
+                    state.AccumulatedBodyLength.ToString()));
+        }
+
         var response = state.GetResponse();
         var (bodyOwner, bodyLength) = state.TakeBodyOwnership();
 

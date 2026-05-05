@@ -23,6 +23,10 @@ internal sealed class StreamState
 
     public bool HasContentHeaders => _contentHeaders is not null;
 
+    public long? ExpectedContentLength { get; set; }
+
+    public long AccumulatedBodyLength => _bodyLength;
+
     public void Initialize(long streamId)
     {
         StreamId = streamId;
@@ -66,6 +70,7 @@ internal sealed class StreamState
         _bodyLength = 0;
         StreamId = -1;
         _response = null;
+        ExpectedContentLength = null;
         _contentHeaders?.Clear();
     }
 

@@ -776,7 +776,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var headerFrame = EncodeHeaders(
             (":status", "200"),
             ("content-type", "text/plain"),
-            ("content-length", "13"));
+            ("content-length", "12"));
         _decoder.DecodeHeaders(headerFrame, state);
 
         // Accumulate body in multiple frames
