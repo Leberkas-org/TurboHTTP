@@ -35,8 +35,8 @@ internal sealed class QpackEncoder
         "set-cookie",
     };
 
-    private readonly int _maxTableCapacity;
-    private readonly bool _enableDynamicTable;
+    private int _maxTableCapacity;
+    private bool _enableDynamicTable;
     private IMemoryOwner<byte>? _instructionOwner;
     private int _instructionBytesWritten;
     private readonly Dictionary<int, int> _pendingSections = new();
@@ -62,6 +62,30 @@ internal sealed class QpackEncoder
 
     /// <summary>The encoder's dynamic table (for inspection and testing).</summary>
     public QpackDynamicTable DynamicTable { get; }
+
+    /// <summary>
+    /// RFC 9204 §3.2.3 — Updates the encoder's maximum dynamic table capacity after
+    /// receiving the peer's SETTINGS_QPACK_MAX_TABLE_CAPACITY.
+    /// Emits a "Set Dynamic Table Capacity" encoder instruction (§4.3.1).
+    /// </summary>
+    public void SetMaxCapacity(int capacity)
+    {
+        if (capacity < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity must be non-negative.");
+        }
+
+        _maxTableCapacity = capacity;
+        _enableDynamicTable = capacity > 0;
+        DynamicTable.SetCapacity(capacity);
+
+        _instructionOwner?.Dispose();
+        _instructionOwner = MemoryPool<byte>.Shared.Rent(16);
+        _instructionBytesWritten = 0;
+
+        var span = _instructionOwner.Memory.Span;
+        _instructionBytesWritten = QpackEncoderInstructionWriter.WriteSetDynamicTableCapacity(capacity, ref span);
+    }
 
     /// <summary>
     /// Encoder instructions emitted during the most recent <see cref="Encode(IReadOnlyList{ValueTuple{string, string}}, ref Span{byte})"/> call.

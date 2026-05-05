@@ -30,14 +30,15 @@ internal sealed class QpackTableSync
     private readonly List<BlockedStream> _blockedStreams = [];
     private readonly int _maxBlockedStreams;
     private readonly int _encoderMaxCapacity;
+    private readonly int _configuredEncoderLimit;
     private readonly int _decoderMaxCapacity;
 
     /// <summary>
     /// Creates a new QPACK table synchronization coordinator that owns both encoder and decoder.
     /// </summary>
     /// <param name="encoderMaxCapacity">
-    /// Maximum QPACK dynamic table capacity for the encoder (SETTINGS_QPACK_MAX_TABLE_CAPACITY).
-    /// RFC 9204 §3.2.3: set to 0 until peer SETTINGS is received to disable dynamic table.
+    /// Initial QPACK dynamic table capacity for the encoder. Set to 0 for connections
+    /// that must wait for peer SETTINGS (RFC 9204 §3.2.3).
     /// </param>
     /// <param name="decoderMaxCapacity">
     /// Maximum QPACK dynamic table capacity for the decoder.
@@ -46,7 +47,13 @@ internal sealed class QpackTableSync
     /// Maximum number of streams that may be blocked waiting for dynamic table updates
     /// (SETTINGS_QPACK_BLOCKED_STREAMS).
     /// </param>
-    public QpackTableSync(int encoderMaxCapacity = 0, int decoderMaxCapacity = 4096, int maxBlockedStreams = 100)
+    /// <param name="configuredEncoderLimit">
+    /// Our configured upper bound for the encoder's dynamic table (from Http3Options).
+    /// Used by <see cref="UpdateEncoderCapacity"/> to cap the peer's advertised capacity.
+    /// When null, defaults to <paramref name="encoderMaxCapacity"/>.
+    /// </param>
+    public QpackTableSync(int encoderMaxCapacity = 0, int decoderMaxCapacity = 4096,
+        int maxBlockedStreams = 100, int? configuredEncoderLimit = null)
     {
         if (maxBlockedStreams < 0)
         {
@@ -55,6 +62,7 @@ internal sealed class QpackTableSync
         }
 
         _encoderMaxCapacity = encoderMaxCapacity;
+        _configuredEncoderLimit = configuredEncoderLimit ?? encoderMaxCapacity;
         _decoderMaxCapacity = decoderMaxCapacity;
         _maxBlockedStreams = maxBlockedStreams;
         Encoder = new QpackEncoder(encoderMaxCapacity);
@@ -217,6 +225,27 @@ internal sealed class QpackTableSync
         return 0;
     }
 
+
+    /// <summary>
+    /// RFC 9204 §3.2.3 — Activates the encoder's dynamic table after receiving the
+    /// peer's SETTINGS_QPACK_MAX_TABLE_CAPACITY. The effective capacity is the minimum
+    /// of the peer's advertised value and our configured limit.
+    /// </summary>
+    public void UpdateEncoderCapacity(int peerMaxCapacity)
+    {
+        if (peerMaxCapacity <= 0)
+        {
+            return;
+        }
+
+        var effective = Math.Min(peerMaxCapacity, _configuredEncoderLimit);
+        if (effective <= 0)
+        {
+            return;
+        }
+
+        Encoder.SetMaxCapacity(effective);
+    }
 
     /// <summary>
     /// Resets all QPACK state for reconnection. Creates fresh encoder and decoder

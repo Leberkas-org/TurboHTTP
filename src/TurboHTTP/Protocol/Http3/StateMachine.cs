@@ -94,11 +94,13 @@ internal sealed class StateMachine : IDisposable
         _ops = ops;
         // RFC 9204 §3.2.3: the encoder MUST NOT use the dynamic table until the
         // peer has advertised a non-zero SETTINGS_QPACK_MAX_TABLE_CAPACITY.
-        // We start static-only (0) and will update after receiving peer SETTINGS.
+        // The encoder starts at capacity 0; UpdateEncoderCapacity activates it
+        // after receiving peer SETTINGS (see HandleSettings).
         TableSync = new QpackTableSync(
             encoderMaxCapacity: 0,
             decoderMaxCapacity: 4096,
-            maxBlockedStreams: options.Http3.QpackBlockedStreams);
+            maxBlockedStreams: options.Http3.QpackBlockedStreams,
+            configuredEncoderLimit: options.Http3.QpackMaxTableCapacity);
         _requestEncoder = new RequestEncoder(TableSync);
         _responseDecoder = new ResponseDecoder(TableSync);
         _qpackHandler = new QpackStreamHandler(ops, _requestEncoder, _responseDecoder, TableSync);
@@ -587,6 +589,13 @@ internal sealed class StateMachine : IDisposable
             Connection.OnRemoteSettings(settings);
             _ops.OnWarning(
                 $"RFC 9114 §7.2.4 — remote SETTINGS received ({settings.Parameters.Count} parameters).");
+
+            var peerQpackCapacity = Connection.RemoteSettings!.QpackMaxTableCapacity;
+            if (peerQpackCapacity > 0)
+            {
+                TableSync.UpdateEncoderCapacity((int)peerQpackCapacity);
+                FlushEncoderInstructions();
+            }
         }
         catch (Http3Exception ex)
         {
