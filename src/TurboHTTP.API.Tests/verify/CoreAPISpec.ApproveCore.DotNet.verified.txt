@@ -58,6 +58,7 @@ namespace TurboHTTP
         public bool AllowServerPush { get; set; }
         public bool EnableAltSvcDiscovery { get; set; }
         public System.TimeSpan IdleTimeout { get; set; }
+        public int MaxConcurrentStreams { get; set; }
         public int MaxConnectionsPerServer { get; set; }
         public int MaxFieldSectionSize { get; set; }
         public int MaxReconnectAttempts { get; set; }
