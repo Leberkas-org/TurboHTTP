@@ -25,7 +25,7 @@ public sealed class HeaderInjectionSpec
     private static void EncodeHttp10Throwing(HttpRequestMessage request)
     {
         Span<byte> buffer = new byte[8192];
-        Protocol.Http10.Encoder.Encode(request, ref buffer);
+        TurboHTTP.Protocol.Http10.Encoder.Encode(request, ref buffer);
     }
 
     [Fact(Timeout = 5000)]
@@ -165,7 +165,7 @@ public sealed class HeaderInjectionSpec
     {
         // Attack: Space in header name can cause different parsers to interpret
         // the header name boundary differently (e.g., "Content Length" vs "Content").
-        var decoder = new Protocol.Http10.Decoder();
+        var decoder = new TurboHTTP.Protocol.Http10.Decoder();
         var raw = "HTTP/1.0 200 OK\r\nContent Length: 0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(raw);
 

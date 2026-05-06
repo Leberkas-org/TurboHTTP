@@ -76,7 +76,7 @@ public sealed class QpackDynamicTableActivationSpec
         sync.UpdateEncoderCapacity(8192);
 
         var headers = new List<(string, string)> { ("x-custom", "value1") };
-        var encoded = sync.Encoder.Encode(headers);
+        sync.Encoder.Encode(headers);
 
         Assert.Equal(1, sync.Encoder.DynamicTable.Count);
         Assert.True(sync.Encoder.EncoderInstructions.Length > 0);

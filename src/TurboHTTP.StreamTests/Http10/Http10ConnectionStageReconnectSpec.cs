@@ -127,7 +127,7 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
         // First drop → reconnect attempt 1 (hits max immediately)
         serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));
         var reconnectRaw = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var reconnectItem = Assert.IsType<ConnectTransport>(reconnectRaw);
+        Assert.IsType<ConnectTransport>(reconnectRaw);
 
         // Reconnect fails → TransportDisconnected again (attempt 2 exceeds max of 1)
         serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));

@@ -254,8 +254,8 @@ public sealed class HpackBombSpec
         // Encode a legitimate long string via encoder, then try to decode with tight limit
         var longName = new string('a', 300); // 'a' Huffman encodes to ~5 bits
         var nameBytes = Encoding.UTF8.GetBytes(longName);
-        var huffBuf = new byte[Protocol.HuffmanCodec.GetMaxEncodedLength(nameBytes.Length)];
-        var huffLen = Protocol.HuffmanCodec.Encode(nameBytes, huffBuf);
+        var huffBuf = new byte[TurboHTTP.Protocol.HuffmanCodec.GetMaxEncodedLength(nameBytes.Length)];
+        var huffLen = TurboHTTP.Protocol.HuffmanCodec.Encode(nameBytes, huffBuf);
         var huffmanEncoded = huffBuf[..huffLen].ToArray();
 
         var block = new byte[huffmanEncoded.Length + 32];

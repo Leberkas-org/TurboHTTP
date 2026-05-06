@@ -18,7 +18,7 @@ public sealed class UriSecuritySpec
     private static string EncodeHttp10(HttpRequestMessage request, bool absoluteForm = false, int bufferSize = 16384)
     {
         Span<byte> buffer = new byte[bufferSize];
-        var written = Protocol.Http10.Encoder.Encode(request, ref buffer, absoluteForm);
+        var written = TurboHTTP.Protocol.Http10.Encoder.Encode(request, ref buffer, absoluteForm);
         return Encoding.ASCII.GetString(buffer[..written]);
     }
 

@@ -95,7 +95,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
     {
         var request = (new HttpRequestMessage(HttpMethod.Get, "http://example.com/"), 1);
 
-        var (_, signals) = await RunWithRequestsAsync(request);
+        var (_, _) = await RunWithRequestsAsync(request);
 
         // Verify that some control signals are emitted (transport communication)
     }
@@ -111,7 +111,7 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
             Content = new ByteArrayContent([0x01])
         }, 1);
 
-        var (_, signals) = await RunWithRequestsAsync(request);
+        var (_, _) = await RunWithRequestsAsync(request);
 
         // Verify that control signals are emitted for stream management
     }
@@ -120,20 +120,12 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
     [Trait("RFC", "RFC9113-8.1")]
     public async Task Http2ConnectionStreamAcquire_should_include_correct_key_in_stream_acquire_item_from_pipeline()
     {
-        var endpoint = new RequestEndpoint
-        {
-            Scheme = "https",
-            Host = "example.com",
-            Port = 443,
-            Version = HttpVersion.Version20
-        };
-
         var request = (new HttpRequestMessage(HttpMethod.Get, "https://example.com/")
         {
             Version = HttpVersion.Version20
         }, 1);
 
-        var (_, signals) = await RunWithRequestsAsync(request);
+        var (_, _) = await RunWithRequestsAsync(request);
 
         // Verify that control signals are emitted (stream endpoint tracking)
     }

@@ -121,7 +121,7 @@ public sealed class Http2StateMachineReconnectSpec
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(maxReconnect: 1), ops);
         sm.PreStart();
-        var (req, pending, ver) = MakeTrackedGet();
+        var (req, pending, _) = MakeTrackedGet();
         sm.OnRequest(req);
 
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));

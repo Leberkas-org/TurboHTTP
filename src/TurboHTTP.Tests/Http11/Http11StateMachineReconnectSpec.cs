@@ -89,7 +89,7 @@ public sealed class Http11StateMachineReconnectSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig(maxReconnectAttempts: 1));
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, pending, _) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));

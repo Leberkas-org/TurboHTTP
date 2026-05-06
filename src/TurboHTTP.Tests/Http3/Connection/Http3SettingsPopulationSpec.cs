@@ -141,7 +141,7 @@ public sealed class Http3SettingsPopulationSpec
         span = span[streamTypeBytes..];
 
         // Read frame type
-        if (!QuicVarInt.TryDecode(span, out var frameType, out var frameTypeBytes))
+        if (!QuicVarInt.TryDecode(span, out _, out var frameTypeBytes))
         {
             return null;
         }

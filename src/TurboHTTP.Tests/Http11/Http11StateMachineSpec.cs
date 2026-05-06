@@ -350,7 +350,7 @@ public sealed class Http11StateMachineSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, pending, _) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
@@ -385,7 +385,7 @@ public sealed class Http11StateMachineSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, _, _) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
@@ -402,7 +402,7 @@ public sealed class Http11StateMachineSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, pending, _) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var buffer1 = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
@@ -436,8 +436,8 @@ public sealed class Http11StateMachineSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, MakeConfig());
-        var (request1, pending1, version1) = MakeTrackedRequest("/1");
-        var (request2, pending2, version2) = MakeTrackedRequest("/2");
+        var (request1, pending1, _) = MakeTrackedRequest("/1");
+        var (request2, pending2, _) = MakeTrackedRequest("/2");
         sm.OnRequest(request1);
         sm.OnRequest(request2);
 

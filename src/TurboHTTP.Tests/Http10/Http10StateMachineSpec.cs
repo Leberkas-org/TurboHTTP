@@ -373,7 +373,7 @@ public sealed class Http10StateMachineSpec
         var config = MakeConfig();
         config.Http1.MaxReconnectAttempts = 0;
         var sm = new StateMachine(new FakeOps(), config);
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, pending, _) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var partialBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nhello");
@@ -393,7 +393,7 @@ public sealed class Http10StateMachineSpec
         var config = MakeConfig();
         config.Http1.MaxReconnectAttempts = 0;
         var sm = new StateMachine(new FakeOps(), config);
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, pending, _) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var closeSignal = new TransportDisconnected(DisconnectReason.Error);

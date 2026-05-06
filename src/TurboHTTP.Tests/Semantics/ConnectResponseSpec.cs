@@ -103,7 +103,7 @@ public sealed class ConnectResponseSpec
     [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Http10_should_ignore_content_length_when_connect_200()
     {
-        var decoder = new Protocol.Http10.Decoder();
+        var decoder = new TurboHTTP.Protocol.Http10.Decoder();
         var raw = "HTTP/1.0 200 Connection Established\r\nContent-Length: 100\r\n\r\n"u8.ToArray();
 
         var decoded = decoder.TryDecodeConnect(raw, out var response);
@@ -119,7 +119,7 @@ public sealed class ConnectResponseSpec
     [Trait("RFC", "RFC9110-9.3.6")]
     public async Task Http10_should_parse_body_when_connect_407()
     {
-        var decoder = new Protocol.Http10.Decoder();
+        var decoder = new TurboHTTP.Protocol.Http10.Decoder();
         var bodyText = "Auth Required";
         var raw = Encoding.ASCII.GetBytes(
             $"HTTP/1.0 407 Proxy Authentication Required\r\n" +

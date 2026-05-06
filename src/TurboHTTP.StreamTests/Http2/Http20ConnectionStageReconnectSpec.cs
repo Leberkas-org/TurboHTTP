@@ -61,7 +61,7 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
 
         // Stage must emit ConnectTransport instead of failing (2nd ConnectTransport = reconnect)
         var reconnect = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var reconnectItem = Assert.IsType<ConnectTransport>(reconnect);
+        Assert.IsType<ConnectTransport>(reconnect);
     }
 
     [Fact(Timeout = 10000)]
@@ -102,7 +102,7 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
         // First drop → reconnect attempt 1 (hits max immediately)
         serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));
         var reconnect = await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
-        var reconnectItem2 = Assert.IsType<ConnectTransport>(reconnect);
+        Assert.IsType<ConnectTransport>(reconnect);
 
         // Reconnect fails → TransportDisconnected again (attempt 2 exceeds max of 1)
         serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));

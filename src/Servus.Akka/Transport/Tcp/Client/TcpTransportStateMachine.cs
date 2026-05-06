@@ -65,7 +65,7 @@ public sealed class TcpTransportStateMachine
                     OnInboundComplete(e.Reason);
                 }
                 break;
-            case InboundPumpFailed e:
+            case InboundPumpFailed:
                 OnInboundComplete(DisconnectReason.Error);
                 break;
             case OutboundWriteDone:

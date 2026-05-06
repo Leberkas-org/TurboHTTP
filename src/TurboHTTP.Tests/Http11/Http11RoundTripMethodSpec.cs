@@ -10,7 +10,7 @@ public sealed class Http11RoundTripMethodSpec
     {
         var buffer = new byte[65536];
         var span = buffer.AsSpan();
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         return (buffer, written);
     }
 

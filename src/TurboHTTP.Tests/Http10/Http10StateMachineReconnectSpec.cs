@@ -29,7 +29,6 @@ public sealed class Http10StateMachineReconnectSpec
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         var request = MakeRequest();
         sm.OnRequest(request);
-        var initialConnectCount = ops.Outbound.OfType<ConnectTransport>().Count();
         ops.Outbound.Clear(); // ignore encode output
 
         // Simulate disconnect while request in flight
@@ -77,7 +76,7 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_should_fail_request_when_max_reconnect_attempts_exceeded()
     {
         var sm = new StateMachine(new FakeOps(), new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 1 } });
-        var (request, pending, version) = MakeTrackedRequest();
+        var (request, pending, _) = MakeTrackedRequest();
         sm.OnRequest(request);
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)); // attempt 1
 

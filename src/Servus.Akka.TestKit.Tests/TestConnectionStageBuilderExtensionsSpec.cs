@@ -197,7 +197,6 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
     [Fact(Timeout = 5000)]
     public async Task AutoStreamOpened_should_not_respond_for_different_streamId()
     {
-        var ct = TestContext.Current.CancellationToken;
         var inbound = new List<ITransportInbound>();
         var tcs = new TaskCompletionSource();
         var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));

@@ -78,7 +78,7 @@ public sealed class TcpConnectionStageSpec : TestKit
         var stage = new TcpConnectionStage(TestActor, _poolingStrategy);
         var flow = Flow.FromGraph(stage);
 
-        var (sourceQueue, sinkQueue) = Source
+        var (sourceQueue, _) = Source
             .Queue<ITransportOutbound>(1, OverflowStrategy.Fail)
             .ViaMaterialized(flow, Keep.Left)
             .ToMaterialized(Sink.Queue<ITransportInbound>(), Keep.Both)
@@ -127,7 +127,7 @@ public sealed class TcpConnectionStageSpec : TestKit
         var stage = new TcpConnectionStage(TestActor, _poolingStrategy);
         var flow = Flow.FromGraph(stage);
 
-        var (sourceQueue, sinkQueue) = Source
+        var (sourceQueue, _) = Source
             .Queue<ITransportOutbound>(1, OverflowStrategy.Fail)
             .ViaMaterialized(flow, Keep.Left)
             .ToMaterialized(Sink.Queue<ITransportInbound>(), Keep.Both)
@@ -152,7 +152,7 @@ public sealed class TcpConnectionStageSpec : TestKit
         var stage = new TcpConnectionStage(TestActor, _poolingStrategy);
         var flow = Flow.FromGraph(stage);
 
-        var (sourceQueue, sinkQueue) = Source
+        var (sourceQueue, _) = Source
             .Queue<ITransportOutbound>(2, OverflowStrategy.Fail)
             .ViaMaterialized(flow, Keep.Left)
             .ToMaterialized(Sink.Queue<ITransportInbound>(), Keep.Both)

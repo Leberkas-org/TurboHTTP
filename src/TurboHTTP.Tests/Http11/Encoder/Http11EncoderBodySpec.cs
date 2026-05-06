@@ -83,7 +83,7 @@ public sealed class Http11EncoderBodySpec
         using var owner = MemoryPool<byte>.Shared.Rent(4096);
         var buffer = owner.Memory;
         var span = buffer.Span;
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         var bytes = buffer.Span[..written].ToArray();
 
         // Find body start (after \r\n\r\n)
@@ -116,7 +116,7 @@ public sealed class Http11EncoderBodySpec
         using var owner = MemoryPool<byte>.Shared.Rent(4096);
         var buffer = owner.Memory;
         var span = buffer.Span;
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         var bytes = buffer.Span[..written].ToArray();
         var result = Encoding.ASCII.GetString(bytes);
 
@@ -147,7 +147,7 @@ public sealed class Http11EncoderBodySpec
         using var owner = MemoryPool<byte>.Shared.Rent(4096);
         var buffer = owner.Memory;
         var span = buffer.Span;
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         var bytes = buffer.Span[..written].ToArray();
         var result = Encoding.ASCII.GetString(bytes);
 
@@ -169,7 +169,7 @@ public sealed class Http11EncoderBodySpec
         using var owner = MemoryPool<byte>.Shared.Rent(4096);
         var buffer = owner.Memory;
         var span = buffer.Span;
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         var bytes = buffer.Span[..written].ToArray();
         var result = Encoding.ASCII.GetString(bytes);
 
@@ -234,7 +234,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Throws<ArgumentException>(() =>
         {
             var span = buffer.Span;
-            Protocol.Http11.Encoder.Encode(request, ref span);
+            TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         });
     }
 
@@ -247,7 +247,7 @@ public sealed class Http11EncoderBodySpec
         Assert.Throws<ArgumentException>(() =>
         {
             var span = buffer.Span;
-            Protocol.Http11.Encoder.Encode(request, ref span);
+            TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         });
     }
 
@@ -286,7 +286,7 @@ public sealed class Http11EncoderBodySpec
         using var owner = MemoryPool<byte>.Shared.Rent(16384);
         var buffer = owner.Memory;
         var span = buffer.Span;
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         var bytes = buffer.Span[..written].ToArray();
         var result = Encoding.ASCII.GetString(bytes);
 
@@ -365,7 +365,7 @@ public sealed class Http11EncoderBodySpec
         using var owner = MemoryPool<byte>.Shared.Rent(4096);
         var buffer = owner.Memory;
         var span = buffer.Span;
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         return Encoding.ASCII.GetString(buffer.Span[..written]);
     }
 }

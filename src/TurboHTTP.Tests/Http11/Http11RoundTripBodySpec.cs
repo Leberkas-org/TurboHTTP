@@ -9,7 +9,7 @@ public sealed class Http11RoundTripBodySpec
     {
         var buffer = new byte[65536];
         var span = buffer.AsSpan();
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         return (buffer, written);
     }
 
@@ -98,7 +98,7 @@ public sealed class Http11RoundTripBodySpec
         };
         var encBuf = new byte[oneMb + 4096];
         var span = encBuf.AsSpan();
-        var written = Protocol.Http11.Encoder.Encode(request, ref span);
+        var written = TurboHTTP.Protocol.Http11.Encoder.Encode(request, ref span);
         Assert.True(written > oneMb);
 
         var decoder = new Decoder(maxBodySize: oneMb + 1024);

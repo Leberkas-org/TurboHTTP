@@ -205,7 +205,7 @@ public sealed class Http3StateMachineSpec
         _ops.Outbound.Clear();
         _ops.Responses.Clear();
 
-        var qpack = new Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
+        var qpack = new TurboHTTP.Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
         var headers = new HeadersFrame(qpack.Encode([(":status", "200")]));
         var buffer = SerializeFrame(headers);
         sm.DecodeServerData(new MultiplexedData(buffer, 0));
@@ -362,7 +362,7 @@ public sealed class Http3StateMachineSpec
         Assert.True(sm.HasInFlightRequests);
 
         // After response assembly and flush
-        var qpack = new Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
+        var qpack = new TurboHTTP.Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
         var headersFrame = new HeadersFrame(qpack.Encode([(":status", "200")]));
         sm.DecodeServerData(new MultiplexedData(SerializeFrame(headersFrame), 0));
         sm.DecodeServerData(new StreamReadCompleted(0));
@@ -375,7 +375,7 @@ public sealed class Http3StateMachineSpec
     {
         var sm = CreateMachine();
         sm.PreStart();
-        var qpack = new Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
+        var qpack = new TurboHTTP.Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
 
         sm.OnRequest(CreateGetRequest("https://example.com/a"));
         sm.OnRequest(CreateGetRequest("https://example.com/b"));
@@ -396,7 +396,7 @@ public sealed class Http3StateMachineSpec
         sm.PreStart();
 
         // Build minimal QPACK-encoded HEADERS for two different status codes
-        var qpack = new Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
+        var qpack = new TurboHTTP.Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
         var headers200 = new HeadersFrame(qpack.Encode([(":status", "200")]));
         var headers404 = new HeadersFrame(qpack.Encode([(":status", "404")]));
 
@@ -414,12 +414,12 @@ public sealed class Http3StateMachineSpec
         // Flush stream 4 first (out-of-order)
         sm.DecodeServerData(new StreamReadCompleted(4));
         Assert.Single(_ops.Responses);
-        Assert.Equal(System.Net.HttpStatusCode.NotFound, _ops.Responses[0].StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, _ops.Responses[0].StatusCode);
 
         // Flush stream 0
         sm.DecodeServerData(new StreamReadCompleted(0));
         Assert.Equal(2, _ops.Responses.Count);
-        Assert.Equal(System.Net.HttpStatusCode.OK, _ops.Responses[1].StatusCode);
+        Assert.Equal(HttpStatusCode.OK, _ops.Responses[1].StatusCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -428,7 +428,7 @@ public sealed class Http3StateMachineSpec
     {
         var sm = CreateMachine();
         sm.PreStart();
-        var qpack = new Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
+        var qpack = new TurboHTTP.Protocol.Http3.Qpack.QpackEncoder(maxTableCapacity: 0);
 
         // Send two requests — stream IDs allocated as 0 and 4
         var req1 = CreateGetRequest("https://example.com/first");
@@ -524,8 +524,6 @@ public sealed class Http3StateMachineSpec
         var sm = CreateMachine();
         sm.PreStart();
         sm.OnRequest(CreateGetRequest());
-
-        var endpoint = sm.Endpoint;
 
         // Endpoint is a value type, so it's always valid
         Assert.True(true);

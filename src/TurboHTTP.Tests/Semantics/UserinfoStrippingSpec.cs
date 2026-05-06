@@ -239,14 +239,14 @@ public sealed class UserinfoStrippingSpec
     private static string EncodeHttp10Absolute(HttpRequestMessage request)
     {
         Span<byte> buffer = new byte[4096];
-        var written = Protocol.Http10.Encoder.Encode(request, ref buffer, absoluteForm: true);
+        var written = TurboHTTP.Protocol.Http10.Encoder.Encode(request, ref buffer, absoluteForm: true);
         return Encoding.ASCII.GetString(buffer[..written]);
     }
 
     private static string EncodeHttp10Origin(HttpRequestMessage request)
     {
         Span<byte> buffer = new byte[4096];
-        var written = Protocol.Http10.Encoder.Encode(request, ref buffer, absoluteForm: false);
+        var written = TurboHTTP.Protocol.Http10.Encoder.Encode(request, ref buffer, absoluteForm: false);
         return Encoding.ASCII.GetString(buffer[..written]);
     }
 
