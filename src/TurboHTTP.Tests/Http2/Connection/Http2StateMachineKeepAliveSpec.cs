@@ -6,60 +6,56 @@ namespace TurboHTTP.Tests.Http2.Connection;
 
 public sealed class Http2StateMachineKeepAliveSpec
 {
-    private static TurboClientOptions MakeConfig() => new();
+    private static TurboClientOptions MakeConfig()
+    {
+        var options = new TurboClientOptions();
+        options.Http2.KeepAlivePingDelay = TimeSpan.FromSeconds(10);
+        options.Http2.KeepAlivePingTimeout = TimeSpan.FromSeconds(20);
+        return options;
+    }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
-    public void StateMachine_SendKeepAlivePing_should_emit_ping_frame()
+    public void OnTimerFired_should_emit_ping_frame_on_keepalive_timer()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
-        sm.SendKeepAlivePing();
+        sm.OnTimerFired("keep-alive-ping");
 
-        var ping = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
-        Assert.True(ping.Length > 0);
+        Assert.Single(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
-    public void StateMachine_SendKeepAlivePing_should_not_emit_duplicate_when_awaiting_ack()
+    public void OnTimerFired_should_not_emit_duplicate_ping_when_awaiting_ack()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
-        sm.SendKeepAlivePing();
-        sm.SendKeepAlivePing(); // duplicate — should be ignored
+        sm.OnTimerFired("keep-alive-ping");
+        sm.OnTimerFired("keep-alive-ping");
 
-        Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
+        Assert.Single(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
-    public void StateMachine_IsKeepAliveTimedOut_should_return_false_when_no_ping_sent()
+    public void OnTimerFired_should_not_close_when_timeout_not_elapsed()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
+        ops.Outbound.Clear();
 
-        Assert.False(sm.IsKeepAliveTimedOut(TimeSpan.FromSeconds(20)));
-    }
+        sm.OnTimerFired("keep-alive-ping");
+        sm.OnTimerFired("keep-alive-ping-timeout");
 
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.7")]
-    public void StateMachine_IsKeepAliveTimedOut_should_return_false_immediately_after_ping()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.SendKeepAlivePing();
-
-        // Immediately after sending, timeout should not have elapsed
-        Assert.False(sm.IsKeepAliveTimedOut(TimeSpan.FromSeconds(20)));
+        Assert.False(ops.StageCompleted);
+        Assert.Null(ops.FailException);
     }
 }

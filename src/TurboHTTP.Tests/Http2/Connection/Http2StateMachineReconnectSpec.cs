@@ -1,3 +1,4 @@
+using System.Net;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Tests.Shared;
@@ -6,6 +7,15 @@ namespace TurboHTTP.Tests.Http2.Connection;
 
 public sealed class Http2StateMachineReconnectSpec
 {
+    private static TransportBuffer SerializeFrame(Http2Frame frame)
+    {
+        var buffer = TransportBuffer.Rent(frame.SerializedSize);
+        var span = buffer.FullMemory.Span;
+        frame.WriteTo(ref span);
+        buffer.Length = frame.SerializedSize;
+        return buffer;
+    }
+
     private static TurboClientOptions MakeConfig(int? maxConcurrentStreams = null, int? maxReconnect = null)
     {
         var options = new TurboClientOptions();
@@ -20,20 +30,23 @@ public sealed class Http2StateMachineReconnectSpec
     private static HttpRequestMessage MakePost(string path = "/") =>
         new(HttpMethod.Post, $"https://example.com{path}");
 
+    private static readonly ConnectionInfo DummyConnectionInfo = new(
+        new IPEndPoint(IPAddress.Loopback, 5000),
+        new IPEndPoint(IPAddress.Loopback, 443),
+        null, null);
+
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
-    public void Http2StateMachine_OnConnectionLost_should_buffer_streams_above_lastStreamId()
+    public void DecodeServerData_should_start_reconnect_on_disconnect_with_inflight()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface(); // consume preface
+        sm.PreStart();
+        sm.OnRequest(MakeGet("/a"));
+        sm.OnRequest(MakeGet("/b"));
         ops.Outbound.Clear();
 
-        sm.EncodeRequest(MakeGet("/a")); // stream 1
-        sm.EncodeRequest(MakeGet("/b")); // stream 3
-        ops.Outbound.Clear();
-
-        sm.OnConnectionLost(lastStreamId: 0); // server processed nothing
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         Assert.True(sm.IsReconnecting);
         Assert.Equal(2, sm.ReconnectBufferCount);
@@ -42,72 +55,87 @@ public sealed class Http2StateMachineReconnectSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
-    public void Http2StateMachine_OnConnectionLost_should_not_replay_non_idempotent_streams_below_lastStreamId()
+    public void DecodeServerData_should_not_replay_non_idempotent_requests()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
+        sm.OnRequest(MakeGet("/a"));  // stream 1
+        sm.OnRequest(MakePost("/b")); // stream 3
         ops.Outbound.Clear();
+        ops.Warnings.Clear();
 
-        sm.EncodeRequest(MakeGet("/a")); // stream 1 — GET (idempotent)
-        sm.EncodeRequest(MakePost("/b")); // stream 3 — POST (not idempotent)
-        ops.Outbound.Clear();
+        var goaway = new GoAwayFrame(3, Http2ErrorCode.NoError);
+        sm.DecodeServerData(new TransportData(SerializeFrame(goaway)));
 
-        // Server processed stream 1 and 3 (LastStreamId=3) — POST stream 3 ≤ LastStreamId and non-idempotent
-        sm.OnConnectionLost(lastStreamId: 3);
-
-        // GET at stream 1 ≤ LastStreamId but idempotent and no response headers → buffered
-        // POST at stream 3 ≤ LastStreamId and non-idempotent → discarded
+        Assert.True(sm.IsReconnecting);
         Assert.Equal(1, sm.ReconnectBufferCount);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
-    public void Http2StateMachine_OnConnectionRestored_should_replay_with_fresh_stream_ids()
+    public void DecodeServerData_should_replay_requests_on_connection_restored()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
+        sm.OnRequest(MakeGet("/a"));
         ops.Outbound.Clear();
 
-        sm.EncodeRequest(MakeGet("/a")); // stream 1
-        ops.Outbound.Clear();
-        sm.OnConnectionLost(lastStreamId: 0);
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
         ops.Outbound.Clear();
 
-        sm.OnConnectionRestored();
+        sm.DecodeServerData(new TransportConnected(DummyConnectionInfo));
 
         Assert.False(sm.IsReconnecting);
-        // New preface emitted, then request with stream ID 1 (fresh tracker)
         Assert.NotEmpty(ops.Outbound);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
-    public void Http2StateMachine_CanAcceptRequest_should_be_false_when_reconnecting()
+    public void DecodeServerData_should_set_CanAcceptRequest_false_when_reconnecting()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0);
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
+
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         Assert.False(sm.CanAcceptRequest);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
-    public void Http2StateMachine_OnReconnectAttemptFailed_should_fail_when_max_exceeded()
+    public void DecodeServerData_should_fail_when_max_reconnect_exceeded()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(maxReconnect: 1), ops);
-        sm.TryBuildPreface();
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0); // attempt 1
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
-        sm.OnReconnectAttemptFailed(); // attempt 2 > max
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         Assert.NotNull(ops.FailException);
         Assert.Contains("reconnect failed after max attempts", ops.FailException.Message);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-6.8")]
+    public void DecodeServerData_should_emit_new_connect_when_reconnect_under_limit()
+    {
+        var ops = new FakeOps();
+        var sm = new StateMachine(MakeConfig(maxReconnect: 3), ops);
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
+
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
+        var countAfterFirst = ops.Outbound.OfType<ConnectTransport>().Count();
+
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
+
+        Assert.True(sm.IsReconnecting);
+        Assert.Equal(countAfterFirst + 1, ops.Outbound.OfType<ConnectTransport>().Count());
     }
 }

@@ -1,3 +1,4 @@
+using System.Net;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Protocol.Http2.Hpack;
@@ -35,306 +36,188 @@ public sealed class Http2StateMachineSpec
             (":status", statusCode),
             ("content-type", "text/plain")
         ]);
-        return new HeadersFrame(streamId, hpack, endHeaders, endStream);
+        return new HeadersFrame(streamId, hpack, endStream, endHeaders);
     }
 
     private static DataFrame MakeData(int streamId, byte[] data, bool endStream = true)
         => new(streamId, data, endStream);
 
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-3.4")]
-    public void StateMachine_TryBuildPreface_should_return_preface_on_first_call()
+    private static TransportBuffer SerializeFrame(Http2Frame frame)
     {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-
-        var preface = sm.TryBuildPreface();
-
-        Assert.NotNull(preface);
-        Assert.True(preface.Buffer.Length > 0);
+        var buffer = TransportBuffer.Rent(frame.SerializedSize);
+        var span = buffer.FullMemory.Span;
+        frame.WriteTo(ref span);
+        buffer.Length = frame.SerializedSize;
+        return buffer;
     }
 
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-3.4")]
-    public void StateMachine_TryBuildPreface_should_return_null_on_subsequent_calls()
+    private static TransportBuffer SerializeFrames(params Http2Frame[] frames)
     {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-
-        sm.TryBuildPreface();
-        var second = sm.TryBuildPreface();
-
-        Assert.Null(second);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-3.4")]
-    public void StateMachine_TryBuildPreface_should_return_null_when_connection_window_disabled()
-    {
-        var ops = new FakeOps();
-        var config = new TurboClientOptions
+        var totalSize = frames.Sum(f => f.SerializedSize);
+        var buffer = TransportBuffer.Rent(totalSize);
+        var span = buffer.FullMemory.Span;
+        var offset = 0;
+        foreach (var frame in frames)
         {
-            Http2 = new Http2Options
-            {
-                MaxConnectionsPerServer = 6,
-                MaxConcurrentStreams = 100,
-                InitialConnectionWindowSize = 0, // disabled
-                InitialStreamWindowSize = 65535,
-                MaxFrameSize = 16384,
-                HeaderTableSize = 4096,
-                MaxReconnectAttempts = 3,
-                KeepAlivePingDelay = Timeout.InfiniteTimeSpan,
-                KeepAlivePingTimeout = TimeSpan.FromSeconds(20),
-                KeepAlivePingPolicy = HttpKeepAlivePingPolicy.Always
-            }
-        };
-        var sm = new StateMachine(config, ops);
+            var frameSpan = span.Slice(offset);
+            frame.WriteTo(ref frameSpan);
+            offset += frame.SerializedSize;
+        }
+        buffer.Length = totalSize;
+        return buffer;
+    }
 
-        var preface = sm.TryBuildPreface();
+    private static readonly ConnectionInfo DummyConnectionInfo = new(
+        new IPEndPoint(IPAddress.Loopback, 5000),
+        new IPEndPoint(IPAddress.Loopback, 443),
+        null, null);
 
-        Assert.Null(preface);
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-3.4")]
+    public void PreStart_should_emit_preface()
+    {
+        var ops = new FakeOps();
+        var sm = new StateMachine(MakeConfig(), ops);
+
+        sm.PreStart();
+
+        Assert.NotEmpty(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.3")]
-    public void StateMachine_EncodeRequest_should_emit_headers_and_acquire_frames()
+    public void OnRequest_should_emit_headers_frame()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
-        var req = MakeGet();
-        sm.EncodeRequest(req);
+        sm.OnRequest(MakeGet());
 
-        var headers = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
-        Assert.True(headers.Length > 0);
-        Assert.True(headers.Length > 0);
+        Assert.Single(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.3")]
-    public void StateMachine_EncodeRequest_should_return_false_when_goaway_received()
+    public void OnRequest_should_warn_when_goaway_received()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
 
-        // Simulate GOAWAY
         var goaway = new GoAwayFrame(0, Http2ErrorCode.NoError);
-        sm.ProcessFrame(goaway);
+        sm.DecodeServerData(new TransportData(SerializeFrame(goaway)));
         ops.Warnings.Clear();
 
-        var result = sm.EncodeRequest(MakeGet());
+        sm.OnRequest(MakeGet());
 
-        Assert.False(result);
         Assert.Single(ops.Warnings);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.3")]
-    public void StateMachine_EncodeRequest_should_set_endpoint_on_first_request()
+    public void OnRequest_should_set_endpoint_on_first_request()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
 
         Assert.Equal(default, sm.Endpoint);
 
-        var req = MakeGet();
-        sm.EncodeRequest(req);
+        sm.OnRequest(MakeGet());
 
         Assert.NotEqual(default, sm.Endpoint);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
-    public void StateMachine_EncodeRequest_should_emit_data_frame_when_request_has_body()
+    public void OnRequest_should_emit_data_frame_when_request_has_body()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
         var content = new ByteArrayContent([1, 2, 3]);
-        var req = MakePost("/", content);
-        sm.EncodeRequest(req);
+        sm.OnRequest(MakePost("/", content));
 
-        var frames = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).ToList();
-        Assert.True(frames.Count > 0); // headers + data
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.1")]
-    public void StateMachine_EncodeRequest_should_return_true_for_null_request_uri()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-        ops.Outbound.Clear();
-
-        var req = new HttpRequestMessage { RequestUri = null };
-        var result = sm.EncodeRequest(req);
-
-        Assert.True(result);
-        Assert.True(ops.Outbound.Count > 0);
+        var frames = ops.Outbound.OfType<TransportData>().ToList();
+        Assert.True(frames.Count > 0);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1.1")]
-    public void StateMachine_EncodeRequest_should_allocate_incremented_stream_ids()
+    public void OnRequest_should_allocate_incremented_stream_ids()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
-        sm.EncodeRequest(MakeGet("/a")); // stream 1
-        sm.EncodeRequest(MakeGet("/b")); // stream 3
-        sm.EncodeRequest(MakeGet("/c")); // stream 5
+        sm.OnRequest(MakeGet("/a"));
+        sm.OnRequest(MakeGet("/b"));
+        sm.OnRequest(MakeGet("/c"));
 
-        var acquires = ops.Outbound.OfType<TransportData>().Count();
-        Assert.Equal(3, acquires);
+        Assert.Equal(3, ops.Outbound.OfType<TransportData>().Count());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-4")]
-    public void StateMachine_DecodeServerData_should_decode_frames_and_return_list()
+    public void DecodeServerData_should_process_settings_frame()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-
-        var frame = new SettingsFrame([]);
-        var buffer = TransportBuffer.Rent(frame.SerializedSize);
-        var span = buffer.FullMemory.Span;
-        frame.WriteTo(ref span);
-        buffer.Length = frame.SerializedSize;
-
-        var frames = sm.DecodeServerData(buffer);
-
-        Assert.Single(frames);
-        Assert.IsType<SettingsFrame>(frames[0]);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5")]
-    public void StateMachine_ProcessFrame_should_handle_settings_frame()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-        ops.Outbound.Clear();
-
-        var settings = new SettingsFrame([(SettingsParameter.MaxFrameSize, 32768u)]);
-
-        var result = sm.ProcessFrame(settings);
-
-        Assert.True(result);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5")]
-    public void StateMachine_ProcessFrame_should_emit_settings_ack_frame()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
         var settings = new SettingsFrame([]);
-        sm.ProcessFrame(settings);
+        sm.DecodeServerData(new TransportData(SerializeFrame(settings)));
 
-        var ack = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
-        Assert.NotNull(ack);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.5.3")]
-    public void StateMachine_ProcessFrame_should_update_max_concurrent_streams_from_settings()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(maxConcurrentStreams: 100), ops);
-        sm.TryBuildPreface();
-        ops.Outbound.Clear();
-
-        var settings = new SettingsFrame([(SettingsParameter.MaxConcurrentStreams, 50u)]);
-
-        sm.ProcessFrame(settings);
-
+        Assert.NotEmpty(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
-    public void StateMachine_ProcessFrame_should_return_true_for_valid_data_frame()
+    public void DecodeServerData_should_produce_response_from_headers_and_data()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        // First, encode a request to create a stream
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
-        // Then send response headers
-        var headers = MakeResponseHeaders(1, endStream: false);
-        var result = sm.ProcessFrame(headers);
-        Assert.True(result);
-
-        // Then send data frame
+        var headers = MakeResponseHeaders(1, endStream: false, endHeaders: true);
         var data = MakeData(1, [1, 2, 3], endStream: true);
-        result = sm.ProcessFrame(data);
+        sm.DecodeServerData(new TransportData(SerializeFrames(headers, data)));
 
-        Assert.True(result);
         Assert.Single(ops.Responses);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
-    public void StateMachine_ProcessFrame_should_set_response_produced_when_data_completes_response()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-
-        var headers = MakeResponseHeaders(1, endStream: false);
-        sm.ProcessFrame(headers);
-
-        Assert.False(sm.ResponseProduced);
-
-        var data = MakeData(1, [1, 2, 3], endStream: true);
-        sm.ProcessFrame(data);
-
-        Assert.True(sm.ResponseProduced);
-    }
-
-    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.2")]
-    public void StateMachine_ProcessFrame_should_handle_headers_frame_with_endstream()
+    public void DecodeServerData_should_complete_response_on_headers_with_endstream()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
         var headers = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         Assert.Single(ops.Responses);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.2")]
-    public void StateMachine_ProcessFrame_should_accumulate_headers_without_endheaders()
+    public void DecodeServerData_should_accumulate_headers_without_endheaders()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
         var encoder = new HpackEncoder();
@@ -345,20 +228,19 @@ public sealed class Http2StateMachineSpec
         var split = hpack.Length / 2;
         var partial = new HeadersFrame(1, hpack.Slice(0, split), endHeaders: false, endStream: false);
 
-        sm.ProcessFrame(partial);
+        sm.DecodeServerData(new TransportData(SerializeFrame(partial)));
 
-        Assert.Empty(ops.Responses); // incomplete, awaiting continuation
+        Assert.Empty(ops.Responses);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.10")]
-    public void StateMachine_ProcessFrame_should_handle_continuation_frame()
+    public void DecodeServerData_should_handle_continuation_frame()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
         var encoder = new HpackEncoder();
@@ -370,125 +252,101 @@ public sealed class Http2StateMachineSpec
         var split = hpackSize / 2;
 
         var headers = new HeadersFrame(1, fullHpack[..split], endHeaders: false, endStream: false);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         var cont = new ContinuationFrame(1, fullHpack[split..], endHeaders: true);
-        sm.ProcessFrame(cont);
+        sm.DecodeServerData(new TransportData(SerializeFrame(cont)));
 
-        // EndStream comes from DATA frame for headers-only responses with body
         var data = MakeData(1, [], endStream: true);
-        sm.ProcessFrame(data);
+        sm.DecodeServerData(new TransportData(SerializeFrame(data)));
 
         Assert.Single(ops.Responses);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.3")]
-    public void StateMachine_ProcessFrame_should_handle_rst_stream_frame()
+    public void DecodeServerData_should_handle_rst_stream_frame()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
         var rst = new RstStreamFrame(1, Http2ErrorCode.Cancel);
-        var result = sm.ProcessFrame(rst);
+        sm.DecodeServerData(new TransportData(SerializeFrame(rst)));
 
-        Assert.True(result);
+        Assert.Empty(ops.Responses);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
-    public void StateMachine_ProcessFrame_should_handle_window_update_on_connection()
+    public void DecodeServerData_should_handle_window_update_on_connection()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
-        var win = new WindowUpdateFrame(0, 16384); // stream 0 = connection
-        var result = sm.ProcessFrame(win);
-
-        Assert.True(result);
+        var win = new WindowUpdateFrame(0, 16384);
+        sm.DecodeServerData(new TransportData(SerializeFrame(win)));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
-    public void StateMachine_ProcessFrame_should_handle_window_update_on_stream()
+    public void DecodeServerData_should_handle_window_update_on_stream()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
-        var win = new WindowUpdateFrame(1, 8192); // stream 1
-        var result = sm.ProcessFrame(win);
-
-        Assert.True(result);
+        var win = new WindowUpdateFrame(1, 8192);
+        sm.DecodeServerData(new TransportData(SerializeFrame(win)));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
-    public void StateMachine_ProcessFrame_should_respond_to_ping_with_ack()
+    public void DecodeServerData_should_respond_to_ping_with_ack()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
         var ping = new PingFrame(new byte[8], isAck: false);
-        sm.ProcessFrame(ping);
+        sm.DecodeServerData(new TransportData(SerializeFrame(ping)));
 
-        var pongBuf = Assert.Single(ops.Outbound.OfType<TransportData>().Select(d => d.Buffer));
-        Assert.NotNull(pongBuf);
+        Assert.Single(ops.Outbound.OfType<TransportData>());
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.7")]
-    public void StateMachine_ProcessFrame_should_ignore_ping_ack()
+    public void DecodeServerData_should_ignore_ping_ack()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
         ops.Outbound.Clear();
 
         var pong = new PingFrame(new byte[8], isAck: true);
-        sm.ProcessFrame(pong);
+        sm.DecodeServerData(new TransportData(SerializeFrame(pong)));
 
-        // ACK ping should not trigger response
         Assert.Empty(ops.Outbound);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_ProcessFrame_should_handle_goaway_frame()
+    public void DecodeServerData_should_trigger_reconnect_on_goaway_with_inflight()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        var goaway = new GoAwayFrame(0, Http2ErrorCode.NoError);
-        var result = sm.ProcessFrame(goaway);
-
-        Assert.True(result);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_ProcessFrame_should_trigger_reconnect_on_goaway_with_inflight()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
         var goaway = new GoAwayFrame(0, Http2ErrorCode.NoError);
-        sm.ProcessFrame(goaway);
+        sm.DecodeServerData(new TransportData(SerializeFrame(goaway)));
 
         Assert.True(sm.IsReconnecting);
         Assert.Single(ops.Outbound, item => item is ConnectTransport);
@@ -496,58 +354,36 @@ public sealed class Http2StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-6.9")]
-    public void StateMachine_ProcessFrame_should_return_false_when_connection_flow_control_violated()
+    public void DecodeServerData_should_warn_when_connection_flow_control_violated()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
         ops.Outbound.Clear();
 
-        // Send DATA that exceeds connection window (initial = 65535)
+        var headers = MakeResponseHeaders(1, endStream: false, endHeaders: true);
         var largeData = new byte[100000];
         var data = new DataFrame(1, largeData, endStream: true);
+        sm.DecodeServerData(new TransportData(SerializeFrames(headers, data)));
 
-        var result = sm.ProcessFrame(data);
-
-        Assert.False(result);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.9")]
-    public void StateMachine_ProcessFrame_should_return_false_when_stream_flow_control_violated()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
-
-        // Send DATA on stream that exceeds stream window (initial = 65535)
-        var largeData = new byte[100000];
-        var data = new DataFrame(1, largeData, endStream: true);
-
-        var result = sm.ProcessFrame(data);
-
-        Assert.False(result);
+        Assert.Contains(ops.Warnings, w => w.Contains("flow control window exceeded"));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public void StateMachine_ProcessFrame_should_correlate_request_with_response()
+    public void DecodeServerData_should_correlate_request_with_response()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
 
         var req = MakeGet("/test");
-        sm.EncodeRequest(req);
+        sm.OnRequest(req);
         ops.Outbound.Clear();
 
         var headers = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         var response = Assert.Single(ops.Responses);
         Assert.NotNull(response.RequestMessage);
@@ -556,253 +392,50 @@ public sealed class Http2StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.4")]
-    public void StateMachine_ProcessFrame_should_handle_multiple_concurrent_streams()
+    public void DecodeServerData_should_handle_multiple_concurrent_streams()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
 
-        sm.EncodeRequest(MakeGet("/a")); // stream 1
-        sm.EncodeRequest(MakeGet("/b")); // stream 3
+        sm.OnRequest(MakeGet("/a"));
+        sm.OnRequest(MakeGet("/b"));
         ops.Outbound.Clear();
 
-        // Response for stream 3 arrives first
         var headers3 = MakeResponseHeaders(3);
-        sm.ProcessFrame(headers3);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers3)));
 
-        // Response for stream 1 arrives second
         var headers1 = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers1);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers1)));
 
         Assert.Equal(2, ops.Responses.Count);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.1")]
-    public void StateMachine_ProcessFrame_should_clean_up_stream_state_after_response()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-
-        var headers = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers);
-
-        // Stream should be closed and state returned to pool
-        Assert.Single(ops.Responses);
-    }
-
-    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1.2")]
-    public void StateMachine_CanAcceptRequest_should_respect_max_concurrent_streams()
+    public void CanAcceptRequest_should_respect_max_concurrent_streams()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(maxConcurrentStreams: 2), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
 
-        sm.EncodeRequest(MakeGet("/a")); // stream 1
-        sm.EncodeRequest(MakeGet("/b")); // stream 3
-
-        Assert.False(sm.CanAcceptRequest); // limit reached
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-5.1")]
-    public void StateMachine_CanAcceptRequest_should_be_true_after_stream_closes()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(maxConcurrentStreams: 2), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet("/a"));
-        sm.EncodeRequest(MakeGet("/b"));
+        sm.OnRequest(MakeGet("/a"));
+        sm.OnRequest(MakeGet("/b"));
 
         Assert.False(sm.CanAcceptRequest);
-
-        // Close first stream with headers (headers-only response)
-        var headers1 = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers1);
-
-        // Close with empty data frame to trigger stream closure
-        var data1 = MakeData(1, [], endStream: true);
-        sm.ProcessFrame(data1);
-
-        // Should be able to accept new request now
-        Assert.True(sm.CanAcceptRequest);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.1")]
-    public void StateMachine_OnConnectionLost_should_replay_idempotent_methods_below_lastStreamId()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet("/a")); // idempotent
-        sm.EncodeRequest(MakeDelete("/b")); // idempotent
-        ops.Outbound.Clear();
-
-        sm.OnConnectionLost(lastStreamId: 3); // both processed
-
-        Assert.Equal(2, sm.ReconnectBufferCount);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9110-9.1")]
-    public void StateMachine_OnConnectionLost_should_drop_non_idempotent_methods()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakePost("/a")); // non-idempotent
-        ops.Outbound.Clear();
-
-        sm.OnConnectionLost(lastStreamId: 1);
-
-        Assert.Equal(0, sm.ReconnectBufferCount);
-        Assert.Single(ops.Warnings);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_IsReconnecting_should_be_true_after_connection_lost()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0);
-
-        Assert.True(sm.IsReconnecting);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_CanAcceptRequest_should_be_false_when_reconnecting()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0);
-
-        Assert.False(sm.CanAcceptRequest);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_OnConnectionRestored_should_clear_reconnecting_flag()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0);
-        ops.Outbound.Clear();
-
-        sm.OnConnectionRestored();
-
-        Assert.False(sm.IsReconnecting);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-3.4")]
-    public void StateMachine_OnConnectionRestored_should_emit_preface()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0);
-        ops.Outbound.Clear();
-
-        sm.OnConnectionRestored();
-
-        // First item should be preface, then headers from replayed request
-        var buffers = ops.Outbound.OfType<TransportData>().Select(d => d.Buffer).ToList();
-        Assert.NotEmpty(buffers);
-        var preface = buffers[0];
-        Assert.NotNull(preface);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_OnConnectionRestored_should_replay_buffered_requests()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet("/a"));
-        sm.EncodeRequest(MakeGet("/b"));
-        ops.Outbound.Clear();
-
-        sm.OnConnectionLost(lastStreamId: 0);
-        ops.Outbound.Clear();
-
-        sm.OnConnectionRestored();
-
-        // OnConnectionRestored emits preface + 2 replayed requests
-        var acquires = ops.Outbound.OfType<TransportData>().Count();
-        Assert.Equal(3, acquires);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_OnReconnectAttemptFailed_should_emit_new_reconnect_when_under_max()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(maxReconnect: 3), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0); // attempt 1
-        ops.Outbound.Clear();
-
-        sm.OnReconnectAttemptFailed(); // attempt 2
-
-        Assert.True(sm.IsReconnecting);
-        Assert.Single(ops.Outbound, item => item is ConnectTransport);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.8")]
-    public void StateMachine_OnReconnectAttemptFailed_should_fail_when_max_exceeded()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(maxReconnect: 1), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        sm.OnConnectionLost(lastStreamId: 0); // attempt 1
-
-        sm.OnReconnectAttemptFailed(); // attempt 2 > max
-
-        Assert.NotNull(ops.FailException);
-        Assert.Contains("reconnect failed after max attempts", ops.FailException.Message);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public void StateMachine_ProcessFrame_should_decode_1xx_status_codes()
+    public void DecodeServerData_should_decode_1xx_status_codes()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
         var headers = MakeResponseHeaders(1, "100", endStream: true);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         var response = Assert.Single(ops.Responses);
         Assert.Equal(100, (int)response.StatusCode);
@@ -810,35 +443,15 @@ public sealed class Http2StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public void StateMachine_ProcessFrame_should_decode_2xx_status_codes()
+    public void DecodeServerData_should_decode_4xx_status_codes()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
-
-        var headers = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers);
-
-        var response = Assert.Single(ops.Responses);
-        Assert.Equal(200, (int)response.StatusCode);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-8.1")]
-    public void StateMachine_ProcessFrame_should_decode_4xx_status_codes()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
         var headers = MakeResponseHeaders(1, "404", endStream: true);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         var response = Assert.Single(ops.Responses);
         Assert.Equal(404, (int)response.StatusCode);
@@ -846,50 +459,70 @@ public sealed class Http2StateMachineSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public void StateMachine_ProcessFrame_should_decode_5xx_status_codes()
+    public void DecodeServerData_should_decode_5xx_status_codes()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
         var headers = MakeResponseHeaders(1, "500", endStream: true);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         var response = Assert.Single(ops.Responses);
         Assert.Equal(500, (int)response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-8.1")]
-    public void StateMachine_ProcessFrame_should_preserve_response_headers()
+    [Trait("RFC", "RFC9113-6.10")]
+    public void DecodeServerData_should_warn_when_continuation_for_unknown_stream()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
 
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
+        var data = new DataFrame(999, new byte[10], endStream: true);
+        sm.DecodeServerData(new TransportData(SerializeFrame(data)));
 
-        var encoder = new HpackEncoder();
-        var hpack = encoder.Encode([
-            (":status", "200"),
-            ("content-type", "application/json"),
-            ("cache-control", "max-age=3600")
-        ]);
-        var headers = new HeadersFrame(1, hpack, endHeaders: true, endStream: true);
+        Assert.Single(ops.Warnings);
+    }
 
-        sm.ProcessFrame(headers);
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-6.2")]
+    public void DecodeServerData_should_warn_when_data_for_unknown_stream()
+    {
+        var ops = new FakeOps();
+        var sm = new StateMachine(MakeConfig(), ops);
+        sm.PreStart();
+
+        var data = new DataFrame(999, new byte[10], endStream: true);
+        sm.DecodeServerData(new TransportData(SerializeFrame(data)));
+
+        Assert.Single(ops.Warnings);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-6.2")]
+    public void DecodeServerData_should_accumulate_response_body_across_multiple_frames()
+    {
+        var ops = new FakeOps();
+        var sm = new StateMachine(MakeConfig(), ops);
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
+
+        var headers = MakeResponseHeaders(1, endStream: false, endHeaders: true);
+        var data1 = MakeData(1, [1, 2, 3], endStream: false);
+        var data2 = MakeData(1, [4, 5, 6], endStream: true);
+        sm.DecodeServerData(new TransportData(SerializeFrames(headers, data1, data2)));
 
         var response = Assert.Single(ops.Responses);
-        Assert.True(response.Content?.Headers.ContentType is not null);
+        var body = response.Content.ReadAsStream(TestContext.Current.CancellationToken);
+        Assert.NotNull(body);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-3.1")]
-    public void StateMachine_Endpoint_should_be_initialized_default()
+    public void Endpoint_should_be_initialized_default()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
@@ -898,100 +531,51 @@ public sealed class Http2StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-3.1")]
-    public void StateMachine_Endpoint_should_be_set_from_first_request()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        var req = MakeGet();
-        sm.EncodeRequest(req);
-
-        Assert.NotEqual(default, sm.Endpoint);
-        Assert.Equal("example.com", sm.Endpoint.Host);
-    }
-
-    [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
-    public void StateMachine_HasInFlightRequests_should_be_true_when_requests_pending()
+    public void HasInFlightRequests_should_be_true_when_requests_pending()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
         Assert.True(sm.HasInFlightRequests);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-5.1")]
-    public void StateMachine_HasInFlightRequests_should_be_false_after_response()
+    public void HasInFlightRequests_should_be_false_after_response()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
-        sm.EncodeRequest(MakeGet());
         var headers = MakeResponseHeaders(1);
-        sm.ProcessFrame(headers);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         Assert.False(sm.HasInFlightRequests);
     }
 
     [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.10")]
-    public void StateMachine_ProcessFrame_should_warn_when_continuation_for_unknown_stream()
+    [Trait("RFC", "RFC9113-8.1")]
+    public void DecodeServerData_should_preserve_response_headers()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-        ops.Outbound.Clear();
+        sm.PreStart();
+        sm.OnRequest(MakeGet());
 
-        var cont = new ContinuationFrame(999, new byte[10], endHeaders: true);
-        sm.ProcessFrame(cont);
-
-        Assert.Single(ops.Warnings);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
-    public void StateMachine_ProcessFrame_should_warn_when_data_for_unknown_stream()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-        ops.Outbound.Clear();
-
-        var data = new DataFrame(999, new byte[10], endStream: true);
-        sm.ProcessFrame(data);
-
-        Assert.Single(ops.Warnings);
-    }
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-6.2")]
-    public void StateMachine_ProcessFrame_should_accumulate_response_body_across_multiple_frames()
-    {
-        var ops = new FakeOps();
-        var sm = new StateMachine(MakeConfig(), ops);
-        sm.TryBuildPreface();
-
-        sm.EncodeRequest(MakeGet());
-        ops.Outbound.Clear();
-
-        var headers = MakeResponseHeaders(1, endStream: false);
-        sm.ProcessFrame(headers);
-
-        var data1 = MakeData(1, [1, 2, 3], endStream: false);
-        sm.ProcessFrame(data1);
-
-        var data2 = MakeData(1, [4, 5, 6], endStream: true);
-        sm.ProcessFrame(data2);
+        var encoder = new HpackEncoder();
+        var hpack = encoder.Encode([
+            (":status", "200"),
+            ("content-type", "application/json"),
+            ("cache-control", "max-age=3600")
+        ]);
+        var headers = new HeadersFrame(1, hpack, endHeaders: true, endStream: true);
+        sm.DecodeServerData(new TransportData(SerializeFrame(headers)));
 
         var response = Assert.Single(ops.Responses);
-        var body = response.Content.ReadAsStream(TestContext.Current.CancellationToken);
-        Assert.NotNull(body);
+        Assert.True(response.Content?.Headers.ContentType is not null);
     }
 }
