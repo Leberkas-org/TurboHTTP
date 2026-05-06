@@ -13,7 +13,7 @@ namespace TurboHTTP.Protocol.Http2;
 /// Calls back into <see cref="IStageOperations"/> for responses, outbound items, and warnings.
 /// Outbound frames are serialized and emitted immediately via callbacks.
 /// </summary>
-internal sealed class StateMachine
+internal sealed class StateMachine : IHttpStateMachine
 {
     private const int MaxStatePoolCapacity = 1000;
     private readonly TurboClientOptions _options;
@@ -52,6 +52,11 @@ internal sealed class StateMachine
 
     /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
+
+    private const string KeepAlivePingTimerKey = "keep-alive-ping";
+    private const string KeepAlivePingTimeoutKey = "keep-alive-ping-timeout";
+
+    private bool KeepAliveEnabled => _options.Http2.KeepAlivePingDelay != Timeout.InfiniteTimeSpan;
 
     public StateMachine(TurboClientOptions options, IStageOperations ops)
     {
@@ -480,13 +485,13 @@ internal sealed class StateMachine
 
     /// <summary>
     /// Called when a CloseSignalItem arrives while already reconnecting (reconnect attempt failed).
-    /// Increments the attempt counter; emits a new ConnectItem (reconnect) or calls OnReconnectFailed.
+    /// Increments the attempt counter; emits a new ConnectItem (reconnect) or calls OnFail.
     /// </summary>
     public void OnReconnectAttemptFailed()
     {
         if (_reconnectAttempts >= _options.Http2.MaxReconnectAttempts)
         {
-            _ops.OnReconnectFailed();
+            _ops.OnFail(new HttpRequestException("TurboHTTP: HTTP/2 reconnect failed after max attempts."));
             return;
         }
 
@@ -602,5 +607,173 @@ internal sealed class StateMachine
 
         _streams.Remove(streamId);
         ReturnState(state);
+    }
+
+    /// <summary>
+    /// Cleanup resources: close all streams, clear buffers, reset state, dispose responses.
+    /// Called during stage shutdown via PostStop.
+    /// </summary>
+    public void Cleanup()
+    {
+        ReleaseAllStreamState();
+        _statePool.Clear();
+    }
+
+    // --- IHttpStateMachine explicit implementation ---
+
+    void IHttpStateMachine.PreStart()
+    {
+        var preface = TryBuildPreface();
+        if (preface is not null)
+        {
+            _ops.OnOutbound(preface);
+        }
+    }
+
+    void IHttpStateMachine.OnRequest(HttpRequestMessage request)
+    {
+        EncodeRequest(request);
+    }
+
+    void IHttpStateMachine.DecodeServerData(ITransportInbound data)
+    {
+        switch (data)
+        {
+            case TransportConnected:
+            {
+                OnConnectionRestored();
+                EmitPreface();
+                ScheduleKeepAlivePing();
+                return;
+            }
+
+            case TransportDisconnected when IsReconnecting:
+            {
+                OnReconnectAttemptFailed();
+                return;
+            }
+
+            case TransportDisconnected when HasInFlightRequests:
+            {
+                OnConnectionLost(lastStreamId: 0);
+                return;
+            }
+
+            case TransportDisconnected:
+            {
+                _ops.OnComplete();
+                return;
+            }
+        }
+
+        if (data is not TransportData { Buffer: var buffer })
+        {
+            return;
+        }
+
+        var frames = DecodeServerData(buffer);
+
+        var anyProcessed = false;
+        for (var i = 0; i < frames.Count; i++)
+        {
+            var frame = frames[i];
+            anyProcessed = true;
+            var ok = ProcessFrame(frame);
+            if (!ok)
+            {
+                break;
+            }
+        }
+
+        if (anyProcessed)
+        {
+            ResetKeepAliveTimer();
+        }
+    }
+
+    void IHttpStateMachine.OnUpstreamFinished()
+    {
+        if (IsReconnecting)
+        {
+            _ops.OnFail(new HttpRequestException("TurboHTTP: HTTP/2 transport closed during reconnect."));
+            return;
+        }
+
+        _ops.OnComplete();
+    }
+
+    void IHttpStateMachine.OnTimerFired(string name)
+    {
+        switch (name)
+        {
+            case KeepAlivePingTimerKey:
+            {
+                var policy = _options.Http2.KeepAlivePingPolicy;
+                if (policy == HttpKeepAlivePingPolicy.WithActiveRequests && !HasInFlightRequests)
+                {
+                    return;
+                }
+
+                SendKeepAlivePing();
+                ScheduleKeepAlivePingTimeout();
+                break;
+            }
+            case KeepAlivePingTimeoutKey:
+            {
+                if (IsKeepAliveTimedOut(_options.Http2.KeepAlivePingTimeout))
+                {
+                    _ops.OnWarning("Keep-alive PING timeout — closing connection.");
+                    if (HasInFlightRequests)
+                    {
+                        OnConnectionLost(lastStreamId: 0);
+                    }
+                    else
+                    {
+                        _ops.OnComplete();
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+
+    void IHttpStateMachine.Cleanup()
+    {
+        Cleanup();
+    }
+
+    private void EmitPreface()
+    {
+        var preface = TryBuildPreface();
+        if (preface is not null)
+        {
+            _ops.OnOutbound(preface);
+        }
+    }
+
+    private void ScheduleKeepAlivePing()
+    {
+        if (KeepAliveEnabled)
+        {
+            _ops.OnScheduleTimer(KeepAlivePingTimerKey, _options.Http2.KeepAlivePingDelay);
+        }
+    }
+
+    private void ScheduleKeepAlivePingTimeout()
+    {
+        if (KeepAliveEnabled)
+        {
+            _ops.OnScheduleTimer(KeepAlivePingTimeoutKey, _options.Http2.KeepAlivePingTimeout);
+        }
+    }
+
+    private void ResetKeepAliveTimer()
+    {
+        if (KeepAliveEnabled)
+        {
+            _ops.OnCancelTimer(KeepAlivePingTimeoutKey);
+            ScheduleKeepAlivePing();
+        }
     }
 }

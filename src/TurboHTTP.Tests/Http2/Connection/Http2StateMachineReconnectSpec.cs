@@ -107,6 +107,7 @@ public sealed class Http2StateMachineReconnectSpec
 
         sm.OnReconnectAttemptFailed(); // attempt 2 > max
 
-        Assert.True(ops.ReconnectFailed);
+        Assert.NotNull(ops.FailException);
+        Assert.Contains("reconnect failed after max attempts", ops.FailException.Message);
     }
 }

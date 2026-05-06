@@ -2,6 +2,8 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using Servus.Akka.Transport;
+using TurboHTTP.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages;
 
@@ -117,6 +119,7 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ISta
 
     void IStageOperations.OnResponse(HttpResponseMessage response)
     {
+        Tracing.For("Protocol").Debug(this, "← {0}", (int)response.StatusCode);
         _responseQueue.Enqueue(response);
         TryPushResponse();
     }
@@ -130,12 +133,6 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ISta
     void IStageOperations.OnWarning(string message)
     {
         Log.Warning(message);
-    }
-
-    void IStageOperations.OnReconnectFailed()
-    {
-        // Temporary — will be removed in Task 10.
-        // SMs that have been migrated call OnFail() directly instead.
     }
 
     void IStageOperations.OnScheduleTimer(string name, TimeSpan duration)
