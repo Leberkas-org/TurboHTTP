@@ -38,6 +38,12 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
     // Preface tracking
     private bool _controlPrefaceSent;
 
+    // Transport connection tracking and pre-connect buffering
+    // For HTTP/3, the transport (QUIC) is already connected when the stage starts,
+    // so we begin in the connected state and bypass pre-connect buffering.
+    private bool _transportConnected = true;
+    private readonly List<ITransportOutbound> _preConnectBuffer = [];
+
     // Server-initiated stream mapping (QUIC stream ID → logical stream ID)
     private readonly Dictionary<long, long> _serverStreamMap = new();
     private readonly HashSet<long> _pendingStreamType = [];
@@ -449,11 +455,64 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
     }
 
     /// <summary>
+    /// Emits an outbound item, or buffers it if transport isn't connected yet.
+    /// ConnectTransport items always emit immediately.
+    /// </summary>
+    private void EmitOutbound(ITransportOutbound item)
+    {
+        if (item is ConnectTransport || _transportConnected)
+        {
+            _ops.OnOutbound(item);
+            return;
+        }
+
+        _preConnectBuffer.Add(item);
+    }
+
+    /// <summary>
+    /// Flushes all pre-connect buffered items and clears the buffer.
+    /// </summary>
+    private void FlushPreConnectBuffer()
+    {
+        for (var i = 0; i < _preConnectBuffer.Count; i++)
+        {
+            _ops.OnOutbound(_preConnectBuffer[i]);
+        }
+
+        _preConnectBuffer.Clear();
+    }
+
+    /// <summary>
+    /// Schedules an idle timeout check timer.
+    /// </summary>
+    private void ScheduleIdleCheck()
+    {
+        if (IsTimeoutDisabled)
+        {
+            return;
+        }
+
+        var remaining = TimeUntilExpiry();
+        var checkInterval = remaining > TimeSpan.Zero ? remaining : TimeSpan.FromSeconds(1);
+        _ops.OnScheduleTimer("idle-timeout-check", checkInterval);
+    }
+
+    /// <summary>
     /// Disposes owned resources.
     /// </summary>
     public void Dispose()
     {
         _streamManager.Dispose();
+
+        foreach (var item in _preConnectBuffer)
+        {
+            if (item is TransportData { Buffer: var buffer })
+            {
+                buffer.Dispose();
+            }
+        }
+
+        _preConnectBuffer.Clear();
     }
 
     private bool BufferForReconnect(HttpRequestMessage request)
@@ -646,15 +705,72 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
                 " (pushId=", pushId.ToString(), ") reset (push response delivery not implemented)"));
     }
 
+    private void HandleTaggedStreamData(MultiplexedData multiplexed)
+    {
+        var (streamId, buffer) = ResolveStreamId(multiplexed.StreamId, multiplexed.Buffer);
+
+        if (buffer is null)
+        {
+            return;
+        }
+
+        switch (streamId)
+        {
+            case -4:
+            {
+                ProcessQpackDecoderBytes(buffer.Memory);
+                buffer.Dispose();
+                return;
+            }
+            case -3:
+            {
+                ProcessQpackEncoderBytes(buffer.Memory);
+                buffer.Dispose();
+                return;
+            }
+            case -2:
+            {
+                ProcessFrameData(buffer, -2);
+                return;
+            }
+            default:
+            {
+                ProcessFrameData(buffer, streamId);
+                return;
+            }
+        }
+    }
+
+    private void ProcessFrameData(TransportBuffer buffer, long streamId)
+    {
+        var frames = DecodeServerData(buffer, streamId);
+
+        for (var i = 0; i < frames.Count; i++)
+        {
+            var frame = frames[i];
+            var forwarded = ProcessFrame(frame);
+            if (forwarded is not null)
+            {
+                AssembleResponse(forwarded, streamId);
+            }
+        }
+    }
+
     // --- IHttpStateMachine explicit implementation ---
 
     void IHttpStateMachine.PreStart()
     {
+        EmitOutbound(new OpenStream(-2, StreamDirection.Unidirectional));
+        EmitOutbound(new OpenStream(-3, StreamDirection.Unidirectional));
+        EmitOutbound(new OpenStream(-4, StreamDirection.Unidirectional));
+
         var preface = TryBuildControlPreface();
         if (preface is not null)
         {
-            _ops.OnOutbound(preface);
+            EmitOutbound(preface);
         }
+
+        ScheduleIdleCheck();
     }
 
     void IHttpStateMachine.OnRequest(HttpRequestMessage request)
@@ -668,7 +784,9 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         {
             case TransportConnected:
             {
+                _transportConnected = true;
                 OnConnectionRestored();
+                FlushPreConnectBuffer();
                 return;
             }
 
@@ -692,11 +810,68 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
                 _ops.OnComplete();
                 return;
             }
+
+            case ServerStreamAccepted { StreamId: var id }:
+            {
+                OnServerStreamOpened(id);
+                return;
+            }
+
+            case StreamOpened:
+            {
+                return;
+            }
+
+            case StreamReadCompleted { StreamId: >= 0 } readCompleted:
+            {
+                FlushPendingResponse(readCompleted.StreamId);
+                return;
+            }
+
+            case StreamReadCompleted:
+            {
+                return;
+            }
+
+            case StreamClosed { StreamId: >= 0 } streamClosed:
+            {
+                if (streamClosed.Reason == DisconnectReason.Error)
+                {
+                    FailInflightRequest(streamClosed.StreamId,
+                        new HttpRequestException("HTTP/3 stream aborted by transport."));
+                }
+                else
+                {
+                    FlushPendingResponse(streamClosed.StreamId);
+                }
+                return;
+            }
+
+            case StreamClosed:
+            {
+                FlushPendingResponse();
+                return;
+            }
+
+            case MultiplexedData multiplexed:
+            {
+                HandleTaggedStreamData(multiplexed);
+                return;
+            }
+
+            case TransportData rawData:
+            {
+                _ops.OnWarning("Received untagged TransportData — dropping to prevent stream ID misrouting.");
+                rawData.Buffer.Dispose();
+                return;
+            }
         }
     }
 
     void IHttpStateMachine.OnUpstreamFinished()
     {
+        FlushPendingResponse();
+
         if (IsReconnecting)
         {
             _ops.OnWarning("HTTP/3 transport closed during reconnect — discarding in-flight request(s).");
@@ -704,16 +879,29 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
             return;
         }
 
-        if (!HasInFlightRequests)
-        {
-            _ops.OnComplete();
-        }
+        _ops.OnComplete();
     }
 
     void IHttpStateMachine.OnTimerFired(string name)
     {
-        // HTTP/3 doesn't use timer-based logic in the protocol state machine.
-        // Idle timeout is checked explicitly via CheckIdleTimeout().
+        if (name != "idle-timeout-check")
+        {
+            return;
+        }
+
+        var goAway = CheckIdleTimeout();
+        if (goAway is not null)
+        {
+            var buf = TransportBuffer.Rent(goAway.SerializedSize);
+            var span = buf.FullMemory.Span;
+            goAway.WriteTo(ref span);
+            buf.Length = goAway.SerializedSize;
+            _ops.OnOutbound(new MultiplexedData(buf, -2));
+            _ops.OnComplete();
+            return;
+        }
+
+        ScheduleIdleCheck();
     }
 
     void IHttpStateMachine.Cleanup()
