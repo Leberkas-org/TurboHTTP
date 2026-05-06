@@ -10,6 +10,7 @@ internal sealed class FakeOps : IStageOperations
     public List<ITransportOutbound> Outbound { get; } = [];
     public List<string> Warnings { get; } = [];
     public bool ReconnectFailed { get; private set; }
+    public Exception? FailException { get; private set; }
 
     public void OnResponse(HttpResponseMessage r) => Responses.Add(r);
     public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
@@ -18,6 +19,6 @@ internal sealed class FakeOps : IStageOperations
     public void OnScheduleTimer(string name, TimeSpan duration) { }
     public void OnCancelTimer(string name) { }
     public void OnComplete() { }
-    public void OnFail(Exception exception) { }
+    public void OnFail(Exception exception) => FailException = exception;
     public ILoggingAdapter Log => NoLogger.Instance;
 }

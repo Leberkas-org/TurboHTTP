@@ -72,7 +72,7 @@ public sealed class Http11StateMachineReconnectSpec
 
         sm.OnReconnectAttemptFailed(); // attempt 2 — exceeds max of 1
 
-        Assert.True(ops.ReconnectFailed);
+        Assert.NotNull(ops.FailException);
     }
 
     [Fact(Timeout = 5000)]
