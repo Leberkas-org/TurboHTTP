@@ -70,7 +70,7 @@ public sealed class Http10StateMachineReconnectSpec
 
         sm.OnReconnectAttemptFailed(); // attempt 2 — exceeds max of 1
 
-        Assert.True(ops.ReconnectFailed);
+        Assert.True(ops.StageCompleted);
     }
 
     [Fact(Timeout = 5000)]
