@@ -1,4 +1,5 @@
 using Servus.Akka.Transport;
+using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
@@ -10,7 +11,7 @@ namespace TurboHTTP.Protocol.Http11;
 /// request-response correlation with pipelining, and control signal emission.
 /// Calls back into <see cref="IStageOperations"/> for responses, outbound items, and warnings.
 /// </summary>
-internal sealed class StateMachine
+internal sealed class StateMachine : IHttpStateMachine
 {
     private readonly IStageOperations _ops;
     private readonly Decoder _decoder;
@@ -260,7 +261,11 @@ internal sealed class StateMachine
     {
         if (_reconnectAttempts >= _options.Http1.MaxReconnectAttempts)
         {
-            _ops.OnReconnectFailed();
+            _ops.OnWarning(string.Concat(
+                "HTTP/1.1 reconnect failed after max attempts — discarding ",
+                PendingRequestCount.ToString(), " in-flight request(s)."));
+            _ops.OnFail(new HttpRequestException(
+                "TurboHTTP: HTTP/1.1 reconnect failed after max attempts."));
             return;
         }
 
@@ -396,5 +401,76 @@ internal sealed class StateMachine
     private static bool HasConnectionClose(HttpResponseMessage response)
     {
         return response.Headers.ConnectionClose == true;
+    }
+
+    void IHttpStateMachine.PreStart()
+    {
+    }
+
+    void IHttpStateMachine.OnRequest(HttpRequestMessage request)
+    {
+        EncodeRequest(request);
+    }
+
+    void IHttpStateMachine.DecodeServerData(ITransportInbound data)
+    {
+        switch (data)
+        {
+            case TransportConnected:
+                OnConnectionRestored();
+                return;
+
+            case TransportDisconnected when IsReconnecting:
+                OnReconnectAttemptFailed();
+                return;
+
+            case TransportDisconnected when HasInFlightRequests:
+                _ops.OnWarning(string.Concat("HTTP/1.1 closed, ", PendingRequestCount.ToString(), " pending"));
+                StartReconnect();
+                return;
+
+            case TransportDisconnected:
+                _ops.OnComplete();
+                return;
+        }
+
+        try
+        {
+            DecodeServerData(data);
+        }
+        catch (HttpRequestException ex)
+        {
+            _ops.OnWarning(string.Concat("HTTP/1.1: ", ex.Message));
+            _ops.OnComplete();
+        }
+    }
+
+    void IHttpStateMachine.OnUpstreamFinished()
+    {
+        if (IsReconnecting)
+        {
+            _ops.OnWarning(string.Concat(
+                "HTTP/1.1 transport closed during reconnect — discarding ",
+                PendingRequestCount.ToString(), " buffered request(s)."));
+            _ops.OnComplete();
+            return;
+        }
+
+        if (TryDecodeEof())
+        {
+            return;
+        }
+
+        HandleOrphanedRequests();
+        _ops.OnComplete();
+    }
+
+    void IHttpStateMachine.OnTimerFired(string name)
+    {
+    }
+
+    void IHttpStateMachine.Cleanup()
+    {
+        Cleanup();
     }
 }
