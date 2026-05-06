@@ -18,7 +18,8 @@ internal sealed class FakeOps : IStageOperations
     public void OnReconnectFailed() => ReconnectFailed = true;
     public void OnScheduleTimer(string name, TimeSpan duration) { }
     public void OnCancelTimer(string name) { }
-    public void OnComplete() { }
+    public bool StageCompleted { get; private set; }
+    public void OnComplete() => StageCompleted = true;
     public void OnFail(Exception exception) => FailException = exception;
     public ILoggingAdapter Log => NoLogger.Instance;
 }

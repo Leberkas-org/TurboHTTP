@@ -264,8 +264,7 @@ internal sealed class StateMachine : IHttpStateMachine
             _ops.OnWarning(string.Concat(
                 "HTTP/1.1 reconnect failed after max attempts — discarding ",
                 PendingRequestCount.ToString(), " in-flight request(s)."));
-            _ops.OnFail(new HttpRequestException(
-                "TurboHTTP: HTTP/1.1 reconnect failed after max attempts."));
+            _ops.OnComplete();
             return;
         }
 

@@ -131,18 +131,7 @@ internal sealed class Http11ConnectionStage : GraphStage<ConnectionShape>
         void IStageOperations.OnScheduleTimer(string name, TimeSpan duration) { }
         void IStageOperations.OnCancelTimer(string name) { }
         void IStageOperations.OnComplete() => CompleteStage();
-        void IStageOperations.OnFail(Exception exception)
-        {
-            // Reconnect failures that exceed max attempts should complete gracefully, not fail the stage
-            if (exception is HttpRequestException && exception.Message.Contains("reconnect failed after max attempts"))
-            {
-                _reconnectFailed = true;
-                CompleteStage();
-                return;
-            }
-
-            FailStage(exception);
-        }
+        void IStageOperations.OnFail(Exception exception) => FailStage(exception);
 
         ILoggingAdapter IStageOperations.Log => Log;
 
