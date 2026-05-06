@@ -5,6 +5,8 @@ namespace TurboHTTP.Streams.Stages;
 internal interface IHttpStateMachine
 {
     bool CanAcceptRequest { get; }
+    bool HasInFlightRequests { get; }
+    bool IsReconnecting { get; }
 
     void PreStart();
     void OnRequest(HttpRequestMessage request);

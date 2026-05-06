@@ -58,12 +58,10 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ISta
         },
         onUpstreamFinish: () =>
         {
-            if (!_sm.CanAcceptRequest)
+            if (!_sm.HasInFlightRequests && !_sm.IsReconnecting)
             {
-                return;
+                CompleteStage();
             }
-
-            _sm.OnUpstreamFinished();
         },
         onUpstreamFailure: ex =>
         {
@@ -82,6 +80,18 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ISta
     {
         var item = Grab(_inServer);
         _sm.DecodeServerData(item);
+
+        if (_responseQueue.Count > 0)
+        {
+            TryPushResponse();
+        }
+
+        if (!HasBeenPulled(_inServer) && !IsClosed(_inServer))
+        {
+            Pull(_inServer);
+        }
+
+        TryPullRequest();
     }
 
     private void OnNetworkPull()
