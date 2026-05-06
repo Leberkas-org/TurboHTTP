@@ -14,11 +14,10 @@ internal sealed class StateMachine : IHttpStateMachine
 
     private TransportOptions? _transportOptions;
     private HttpRequestMessage? _inFlightRequest;
-    private bool _closed;
     private HttpRequestMessage? _reconnectBufferedRequest;
     private int _reconnectAttempts;
 
-    public bool CanAcceptRequest => _inFlightRequest is null && !_closed && !IsReconnecting;
+    public bool CanAcceptRequest => _inFlightRequest is null && !IsReconnecting;
 
     public bool HasInFlightRequest => _inFlightRequest is not null;
 
@@ -47,7 +46,67 @@ internal sealed class StateMachine : IHttpStateMachine
         _maxBufferSize = maxBufferSize;
     }
 
-    public void EncodeRequest(HttpRequestMessage request)
+    public void PreStart()
+    {
+    }
+
+    public void OnRequest(HttpRequestMessage request)
+    {
+        EncodeRequest(request);
+    }
+
+    public void DecodeServerData(ITransportInbound data)
+    {
+        switch (data)
+        {
+            case TransportConnected:
+                OnConnectionRestored();
+                return;
+
+            case TransportDisconnected when IsReconnecting:
+                OnReconnectAttemptFailed();
+                return;
+
+            case TransportDisconnected disconnect when !IsReconnecting:
+                HandleDisconnect(disconnect);
+                return;
+        }
+
+        if (data is not TransportData { Buffer: var buffer })
+        {
+            return;
+        }
+
+        DecodeResponse(buffer);
+    }
+
+    public void OnUpstreamFinished()
+    {
+        if (IsReconnecting)
+        {
+            _ops.OnWarning(string.Concat(
+                "HTTP/1.0 transport closed during reconnect — discarding ",
+                PendingRequestCount.ToString(), " buffered request(s)."));
+            _ops.OnComplete();
+            return;
+        }
+
+        TryDecodeEof();
+        HandleOrphanedRequest();
+        _ops.OnComplete();
+    }
+
+    public void OnTimerFired(string name)
+    {
+    }
+
+    public void Cleanup()
+    {
+        _inFlightRequest = null;
+        _decoder.Reset();
+    }
+
+    private void EncodeRequest(HttpRequestMessage request)
     {
         _inFlightRequest = request;
 
@@ -82,19 +141,8 @@ internal sealed class StateMachine : IHttpStateMachine
         }
     }
 
-    public void DecodeServerData(ITransportInbound inputItem)
+    private void DecodeResponse(TransportBuffer buffer)
     {
-        if (inputItem is TransportDisconnected disconnect)
-        {
-            HandleDisconnect(disconnect);
-            return;
-        }
-
-        if (inputItem is not TransportData { Buffer: var buffer })
-        {
-            return;
-        }
-
         try
         {
             var data = buffer.Memory;
@@ -117,28 +165,57 @@ internal sealed class StateMachine : IHttpStateMachine
         }
     }
 
-    public bool TryDecodeEof()
+    private void HandleDisconnect(TransportDisconnected disconnect)
+    {
+        if (HasInFlightRequest)
+        {
+            _ops.OnWarning(string.Concat("HTTP/1.0 closed, ", PendingRequestCount.ToString(), " pending"));
+            StartReconnect();
+            return;
+        }
+
+        var isGraceful = disconnect.Reason == DisconnectReason.Graceful;
+
+        if (!isGraceful)
+        {
+            var message = _decoder.IsWaitingForContentLength
+                ? "Content-Length mismatch: connection closed before all body data was received."
+                : "Connection was aborted while receiving HTTP/1.0 response.";
+
+            _decoder.Reset();
+            _ops.OnWarning(string.Concat("HTTP/1.0: ", message));
+            _ops.OnComplete();
+            return;
+        }
+
+        if (_decoder.TryDecodeEof(out var eofResponse) && eofResponse is not null)
+        {
+            CompleteResponse(eofResponse);
+        }
+
+        _ops.OnComplete();
+    }
+
+    private void TryDecodeEof()
     {
         try
         {
             if (_decoder.TryDecodeEof(out var response) && response is not null)
             {
                 CompleteResponse(response);
-                return true;
+                return;
             }
 
             _decoder.Reset();
-            return false;
         }
         catch (Exception ex)
         {
             _ops.OnWarning($"Failed to decode EOF: {ex.Message}");
             _decoder.Reset();
-            return false;
         }
     }
 
-    public void HandleOrphanedRequest()
+    private void HandleOrphanedRequest()
     {
         if (_inFlightRequest is not null)
         {
@@ -147,12 +224,7 @@ internal sealed class StateMachine : IHttpStateMachine
         }
     }
 
-    public void MarkClosed()
-    {
-        _closed = true;
-    }
-
-    public void StartReconnect()
+    private void StartReconnect()
     {
         _reconnectBufferedRequest = _inFlightRequest;
         _inFlightRequest = null;
@@ -161,7 +233,7 @@ internal sealed class StateMachine : IHttpStateMachine
         _ops.OnOutbound(new ConnectTransport(_transportOptions!));
     }
 
-    public void OnConnectionRestored()
+    private void OnConnectionRestored()
     {
         IsReconnecting = false;
         _reconnectAttempts = 0;
@@ -174,7 +246,7 @@ internal sealed class StateMachine : IHttpStateMachine
         }
     }
 
-    public void OnReconnectAttemptFailed()
+    private void OnReconnectAttemptFailed()
     {
         if (_reconnectAttempts >= _options.Http1.MaxReconnectAttempts)
         {
@@ -189,37 +261,6 @@ internal sealed class StateMachine : IHttpStateMachine
         _ops.OnOutbound(new ConnectTransport(_transportOptions!));
     }
 
-    public void Cleanup()
-    {
-        _inFlightRequest = null;
-        _decoder.Reset();
-    }
-
-    private void HandleDisconnect(TransportDisconnected disconnect)
-    {
-        var isGraceful = disconnect.Reason == DisconnectReason.Graceful;
-
-        if (!isGraceful)
-        {
-            var message = _decoder.IsWaitingForContentLength
-                ? "Content-Length mismatch: connection closed before all body data was received."
-                : "Connection was aborted while receiving HTTP/1.0 response.";
-
-            _decoder.Reset();
-            _closed = true;
-            throw new HttpRequestException(message);
-        }
-
-        if (_decoder.TryDecodeEof(out var eofResponse) && eofResponse is not null)
-        {
-            CompleteResponse(eofResponse);
-        }
-        else
-        {
-            _decoder.Reset();
-        }
-    }
-
     private void CompleteResponse(HttpResponseMessage response)
     {
         var request = _inFlightRequest;
@@ -231,76 +272,5 @@ internal sealed class StateMachine : IHttpStateMachine
         }
 
         _ops.OnResponse(response);
-    }
-
-    void IHttpStateMachine.PreStart()
-    {
-    }
-
-    void IHttpStateMachine.OnRequest(HttpRequestMessage request)
-    {
-        EncodeRequest(request);
-    }
-
-    void IHttpStateMachine.DecodeServerData(ITransportInbound data)
-    {
-        switch (data)
-        {
-            case TransportConnected:
-                OnConnectionRestored();
-                return;
-
-            case TransportDisconnected when IsReconnecting:
-                OnReconnectAttemptFailed();
-                return;
-
-            case TransportDisconnected when HasInFlightRequest:
-                _ops.OnWarning(string.Concat("HTTP/1.0 closed, ", PendingRequestCount.ToString(), " pending"));
-                StartReconnect();
-                return;
-
-            case TransportDisconnected:
-                _ops.OnComplete();
-                return;
-        }
-
-        try
-        {
-            DecodeServerData(data);
-        }
-        catch (HttpRequestException ex)
-        {
-            _ops.OnWarning(string.Concat("HTTP/1.0: ", ex.Message));
-            _ops.OnComplete();
-        }
-    }
-
-    void IHttpStateMachine.OnUpstreamFinished()
-    {
-        if (IsReconnecting)
-        {
-            _ops.OnWarning(string.Concat(
-                "HTTP/1.0 transport closed during reconnect — discarding ",
-                PendingRequestCount.ToString(), " buffered request(s)."));
-            _ops.OnComplete();
-            return;
-        }
-
-        if (TryDecodeEof())
-        {
-            return;
-        }
-
-        HandleOrphanedRequest();
-        _ops.OnComplete();
-    }
-
-    void IHttpStateMachine.OnTimerFired(string name)
-    {
-    }
-
-    void IHttpStateMachine.Cleanup()
-    {
-        Cleanup();
     }
 }

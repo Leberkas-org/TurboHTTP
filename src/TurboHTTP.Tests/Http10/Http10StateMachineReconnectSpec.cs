@@ -11,19 +11,20 @@ public sealed class Http10StateMachineReconnectSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10StateMachine_should_buffer_request_and_emit_reconnect_item_on_start_reconnect()
+    public void Http10StateMachine_should_buffer_request_and_emit_reconnect_item_on_disconnect_with_inflight()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         var request = MakeRequest();
-        sm.EncodeRequest(request);
+        sm.OnRequest(request);
         var initialConnectCount = ops.Outbound.OfType<ConnectTransport>().Count();
         ops.Outbound.Clear(); // ignore encode output
 
-        sm.StartReconnect();
+        // Simulate disconnect while request in flight
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         Assert.True(sm.IsReconnecting);
-        Assert.False(sm.HasInFlightRequest);
+        Assert.False(sm.HasInFlightRequest); // buffered request is not "in-flight"
         var newConnectCount = ops.Outbound.OfType<ConnectTransport>().Count();
         Assert.Equal(1, newConnectCount); // Should emit a reconnect ConnectTransport
     }
@@ -34,24 +35,24 @@ public sealed class Http10StateMachineReconnectSpec
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
-        sm.EncodeRequest(MakeRequest());
-        sm.StartReconnect();
+        sm.OnRequest(MakeRequest());
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         Assert.False(sm.CanAcceptRequest);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10StateMachine_OnConnectionRestored_should_replay_buffered_request()
+    public void Http10StateMachine_should_replay_buffered_request_on_reconnect_connected()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
-        sm.EncodeRequest(MakeRequest());
+        sm.OnRequest(MakeRequest());
         ops.Outbound.Clear();
-        sm.StartReconnect();
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
         ops.Outbound.Clear(); // ignore ConnectTransport (reconnect)
 
-        sm.OnConnectionRestored();
+        sm.DecodeServerData(new TransportConnected(default!));
 
         Assert.False(sm.IsReconnecting);
         Assert.True(sm.HasInFlightRequest); // re-encoded, back in flight
@@ -61,29 +62,29 @@ public sealed class Http10StateMachineReconnectSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10StateMachine_OnReconnectAttemptFailed_should_fail_when_max_exceeded()
+    public void Http10StateMachine_should_fail_when_max_reconnect_attempts_exceeded()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 1 } });
-        sm.EncodeRequest(MakeRequest());
-        sm.StartReconnect(); // attempt 1
+        sm.OnRequest(MakeRequest());
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)); // attempt 1
 
-        sm.OnReconnectAttemptFailed(); // attempt 2 — exceeds max of 1
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)); // attempt 2 — exceeds max of 1
 
         Assert.True(ops.StageCompleted);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-8")]
-    public void Http10StateMachine_OnReconnectAttemptFailed_should_emit_new_reconnect_item_when_under_limit()
+    public void Http10StateMachine_should_emit_new_reconnect_item_when_under_limit()
     {
         var ops = new FakeOps();
         var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
-        sm.EncodeRequest(MakeRequest());
-        sm.StartReconnect(); // attempt 1
+        sm.OnRequest(MakeRequest());
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)); // attempt 1
         var countAfterFirst = ops.Outbound.OfType<ConnectTransport>().Count();
 
-        sm.OnReconnectAttemptFailed(); // attempt 2
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)); // attempt 2
 
         Assert.Null(ops.FailException);
         Assert.Equal(countAfterFirst + 1, ops.Outbound.OfType<ConnectTransport>().Count());

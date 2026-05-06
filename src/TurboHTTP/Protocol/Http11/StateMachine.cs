@@ -1,16 +1,10 @@
 using Servus.Akka.Transport;
-using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Protocol.Http11;
 
-/// <summary>
-/// Encapsulates all HTTP/1.1 connection protocol logic — request encoding, response decoding,
-/// request-response correlation with pipelining, and control signal emission.
-/// Calls back into <see cref="IStageOperations"/> for responses, outbound items, and warnings.
-/// </summary>
 internal sealed class StateMachine : IHttpStateMachine
 {
     private readonly IStageOperations _ops;
@@ -26,30 +20,19 @@ internal sealed class StateMachine : IHttpStateMachine
     private TransportOptions? _transportOptions;
 
     private HttpResponseMessage? _pendingCloseDelimitedResponse;
-
     private List<TransportBuffer>? _bodyOwners;
-
-    /// <summary>
-    /// Body bytes flushed from the decoder remainder when the close-delimited response
-    /// is first detected (decoder internal buffer — one unavoidable copy).
-    /// </summary>
     private byte[]? _initialBodyBytes;
 
-    /// <summary>Whether a new request can be accepted (queue not full and not reconnecting).</summary>
     public bool CanAcceptRequest => _inFlightQueue.Count < _effectivePipelineDepth && !IsReconnecting;
 
-    /// <summary>Whether there are in-flight requests waiting for responses.</summary>
     public bool HasInFlightRequests => _inFlightQueue.Count > 0;
 
-    /// <summary>Number of requests currently buffered or in-flight (used for discard logging).</summary>
     public int PendingRequestCount => IsReconnecting
         ? _reconnectBufferedQueue?.Count ?? 0
         : _inFlightQueue.Count;
 
-    /// <summary>Whether the state machine is currently in reconnect state.</summary>
     public bool IsReconnecting { get; private set; }
 
-    /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
 
     public StateMachine(
@@ -66,7 +49,11 @@ internal sealed class StateMachine : IHttpStateMachine
         _effectivePipelineDepth = options.Http1.MaxPipelineDepth;
     }
 
-    public void EncodeRequest(HttpRequestMessage request)
+    public void PreStart()
+    {
+    }
+
+    public void OnRequest(HttpRequestMessage request)
     {
         _inFlightQueue.Enqueue(request);
 
@@ -109,167 +96,49 @@ internal sealed class StateMachine : IHttpStateMachine
         }
     }
 
-    public bool DecodeServerData(ITransportInbound inputItem)
+    public void DecodeServerData(ITransportInbound data)
     {
-        if (inputItem is TransportDisconnected disconnect)
+        switch (data)
         {
-            HandleDisconnect(disconnect);
-            return false;
+            case TransportConnected:
+                OnConnectionRestored();
+                return;
+
+            case TransportDisconnected when IsReconnecting:
+                OnReconnectAttemptFailed();
+                return;
+
+            case TransportDisconnected disconnect when !IsReconnecting:
+                HandleDisconnect(disconnect);
+                return;
         }
 
-        if (inputItem is not TransportData { Buffer: var buffer })
-        {
-            return true;
-        }
-
-        if (_pendingCloseDelimitedResponse is not null)
-        {
-            return AccumulateCloseDelimitedBody(buffer);
-        }
-
-        return DecodeNormalResponse(buffer);
-    }
-
-    private bool AccumulateCloseDelimitedBody(TransportBuffer buffer)
-    {
-        _bodyOwners ??= [];
-        _bodyOwners.Add(buffer);
-        return true;
-    }
-
-    private bool DecodeNormalResponse(TransportBuffer buffer)
-    {
-        try
-        {
-            var data = buffer.Memory;
-
-            if (!_decoder.TryDecode(data, out var responses))
-            {
-                buffer.Dispose();
-                return true;
-            }
-
-            buffer.Dispose();
-
-            var last = responses[^1];
-            if (IsCloseDelimited(last))
-            {
-                return BeginCloseDelimitedResponse(responses);
-            }
-
-            foreach (var response in responses)
-            {
-                CompleteResponse(response);
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            buffer.Dispose();
-            _ops.OnWarning($"Failed to decode response: {ex.Message}");
-            _decoder.Reset();
-            return true;
-        }
-    }
-
-    private bool BeginCloseDelimitedResponse(IReadOnlyList<HttpResponseMessage> responses)
-    {
-        for (var i = 0; i < responses.Count - 1; i++)
-        {
-            CompleteResponse(responses[i]);
-        }
-
-        _pendingCloseDelimitedResponse = responses[^1];
-        _bodyOwners = [];
-
-        var remainder = _decoder.FlushRemainder();
-        _initialBodyBytes = remainder.Length > 0 ? remainder : null;
-
-        return true;
-    }
-
-    /// <summary>
-    /// Attempts to decode any remaining buffered data on EOF (upstream finish).
-    /// Returns true if a response was emitted.
-    /// </summary>
-    public bool TryDecodeEof()
-    {
-        try
-        {
-            if (_decoder.TryDecodeEof(out var response) && response is not null)
-            {
-                CompleteResponse(response);
-                return true;
-            }
-
-            _decoder.Reset();
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _ops.OnWarning($"Failed to decode EOF: {ex.Message}");
-            _decoder.Reset();
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Logs and discards all orphaned in-flight requests.
-    /// Called when the upstream (server connection) finishes or fails.
-    /// </summary>
-    public void HandleOrphanedRequests()
-    {
-        if (_inFlightQueue.Count == 0)
+        if (data is not TransportData { Buffer: var buffer })
         {
             return;
         }
 
-        _ops.OnWarning(
-            $"Connection closed with {_inFlightQueue.Count} orphaned pipelined request(s) — discarding");
-        _inFlightQueue.Clear();
-        _effectivePipelineDepth = 1;
+        DecodeResponse(buffer);
     }
 
-    public void StartReconnect()
-    {
-        _reconnectBufferedQueue = new Queue<HttpRequestMessage>(_inFlightQueue);
-        _inFlightQueue.Clear();
-        IsReconnecting = true;
-        _reconnectAttempts = 1;
-        _decoder.Reset();
-        _ops.OnOutbound(new ConnectTransport(_transportOptions!));
-    }
-
-    public void OnConnectionRestored()
-    {
-        IsReconnecting = false;
-        _reconnectAttempts = 0;
-        _decoder.Reset();
-
-        if (_reconnectBufferedQueue is { Count: > 0 } queue)
-        {
-            _reconnectBufferedQueue = null;
-            while (queue.Count > 0)
-            {
-                EncodeRequest(queue.Dequeue());
-            }
-        }
-    }
-
-    public void OnReconnectAttemptFailed()
-    {
-        if (_reconnectAttempts >= _options.Http1.MaxReconnectAttempts)
+    public void OnUpstreamFinished()
+    { 
+        if (IsReconnecting)
         {
             _ops.OnWarning(string.Concat(
-                "HTTP/1.1 reconnect failed after max attempts — discarding ",
-                PendingRequestCount.ToString(), " in-flight request(s)."));
+                "HTTP/1.1 transport closed during reconnect — discarding ",
+                PendingRequestCount.ToString(), " buffered request(s)."));
             _ops.OnComplete();
             return;
         }
 
-        _reconnectAttempts++;
-        _ops.OnOutbound(new ConnectTransport(_transportOptions!));
+        TryDecodeEof();
+        HandleOrphanedRequests();
+        _ops.OnComplete();
+    }
+
+    public void OnTimerFired(string name)
+    {
     }
 
     public void Cleanup()
@@ -290,6 +159,71 @@ internal sealed class StateMachine : IHttpStateMachine
         _pendingCloseDelimitedResponse?.Dispose();
         _pendingCloseDelimitedResponse = null;
         _initialBodyBytes = null;
+    }
+
+    private void DecodeResponse(TransportBuffer buffer)
+    {
+        if (_pendingCloseDelimitedResponse is not null)
+        {
+            AccumulateCloseDelimitedBody(buffer);
+            return;
+        }
+
+        DecodeNormalResponse(buffer);
+    }
+
+    private void AccumulateCloseDelimitedBody(TransportBuffer buffer)
+    {
+        _bodyOwners ??= [];
+        _bodyOwners.Add(buffer);
+    }
+
+    private void DecodeNormalResponse(TransportBuffer buffer)
+    {
+        try
+        {
+            var data = buffer.Memory;
+
+            if (!_decoder.TryDecode(data, out var responses))
+            {
+                buffer.Dispose();
+                return;
+            }
+
+            buffer.Dispose();
+
+            var last = responses[^1];
+            if (IsCloseDelimited(last))
+            {
+                BeginCloseDelimitedResponse(responses);
+                return;
+            }
+
+            foreach (var response in responses)
+            {
+                CompleteResponse(response);
+            }
+        }
+        catch (Exception ex)
+        {
+            buffer.Dispose();
+            _ops.OnWarning($"Failed to decode response: {ex.Message}");
+            _decoder.Reset();
+        }
+    }
+
+    private void BeginCloseDelimitedResponse(IReadOnlyList<HttpResponseMessage> responses)
+    {
+        for (var i = 0; i < responses.Count - 1; i++)
+        {
+            CompleteResponse(responses[i]);
+        }
+
+        _pendingCloseDelimitedResponse = responses[^1];
+        _bodyOwners = [];
+
+        var remainder = _decoder.FlushRemainder();
+        _initialBodyBytes = remainder.Length > 0 ? remainder : null;
     }
 
     private void HandleDisconnect(TransportDisconnected disconnect)
@@ -329,6 +263,13 @@ internal sealed class StateMachine : IHttpStateMachine
             return;
         }
 
+        if (HasInFlightRequests)
+        {
+            _ops.OnWarning(string.Concat("HTTP/1.1 closed, ", PendingRequestCount.ToString(), " pending"));
+            StartReconnect();
+            return;
+        }
+
         if (isGraceful)
         {
             if (_decoder.TryDecodeEof(out var response) && response is not null)
@@ -340,6 +281,81 @@ internal sealed class StateMachine : IHttpStateMachine
         {
             _ops.OnWarning("Abrupt connection close — discarding incomplete response");
         }
+
+        _ops.OnComplete();
+    }
+
+    private void TryDecodeEof()
+    {
+        try
+        {
+            if (_decoder.TryDecodeEof(out var response) && response is not null)
+            {
+                CompleteResponse(response);
+                return;
+            }
+
+            _decoder.Reset();
+        }
+        catch (Exception ex)
+        {
+            _ops.OnWarning($"Failed to decode EOF: {ex.Message}");
+            _decoder.Reset();
+        }
+    }
+
+    private void HandleOrphanedRequests()
+    {
+        if (_inFlightQueue.Count == 0)
+        {
+            return;
+        }
+
+        _ops.OnWarning(
+            $"Connection closed with {_inFlightQueue.Count} orphaned pipelined request(s) — discarding");
+        _inFlightQueue.Clear();
+        _effectivePipelineDepth = 1;
+    }
+
+    private void StartReconnect()
+    {
+        _reconnectBufferedQueue = new Queue<HttpRequestMessage>(_inFlightQueue);
+        _inFlightQueue.Clear();
+        IsReconnecting = true;
+        _reconnectAttempts = 1;
+        _decoder.Reset();
+        _ops.OnOutbound(new ConnectTransport(_transportOptions!));
+    }
+
+    private void OnConnectionRestored()
+    {
+        IsReconnecting = false;
+        _reconnectAttempts = 0;
+        _decoder.Reset();
+
+        if (_reconnectBufferedQueue is { Count: > 0 } queue)
+        {
+            _reconnectBufferedQueue = null;
+            while (queue.Count > 0)
+            {
+                OnRequest(queue.Dequeue());
+            }
+        }
+    }
+
+    private void OnReconnectAttemptFailed()
+    {
+        if (_reconnectAttempts >= _options.Http1.MaxReconnectAttempts)
+        {
+            _ops.OnWarning(string.Concat(
+                "HTTP/1.1 reconnect failed after max attempts — discarding ",
+                PendingRequestCount.ToString(), " in-flight request(s)."));
+            _ops.OnComplete();
+            return;
+        }
+
+        _reconnectAttempts++;
+        _ops.OnOutbound(new ConnectTransport(_transportOptions!));
     }
 
     private void CompleteResponse(HttpResponseMessage response)
@@ -376,19 +392,16 @@ internal sealed class StateMachine : IHttpStateMachine
     {
         var status = (int)response.StatusCode;
 
-        // 1xx (informational), 204 (No Content), 304 (Not Modified) never carry a message body.
         if (status is >= 100 and < 200 or 204 or 304)
         {
             return false;
         }
 
-        // Transfer-Encoding present — body is chunked
         if (response.Headers.TransferEncodingChunked == true)
         {
             return false;
         }
 
-        // Content-Length explicitly set — body length is known
         if (response.Content.Headers.Contains("Content-Length"))
         {
             return false;
@@ -400,76 +413,5 @@ internal sealed class StateMachine : IHttpStateMachine
     private static bool HasConnectionClose(HttpResponseMessage response)
     {
         return response.Headers.ConnectionClose == true;
-    }
-
-    void IHttpStateMachine.PreStart()
-    {
-    }
-
-    void IHttpStateMachine.OnRequest(HttpRequestMessage request)
-    {
-        EncodeRequest(request);
-    }
-
-    void IHttpStateMachine.DecodeServerData(ITransportInbound data)
-    {
-        switch (data)
-        {
-            case TransportConnected:
-                OnConnectionRestored();
-                return;
-
-            case TransportDisconnected when IsReconnecting:
-                OnReconnectAttemptFailed();
-                return;
-
-            case TransportDisconnected when HasInFlightRequests:
-                _ops.OnWarning(string.Concat("HTTP/1.1 closed, ", PendingRequestCount.ToString(), " pending"));
-                StartReconnect();
-                return;
-
-            case TransportDisconnected:
-                _ops.OnComplete();
-                return;
-        }
-
-        try
-        {
-            DecodeServerData(data);
-        }
-        catch (HttpRequestException ex)
-        {
-            _ops.OnWarning(string.Concat("HTTP/1.1: ", ex.Message));
-            _ops.OnComplete();
-        }
-    }
-
-    void IHttpStateMachine.OnUpstreamFinished()
-    {
-        if (IsReconnecting)
-        {
-            _ops.OnWarning(string.Concat(
-                "HTTP/1.1 transport closed during reconnect — discarding ",
-                PendingRequestCount.ToString(), " buffered request(s)."));
-            _ops.OnComplete();
-            return;
-        }
-
-        if (TryDecodeEof())
-        {
-            return;
-        }
-
-        HandleOrphanedRequests();
-        _ops.OnComplete();
-    }
-
-    void IHttpStateMachine.OnTimerFired(string name)
-    {
-    }
-
-    void IHttpStateMachine.Cleanup()
-    {
-        Cleanup();
     }
 }
