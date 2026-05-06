@@ -60,7 +60,7 @@ internal sealed class StateMachine
         _tracker = new StreamTracker(1, options.Http2.MaxConcurrentStreams);
         _connection = new ConnectionState(options.Http2.InitialConnectionWindowSize,
             options.Http2.InitialStreamWindowSize);
-        _requestEncoder = new RequestEncoder(maxFrameSize: 16_384);
+        _requestEncoder = new RequestEncoder(useHuffman: true, maxFrameSize: 16_384);
         _statePoolCapacity = Math.Min(
             _tracker.MaxConcurrentStreams > 0 ? _tracker.MaxConcurrentStreams : 100,
             MaxStatePoolCapacity);

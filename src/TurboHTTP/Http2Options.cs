@@ -48,7 +48,7 @@ public sealed class Http2Options
     /// Advertised via SETTINGS_HEADER_TABLE_SIZE in the connection preface.
     /// Default is 4,096 (RFC 7541 default).
     /// </summary>
-    public int HeaderTableSize { get; set; } = 4_096;
+    public int HeaderTableSize { get; set; } = 65_536;
 
     /// <summary>
     /// Maximum number of reconnect attempts when a TCP connection drops with in-flight requests.
