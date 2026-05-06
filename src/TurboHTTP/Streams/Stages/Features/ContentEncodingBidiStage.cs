@@ -69,7 +69,15 @@ internal sealed class ContentEncodingBidiStage
                     onPush: () =>
                     {
                         var request = Grab(stage._inRequest);
-                        _processor.OnRequestPushWithCompression(request);
+                        try
+                        {
+                            _processor.OnRequestPushWithCompression(request);
+                        }
+                        catch (Exception ex)
+                        {
+                            Tracing.For("ContentEncoding").Warning(this, "→ compression failed: {0}", ex.Message);
+                            Push(stage._outRequest, request);
+                        }
                     },
                     onUpstreamFinish: () => Complete(stage._outRequest),
                     onUpstreamFailure: ex =>
@@ -100,7 +108,15 @@ internal sealed class ContentEncodingBidiStage
                     onPush: () =>
                     {
                         var response = Grab(stage._inResponse);
-                        _processor.OnResponsePushWithDecompression(response);
+                        try
+                        {
+                            _processor.OnResponsePushWithDecompression(response);
+                        }
+                        catch (Exception ex)
+                        {
+                            Tracing.For("ContentEncoding").Warning(this, "← decompression failed: {0}", ex.Message);
+                            Push(stage._outResponse, response);
+                        }
                     },
                     onUpstreamFinish: () => Complete(stage._outResponse),
                     onUpstreamFailure: ex =>

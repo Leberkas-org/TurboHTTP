@@ -42,12 +42,18 @@ internal sealed class CookieBidiStage
                 onPush: () =>
                 {
                     var request = Grab(stage._inRequest);
-
-                    if (stage._cookieJar is not null && request.RequestUri is not null)
+                    try
                     {
-                        var uri = request.RequestUri;
-                        stage._cookieJar.AddCookiesToRequest(uri, ref request);
-                        Tracing.For("Cookie").Debug(this, "→ injected cookies for {0}", uri.Host);
+                        if (stage._cookieJar is not null && request.RequestUri is not null)
+                        {
+                            var uri = request.RequestUri;
+                            stage._cookieJar.AddCookiesToRequest(uri, ref request);
+                            Tracing.For("Cookie").Debug(this, "→ injected cookies for {0}", uri.Host);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Cookie").Warning(this, "→ cookie injection failed: {0}", ex.Message);
                     }
 
                     Push(stage._outRequest, request);
@@ -68,11 +74,18 @@ internal sealed class CookieBidiStage
                 onPush: () =>
                 {
                     var response = Grab(stage._inResponse);
-
-                    if (stage._cookieJar is not null && response.RequestMessage?.RequestUri is not null)
+                    try
                     {
-                        stage._cookieJar.ProcessResponse(response.RequestMessage.RequestUri, response);
-                        Tracing.For("Cookie").Debug(this, "← processed Set-Cookie for {0}", response.RequestMessage.RequestUri.Host);
+                        if (stage._cookieJar is not null && response.RequestMessage?.RequestUri is not null)
+                        {
+                            var uri = response.RequestMessage.RequestUri;
+                            stage._cookieJar.ProcessResponse(uri, response);
+                            Tracing.For("Cookie").Debug(this, "← processed Set-Cookie for {0}", uri.Host);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Cookie").Warning(this, "← Set-Cookie processing failed: {0}", ex.Message);
                     }
 
                     Push(stage._outResponse, response);

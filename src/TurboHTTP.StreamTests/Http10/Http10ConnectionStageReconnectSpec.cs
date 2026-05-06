@@ -132,6 +132,9 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
         // Reconnect fails → TransportDisconnected again (attempt 2 exceeds max of 1)
         serverSub.SendNext(new TransportDisconnected(DisconnectReason.Error));
 
+        // Transport source completes after final disconnect
+        serverSub.SendComplete();
+
         // Stage should complete
         await Task.Run(() => responseSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
@@ -167,8 +170,9 @@ public sealed class Http10ConnectionStageReconnectSpec : StreamTestBase
 
         // No requests sent — connection just closes
         serverSub.SendNext(new TransportDisconnected(DisconnectReason.Graceful));
+        serverSub.SendComplete();
 
-        // Stage completes immediately (no in-flight request → no reconnect, just CompleteStage)
+        // Stage completes when server upstream finishes
         await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }

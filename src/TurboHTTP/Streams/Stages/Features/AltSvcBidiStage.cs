@@ -45,32 +45,38 @@ internal sealed class AltSvcBidiStage
                 onPush: () =>
                 {
                     var request = Grab(stage._inRequest);
-
-                    if (request.RequestUri is not null
-                        && request.Version.Major < 3
-                        && stage._cache.TryGetHttp3(request.RequestUri.Host, out var entry))
+                    try
                     {
-                        // Upgrade to HTTP/3. Use the advertised port if different from origin.
-                        Tracing.For("AltSvc").Info(this, "→ upgrading {0} to HTTP/3 (alt-svc cache hit, port {1})", request.RequestUri.Host, entry.Port);
-                        request.Version = HttpVersion.Version30;
-
-                        if (entry.Port != request.RequestUri.Port)
+                        if (request.RequestUri is not null
+                            && request.Version.Major < 3
+                            && stage._cache.TryGetHttp3(request.RequestUri.Host, out var entry))
                         {
-                            var builder = new UriBuilder(request.RequestUri) { Port = entry.Port };
+                            // Upgrade to HTTP/3. Use the advertised port if different from origin.
+                            Tracing.For("AltSvc").Info(this, "→ upgrading {0} to HTTP/3 (alt-svc cache hit, port {1})", request.RequestUri.Host, entry.Port);
+                            request.Version = HttpVersion.Version30;
 
-                            // Use advertised host if specified, otherwise keep origin host.
-                            if (!string.IsNullOrEmpty(entry.Host))
+                            if (entry.Port != request.RequestUri.Port)
                             {
-                                builder.Host = entry.Host;
-                            }
+                                var builder = new UriBuilder(request.RequestUri) { Port = entry.Port };
 
-                            request.RequestUri = builder.Uri;
+                                // Use advertised host if specified, otherwise keep origin host.
+                                if (!string.IsNullOrEmpty(entry.Host))
+                                {
+                                    builder.Host = entry.Host;
+                                }
+
+                                request.RequestUri = builder.Uri;
+                            }
+                            else if (!string.IsNullOrEmpty(entry.Host))
+                            {
+                                var builder = new UriBuilder(request.RequestUri) { Host = entry.Host };
+                                request.RequestUri = builder.Uri;
+                            }
                         }
-                        else if (!string.IsNullOrEmpty(entry.Host))
-                        {
-                            var builder = new UriBuilder(request.RequestUri) { Host = entry.Host };
-                            request.RequestUri = builder.Uri;
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("AltSvc").Warning(this, "→ version upgrade failed: {0}", ex.Message);
                     }
 
                     Push(stage._outRequest, request);
@@ -91,27 +97,33 @@ internal sealed class AltSvcBidiStage
                 onPush: () =>
                 {
                     var response = Grab(stage._inResponse);
-
-                    if (response.Headers.TryGetValues("Alt-Svc", out var altSvcValues))
+                    try
                     {
-                        var host = response.RequestMessage?.RequestUri?.Host;
-                        if (!string.IsNullOrEmpty(host))
+                        if (response.Headers.TryGetValues("Alt-Svc", out var altSvcValues))
                         {
-                            foreach (var value in altSvcValues)
+                            var host = response.RequestMessage?.RequestUri?.Host;
+                            if (!string.IsNullOrEmpty(host))
                             {
-                                var entries = AltSvcParser.Parse(value, out var isClear);
-                                if (isClear)
+                                foreach (var value in altSvcValues)
                                 {
-                                    Tracing.For("AltSvc").Debug(this, "← Alt-Svc clear for {0}", host);
-                                    stage._cache.Clear(host);
-                                }
-                                else if (entries.Count > 0)
-                                {
-                                    Tracing.For("AltSvc").Debug(this, "← Alt-Svc stored {0} entries for {1}", entries.Count, host);
-                                    stage._cache.Store(host, entries);
+                                    var entries = AltSvcParser.Parse(value, out var isClear);
+                                    if (isClear)
+                                    {
+                                        Tracing.For("AltSvc").Debug(this, "← Alt-Svc clear for {0}", host);
+                                        stage._cache.Clear(host);
+                                    }
+                                    else if (entries.Count > 0)
+                                    {
+                                        Tracing.For("AltSvc").Debug(this, "← Alt-Svc stored {0} entries for {1}", entries.Count, host);
+                                        stage._cache.Store(host, entries);
+                                    }
                                 }
                             }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("AltSvc").Warning(this, "← Alt-Svc parsing failed: {0}", ex.Message);
                     }
 
                     Push(stage._outResponse, response);

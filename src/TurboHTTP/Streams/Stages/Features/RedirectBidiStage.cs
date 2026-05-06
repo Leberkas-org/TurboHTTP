@@ -113,7 +113,15 @@ internal sealed class RedirectBidiStage
                 onPush: () =>
                 {
                     var request = Grab(stage._inRequest);
-                    _sm.OnRequest(request);
+                    try
+                    {
+                        _sm.OnRequest(request);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Redirect").Warning(this, "→ redirect request processing failed: {0}", ex.Message);
+                        Push(stage._outRequest, request);
+                    }
                 },
                 onUpstreamFinish: () => _sm.OnRequestUpstreamFinish(),
                 onUpstreamFailure: ex =>
@@ -140,7 +148,15 @@ internal sealed class RedirectBidiStage
                 onPush: () =>
                 {
                     var response = Grab(stage._inResponse);
-                    _sm.OnResponse(response);
+                    try
+                    {
+                        _sm.OnResponse(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Redirect").Warning(this, "← redirect response evaluation failed: {0}", ex.Message);
+                        Push(stage._outResponse, response);
+                    }
                 },
                 onUpstreamFinish: () =>
                 {

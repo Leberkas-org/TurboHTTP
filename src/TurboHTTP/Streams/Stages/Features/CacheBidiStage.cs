@@ -91,7 +91,15 @@ internal sealed class CacheBidiStage
                 onPush: () =>
                 {
                     var request = Grab(stage._inRequest);
-                    _sm.OnRequest(request);
+                    try
+                    {
+                        _sm.OnRequest(request);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Cache").Warning(this, "→ cache lookup failed: {0}", ex.Message);
+                        Push(stage._outRequest, request);
+                    }
                 },
                 onUpstreamFinish: () => Complete(stage._outRequest),
                 onUpstreamFailure: ex =>
@@ -114,7 +122,15 @@ internal sealed class CacheBidiStage
                 onPush: () =>
                 {
                     var response = Grab(stage._inResponse);
-                    _sm.OnResponse(response);
+                    try
+                    {
+                        _sm.OnResponse(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Cache").Warning(this, "← cache response processing failed: {0}", ex.Message);
+                        Push(stage._outResponse, response);
+                    }
                 },
                 onUpstreamFinish: () =>
                 {

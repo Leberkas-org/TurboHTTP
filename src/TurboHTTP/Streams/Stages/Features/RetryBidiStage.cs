@@ -104,7 +104,15 @@ internal sealed class RetryBidiStage
                 onPush: () =>
                 {
                     var request = Grab(stage._inRequest);
-                    _sm.OnRequest(request);
+                    try
+                    {
+                        _sm.OnRequest(request);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Retry").Warning(this, "→ retry request processing failed: {0}", ex.Message);
+                        Push(stage._outRequest, request);
+                    }
                 },
                 onUpstreamFinish: () => _sm.OnRequestUpstreamFinish(),
                 onUpstreamFailure: ex =>
@@ -131,7 +139,15 @@ internal sealed class RetryBidiStage
                 onPush: () =>
                 {
                     var response = Grab(stage._inResponse);
-                    _sm.OnResponse(response);
+                    try
+                    {
+                        _sm.OnResponse(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        Tracing.For("Retry").Warning(this, "← retry response evaluation failed: {0}", ex.Message);
+                        Push(stage._outResponse, response);
+                    }
                 },
                 onUpstreamFinish: () =>
                 {

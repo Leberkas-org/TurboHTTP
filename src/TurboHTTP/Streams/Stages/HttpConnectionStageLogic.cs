@@ -63,7 +63,16 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ISta
         SetHandler(_inApp, onPush: () =>
         {
             var request = Grab(_inApp);
-            _sm.OnRequest(request);
+            try
+            {
+                _sm.OnRequest(request);
+            }
+            catch (Exception ex)
+            {
+                Tracing.For("Stage").Warning(this, "OnRequest threw: {0}", ex.Message);
+                RequestFault.Fail(request, ex);
+            }
+
             TryPullRequest();
         },
         onUpstreamFinish: () =>
@@ -90,7 +99,14 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ISta
     private void OnServerPush()
     {
         var item = Grab(_inServer);
-        _sm.DecodeServerData(item);
+        try
+        {
+            _sm.DecodeServerData(item);
+        }
+        catch (Exception ex)
+        {
+            Tracing.For("Stage").Warning(this, "DecodeServerData threw: {0}", ex.Message);
+        }
 
         if (_responseQueue.Count > 0)
         {

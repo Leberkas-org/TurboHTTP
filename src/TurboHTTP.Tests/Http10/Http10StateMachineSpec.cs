@@ -407,7 +407,8 @@ public sealed class Http10StateMachineSpec
     [Trait("RFC", "RFC1945-7")]
     public void DecodeServerData_should_stay_alive_after_abrupt_close()
     {
-        var sm = new StateMachine(new FakeOps(), MakeConfig());
+        var config = new TurboClientOptions { Http1 = { MaxReconnectAttempts = 0 } };
+        var sm = new StateMachine(new FakeOps(), config);
         sm.OnRequest(MakeRequest());
 
         var closeSignal = new TransportDisconnected(DisconnectReason.Error);

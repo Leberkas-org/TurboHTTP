@@ -356,8 +356,7 @@ public sealed class Http11StateMachineSpec
         var buffer = CreateResponseBuffer("HTTP/1.1 200 OK\r\n\r\n");
         sm.DecodeServerData(new TransportData(buffer));
 
-        Assert.Throws<HttpRequestException>(() =>
-            sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)));
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
         var task = pending.GetValueTask();
         Assert.True(task.IsFaulted);
@@ -410,10 +409,8 @@ public sealed class Http11StateMachineSpec
         var buffer2 = CreateResponseBuffer("body");
         sm.DecodeServerData(new TransportData(buffer2));
 
-        var ex = Assert.Throws<HttpRequestException>(() =>
-            sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)));
+        sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
 
-        Assert.NotNull(ex);
         var task = pending.GetValueTask();
         Assert.True(task.IsFaulted);
     }

@@ -260,8 +260,9 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
 
         // Server sends GOAWAY
         serverSubscription.SendNext(new TransportDisconnected(DisconnectReason.Graceful));
+        serverSubscription.SendComplete();
 
-        // Stage should complete
+        // Stage completes when server upstream finishes
         await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 

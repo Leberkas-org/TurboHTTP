@@ -2,7 +2,7 @@ namespace TurboHTTP.Protocol;
 
 internal static class RequestFault
 {
-    public static void Fail(HttpRequestMessage request, Exception exception)
+    public static void Fail(this HttpRequestMessage request, Exception exception)
     {
         if (request.Options.TryGetValue(TcsCorrelation.Key, out var pending))
         {
@@ -14,7 +14,7 @@ internal static class RequestFault
     {
         foreach (var request in requests)
         {
-            Fail(request, exception);
+            request.Fail(exception);
         }
     }
 
@@ -22,7 +22,7 @@ internal static class RequestFault
     {
         while (queue.Count > 0)
         {
-            Fail(queue.Dequeue(), exception);
+            queue.Dequeue().Fail(exception);
         }
     }
 }
