@@ -359,15 +359,15 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_warn_on_abrupt_close_with_content_length_mismatch()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, MakeConfig());
+        var config = MakeConfig();
+        config.Http1.MaxReconnectAttempts = 0;
+        var sm = new StateMachine(ops, config);
         sm.OnRequest(MakeRequest());
 
-        // First, start receiving data with Content-Length
         var partialBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nhello");
-        sm.DecodeServerData(new TransportData(partialBuffer)); // Decoder is now waiting for 100 bytes
+        sm.DecodeServerData(new TransportData(partialBuffer));
 
         var closeSignal = new TransportDisconnected(DisconnectReason.Error);
-
         sm.DecodeServerData(closeSignal);
         Assert.Contains(ops.Warnings, w => w.Contains("Content-Length mismatch"));
     }
@@ -377,7 +377,9 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_warn_on_abrupt_close_without_content_length()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, MakeConfig());
+        var config = MakeConfig();
+        config.Http1.MaxReconnectAttempts = 0;
+        var sm = new StateMachine(ops, config);
         sm.OnRequest(MakeRequest());
 
         var closeSignal = new TransportDisconnected(DisconnectReason.Error);
@@ -391,7 +393,9 @@ public sealed class Http10StateMachineSpec
     public void DecodeServerData_should_complete_on_abrupt_close()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, MakeConfig());
+        var config = MakeConfig();
+        config.Http1.MaxReconnectAttempts = 0;
+        var sm = new StateMachine(ops, config);
         sm.OnRequest(MakeRequest());
 
         var closeSignal = new TransportDisconnected(DisconnectReason.Error);

@@ -29,7 +29,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        Assert.Contains(outboundFrames, f => f is Http3SettingsFrame);
+        Assert.Contains(outboundFrames, f => f is SettingsFrame);
     }
 
     [Fact(Timeout = 5000)]
@@ -44,7 +44,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().First();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().First();
         var decoder = new QpackDecoder();
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
@@ -63,7 +63,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().First();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().First();
         var decoder = new QpackDecoder();
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
@@ -82,7 +82,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().First();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().First();
         var decoder = new QpackDecoder();
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
@@ -101,7 +101,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().First();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().First();
         var decoder = new QpackDecoder();
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
@@ -122,10 +122,10 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().FirstOrDefault();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().FirstOrDefault();
         Assert.NotNull(headersFrame);
 
-        var dataFrames = outboundFrames.OfType<Http3DataFrame>().ToList();
+        var dataFrames = outboundFrames.OfType<DataFrame>().ToList();
         Assert.NotEmpty(dataFrames);
     }
 
@@ -142,7 +142,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().First();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().First();
         var decoder = new QpackDecoder();
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
@@ -162,7 +162,7 @@ public sealed class RequestFormatSpec : AcceptanceTestBase
         var (_, outboundFrames) = await SendH3EngineAsync(
             CreateHttp30Engine().CreateFlow(), request, ControlFrames(), ResponseFrames());
 
-        var headersFrame = outboundFrames.OfType<Http3HeadersFrame>().First();
+        var headersFrame = outboundFrames.OfType<HeadersFrame>().First();
         var decoder = new QpackDecoder();
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 

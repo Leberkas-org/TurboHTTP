@@ -28,7 +28,7 @@ public sealed class H3ResponseBuilder
     /// </summary>
     public H3ResponseBuilder Settings(params (long Identifier, long Value)[] parameters)
     {
-        _frames.Add(new Http3SettingsFrame(parameters));
+        _frames.Add(new SettingsFrame(parameters));
         return this;
     }
 
@@ -48,7 +48,7 @@ public sealed class H3ResponseBuilder
         }
 
         var encoded = _encoder.Encode(allHeaders);
-        var frame = new Http3HeadersFrame(encoded);
+        var frame = new HeadersFrame(encoded);
         _frames.Add(frame);
         return this;
     }
@@ -58,7 +58,7 @@ public sealed class H3ResponseBuilder
     /// </summary>
     public H3ResponseBuilder Data(ReadOnlyMemory<byte> body)
     {
-        _frames.Add(new Http3DataFrame(body));
+        _frames.Add(new DataFrame(body));
         return this;
     }
 
@@ -75,7 +75,7 @@ public sealed class H3ResponseBuilder
     /// </summary>
     public H3ResponseBuilder GoAway(long streamId)
     {
-        _frames.Add(new Http3GoAwayFrame(streamId));
+        _frames.Add(new GoAwayFrame(streamId));
         return this;
     }
 
@@ -84,7 +84,7 @@ public sealed class H3ResponseBuilder
     /// </summary>
     public H3ResponseBuilder MaxPushId(long pushId)
     {
-        _frames.Add(new Http3MaxPushIdFrame(pushId));
+        _frames.Add(new MaxPushIdFrame(pushId));
         return this;
     }
 
@@ -93,7 +93,7 @@ public sealed class H3ResponseBuilder
     /// </summary>
     public H3ResponseBuilder CancelPush(long pushId)
     {
-        _frames.Add(new Http3CancelPushFrame(pushId));
+        _frames.Add(new CancelPushFrame(pushId));
         return this;
     }
 

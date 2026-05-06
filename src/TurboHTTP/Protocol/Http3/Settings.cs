@@ -27,17 +27,17 @@ internal sealed class Settings
     /// Advisory maximum size of a header block the peer is prepared to accept.
     /// <c>null</c> means the setting was not received (no limit imposed).
     /// </summary>
-    public long? MaxFieldSectionSize => this[Http3SettingsIdentifier.MaxFieldSectionSize];
+    public long? MaxFieldSectionSize => this[SettingsIdentifier.MaxFieldSectionSize];
 
     /// <summary>
     /// SETTINGS_QPACK_MAX_TABLE_CAPACITY (0x01). Default: 0.
     /// </summary>
-    public long QpackMaxTableCapacity => this[Http3SettingsIdentifier.QpackMaxTableCapacity] ?? 0;
+    public long QpackMaxTableCapacity => this[SettingsIdentifier.QpackMaxTableCapacity] ?? 0;
 
     /// <summary>
     /// SETTINGS_QPACK_BLOCKED_STREAMS (0x07). Default: 0.
     /// </summary>
-    public long QpackBlockedStreams => this[Http3SettingsIdentifier.QpackBlockedStreams] ?? 0;
+    public long QpackBlockedStreams => this[SettingsIdentifier.QpackBlockedStreams] ?? 0;
 
     /// <summary>
     /// All parameters (known and unknown), for extension tolerance.
@@ -51,9 +51,9 @@ internal sealed class Settings
     /// </summary>
     public void Set(long identifier, long value)
     {
-        if (Http3SettingsIdentifier.IsReservedH2Setting(identifier))
+        if (SettingsIdentifier.IsReservedH2Setting(identifier))
         {
-            throw new Http3Exception(Http3ErrorCode.SettingsError,
+            throw new Http3Exception(ErrorCode.SettingsError,
                 $"Setting identifier 0x{identifier:x2} is reserved (HTTP/2 setting) and MUST NOT be sent in HTTP/3 (RFC 9114 §7.2.4.1).");
         }
 
@@ -100,27 +100,27 @@ internal sealed class Settings
         {
             if (!QuicVarInt.TryDecode(payload, out var identifier, out var consumed))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError, "Incomplete setting identifier in SETTINGS payload.");
+                throw new Http3Exception(ErrorCode.SettingsError, "Incomplete setting identifier in SETTINGS payload.");
             }
 
             payload = payload[consumed..];
 
             if (!QuicVarInt.TryDecode(payload, out var value, out consumed))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError, "Incomplete setting value in SETTINGS payload.");
+                throw new Http3Exception(ErrorCode.SettingsError, "Incomplete setting value in SETTINGS payload.");
             }
 
             payload = payload[consumed..];
 
-            if (Http3SettingsIdentifier.IsReservedH2Setting(identifier))
+            if (SettingsIdentifier.IsReservedH2Setting(identifier))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError,
+                throw new Http3Exception(ErrorCode.SettingsError,
                     $"Setting identifier 0x{identifier:x2} is reserved (HTTP/2 setting) and MUST NOT appear in HTTP/3 (RFC 9114 §7.2.4.1).");
             }
 
             if (settings._parameters.ContainsKey(identifier))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError,
+                throw new Http3Exception(ErrorCode.SettingsError,
                     $"Duplicate setting identifier 0x{identifier:x2} in SETTINGS payload (RFC 9114 §7.2.4).");
             }
 
@@ -131,9 +131,9 @@ internal sealed class Settings
     }
 
     /// <summary>
-    /// Creates an <see cref="Http3SettingsFrame"/> from these settings.
+    /// Creates an <see cref="SettingsFrame"/> from these settings.
     /// </summary>
-    public Http3SettingsFrame ToFrame()
+    public SettingsFrame ToFrame()
     {
         var parameters = new List<(long, long)>(_parameters.Count);
         foreach (var (id, val) in _parameters)
@@ -141,6 +141,6 @@ internal sealed class Settings
             parameters.Add((id, val));
         }
 
-        return new Http3SettingsFrame(parameters);
+        return new SettingsFrame(parameters);
     }
 }

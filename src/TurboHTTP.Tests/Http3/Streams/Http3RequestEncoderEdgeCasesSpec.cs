@@ -40,7 +40,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -56,7 +56,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -73,10 +73,10 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Equal(2, frames.Count);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
-        Assert.IsType<Http3DataFrame>(frames[1]);
+        Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.IsType<DataFrame>(frames[1]);
 
-        var dataFrame = (Http3DataFrame)frames[1];
+        var dataFrame = (DataFrame)frames[1];
         Assert.Equal(bodyData, dataFrame.Data.ToArray());
     }
 
@@ -100,19 +100,19 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
 
         // Should have headers + at least one data frame
         Assert.True(frames.Count >= 2);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
 
         // All remaining frames should be data frames
         for (var i = 1; i < frames.Count; i++)
         {
-            Assert.IsType<Http3DataFrame>(frames[i]);
+            Assert.IsType<DataFrame>(frames[i]);
         }
 
         // Total body should match
         var totalBody = new List<byte>();
         for (var i = 1; i < frames.Count; i++)
         {
-            var dataFrame = (Http3DataFrame)frames[i];
+            var dataFrame = (DataFrame)frames[i];
             totalBody.AddRange(dataFrame.Data.ToArray());
         }
 
@@ -136,7 +136,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Equal(2, frames.Count);
-        var dataFrame = (Http3DataFrame)frames[1];
+        var dataFrame = (DataFrame)frames[1];
         Assert.Equal(bodyData, dataFrame.Data.ToArray());
     }
 
@@ -150,7 +150,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -177,7 +177,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -191,7 +191,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -205,7 +205,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -219,7 +219,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -233,7 +233,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -247,7 +247,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -262,7 +262,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -281,7 +281,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Equal(2, frames.Count);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -564,8 +564,8 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         Assert.NotEmpty(frames2);
 
         // Both should produce valid frames
-        Assert.IsType<Http3HeadersFrame>(frames1[0]);
-        Assert.IsType<Http3HeadersFrame>(frames2[0]);
+        Assert.IsType<HeadersFrame>(frames1[0]);
+        Assert.IsType<HeadersFrame>(frames2[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -578,7 +578,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -591,7 +591,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -604,7 +604,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -619,7 +619,7 @@ public sealed class Http3RequestEncoderEdgeCasesSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]

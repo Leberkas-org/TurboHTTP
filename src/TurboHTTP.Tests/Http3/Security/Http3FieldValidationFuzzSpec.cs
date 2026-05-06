@@ -14,7 +14,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("uppercase", ex.Message);
     }
 
@@ -28,7 +28,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -56,7 +56,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("CR", ex.Message);
     }
 
@@ -70,7 +70,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("LF", ex.Message);
     }
 
@@ -84,7 +84,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("NUL", ex.Message);
     }
 
@@ -98,7 +98,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -112,7 +112,7 @@ public sealed class Http3FieldValidationFuzzSpec
             var headers = new List<(string Name, string Value)> { (name, "value") };
 
             var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-            Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+            Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         }
     }
 
@@ -126,7 +126,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -139,7 +139,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Connection", ex.Message);
     }
 
@@ -153,7 +153,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -166,7 +166,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -179,7 +179,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -192,7 +192,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -206,7 +206,7 @@ public sealed class Http3FieldValidationFuzzSpec
             var headers = new List<(string Name, string Value)> { ("te", badValue) };
 
             var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-            Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+            Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         }
     }
 
@@ -234,7 +234,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -253,7 +253,7 @@ public sealed class Http3FieldValidationFuzzSpec
             };
 
             var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-            Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+            Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         }
     }
 
@@ -269,7 +269,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -298,7 +298,7 @@ public sealed class Http3FieldValidationFuzzSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]

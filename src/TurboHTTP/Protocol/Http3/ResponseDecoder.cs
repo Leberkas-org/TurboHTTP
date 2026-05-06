@@ -35,7 +35,7 @@ internal sealed class ResponseDecoder
     /// Returns true if a new response was created (first HEADERS),
     /// false if this was a trailing HEADERS (trailers not yet supported).
     /// </summary>
-    public bool DecodeHeaders(Http3HeadersFrame frame, StreamState state)
+    public bool DecodeHeaders(HeadersFrame frame, StreamState state)
     {
         if (state.HasResponse)
         {
@@ -94,7 +94,7 @@ internal sealed class ResponseDecoder
     /// Accumulate DATA frame payload into stream body buffer.
     /// Returns false if no response headers have been received yet (protocol violation).
     /// </summary>
-    public bool AccumulateData(Http3DataFrame frame, StreamState state)
+    public bool AccumulateData(DataFrame frame, StreamState state)
     {
         if (!state.HasResponse)
         {
@@ -119,7 +119,7 @@ internal sealed class ResponseDecoder
         if (state.ExpectedContentLength.HasValue &&
             state.AccumulatedBodyLength != state.ExpectedContentLength.Value)
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 string.Concat("RFC 9114 §4.1.2: Content-Length mismatch — expected ",
                     state.ExpectedContentLength.Value.ToString(), ", received ",
                     state.AccumulatedBodyLength.ToString()));
@@ -165,7 +165,7 @@ internal sealed class ResponseDecoder
 
         if (totalSize > _maxFieldSectionSize)
         {
-            throw new Http3Exception(Http3ErrorCode.ExcessiveLoad,
+            throw new Http3Exception(ErrorCode.ExcessiveLoad,
                 "RFC 9114 §4.2.2: Received field section exceeds SETTINGS_MAX_FIELD_SECTION_SIZE");
         }
     }

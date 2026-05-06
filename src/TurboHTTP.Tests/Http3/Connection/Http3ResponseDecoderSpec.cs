@@ -14,9 +14,9 @@ public sealed class Http3ResponseDecoderSpec
         _decoder = new ResponseDecoder(_tableSync);
     }
 
-    private Http3HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
+    private HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
     {
-        return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
+        return new HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -80,7 +80,7 @@ public sealed class Http3ResponseDecoderSpec
     public void AccumulateData_should_reject_data_before_headers()
     {
         var state = new StreamState();
-        var frame = new Http3DataFrame(new byte[] { 0x01, 0x02 });
+        var frame = new DataFrame(new byte[] { 0x01, 0x02 });
 
         var result = _decoder.AccumulateData(frame, state);
 
@@ -93,7 +93,7 @@ public sealed class Http3ResponseDecoderSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
-        var result = _decoder.AccumulateData(new Http3DataFrame("AB"u8.ToArray()), state);
+        var result = _decoder.AccumulateData(new DataFrame("AB"u8.ToArray()), state);
 
         Assert.True(result);
     }
@@ -104,7 +104,7 @@ public sealed class Http3ResponseDecoderSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
-        var result = _decoder.AccumulateData(new Http3DataFrame(ReadOnlyMemory<byte>.Empty), state);
+        var result = _decoder.AccumulateData(new DataFrame(ReadOnlyMemory<byte>.Empty), state);
 
         Assert.True(result);
     }
@@ -116,7 +116,7 @@ public sealed class Http3ResponseDecoderSpec
         _decoder.DecodeHeaders(EncodeHeaders(
             (":status", "200"),
             ("content-type", "application/json")), state);
-        _decoder.AccumulateData(new Http3DataFrame("{}"u8.ToArray()), state);
+        _decoder.AccumulateData(new DataFrame("{}"u8.ToArray()), state);
 
         var response = _decoder.CompleteResponse(state);
 
@@ -157,8 +157,8 @@ public sealed class Http3ResponseDecoderSpec
     {
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x41 }), state);
-        _decoder.AccumulateData(new Http3DataFrame("BC"u8.ToArray()), state);
+        _decoder.AccumulateData(new DataFrame(new byte[] { 0x41 }), state);
+        _decoder.AccumulateData(new DataFrame("BC"u8.ToArray()), state);
 
         var response = _decoder.CompleteResponse(state);
 

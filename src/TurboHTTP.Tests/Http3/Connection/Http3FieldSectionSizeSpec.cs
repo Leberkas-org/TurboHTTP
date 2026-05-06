@@ -13,7 +13,7 @@ public sealed class Http3FieldSectionSizeSpec
         var decoder = new ResponseDecoder(tableSync, maxFieldSectionSize: 64);
 
         var longValue = new string('x', 100);
-        var headerFrame = new Http3HeadersFrame(
+        var headerFrame = new HeadersFrame(
             tableSync.Encoder.Encode([(":status", "200"), ("x-big", longValue)]));
 
         var state = new StreamState();
@@ -29,7 +29,7 @@ public sealed class Http3FieldSectionSizeSpec
         var tableSync = new QpackTableSync(encoderMaxCapacity: 0);
         var decoder = new ResponseDecoder(tableSync, maxFieldSectionSize: 65536);
 
-        var headerFrame = new Http3HeadersFrame(
+        var headerFrame = new HeadersFrame(
             tableSync.Encoder.Encode([(":status", "200"), ("x-small", "ok")]));
 
         var state = new StreamState();

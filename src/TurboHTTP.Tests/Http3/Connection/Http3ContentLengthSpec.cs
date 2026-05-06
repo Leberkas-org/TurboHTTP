@@ -13,9 +13,9 @@ public sealed class Http3ContentLengthSpec
         _decoder = new ResponseDecoder(_tableSync);
     }
 
-    private Http3HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
+    private HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
     {
-        return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
+        return new HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -27,7 +27,7 @@ public sealed class Http3ContentLengthSpec
             (":status", "200"),
             ("content-length", "5")), state);
 
-        _decoder.AccumulateData(new Http3DataFrame("Hello"u8.ToArray()), state);
+        _decoder.AccumulateData(new DataFrame("Hello"u8.ToArray()), state);
 
         var response = _decoder.CompleteResponse(state);
         Assert.NotNull(response);
@@ -42,7 +42,7 @@ public sealed class Http3ContentLengthSpec
             (":status", "200"),
             ("content-length", "10")), state);
 
-        _decoder.AccumulateData(new Http3DataFrame("Short"u8.ToArray()), state);
+        _decoder.AccumulateData(new DataFrame("Short"u8.ToArray()), state);
 
         var ex = Assert.Throws<Http3Exception>(() => _decoder.CompleteResponse(state));
         Assert.Contains("Content-Length mismatch", ex.Message);
@@ -57,7 +57,7 @@ public sealed class Http3ContentLengthSpec
             (":status", "200"),
             ("content-length", "3")), state);
 
-        _decoder.AccumulateData(new Http3DataFrame("TooLong"u8.ToArray()), state);
+        _decoder.AccumulateData(new DataFrame("TooLong"u8.ToArray()), state);
 
         var ex = Assert.Throws<Http3Exception>(() => _decoder.CompleteResponse(state));
         Assert.Contains("Content-Length mismatch", ex.Message);
@@ -72,7 +72,7 @@ public sealed class Http3ContentLengthSpec
             (":status", "200"),
             ("content-type", "text/plain")), state);
 
-        _decoder.AccumulateData(new Http3DataFrame("Any length"u8.ToArray()), state);
+        _decoder.AccumulateData(new DataFrame("Any length"u8.ToArray()), state);
 
         var response = _decoder.CompleteResponse(state);
         Assert.NotNull(response);

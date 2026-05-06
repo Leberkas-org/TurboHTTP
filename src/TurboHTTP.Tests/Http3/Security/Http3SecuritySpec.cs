@@ -36,10 +36,10 @@ public sealed class Http3SecuritySpec
         // RFC 9114 §7.2.4.1: Identifiers 0x02-0x05 are reserved HTTP/2 settings
         long[] reserved =
         [
-            Http3SettingsIdentifier.ReservedH2EnablePush,
-            Http3SettingsIdentifier.ReservedH2MaxConcurrentStreams,
-            Http3SettingsIdentifier.ReservedH2InitialWindowSize,
-            Http3SettingsIdentifier.ReservedH2MaxFrameSize,
+            SettingsIdentifier.ReservedH2EnablePush,
+            SettingsIdentifier.ReservedH2MaxConcurrentStreams,
+            SettingsIdentifier.ReservedH2InitialWindowSize,
+            SettingsIdentifier.ReservedH2MaxFrameSize,
         ];
 
         foreach (var id in reserved)
@@ -49,7 +49,7 @@ public sealed class Http3SecuritySpec
             offset += QuicVarInt.Encode(0, buf.AsSpan(offset));
 
             var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(buf[..offset]));
-            Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+            Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
             Assert.Contains("reserved", ex.Message.ToLowerInvariant());
         }
     }
@@ -94,9 +94,9 @@ public sealed class Http3SecuritySpec
     public void Settings_should_roundtrip_serialize_deserialize()
     {
         var original = new Settings();
-        original.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, 4096);
-        original.Set(Http3SettingsIdentifier.QpackBlockedStreams, 100);
-        original.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 16384);
+        original.Set(SettingsIdentifier.QpackMaxTableCapacity, 4096);
+        original.Set(SettingsIdentifier.QpackBlockedStreams, 100);
+        original.Set(SettingsIdentifier.MaxFieldSectionSize, 16384);
         original.Set(0xFF, 42); // Extension setting
 
         var serialized = original.Serialize();
@@ -114,11 +114,11 @@ public sealed class Http3SecuritySpec
     {
         var parameters = new List<(long Identifier, long Value)>
         {
-            (Http3SettingsIdentifier.ReservedH2EnablePush, 1),
+            (SettingsIdentifier.ReservedH2EnablePush, 1),
         };
 
-        var ex = Assert.Throws<Http3Exception>(() => Http3SettingsIdentifier.RejectForbiddenH2Settings(parameters));
-        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+        var ex = Assert.Throws<Http3Exception>(() => SettingsIdentifier.RejectForbiddenH2Settings(parameters));
+        Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -127,14 +127,14 @@ public sealed class Http3SecuritySpec
     {
         var parameters = new List<(long Identifier, long Value)>
         {
-            (Http3SettingsIdentifier.QpackMaxTableCapacity, 4096),
-            (Http3SettingsIdentifier.QpackBlockedStreams, 100),
-            (Http3SettingsIdentifier.MaxFieldSectionSize, 8192),
+            (SettingsIdentifier.QpackMaxTableCapacity, 4096),
+            (SettingsIdentifier.QpackBlockedStreams, 100),
+            (SettingsIdentifier.MaxFieldSectionSize, 8192),
             (0xFF, 42), // Extension setting
         };
 
         // Should not throw
-        Http3SettingsIdentifier.RejectForbiddenH2Settings(parameters);
+        SettingsIdentifier.RejectForbiddenH2Settings(parameters);
     }
 
     [Fact(Timeout = 5000)]
@@ -168,17 +168,17 @@ public sealed class Http3SecuritySpec
     {
         using var decoder = new FrameDecoder();
 
-        var settings = new Http3SettingsFrame(new List<(long, long)>
+        var settings = new SettingsFrame(new List<(long, long)>
         {
-            (Http3SettingsIdentifier.QpackMaxTableCapacity, 4096),
-            (Http3SettingsIdentifier.QpackBlockedStreams, 100),
+            (SettingsIdentifier.QpackMaxTableCapacity, 4096),
+            (SettingsIdentifier.QpackBlockedStreams, 100),
         });
 
         var serialized = settings.Serialize();
         var status = decoder.TryDecode(serialized, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var settingsFrame = Assert.IsType<Http3SettingsFrame>(frame);
+        var settingsFrame = Assert.IsType<SettingsFrame>(frame);
         Assert.Equal(2, settingsFrame.Parameters.Count);
     }
 
@@ -204,7 +204,7 @@ public sealed class Http3SecuritySpec
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        var dataFrame = Assert.IsType<Http3DataFrame>(decoded);
+        var dataFrame = Assert.IsType<DataFrame>(decoded);
         Assert.Equal(65536, dataFrame.Data.Length);
         dataFrame.Dispose();
     }
@@ -234,21 +234,21 @@ public sealed class Http3SecuritySpec
     [Trait("RFC", "RFC9114-7.2.6")]
     public void GoAwayFrame_should_reject_negative_stream_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3GoAwayFrame(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GoAwayFrame(-1));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.3")]
     public void CancelPushFrame_should_reject_negative_push_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3CancelPushFrame(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new CancelPushFrame(-1));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.7")]
     public void MaxPushIdFrame_should_reject_negative_push_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3MaxPushIdFrame(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MaxPushIdFrame(-1));
     }
 
     [Fact(Timeout = 5000)]
@@ -257,12 +257,12 @@ public sealed class Http3SecuritySpec
     {
         using var decoder = new FrameDecoder();
 
-        var goaway = new Http3GoAwayFrame(42);
+        var goaway = new GoAwayFrame(42);
         var serialized = goaway.Serialize();
 
         var status = decoder.TryDecode(serialized, out var frame, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        var decoded = Assert.IsType<Http3GoAwayFrame>(frame);
+        var decoded = Assert.IsType<GoAwayFrame>(frame);
         Assert.Equal(42, decoded.StreamId);
     }
 

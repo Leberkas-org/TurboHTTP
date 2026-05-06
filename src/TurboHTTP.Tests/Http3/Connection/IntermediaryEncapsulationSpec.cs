@@ -18,7 +18,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("§10.3", ex.Message);
     }
 
@@ -37,7 +37,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("§10.3", ex.Message);
     }
 
@@ -69,7 +69,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("§10.3", ex.Message);
     }
 
@@ -84,7 +84,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("§10.3", ex.Message);
     }
 
@@ -129,7 +129,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("§10.3", ex.Message);
     }
 
@@ -145,7 +145,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("NUL", ex.Message);
     }
 
@@ -160,7 +160,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("CR", ex.Message);
     }
 
@@ -175,7 +175,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("LF", ex.Message);
     }
 
@@ -190,7 +190,7 @@ public sealed class IntermediaryEncapsulationSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -216,7 +216,7 @@ public sealed class IntermediaryEncapsulationSpec
         var uri = new Uri("https://user:password@example.com/path");
 
         var ex = Assert.Throws<Http3Exception>(() => OriginValidator.Validate(uri));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("userinfo", ex.Message);
     }
 
@@ -227,7 +227,7 @@ public sealed class IntermediaryEncapsulationSpec
         var uri = new Uri("https://user@example.com/path");
 
         var ex = Assert.Throws<Http3Exception>(() => OriginValidator.Validate(uri));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("userinfo", ex.Message);
     }
 
@@ -238,7 +238,7 @@ public sealed class IntermediaryEncapsulationSpec
         var uri = new Uri("https://example.com/path#fragment");
 
         var ex = Assert.Throws<Http3Exception>(() => OriginValidator.Validate(uri));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("fragment", ex.Message);
     }
 
@@ -267,7 +267,7 @@ public sealed class IntermediaryEncapsulationSpec
         var uri = new Uri("https://user@example.com:443/");
 
         var ex = Assert.Throws<Http3Exception>(() => OriginValidator.Validate(uri, isConnect: true));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("userinfo", ex.Message);
     }
 
@@ -280,7 +280,7 @@ public sealed class IntermediaryEncapsulationSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://user:pass@example.com/");
 
         var ex = Assert.Throws<Http3Exception>(() => encoder.Encode(request));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("userinfo", ex.Message);
     }
 
@@ -292,7 +292,7 @@ public sealed class IntermediaryEncapsulationSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/page#section");
 
         var ex = Assert.Throws<Http3Exception>(() => encoder.Encode(request));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("fragment", ex.Message);
     }
 

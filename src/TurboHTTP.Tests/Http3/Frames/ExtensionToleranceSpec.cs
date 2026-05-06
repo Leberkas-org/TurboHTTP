@@ -81,8 +81,8 @@ public sealed class ExtensionToleranceSpec
     public void FrameDecoder_should_filter_unknown_frames_in_decodeall()
     {
         // Build: DATA + unknown(0xFF) + GOAWAY
-        var data = new Http3DataFrame(new byte[] { 0xCA, 0xFE });
-        var goaway = new Http3GoAwayFrame(42);
+        var data = new DataFrame(new byte[] { 0xCA, 0xFE });
+        var goaway = new GoAwayFrame(42);
 
         var unknownBuf = new byte[16];
         var uOffset = 0;
@@ -108,8 +108,8 @@ public sealed class ExtensionToleranceSpec
         var frames = decoder.DecodeAll(wire, out var consumed);
 
         Assert.Equal(2, frames.Count); // Unknown frame filtered out
-        Assert.IsType<Http3DataFrame>(frames[0]);
-        Assert.IsType<Http3GoAwayFrame>(frames[1]);
+        Assert.IsType<DataFrame>(frames[0]);
+        Assert.IsType<GoAwayFrame>(frames[1]);
         Assert.Equal(totalSize, consumed);
     }
 
@@ -181,11 +181,11 @@ public sealed class ExtensionToleranceSpec
     public void Settings_should_allow_mixed_known_and_unknown_settings()
     {
         var settings = new Settings();
-        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 8192);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, 8192);
         settings.Set(0x21, 0); // GREASE
-        settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, 4096);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, 4096);
         settings.Set(0xBEEF, 999); // Unknown extension
-        settings.Set(Http3SettingsIdentifier.QpackBlockedStreams, 16);
+        settings.Set(SettingsIdentifier.QpackBlockedStreams, 16);
 
         var payload = settings.Serialize();
         var restored = Settings.Deserialize(payload);
@@ -255,7 +255,7 @@ public sealed class ExtensionToleranceSpec
         buf[offset++] = 0xBB;
 
         // DATA frame
-        var dataFrame = new Http3DataFrame(new byte[] { 0xCA, 0xFE });
+        var dataFrame = new DataFrame(new byte[] { 0xCA, 0xFE });
         var span = buf.AsSpan(offset);
         offset += dataFrame.WriteTo(ref span);
 
@@ -270,7 +270,7 @@ public sealed class ExtensionToleranceSpec
         status = decoder.TryDecode(buf.AsSpan(consumed, offset - consumed), out frame, out _);
         Assert.Equal(DecodeStatus.Success, status);
         Assert.NotNull(frame);
-        var data = Assert.IsType<Http3DataFrame>(frame);
+        var data = Assert.IsType<DataFrame>(frame);
         Assert.Equal(new byte[] { 0xCA, 0xFE }, data.Data.ToArray());
     }
 

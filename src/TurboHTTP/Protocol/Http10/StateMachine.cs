@@ -167,7 +167,7 @@ internal sealed class StateMachine : IHttpStateMachine
 
     private void HandleDisconnect(TransportDisconnected disconnect)
     {
-        if (HasInFlightRequest)
+        if (HasInFlightRequest && _options.Http1.MaxReconnectAttempts > 0)
         {
             _ops.OnWarning(string.Concat("HTTP/1.0 closed, ", PendingRequestCount.ToString(), " pending"));
             StartReconnect();

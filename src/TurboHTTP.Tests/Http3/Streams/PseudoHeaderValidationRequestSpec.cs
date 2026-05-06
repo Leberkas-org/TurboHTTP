@@ -33,7 +33,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":method", ex.Message);
     }
 
@@ -49,7 +49,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":scheme", ex.Message);
     }
 
@@ -65,7 +65,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":authority", ex.Message);
     }
 
@@ -81,7 +81,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":path", ex.Message);
     }
 
@@ -116,7 +116,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
         Assert.Contains(":status", ex.Message);
     }
@@ -135,7 +135,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
     }
 
@@ -153,7 +153,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":custom", ex.Message);
     }
 
@@ -171,7 +171,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular header", ex.Message);
     }
 
@@ -189,7 +189,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -206,7 +206,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -224,7 +224,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -242,7 +242,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -260,7 +260,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -273,7 +273,7 @@ public sealed class PseudoHeaderValidationRequestSpec
 
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/path?q=1");
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":method", Value: "GET" });
@@ -291,7 +291,7 @@ public sealed class PseudoHeaderValidationRequestSpec
 
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com:8443/submit");
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":method", Value: "POST" });
@@ -312,7 +312,7 @@ public sealed class PseudoHeaderValidationRequestSpec
         request.Headers.TryAddWithoutValidation("user-agent", "TurboHttp");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         var lastPseudoIndex = -1;

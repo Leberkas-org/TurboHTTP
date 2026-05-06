@@ -74,11 +74,11 @@ internal sealed class StreamManager
 
         switch (frame)
         {
-            case Http3HeadersFrame headers:
+            case HeadersFrame headers:
                 HandleResponseHeaders(headers, state, endpoint);
                 break;
 
-            case Http3DataFrame data:
+            case DataFrame data:
                 HandleResponseData(data, state);
                 break;
         }
@@ -263,7 +263,7 @@ internal sealed class StreamManager
         }
     }
 
-    private void HandleResponseHeaders(Http3HeadersFrame frame, StreamState state, RequestEndpoint endpoint)
+    private void HandleResponseHeaders(HeadersFrame frame, StreamState state, RequestEndpoint endpoint)
     {
         var result = _tableSync.TryDecodeOrBlock(frame.HeaderBlock, (int)state.StreamId);
 
@@ -276,7 +276,7 @@ internal sealed class StreamManager
         FlushDecoderInstructionsCallback?.Invoke(endpoint);
     }
 
-    private void HandleResponseData(Http3DataFrame frame, StreamState state)
+    private void HandleResponseData(DataFrame frame, StreamState state)
     {
         if (!_responseDecoder.AccumulateData(frame, state))
         {

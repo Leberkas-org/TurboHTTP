@@ -8,7 +8,7 @@ public sealed class FrameDecoderSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_data_frame()
     {
-        var original = new Http3DataFrame(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE });
+        var original = new DataFrame(new byte[] { 0xCA, 0xFE, 0xBA, 0xBE });
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
@@ -16,7 +16,7 @@ public sealed class FrameDecoderSpec
 
         Assert.Equal(DecodeStatus.Success, status);
         Assert.NotNull(frame);
-        var data = Assert.IsType<Http3DataFrame>(frame);
+        var data = Assert.IsType<DataFrame>(frame);
         Assert.Equal(original.Data.ToArray(), data.Data.ToArray());
         Assert.Equal(wire.Length, consumed);
     }
@@ -26,14 +26,14 @@ public sealed class FrameDecoderSpec
     public void FrameDecoder_should_decode_headers_frame()
     {
         var headerBlock = new byte[] { 0x00, 0x00, 0x82, 0x87, 0x44, 0x88 };
-        var original = new Http3HeadersFrame(headerBlock);
+        var original = new HeadersFrame(headerBlock);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var headers = Assert.IsType<Http3HeadersFrame>(frame);
+        var headers = Assert.IsType<HeadersFrame>(frame);
         Assert.Equal(headerBlock, headers.HeaderBlock.ToArray());
     }
 
@@ -41,14 +41,14 @@ public sealed class FrameDecoderSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_cancel_push_frame()
     {
-        var original = new Http3CancelPushFrame(16383);
+        var original = new CancelPushFrame(16383);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var cp = Assert.IsType<Http3CancelPushFrame>(frame);
+        var cp = Assert.IsType<CancelPushFrame>(frame);
         Assert.Equal(16383, cp.PushId);
     }
 
@@ -62,14 +62,14 @@ public sealed class FrameDecoderSpec
             (0x01, 100), // QPACK_MAX_TABLE_CAPACITY
             (0x07, 50), // QPACK_BLOCKED_STREAMS
         };
-        var original = new Http3SettingsFrame(parameters);
+        var original = new SettingsFrame(parameters);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        var settings = Assert.IsType<SettingsFrame>(frame);
         Assert.Equal(3, settings.Parameters.Count);
         Assert.Equal((0x06L, 4096L), settings.Parameters[0]);
         Assert.Equal((0x01L, 100L), settings.Parameters[1]);
@@ -81,14 +81,14 @@ public sealed class FrameDecoderSpec
     public void FrameDecoder_should_decode_push_promise_frame()
     {
         var headerBlock = new byte[] { 0xAA, 0xBB, 0xCC };
-        var original = new Http3PushPromiseFrame(42, headerBlock);
+        var original = new PushPromiseFrame(42, headerBlock);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var pp = Assert.IsType<Http3PushPromiseFrame>(frame);
+        var pp = Assert.IsType<PushPromiseFrame>(frame);
         Assert.Equal(42, pp.PushId);
         Assert.Equal(headerBlock, pp.HeaderBlock.ToArray());
     }
@@ -97,14 +97,14 @@ public sealed class FrameDecoderSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_goaway_frame()
     {
-        var original = new Http3GoAwayFrame(1_000_000);
+        var original = new GoAwayFrame(1_000_000);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var goaway = Assert.IsType<Http3GoAwayFrame>(frame);
+        var goaway = Assert.IsType<GoAwayFrame>(frame);
         Assert.Equal(1_000_000, goaway.StreamId);
     }
 
@@ -112,14 +112,14 @@ public sealed class FrameDecoderSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_max_push_id_frame()
     {
-        var original = new Http3MaxPushIdFrame(63);
+        var original = new MaxPushIdFrame(63);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var mp = Assert.IsType<Http3MaxPushIdFrame>(frame);
+        var mp = Assert.IsType<MaxPushIdFrame>(frame);
         Assert.Equal(63, mp.PushId);
     }
 
@@ -139,7 +139,7 @@ public sealed class FrameDecoderSpec
     public void FrameDecoder_should_reassemble_partial_payload_across_calls()
     {
         var payload = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-        var original = new Http3DataFrame(payload);
+        var original = new DataFrame(payload);
         var wire = original.Serialize();
 
         // Split at midpoint
@@ -157,7 +157,7 @@ public sealed class FrameDecoderSpec
         // Second call — complete the frame
         status = decoder.TryDecode(part2, out frame, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        var data = Assert.IsType<Http3DataFrame>(frame);
+        var data = Assert.IsType<DataFrame>(frame);
         Assert.Equal(payload, data.Data.ToArray());
         Assert.False(decoder.HasRemainder);
     }
@@ -166,7 +166,7 @@ public sealed class FrameDecoderSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_handle_byte_at_a_time_feeding()
     {
-        var original = new Http3GoAwayFrame(256);
+        var original = new GoAwayFrame(256);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
@@ -186,7 +186,7 @@ public sealed class FrameDecoderSpec
             }
         }
 
-        var goaway = Assert.IsType<Http3GoAwayFrame>(frame);
+        var goaway = Assert.IsType<GoAwayFrame>(frame);
         Assert.Equal(256, goaway.StreamId);
     }
 
@@ -217,10 +217,10 @@ public sealed class FrameDecoderSpec
     {
         var frames = new Http3Frame[]
         {
-            new Http3DataFrame(new byte[] { 0x01 }),
-            new Http3GoAwayFrame(0),
-            new Http3MaxPushIdFrame(63),
-            new Http3SettingsFrame(new List<(long, long)> { (0x06, 4096) }),
+            new DataFrame(new byte[] { 0x01 }),
+            new GoAwayFrame(0),
+            new MaxPushIdFrame(63),
+            new SettingsFrame(new List<(long, long)> { (0x06, 4096) }),
         };
 
         // Serialize all frames into a single buffer
@@ -243,9 +243,9 @@ public sealed class FrameDecoderSpec
 
         Assert.Equal(4, decoded.Count);
         Assert.Equal(totalSize, consumed);
-        Assert.IsType<Http3DataFrame>(decoded[0]);
-        Assert.IsType<Http3GoAwayFrame>(decoded[1]);
-        Assert.IsType<Http3MaxPushIdFrame>(decoded[2]);
-        Assert.IsType<Http3SettingsFrame>(decoded[3]);
+        Assert.IsType<DataFrame>(decoded[0]);
+        Assert.IsType<GoAwayFrame>(decoded[1]);
+        Assert.IsType<MaxPushIdFrame>(decoded[2]);
+        Assert.IsType<SettingsFrame>(decoded[3]);
     }
 }

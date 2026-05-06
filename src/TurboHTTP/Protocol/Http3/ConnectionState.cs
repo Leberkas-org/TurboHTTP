@@ -14,7 +14,7 @@ internal sealed class ConnectionState
     public Settings? RemoteSettings { get; private set; }
     public long? RemoteMaxFieldSectionSize => RemoteSettings?.MaxFieldSectionSize;
 
-    private DateTime _lastActivity;
+    private long _lastActivity;
 
     public int ActiveStreamCount { get; private set; }
     public bool IsTimeoutDisabled => _idleTimeout == TimeSpan.Zero;
@@ -28,10 +28,10 @@ internal sealed class ConnectionState
     {
         _idleTimeout = idleTimeout;
         _maxPushCount = maxPushCount;
-        _lastActivity = DateTime.UtcNow;
+        _lastActivity = Environment.TickCount64;
     }
 
-    public void OnServerGoAway(Http3GoAwayFrame frame)
+    public void OnServerGoAway(GoAwayFrame frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
 
@@ -40,14 +40,14 @@ internal sealed class ConnectionState
         if (streamId % 4 != 0)
         {
             throw new Http3Exception(
-                Http3ErrorCode.IdError,
+                ErrorCode.IdError,
                 $"Server GOAWAY stream ID {streamId} is not a valid client-initiated bidirectional stream ID (must be divisible by 4, RFC 9114 §5.2).");
         }
 
         if (LastGoAwayStreamId >= 0 && streamId > LastGoAwayStreamId)
         {
             throw new Http3Exception(
-                Http3ErrorCode.IdError,
+                ErrorCode.IdError,
                 $"Server GOAWAY stream ID {streamId} must not increase beyond previous value {LastGoAwayStreamId} (RFC 9114 §5.2).");
         }
 
@@ -55,12 +55,12 @@ internal sealed class ConnectionState
         GoAwayReceived = true;
     }
 
-    public void OnRemoteSettings(Http3SettingsFrame settingsFrame)
+    public void OnRemoteSettings(SettingsFrame settingsFrame)
     {
         if (RemoteSettingsReceived)
         {
             throw new Http3Exception(
-                Http3ErrorCode.FrameUnexpected,
+                ErrorCode.FrameUnexpected,
                 "A second SETTINGS frame on the control stream is a connection error (RFC 9114 §7.2.4).");
         }
 
@@ -76,7 +76,7 @@ internal sealed class ConnectionState
 
     public void RecordActivity()
     {
-        _lastActivity = DateTime.UtcNow;
+        _lastActivity = Environment.TickCount64;
     }
 
     public void OnStreamOpened()
@@ -102,7 +102,7 @@ internal sealed class ConnectionState
             return false;
         }
 
-        return DateTime.UtcNow - _lastActivity >= _idleTimeout;
+        return Environment.TickCount64 - _lastActivity >= (long)_idleTimeout.TotalMilliseconds;
     }
 
     public TimeSpan TimeUntilExpiry()
@@ -112,8 +112,8 @@ internal sealed class ConnectionState
             return TimeSpan.MaxValue;
         }
 
-        var remaining = _idleTimeout - (DateTime.UtcNow - _lastActivity);
-        return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
+        var remainingMs = (long)_idleTimeout.TotalMilliseconds - (Environment.TickCount64 - _lastActivity);
+        return remainingMs > 0 ? TimeSpan.FromMilliseconds(remainingMs) : TimeSpan.Zero;
     }
 
     public static TimeSpan ComputeEffectiveTimeout(TimeSpan localTimeout, TimeSpan remoteTimeout)
@@ -148,14 +148,14 @@ internal sealed class ConnectionState
         if (_pushCount >= _maxPushCount)
         {
             throw new Http3Exception(
-                Http3ErrorCode.ExcessiveLoad,
+                ErrorCode.ExcessiveLoad,
                 $"Server exceeded push limit of {_maxPushCount} push promises (RFC 9114 §10.5).");
         }
 
         _pushCount++;
     }
 
-    public void OnReceivedCancelPush(Http3CancelPushFrame frame)
+    public void OnReceivedCancelPush(CancelPushFrame frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
         _cancelledPushIds.Add(frame.PushId);

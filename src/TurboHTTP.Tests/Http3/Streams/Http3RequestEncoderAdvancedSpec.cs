@@ -17,7 +17,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         request.Headers.TryAddWithoutValidation("x-request-id", "abc-123");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: "accept", Value: "application/json" });
@@ -36,7 +36,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         };
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h.Name == "content-type" && h.Value.Contains("application/json"));
@@ -52,7 +52,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         request.Headers.TryAddWithoutValidation("Accept-Language", "en-US");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: "accept-language", Value: "en-US" });
@@ -75,7 +75,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         request.Headers.TryAddWithoutValidation(forbiddenHeader, "some-value");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.DoesNotContain(headers, h => h.Name == forbiddenHeader);
@@ -92,7 +92,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         request.Headers.TryAddWithoutValidation("accept", "*/*");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.DoesNotContain(headers, h => h.Name == "connection");
@@ -130,7 +130,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -145,7 +145,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Missing", ex.Message);
     }
 
@@ -163,7 +163,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Unknown", ex.Message);
     }
 
@@ -181,7 +181,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => RequestEncoder.ValidatePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular", ex.Message);
     }
 
@@ -202,8 +202,8 @@ public sealed class Http3RequestEncoderAdvancedSpec
         Assert.NotEmpty(frames2);
 
         // Second request header block is typically smaller due to QPACK dynamic table reuse
-        var block1 = Assert.IsType<Http3HeadersFrame>(frames1[0]).HeaderBlock;
-        var block2 = Assert.IsType<Http3HeadersFrame>(frames2[0]).HeaderBlock;
+        var block1 = Assert.IsType<HeadersFrame>(frames1[0]).HeaderBlock;
+        var block2 = Assert.IsType<HeadersFrame>(frames2[0]).HeaderBlock;
         Assert.True(block2.Length <= block1.Length,
             "Second request should benefit from QPACK state (same or smaller header block)");
     }
@@ -223,7 +223,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         var frames = encoder.Encode(request);
 
         Assert.Equal(2, frames.Count);
-        var dataFrame = Assert.IsType<Http3DataFrame>(frames[1]);
+        var dataFrame = Assert.IsType<DataFrame>(frames[1]);
         Assert.Equal(body.Length, dataFrame.Data.Length);
         Assert.Equal(body, dataFrame.Data.ToArray());
     }
@@ -237,7 +237,7 @@ public sealed class Http3RequestEncoderAdvancedSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/" });

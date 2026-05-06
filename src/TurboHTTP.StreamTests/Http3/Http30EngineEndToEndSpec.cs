@@ -18,7 +18,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
         => _qpack.Encode(headers);
 
     private static byte[] ServerSettings()
-        => new Http3SettingsFrame([]).Serialize();
+        => new SettingsFrame([]).Serialize();
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9114-4.1")]
@@ -29,7 +29,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             Version = HttpVersion.Version30
         };
 
-        var headersFrame = new Http3HeadersFrame(
+        var headersFrame = new HeadersFrame(
             EncodeResponseHeaders((":status", "200"))).Serialize();
 
         var (response, outboundFrames) = await SendH3EngineAsync(
@@ -39,7 +39,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             headersFrame);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(outboundFrames, f => f is Http3HeadersFrame);
+        Assert.Contains(outboundFrames, f => f is HeadersFrame);
     }
 
     [Fact(Timeout = 10_000)]
@@ -53,7 +53,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             Content = new StringContent(payload, Encoding.UTF8, "application/x-www-form-urlencoded")
         };
 
-        var headersFrame = new Http3HeadersFrame(
+        var headersFrame = new HeadersFrame(
             EncodeResponseHeaders((":status", "200"))).Serialize();
 
         var (response, outboundFrames) = await SendH3EngineAsync(
@@ -63,8 +63,8 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             headersFrame);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(outboundFrames, f => f is Http3HeadersFrame);
-        Assert.Contains(outboundFrames, f => f is Http3DataFrame);
+        Assert.Contains(outboundFrames, f => f is HeadersFrame);
+        Assert.Contains(outboundFrames, f => f is DataFrame);
     }
 
     [Fact(Timeout = 10_000)]
@@ -88,12 +88,12 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             compressedBody = ms.ToArray();
         }
 
-        var headersFrame = new Http3HeadersFrame(
+        var headersFrame = new HeadersFrame(
             EncodeResponseHeaders(
                 (":status", "200"),
                 ("content-encoding", "gzip"))).Serialize();
 
-        var dataFrame = new Http3DataFrame(compressedBody).Serialize();
+        var dataFrame = new DataFrame(compressedBody).Serialize();
 
         // Concatenate headers + data into a single server frame buffer
         var responseFrames = new byte[headersFrame.Length + dataFrame.Length];
@@ -121,7 +121,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             Version = HttpVersion.Version30
         };
 
-        var headersFrame = new Http3HeadersFrame(
+        var headersFrame = new HeadersFrame(
             EncodeResponseHeaders((":status", "200"))).Serialize();
 
         var (response, outboundFrames) = await SendH3EngineAsync(
@@ -131,7 +131,7 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
             headersFrame);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(outboundFrames, f => f is Http3SettingsFrame);
+        Assert.Contains(outboundFrames, f => f is SettingsFrame);
     }
 
     [Fact(Timeout = 10_000)]
@@ -145,9 +145,9 @@ public sealed class Http30EngineEndToEndSpec : EngineTestBase
 
         var expectedBody = "Response body content"u8.ToArray();
 
-        var headersFrame = new Http3HeadersFrame(
+        var headersFrame = new HeadersFrame(
             EncodeResponseHeaders((":status", "200"))).Serialize();
-        var dataFrame = new Http3DataFrame(expectedBody).Serialize();
+        var dataFrame = new DataFrame(expectedBody).Serialize();
 
         var responseFrames = new byte[headersFrame.Length + dataFrame.Length];
         headersFrame.CopyTo(responseFrames, 0);

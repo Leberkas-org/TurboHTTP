@@ -18,7 +18,7 @@ namespace TurboHTTP.Protocol.Http3;
 /// QPACK instruction streams to <see cref="QpackStreamHandler"/>.
 /// </para>
 /// </summary>
-internal sealed class StateMachine : IHttpStateMachine, IDisposable
+internal sealed class StateMachine : IHttpStateMachine
 {
     private static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromSeconds(30);
 
@@ -38,10 +38,10 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
     // Preface tracking
     private bool _controlPrefaceSent;
 
-    // Transport connection tracking and pre-connect buffering
-    // For HTTP/3, the transport (QUIC) is already connected when the stage starts,
-    // so we begin in the connected state and bypass pre-connect buffering.
-    private bool _transportConnected = true;
+    // Transport connection tracking and pre-connect buffering.
+    // QUIC requires ConnectTransport before OpenStream/data can be processed,
+    // so we buffer outbound items until TransportConnected arrives.
+    private bool _transportConnected;
     private readonly List<ITransportOutbound> _preConnectBuffer = [];
 
     // Server-initiated stream mapping (QUIC stream ID → logical stream ID)
@@ -128,9 +128,9 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         _controlPrefaceSent = true;
 
         var settings = new Settings();
-        settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, _options.Http3.QpackMaxTableCapacity);
-        settings.Set(Http3SettingsIdentifier.QpackBlockedStreams, _options.Http3.QpackBlockedStreams);
-        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, _options.Http3.MaxFieldSectionSize);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, _options.Http3.QpackMaxTableCapacity);
+        settings.Set(SettingsIdentifier.QpackBlockedStreams, _options.Http3.QpackBlockedStreams);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, _options.Http3.MaxFieldSectionSize);
         var settingsFrame = settings.ToFrame();
 
         var streamTypeSize = QuicVarInt.EncodedLength((long)StreamType.Control);
@@ -199,7 +199,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
             {
                 if (!_assignedCriticalStreams.Add(logicalId))
                 {
-                    throw new Http3Exception(Http3ErrorCode.ClosedCriticalStream,
+                    throw new Http3Exception(ErrorCode.ClosedCriticalStream,
                         string.Concat("RFC 9114 §6.2.1: Duplicate stream type ", ((StreamType)rawType).ToString()));
                 }
             }
@@ -247,25 +247,25 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
 
         switch (frame)
         {
-            case Http3SettingsFrame settings:
+            case SettingsFrame settings:
                 HandleSettings(settings);
                 return null;
 
-            case Http3GoAwayFrame goAway:
+            case GoAwayFrame goAway:
                 HandleGoAway(goAway);
                 return null;
 
-            case Http3PushPromiseFrame pushPromise:
+            case PushPromiseFrame pushPromise:
                 return HandlePushPromise(pushPromise);
 
-            case Http3CancelPushFrame cancelPush:
+            case CancelPushFrame cancelPush:
                 Connection.OnReceivedCancelPush(cancelPush);
                 return null;
 
-            case Http3MaxPushIdFrame:
+            case MaxPushIdFrame:
                 return null;
 
-            case Http3HeadersFrame:
+            case HeadersFrame:
             default:
                 return frame;
         }
@@ -294,22 +294,6 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
     public void FlushPendingResponse()
     {
         _streamManager.FlushAllPendingResponses();
-    }
-
-    /// <summary>
-    /// Encodes an outbound HTTP request into HTTP/3 frames and emits them via callbacks.
-    /// Also handles QPACK encoder instructions and correlation tracking.
-    /// Returns false if GOAWAY was received (request dropped).
-    /// </summary>
-    public bool EncodeRequest(HttpRequestMessage request)
-    {
-        if (Connection.GoAwayReceived)
-        {
-            _ops.OnWarning("RFC 9114 §5.2 — GOAWAY received; dropping outbound request.");
-            return false;
-        }
-
-        return IsReconnecting ? BufferForReconnect(request) : EncodeAndEmit(request);
     }
 
     /// <summary>
@@ -350,12 +334,12 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
     /// <summary>
     /// Checks whether the idle timeout has expired with no active streams.
     /// </summary>
-    public Http3GoAwayFrame? CheckIdleTimeout()
+    public GoAwayFrame? CheckIdleTimeout()
     {
         if (Connection.IsIdleTimeoutExpired() && Connection.ActiveStreamCount == 0)
         {
             _ops.OnWarning("RFC 9114 §5.1 — idle timeout expired with no active streams; sending GOAWAY.");
-            return new Http3GoAwayFrame(0);
+            return new GoAwayFrame(0);
         }
 
         return null;
@@ -394,6 +378,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
     public void OnConnectionLost()
     {
         IsReconnecting = true;
+        _transportConnected = false;
         _reconnectAttempts = 1;
 
         _streamManager.DrainStreams();
@@ -410,10 +395,10 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
 
         if (_transportOptions is not null)
         {
-            _ops.OnOutbound(new OpenStream(-2, StreamDirection.Unidirectional));
-            _ops.OnOutbound(new OpenStream(-3, StreamDirection.Unidirectional));
-            _ops.OnOutbound(new OpenStream(-4, StreamDirection.Unidirectional));
-            _ops.OnOutbound(new ConnectTransport(_transportOptions));
+            EmitOutbound(new OpenStream(-2, StreamDirection.Unidirectional));
+            EmitOutbound(new OpenStream(-3, StreamDirection.Unidirectional));
+            EmitOutbound(new OpenStream(-4, StreamDirection.Unidirectional));
+            EmitOutbound(new ConnectTransport(_transportOptions));
         }
     }
 
@@ -497,29 +482,11 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         _ops.OnScheduleTimer("idle-timeout-check", checkInterval);
     }
 
-    /// <summary>
-    /// Disposes owned resources.
-    /// </summary>
-    public void Dispose()
-    {
-        _streamManager.Dispose();
-
-        foreach (var item in _preConnectBuffer)
-        {
-            if (item is TransportData { Buffer: var buffer })
-            {
-                buffer.Dispose();
-            }
-        }
-
-        _preConnectBuffer.Clear();
-    }
-
-    private bool BufferForReconnect(HttpRequestMessage request)
+    private void BufferForReconnect(HttpRequestMessage request)
     {
         if (_reconnectBuffer.Count >= _options.Http3.MaxReconnectBufferSize)
         {
-            return false;
+            return;
         }
 
         var frames = EncodeToFrames(request);
@@ -530,10 +497,9 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
 
         var reconnectStreamId = Tracker.AllocateStreamId();
         _streamManager.Correlate(reconnectStreamId, request);
-        return true;
     }
 
-    private bool EncodeAndEmit(HttpRequestMessage request)
+    private void EncodeAndEmit(HttpRequestMessage request)
     {
         var encoded = EncodeToFrames(request);
 
@@ -554,7 +520,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
 
         _streamManager.Correlate(streamId, request);
 
-        _ops.OnOutbound(new OpenStream(streamId, StreamDirection.Bidirectional));
+        EmitOutbound(new OpenStream(streamId, StreamDirection.Bidirectional));
 
         FlushEncoderInstructions();
 
@@ -563,8 +529,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
             EmitSerializedFrame(f, streamId);
         }
 
-        _ops.OnOutbound(new CompleteWrites(streamId));
-        return true;
+        EmitOutbound(new CompleteWrites(streamId));
     }
 
     private IReadOnlyList<Http3Frame> EncodeToFrames(HttpRequestMessage request)
@@ -589,7 +554,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         for (var i = 0; i < replayCount; i++)
         {
             var frame = replayArray[i];
-            if (frame is Http3HeadersFrame)
+            if (frame is HeadersFrame)
             {
                 currentReplayStreamId = Tracker.AllocateStreamId();
                 Tracker.OnStreamOpened(currentReplayStreamId);
@@ -621,11 +586,11 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
 
         if (streamId >= 0)
         {
-            _ops.OnOutbound(new MultiplexedData(buf, streamId));
+            EmitOutbound(new MultiplexedData(buf, streamId));
         }
         else
         {
-            _ops.OnOutbound(new TransportData(buf));
+            EmitOutbound(new TransportData(buf));
         }
     }
 
@@ -635,7 +600,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         Connection.OnStreamClosed();
     }
 
-    private void HandleSettings(Http3SettingsFrame settings)
+    private void HandleSettings(SettingsFrame settings)
     {
         try
         {
@@ -660,7 +625,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         }
     }
 
-    private void HandleGoAway(Http3GoAwayFrame goAway)
+    private void HandleGoAway(GoAwayFrame goAway)
     {
         try
         {
@@ -675,9 +640,9 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         }
     }
 
-    private Http3PushPromiseFrame? HandlePushPromise(Http3PushPromiseFrame pushPromise)
+    private PushPromiseFrame? HandlePushPromise(PushPromiseFrame pushPromise)
     {
-        var cancelFrame = new Http3CancelPushFrame(pushPromise.PushId);
+        var cancelFrame = new CancelPushFrame(pushPromise.PushId);
         EmitSerializedFrame(cancelFrame);
         _ops.OnWarning(
             string.Concat("RFC 9114 §7.2.5 — push promise rejected (pushId=",
@@ -695,7 +660,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
 
         if (pushId >= 0)
         {
-            var cancel = new Http3CancelPushFrame(pushId);
+            var cancel = new CancelPushFrame(pushId);
             EmitSerializedFrame(cancel);
         }
 
@@ -756,9 +721,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         }
     }
 
-    // --- IHttpStateMachine explicit implementation ---
-
-    void IHttpStateMachine.PreStart()
+    public void PreStart()
     {
         EmitOutbound(new OpenStream(-2, StreamDirection.Unidirectional));
         EmitOutbound(new OpenStream(-3, StreamDirection.Unidirectional));
@@ -773,12 +736,24 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         ScheduleIdleCheck();
     }
 
-    void IHttpStateMachine.OnRequest(HttpRequestMessage request)
+    public void OnRequest(HttpRequestMessage request)
     {
-        EncodeRequest(request);
+        if (Connection.GoAwayReceived)
+        {
+            _ops.OnWarning("RFC 9114 §5.2 — GOAWAY received; dropping outbound request.");
+            return;
+        }
+
+        if (IsReconnecting)
+        {
+            BufferForReconnect(request);
+            return;
+        }
+
+        EncodeAndEmit(request);
     }
 
-    void IHttpStateMachine.DecodeServerData(ITransportInbound data)
+    public void DecodeServerData(ITransportInbound data)
     {
         switch (data)
         {
@@ -796,6 +771,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
                 {
                     _ops.OnFail(new HttpRequestException("TurboHTTP: HTTP/3 reconnect failed after max attempts."));
                 }
+
                 return;
             }
 
@@ -844,6 +820,7 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
                 {
                     FlushPendingResponse(streamClosed.StreamId);
                 }
+
                 return;
             }
 
@@ -868,21 +845,19 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         }
     }
 
-    void IHttpStateMachine.OnUpstreamFinished()
+    public void OnUpstreamFinished()
     {
         FlushPendingResponse();
 
         if (IsReconnecting)
         {
             _ops.OnWarning("HTTP/3 transport closed during reconnect — discarding in-flight request(s).");
-            _ops.OnComplete();
-            return;
         }
 
         _ops.OnComplete();
     }
 
-    void IHttpStateMachine.OnTimerFired(string name)
+    public void OnTimerFired(string name)
     {
         if (name != "idle-timeout-check")
         {
@@ -904,8 +879,18 @@ internal sealed class StateMachine : IHttpStateMachine, IDisposable
         ScheduleIdleCheck();
     }
 
-    void IHttpStateMachine.Cleanup()
+    public void Cleanup()
     {
-        Dispose();
+        _streamManager.Dispose();
+
+        foreach (var item in _preConnectBuffer)
+        {
+            if (item is TransportData { Buffer: var buffer })
+            {
+                buffer.Dispose();
+            }
+        }
+
+        _preConnectBuffer.Clear();
     }
 }

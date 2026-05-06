@@ -54,7 +54,7 @@ internal static class FieldValidator
 
     /// <summary>
     /// Validates all field names and values in the header list.
-    /// Throws <see cref="Http3Exception"/> with <see cref="Http3ErrorCode.MessageError"/>
+    /// Throws <see cref="Http3Exception"/> with <see cref="ErrorCode.MessageError"/>
     /// if any field violates RFC 9114 §4.2 or §10.3 rules.
     /// </summary>
     /// <param name="headers">The header field list to validate.</param>
@@ -86,7 +86,7 @@ internal static class FieldValidator
     {
         if (name.Length == 0)
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §10.3: Empty field name is not a valid token");
         }
 
@@ -97,14 +97,14 @@ internal static class FieldValidator
             // Check uppercase first (§4.2 — specific error message)
             if (c is >= 'A' and <= 'Z')
             {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
+                throw new Http3Exception(ErrorCode.MessageError,
                     $"RFC 9114 §4.2: Field name '{name}' contains uppercase character '{c}' at position {i}");
             }
 
             // Check token validity (§10.3 — intermediary encapsulation prevention)
             if (c >= 128 || !IsTokenChar[c])
             {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
+                throw new Http3Exception(ErrorCode.MessageError,
                     $"RFC 9114 §10.3: Field name '{name}' contains invalid character 0x{(int)c:X2} at position {i}");
             }
         }
@@ -126,13 +126,13 @@ internal static class FieldValidator
             switch (c)
             {
                 case '\0':
-                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(ErrorCode.MessageError,
                         $"RFC 9114 §10.3: Field '{name}' value contains NUL (0x00) at position {i}");
                 case '\r':
-                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(ErrorCode.MessageError,
                         $"RFC 9114 §10.3: Field '{name}' value contains CR (0x0D) at position {i}");
                 case '\n':
-                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(ErrorCode.MessageError,
                         $"RFC 9114 §10.3: Field '{name}' value contains LF (0x0A) at position {i}");
             }
         }
@@ -171,7 +171,7 @@ internal static class FieldValidator
                 {
                     if (hasStatus)
                     {
-                        throw new Http3Exception(Http3ErrorCode.MessageError,
+                        throw new Http3Exception(ErrorCode.MessageError,
                             "RFC 9114 §4.3.2: Duplicate :status pseudo-header");
                     }
 
@@ -179,7 +179,7 @@ internal static class FieldValidator
                 }
                 else
                 {
-                    throw new Http3Exception(Http3ErrorCode.MessageError,
+                    throw new Http3Exception(ErrorCode.MessageError,
                         $"RFC 9114 §4.3.2: Unknown response pseudo-header '{name}'");
                 }
             }
@@ -194,7 +194,7 @@ internal static class FieldValidator
 
         if (lastPseudoIndex > firstRegularIndex)
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 $"RFC 9114 §4.3.2: Pseudo-header at index {lastPseudoIndex} appears after regular header at index {firstRegularIndex}");
         }
     }
@@ -203,38 +203,38 @@ internal static class FieldValidator
     {
         if (string.Equals(name, "connection", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §4.2: Connection header is forbidden in HTTP/3");
         }
 
         if (string.Equals(name, "transfer-encoding", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §4.2: Transfer-Encoding header is forbidden in HTTP/3");
         }
 
         if (string.Equals(name, "upgrade", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §4.2: Upgrade header is forbidden in HTTP/3");
         }
 
         if (string.Equals(name, "proxy-connection", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §4.2: Proxy-Connection header is forbidden in HTTP/3");
         }
 
         if (string.Equals(name, "keep-alive", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §4.2: Keep-Alive header is forbidden in HTTP/3");
         }
 
         if (string.Equals(name, "te", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(value, "trailers", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 $"RFC 9114 §4.2: TE header is only allowed with value 'trailers', got '{value}'");
         }
     }

@@ -2,85 +2,12 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Threading.Channels;
-using System.Threading.Tasks.Sources;
 using Akka.Actor;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Lifecycle;
 
 namespace TurboHTTP;
-
-/// <summary>
-/// Pooled per-request completion source backed by <see cref="ManualResetValueTaskSourceCore{T}"/>.
-/// Avoids the ~120 B per-request allocation of <see cref="TaskCompletionSource{T}"/> + its inner <see cref="Task{T}"/>.
-/// Completed directly by the pipeline Sink via <see cref="TcsCorrelation.Key"/> (G2).
-/// Pooled on a static <see cref="System.Collections.Concurrent.ConcurrentStack{T}"/> for reuse (E4).
-/// </summary>
-internal sealed class PendingRequest : IValueTaskSource<HttpResponseMessage>
-{
-    private static readonly ConcurrentStack<PendingRequest> Pool = new();
-
-    private ManualResetValueTaskSourceCore<HttpResponseMessage> _core = new() { RunContinuationsAsynchronously = true };
-
-    private PendingRequest()
-    {
-    }
-
-    public static PendingRequest Rent()
-    {
-        if (!Pool.TryPop(out var item)) return new PendingRequest();
-        item._core.Reset();
-        return item;
-    }
-
-    public static void Return(PendingRequest item) => Pool.Push(item);
-
-    /// <summary>The version token from the current MRVTSC cycle — used by the Sink to guard against stale completions.</summary>
-    public short Version => _core.Version;
-
-    /// <summary>Returns a <see cref="ValueTask{T}"/> tied to the current cycle of this instance.</summary>
-    public ValueTask<HttpResponseMessage> GetValueTask() => new(this, _core.Version);
-
-    public bool TrySetResult(HttpResponseMessage response, short expectedVersion)
-    {
-        if (_core.Version != expectedVersion)
-        {
-            return false;
-        }
-
-        try
-        {
-            _core.SetResult(response);
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-    }
-
-    public bool TrySetException(Exception exception)
-    {
-        try
-        {
-            _core.SetException(exception);
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-    }
-
-    public bool TrySetCanceled(CancellationToken ct = default) => TrySetException(new OperationCanceledException(ct));
-
-    public HttpResponseMessage GetResult(short token) => _core.GetResult(token);
-    public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);
-
-    public void OnCompleted(Action<object?> continuation, object? state, short token,
-        ValueTaskSourceOnCompletedFlags flags)
-        => _core.OnCompleted(continuation, state, token, flags);
-}
 
 public sealed class TurboHttpClient : ITurboHttpClient
 {
@@ -157,7 +84,7 @@ public sealed class TurboHttpClient : ITurboHttpClient
 
     public ChannelWriter<HttpRequestMessage> Requests => Manager.Requests;
     public ChannelReader<HttpResponseMessage> Responses => Manager.Responses;
-
+    
     internal ClientStreamManager Manager { get; }
 
     private void UpdateCachedOptions()

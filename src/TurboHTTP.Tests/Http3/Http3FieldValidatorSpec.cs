@@ -29,7 +29,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("uppercase", ex.Message);
         Assert.Contains("Content-Type", ex.Message);
     }
@@ -48,7 +48,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Accept-Encoding", ex.Message);
     }
 
@@ -63,7 +63,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("HOST", ex.Message);
     }
 
@@ -114,7 +114,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -128,7 +128,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Connection", ex.Message);
     }
 
@@ -143,7 +143,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Transfer-Encoding", ex.Message);
     }
 
@@ -158,7 +158,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Upgrade", ex.Message);
     }
 
@@ -173,7 +173,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Proxy-Connection", ex.Message);
     }
 
@@ -188,7 +188,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Keep-Alive", ex.Message);
     }
 
@@ -219,7 +219,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("TE", ex.Message);
         Assert.Contains("trailers", ex.Message);
     }
@@ -235,7 +235,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -249,7 +249,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -263,7 +263,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.Validate(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -291,7 +291,7 @@ public sealed class Http3FieldValidatorSpec
     public void ValidateConnectionSpecific_should_reject_all_forbidden_headers(string name)
     {
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateConnectionSpecific(name, "value"));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -345,7 +345,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -360,7 +360,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":method", ex.Message);
     }
 
@@ -375,7 +375,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":path", ex.Message);
     }
 
@@ -390,7 +390,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains(":custom", ex.Message);
     }
 
@@ -405,7 +405,7 @@ public sealed class Http3FieldValidatorSpec
         };
 
         var ex = Assert.Throws<Http3Exception>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
-        Assert.Equal(Http3ErrorCode.MessageError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.MessageError, ex.ErrorCode);
         Assert.Contains("after regular header", ex.Message);
     }
 }

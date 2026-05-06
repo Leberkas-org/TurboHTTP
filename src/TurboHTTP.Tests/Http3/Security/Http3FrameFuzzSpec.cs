@@ -133,7 +133,7 @@ public sealed class Http3FrameFuzzSpec
         var status = decoder.TryDecode(frame, out var decoded, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var dataFrame = Assert.IsType<Http3DataFrame>(decoded);
+        var dataFrame = Assert.IsType<DataFrame>(decoded);
         Assert.Equal(5, dataFrame.Data.Length);
         dataFrame.Dispose();
     }
@@ -155,7 +155,7 @@ public sealed class Http3FrameFuzzSpec
 
             var ex = Assert.Throws<Http3Exception>(
                 () => Settings.Deserialize(payload));
-            Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+            Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
         }
     }
 
@@ -167,15 +167,15 @@ public sealed class Http3FrameFuzzSpec
         var payloadBuf = new byte[32];
         var offset = 0;
         // Write QPACK_MAX_TABLE_CAPACITY twice
-        offset += QuicVarInt.Encode(Http3SettingsIdentifier.QpackMaxTableCapacity, payloadBuf.AsSpan(offset));
+        offset += QuicVarInt.Encode(SettingsIdentifier.QpackMaxTableCapacity, payloadBuf.AsSpan(offset));
         offset += QuicVarInt.Encode(4096, payloadBuf.AsSpan(offset));
-        offset += QuicVarInt.Encode(Http3SettingsIdentifier.QpackMaxTableCapacity, payloadBuf.AsSpan(offset));
+        offset += QuicVarInt.Encode(SettingsIdentifier.QpackMaxTableCapacity, payloadBuf.AsSpan(offset));
         offset += QuicVarInt.Encode(8192, payloadBuf.AsSpan(offset));
 
         var payload = payloadBuf[..offset];
 
         var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(payload));
-        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
     }
 
     [Fact(Timeout = 5000)]
@@ -199,7 +199,7 @@ public sealed class Http3FrameFuzzSpec
     {
         // Truncated: identifier present but value missing
         var payloadBuf = new byte[8];
-        var offset = QuicVarInt.Encode(Http3SettingsIdentifier.QpackMaxTableCapacity, payloadBuf);
+        var offset = QuicVarInt.Encode(SettingsIdentifier.QpackMaxTableCapacity, payloadBuf);
         var payload = payloadBuf[..offset]; // Only identifier, no value
 
         Assert.Throws<Http3Exception>(() => Settings.Deserialize(payload));
@@ -231,8 +231,8 @@ public sealed class Http3FrameFuzzSpec
         var validFrame = BuildRawFrame((long)FrameType.Data, [0x01, 0x02, 0x03]);
         var status = decoder.TryDecode(validFrame, out var frame, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        Assert.IsType<Http3DataFrame>(frame);
-        ((Http3DataFrame)frame).Dispose();
+        Assert.IsType<DataFrame>(frame);
+        ((DataFrame)frame).Dispose();
 
         // Valid GOAWAY frame
         var goawayPayload = new byte[8];
@@ -240,7 +240,7 @@ public sealed class Http3FrameFuzzSpec
         var goawayFrame = BuildRawFrame((long)FrameType.GoAway, goawayPayload[..goawayLen]);
         status = decoder.TryDecode(goawayFrame, out frame, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        Assert.IsType<Http3GoAwayFrame>(frame);
+        Assert.IsType<GoAwayFrame>(frame);
     }
 
     [Fact(Timeout = 5000)]
@@ -253,7 +253,7 @@ public sealed class Http3FrameFuzzSpec
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        var dataFrame = Assert.IsType<Http3DataFrame>(decoded);
+        var dataFrame = Assert.IsType<DataFrame>(decoded);
         Assert.Equal(0, dataFrame.Data.Length);
         dataFrame.Dispose();
     }
@@ -268,7 +268,7 @@ public sealed class Http3FrameFuzzSpec
 
         var status = decoder.TryDecode(frame, out var decoded, out _);
         Assert.Equal(DecodeStatus.Success, status);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(decoded);
+        var headersFrame = Assert.IsType<HeadersFrame>(decoded);
         Assert.Equal(0, headersFrame.HeaderBlock.Length);
         headersFrame.Dispose();
     }
@@ -319,7 +319,7 @@ public sealed class Http3FrameFuzzSpec
 
         var status2 = decoder.TryDecode(part2, out var frame2, out _);
         Assert.Equal(DecodeStatus.Success, status2);
-        var dataFrame = Assert.IsType<Http3DataFrame>(frame2);
+        var dataFrame = Assert.IsType<DataFrame>(frame2);
         Assert.Equal(5, dataFrame.Data.Length);
         dataFrame.Dispose();
     }
@@ -346,13 +346,13 @@ public sealed class Http3FrameFuzzSpec
         var settings = new Settings();
 
         Assert.Throws<Http3Exception>(() =>
-            settings.Set(Http3SettingsIdentifier.ReservedH2EnablePush, 1));
+            settings.Set(SettingsIdentifier.ReservedH2EnablePush, 1));
         Assert.Throws<Http3Exception>(() =>
-            settings.Set(Http3SettingsIdentifier.ReservedH2MaxConcurrentStreams, 100));
+            settings.Set(SettingsIdentifier.ReservedH2MaxConcurrentStreams, 100));
         Assert.Throws<Http3Exception>(() =>
-            settings.Set(Http3SettingsIdentifier.ReservedH2InitialWindowSize, 65535));
+            settings.Set(SettingsIdentifier.ReservedH2InitialWindowSize, 65535));
         Assert.Throws<Http3Exception>(() =>
-            settings.Set(Http3SettingsIdentifier.ReservedH2MaxFrameSize, 16384));
+            settings.Set(SettingsIdentifier.ReservedH2MaxFrameSize, 16384));
     }
 
     [Fact(Timeout = 5000)]
@@ -360,9 +360,9 @@ public sealed class Http3FrameFuzzSpec
     public void Settings_should_roundtrip_valid_parameters()
     {
         var settings = new Settings();
-        settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, 4096);
-        settings.Set(Http3SettingsIdentifier.QpackBlockedStreams, 100);
-        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 8192);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, 4096);
+        settings.Set(SettingsIdentifier.QpackBlockedStreams, 100);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, 8192);
 
         var serialized = settings.Serialize();
         var deserialized = Settings.Deserialize(serialized);

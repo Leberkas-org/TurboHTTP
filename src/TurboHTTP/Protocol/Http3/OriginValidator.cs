@@ -44,7 +44,7 @@ internal static class OriginValidator
     {
         if (!string.IsNullOrEmpty(uri.UserInfo))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §10.3: Request URI contains userinfo which cannot be represented in HTTP/3 :authority");
         }
     }
@@ -57,7 +57,7 @@ internal static class OriginValidator
     {
         if (string.IsNullOrEmpty(uri.Scheme))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §10.3: Request URI has empty scheme which cannot be represented in HTTP/3 :scheme");
         }
     }
@@ -73,14 +73,14 @@ internal static class OriginValidator
 
         if (string.IsNullOrEmpty(path))
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §10.3: Request URI has empty path which cannot be represented in HTTP/3 :path");
         }
 
         // Fragment identifiers MUST NOT be sent in :path (RFC 9110 §7.1)
         if (uri.Fragment.Length > 0)
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 "RFC 9114 §10.3: Request URI contains fragment identifier which MUST NOT appear in HTTP/3 :path");
         }
     }

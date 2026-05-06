@@ -18,7 +18,6 @@ internal sealed class StateMachine : IHttpStateMachine
     private const string KeepAlivePingTimeoutKey = "keep-alive-ping-timeout";
 
     private bool KeepAliveEnabled => _options.Http2.KeepAlivePingDelay != Timeout.InfiniteTimeSpan;
-
     public bool CanAcceptRequest => !_protocol.GoAwayReceived && !IsReconnecting && _protocol.CanOpenStream;
     public bool HasInFlightRequests => _protocol.HasInFlightRequests;
     public bool IsReconnecting { get; private set; }
@@ -78,7 +77,7 @@ internal sealed class StateMachine : IHttpStateMachine
             _protocol.ProcessFrame(frames[i]);
         }
 
-        if (_protocol.GoAwayReceived && _protocol.HasInFlightRequests)
+        if (_protocol is { GoAwayReceived: true, HasInFlightRequests: true })
         {
             OnConnectionLost(_protocol.GoAwayLastStreamId);
             return;

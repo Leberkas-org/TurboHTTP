@@ -22,7 +22,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.1")]
     public void Http3DataFrame_should_have_empty_payload()
     {
-        var frame = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
+        var frame = new DataFrame(ReadOnlyMemory<byte>.Empty);
         Assert.Equal(FrameType.Data, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x00 (1 byte) + Length=0x00 (1 byte) = 2 bytes
@@ -37,7 +37,7 @@ public sealed class Http3FrameSpec
     public void Http3DataFrame_should_serialize_with_payload()
     {
         var payload = new byte[] { 0xCA, 0xFE, 0xBA, 0xBE };
-        var frame = new Http3DataFrame(payload);
+        var frame = new DataFrame(payload);
         var bytes = frame.Serialize();
         // Type=0x00 (1b) + Length=0x04 (1b) + 4 bytes payload = 6
         Assert.Equal(6, bytes.Length);
@@ -51,7 +51,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.1")]
     public void Http3DataFrame_should_advance_span_in_writeto()
     {
-        var frame = new Http3DataFrame(new byte[] { 0x01, 0x02 });
+        var frame = new DataFrame(new byte[] { 0x01, 0x02 });
         var buf = new byte[frame.SerializedSize + 5];
         var span = buf.AsSpan();
         var written = frame.WriteTo(ref span);
@@ -64,7 +64,7 @@ public sealed class Http3FrameSpec
     public void Http3HeadersFrame_should_serialize()
     {
         var headerBlock = new byte[] { 0x00, 0x00, 0x82 }; // sample QPACK block
-        var frame = new Http3HeadersFrame(headerBlock);
+        var frame = new HeadersFrame(headerBlock);
         Assert.Equal(FrameType.Headers, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x01 (1b) + Length=0x03 (1b) + 3 bytes = 5
@@ -79,7 +79,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.2")]
     public void Http3HeadersFrame_should_handle_empty_block()
     {
-        var frame = new Http3HeadersFrame(ReadOnlyMemory<byte>.Empty);
+        var frame = new HeadersFrame(ReadOnlyMemory<byte>.Empty);
         var bytes = frame.Serialize();
         Assert.Equal(2, bytes.Length);
         Assert.Equal(0x01, bytes[0]);
@@ -90,7 +90,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.3")]
     public void Http3CancelPushFrame_should_serialize()
     {
-        var frame = new Http3CancelPushFrame(42);
+        var frame = new CancelPushFrame(42);
         Assert.Equal(FrameType.CancelPush, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x03 (1b) + Length=0x01 (1b) + pushId=42 (1b) = 3
@@ -105,7 +105,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.3")]
     public void Http3CancelPushFrame_should_handle_large_push_id()
     {
-        var frame = new Http3CancelPushFrame(16383); // 2-byte varint
+        var frame = new CancelPushFrame(16383); // 2-byte varint
         var bytes = frame.Serialize();
         // Type=0x03 (1b) + Length=0x02 (1b, varint for 2) + pushId (2b) = 4
         Assert.Equal(4, bytes.Length);
@@ -116,14 +116,14 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.3")]
     public void Http3CancelPushFrame_should_reject_negative_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3CancelPushFrame(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new CancelPushFrame(-1));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
     public void Http3SettingsFrame_should_serialize_empty()
     {
-        var frame = new Http3SettingsFrame([]);
+        var frame = new SettingsFrame([]);
         Assert.Equal(FrameType.Settings, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x04 (1b) + Length=0x00 (1b) = 2
@@ -142,7 +142,7 @@ public sealed class Http3FrameSpec
             (0x06, 4096), // SETTINGS_MAX_FIELD_SECTION_SIZE = 4096
             (0x01, 100), // SETTINGS_QPACK_MAX_TABLE_CAPACITY = 100
         };
-        var frame = new Http3SettingsFrame(parameters);
+        var frame = new SettingsFrame(parameters);
         var bytes = frame.Serialize();
 
         // Verify type
@@ -187,7 +187,7 @@ public sealed class Http3FrameSpec
     public void Http3PushPromiseFrame_should_serialize()
     {
         var headerBlock = new byte[] { 0xAA, 0xBB };
-        var frame = new Http3PushPromiseFrame(7, headerBlock);
+        var frame = new PushPromiseFrame(7, headerBlock);
         Assert.Equal(FrameType.PushPromise, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x05 (1b) + Length=0x03 (1b, varint for 3: 1b pushId + 2b header) + pushId=7 (1b) + header (2b) = 5
@@ -204,14 +204,14 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.5")]
     public void Http3PushPromiseFrame_should_reject_negative_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3PushPromiseFrame(-1, ReadOnlyMemory<byte>.Empty));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PushPromiseFrame(-1, ReadOnlyMemory<byte>.Empty));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.6")]
     public void Http3GoAwayFrame_should_serialize()
     {
-        var frame = new Http3GoAwayFrame(0);
+        var frame = new GoAwayFrame(0);
         Assert.Equal(FrameType.GoAway, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x06 (1b) + Length=0x01 (1b) + streamId=0 (1b) = 3
@@ -226,7 +226,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.6")]
     public void Http3GoAwayFrame_should_handle_large_stream_id()
     {
-        var frame = new Http3GoAwayFrame(1_000_000);
+        var frame = new GoAwayFrame(1_000_000);
         var bytes = frame.Serialize();
 
         // Decode and verify
@@ -248,14 +248,14 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.6")]
     public void Http3GoAwayFrame_should_reject_negative_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3GoAwayFrame(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GoAwayFrame(-1));
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.7")]
     public void Http3MaxPushIdFrame_should_serialize()
     {
-        var frame = new Http3MaxPushIdFrame(15);
+        var frame = new MaxPushIdFrame(15);
         Assert.Equal(FrameType.MaxPushId, frame.Type);
         var bytes = frame.Serialize();
         // Type=0x0d (1b) + Length=0x01 (1b) + pushId=15 (1b) = 3
@@ -270,7 +270,7 @@ public sealed class Http3FrameSpec
     [Trait("RFC", "RFC9114-7.2.7")]
     public void Http3MaxPushIdFrame_should_reject_negative_id()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Http3MaxPushIdFrame(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MaxPushIdFrame(-1));
     }
 
     [Fact(Timeout = 5000)]
@@ -280,13 +280,13 @@ public sealed class Http3FrameSpec
         var payload = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
         Http3Frame[] frames =
         [
-            new Http3DataFrame(payload),
-            new Http3HeadersFrame(payload),
-            new Http3CancelPushFrame(63),
-            new Http3SettingsFrame(new List<(long, long)> { (0x06, 4096), (0x01, 0) }),
-            new Http3PushPromiseFrame(10, payload),
-            new Http3GoAwayFrame(100),
-            new Http3MaxPushIdFrame(63),
+            new DataFrame(payload),
+            new HeadersFrame(payload),
+            new CancelPushFrame(63),
+            new SettingsFrame(new List<(long, long)> { (0x06, 4096), (0x01, 0) }),
+            new PushPromiseFrame(10, payload),
+            new GoAwayFrame(100),
+            new MaxPushIdFrame(63),
         ];
 
         foreach (var frame in frames)
@@ -303,13 +303,13 @@ public sealed class Http3FrameSpec
         var payload = "\u07ad"u8.ToArray();
         Http3Frame[] frames =
         [
-            new Http3DataFrame(payload),
-            new Http3HeadersFrame(payload),
-            new Http3CancelPushFrame(0),
-            new Http3SettingsFrame([]),
-            new Http3PushPromiseFrame(0, payload),
-            new Http3GoAwayFrame(0),
-            new Http3MaxPushIdFrame(0),
+            new DataFrame(payload),
+            new HeadersFrame(payload),
+            new CancelPushFrame(0),
+            new SettingsFrame([]),
+            new PushPromiseFrame(0, payload),
+            new GoAwayFrame(0),
+            new MaxPushIdFrame(0),
         ];
 
         foreach (var frame in frames)
@@ -328,7 +328,7 @@ public sealed class Http3FrameSpec
     {
         // 100 bytes payload → length=100 uses 2-byte varint (64-16383 range)
         var payload = new byte[100];
-        var frame = new Http3DataFrame(payload);
+        var frame = new DataFrame(payload);
         var bytes = frame.Serialize();
         // Type=0x00 (1b) + Length=100 (2b, since 100 > 63) + payload (100b) = 103
         Assert.Equal(103, bytes.Length);

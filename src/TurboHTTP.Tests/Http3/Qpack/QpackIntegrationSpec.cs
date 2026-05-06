@@ -16,7 +16,7 @@ public sealed class QpackIntegrationSpec
         var frames = encoder.Encode(request);
 
         Assert.NotEmpty(frames);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         Assert.True(headersFrame.HeaderBlock.Length > 0, "Header block should not be empty");
     }
 
@@ -32,7 +32,7 @@ public sealed class QpackIntegrationSpec
         request.Headers.TryAddWithoutValidation("user-agent", "TurboHttp/1.0");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         // Verify pseudo-headers
@@ -59,8 +59,8 @@ public sealed class QpackIntegrationSpec
         var frames = encoder.Encode(request);
 
         Assert.True(frames.Count >= 2, "Should have at least HEADERS + DATA frames");
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
-        var dataFrame = Assert.IsType<Http3DataFrame>(frames[1]);
+        Assert.IsType<HeadersFrame>(frames[0]);
+        var dataFrame = Assert.IsType<DataFrame>(frames[1]);
         var body = Encoding.UTF8.GetString(dataFrame.Data.Span);
         Assert.Equal("hello world", body);
     }
@@ -77,7 +77,7 @@ public sealed class QpackIntegrationSpec
         request.Headers.TryAddWithoutValidation("accept", "application/json");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.DoesNotContain(headers, h => h.Name == "connection");

@@ -11,8 +11,8 @@ public sealed class H3ResponseBuilderSpec
     {
         var bytes = new H3ResponseBuilder()
             .Settings(
-                (Http3SettingsIdentifier.QpackMaxTableCapacity, 0),
-                (Http3SettingsIdentifier.MaxFieldSectionSize, 8192))
+                (SettingsIdentifier.QpackMaxTableCapacity, 0),
+                (SettingsIdentifier.MaxFieldSectionSize, 8192))
             .Headers(200, [("content-type", "text/plain")])
             .Data("hello")
             .Build();
@@ -23,20 +23,20 @@ public sealed class H3ResponseBuilderSpec
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Equal(3, frames.Count);
 
-        var settings = Assert.IsType<Http3SettingsFrame>(frames[0]);
+        var settings = Assert.IsType<SettingsFrame>(frames[0]);
         Assert.Equal(2, settings.Parameters.Count);
-        Assert.Equal(Http3SettingsIdentifier.QpackMaxTableCapacity, settings.Parameters[0].Identifier);
+        Assert.Equal(SettingsIdentifier.QpackMaxTableCapacity, settings.Parameters[0].Identifier);
         Assert.Equal(0L, settings.Parameters[0].Value);
-        Assert.Equal(Http3SettingsIdentifier.MaxFieldSectionSize, settings.Parameters[1].Identifier);
+        Assert.Equal(SettingsIdentifier.MaxFieldSectionSize, settings.Parameters[1].Identifier);
         Assert.Equal(8192L, settings.Parameters[1].Value);
 
-        var headers = Assert.IsType<Http3HeadersFrame>(frames[1]);
+        var headers = Assert.IsType<HeadersFrame>(frames[1]);
         var qpackDecoder = new QpackDecoder();
         var decoded = qpackDecoder.Decode(headers.HeaderBlock.Span);
         Assert.Contains(decoded, h => h.Name == ":status" && h.Value == "200");
         Assert.Contains(decoded, h => h.Name == "content-type" && h.Value == "text/plain");
 
-        var data = Assert.IsType<Http3DataFrame>(frames[2]);
+        var data = Assert.IsType<DataFrame>(frames[2]);
         Assert.Equal("hello"u8.ToArray(), data.Data.ToArray());
     }
 
@@ -52,7 +52,7 @@ public sealed class H3ResponseBuilderSpec
 
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Single(frames);
-        var settings = Assert.IsType<Http3SettingsFrame>(frames[0]);
+        var settings = Assert.IsType<SettingsFrame>(frames[0]);
         Assert.Empty(settings.Parameters);
     }
 
@@ -68,7 +68,7 @@ public sealed class H3ResponseBuilderSpec
 
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Single(frames);
-        var goaway = Assert.IsType<Http3GoAwayFrame>(frames[0]);
+        var goaway = Assert.IsType<GoAwayFrame>(frames[0]);
         Assert.Equal(4L, goaway.StreamId);
     }
 
@@ -84,7 +84,7 @@ public sealed class H3ResponseBuilderSpec
 
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Single(frames);
-        var headers = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headers = Assert.IsType<HeadersFrame>(frames[0]);
 
         var qpackDecoder = new QpackDecoder();
         var decoded = qpackDecoder.Decode(headers.HeaderBlock.Span);
@@ -105,7 +105,7 @@ public sealed class H3ResponseBuilderSpec
 
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Single(frames);
-        var maxPush = Assert.IsType<Http3MaxPushIdFrame>(frames[0]);
+        var maxPush = Assert.IsType<MaxPushIdFrame>(frames[0]);
         Assert.Equal(7L, maxPush.PushId);
     }
 
@@ -114,7 +114,7 @@ public sealed class H3ResponseBuilderSpec
     {
         var builder = new H3ResponseBuilder();
         var bytes = builder
-            .Settings((Http3SettingsIdentifier.QpackMaxTableCapacity, 0))
+            .Settings((SettingsIdentifier.QpackMaxTableCapacity, 0))
             .Headers(200)
             .Data("body")
             .GoAway(0)
@@ -125,10 +125,10 @@ public sealed class H3ResponseBuilderSpec
 
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Equal(4, frames.Count);
-        Assert.IsType<Http3SettingsFrame>(frames[0]);
-        Assert.IsType<Http3HeadersFrame>(frames[1]);
-        Assert.IsType<Http3DataFrame>(frames[2]);
-        Assert.IsType<Http3GoAwayFrame>(frames[3]);
+        Assert.IsType<SettingsFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[1]);
+        Assert.IsType<DataFrame>(frames[2]);
+        Assert.IsType<GoAwayFrame>(frames[3]);
     }
 
     [Fact(Timeout = 5000)]
@@ -143,7 +143,7 @@ public sealed class H3ResponseBuilderSpec
 
         Assert.Equal(bytes.Length, bytesConsumed);
         Assert.Single(frames);
-        var cancel = Assert.IsType<Http3CancelPushFrame>(frames[0]);
+        var cancel = Assert.IsType<CancelPushFrame>(frames[0]);
         Assert.Equal(3L, cancel.PushId);
     }
 }

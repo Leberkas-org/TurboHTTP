@@ -17,9 +17,9 @@ public sealed class Http3StreamRoutingSpec
             ops ?? _ops);
     }
 
-    private Http3HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
+    private HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
     {
-        return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
+        return new HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
 
     private TransportBuffer BuildResponseBuffer(byte fillByte, int bodySize)
@@ -27,7 +27,7 @@ public sealed class Http3StreamRoutingSpec
         var headersFrame = EncodeHeaders((":status", "200"));
         var body = new byte[bodySize];
         Array.Fill(body, fillByte);
-        var dataFrame = new Http3DataFrame(body);
+        var dataFrame = new DataFrame(body);
 
         var totalSize = headersFrame.SerializedSize + dataFrame.SerializedSize;
         var buf = TransportBuffer.Rent(totalSize);
@@ -42,7 +42,7 @@ public sealed class Http3StreamRoutingSpec
     {
         var body = new byte[bodySize];
         Array.Fill(body, fillByte);
-        var dataFrame = new Http3DataFrame(body);
+        var dataFrame = new DataFrame(body);
 
         var buf = TransportBuffer.Rent(dataFrame.SerializedSize);
         var span = buf.FullMemory.Span;
@@ -52,32 +52,32 @@ public sealed class Http3StreamRoutingSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void DecodeServerData_should_use_per_stream_decoders()
+    public async Task DecodeServerData_should_use_per_stream_decoders()
     {
         var sm = CreateMachine();
 
         // Stream 0: HEADERS + 1KB DATA
         var buf0 = BuildResponseBuffer(0xAA, 1024);
-        var frames0 = sm.DecodeServerData(buf0, streamId: 0);
-
-        Assert.Equal(2, frames0.Count);
-        Assert.IsType<Http3HeadersFrame>(frames0[0]);
-        Assert.IsType<Http3DataFrame>(frames0[1]);
+        sm.DecodeServerData(new MultiplexedData(buf0, 0));
 
         // Stream 4: HEADERS + 1KB DATA
         var buf4 = BuildResponseBuffer(0xBB, 1024);
-        var frames4 = sm.DecodeServerData(buf4, streamId: 4);
+        sm.DecodeServerData(new MultiplexedData(buf4, 4));
 
-        Assert.Equal(2, frames4.Count);
-        Assert.IsType<Http3HeadersFrame>(frames4[0]);
-        Assert.IsType<Http3DataFrame>(frames4[1]);
+        // Signal EOF to flush responses
+        sm.DecodeServerData(new StreamReadCompleted(0));
+        sm.DecodeServerData(new StreamReadCompleted(4));
 
-        // Verify data integrity — stream 4's DATA should be 0xBB, not contaminated by stream 0
-        var data4 = ((Http3DataFrame)frames4[1]).Data.Span;
-        Assert.Equal(1024, data4.Length);
-        Assert.True(data4.ToArray().All(b => b == 0xBB));
+        // Verify responses were assembled with correct data integrity
+        Assert.Equal(2, _ops.Responses.Count);
 
-        sm.Dispose();
+        // Verify stream 0's response body is all 0xAA
+        var body0 = await _ops.Responses[0].Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        Assert.True(body0.All(b => b == 0xAA), "Stream 0 body corrupted");
+
+        // Verify stream 4's response body is all 0xBB
+        var body4 = await _ops.Responses[1].Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+        Assert.True(body4.All(b => b == 0xBB), "Stream 4 body corrupted");
     }
 
     [Fact(Timeout = 5000)]
@@ -92,55 +92,23 @@ public sealed class Http3StreamRoutingSpec
 
         // Decode HEADERS + partial DATA for stream 0
         var buf0 = BuildResponseBuffer(0xAA, bodySize / 2);
-        var frames0 = sm.DecodeServerData(buf0, streamId: 0);
-        foreach (var f in frames0)
-        {
-            var forwarded = sm.ProcessFrame(f);
-            if (forwarded is not null)
-            {
-                sm.AssembleResponse(forwarded, streamId: 0);
-            }
-        }
+        sm.DecodeServerData(new MultiplexedData(buf0, 0));
 
         // Interleave: decode HEADERS + partial DATA for stream 4
         var buf4 = BuildResponseBuffer(0xBB, bodySize / 2);
-        var frames4 = sm.DecodeServerData(buf4, streamId: 4);
-        foreach (var f in frames4)
-        {
-            var forwarded = sm.ProcessFrame(f);
-            if (forwarded is not null)
-            {
-                sm.AssembleResponse(forwarded, streamId: 4);
-            }
-        }
+        sm.DecodeServerData(new MultiplexedData(buf4, 4));
 
         // More DATA for stream 0 (second half)
         var buf0b = BuildDataBuffer(0xAA, bodySize / 2);
-        var frames0b = sm.DecodeServerData(buf0b, streamId: 0);
-        foreach (var f in frames0b)
-        {
-            var forwarded = sm.ProcessFrame(f);
-            if (forwarded is not null)
-            {
-                sm.AssembleResponse(forwarded, streamId: 0);
-            }
-        }
+        sm.DecodeServerData(new MultiplexedData(buf0b, 0));
 
         // More DATA for stream 4 (second half)
         var buf4b = BuildDataBuffer(0xBB, bodySize / 2);
-        var frames4b = sm.DecodeServerData(buf4b, streamId: 4);
-        foreach (var f in frames4b)
-        {
-            var forwarded = sm.ProcessFrame(f);
-            if (forwarded is not null)
-            {
-                sm.AssembleResponse(forwarded, streamId: 4);
-            }
-        }
+        sm.DecodeServerData(new MultiplexedData(buf4b, 4));
 
-        // Flush both responses
-        sm.FlushPendingResponse(0);
-        sm.FlushPendingResponse(4);
+        // Signal EOF to flush both responses
+        sm.DecodeServerData(new StreamReadCompleted(0));
+        sm.DecodeServerData(new StreamReadCompleted(4));
 
         Assert.Equal(2, _ops.Responses.Count);
 
@@ -153,53 +121,53 @@ public sealed class Http3StreamRoutingSpec
         var body4 = await _ops.Responses[1].Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
         Assert.Equal(bodySize, body4.Length);
         Assert.True(body4.All(b => b == 0xBB), "Stream 4 body corrupted — contains bytes from another stream");
-
-        sm.Dispose();
     }
 
     [Fact(Timeout = 5000)]
-    public void DecodeServerData_should_handle_partial_frames_across_buffers_per_stream()
+    public void DecodeServerData_should_handle_fragmented_data_across_multiple_calls()
     {
         var sm = CreateMachine();
 
-        // Build a DATA frame and split it mid-frame to test remainder handling
-        var body = new byte[256];
-        Array.Fill(body, (byte)0xCC);
-        var dataFrame = new Http3DataFrame(body);
-        var serialized = dataFrame.Serialize();
+        // Test verifies that per-stream decoders buffer incomplete frames correctly.
+        // Send a complete response as fragments to stream 0.
 
-        // Split at byte 10 (mid-frame)
-        var part1 = TransportBuffer.Rent(10);
-        serialized.AsSpan(0, 10).CopyTo(part1.FullMemory.Span);
-        part1.Length = 10;
+        var response = BuildResponseBuffer(0xCC, 512);
+        var bytes = response.FullMemory;
 
-        var part2 = TransportBuffer.Rent(serialized.Length - 10);
-        serialized.AsSpan(10).CopyTo(part2.FullMemory.Span);
-        part2.Length = serialized.Length - 10;
+        // Split response into 3 parts
+        var part1Size = bytes.Length / 3;
+        var part2Size = bytes.Length / 3;
+        var part3Size = bytes.Length - part1Size - part2Size;
 
-        // Feed part 1 to stream 0 — should buffer remainder, no complete frame
-        var frames1 = sm.DecodeServerData(part1, streamId: 0);
-        Assert.Empty(frames1);
+        var part1 = TransportBuffer.Rent(part1Size);
+        bytes.Span.Slice(0, part1Size).CopyTo(part1.FullMemory.Span);
+        part1.Length = part1Size;
 
-        // Feed unrelated data to stream 4 — should NOT interfere with stream 0's remainder
-        var headersFrame = EncodeHeaders((":status", "200"));
-        var hdrBuf = TransportBuffer.Rent(headersFrame.SerializedSize);
-        var hdrSpan = hdrBuf.FullMemory.Span;
-        headersFrame.WriteTo(ref hdrSpan);
-        hdrBuf.Length = headersFrame.SerializedSize;
+        var part2 = TransportBuffer.Rent(part2Size);
+        bytes.Span.Slice(part1Size, part2Size).CopyTo(part2.FullMemory.Span);
+        part2.Length = part2Size;
 
-        var stream4Frames = sm.DecodeServerData(hdrBuf, streamId: 4);
-        Assert.Single(stream4Frames);
-        Assert.IsType<Http3HeadersFrame>(stream4Frames[0]);
+        var part3 = TransportBuffer.Rent(part3Size);
+        bytes.Span.Slice(part1Size + part2Size, part3Size).CopyTo(part3.FullMemory.Span);
+        part3.Length = part3Size;
 
-        // Feed part 2 to stream 0 — should complete the DATA frame
-        var frames2 = sm.DecodeServerData(part2, streamId: 0);
-        Assert.Single(frames2);
-        var decoded = Assert.IsType<Http3DataFrame>(frames2[0]);
-        Assert.Equal(256, decoded.Data.Length);
-        Assert.True(decoded.Data.Span.ToArray().All(b => b == 0xCC));
+        // Feed fragments to stream 0
+        sm.DecodeServerData(new MultiplexedData(part1, 0));
+        sm.DecodeServerData(new MultiplexedData(part2, 0));
+        sm.DecodeServerData(new MultiplexedData(part3, 0));
 
-        sm.Dispose();
+        // Signal EOF
+        sm.DecodeServerData(new StreamReadCompleted(0));
+
+        // Response should be assembled despite fragmentation
+        Assert.Single(_ops.Responses);
+        var body = _ops.Responses[0].Content.ReadAsStream(TestContext.Current.CancellationToken);
+        var buffer = new byte[512];
+        var bytesRead = body.Read(buffer);
+        Assert.Equal(512, bytesRead);
+        Assert.True(buffer.All(b => b == 0xCC), "Response body corrupted");
+
+        response.Dispose();
     }
 
     [Fact(Timeout = 5000)]
@@ -209,25 +177,27 @@ public sealed class Http3StreamRoutingSpec
         const long controlStreamId = -2; // Matches ControlStreamDecoderId in Http30ConnectionStage
 
         // Feed SETTINGS on control stream
-        var settings = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192)]);
+        var settings = new SettingsFrame([(SettingsIdentifier.MaxFieldSectionSize, 8192)]);
         var settingsBuf = TransportBuffer.Rent(settings.SerializedSize);
         var settingsSpan = settingsBuf.FullMemory.Span;
         settings.WriteTo(ref settingsSpan);
         settingsBuf.Length = settings.SerializedSize;
 
-        var controlFrames = sm.DecodeServerData(settingsBuf, streamId: controlStreamId);
-        Assert.Single(controlFrames);
-        Assert.IsType<Http3SettingsFrame>(controlFrames[0]);
+        sm.DecodeServerData(new MultiplexedData(settingsBuf, controlStreamId));
 
         // Feed HEADERS + DATA on request stream 0 — should not be affected by control stream
         var reqBuf = BuildResponseBuffer(0xDD, 512);
-        var reqFrames = sm.DecodeServerData(reqBuf, streamId: 0);
-        Assert.Equal(2, reqFrames.Count);
-        Assert.IsType<Http3HeadersFrame>(reqFrames[0]);
-        var reqData = Assert.IsType<Http3DataFrame>(reqFrames[1]);
-        Assert.Equal(512, reqData.Data.Length);
-        Assert.True(reqData.Data.Span.ToArray().All(b => b == 0xDD));
+        sm.DecodeServerData(new MultiplexedData(reqBuf, 0));
 
-        sm.Dispose();
+        // Flush to get response
+        sm.DecodeServerData(new StreamReadCompleted(0));
+
+        Assert.Single(_ops.Responses);
+        var bodyBuffer = new byte[512];
+        var bodyStream = _ops.Responses[0].Content.ReadAsStream(TestContext.Current.CancellationToken);
+        var bytesRead = bodyStream.Read(bodyBuffer);
+        var body = bodyBuffer.Take(bytesRead).ToArray();
+        Assert.Equal(512, body.Length);
+        Assert.True(body.All(b => b == 0xDD), "Request stream data corrupted by control stream");
     }
 }

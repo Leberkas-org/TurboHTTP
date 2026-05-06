@@ -16,7 +16,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -32,8 +32,8 @@ public sealed class Http3RequestEncoderBasicSpec
         var frames = encoder.Encode(request);
 
         Assert.Equal(2, frames.Count);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
-        Assert.IsType<Http3DataFrame>(frames[1]);
+        Assert.IsType<HeadersFrame>(frames[0]);
+        Assert.IsType<DataFrame>(frames[1]);
     }
 
     [Fact(Timeout = 5000)]
@@ -49,7 +49,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
     [Fact(Timeout = 5000)]
@@ -65,7 +65,7 @@ public sealed class Http3RequestEncoderBasicSpec
 
         var frames = encoder.Encode(request);
 
-        var dataFrame = Assert.IsType<Http3DataFrame>(frames[1]);
+        var dataFrame = Assert.IsType<DataFrame>(frames[1]);
         Assert.Equal(body, dataFrame.Data.ToArray());
     }
 
@@ -79,7 +79,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var frames = encoder.Encode(request);
 
         Assert.Single(frames);
-        Assert.IsType<Http3HeadersFrame>(frames[0]);
+        Assert.IsType<HeadersFrame>(frames[0]);
     }
 
 
@@ -92,7 +92,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/path");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":method", Value: "GET" });
@@ -117,7 +117,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(new HttpMethod(method), "https://example.com/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h.Name == ":method" && h.Value == method);
@@ -132,7 +132,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/search?q=test&page=2");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/search?q=test&page=2" });
@@ -147,7 +147,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/resource");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":path", Value: "/resource" });
@@ -162,7 +162,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":scheme", Value: "https" });
@@ -177,7 +177,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":scheme", Value: "http" });
@@ -192,7 +192,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com:8443/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "example.com:8443" });
@@ -207,7 +207,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com:443/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         Assert.Contains(headers, h => h is { Name: ":authority", Value: "example.com" });
@@ -223,7 +223,7 @@ public sealed class Http3RequestEncoderBasicSpec
         request.Headers.TryAddWithoutValidation("accept", "text/html");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
 
         var lastPseudoIdx = -1;
@@ -251,7 +251,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
 
         Assert.True(headersFrame.HeaderBlock.Length > 0, "QPACK header block must not be empty");
     }
@@ -265,7 +265,7 @@ public sealed class Http3RequestEncoderBasicSpec
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/");
 
         var frames = encoder.Encode(request);
-        var headersFrame = Assert.IsType<Http3HeadersFrame>(frames[0]);
+        var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
 
         var headers = decoder.Decode(headersFrame.HeaderBlock.Span);
         Assert.True(headers.Count >= 4, "Should have at least 4 pseudo-headers");

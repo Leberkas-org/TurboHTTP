@@ -8,7 +8,7 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_empty_data_frame()
     {
-        var original = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
+        var original = new DataFrame(ReadOnlyMemory<byte>.Empty);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
@@ -16,7 +16,7 @@ public sealed class FrameDecoderEdgeCasesSpec
 
         Assert.Equal(DecodeStatus.Success, status);
         Assert.NotNull(frame);
-        var data = Assert.IsType<Http3DataFrame>(frame);
+        var data = Assert.IsType<DataFrame>(frame);
         Assert.Empty(data.Data.ToArray());
         Assert.Equal(wire.Length, consumed);
     }
@@ -25,14 +25,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_empty_headers_frame()
     {
-        var original = new Http3HeadersFrame(ReadOnlyMemory<byte>.Empty);
+        var original = new HeadersFrame(ReadOnlyMemory<byte>.Empty);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var headers = Assert.IsType<Http3HeadersFrame>(frame);
+        var headers = Assert.IsType<HeadersFrame>(frame);
         Assert.Empty(headers.HeaderBlock.ToArray());
     }
 
@@ -46,14 +46,14 @@ public sealed class FrameDecoderEdgeCasesSpec
             largePayload[i] = (byte)(i % 256);
         }
 
-        var original = new Http3DataFrame(largePayload);
+        var original = new DataFrame(largePayload);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var data = Assert.IsType<Http3DataFrame>(frame);
+        var data = Assert.IsType<DataFrame>(frame);
         Assert.Equal(largePayload, data.Data.ToArray());
     }
 
@@ -95,8 +95,8 @@ public sealed class FrameDecoderEdgeCasesSpec
     public void FrameDecoder_should_decode_all_and_skip_unknown_frame_types()
     {
         // Create two known frames only (since unknown frames cannot be serialized by our API)
-        var data = new Http3DataFrame(new byte[] { 0xAA, 0xBB, 0xCC });
-        var goaway = new Http3GoAwayFrame(0);
+        var data = new DataFrame(new byte[] { 0xAA, 0xBB, 0xCC });
+        var goaway = new GoAwayFrame(0);
 
         var buf = new byte[128];
         var bufSpan = buf.AsSpan();
@@ -110,8 +110,8 @@ public sealed class FrameDecoderEdgeCasesSpec
 
         // Should have 2 frames (DATA and GOAWAY)
         Assert.Equal(2, frames.Count);
-        Assert.IsType<Http3DataFrame>(frames[0]);
-        Assert.IsType<Http3GoAwayFrame>(frames[1]);
+        Assert.IsType<DataFrame>(frames[0]);
+        Assert.IsType<GoAwayFrame>(frames[1]);
         Assert.Equal(offset, consumed);
     }
 
@@ -142,7 +142,7 @@ public sealed class FrameDecoderEdgeCasesSpec
         Assert.False(decoder.HasRemainder);
 
         // Create a DATA frame and split it mid-payload
-        var frame1 = new Http3DataFrame(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE });
+        var frame1 = new DataFrame(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE });
         var wire = frame1.Serialize();
 
         // Feed only first 3 bytes, leaving remainder
@@ -192,14 +192,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     public void FrameDecoder_should_decode_cancel_push_frame_with_large_push_id()
     {
         const long largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
-        var original = new Http3CancelPushFrame(largeId);
+        var original = new CancelPushFrame(largeId);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var cp = Assert.IsType<Http3CancelPushFrame>(frame);
+        var cp = Assert.IsType<CancelPushFrame>(frame);
         Assert.Equal(largeId, cp.PushId);
     }
 
@@ -207,14 +207,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_cancel_push_frame_with_zero_push_id()
     {
-        var original = new Http3CancelPushFrame(0);
+        var original = new CancelPushFrame(0);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var cp = Assert.IsType<Http3CancelPushFrame>(frame);
+        var cp = Assert.IsType<CancelPushFrame>(frame);
         Assert.Equal(0, cp.PushId);
     }
 
@@ -222,14 +222,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_settings_frame_when_empty()
     {
-        var original = new Http3SettingsFrame(new List<(long, long)>());
+        var original = new SettingsFrame(new List<(long, long)>());
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        var settings = Assert.IsType<SettingsFrame>(frame);
         Assert.Empty(settings.Parameters);
     }
 
@@ -243,14 +243,14 @@ public sealed class FrameDecoderEdgeCasesSpec
             parameters.Add((i, (long)i * 1000));
         }
 
-        var original = new Http3SettingsFrame(parameters);
+        var original = new SettingsFrame(parameters);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        var settings = Assert.IsType<SettingsFrame>(frame);
         Assert.Equal(100, settings.Parameters.Count);
     }
 
@@ -265,14 +265,14 @@ public sealed class FrameDecoderEdgeCasesSpec
             (0x01, largeValue), // QPACK_MAX_TABLE_CAPACITY
         };
 
-        var original = new Http3SettingsFrame(parameters);
+        var original = new SettingsFrame(parameters);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var settings = Assert.IsType<Http3SettingsFrame>(frame);
+        var settings = Assert.IsType<SettingsFrame>(frame);
         Assert.Equal(2, settings.Parameters.Count);
         Assert.Equal(largeValue, settings.Parameters[0].Item2);
         Assert.Equal(largeValue, settings.Parameters[1].Item2);
@@ -282,14 +282,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_push_promise_frame_with_empty_headers()
     {
-        var original = new Http3PushPromiseFrame(1, ReadOnlyMemory<byte>.Empty);
+        var original = new PushPromiseFrame(1, ReadOnlyMemory<byte>.Empty);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var pp = Assert.IsType<Http3PushPromiseFrame>(frame);
+        var pp = Assert.IsType<PushPromiseFrame>(frame);
         Assert.Equal(1, pp.PushId);
         Assert.Empty(pp.HeaderBlock.ToArray());
     }
@@ -304,14 +304,14 @@ public sealed class FrameDecoderEdgeCasesSpec
             largeHeaders[i] = (byte)(i % 256);
         }
 
-        var original = new Http3PushPromiseFrame(999, largeHeaders);
+        var original = new PushPromiseFrame(999, largeHeaders);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var pp = Assert.IsType<Http3PushPromiseFrame>(frame);
+        var pp = Assert.IsType<PushPromiseFrame>(frame);
         Assert.Equal(999, pp.PushId);
         Assert.Equal(largeHeaders, pp.HeaderBlock.ToArray());
     }
@@ -321,14 +321,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     public void FrameDecoder_should_decode_go_away_frame_with_large_stream_id()
     {
         const long largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
-        var original = new Http3GoAwayFrame(largeId);
+        var original = new GoAwayFrame(largeId);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var goaway = Assert.IsType<Http3GoAwayFrame>(frame);
+        var goaway = Assert.IsType<GoAwayFrame>(frame);
         Assert.Equal(largeId, goaway.StreamId);
     }
 
@@ -336,14 +336,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_max_push_id_frame_when_zero()
     {
-        var original = new Http3MaxPushIdFrame(0);
+        var original = new MaxPushIdFrame(0);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var mp = Assert.IsType<Http3MaxPushIdFrame>(frame);
+        var mp = Assert.IsType<MaxPushIdFrame>(frame);
         Assert.Equal(0, mp.PushId);
     }
 
@@ -352,14 +352,14 @@ public sealed class FrameDecoderEdgeCasesSpec
     public void FrameDecoder_should_decode_max_push_id_frame_with_large_value()
     {
         const long largeId = (1L << 62) - 1; // Maximum QUIC VarInt value
-        var original = new Http3MaxPushIdFrame(largeId);
+        var original = new MaxPushIdFrame(largeId);
         var wire = original.Serialize();
 
         var decoder = new FrameDecoder();
         var status = decoder.TryDecode(wire, out var frame, out _);
 
         Assert.Equal(DecodeStatus.Success, status);
-        var mp = Assert.IsType<Http3MaxPushIdFrame>(frame);
+        var mp = Assert.IsType<MaxPushIdFrame>(frame);
         Assert.Equal(largeId, mp.PushId);
     }
 
@@ -378,7 +378,7 @@ public sealed class FrameDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameDecoder_should_decode_all_and_leave_remainder()
     {
-        var original = new Http3DataFrame(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE });
+        var original = new DataFrame(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE });
         var wire = original.Serialize();
 
         // Split so only partial frame is in buffer
@@ -444,14 +444,14 @@ public sealed class FrameDecoderEdgeCasesSpec
         var decoder = new FrameDecoder();
 
         // First call
-        var frame1 = new Http3DataFrame(new byte[] { 0x01 });
+        var frame1 = new DataFrame(new byte[] { 0x01 });
         var wire1 = frame1.Serialize();
         var frames1 = decoder.DecodeAll(wire1, out _);
         Assert.Single(frames1);
 
         // Second call with different frames
-        var frame2A = new Http3GoAwayFrame(0);
-        var frame2B = new Http3MaxPushIdFrame(42);
+        var frame2A = new GoAwayFrame(0);
+        var frame2B = new MaxPushIdFrame(42);
         var buf = new byte[64];
         var offset = 0;
         var bufSpan = buf.AsSpan();
@@ -463,8 +463,8 @@ public sealed class FrameDecoderEdgeCasesSpec
 
         // Should have 2 frames from second call, not 1+2
         Assert.Equal(2, frames2.Count);
-        Assert.IsType<Http3GoAwayFrame>(frames2[0]);
-        Assert.IsType<Http3MaxPushIdFrame>(frames2[1]);
+        Assert.IsType<GoAwayFrame>(frames2[0]);
+        Assert.IsType<MaxPushIdFrame>(frames2[1]);
     }
 
     [Fact(Timeout = 5000)]
@@ -472,7 +472,7 @@ public sealed class FrameDecoderEdgeCasesSpec
     public void FrameDecoder_should_handle_partial_frames_across_decode_all_calls()
     {
         var payload = new byte[] { 0x11, 0x22, 0x33 };
-        var frame = new Http3DataFrame(payload);
+        var frame = new DataFrame(payload);
         var wire = frame.Serialize();
 
         // Split in middle

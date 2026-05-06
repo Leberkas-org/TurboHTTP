@@ -185,7 +185,7 @@ internal sealed class FrameDecoder : IDisposable
 
         if (payloadLength > int.MaxValue - headerSize)
         {
-            throw new Http3Exception(Http3ErrorCode.FrameError,
+            throw new Http3Exception(ErrorCode.FrameError,
                 $"HTTP/3 frame payload length {payloadLength} exceeds maximum decodable size.");
         }
 
@@ -230,37 +230,37 @@ internal sealed class FrameDecoder : IDisposable
         return DecodeStatus.Success;
     }
 
-    private static Http3DataFrame DecodeDataFrame(ReadOnlySpan<byte> payload)
+    private static DataFrame DecodeDataFrame(ReadOnlySpan<byte> payload)
     {
         if (payload.Length == 0)
         {
-            return new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
+            return new DataFrame(ReadOnlyMemory<byte>.Empty);
         }
 
         var owner = MemoryPool<byte>.Shared.Rent(payload.Length);
         payload.CopyTo(owner.Memory.Span);
-        return new Http3DataFrame(owner, payload.Length);
+        return new DataFrame(owner, payload.Length);
     }
 
-    private static Http3HeadersFrame DecodeHeadersFrame(ReadOnlySpan<byte> payload)
+    private static HeadersFrame DecodeHeadersFrame(ReadOnlySpan<byte> payload)
     {
         if (payload.Length == 0)
         {
-            return new Http3HeadersFrame(ReadOnlyMemory<byte>.Empty);
+            return new HeadersFrame(ReadOnlyMemory<byte>.Empty);
         }
 
         var owner = MemoryPool<byte>.Shared.Rent(payload.Length);
         payload.CopyTo(owner.Memory.Span);
-        return new Http3HeadersFrame(owner, payload.Length);
+        return new HeadersFrame(owner, payload.Length);
     }
 
-    private static Http3CancelPushFrame DecodeCancelPushFrame(ReadOnlySpan<byte> payload)
+    private static CancelPushFrame DecodeCancelPushFrame(ReadOnlySpan<byte> payload)
     {
         var pushId = QuicVarInt.Decode(payload, out _);
-        return new Http3CancelPushFrame(pushId);
+        return new CancelPushFrame(pushId);
     }
 
-    private static Http3SettingsFrame DecodeSettingsFrame(ReadOnlySpan<byte> payload)
+    private static SettingsFrame DecodeSettingsFrame(ReadOnlySpan<byte> payload)
     {
         var parameters = new List<(long Identifier, long Value)>();
         var offset = 0;
@@ -276,33 +276,33 @@ internal sealed class FrameDecoder : IDisposable
             parameters.Add((id, value));
         }
 
-        return new Http3SettingsFrame(parameters);
+        return new SettingsFrame(parameters);
     }
 
-    private static Http3PushPromiseFrame DecodePushPromiseFrame(ReadOnlySpan<byte> payload)
+    private static PushPromiseFrame DecodePushPromiseFrame(ReadOnlySpan<byte> payload)
     {
         var pushId = QuicVarInt.Decode(payload, out var pushIdBytes);
         var headerBlockSpan = payload[pushIdBytes..];
 
         if (headerBlockSpan.Length == 0)
         {
-            return new Http3PushPromiseFrame(pushId, ReadOnlyMemory<byte>.Empty);
+            return new PushPromiseFrame(pushId, ReadOnlyMemory<byte>.Empty);
         }
 
         var owner = MemoryPool<byte>.Shared.Rent(headerBlockSpan.Length);
         headerBlockSpan.CopyTo(owner.Memory.Span);
-        return new Http3PushPromiseFrame(pushId, owner, headerBlockSpan.Length);
+        return new PushPromiseFrame(pushId, owner, headerBlockSpan.Length);
     }
 
-    private static Http3GoAwayFrame DecodeGoAwayFrame(ReadOnlySpan<byte> payload)
+    private static GoAwayFrame DecodeGoAwayFrame(ReadOnlySpan<byte> payload)
     {
         var streamId = QuicVarInt.Decode(payload, out _);
-        return new Http3GoAwayFrame(streamId);
+        return new GoAwayFrame(streamId);
     }
 
-    private static Http3MaxPushIdFrame DecodeMaxPushIdFrame(ReadOnlySpan<byte> payload)
+    private static MaxPushIdFrame DecodeMaxPushIdFrame(ReadOnlySpan<byte> payload)
     {
         var pushId = QuicVarInt.Decode(payload, out _);
-        return new Http3MaxPushIdFrame(pushId);
+        return new MaxPushIdFrame(pushId);
     }
 }

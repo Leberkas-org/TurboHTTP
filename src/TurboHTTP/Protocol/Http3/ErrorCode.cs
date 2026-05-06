@@ -4,7 +4,7 @@ namespace TurboHTTP.Protocol.Http3;
 /// HTTP/3 error codes as defined in RFC 9114 §8.1.
 /// These are used in GOAWAY frames and stream resets.
 /// </summary>
-internal enum Http3ErrorCode : uint
+internal enum ErrorCode : uint
 {
     NoError = 0x100,
     GeneralProtocolError = 0x101,

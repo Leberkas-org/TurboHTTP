@@ -78,19 +78,19 @@ internal abstract class Http3Frame
 /// DATA frame (RFC 9114 §7.2.1).
 /// Carries request or response body data on a request stream.
 /// </summary>
-internal sealed class Http3DataFrame : Http3Frame, IDisposable
+internal sealed class DataFrame : Http3Frame, IDisposable
 {
     private readonly IMemoryOwner<byte>? _owner;
 
     public override FrameType Type => FrameType.Data;
     public ReadOnlyMemory<byte> Data { get; }
 
-    public Http3DataFrame(ReadOnlyMemory<byte> data)
+    public DataFrame(ReadOnlyMemory<byte> data)
     {
         Data = data;
     }
 
-    internal Http3DataFrame(IMemoryOwner<byte> owner, int length)
+    internal DataFrame(IMemoryOwner<byte> owner, int length)
     {
         _owner = owner;
         Data = owner.Memory[..length];
@@ -115,19 +115,19 @@ internal sealed class Http3DataFrame : Http3Frame, IDisposable
 /// HEADERS frame (RFC 9114 §7.2.2).
 /// Carries a compressed QPACK header block on a request stream.
 /// </summary>
-internal sealed class Http3HeadersFrame : Http3Frame, IDisposable
+internal sealed class HeadersFrame : Http3Frame, IDisposable
 {
     private readonly IMemoryOwner<byte>? _owner;
 
     public override FrameType Type => FrameType.Headers;
     public ReadOnlyMemory<byte> HeaderBlock { get; }
 
-    public Http3HeadersFrame(ReadOnlyMemory<byte> headerBlock)
+    public HeadersFrame(ReadOnlyMemory<byte> headerBlock)
     {
         HeaderBlock = headerBlock;
     }
 
-    internal Http3HeadersFrame(IMemoryOwner<byte> owner, int length)
+    internal HeadersFrame(IMemoryOwner<byte> owner, int length)
     {
         _owner = owner;
         HeaderBlock = owner.Memory[..length];
@@ -153,12 +153,12 @@ internal sealed class Http3HeadersFrame : Http3Frame, IDisposable
 /// Requests cancellation of a server push before the push stream is received.
 /// Sent on the control stream. Payload is a single QUIC variable-length push ID.
 /// </summary>
-internal sealed class Http3CancelPushFrame : Http3Frame
+internal sealed class CancelPushFrame : Http3Frame
 {
     public override FrameType Type => FrameType.CancelPush;
     public long PushId { get; }
 
-    public Http3CancelPushFrame(long pushId)
+    public CancelPushFrame(long pushId)
     {
         if (pushId < 0)
         {
@@ -187,12 +187,12 @@ internal sealed class Http3CancelPushFrame : Http3Frame
 /// Each parameter is an identifier-value pair of QUIC variable-length integers.
 /// Unlike HTTP/2, there is no ACK mechanism — the transport provides reliability.
 /// </summary>
-internal sealed class Http3SettingsFrame : Http3Frame
+internal sealed class SettingsFrame : Http3Frame
 {
     public override FrameType Type => FrameType.Settings;
     public IReadOnlyList<(long Identifier, long Value)> Parameters { get; }
 
-    public Http3SettingsFrame(IReadOnlyList<(long Identifier, long Value)> parameters)
+    public SettingsFrame(IReadOnlyList<(long Identifier, long Value)> parameters)
     {
         Parameters = parameters;
     }
@@ -234,7 +234,7 @@ internal sealed class Http3SettingsFrame : Http3Frame
 /// PUSH_PROMISE frame (RFC 9114 §7.2.5).
 /// Carries a push ID followed by a compressed QPACK header block on a request stream.
 /// </summary>
-internal sealed class Http3PushPromiseFrame : Http3Frame, IDisposable
+internal sealed class PushPromiseFrame : Http3Frame, IDisposable
 {
     private readonly IMemoryOwner<byte>? _owner;
 
@@ -242,7 +242,7 @@ internal sealed class Http3PushPromiseFrame : Http3Frame, IDisposable
     public long PushId { get; }
     public ReadOnlyMemory<byte> HeaderBlock { get; }
 
-    public Http3PushPromiseFrame(long pushId, ReadOnlyMemory<byte> headerBlock)
+    public PushPromiseFrame(long pushId, ReadOnlyMemory<byte> headerBlock)
     {
         if (pushId < 0)
         {
@@ -253,7 +253,7 @@ internal sealed class Http3PushPromiseFrame : Http3Frame, IDisposable
         HeaderBlock = headerBlock;
     }
 
-    internal Http3PushPromiseFrame(long pushId, IMemoryOwner<byte> owner, int length)
+    internal PushPromiseFrame(long pushId, IMemoryOwner<byte> owner, int length)
     {
         if (pushId < 0)
         {
@@ -287,12 +287,12 @@ internal sealed class Http3PushPromiseFrame : Http3Frame, IDisposable
 /// Initiates graceful shutdown of a connection. Payload is a single QUIC
 /// variable-length integer indicating the stream ID or push ID.
 /// </summary>
-internal sealed class Http3GoAwayFrame : Http3Frame
+internal sealed class GoAwayFrame : Http3Frame
 {
     public override FrameType Type => FrameType.GoAway;
     public long StreamId { get; }
 
-    public Http3GoAwayFrame(long streamId)
+    public GoAwayFrame(long streamId)
     {
         if (streamId < 0)
         {
@@ -320,12 +320,12 @@ internal sealed class Http3GoAwayFrame : Http3Frame
 /// Sent by the client on the control stream to indicate the maximum push ID
 /// the server is permitted to use.
 /// </summary>
-internal sealed class Http3MaxPushIdFrame : Http3Frame
+internal sealed class MaxPushIdFrame : Http3Frame
 {
     public override FrameType Type => FrameType.MaxPushId;
     public long PushId { get; }
 
-    public Http3MaxPushIdFrame(long pushId)
+    public MaxPushIdFrame(long pushId)
     {
         if (pushId < 0)
         {
@@ -352,7 +352,7 @@ internal sealed class Http3MaxPushIdFrame : Http3Frame
 /// Well-known HTTP/3 setting identifiers per RFC 9114 §7.2.4.1.
 /// Analogous to HTTP/2's <see cref="Http2.SettingsParameter"/> enum.
 /// </summary>
-internal static class Http3SettingsIdentifier
+internal static class SettingsIdentifier
 {
     /// <summary>
     /// SETTINGS_QPACK_MAX_TABLE_CAPACITY (RFC 9204 §5).
@@ -422,7 +422,7 @@ internal static class Http3SettingsIdentifier
             var (id, _) = parameters[i];
             if (IsReservedH2Setting(id))
             {
-                throw new Http3Exception(Http3ErrorCode.SettingsError,
+                throw new Http3Exception(ErrorCode.SettingsError,
                     $"Setting identifier 0x{id:x2} is a reserved HTTP/2 setting and MUST NOT appear in HTTP/3 (RFC 9114 §7.2.4.1).");
             }
         }

@@ -9,12 +9,12 @@ public sealed class FrameRoundTripSpec
     public void FrameRoundTrip_should_preserve_data_frame()
     {
         var payload = new byte[] { 0xCA, 0xFE, 0xBA, 0xBE, 0xDE, 0xAD };
-        var original = new Http3DataFrame(payload);
+        var original = new DataFrame(payload);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3DataFrame>(decoded);
+        var result = Assert.IsType<DataFrame>(decoded);
         Assert.Equal(FrameType.Data, result.Type);
         Assert.Equal(payload, result.Data.ToArray());
     }
@@ -24,12 +24,12 @@ public sealed class FrameRoundTripSpec
     public void FrameRoundTrip_should_preserve_headers_frame()
     {
         var headerBlock = new byte[] { 0x00, 0x00, 0x82, 0x87, 0x44, 0x88, 0x62, 0xA1 };
-        var original = new Http3HeadersFrame(headerBlock);
+        var original = new HeadersFrame(headerBlock);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3HeadersFrame>(decoded);
+        var result = Assert.IsType<HeadersFrame>(decoded);
         Assert.Equal(FrameType.Headers, result.Type);
         Assert.Equal(headerBlock, result.HeaderBlock.ToArray());
     }
@@ -38,12 +38,12 @@ public sealed class FrameRoundTripSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_cancel_push_frame()
     {
-        var original = new Http3CancelPushFrame(16383);
+        var original = new CancelPushFrame(16383);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3CancelPushFrame>(decoded);
+        var result = Assert.IsType<CancelPushFrame>(decoded);
         Assert.Equal(FrameType.CancelPush, result.Type);
         Assert.Equal(16383, result.PushId);
     }
@@ -58,12 +58,12 @@ public sealed class FrameRoundTripSpec
             (0x01, 100), // QPACK_MAX_TABLE_CAPACITY
             (0x07, 50), // QPACK_BLOCKED_STREAMS
         };
-        var original = new Http3SettingsFrame(parameters);
+        var original = new SettingsFrame(parameters);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3SettingsFrame>(decoded);
+        var result = Assert.IsType<SettingsFrame>(decoded);
         Assert.Equal(FrameType.Settings, result.Type);
         Assert.Equal(3, result.Parameters.Count);
         Assert.Equal((0x06L, 4096L), result.Parameters[0]);
@@ -76,12 +76,12 @@ public sealed class FrameRoundTripSpec
     public void FrameRoundTrip_should_preserve_push_promise_frame()
     {
         var headerBlock = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD };
-        var original = new Http3PushPromiseFrame(42, headerBlock);
+        var original = new PushPromiseFrame(42, headerBlock);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3PushPromiseFrame>(decoded);
+        var result = Assert.IsType<PushPromiseFrame>(decoded);
         Assert.Equal(FrameType.PushPromise, result.Type);
         Assert.Equal(42, result.PushId);
         Assert.Equal(headerBlock, result.HeaderBlock.ToArray());
@@ -91,12 +91,12 @@ public sealed class FrameRoundTripSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_goaway_frame()
     {
-        var original = new Http3GoAwayFrame(1_000_000);
+        var original = new GoAwayFrame(1_000_000);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3GoAwayFrame>(decoded);
+        var result = Assert.IsType<GoAwayFrame>(decoded);
         Assert.Equal(FrameType.GoAway, result.Type);
         Assert.Equal(1_000_000, result.StreamId);
     }
@@ -105,12 +105,12 @@ public sealed class FrameRoundTripSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_max_push_id_frame()
     {
-        var original = new Http3MaxPushIdFrame(63);
+        var original = new MaxPushIdFrame(63);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3MaxPushIdFrame>(decoded);
+        var result = Assert.IsType<MaxPushIdFrame>(decoded);
         Assert.Equal(FrameType.MaxPushId, result.Type);
         Assert.Equal(63, result.PushId);
     }
@@ -126,18 +126,18 @@ public sealed class FrameRoundTripSpec
     public void FrameRoundTrip_should_preserve_large_varint_values(long value)
     {
         // CancelPush
-        var cp = new Http3CancelPushFrame(value);
-        var cpDecoded = Assert.IsType<Http3CancelPushFrame>(Decode(Encode(cp)));
+        var cp = new CancelPushFrame(value);
+        var cpDecoded = Assert.IsType<CancelPushFrame>(Decode(Encode(cp)));
         Assert.Equal(value, cpDecoded.PushId);
 
         // GoAway
-        var ga = new Http3GoAwayFrame(value);
-        var gaDecoded = Assert.IsType<Http3GoAwayFrame>(Decode(Encode(ga)));
+        var ga = new GoAwayFrame(value);
+        var gaDecoded = Assert.IsType<GoAwayFrame>(Decode(Encode(ga)));
         Assert.Equal(value, gaDecoded.StreamId);
 
         // MaxPushId
-        var mp = new Http3MaxPushIdFrame(value);
-        var mpDecoded = Assert.IsType<Http3MaxPushIdFrame>(Decode(Encode(mp)));
+        var mp = new MaxPushIdFrame(value);
+        var mpDecoded = Assert.IsType<MaxPushIdFrame>(Decode(Encode(mp)));
         Assert.Equal(value, mpDecoded.PushId);
     }
 
@@ -145,12 +145,12 @@ public sealed class FrameRoundTripSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_empty_data_frame()
     {
-        var original = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
+        var original = new DataFrame(ReadOnlyMemory<byte>.Empty);
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3DataFrame>(decoded);
+        var result = Assert.IsType<DataFrame>(decoded);
         Assert.Empty(result.Data.ToArray());
     }
 
@@ -158,12 +158,12 @@ public sealed class FrameRoundTripSpec
     [Trait("RFC", "RFC9114-7")]
     public void FrameRoundTrip_should_preserve_empty_settings_frame()
     {
-        var original = new Http3SettingsFrame(new List<(long, long)>());
+        var original = new SettingsFrame(new List<(long, long)>());
 
         var wire = Encode(original);
         var decoded = Decode(wire);
 
-        var result = Assert.IsType<Http3SettingsFrame>(decoded);
+        var result = Assert.IsType<SettingsFrame>(decoded);
         Assert.Empty(result.Parameters);
     }
 
@@ -173,13 +173,13 @@ public sealed class FrameRoundTripSpec
     {
         var frames = new Http3Frame[]
         {
-            new Http3DataFrame(new byte[] { 0x01, 0x02 }),
-            new Http3HeadersFrame(new byte[] { 0x82, 0x87 }),
-            new Http3CancelPushFrame(7),
-            new Http3SettingsFrame(new List<(long, long)> { (0x06, 8192) }),
-            new Http3PushPromiseFrame(3, new byte[] { 0xAA }),
-            new Http3GoAwayFrame(100),
-            new Http3MaxPushIdFrame(255),
+            new DataFrame(new byte[] { 0x01, 0x02 }),
+            new HeadersFrame(new byte[] { 0x82, 0x87 }),
+            new CancelPushFrame(7),
+            new SettingsFrame(new List<(long, long)> { (0x06, 8192) }),
+            new PushPromiseFrame(3, new byte[] { 0xAA }),
+            new GoAwayFrame(100),
+            new MaxPushIdFrame(255),
         };
 
         // Encode all frames into a single buffer
@@ -205,26 +205,26 @@ public sealed class FrameRoundTripSpec
         Assert.Equal(7, decoded.Count);
 
         // Verify each frame type and key fields
-        var data = Assert.IsType<Http3DataFrame>(decoded[0]);
+        var data = Assert.IsType<DataFrame>(decoded[0]);
         Assert.Equal(new byte[] { 0x01, 0x02 }, data.Data.ToArray());
 
-        var headers = Assert.IsType<Http3HeadersFrame>(decoded[1]);
+        var headers = Assert.IsType<HeadersFrame>(decoded[1]);
         Assert.Equal(new byte[] { 0x82, 0x87 }, headers.HeaderBlock.ToArray());
 
-        var cancelPush = Assert.IsType<Http3CancelPushFrame>(decoded[2]);
+        var cancelPush = Assert.IsType<CancelPushFrame>(decoded[2]);
         Assert.Equal(7, cancelPush.PushId);
 
-        var settings = Assert.IsType<Http3SettingsFrame>(decoded[3]);
+        var settings = Assert.IsType<SettingsFrame>(decoded[3]);
         Assert.Equal((0x06L, 8192L), settings.Parameters[0]);
 
-        var pushPromise = Assert.IsType<Http3PushPromiseFrame>(decoded[4]);
+        var pushPromise = Assert.IsType<PushPromiseFrame>(decoded[4]);
         Assert.Equal(3, pushPromise.PushId);
         Assert.Equal(new byte[] { 0xAA }, pushPromise.HeaderBlock.ToArray());
 
-        var goaway = Assert.IsType<Http3GoAwayFrame>(decoded[5]);
+        var goaway = Assert.IsType<GoAwayFrame>(decoded[5]);
         Assert.Equal(100, goaway.StreamId);
 
-        var maxPushId = Assert.IsType<Http3MaxPushIdFrame>(decoded[6]);
+        var maxPushId = Assert.IsType<MaxPushIdFrame>(decoded[6]);
         Assert.Equal(255, maxPushId.PushId);
     }
 
@@ -234,13 +234,13 @@ public sealed class FrameRoundTripSpec
     {
         var frames = new Http3Frame[]
         {
-            new Http3DataFrame("\u07ad"u8.ToArray()),
-            new Http3HeadersFrame(new byte[] { 0x82 }),
-            new Http3CancelPushFrame(16384),
-            new Http3SettingsFrame(new List<(long, long)> { (0x01, 4096), (0x07, 100) }),
-            new Http3PushPromiseFrame(99, new byte[] { 0xFF }),
-            new Http3GoAwayFrame(256),
-            new Http3MaxPushIdFrame(0),
+            new DataFrame("\u07ad"u8.ToArray()),
+            new HeadersFrame(new byte[] { 0x82 }),
+            new CancelPushFrame(16384),
+            new SettingsFrame(new List<(long, long)> { (0x01, 4096), (0x07, 100) }),
+            new PushPromiseFrame(99, new byte[] { 0xFF }),
+            new GoAwayFrame(256),
+            new MaxPushIdFrame(0),
         };
 
         foreach (var original in frames)

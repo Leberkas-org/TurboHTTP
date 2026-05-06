@@ -6,9 +6,9 @@ public sealed class SettingsFrameSpec
 {
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4")]
-    [InlineData(Http3SettingsIdentifier.QpackMaxTableCapacity, 0x01)]
-    [InlineData(Http3SettingsIdentifier.MaxFieldSectionSize, 0x06)]
-    [InlineData(Http3SettingsIdentifier.QpackBlockedStreams, 0x07)]
+    [InlineData(SettingsIdentifier.QpackMaxTableCapacity, 0x01)]
+    [InlineData(SettingsIdentifier.MaxFieldSectionSize, 0x06)]
+    [InlineData(SettingsIdentifier.QpackBlockedStreams, 0x07)]
     public void Settings_should_have_correct_values_for_well_known_ids(long actual, long expected)
     {
         Assert.Equal(expected, actual);
@@ -16,13 +16,13 @@ public sealed class SettingsFrameSpec
 
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7.2.4.1")]
-    [InlineData(Http3SettingsIdentifier.ReservedH2EnablePush)]
-    [InlineData(Http3SettingsIdentifier.ReservedH2MaxConcurrentStreams)]
-    [InlineData(Http3SettingsIdentifier.ReservedH2InitialWindowSize)]
-    [InlineData(Http3SettingsIdentifier.ReservedH2MaxFrameSize)]
+    [InlineData(SettingsIdentifier.ReservedH2EnablePush)]
+    [InlineData(SettingsIdentifier.ReservedH2MaxConcurrentStreams)]
+    [InlineData(SettingsIdentifier.ReservedH2InitialWindowSize)]
+    [InlineData(SettingsIdentifier.ReservedH2MaxFrameSize)]
     public void Settings_should_detect_reserved_http2_settings(long identifier)
     {
-        Assert.True(Http3SettingsIdentifier.IsReservedH2Setting(identifier));
+        Assert.True(SettingsIdentifier.IsReservedH2Setting(identifier));
     }
 
     [Fact(Timeout = 5000)]
@@ -30,9 +30,9 @@ public sealed class SettingsFrameSpec
     public void Settings_should_roundtrip_serialize_deserialize()
     {
         var settings = new Settings();
-        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 8192);
-        settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, 4096);
-        settings.Set(Http3SettingsIdentifier.QpackBlockedStreams, 16);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, 8192);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, 4096);
+        settings.Set(SettingsIdentifier.QpackBlockedStreams, 16);
 
         var payload = settings.Serialize();
         var restored = Settings.Deserialize(payload);
@@ -60,7 +60,7 @@ public sealed class SettingsFrameSpec
     public void Settings_should_preserve_unknown_settings_through_roundtrip()
     {
         var settings = new Settings();
-        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 1024);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, 1024);
         settings.Set(0x33, 999); // unknown extension setting
         settings.Set(0xFF, 42); // another unknown
 
@@ -83,7 +83,7 @@ public sealed class SettingsFrameSpec
     {
         var settings = new Settings();
         var ex = Assert.Throws<Http3Exception>(() => settings.Set(reservedId, 0));
-        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -97,7 +97,7 @@ public sealed class SettingsFrameSpec
     {
         var payload = BuildSingleSettingPayload(reservedId, 0);
         var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(payload));
-        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("reserved", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -107,7 +107,7 @@ public sealed class SettingsFrameSpec
     {
         var payload = BuildDuplicatePayload();
         var ex = Assert.Throws<Http3Exception>(() => Settings.Deserialize(payload));
-        Assert.Equal(Http3ErrorCode.SettingsError, ex.ErrorCode);
+        Assert.Equal(ErrorCode.SettingsError, ex.ErrorCode);
         Assert.Contains("Duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -151,8 +151,8 @@ public sealed class SettingsFrameSpec
     public void Settings_should_create_valid_frame_via_toframe()
     {
         var settings = new Settings();
-        settings.Set(Http3SettingsIdentifier.MaxFieldSectionSize, 16384);
-        settings.Set(Http3SettingsIdentifier.QpackMaxTableCapacity, 256);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, 16384);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, 256);
 
         var frame = settings.ToFrame();
         Assert.Equal(FrameType.Settings, frame.Type);

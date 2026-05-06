@@ -81,15 +81,15 @@ internal sealed class RequestEncoder
         var headerBlock = qpackOwner.Memory[..qpackBytesWritten];
 
         var peerLimit = _tableSync.RemoteMaxFieldSectionSize;
-        if (peerLimit.HasValue && qpackBytesWritten > peerLimit.Value)
+        if (qpackBytesWritten > peerLimit)
         {
-            throw new Http3Exception(Http3ErrorCode.ExcessiveLoad,
+            throw new Http3Exception(ErrorCode.ExcessiveLoad,
                 string.Concat("RFC 9114 §4.2.2: Encoded header block (", qpackBytesWritten.ToString(),
                     " bytes) exceeds peer SETTINGS_MAX_FIELD_SECTION_SIZE (", peerLimit.Value.ToString(), ")"));
         }
 
         _reusableFrames.Clear();
-        _reusableFrames.Add(new Http3HeadersFrame(headerBlock));
+        _reusableFrames.Add(new HeadersFrame(headerBlock));
 
         // DATA frames carry the request body (if any)
         if (request.Content != null)
@@ -113,7 +113,7 @@ internal sealed class RequestEncoder
                 if (totalRead > 0)
                 {
                     _rentedOwners.Add(bodyOwner);
-                    _reusableFrames.Add(new Http3DataFrame(bodyOwner.Memory[..totalRead]));
+                    _reusableFrames.Add(new DataFrame(bodyOwner.Memory[..totalRead]));
                 }
                 else
                 {
@@ -123,13 +123,13 @@ internal sealed class RequestEncoder
             else
             {
                 const int chunkSize = 262_144;
-                int bytesRead;
 
                 while (true)
                 {
                     var chunkOwner = MemoryPool<byte>.Shared.Rent(chunkSize);
                     var chunkFilled = 0;
 
+                    int bytesRead;
                     while (chunkFilled < chunkSize &&
                            (bytesRead = contentStream.Read(chunkOwner.Memory.Span[chunkFilled..chunkSize])) > 0)
                     {
@@ -139,7 +139,7 @@ internal sealed class RequestEncoder
                     if (chunkFilled > 0)
                     {
                         _rentedOwners.Add(chunkOwner);
-                        _reusableFrames.Add(new Http3DataFrame(chunkOwner.Memory[..chunkFilled]));
+                        _reusableFrames.Add(new DataFrame(chunkOwner.Memory[..chunkFilled]));
                     }
                     else
                     {
@@ -271,7 +271,7 @@ internal sealed class RequestEncoder
                     case ":method":
                         if (hasMethod)
                         {
-                            throw new Http3Exception(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :method pseudo-header");
                         }
 
@@ -281,7 +281,7 @@ internal sealed class RequestEncoder
                     case ":path":
                         if (hasPath)
                         {
-                            throw new Http3Exception(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :path pseudo-header");
                         }
 
@@ -290,7 +290,7 @@ internal sealed class RequestEncoder
                     case ":scheme":
                         if (hasScheme)
                         {
-                            throw new Http3Exception(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :scheme pseudo-header");
                         }
 
@@ -299,14 +299,14 @@ internal sealed class RequestEncoder
                     case ":authority":
                         if (hasAuthority)
                         {
-                            throw new Http3Exception(Http3ErrorCode.MessageError,
+                            throw new Http3Exception(ErrorCode.MessageError,
                                 "RFC 9114 §4.3.1: Duplicate :authority pseudo-header");
                         }
 
                         hasAuthority = true;
                         break;
                     default:
-                        throw new Http3Exception(Http3ErrorCode.MessageError,
+                        throw new Http3Exception(ErrorCode.MessageError,
                             $"RFC 9114 §4.3.1: Unknown request pseudo-header '{name}'");
                 }
             }
@@ -321,7 +321,7 @@ internal sealed class RequestEncoder
 
         if (lastPseudoIndex > firstRegularIndex)
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 $"RFC 9114 §4.3.1: Pseudo-header at index {lastPseudoIndex} appears after regular header at index {firstRegularIndex}");
         }
 
@@ -330,19 +330,19 @@ internal sealed class RequestEncoder
         {
             if (hasScheme)
             {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
+                throw new Http3Exception(ErrorCode.MessageError,
                     "RFC 9114 §4.4: CONNECT request MUST NOT include :scheme pseudo-header");
             }
 
             if (hasPath)
             {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
+                throw new Http3Exception(ErrorCode.MessageError,
                     "RFC 9114 §4.4: CONNECT request MUST NOT include :path pseudo-header");
             }
 
             if (!hasAuthority)
             {
-                throw new Http3Exception(Http3ErrorCode.MessageError,
+                throw new Http3Exception(ErrorCode.MessageError,
                     "RFC 9114 §4.4: CONNECT request MUST include :authority pseudo-header");
             }
 
@@ -357,7 +357,7 @@ internal sealed class RequestEncoder
 
         if (missing.Length > 0)
         {
-            throw new Http3Exception(Http3ErrorCode.MessageError,
+            throw new Http3Exception(ErrorCode.MessageError,
                 $"RFC 9114 §4.3.1: Missing required pseudo-headers: {missing}");
         }
     }

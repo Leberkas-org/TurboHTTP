@@ -14,9 +14,9 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         _decoder = new ResponseDecoder(_tableSync);
     }
 
-    private Http3HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
+    private HeadersFrame EncodeHeaders(params (string Name, string Value)[] headers)
     {
-        return new Http3HeadersFrame(_tableSync.Encoder.Encode(headers));
+        return new HeadersFrame(_tableSync.Encoder.Encode(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -421,7 +421,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     [Trait("RFC", "RFC9114-4.1")]
     public void AccumulateData_rejects_null_state()
     {
-        var frame = new Http3DataFrame(new byte[] { 0x01 });
+        var frame = new DataFrame(new byte[] { 0x01 });
         // NullReferenceException thrown when state is null
         Assert.Throws<NullReferenceException>(() => _decoder.AccumulateData(frame, null!));
     }
@@ -433,9 +433,9 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
-        var frame1 = new Http3DataFrame(new byte[] { 0x01, 0x02, 0x03 });
-        var frame2 = new Http3DataFrame(new byte[] { 0x04, 0x05 });
-        var frame3 = new Http3DataFrame(new byte[] { 0x06 });
+        var frame1 = new DataFrame(new byte[] { 0x01, 0x02, 0x03 });
+        var frame2 = new DataFrame(new byte[] { 0x04, 0x05 });
+        var frame3 = new DataFrame(new byte[] { 0x06 });
 
         Assert.True(_decoder.AccumulateData(frame1, state));
         Assert.True(_decoder.AccumulateData(frame2, state));
@@ -455,7 +455,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
             largeData[i] = (byte)(i % 256);
         }
 
-        var frame = new Http3DataFrame(largeData);
+        var frame = new DataFrame(largeData);
         var result = _decoder.AccumulateData(frame, state);
 
         Assert.True(result);
@@ -470,7 +470,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
 
         for (var i = 0; i < 1000; i++)
         {
-            var frame = new Http3DataFrame(new[] { (byte)(i % 256) });
+            var frame = new DataFrame(new[] { (byte)(i % 256) });
             Assert.True(_decoder.AccumulateData(frame, state));
         }
     }
@@ -482,8 +482,8 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
 
-        var emptyFrame1 = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
-        var emptyFrame2 = new Http3DataFrame(ReadOnlyMemory<byte>.Empty);
+        var emptyFrame1 = new DataFrame(ReadOnlyMemory<byte>.Empty);
+        var emptyFrame2 = new DataFrame(ReadOnlyMemory<byte>.Empty);
 
         Assert.True(_decoder.AccumulateData(emptyFrame1, state));
         Assert.True(_decoder.AccumulateData(emptyFrame2, state));
@@ -524,7 +524,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     {
         var state = new StreamState();
         _decoder.DecodeHeaders(EncodeHeaders((":status", "200")), state);
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0xFF }), state);
+        _decoder.AccumulateData(new DataFrame(new byte[] { 0xFF }), state);
 
         var response = _decoder.CompleteResponse(state);
 
@@ -546,7 +546,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
             largeData[i] = (byte)(i % 256);
         }
 
-        _decoder.AccumulateData(new Http3DataFrame(largeData), state);
+        _decoder.AccumulateData(new DataFrame(largeData), state);
 
         var response = _decoder.CompleteResponse(state);
 
@@ -572,7 +572,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
                 chunk[j] = (byte)((i + j) % 256);
             }
 
-            _decoder.AccumulateData(new Http3DataFrame(chunk), state);
+            _decoder.AccumulateData(new DataFrame(chunk), state);
         }
 
         var response = _decoder.CompleteResponse(state);
@@ -590,7 +590,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
             (":status", "200"),
             ("content-type", "application/json"),
             ("content-length", "2")), state);
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x01, 0x02 }), state);
+        _decoder.AccumulateData(new DataFrame(new byte[] { 0x01, 0x02 }), state);
 
         var response = _decoder.CompleteResponse(state);
 
@@ -780,11 +780,11 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         _decoder.DecodeHeaders(headerFrame, state);
 
         // Accumulate body in multiple frames
-        _decoder.AccumulateData(new Http3DataFrame("Hel"u8.ToArray()), state); // "Hel"
-        _decoder.AccumulateData(new Http3DataFrame("lo"u8.ToArray()), state); // "lo"
-        _decoder.AccumulateData(new Http3DataFrame(" Wo"u8.ToArray()), state); // " Wo"
-        _decoder.AccumulateData(new Http3DataFrame("rld"u8.ToArray()), state); // "rld"
-        _decoder.AccumulateData(new Http3DataFrame(new byte[] { 0x21 }), state); // "!"
+        _decoder.AccumulateData(new DataFrame("Hel"u8.ToArray()), state); // "Hel"
+        _decoder.AccumulateData(new DataFrame("lo"u8.ToArray()), state); // "lo"
+        _decoder.AccumulateData(new DataFrame(" Wo"u8.ToArray()), state); // " Wo"
+        _decoder.AccumulateData(new DataFrame("rld"u8.ToArray()), state); // "rld"
+        _decoder.AccumulateData(new DataFrame(new byte[] { 0x21 }), state); // "!"
 
         // Complete response
         var response = _decoder.CompleteResponse(state);
@@ -805,7 +805,7 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var firstHeaders = EncodeHeaders((":status", "200"));
         _decoder.DecodeHeaders(firstHeaders, state);
 
-        var bodyFrame = new Http3DataFrame(new byte[] { 0x01, 0x02 });
+        var bodyFrame = new DataFrame(new byte[] { 0x01, 0x02 });
         _decoder.AccumulateData(bodyFrame, state);
 
         // Try to decode trailing headers

@@ -9,7 +9,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_accept_valid_stream_id_divisible_by_four()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3GoAwayFrame(streamId: 0);
+        var frame = new GoAwayFrame(streamId: 0);
 
         // Should not throw
         state.OnServerGoAway(frame);
@@ -23,7 +23,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_reject_stream_id_not_divisible_by_four()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3GoAwayFrame(streamId: 1);
+        var frame = new GoAwayFrame(streamId: 1);
 
         var ex = Assert.Throws<Http3Exception>(() => state.OnServerGoAway(frame));
         Assert.Contains("divisible by 4", ex.Message);
@@ -34,7 +34,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_reject_stream_id_not_divisible_by_four_odd()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3GoAwayFrame(streamId: 3);
+        var frame = new GoAwayFrame(streamId: 3);
 
         var ex = Assert.Throws<Http3Exception>(() => state.OnServerGoAway(frame));
         Assert.Contains("divisible by 4", ex.Message);
@@ -45,7 +45,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_reject_stream_id_not_divisible_by_four_mod_two()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3GoAwayFrame(streamId: 2);
+        var frame = new GoAwayFrame(streamId: 2);
 
         var ex = Assert.Throws<Http3Exception>(() => state.OnServerGoAway(frame));
         Assert.Contains("divisible by 4", ex.Message);
@@ -56,8 +56,8 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_reject_increasing_stream_ids()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame1 = new Http3GoAwayFrame(streamId: 4);
-        var frame2 = new Http3GoAwayFrame(streamId: 8);
+        var frame1 = new GoAwayFrame(streamId: 4);
+        var frame2 = new GoAwayFrame(streamId: 8);
 
         state.OnServerGoAway(frame1);
 
@@ -70,8 +70,8 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_accept_decreasing_stream_ids()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame1 = new Http3GoAwayFrame(streamId: 8);
-        var frame2 = new Http3GoAwayFrame(streamId: 4);
+        var frame1 = new GoAwayFrame(streamId: 8);
+        var frame2 = new GoAwayFrame(streamId: 4);
 
         state.OnServerGoAway(frame1);
         state.OnServerGoAway(frame2);
@@ -84,8 +84,8 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnServerGoAway_should_accept_equal_stream_ids()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame1 = new Http3GoAwayFrame(streamId: 8);
-        var frame2 = new Http3GoAwayFrame(streamId: 8);
+        var frame1 = new GoAwayFrame(streamId: 8);
+        var frame2 = new GoAwayFrame(streamId: 8);
 
         state.OnServerGoAway(frame1);
 
@@ -109,7 +109,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnRemoteSettings_should_accept_first_settings_frame()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
+        var frame = new SettingsFrame([(SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
 
         state.OnRemoteSettings(frame);
 
@@ -122,8 +122,8 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnRemoteSettings_should_reject_duplicate_settings_frames()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame1 = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
-        var frame2 = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192L)]);
+        var frame1 = new SettingsFrame([(SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
+        var frame2 = new SettingsFrame([(SettingsIdentifier.MaxFieldSectionSize, 8192L)]);
 
         state.OnRemoteSettings(frame1);
 
@@ -145,9 +145,9 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnRemoteSettings_should_store_multiple_parameters()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame([
-            (Http3SettingsIdentifier.MaxFieldSectionSize, 4096L),
-            (Http3SettingsIdentifier.QpackMaxTableCapacity, 2048L)
+        var frame = new SettingsFrame([
+            (SettingsIdentifier.MaxFieldSectionSize, 4096L),
+            (SettingsIdentifier.QpackMaxTableCapacity, 2048L)
         ]);
 
         state.OnRemoteSettings(frame);
@@ -382,7 +382,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void OnReceivedCancelPush_should_track_cancelled_push_ids()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3CancelPushFrame(pushId: 42);
+        var frame = new CancelPushFrame(pushId: 42);
 
         state.OnReceivedCancelPush(frame);
 
@@ -395,9 +395,9 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
 
-        state.OnReceivedCancelPush(new Http3CancelPushFrame(pushId: 1));
-        state.OnReceivedCancelPush(new Http3CancelPushFrame(pushId: 2));
-        state.OnReceivedCancelPush(new Http3CancelPushFrame(pushId: 3));
+        state.OnReceivedCancelPush(new CancelPushFrame(pushId: 1));
+        state.OnReceivedCancelPush(new CancelPushFrame(pushId: 2));
+        state.OnReceivedCancelPush(new CancelPushFrame(pushId: 3));
 
         Assert.True(state.IsPushCancelled(1));
         Assert.True(state.IsPushCancelled(2));
@@ -428,7 +428,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void Reset_should_clear_goaway_state()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3GoAwayFrame(streamId: 4);
+        var frame = new GoAwayFrame(streamId: 4);
 
         state.OnServerGoAway(frame);
         Assert.True(state.GoAwayReceived);
@@ -444,7 +444,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void Reset_should_clear_settings_state()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
+        var frame = new SettingsFrame([(SettingsIdentifier.MaxFieldSectionSize, 4096L)]);
 
         state.OnRemoteSettings(frame);
         Assert.True(state.RemoteSettingsReceived);
@@ -478,7 +478,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
 
         state.RecordPush();
         state.RecordPush();
-        state.OnReceivedCancelPush(new Http3CancelPushFrame(pushId: 5));
+        state.OnReceivedCancelPush(new CancelPushFrame(pushId: 5));
 
         state.Reset();
 
@@ -589,7 +589,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     public void RemoteMaxFieldSectionSize_should_return_value_after_settings()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
-        var frame = new Http3SettingsFrame([(Http3SettingsIdentifier.MaxFieldSectionSize, 8192L)]);
+        var frame = new SettingsFrame([(SettingsIdentifier.MaxFieldSectionSize, 8192L)]);
 
         state.OnRemoteSettings(frame);
 
