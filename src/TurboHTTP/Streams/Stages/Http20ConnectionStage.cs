@@ -118,6 +118,11 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             _reconnectFailed = true;
         }
 
+        void IStageOperations.OnScheduleTimer(string name, TimeSpan duration) { }
+        void IStageOperations.OnCancelTimer(string name) { }
+        void IStageOperations.OnComplete() => CompleteStage();
+        void IStageOperations.OnFail(Exception exception) => FailStage(exception);
+
         ILoggingAdapter IStageOperations.Log => Log;
 
         private void OnServerPush()

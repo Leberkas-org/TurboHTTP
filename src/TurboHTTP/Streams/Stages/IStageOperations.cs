@@ -9,5 +9,9 @@ internal interface IStageOperations
     void OnOutbound(ITransportOutbound item);
     void OnWarning(string message);
     void OnReconnectFailed();
+    void OnScheduleTimer(string name, TimeSpan duration);
+    void OnCancelTimer(string name);
+    void OnComplete();
+    void OnFail(Exception exception);
     ILoggingAdapter Log { get; }
 }
