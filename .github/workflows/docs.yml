@@ -1,11 +1,6 @@
 name: Build and Deploy Docs
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - "docs/**"
-      - "README.md"
   workflow_dispatch:
 
 permissions:

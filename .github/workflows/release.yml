@@ -12,6 +12,8 @@ env:
 permissions:
   contents: write
   pull-requests: write
+  pages: write
+  id-token: write
 
 jobs:
   release-please:
@@ -33,10 +35,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-    environment:
-      name: nuget
-      url: https://www.nuget.org/packages/TurboHTTP
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -84,3 +82,47 @@ jobs:
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: ${{ env.PACKAGE_OUTPUT_DIRECTORY }}/*.nupkg
+
+  docs-build:
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    defaults:
+      run:
+        working-directory: docs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate static SVG fallback diagrams
+        run: npx likec4 export svg --output public/diagrams ./likec4
+        continue-on-error: true
+
+      - name: Build VitePress site
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/.vitepress/dist
+
+  docs-deploy:
+    needs: docs-build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
