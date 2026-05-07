@@ -4,8 +4,13 @@
 // relationships live in model-pipeline.c4.
 
 model {
-  user = person 'Application' {
+  app = person 'Application' {
     description 'Any .NET application using TurboHTTP'
+  }
+
+  network = externalSystem 'Network' {
+    description 'Remote HTTP servers (TCP, TLS, or QUIC)'
+    technology 'TCP / TLS / QUIC'
   }
 
   turbohttp = system 'TurboHTTP' {
@@ -85,244 +90,84 @@ model {
       // with four ports (InApp, OutResponse, InServer, OutNetwork) handling encoding,
       // decoding, correlation, and connection management internally.
       Http10ConnectionStage = component 'Http10ConnectionStage' {
-        #graphstage
+        #stage
         technology 'GraphStage<ConnectionShape>'
         description 'Unified HTTP/1.0 stage: encodes requests to wire bytes, decodes response bytes, correlates request-response pairs. Connection closes after each response.'
       }
 
       Http11ConnectionStage = component 'Http11ConnectionStage' {
-        #graphstage
+        #stage
         technology 'GraphStage<ConnectionShape>'
         description 'Unified HTTP/1.1 stage: encodes requests (Host header, chunked TE), decodes responses (chunked transfer), correlates pairs, evaluates keep-alive/close for connection reuse'
       }
 
       Http20ConnectionStage = component 'Http20ConnectionStage' {
-        #graphstage #http2
+        #stage #http2
         technology 'GraphStage<ConnectionShape>'
         description 'Unified HTTP/2 stage: stream ID allocation, HPACK header compression, HEADERS/DATA frame encoding, SETTINGS/PING/WINDOW_UPDATE/GOAWAY handling, frame decoding, response assembly, and stream-ID-based correlation'
       }
 
       Http30ConnectionStage = component 'Http30ConnectionStage' {
-        #graphstage #http3
+        #stage #http3
         technology 'GraphStage<ConnectionShape>'
         description 'Unified HTTP/3 stage: QPACK header compression, HEADERS/DATA frame encoding/decoding over QUIC, stream multiplexing, flow control, GOAWAY handling, response assembly, and stream-ID-based correlation'
       }
 
-
       // Feature BidiStages — each handles both request and response direction
       AltSvcBidiStage = component 'AltSvcBidiStage' {
-        #graphstage
+        #stage
         technology 'BidiStage'
         description 'Alt-Svc discovery: upgrades request version based on cached Alt-Svc headers from previous responses; captures Alt-Svc headers from responses'
       }
 
       ContentEncodingBidiStage = component 'ContentEncodingBidiStage' {
-        #graphstage
+        #stage
         technology 'BidiStage'
         description 'Bidirectional compression/decompression: adds Accept-Encoding to requests, compresses request bodies, decompresses gzip/deflate/brotli response bodies automatically'
       }
 
       TracingBidiStage = component 'TracingBidiStage' {
-        #graphstage
+        #stage
         technology 'BidiStage'
         description 'Observability stage: traces request/response events for logging and metrics collection'
       }
 
       CacheBidiStage = component 'CacheBidiStage' {
-        #graphstage #cache
+        #stage #cache
         technology 'BidiStage'
         description 'Returns cached responses on hit (skipping the network); stores cacheable responses; handles conditional revalidation with 304 merging'
       }
 
       CookieBidiStage = component 'CookieBidiStage' {
-        #graphstage #cookie
+        #stage #cookie
         technology 'BidiStage'
         description 'Injects matching cookies into outgoing requests; stores incoming Set-Cookie headers in the cookie jar'
       }
 
       RedirectBidiStage = component 'RedirectBidiStage' {
-        #graphstage
+        #stage #redirect
         technology 'BidiStage'
         description 'Follows redirects automatically; rewrites HTTP methods where needed (POST becomes GET for 301/302/303); detects loops and blocks HTTPS-to-HTTP downgrades'
       }
 
       RetryBidiStage = component 'RetryBidiStage' {
-        #graphstage
+        #stage #retry
         technology 'BidiStage'
         description 'Retries safe (idempotent) requests on transient failures; respects Retry-After delays'
       }
 
       ExpectContinueBidiStage = component 'ExpectContinueBidiStage' {
-        #graphstage
+        #stage
         technology 'BidiStage'
         description 'Handles 100-continue negotiation: holds request body until the server confirms readiness'
       }
 
       HandlerBidiStage = component 'HandlerBidiStage' {
-        #graphstage
+        #stage
         technology 'BidiStage'
         description 'Bridge for custom TurboHandler middleware; allows user-defined request/response processing'
       }
     }
-
-    protocol = container 'Protocol Layer' {
-      description 'Stateless encoders/decoders, header compression, and protocol business rules'
-      technology 'C# / .NET 10'
-
-      // HTTP/1.x codecs
-      Http10Encoder = component 'Http10Encoder' {
-        #staticClass #protocol
-        technology 'Static class'
-        description 'Encodes HTTP/1.0 request-line + headers to bytes'
-      }
-
-      Http11Encoder = component 'Http11Encoder' {
-        #staticClass #protocol
-        technology 'Static class'
-        description 'Encodes HTTP/1.1 request-line + Host header + headers + chunked body'
-      }
-
-      Http10Decoder = component 'Http10Decoder' {
-        #protocol
-        technology 'Class'
-        description 'Stateful HTTP/1.0 response parser; handles partial data across TCP reads'
-      }
-
-      Http11Decoder = component 'Http11Decoder' {
-        #protocol
-        technology 'Class'
-        description 'Stateful HTTP/1.1 response parser; handles chunked transfer decoding and partial data'
-      }
-
-      // HTTP/2 codecs
-      Http2RequestEncoder = component 'Http2RequestEncoder' {
-        #protocol #http2
-        technology 'Class'
-        description 'Encodes requests into HEADERS frames (via HPACK) + optional DATA frames'
-      }
-
-      Http2FrameDecoder = component 'Http2FrameDecoder' {
-        #protocol #http2
-        technology 'Class'
-        description 'Parses 9-byte frame headers + payload into typed HTTP/2 frame objects'
-      }
-
-      // HPACK (header compression for HTTP/2)
-      HpackEncoder = component 'HpackEncoder' {
-        #protocol #http2
-        technology 'Class'
-        description 'Header compression encoder; sensitive headers (Authorization, Cookie) are never indexed'
-      }
-
-      HpackDecoder = component 'HpackDecoder' {
-        #protocol #http2
-        technology 'Class'
-        description 'Header compression decoder; maintains synchronised dynamic table'
-      }
-
-      HpackDynamicTable = component 'HpackDynamicTable' {
-        #protocol #http2
-        technology 'Class'
-        description 'FIFO eviction table for HPACK header compression; 32-byte per-entry overhead'
-      }
-
-      HuffmanCodec = component 'HuffmanCodec' {
-        #staticClass #protocol #http2
-        technology 'Static class'
-        description 'Static Huffman encoding and decoding for HPACK string literals'
-      }
-
-      // HTTP/3 codecs
-      Http3RequestEncoder = component 'Http3RequestEncoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'Encodes requests into HEADERS frames (via QPACK) + optional DATA frames'
-      }
-
-      Http3FrameDecoder = component 'Http3FrameDecoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'Parses HTTP/3 frame headers + payload into typed frame objects'
-      }
-
-      // QPACK (header compression for HTTP/3)
-      QpackEncoder = component 'QpackEncoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'QPACK header compression encoder; maintains dynamic table; sensitive headers are never indexed'
-      }
-
-      QpackDecoder = component 'QpackDecoder' {
-        #protocol #http3
-        technology 'Class'
-        description 'QPACK header compression decoder; applies encoder instructions to maintain synchronised dynamic table'
-      }
-
-      QpackDynamicTable = component 'QpackDynamicTable' {
-        #protocol #http3
-        technology 'Class'
-        description 'FIFO eviction table for QPACK header compression'
-      }
-
-      // HTTP semantics (business rules)
-      RedirectHandler = component 'RedirectHandler' {
-        #protocol
-        technology 'Class'
-        description 'Redirect logic: method rewriting (POST becomes GET for 301/302/303), HTTPS-to-HTTP downgrade protection, loop detection'
-      }
-
-      RetryEvaluator = component 'RetryEvaluator' {
-        #staticClass #protocol
-        technology 'Static class'
-        description 'Retry decision logic: determines if a request is safe to retry based on method and response; parses Retry-After headers'
-      }
-
-      ConnectionReuseEvaluator = component 'ConnectionReuseEvaluator' {
-        #staticClass #protocol
-        technology 'Static class'
-        description 'Keep-alive / close decision based on Connection header and HTTP version'
-      }
-
-      // Cookie jar
-      CookieJar = component 'CookieJar' {
-        #protocol #cookie
-        technology 'Class'
-        description 'Cookie storage with domain/path matching, Secure/HttpOnly/SameSite enforcement, and automatic expiry'
-      }
-
-      // Content encoding
-      ContentEncodingDecoder = component 'ContentEncodingDecoder' {
-        #staticClass #protocol
-        technology 'Internal static class'
-        description 'Decompresses gzip/deflate/brotli response bodies'
-      }
-
-      // Caching
-      HttpCacheStore = component 'HttpCacheStore' {
-        #protocol #cache
-        technology 'Class'
-        description 'Thread-safe in-memory LRU cache with Vary header support'
-      }
-
-      CacheFreshnessEvaluator = component 'CacheFreshnessEvaluator' {
-        #staticClass #protocol #cache
-        technology 'Static class'
-        description 'Calculates whether a cached response is still fresh based on max-age, Expires, and heuristic rules'
-      }
-
-      CacheValidationRequestBuilder = component 'CacheValidationRequestBuilder' {
-        #staticClass #protocol #cache
-        technology 'Static class'
-        description 'Builds conditional revalidation requests (If-None-Match, If-Modified-Since); merges 304 responses with cached entries'
-      }
-
-      CacheControlParser = component 'CacheControlParser' {
-        #staticClass #protocol #cache
-        technology 'Static class'
-        description 'Parses Cache-Control directive tokens and values'
-      }
-    }
-
   }
 
   // External systems
@@ -341,112 +186,46 @@ model {
     }
 
     TcpConnectionStage = component 'TcpConnectionStage' {
-      #graphstage
+      #stage
       technology 'GraphStage<FlowShape>'
       description 'TCP/TLS transport bridge: acquires a connection from TcpConnectionManagerActor, writes outbound bytes, reads inbound bytes; used by HTTP/1.x and HTTP/2 engines'
     }
 
     QuicConnectionStage = component 'QuicConnectionStage' {
-      #graphstage
+      #stage
       technology 'GraphStage<FlowShape>'
       description 'QUIC transport bridge: acquires a QUIC connection from QuicConnectionManagerActor, writes outbound bytes, reads inbound bytes; used by the HTTP/3 engine'
     }
   }
 
-  tcp = externalSystem 'Network' {
-    description 'Remote HTTP servers (TCP, TLS, or QUIC)'
-    technology 'TCP / TLS / QUIC'
-  }
+  // Overview (for index and turbohttp views where intermediate elements are not included)
+  turbohttp.client -> network 'HTTP requests and responses'
+  turbohttp.streams.Engine -> network 'Routes to remote servers via transport'
 
-  // User -> Client Layer
-  user -> turbohttp.client.ITurboHttpClient 'Sends HttpRequestMessage, receives HttpResponseMessage'
+  // App -> Client
+  app -> turbohttp.client.ITurboHttpClient 'Sends requests, receives responses'
   turbohttp.client.ITurboHttpClient -> turbohttp.client.TurboHttpClient 'Implemented by'
-  turbohttp.client.TurboHttpClient -> turbohttp.client.ClientStreamManager 'Delegates to stream pipeline'
-  turbohttp.client.ClientStreamManager -> turbohttp.client.ClientStreamOwner 'Manages stream lifecycle'
+  turbohttp.client.TurboHttpClient -> turbohttp.client.ClientStreamManager 'Delegates to pipeline'
+  turbohttp.client.ClientStreamManager -> turbohttp.client.ClientStreamOwner 'Manages lifecycle'
   turbohttp.client.ITurboHttpClient -> turbohttp.client.TurboClientOptions 'Reads configuration'
 
-  // Client -> Streams
-  turbohttp.client.ClientStreamManager -> turbohttp.streams.Engine 'Feeds requests into pipeline'
-  turbohttp.client.ClientStreamManager -> turbohttp.streams.RequestEnricher 'Enriches requests with defaults'
+  // Pipeline assembly (ClientStreamManager builds the pipeline from these stages)
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.RequestEnricher 'Wraps with enrichment'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.HandlerBidiStage 'Wraps with handlers'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.TracingBidiStage 'Wraps with tracing'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.RedirectBidiStage 'Wraps with redirects'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.CookieBidiStage 'Wraps with cookies'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.RetryBidiStage 'Wraps with retry'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.ExpectContinueBidiStage 'Wraps with 100-continue'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.CacheBidiStage 'Wraps with caching'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.ContentEncodingBidiStage 'Wraps with compression'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.AltSvcBidiStage 'Wraps with Alt-Svc'
+  turbohttp.client.ClientStreamManager -> turbohttp.streams.Engine 'Wraps with engine'
 
-  // Engine routing
-  turbohttp.streams.Engine -> turbohttp.streams.Http10Engine 'Routes HTTP/1.0 requests'
-  turbohttp.streams.Engine -> turbohttp.streams.Http11Engine 'Routes HTTP/1.1 requests'
-  turbohttp.streams.Engine -> turbohttp.streams.Http20Engine 'Routes HTTP/2 requests'
-  turbohttp.streams.Engine -> turbohttp.streams.Http30Engine 'Routes HTTP/3 requests'
-
-  // Client -> Network (via Servus transport)
-  turbohttp.client -> servus 'HTTP requests via actor-managed connections'
-
-  // Pipeline BidiStages (applied around engine core)
-  turbohttp.streams.Engine -> turbohttp.streams.RequestEnricher 'Applies defaults before routing'
-  turbohttp.streams.Engine -> turbohttp.streams.AltSvcBidiStage 'Upgrades version via Alt-Svc'
-  turbohttp.streams.Engine -> turbohttp.streams.CookieBidiStage 'Injects/stores cookies'
-  turbohttp.streams.Engine -> turbohttp.streams.CacheBidiStage 'Checks/stores cache'
-  turbohttp.streams.Engine -> turbohttp.streams.ContentEncodingBidiStage 'Compresses requests, decompresses responses'
-  turbohttp.streams.Engine -> turbohttp.streams.TracingBidiStage 'Traces requests and responses'
-  turbohttp.streams.Engine -> turbohttp.streams.RetryBidiStage 'Feeds retry loop'
-  turbohttp.streams.Engine -> turbohttp.streams.RedirectBidiStage 'Feeds redirect loop'
-  turbohttp.streams.Engine -> turbohttp.streams.ExpectContinueBidiStage 'Handles 100-continue'
-  turbohttp.streams.Engine -> turbohttp.streams.HandlerBidiStage 'Custom handler middleware'
-
-  // HTTP/1.0 engine internals
-  turbohttp.streams.Http10Engine -> turbohttp.streams.Http10ConnectionStage 'Encodes, sends, receives, decodes, correlates'
-  turbohttp.streams.Http10Engine -> servus.TcpConnectionStage 'Reads/writes bytes via TCP'
-
-  // HTTP/1.1 engine internals
-  turbohttp.streams.Http11Engine -> turbohttp.streams.Http11ConnectionStage 'Encodes, sends, receives, decodes, correlates, manages keep-alive'
-  turbohttp.streams.Http11Engine -> servus.TcpConnectionStage 'Reads/writes bytes via TCP'
-
-  // HTTP/2 engine internals
-  turbohttp.streams.Http20Engine -> turbohttp.streams.Http20ConnectionStage 'Stream IDs, HPACK, frame encoding/decoding, flow control, correlation'
-  turbohttp.streams.Http20Engine -> servus.TcpConnectionStage 'Reads/writes bytes via TCP'
-
-  // HTTP/3 engine internals
-  turbohttp.streams.Http30Engine -> turbohttp.streams.Http30ConnectionStage 'QPACK, frame encoding/decoding, stream multiplexing, correlation'
-  turbohttp.streams.Http30Engine -> servus.QuicConnectionStage 'Reads/writes bytes via QUIC'
-
-  // Transport stages -> Transport Layer
-  servus.TcpConnectionStage -> servus.TcpConnectionManagerActor 'Requests connection lease'
-  servus.TcpConnectionStage -> tcp 'Writes request bytes, reads response bytes via TCP/TLS'
-  servus.QuicConnectionStage -> servus.QuicConnectionManagerActor 'Requests QUIC connection lease'
-  servus.QuicConnectionStage -> tcp 'Writes request bytes, reads response bytes via QUIC'
-
-  // Connection stages -> Protocol codecs
-  turbohttp.streams.Http10ConnectionStage -> turbohttp.protocol.Http10Encoder 'Delegates encoding'
-  turbohttp.streams.Http10ConnectionStage -> turbohttp.protocol.Http10Decoder 'Delegates decoding'
-  turbohttp.streams.Http11ConnectionStage -> turbohttp.protocol.Http11Encoder 'Delegates encoding'
-  turbohttp.streams.Http11ConnectionStage -> turbohttp.protocol.Http11Decoder 'Delegates decoding'
-  turbohttp.streams.Http11ConnectionStage -> turbohttp.protocol.ConnectionReuseEvaluator 'Evaluates keep-alive / close'
-  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.Http2RequestEncoder 'Encodes requests to HEADERS + DATA frames'
-  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.Http2FrameDecoder 'Decodes inbound frames'
-  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.HpackEncoder 'Compresses request headers'
-  turbohttp.streams.Http20ConnectionStage -> turbohttp.protocol.HpackDecoder 'Decompresses response headers'
-  turbohttp.streams.Http30ConnectionStage -> turbohttp.protocol.Http3RequestEncoder 'Encodes requests to HEADERS + DATA frames'
-  turbohttp.streams.Http30ConnectionStage -> turbohttp.protocol.Http3FrameDecoder 'Decodes inbound frames'
-  turbohttp.streams.Http30ConnectionStage -> turbohttp.protocol.QpackEncoder 'Compresses request headers'
-  turbohttp.streams.Http30ConnectionStage -> turbohttp.protocol.QpackDecoder 'Decompresses response headers'
-
-  // HPACK internals
-  turbohttp.protocol.HpackEncoder -> turbohttp.protocol.HpackDynamicTable 'Maintains dynamic table'
-  turbohttp.protocol.HpackDecoder -> turbohttp.protocol.HpackDynamicTable 'Maintains dynamic table'
-  turbohttp.protocol.HpackEncoder -> turbohttp.protocol.HuffmanCodec 'Huffman-encodes string literals'
-  turbohttp.protocol.HpackDecoder -> turbohttp.protocol.HuffmanCodec 'Huffman-decodes string literals'
-
-  // QPACK internals
-  turbohttp.protocol.QpackEncoder -> turbohttp.protocol.QpackDynamicTable 'Maintains dynamic table'
-  turbohttp.protocol.QpackDecoder -> turbohttp.protocol.QpackDynamicTable 'Maintains dynamic table'
-
-  // BidiStages -> Protocol business rules
-  turbohttp.streams.RedirectBidiStage -> turbohttp.protocol.RedirectHandler 'Evaluates redirect rules'
-  turbohttp.streams.RetryBidiStage -> turbohttp.protocol.RetryEvaluator 'Evaluates retry eligibility'
-  turbohttp.streams.CookieBidiStage -> turbohttp.protocol.CookieJar 'Reads/stores cookies'
-  turbohttp.streams.ContentEncodingBidiStage -> turbohttp.protocol.ContentEncodingDecoder 'Decompresses and compresses content'
-
-  // BidiStages -> Caching subsystem
-  turbohttp.streams.CacheBidiStage -> turbohttp.protocol.HttpCacheStore 'Looks up and stores cached responses'
-  turbohttp.streams.CacheBidiStage -> turbohttp.protocol.CacheFreshnessEvaluator 'Checks freshness lifetime'
-  turbohttp.streams.CacheBidiStage -> turbohttp.protocol.CacheControlParser 'Parses Cache-Control directives'
-  turbohttp.streams.CacheBidiStage -> turbohttp.protocol.CacheValidationRequestBuilder 'Builds conditional revalidation requests'
+  // Engine -> transport (structural; flow details in model-pipeline.c4)
+  turbohttp.streams.Http10Engine -> servus.TcpConnectionStage 'TCP transport'
+  turbohttp.streams.Http11Engine -> servus.TcpConnectionStage 'TCP transport'
+  turbohttp.streams.Http20Engine -> servus.TcpConnectionStage 'TCP transport'
+  turbohttp.streams.Http30Engine -> servus.QuicConnectionStage 'QUIC transport'
 
 }

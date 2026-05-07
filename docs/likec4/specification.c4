@@ -40,14 +40,14 @@ specification {
   }
 
   // Tags for visual grouping
-  tag graphstage
-  tag staticClass
-  tag protocol
+  tag stage
   tag http2
+  tag http3
   tag cache
   tag cookie
+  tag redirect
+  tag retry
   tag api
-  tag http3
 
   // flows    — ordered pipeline data flow (request chain or response chain)
   // feedback — cycle-back path (retry / redirect / cache-hit bypass)

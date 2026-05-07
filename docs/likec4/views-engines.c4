@@ -10,6 +10,7 @@ views {
     include turbohttp.streams.Http10Engine
     include turbohttp.streams.Http10ConnectionStage
     include servus.TcpConnectionStage
+    include network
   }
 
   view http11Engine of turbohttp.streams.Http11Engine {
@@ -18,6 +19,7 @@ views {
     include turbohttp.streams.Http11Engine
     include turbohttp.streams.Http11ConnectionStage
     include servus.TcpConnectionStage
+    include network
   }
 
   view http2Engine of turbohttp.streams.Http20Engine {
@@ -26,6 +28,7 @@ views {
     include turbohttp.streams.Http20Engine
     include turbohttp.streams.Http20ConnectionStage
     include servus.TcpConnectionStage
+    include network
   }
 
   view http3Engine of turbohttp.streams.Http30Engine {
@@ -34,6 +37,7 @@ views {
     include turbohttp.streams.Http30Engine
     include turbohttp.streams.Http30ConnectionStage
     include servus.QuicConnectionStage
+    include network
   }
 
 }

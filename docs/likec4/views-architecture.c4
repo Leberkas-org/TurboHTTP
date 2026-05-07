@@ -5,22 +5,23 @@ views {
   view index {
     title 'TurboHTTP — System Overview'
     description 'Application, TurboHTTP client library, and remote servers'
-    include user
+    include app
     include turbohttp.client
-    include tcp
+    include network
     style turbohttp { color green }
-    style tcp { color muted }
-    style user { color primary }
+    style network { color muted }
+    style app { color primary }
   }
 
   view turbohttp {
     title 'TurboHTTP — Architecture'
     description 'Client API and the request/response pipeline with all processing stages'
-    include user
+    include app
     include turbohttp.client.*
     include turbohttp.streams.Engine
     include turbohttp.streams.RequestEnricher
     include turbohttp.streams.TracingBidiStage
+    include turbohttp.streams.HandlerBidiStage
     include turbohttp.streams.CookieBidiStage
     include turbohttp.streams.CacheBidiStage
     include turbohttp.streams.ContentEncodingBidiStage
@@ -28,27 +29,29 @@ views {
     include turbohttp.streams.RedirectBidiStage
     include turbohttp.streams.ExpectContinueBidiStage
     include turbohttp.streams.AltSvcBidiStage
-    include tcp
+    include network
   }
 
   view clientLayer of turbohttp.client {
     title 'Client API'
     description 'Public interface: SendAsync, channel-based API, configuration options'
-    include user
+    include app
     include turbohttp.client.*
   }
 
   view pipelineFlow of turbohttp.streams {
     title 'Pipeline Flow'
     description 'All processing stages from request entry to response delivery'
-    include turbohttp.client.ITurboHttpClient
+
+    // Entry point (flow starts here)
+    include turbohttp.client.TurboHttpClient
 
     // Request enrichment
     include turbohttp.streams.RequestEnricher
 
     // Feature layers (applied around engine, outermost -> innermost)
-    include turbohttp.streams.TracingBidiStage
     include turbohttp.streams.HandlerBidiStage
+    include turbohttp.streams.TracingBidiStage
     include turbohttp.streams.RedirectBidiStage
     include turbohttp.streams.CookieBidiStage
     include turbohttp.streams.RetryBidiStage
@@ -72,6 +75,11 @@ views {
 
     // Transport
     include servus.TcpConnectionStage
+    include servus.TcpConnectionManagerActor
     include servus.QuicConnectionStage
+    include servus.QuicConnectionManagerActor
+
+    // Exit point (flow ends here)
+    include network
   }
 }
