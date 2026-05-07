@@ -1,10 +1,10 @@
 using System.Buffers;
-using static Servus.Core.Servus;
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Protocol.Http3;
 
@@ -102,7 +102,7 @@ internal sealed class StreamManager
     /// with an exception so the caller's <c>SendAsync</c> or <c>ReadAsStringAsync</c> throws.
     /// Returns true if a correlated request was found and failed.
     /// </summary>
-    public bool FailInflightRequest(long streamId, Exception exception)
+    public void FailInflightRequest(long streamId, Exception exception)
     {
         if (_streams.TryGetValue(streamId, out var state))
         {
@@ -117,7 +117,7 @@ internal sealed class StreamManager
 
         if (!_correlationMap.Remove(streamId, out var request))
         {
-            return false;
+            return;
         }
 
         OnStreamClosedCallback?.Invoke(streamId);
@@ -127,8 +127,6 @@ internal sealed class StreamManager
         {
             pending.TrySetException(exception);
         }
-
-        return true;
     }
 
     /// <summary>

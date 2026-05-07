@@ -17,7 +17,7 @@ public sealed class MultiplexedMessagesSpec
     {
         var msg = new OpenStream(7, StreamDirection.Unidirectional);
 
-        Assert.Equal(7, msg.StreamId);
+        Assert.Equal(new StreamTarget(7), msg.StreamId);
         Assert.Equal(StreamDirection.Unidirectional, msg.Direction);
     }
 
@@ -34,7 +34,7 @@ public sealed class MultiplexedMessagesSpec
     {
         var msg = new CloseStream(55);
 
-        Assert.Equal(55, msg.StreamId);
+        Assert.Equal(new StreamTarget(55), msg.StreamId);
     }
 
     [Fact(Timeout = 5000)]
@@ -50,7 +50,7 @@ public sealed class MultiplexedMessagesSpec
     {
         var msg = new StreamOpened(3, StreamDirection.Unidirectional);
 
-        Assert.Equal(3, msg.StreamId);
+        Assert.Equal(new StreamTarget(3), msg.Id);
         Assert.Equal(StreamDirection.Unidirectional, msg.Direction);
     }
 
@@ -67,25 +67,8 @@ public sealed class MultiplexedMessagesSpec
     {
         var msg = new StreamClosed(22, DisconnectReason.Error);
 
-        Assert.Equal(22, msg.StreamId);
+        Assert.Equal(new StreamTarget(22), msg.Id);
         Assert.Equal(DisconnectReason.Error, msg.Reason);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void InboundStreamAccepted_should_implement_ITransportInbound()
-    {
-        ITransportInbound msg = new InboundStreamAccepted(5, 0x00);
-
-        Assert.IsType<InboundStreamAccepted>(msg);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void InboundStreamAccepted_should_carry_stream_id_and_type()
-    {
-        var msg = new InboundStreamAccepted(8, 0x01);
-
-        Assert.Equal(8, msg.StreamId);
-        Assert.Equal(0x01, msg.StreamType);
     }
 
     [Fact(Timeout = 5000)]
@@ -93,7 +76,7 @@ public sealed class MultiplexedMessagesSpec
     {
         ITransportOutbound msg = new CompleteWrites(42);
         var cw = Assert.IsType<CompleteWrites>(msg);
-        Assert.Equal(42, cw.StreamId);
+        Assert.Equal(new StreamTarget(42), cw.StreamId);
     }
 
     [Fact(Timeout = 5000)]
@@ -101,7 +84,7 @@ public sealed class MultiplexedMessagesSpec
     {
         ITransportOutbound msg = new ResetStream(7, 0x0104);
         var rs = Assert.IsType<ResetStream>(msg);
-        Assert.Equal(7, rs.StreamId);
+        Assert.Equal(new StreamTarget(7), rs.StreamId);
         Assert.Equal(0x0104, rs.ErrorCode);
     }
 
@@ -110,7 +93,7 @@ public sealed class MultiplexedMessagesSpec
     {
         ITransportInbound msg = new ServerStreamAccepted(3, StreamDirection.Unidirectional);
         var ssa = Assert.IsType<ServerStreamAccepted>(msg);
-        Assert.Equal(3, ssa.StreamId);
+        Assert.Equal(new StreamTarget(3), ssa.Id);
         Assert.Equal(StreamDirection.Unidirectional, ssa.Direction);
     }
 
@@ -119,6 +102,6 @@ public sealed class MultiplexedMessagesSpec
     {
         ITransportInbound msg = new StreamReadCompleted(0);
         var src = Assert.IsType<StreamReadCompleted>(msg);
-        Assert.Equal(0, src.StreamId);
+        Assert.Equal(new StreamTarget(0), src.Id);
     }
 }

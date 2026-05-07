@@ -24,7 +24,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         var stage = new TestConnectionStageBuilder()
             .AutoConnect()
-            .OnData((data, ctx) =>
+            .OnData((_, ctx) =>
             {
                 handlerInvoked = true;
                 ctx.Push(new TransportData(new byte[] { 0xFF }));
@@ -89,7 +89,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
         Assert.True(handlerInvoked, "OnOpenStream handler should have been invoked");
         Assert.IsType<TransportConnected>(inbound[0]);
         var opened = Assert.IsType<StreamOpened>(inbound[1]);
-        Assert.Equal(42L, opened.StreamId);
+        Assert.Equal(42L, opened.Id.Value);
     }
 
     [Fact(Timeout = 5000)]
@@ -105,7 +105,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         var stage = new TestConnectionStageBuilder()
             .AutoConnect()
-            .OnMultiplexedData((data, ctx) =>
+            .OnMultiplexedData((_, _) =>
             {
                 handlerInvoked.TrySetResult();
             })
@@ -169,7 +169,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         var stage = new TestConnectionStageBuilder()
             .AutoConnect()
-            .AutoStreamOpened(42, StreamDirection.Bidirectional)
+            .AutoStreamOpened(42)
             .Build();
 
         _ = Source.From<ITransportOutbound>([
@@ -190,7 +190,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         Assert.IsType<TransportConnected>(inbound[0]);
         var opened = Assert.IsType<StreamOpened>(inbound[1]);
-        Assert.Equal(42L, opened.StreamId);
+        Assert.Equal(42L, (long)opened.Id);
         Assert.Equal(StreamDirection.Bidirectional, opened.Direction);
     }
 
@@ -270,7 +270,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         Assert.IsType<TransportConnected>(inbound[0]);
         var echo = Assert.IsType<MultiplexedData>(inbound[1]);
-        Assert.Equal(7L, echo.StreamId);
+        Assert.Equal(7L, (long)echo.StreamId);
         Assert.Equal(3, echo.Buffer.Length);
         Assert.Equal(0x11, echo.Buffer.Span[0]);
         Assert.Equal(0x22, echo.Buffer.Span[1]);
@@ -287,7 +287,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         var stage = new TestConnectionStageBuilder()
             .AutoConnect()
-            .OnCompleteWrites((complete, ctx) =>
+            .OnCompleteWrites((_, ctx) =>
             {
                 handlerInvoked = true;
                 ctx.Push(new TransportDisconnected(DisconnectReason.Graceful));
@@ -335,7 +335,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
 
         _ = Source.From<ITransportOutbound>([
                 new ConnectTransport(new TcpTransportOptions { Host = "localhost", Port = 80 }),
-                new ResetStream(99, 0)
+                new ResetStream(99)
             ])
             .Via(stage.AsFlow())
             .RunWith(Sink.ForEach<ITransportInbound>(msg =>
@@ -352,7 +352,7 @@ public sealed class TestConnectionStageBuilderExtensionsSpec : global::Akka.Test
         Assert.True(handlerInvoked, "OnResetStream handler should have been invoked");
         Assert.IsType<TransportConnected>(inbound[0]);
         var closed = Assert.IsType<StreamClosed>(inbound[1]);
-        Assert.Equal(99L, closed.StreamId);
+        Assert.Equal(99L, (long)closed.Id);
         Assert.Equal(DisconnectReason.Error, closed.Reason);
     }
 }

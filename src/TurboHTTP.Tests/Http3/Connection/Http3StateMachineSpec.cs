@@ -11,7 +11,7 @@ public sealed class Http3StateMachineSpec
     private static readonly ConnectionInfo DummyConnectionInfo = new(
         new IPEndPoint(IPAddress.Loopback, 5000),
         new IPEndPoint(IPAddress.Loopback, 443),
-        null, null);
+        TransportProtocol.Tcp);
 
     private StateMachine CreateMachine(
         TurboClientOptions? options = null,
@@ -461,7 +461,7 @@ public sealed class Http3StateMachineSpec
             .OfType<MultiplexedData>()
             .ToList();
         Assert.NotEmpty(tagged);
-        Assert.All(tagged, t => Assert.Equal(0L, t.StreamId));
+        Assert.All(tagged, t => Assert.Equal(0L, (long)t.StreamId));
     }
 
     [Fact(Timeout = 5000)]

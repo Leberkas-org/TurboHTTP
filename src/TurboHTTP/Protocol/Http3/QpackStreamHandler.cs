@@ -1,8 +1,8 @@
-using static Servus.Core.Servus;
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Streams.Stages;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Protocol.Http3;
 
@@ -78,7 +78,7 @@ internal sealed class QpackStreamHandler
     /// Prepends the stream type prefix (VarInt 0x03) on first emission.
     /// RFC 9204 §4.4.
     /// </summary>
-    public void FlushDecoderInstructions(RequestEndpoint endpoint)
+    public void FlushDecoderInstructions()
     {
         var sectionAck = _responseDecoder.DecoderInstructions;
 
@@ -110,7 +110,7 @@ internal sealed class QpackStreamHandler
 
         _decoderPrefaceSent = true;
         buf.Length = offset;
-        _ops.OnOutbound(new MultiplexedData(buf, -4));
+        _ops.OnOutbound(new MultiplexedData(buf, CriticalStreamId.QpackDecoder));
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ internal sealed class QpackStreamHandler
     /// as tagged items on the encoder stream. Prepends the stream type prefix
     /// (VarInt 0x02) on first emission.
     /// </summary>
-    public void FlushEncoderInstructions(RequestEndpoint endpoint)
+    public void FlushEncoderInstructions()
     {
         var instructions = _requestEncoder.EncoderInstructions;
         if (instructions.Length == 0)
@@ -147,7 +147,7 @@ internal sealed class QpackStreamHandler
         owner.Memory.Span[..totalLength].CopyTo(buf.FullMemory.Span);
         buf.Length = totalLength;
 
-        _ops.OnOutbound(new MultiplexedData(buf, -3));
+        _ops.OnOutbound(new MultiplexedData(buf, CriticalStreamId.QpackEncoder));
     }
 
     /// <summary>

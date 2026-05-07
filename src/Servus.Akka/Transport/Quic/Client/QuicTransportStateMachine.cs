@@ -24,7 +24,7 @@ public sealed class QuicTransportStateMachine
     private CancellationTokenSource? _acquireCts;
     private EndPoint? _lastRemoteEndPoint;
 
-    private readonly Dictionary<long, QuicStreamState> _streams = new();
+    private readonly Dictionary<StreamTarget, QuicStreamState> _streams = new();
     private QuicPumpManager? _pumpManager;
 
     public QuicTransportStateMachine(
@@ -53,7 +53,7 @@ public sealed class QuicTransportStateMachine
             case InboundData e:
                 if (e.Gen == _connectionGen)
                 {
-                    _ops.OnPushInbound(new MultiplexedData(e.Buffer, e.StreamId));
+                    _ops.OnPushInbound(new MultiplexedData(e.Buffer, StreamTarget.FromId(e.StreamId)));
                 }
                 else
                 {
@@ -183,7 +183,7 @@ public sealed class QuicTransportStateMachine
         _ops.OnSignalPullOutbound();
     }
 
-    private void HandleOpenStream(long streamId, StreamDirection direction)
+    private void HandleOpenStream(StreamTarget streamId, StreamDirection direction)
     {
         if (_connectionHandle is null)
         {
@@ -194,7 +194,7 @@ public sealed class QuicTransportStateMachine
         var state = new QuicStreamState(direction);
         _streams[streamId] = state;
 
-        var sid = streamId;
+        var sid = streamId.Value;
         _connectionHandle.OpenStreamAsync(direction)
             .PipeTo(_self,
                 success: result => new StreamLeaseAcquired(new StreamHandle(result.Stream), sid),
@@ -206,6 +206,7 @@ public sealed class QuicTransportStateMachine
     private void HandleMultiplexedData(MultiplexedData data)
     {
         if (_streams.TryGetValue(data.StreamId, out var state))
+
         {
             state.Write(data.Buffer);
         }
@@ -217,7 +218,7 @@ public sealed class QuicTransportStateMachine
         _ops.OnSignalPullOutbound();
     }
 
-    private void HandleCompleteWrites(long streamId)
+    private void HandleCompleteWrites(StreamTarget streamId)
     {
         if (_streams.TryGetValue(streamId, out var state))
         {
@@ -227,7 +228,7 @@ public sealed class QuicTransportStateMachine
         _ops.OnSignalPullOutbound();
     }
 
-    private void HandleResetStream(long streamId, long errorCode)
+    private void HandleResetStream(StreamTarget streamId, long errorCode)
     {
         if (_streams.Remove(streamId, out var state))
         {
@@ -258,11 +259,16 @@ public sealed class QuicTransportStateMachine
             _isReconnecting = false;
         }
 
-        _ops.OnPushInbound(new TransportConnected(default!));
+        var info = new ConnectionInfo(
+            _connectionHandle.LocalEndPoint()!,
+            _connectionHandle.RemoteEndPoint()!,
+            TransportProtocol.Quic);
+        _ops.OnPushInbound(new TransportConnected(info));
     }
 
-    private void OnStreamLeaseAcquired(StreamHandle handle, long streamId)
+    private void OnStreamLeaseAcquired(StreamHandle handle, long rawStreamId)
     {
+        var streamId = StreamTarget.FromId(rawStreamId);
         if (!_streams.TryGetValue(streamId, out var state))
         {
             _ = handle.DisposeAsync();
@@ -272,25 +278,27 @@ public sealed class QuicTransportStateMachine
         state.AttachHandle(handle);
         if (state.Direction == StreamDirection.Bidirectional)
         {
-            _pumpManager?.StartInboundPump(handle, streamId, _connectionGen);
+            _pumpManager?.StartInboundPump(handle, rawStreamId, _connectionGen);
         }
 
         _ops.OnPushInbound(new StreamOpened(streamId, state.Direction));
     }
 
-    private void OnInboundStreamAccepted(Stream stream, long streamId)
+    private void OnInboundStreamAccepted(Stream stream, long rawStreamId)
     {
+        var streamId = StreamTarget.FromId(rawStreamId);
         var handle = new StreamHandle(stream);
         var state = new QuicStreamState(StreamDirection.Unidirectional);
         state.AttachHandle(handle);
         _streams[streamId] = state;
 
-        _pumpManager?.StartInboundPump(handle, streamId, _connectionGen);
+        _pumpManager?.StartInboundPump(handle, rawStreamId, _connectionGen);
         _ops.OnPushInbound(new ServerStreamAccepted(streamId, StreamDirection.Unidirectional));
     }
 
-    private void OnInboundComplete(DisconnectReason reason, long streamId)
+    private void OnInboundComplete(DisconnectReason reason, long rawStreamId)
     {
+        var streamId = StreamTarget.FromId(rawStreamId);
         if (!_streams.TryGetValue(streamId, out var state))
         {
             return;
@@ -366,9 +374,9 @@ public sealed class QuicTransportStateMachine
             return;
         }
 
-        foreach (var (streamId, state) in _streams)
+        foreach (var (target, state) in _streams)
         {
-            _ops.OnPushInbound(new StreamClosed(streamId, reason));
+            _ops.OnPushInbound(new StreamClosed(target, reason));
             _ = state.DisposeAsync();
         }
 

@@ -1,24 +1,12 @@
 using System.Buffers;
-using System.Security.Cryptography.X509Certificates;
-using static Servus.Core.Servus;
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Streams.Stages;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Protocol.Http3;
 
-/// <summary>
-/// Encapsulates all HTTP/3 connection protocol logic — frame decoding, request encoding,
-/// response assembly, QPACK feedback, SETTINGS, GOAWAY, push control, stream lifecycle,
-/// idle timeout, and reconnection.
-/// Calls back into <see cref="IStageOperations"/> for responses, outbound items, and warnings.
-/// Mirrors the HTTP/2 <see cref="Http2.StateMachine"/> pattern.
-/// <para>
-/// Per-stream state and response assembly is delegated to <see cref="StreamManager"/>;
-/// QPACK instruction streams to <see cref="QpackStreamHandler"/>.
-/// </para>
-/// </summary>
 internal sealed class StateMachine : IHttpStateMachine
 {
     private static readonly TimeSpan DefaultIdleTimeout = TimeSpan.FromSeconds(30);
@@ -45,10 +33,7 @@ internal sealed class StateMachine : IHttpStateMachine
     private bool _transportConnected;
     private readonly List<ITransportOutbound> _preConnectBuffer = [];
 
-    // Server-initiated stream mapping (QUIC stream ID → logical stream ID)
-    private readonly Dictionary<long, long> _serverStreamMap = new();
-    private readonly HashSet<long> _pendingStreamType = [];
-    private readonly HashSet<long> _assignedCriticalStreams = [];
+    private readonly ServerStreamResolver _serverStreamResolver;
 
     /// <summary>Whether a new request can be accepted (no GOAWAY + not reconnecting + concurrency budget).</summary>
     public bool CanAcceptRequest => !Connection.GoAwayReceived && !IsReconnecting && Tracker.CanOpenStream();
@@ -59,30 +44,20 @@ internal sealed class StateMachine : IHttpStateMachine
     /// <summary>Number of frames buffered for replay on reconnection.</summary>
     public int ReconnectBufferCount => _reconnectBuffer.Count;
 
-    /// <summary>Whether a response was produced during the most recent ProcessFrame call.</summary>
-    public bool ResponseProduced => _streamManager.ResponseProduced;
-
     /// <summary>Whether there are in-flight requests awaiting responses.</summary>
     public bool HasInFlightRequests => _streamManager.HasInFlightRequests;
-
-    /// <summary>
-    /// Fails an in-flight request on the given stream due to a transport error.
-    /// Returns true if a correlated request was found and failed.
-    /// </summary>
-    public bool FailInflightRequest(long streamId, Exception exception) =>
-        _streamManager.FailInflightRequest(streamId, exception);
 
     /// <summary>The current connection endpoint.</summary>
     public RequestEndpoint Endpoint { get; private set; }
 
     /// <summary>The underlying stream tracker for stream ID allocation and concurrency.</summary>
-    internal StreamTracker Tracker { get; }
+    private StreamTracker Tracker { get; }
 
     /// <summary>The underlying connection state for idle timeout and settings inspection.</summary>
-    internal ConnectionState Connection { get; }
+    private ConnectionState Connection { get; }
 
     /// <summary>The QPACK table synchronization coordinator.</summary>
-    internal QpackTableSync TableSync { get; }
+    private QpackTableSync TableSync { get; }
 
     public StateMachine(TurboClientOptions options, IStageOperations ops)
     {
@@ -102,8 +77,12 @@ internal sealed class StateMachine : IHttpStateMachine
         _qpackHandler = new QpackStreamHandler(ops, _requestEncoder, _responseDecoder, TableSync);
         _streamManager = new StreamManager(ops, _responseDecoder, TableSync)
         {
-            FlushDecoderInstructionsCallback = _ => FlushDecoderInstructions(),
+            FlushDecoderInstructionsCallback = _ => _qpackHandler.FlushDecoderInstructions(),
             OnStreamClosedCallback = OnStreamClosed
+        };
+        _serverStreamResolver = new ServerStreamResolver
+        {
+            OnPushStreamDetected = HandleIncomingPushStream
         };
         Tracker = new StreamTracker(maxConcurrentStreams: options.Http3.MaxConcurrentStreams);
 
@@ -114,12 +93,180 @@ internal sealed class StateMachine : IHttpStateMachine
         Connection = new ConnectionState(idleTimeout);
     }
 
-    /// <summary>
-    /// Builds the HTTP/3 control stream preface if not yet sent.
-    /// Emits: stream type VarInt(0x00) + SETTINGS frame + optional MAX_PUSH_ID.
-    /// Returns null if already sent.
-    /// </summary>
-    public ITransportOutbound? TryBuildControlPreface()
+    public void PreStart()
+    {
+        EmitOutbound(new OpenStream(CriticalStreamId.Control, StreamDirection.Unidirectional));
+        EmitOutbound(new OpenStream(CriticalStreamId.QpackEncoder, StreamDirection.Unidirectional));
+        EmitOutbound(new OpenStream(CriticalStreamId.QpackDecoder, StreamDirection.Unidirectional));
+
+        var preface = TryBuildControlPreface();
+        if (preface is not null)
+        {
+            EmitOutbound(preface);
+        }
+
+        ScheduleIdleCheck();
+    }
+
+    public void OnRequest(HttpRequestMessage request)
+    {
+        if (Connection.GoAwayReceived)
+        {
+            Tracing.For("Protocol").Warning(this, "RFC 9114 §5.2 — GOAWAY received; dropping outbound request.");
+            return;
+        }
+
+        if (IsReconnecting)
+        {
+            BufferForReconnect(request);
+            return;
+        }
+
+        EncodeAndEmit(request);
+    }
+
+    public void DecodeServerData(ITransportInbound data)
+    {
+        switch (data)
+        {
+            case TransportConnected:
+            {
+                _transportConnected = true;
+                OnConnectionRestored();
+                FlushPreConnectBuffer();
+                return;
+            }
+
+            case TransportDisconnected when IsReconnecting:
+            {
+                OnReconnectAttemptFailed();
+                return;
+            }
+
+            case TransportDisconnected when HasInFlightRequests:
+            {
+                OnConnectionLost();
+                return;
+            }
+
+            case TransportDisconnected:
+            {
+                return;
+            }
+
+            case ServerStreamAccepted { Id: var id }:
+            {
+                _serverStreamResolver.OnServerStreamOpened(id);
+                return;
+            }
+
+            case StreamOpened:
+            {
+                return;
+            }
+
+            case StreamReadCompleted readCompleted when readCompleted.Id.Value >= 0:
+            {
+                FlushPendingResponse(readCompleted.Id.Value);
+                return;
+            }
+
+            case StreamReadCompleted:
+            {
+                return;
+            }
+
+            case StreamClosed streamClosed when streamClosed.Id.Value >= 0:
+            {
+                if (streamClosed.Reason == DisconnectReason.Error)
+                {
+                    _streamManager.FailInflightRequest(streamClosed.Id.Value,
+                        new HttpRequestException("HTTP/3 stream aborted by transport."));
+                }
+                else
+                {
+                    FlushPendingResponse(streamClosed.Id.Value);
+                }
+
+                return;
+            }
+
+            case StreamClosed:
+            {
+                FlushPendingResponse();
+                return;
+            }
+
+            case MultiplexedData multiplexed:
+            {
+                HandleTaggedStreamData(multiplexed);
+                return;
+            }
+
+            case TransportData rawData:
+            {
+                Tracing.For("Protocol").Warning(this,
+                    "Received untagged TransportData — dropping to prevent stream ID misrouting.");
+                rawData.Buffer.Dispose();
+                return;
+            }
+        }
+    }
+
+    public void OnUpstreamFinished()
+    {
+        FlushPendingResponse();
+
+        if (IsReconnecting)
+        {
+            Tracing.For("Protocol").Debug(this,
+                "HTTP/3 transport closed during reconnect — discarding in-flight request(s).");
+            var correlations = _streamManager.SnapshotAndClearCorrelations();
+            if (correlations.Count > 0)
+            {
+                RequestFault.FailAll(correlations,
+                    new HttpRequestException("HTTP/3 transport closed during reconnect."));
+            }
+        }
+    }
+
+    public void OnTimerFired(string name)
+    {
+        if (name != "idle-timeout-check")
+        {
+            return;
+        }
+
+        var goAway = CheckIdleTimeout();
+        if (goAway is not null)
+        {
+            var buf = TransportBuffer.Rent(goAway.SerializedSize);
+            var span = buf.FullMemory.Span;
+            goAway.WriteTo(ref span);
+            buf.Length = goAway.SerializedSize;
+            _ops.OnOutbound(new MultiplexedData(buf, CriticalStreamId.Control));
+            return;
+        }
+
+        ScheduleIdleCheck();
+    }
+
+    public void Cleanup()
+    {
+        _streamManager.Dispose();
+
+        foreach (var item in _preConnectBuffer)
+        {
+            if (item is TransportData { Buffer: var buffer })
+            {
+                buffer.Dispose();
+            }
+        }
+
+        _preConnectBuffer.Clear();
+    }
+
+    private MultiplexedData? TryBuildControlPreface()
     {
         if (_controlPrefaceSent)
         {
@@ -149,99 +296,15 @@ internal sealed class StateMachine : IHttpStateMachine
         owner.Memory.Span[..totalSize].CopyTo(buf.FullMemory.Span);
         buf.Length = totalSize;
 
-        return new MultiplexedData(buf, -2);
+        return new MultiplexedData(buf, CriticalStreamId.Control);
     }
 
-    /// <summary>
-    /// Registers a server-initiated stream that needs stream-type identification.
-    /// Only call for streams NOT opened by us — i.e. streams from the QUIC accept loop.
-    /// </summary>
-    public void OnServerStreamOpened(long quicStreamId)
-    {
-        if (quicStreamId < 0 || (quicStreamId & 1) == 0)
-        {
-            return;
-        }
 
-        _pendingStreamType.Add(quicStreamId);
-    }
-
-    /// <summary>
-    /// Resolves a QUIC stream ID to its logical stream ID (-2 control, -3 QPACK encoder, -4 QPACK decoder).
-    /// For server-initiated streams, strips the stream-type prefix from the first buffer and establishes the mapping.
-    /// Returns the logical stream ID and (potentially trimmed) buffer. The caller must use the returned values.
-    /// </summary>
-    public (long LogicalStreamId, TransportBuffer Buffer) ResolveStreamId(long quicStreamId, TransportBuffer buffer)
-    {
-        if (_pendingStreamType.Remove(quicStreamId))
-        {
-            var span = buffer.Span;
-            if (!QuicVarInt.TryDecode(span, out var rawType, out var typeBytes))
-            {
-                return (quicStreamId, buffer);
-            }
-
-            if ((StreamType)rawType == StreamType.Push)
-            {
-                HandleIncomingPushStream(quicStreamId, span[typeBytes..]);
-                buffer.Dispose();
-                return (quicStreamId, null!);
-            }
-
-            var logicalId = (StreamType)rawType switch
-            {
-                StreamType.Control => -2L,
-                StreamType.QpackEncoder => -3L,
-                StreamType.QpackDecoder => -4L,
-                _ => quicStreamId
-            };
-
-            if (logicalId is -2 or -3 or -4)
-            {
-                if (!_assignedCriticalStreams.Add(logicalId))
-                {
-                    throw new Http3Exception(ErrorCode.ClosedCriticalStream,
-                        string.Concat("RFC 9114 §6.2.1: Duplicate stream type ", ((StreamType)rawType).ToString()));
-                }
-            }
-
-            _serverStreamMap[quicStreamId] = logicalId;
-
-            var remaining = span.Length - typeBytes;
-            if (remaining <= 0)
-            {
-                buffer.Dispose();
-                return (logicalId, null!);
-            }
-
-            var trimmed = TransportBuffer.Rent(remaining);
-            span[typeBytes..].CopyTo(trimmed.FullMemory.Span);
-            trimmed.Length = remaining;
-            buffer.Dispose();
-            return (logicalId, trimmed);
-        }
-
-        if (_serverStreamMap.TryGetValue(quicStreamId, out var mapped))
-        {
-            return (mapped, buffer);
-        }
-
-        return (quicStreamId, buffer);
-    }
-
-    /// <summary>
-    /// Decodes a TransportBuffer into HTTP/3 frames using a per-stream decoder.
-    /// </summary>
     public IReadOnlyList<Http3Frame> DecodeServerData(TransportBuffer buffer, long streamId)
     {
         return _streamManager.DecodeServerData(buffer, streamId);
     }
 
-    /// <summary>
-    /// Processes a single decoded HTTP/3 frame. Calls <see cref="IStageOperations"/>
-    /// for responses, signals, and warnings. Sets <see cref="ResponseProduced"/> if a response was generated.
-    /// Returns the frame if it should be forwarded for response assembly, or null if absorbed.
-    /// </summary>
     public Http3Frame? ProcessFrame(Http3Frame frame)
     {
         Connection.RecordActivity();
@@ -312,71 +375,23 @@ internal sealed class StateMachine : IHttpStateMachine
     public void ProcessQpackEncoderBytes(ReadOnlyMemory<byte> data)
     {
         var resolved = _qpackHandler.ProcessEncoderBytes(data);
-        FlushDecoderInstructions();
+        _qpackHandler.FlushDecoderInstructions();
         _streamManager.ResolveBlockedStreams(resolved);
     }
 
-    /// <summary>
-    /// Serializes pending QPACK decoder instructions and emits them on the decoder stream.
-    /// </summary>
-    public void FlushDecoderInstructions()
-    {
-        _qpackHandler.FlushDecoderInstructions(Endpoint);
-    }
-
-    /// <summary>
-    /// Serializes any pending QPACK encoder instructions and emits them on the encoder stream.
-    /// </summary>
-    public void FlushEncoderInstructions()
-    {
-        _qpackHandler.FlushEncoderInstructions(Endpoint);
-    }
-
-    /// <summary>
-    /// Checks whether the idle timeout has expired with no active streams.
-    /// </summary>
-    public GoAwayFrame? CheckIdleTimeout()
+    private GoAwayFrame? CheckIdleTimeout()
     {
         if (Connection.IsIdleTimeoutExpired() && Connection.ActiveStreamCount == 0)
         {
-            Tracing.For("Protocol").Info(this, "RFC 9114 §5.1 — idle timeout expired with no active streams; sending GOAWAY.");
+            Tracing.For("Protocol").Info(this,
+                "RFC 9114 §5.1 — idle timeout expired with no active streams; sending GOAWAY.");
             return new GoAwayFrame(0);
         }
 
         return null;
     }
 
-    /// <summary>
-    /// Evaluates whether this connection can be reused for a request to a different origin.
-    /// </summary>
-    public ConnectionReuseDecision EvaluateConnectionReuse(
-        string targetScheme,
-        string targetHost,
-        int targetPort,
-        X509Certificate2? serverCertificate)
-    {
-        var ep = Endpoint;
-        return ConnectionReuseEvaluator.Evaluate(
-            ep.Scheme,
-            ep.Host,
-            ep.Port,
-            targetScheme,
-            targetHost,
-            targetPort,
-            serverCertificate,
-            Connection.GoAwayReceived);
-    }
-
-    /// <summary>Whether the idle timeout is disabled (timeout is zero).</summary>
-    public bool IsTimeoutDisabled => Connection.IsTimeoutDisabled;
-
-    /// <summary>Time remaining before the idle timeout expires.</summary>
-    public TimeSpan TimeUntilExpiry() => Connection.TimeUntilExpiry();
-
-    /// <summary>
-    /// Called when the QUIC connection is lost.
-    /// </summary>
-    public void OnConnectionLost()
+    private void OnConnectionLost()
     {
         IsReconnecting = true;
         _transportConnected = false;
@@ -390,23 +405,18 @@ internal sealed class StateMachine : IHttpStateMachine
         _controlPrefaceSent = false;
         _qpackHandler.Reset();
         TableSync.Reset();
-        _serverStreamMap.Clear();
-        _pendingStreamType.Clear();
-        _assignedCriticalStreams.Clear();
+        _serverStreamResolver.Reset();
 
         if (_transportOptions is not null)
         {
-            EmitOutbound(new OpenStream(-2, StreamDirection.Unidirectional));
-            EmitOutbound(new OpenStream(-3, StreamDirection.Unidirectional));
-            EmitOutbound(new OpenStream(-4, StreamDirection.Unidirectional));
+            EmitOutbound(new OpenStream(CriticalStreamId.Control, StreamDirection.Unidirectional));
+            EmitOutbound(new OpenStream(CriticalStreamId.QpackEncoder, StreamDirection.Unidirectional));
+            EmitOutbound(new OpenStream(CriticalStreamId.QpackDecoder, StreamDirection.Unidirectional));
             EmitOutbound(new ConnectTransport(_transportOptions));
         }
     }
 
-    /// <summary>
-    /// Called when a new QUIC connection is established after a loss.
-    /// </summary>
-    public void OnConnectionRestored()
+    private void OnConnectionRestored()
     {
         var wasReconnecting = IsReconnecting;
         IsReconnecting = false;
@@ -424,11 +434,7 @@ internal sealed class StateMachine : IHttpStateMachine
         }
     }
 
-    /// <summary>
-    /// Called when a reconnect attempt fails.
-    /// Returns true if another attempt should be made, false if max exceeded.
-    /// </summary>
-    public bool OnReconnectAttemptFailed()
+    private void OnReconnectAttemptFailed()
     {
         if (_reconnectAttempts >= _options.Http3.MaxReconnectAttempts)
         {
@@ -440,17 +446,12 @@ internal sealed class StateMachine : IHttpStateMachine
                 RequestFault.FailAll(correlations, exception);
             }
 
-            return false;
+            return;
         }
 
         _reconnectAttempts++;
-        return true;
     }
 
-    /// <summary>
-    /// Emits an outbound item, or buffers it if transport isn't connected yet.
-    /// ConnectTransport items always emit immediately.
-    /// </summary>
     private void EmitOutbound(ITransportOutbound item)
     {
         if (item is ConnectTransport || _transportConnected)
@@ -462,9 +463,6 @@ internal sealed class StateMachine : IHttpStateMachine
         _preConnectBuffer.Add(item);
     }
 
-    /// <summary>
-    /// Flushes all pre-connect buffered items and clears the buffer.
-    /// </summary>
     private void FlushPreConnectBuffer()
     {
         for (var i = 0; i < _preConnectBuffer.Count; i++)
@@ -475,17 +473,14 @@ internal sealed class StateMachine : IHttpStateMachine
         _preConnectBuffer.Clear();
     }
 
-    /// <summary>
-    /// Schedules an idle timeout check timer.
-    /// </summary>
     private void ScheduleIdleCheck()
     {
-        if (IsTimeoutDisabled)
+        if (Connection.IsTimeoutDisabled)
         {
             return;
         }
 
-        var remaining = TimeUntilExpiry();
+        var remaining = Connection.TimeUntilExpiry();
         var checkInterval = remaining > TimeSpan.Zero ? remaining : TimeSpan.FromSeconds(1);
         _ops.OnScheduleTimer("idle-timeout-check", checkInterval);
     }
@@ -528,24 +523,23 @@ internal sealed class StateMachine : IHttpStateMachine
 
         _streamManager.Correlate(streamId, request);
 
-        EmitOutbound(new OpenStream(streamId, StreamDirection.Bidirectional));
+        var streamTarget = StreamTarget.FromId(streamId);
+        EmitOutbound(new OpenStream(streamTarget, StreamDirection.Bidirectional));
 
-        FlushEncoderInstructions();
+        _qpackHandler.FlushEncoderInstructions();;
 
         foreach (var f in encoded)
         {
             EmitSerializedFrame(f, streamId);
         }
 
-        EmitOutbound(new CompleteWrites(streamId));
+        EmitOutbound(new CompleteWrites(streamTarget));
     }
 
     private IReadOnlyList<Http3Frame> EncodeToFrames(HttpRequestMessage request)
     {
         OriginValidator.Validate(request.RequestUri!, request.Method == HttpMethod.Connect);
-        var frames = _requestEncoder.Encode(request);
-
-        return frames;
+        return _requestEncoder.Encode(request);
     }
 
     private void ReplayBufferedFrames()
@@ -613,7 +607,8 @@ internal sealed class StateMachine : IHttpStateMachine
         try
         {
             Connection.OnRemoteSettings(settings);
-            Tracing.For("Protocol").Info(this, "RFC 9114 §7.2.4 — remote SETTINGS received ({0} parameters).", settings.Parameters.Count);
+            Tracing.For("Protocol").Info(this, "RFC 9114 §7.2.4 — remote SETTINGS received ({0} parameters).",
+                settings.Parameters.Count);
 
             var remoteSettings = Connection.RemoteSettings!;
 
@@ -621,7 +616,7 @@ internal sealed class StateMachine : IHttpStateMachine
             if (peerQpackCapacity > 0)
             {
                 TableSync.UpdateEncoderCapacity((int)peerQpackCapacity);
-                FlushEncoderInstructions();
+                _qpackHandler.FlushEncoderInstructions();
             }
 
             TableSync.RemoteMaxFieldSectionSize = remoteSettings.MaxFieldSectionSize;
@@ -650,7 +645,8 @@ internal sealed class StateMachine : IHttpStateMachine
     {
         var cancelFrame = new CancelPushFrame(pushPromise.PushId);
         EmitSerializedFrame(cancelFrame);
-        Tracing.For("Protocol").Info(this, "RFC 9114 §7.2.5 — push promise rejected (pushId={0}); server push not supported", pushPromise.PushId);
+        Tracing.For("Protocol").Info(this,
+            "RFC 9114 §7.2.5 — push promise rejected (pushId={0}); server push not supported", pushPromise.PushId);
         return null;
     }
 
@@ -669,40 +665,42 @@ internal sealed class StateMachine : IHttpStateMachine
         }
 
         _ops.OnOutbound(new ResetStream(quicStreamId));
-        Tracing.For("Protocol").Info(this, "RFC 9114 §4.6 — push stream {0} (pushId={1}) reset (push response delivery not implemented)", quicStreamId, pushId);
+        Tracing.For("Protocol").Info(this,
+            "RFC 9114 §4.6 — push stream {0} (pushId={1}) reset (push response delivery not implemented)", quicStreamId,
+            pushId);
     }
 
     private void HandleTaggedStreamData(MultiplexedData multiplexed)
     {
-        var (streamId, buffer) = ResolveStreamId(multiplexed.StreamId, multiplexed.Buffer);
+        var resolved = _serverStreamResolver.Resolve(multiplexed.StreamId, multiplexed.Buffer);
 
-        if (buffer is null)
+        if (resolved.Buffer is null)
         {
             return;
         }
 
-        switch (streamId)
+        switch (resolved.LogicalStreamId)
         {
-            case -4:
+            case CriticalStreamId.QpackDecoderId:
             {
-                ProcessQpackDecoderBytes(buffer.Memory);
-                buffer.Dispose();
+                ProcessQpackDecoderBytes(resolved.Buffer.Memory);
+                resolved.Buffer.Dispose();
                 return;
             }
-            case -3:
+            case CriticalStreamId.QpackEncoderId:
             {
-                ProcessQpackEncoderBytes(buffer.Memory);
-                buffer.Dispose();
+                ProcessQpackEncoderBytes(resolved.Buffer.Memory);
+                resolved.Buffer.Dispose();
                 return;
             }
-            case -2:
+            case CriticalStreamId.ControlId:
             {
-                ProcessFrameData(buffer, -2);
+                ProcessFrameData(resolved.Buffer, CriticalStreamId.ControlId);
                 return;
             }
             default:
             {
-                ProcessFrameData(buffer, streamId);
+                ProcessFrameData(resolved.Buffer, resolved.LogicalStreamId);
                 return;
             }
         }
@@ -721,175 +719,5 @@ internal sealed class StateMachine : IHttpStateMachine
                 AssembleResponse(forwarded, streamId);
             }
         }
-    }
-
-    public void PreStart()
-    {
-        EmitOutbound(new OpenStream(-2, StreamDirection.Unidirectional));
-        EmitOutbound(new OpenStream(-3, StreamDirection.Unidirectional));
-        EmitOutbound(new OpenStream(-4, StreamDirection.Unidirectional));
-
-        var preface = TryBuildControlPreface();
-        if (preface is not null)
-        {
-            EmitOutbound(preface);
-        }
-
-        ScheduleIdleCheck();
-    }
-
-    public void OnRequest(HttpRequestMessage request)
-    {
-        if (Connection.GoAwayReceived)
-        {
-            Tracing.For("Protocol").Warning(this, "RFC 9114 §5.2 — GOAWAY received; dropping outbound request.");
-            return;
-        }
-
-        if (IsReconnecting)
-        {
-            BufferForReconnect(request);
-            return;
-        }
-
-        EncodeAndEmit(request);
-    }
-
-    public void DecodeServerData(ITransportInbound data)
-    {
-        switch (data)
-        {
-            case TransportConnected:
-            {
-                _transportConnected = true;
-                OnConnectionRestored();
-                FlushPreConnectBuffer();
-                return;
-            }
-
-            case TransportDisconnected when IsReconnecting:
-            {
-                OnReconnectAttemptFailed();
-                return;
-            }
-
-            case TransportDisconnected when HasInFlightRequests:
-            {
-                OnConnectionLost();
-                return;
-            }
-
-            case TransportDisconnected:
-            {
-                return;
-            }
-
-            case ServerStreamAccepted { StreamId: var id }:
-            {
-                OnServerStreamOpened(id);
-                return;
-            }
-
-            case StreamOpened:
-            {
-                return;
-            }
-
-            case StreamReadCompleted { StreamId: >= 0 } readCompleted:
-            {
-                FlushPendingResponse(readCompleted.StreamId);
-                return;
-            }
-
-            case StreamReadCompleted:
-            {
-                return;
-            }
-
-            case StreamClosed { StreamId: >= 0 } streamClosed:
-            {
-                if (streamClosed.Reason == DisconnectReason.Error)
-                {
-                    FailInflightRequest(streamClosed.StreamId,
-                        new HttpRequestException("HTTP/3 stream aborted by transport."));
-                }
-                else
-                {
-                    FlushPendingResponse(streamClosed.StreamId);
-                }
-
-                return;
-            }
-
-            case StreamClosed:
-            {
-                FlushPendingResponse();
-                return;
-            }
-
-            case MultiplexedData multiplexed:
-            {
-                HandleTaggedStreamData(multiplexed);
-                return;
-            }
-
-            case TransportData rawData:
-            {
-                Tracing.For("Protocol").Warning(this, "Received untagged TransportData — dropping to prevent stream ID misrouting.");
-                rawData.Buffer.Dispose();
-                return;
-            }
-        }
-    }
-
-    public void OnUpstreamFinished()
-    {
-        FlushPendingResponse();
-
-        if (IsReconnecting)
-        {
-            Tracing.For("Protocol").Debug(this, "HTTP/3 transport closed during reconnect — discarding in-flight request(s).");
-            var correlations = _streamManager.SnapshotAndClearCorrelations();
-            if (correlations.Count > 0)
-            {
-                RequestFault.FailAll(correlations, new HttpRequestException("HTTP/3 transport closed during reconnect."));
-            }
-        }
-    }
-
-    public void OnTimerFired(string name)
-    {
-        if (name != "idle-timeout-check")
-        {
-            return;
-        }
-
-        var goAway = CheckIdleTimeout();
-        if (goAway is not null)
-        {
-            var buf = TransportBuffer.Rent(goAway.SerializedSize);
-            var span = buf.FullMemory.Span;
-            goAway.WriteTo(ref span);
-            buf.Length = goAway.SerializedSize;
-            _ops.OnOutbound(new MultiplexedData(buf, -2));
-            return;
-        }
-
-        ScheduleIdleCheck();
-    }
-
-    public void Cleanup()
-    {
-        _streamManager.Dispose();
-
-        foreach (var item in _preConnectBuffer)
-        {
-            if (item is TransportData { Buffer: var buffer })
-            {
-                buffer.Dispose();
-            }
-        }
-
-        _preConnectBuffer.Clear();
     }
 }

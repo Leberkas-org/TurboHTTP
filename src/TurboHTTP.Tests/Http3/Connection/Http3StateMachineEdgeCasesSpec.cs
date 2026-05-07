@@ -19,7 +19,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
 
     private static void SimulateConnect(StateMachine sm)
     {
-        sm.DecodeServerData(new TransportConnected(default!));
+        sm.DecodeServerData(new TransportConnected(null!));
     }
 
     [Fact(Timeout = 5000)]
@@ -100,7 +100,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var connectionInfo = new ConnectionInfo(
             new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 5000),
             new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 443),
-            null, null);
+            TransportProtocol.Tcp);
 
         sm.DecodeServerData(new TransportConnected(connectionInfo));
 
@@ -159,7 +159,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var connectionInfo = new ConnectionInfo(
             new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 5000),
             new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 443),
-            null, null);
+            TransportProtocol.Tcp);
         sm.DecodeServerData(new TransportConnected(connectionInfo));
 
         Assert.False(sm.IsReconnecting);
@@ -200,7 +200,7 @@ public sealed class Http3StateMachineEdgeCasesSpec
         var connectionInfo = new ConnectionInfo(
             new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 5000),
             new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 443),
-            null, null);
+            TransportProtocol.Tcp);
         sm.DecodeServerData(new TransportConnected(connectionInfo));
 
         Assert.Equal(0, sm.ReconnectBufferCount);

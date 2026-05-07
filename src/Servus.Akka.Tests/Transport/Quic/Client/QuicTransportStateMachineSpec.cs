@@ -271,7 +271,7 @@ public sealed class QuicTransportStateMachineSpec
         var ops = new StubOps();
         var sm = new QuicTransportStateMachine(ops, ActorRefs.Nobody, ActorRefs.Nobody);
 
-        sm.HandlePush(new ResetStream(999, 0));
+        sm.HandlePush(new ResetStream(999));
 
         // No pushed inbound for unknown stream
         Assert.Empty(ops.PushedInbound);
@@ -417,7 +417,7 @@ public sealed class QuicTransportStateMachineSpec
         // Should push StreamOpened
         var streamOpened = ops.PushedInbound.OfType<StreamOpened>().FirstOrDefault();
         Assert.NotNull(streamOpened);
-        Assert.Equal(streamId, streamOpened.StreamId);
+        Assert.Equal(new StreamTarget(streamId), streamOpened.Id);
         Assert.Equal(StreamDirection.Bidirectional, streamOpened.Direction);
     }
 
@@ -441,12 +441,12 @@ public sealed class QuicTransportStateMachineSpec
 
         var streamId = 456L;
         var stream = new MemoryStream();
-        sm.Dispatch(new Servus.Akka.Transport.Quic.InboundStreamAccepted(stream, streamId));
+        sm.Dispatch(new InboundStreamAccepted(stream, streamId));
 
         // Should push ServerStreamAccepted
         var accepted = ops.PushedInbound.OfType<ServerStreamAccepted>().FirstOrDefault();
         Assert.NotNull(accepted);
-        Assert.Equal(streamId, accepted.StreamId);
+        Assert.Equal(new StreamTarget(streamId), accepted.Id);
         Assert.Equal(StreamDirection.Unidirectional, accepted.Direction);
     }
 
@@ -468,7 +468,7 @@ public sealed class QuicTransportStateMachineSpec
         // Should push StreamReadCompleted
         var completed = ops.PushedInbound.OfType<StreamReadCompleted>().FirstOrDefault();
         Assert.NotNull(completed);
-        Assert.Equal(streamId, completed.StreamId);
+        Assert.Equal(new StreamTarget(streamId), completed.Id);
     }
 
     [Fact(Timeout = 5000)]
@@ -489,7 +489,7 @@ public sealed class QuicTransportStateMachineSpec
         // Should push StreamClosed
         var closed = ops.PushedInbound.OfType<StreamClosed>().FirstOrDefault();
         Assert.NotNull(closed);
-        Assert.Equal(streamId, closed.StreamId);
+        Assert.Equal(new StreamTarget(streamId), closed.Id);
         Assert.Equal(DisconnectReason.Error, closed.Reason);
     }
 
@@ -555,7 +555,7 @@ public sealed class QuicTransportStateMachineSpec
         // Should push StreamClosed
         var closed = ops.PushedInbound.OfType<StreamClosed>().FirstOrDefault();
         Assert.NotNull(closed);
-        Assert.Equal(streamId, closed.StreamId);
+        Assert.Equal(new StreamTarget(streamId), closed.Id);
         Assert.Equal(DisconnectReason.Error, closed.Reason);
         Assert.True(ops.PullCount > 0);
     }
@@ -605,6 +605,7 @@ public sealed class QuicTransportStateMachineSpec
         // Should push StreamReadCompleted and remove stream from dictionary
         var readCompleted = ops.PushedInbound.OfType<StreamReadCompleted>().FirstOrDefault();
         Assert.NotNull(readCompleted);
+        Assert.Equal(new StreamTarget(streamId), readCompleted.Id);
     }
 
     [Fact(Timeout = 5000)]
@@ -738,7 +739,7 @@ public sealed class QuicTransportStateMachineSpec
     {
         var (ops, sm) = CreateConnectedStateMachine();
 
-        var streamId = 888L;
+        StreamTarget streamId = 888L;
         sm.HandlePush(new OpenStream(streamId, StreamDirection.Bidirectional));
         var handle = new StreamHandle(new MemoryStream());
         sm.Dispatch(new StreamLeaseAcquired(handle, streamId));
@@ -751,7 +752,7 @@ public sealed class QuicTransportStateMachineSpec
         // Should push StreamClosed
         var closed = ops.PushedInbound.OfType<StreamClosed>().FirstOrDefault();
         Assert.NotNull(closed);
-        Assert.Equal(streamId, closed.StreamId);
+        Assert.Equal(streamId, closed.Id);
         Assert.Equal(DisconnectReason.Error, closed.Reason);
     }
 
@@ -760,7 +761,7 @@ public sealed class QuicTransportStateMachineSpec
     {
         var (ops, sm) = CreateConnectedStateMachine();
 
-        const long streamId = 42L;
+        StreamTarget streamId = 42L;
         sm.HandlePush(new OpenStream(streamId, StreamDirection.Unidirectional));
 
         var handle = new StreamHandle(new MemoryStream());
@@ -768,7 +769,7 @@ public sealed class QuicTransportStateMachineSpec
 
         var streamOpened = ops.PushedInbound.OfType<StreamOpened>().FirstOrDefault();
         Assert.NotNull(streamOpened);
-        Assert.Equal(streamId, streamOpened.StreamId);
+        Assert.Equal(streamId, streamOpened.Id);
         Assert.Equal(StreamDirection.Unidirectional, streamOpened.Direction);
 
         // Wait briefly to ensure no InboundPumpFailed is dispatched.

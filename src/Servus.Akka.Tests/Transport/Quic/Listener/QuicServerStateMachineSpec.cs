@@ -12,8 +12,7 @@ public sealed class QuicServerStateMachineSpec
     private static readonly ConnectionInfo TestConnectionInfo = new(
         new IPEndPoint(IPAddress.Loopback, 5000),
         new IPEndPoint(IPAddress.Loopback, 12345),
-        null,
-        null);
+        TransportProtocol.Tcp);
 
     private static QuicConnectionHandle CreateTestHandle()
     {
@@ -121,7 +120,7 @@ public sealed class QuicServerStateMachineSpec
 
         Assert.Single(ops.PushedInbound);
         var multiplexed = Assert.IsType<MultiplexedData>(ops.PushedInbound[0]);
-        Assert.Equal(42L, multiplexed.StreamId);
+        Assert.Equal(new StreamTarget(42L), multiplexed.StreamId);
     }
 
     [Fact(Timeout = 5000)]
@@ -178,9 +177,9 @@ public sealed class QuicServerStateMachineSpec
         ops.PushedInbound.Clear();
 
         var stream = new MemoryStream();
-        sm.Dispatch(new Servus.Akka.Transport.Quic.InboundStreamAccepted(stream, 42));
+        sm.Dispatch(new InboundStreamAccepted(stream, 42));
 
-        Assert.Contains(ops.PushedInbound, item => item is ServerStreamAccepted { StreamId: 42 });
+        Assert.Contains(ops.PushedInbound, item => item is ServerStreamAccepted { Id.Value: 42 });
     }
 
     [Fact(Timeout = 5000)]
@@ -230,7 +229,7 @@ public sealed class QuicServerStateMachineSpec
 
         sm.Dispatch(new InboundComplete(DisconnectReason.Graceful, 1, 1));
 
-        Assert.Contains(ops.PushedInbound, item => item is StreamReadCompleted { StreamId: 1 });
+        Assert.Contains(ops.PushedInbound, item => item is StreamReadCompleted { Id.Value: 1 });
     }
 
     [Fact(Timeout = 5000)]
@@ -272,7 +271,7 @@ public sealed class QuicServerStateMachineSpec
 
         sm.HandlePush(new ResetStream(1));
 
-        Assert.Contains(ops.PushedInbound, item => item is StreamClosed { StreamId: 1 });
+        Assert.Contains(ops.PushedInbound, item => item is StreamClosed { Id.Value: 1 });
     }
 
     [Fact(Timeout = 5000)]
@@ -288,7 +287,7 @@ public sealed class QuicServerStateMachineSpec
         sm.Dispatch(new InboundComplete(DisconnectReason.Error, 1, 1));
 
         Assert.Contains(ops.PushedInbound,
-            item => item is StreamClosed { StreamId: 1, Reason: DisconnectReason.Error });
+            item => item is StreamClosed { Id.Value: 1, Reason: DisconnectReason.Error });
     }
 
     [Fact(Timeout = 5000)]
@@ -300,7 +299,7 @@ public sealed class QuicServerStateMachineSpec
 
         sm.Dispatch(new StreamLeaseAcquired(new StreamHandle(Stream.Null), 999));
 
-        Assert.DoesNotContain(ops.PushedInbound, item => item is StreamOpened { StreamId: 999 });
+        Assert.DoesNotContain(ops.PushedInbound, item => item is StreamOpened { Id.Value: 999 });
     }
 
     [Fact(Timeout = 5000)]
