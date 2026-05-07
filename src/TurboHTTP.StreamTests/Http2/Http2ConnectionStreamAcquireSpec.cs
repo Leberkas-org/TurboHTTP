@@ -3,12 +3,11 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 using static TurboHTTP.StreamTests.Http2.Http2ConnectionTestHelper;
-
-using TurboHTTP.Internal;
 
 namespace TurboHTTP.StreamTests.Http2;
 

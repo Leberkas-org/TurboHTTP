@@ -154,8 +154,7 @@ internal sealed class QpackEncoder
             case DecoderInstructionType.InsertCountIncrement:
                 if (instruction.IntValue <= 0)
                 {
-                    throw new QpackException(
-                        "RFC 9204 §4.4.3 violation: Insert Count Increment must be positive.");
+                    throw new QpackException("RFC 9204 §4.4.3 violation: Insert Count Increment must be positive.");
                 }
 
                 KnownReceivedCount += instruction.IntValue;
@@ -458,7 +457,7 @@ internal sealed class QpackEncoder
                 break;
 
             case HeaderEncodingType.LiteralWithDynamicName:
-                WriteLiteralWithDynamicName(name, value, plan.Index, encodingBase, false, ref output);
+                WriteLiteralWithDynamicName(value, plan.Index, encodingBase, false, ref output);
                 break;
 
             case HeaderEncodingType.LiteralWithStaticNameNeverIndex:
@@ -506,7 +505,7 @@ internal sealed class QpackEncoder
     /// <summary>
     /// §4.5.4 / §4.5.5 — Writes a literal with dynamic table name reference.
     /// </summary>
-    private static void WriteLiteralWithDynamicName(string name, string value, int absoluteIndex, int encodingBase,
+    private static void WriteLiteralWithDynamicName(string value, int absoluteIndex, int encodingBase,
         bool neverIndex, ref Span<byte> output)
     {
         if (absoluteIndex < encodingBase)

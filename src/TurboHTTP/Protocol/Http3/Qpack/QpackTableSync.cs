@@ -94,26 +94,6 @@ internal sealed class QpackTableSync
     /// <summary>Current insert count of the decoder's dynamic table.</summary>
     public int InsertCount => Decoder.DynamicTable.InsertCount;
 
-    /// <summary>
-    /// RFC 9204 §4.3 — Applies encoder instructions to the decoder's dynamic table.
-    ///
-    /// Processes all complete encoder instructions from the provided data, updating
-    /// the decoder's dynamic table accordingly. Partial trailing data is buffered
-    /// internally for the next call.
-    /// </summary>
-    /// <param name="data">Raw encoder instruction stream bytes.</param>
-    /// <returns>The number of instructions applied.</returns>
-    public int ApplyEncoderInstructions(ReadOnlySpan<byte> data)
-    {
-        var instructions = _instructionDecoder.DecodeAllEncoderInstructions(data);
-
-        foreach (var instruction in instructions)
-        {
-            ApplyEncoderInstruction(instruction);
-        }
-
-        return instructions.Length;
-    }
 
     /// <summary>
     /// RFC 9204 §4.4 — Processes inbound decoder instructions from the peer.
@@ -266,6 +246,27 @@ internal sealed class QpackTableSync
         _blockedStreams.Clear();
     }
 
+    /// <summary>
+    /// RFC 9204 §4.3 — Applies encoder instructions to the decoder's dynamic table.
+    ///
+    /// Processes all complete encoder instructions from the provided data, updating
+    /// the decoder's dynamic table accordingly. Partial trailing data is buffered
+    /// internally for the next call.
+    /// </summary>
+    /// <param name="data">Raw encoder instruction stream bytes.</param>
+    /// <returns>The number of instructions applied.</returns>
+    public int ApplyEncoderInstructions(ReadOnlySpan<byte> data)
+    {
+        var instructions = _instructionDecoder.DecodeAllEncoderInstructions(data);
+
+        foreach (var instruction in instructions)
+        {
+            ApplyEncoderInstruction(instruction);
+        }
+
+        return instructions.Length;
+    }
+    
     private void ApplyEncoderInstruction(EncoderInstruction instruction)
     {
         switch (instruction.Type)

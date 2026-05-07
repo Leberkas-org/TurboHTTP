@@ -39,9 +39,17 @@ internal sealed class ClientHelper : IAsyncDisposable
             BaseAddress = baseAddress,
             DangerousAcceptAnyServerCertificate = true,
             // H1.x: many connections with shallow pipelining to handle CL up to 8192.
-            Http1 = new Http1Options { MaxConnectionsPerServer = 512, MaxPipelineDepth = 2 },
+            Http1 = new Http1Options
+            {
+                MaxConnectionsPerServer = 512,
+                MaxPipelineDepth = 2
+            },
             // H2: 16 connections × 1000 streams = 16 000 in-flight capacity.
-            Http2 = new Http2Options { MaxConnectionsPerServer = 16, MaxConcurrentStreams = 1000 },
+            Http2 = new Http2Options
+            {
+                MaxConnectionsPerServer = 16,
+                MaxConcurrentStreams = 1000
+            },
             // H3: 8 connections × 1000 streams = 8000 in-flight capacity.
             // QPACK dynamic table at 32 KiB for better header compression on repeated requests.
             Http3 = new Http3Options

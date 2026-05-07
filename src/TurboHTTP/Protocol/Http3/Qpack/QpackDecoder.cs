@@ -71,9 +71,7 @@ internal sealed class QpackDecoder
     /// Typically contains a Section Acknowledgement (§4.4.1).
     /// </summary>
     public ReadOnlyMemory<byte> DecoderInstructions =>
-        _instructionOwner is not null
-            ? _instructionOwner.Memory[.._instructionBytesWritten]
-            : ReadOnlyMemory<byte>.Empty;
+        _instructionOwner?.Memory[.._instructionBytesWritten] ?? ReadOnlyMemory<byte>.Empty;
 
     /// <summary>Current number of blocked streams.</summary>
     public int BlockedStreamCount { get; private set; }
@@ -319,19 +317,12 @@ internal sealed class QpackDecoder
             return DecodeLiteralWithoutNameReference(data, ref pos);
         }
 
-        if ((firstByte & 0xF0) == 0x10)
+        return (firstByte & 0xF0) switch
         {
-            // §4.5.3 — Indexed Header Field with Post-Base Index: 0001xxxx
-            return DecodePostBaseIndexed(data, ref pos, encodingBase);
-        }
-
-        if ((firstByte & 0xF0) == 0x00)
-        {
-            // §4.5.5 — Literal Header Field with Post-Base Name Reference: 0000Nxxx
-            return DecodeLiteralWithPostBaseNameReference(data, ref pos, encodingBase);
-        }
-
-        throw new QpackException($"RFC 9204 §4.5 violation: Unknown header field pattern 0x{firstByte:X2}.");
+            0x10 => DecodePostBaseIndexed(data, ref pos, encodingBase),
+            0x00 => DecodeLiteralWithPostBaseNameReference(data, ref pos, encodingBase),
+            _ => throw new QpackException($"RFC 9204 §4.5 violation: Unknown header field pattern 0x{firstByte:X2}.")
+        };
     }
 
     /// <summary>

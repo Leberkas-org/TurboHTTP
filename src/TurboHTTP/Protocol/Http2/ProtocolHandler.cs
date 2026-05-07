@@ -1,9 +1,9 @@
-using static Servus.Core.Servus;
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2.Hpack;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Protocol.Http2;
 

@@ -1,8 +1,8 @@
 using System.Buffers;
-using static Servus.Core.Servus;
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Protocol.Http2;
 

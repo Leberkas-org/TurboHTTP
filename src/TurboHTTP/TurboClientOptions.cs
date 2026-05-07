@@ -40,13 +40,13 @@ public sealed class TurboClientOptions
 
     /// <summary>
     /// Timeout for establishing a new TCP connection.
-    /// Default is 15 seconds (same as <c>SocketsHttpHandler.ConnectTimeout</c>).
+    /// Default is 15 seconds.
     /// </summary>
     public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// Time a connection may remain idle in the pool before it is evicted.
-    /// Default is 90 seconds (same as <c>SocketsHttpHandler.PooledConnectionIdleTimeout</c>).
+    /// Default is 90 seconds.
     /// </summary>
     public TimeSpan PooledConnectionIdleTimeout { get; set; } = TimeSpan.FromSeconds(90);
 
@@ -54,15 +54,14 @@ public sealed class TurboClientOptions
     /// Maximum lifetime of a connection in the pool, regardless of activity.
     /// When a connection exceeds this age it is evicted on the next pool sweep
     /// and not handed out for new requests.
-    /// Default is <see cref="Timeout.InfiniteTimeSpan"/> (no lifetime limit),
-    /// matching <c>SocketsHttpHandler.PooledConnectionLifetime</c>.
+    /// Default is <see cref="Timeout.InfiniteTimeSpan"/> (no lifetime limit).
     /// </summary>
     public TimeSpan PooledConnectionLifetime { get; set; } = Timeout.InfiniteTimeSpan;
 
     /// <summary>
     /// Maximum number of distinct endpoint substreams (identified by <c>(scheme, host, port, version)</c>)
     /// that may be active concurrently. Controls the ceiling for per-endpoint multiplexing and connection pooling.
-    /// Must be at least 1. Default is 256. TurboHttp-specific.
+    /// Must be at least 1. Default is 256. TurboHTTP-specific.
     /// </summary>
     public uint MaxEndpointSubstreams { get; set; } = 256;
 

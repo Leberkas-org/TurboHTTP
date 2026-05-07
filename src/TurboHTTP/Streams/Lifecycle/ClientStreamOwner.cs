@@ -7,8 +7,8 @@ using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
-using static Servus.Core.Servus;
 using TurboHTTP.Streams.Pooling;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
