@@ -113,9 +113,9 @@ namespace TurboHTTP
         public bool DangerousAcceptAnyServerCertificate { get; set; }
         public System.Net.ICredentials? DefaultProxyCredentials { get; set; }
         public System.Security.Authentication.SslProtocols EnabledSslProtocols { get; set; }
-        public TurboHTTP.Http1Options Http1 { get; set; }
-        public TurboHTTP.Http2Options Http2 { get; set; }
-        public TurboHTTP.Http3Options Http3 { get; set; }
+        public TurboHTTP.Http1Options Http1 { get; init; }
+        public TurboHTTP.Http2Options Http2 { get; init; }
+        public TurboHTTP.Http3Options Http3 { get; init; }
         public uint MaxEndpointSubstreams { get; set; }
         public System.TimeSpan PooledConnectionIdleTimeout { get; set; }
         public System.TimeSpan PooledConnectionLifetime { get; set; }
