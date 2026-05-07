@@ -31,15 +31,17 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  publish:
+  nuget-build:
     runs-on: ubuntu-latest
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          lfs: true
 
       - name: Install .NET
         uses: actions/setup-dotnet@v5
@@ -68,6 +70,23 @@ jobs:
           --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
           ${{ env.PROJECT_PATH }}
           /p:PackageVersion=${{ needs.release-please.outputs.version }}
+
+      - name: Upload NuGet artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ${{ env.PACKAGE_OUTPUT_DIRECTORY }}/*.nupkg
+
+  nuget-publish:
+    runs-on: ubuntu-latest
+    needs: [release-please, nuget-build]
+
+    steps:
+      - name: Download NuGet artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
 
       - name: Publish to NuGet
         run: >
@@ -106,8 +125,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate static SVG fallback diagrams
-        run: npx likec4 export svg --output public/diagrams ./likec4
+      - name: Generate static png fallback diagrams
+        run: npx likec4 export png --output public/diagrams ./likec4
         continue-on-error: true
 
       - name: Build VitePress site

@@ -34,8 +34,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate static SVG fallback diagrams
-        run: npx likec4 export svg --output public/diagrams ./likec4
+      - name: Generate static png fallback diagrams
+        run: npx likec4 export png --output public/diagrams ./likec4
         continue-on-error: true
 
       - name: Build VitePress site
@@ -49,9 +49,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Deploy to GitHub Pages
