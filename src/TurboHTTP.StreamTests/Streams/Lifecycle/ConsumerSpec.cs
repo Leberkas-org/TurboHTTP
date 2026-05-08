@@ -8,7 +8,7 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams.Lifecycle;
 
-public sealed class ConsumerActorSpec : StreamTestBase
+public sealed class ConsumerSpec : StreamTestBase
 {
     [Fact(Timeout = 10_000)]
     public async Task ConsumerActor_should_be_created_and_stopped_cleanly()
@@ -27,7 +27,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
 
         var (mergeHubSink, broadcastHubSource) = CreateTestHubs();
 
-        var actor = Sys.ActorOf(ConsumerActor.Props(
+        var actor = Sys.ActorOf(Consumer.Props(
             consumerId,
             requestChannel.Reader,
             optionsFactory,
@@ -59,7 +59,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
 
         var (mergeHubSink, broadcastHubSource) = CreateTestHubsWithTap(enrichedRequests);
 
-        var actor = Sys.ActorOf(ConsumerActor.Props(
+        var actor = Sys.ActorOf(Consumer.Props(
             consumerId,
             requestChannel.Reader,
             optionsFactory,
@@ -100,7 +100,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
 
         var (mergeHubSink, broadcastHubSource) = CreateTestHubsWithTap(enrichedRequests);
 
-        var actor = Sys.ActorOf(ConsumerActor.Props(
+        var actor = Sys.ActorOf(Consumer.Props(
             consumerId,
             requestChannel.Reader,
             optionsFactory,
@@ -140,7 +140,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
 
         var (mergeHubSink, broadcastHubSource) = CreateTestHubs();
 
-        var actor = Sys.ActorOf(ConsumerActor.Props(
+        var actor = Sys.ActorOf(Consumer.Props(
             consumerId,
             requestChannel.Reader,
             optionsFactory,
@@ -186,7 +186,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
 
         var (mergeHubSink, broadcastHubSource) = CreateTestHubsWithManualResponses(responseInjectChannel.Reader);
 
-        var actor = Sys.ActorOf(ConsumerActor.Props(
+        var actor = Sys.ActorOf(Consumer.Props(
             consumerId,
             requestChannel.Reader,
             optionsFactory,
@@ -229,7 +229,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
 
         var (mergeHubSink, broadcastHubSource) = CreateTestHubs();
 
-        var actor = Sys.ActorOf(ConsumerActor.Props(
+        var actor = Sys.ActorOf(Consumer.Props(
             consumerId,
             requestChannel.Reader,
             optionsFactory,

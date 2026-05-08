@@ -9,7 +9,7 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
-internal sealed class ConsumerActor : ReceiveActor
+internal sealed class Consumer : ReceiveActor
 {
     internal sealed record ConsumerSinkCompleted(Exception? Error);
 
@@ -44,9 +44,9 @@ internal sealed class ConsumerActor : ReceiveActor
         Sink<HttpRequestMessage, NotUsed> requestIngress,
         Source<HttpResponseMessage, NotUsed> responseFanoutSource) : IIndirectActorProducer
     {
-        public Type ActorType => typeof(ConsumerActor);
+        public Type ActorType => typeof(Consumer);
 
-        public ActorBase Produce() => new ConsumerActor(
+        public ActorBase Produce() => new Consumer(
             consumerId, requestReader,
             fallbackResponseWriter, optionsFactory,
             requestIngress, responseFanoutSource);
@@ -56,7 +56,7 @@ internal sealed class ConsumerActor : ReceiveActor
         }
     }
 
-    private ConsumerActor(
+    private Consumer(
         Guid consumerId,
         ChannelReader<HttpRequestMessage> requestReader,
         ChannelWriter<HttpResponseMessage> responseEgress,

@@ -4,11 +4,6 @@ using Akka.Event;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
-/// <summary>
-/// Actor-based manager that supervises per-name <see cref="ClientStreamOwner"/> instances.
-/// Clients register via Tell messages, sharing a single owned Owner per unique name.
-/// On Dispose, the factory tells the manager to shutdown all children.
-/// </summary>
 internal sealed class ClientStreamManager : ReceiveActor
 {
     internal sealed record RegisterConsumer(
@@ -45,7 +40,7 @@ internal sealed class ClientStreamManager : ReceiveActor
         {
             var sanitizedName = SanitizeActorName(message.Name);
             var owner = Context.ActorOf(
-                Akka.Actor.Props.Create(() => new ClientStreamOwner(
+                Akka.Actor.Props.Create(() => new StreamOwner(
                     message.ClientOptions,
                     message.Pipeline)),
                 sanitizedName);
@@ -59,7 +54,7 @@ internal sealed class ClientStreamManager : ReceiveActor
             _owners[message.Name] = state;
         }
 
-        state.Owner.Tell(new ClientStreamOwner.RegisterConsumer(
+        state.Owner.Tell(new StreamOwner.RegisterConsumer(
             message.ConsumerId,
             message.RequestReader,
             message.OptionsFactory,
@@ -70,7 +65,7 @@ internal sealed class ClientStreamManager : ReceiveActor
     {
         if (_owners.TryGetValue(message.Name, out var state))
         {
-            state.Owner.Tell(new ClientStreamOwner.UnregisterConsumer(message.ConsumerId));
+            state.Owner.Tell(new StreamOwner.UnregisterConsumer(message.ConsumerId));
         }
     }
 
@@ -80,7 +75,7 @@ internal sealed class ClientStreamManager : ReceiveActor
         {
             state.RequestChannel.Writer.TryComplete();
             state.ResponseChannel.Writer.TryComplete();
-            state.Owner.Tell(new ClientStreamOwner.Shutdown());
+            state.Owner.Tell(new StreamOwner.Shutdown());
         }
 
         _owners.Clear();

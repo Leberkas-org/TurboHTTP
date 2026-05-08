@@ -12,7 +12,7 @@ using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
-internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
+internal sealed class StreamOwner : ReceiveActor, IWithTimers
 {
     internal sealed record Shutdown;
     internal sealed record RegisterConsumer(
@@ -61,7 +61,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
     public ITimerScheduler Timers { get; set; } = null!;
 
-    public ClientStreamOwner(TurboClientOptions clientOptions, PipelineDescriptor pipeline)
+    public StreamOwner(TurboClientOptions clientOptions, PipelineDescriptor pipeline)
     {
         _clientOptions = clientOptions;
         _pipeline = pipeline;
@@ -187,7 +187,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
     private void CreateConsumerChild(RegisterConsumer message)
     {
         var childName = $"consumer-{message.ConsumerId:N}";
-        Context.ActorOf(ConsumerActor.Props(
+        Context.ActorOf(Consumer.Props(
             message.ConsumerId,
             message.RequestReader,
             message.OptionsFactory,

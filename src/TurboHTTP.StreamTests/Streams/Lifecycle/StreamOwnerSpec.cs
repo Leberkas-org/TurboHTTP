@@ -7,10 +7,10 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.StreamTests.Streams.Lifecycle;
 
-public sealed class ClientStreamOwnerSpec : StreamTestBase
+public sealed class StreamOwnerSpec : StreamTestBase
 {
     private IActorRef CreateClientStreamOwner(TurboClientOptions? options = null, PipelineDescriptor? pipeline = null)
-        => Sys.ActorOf(Props.Create(() => new ClientStreamOwner(
+        => Sys.ActorOf(Props.Create(() => new StreamOwner(
             options ?? new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             pipeline ?? PipelineDescriptor.Empty)));
 
@@ -27,7 +27,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
     {
         var actor = CreateClientStreamOwner();
 
-        actor.Tell(new ClientStreamOwner.Shutdown());
+        actor.Tell(new StreamOwner.Shutdown());
 
         await actor.GracefulStop(TimeSpan.FromSeconds(5));
     }
@@ -51,7 +51,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
             Credentials: null,
             PreAuthenticate: false);
 
-        actor.Tell(new ClientStreamOwner.RegisterConsumer(
+        actor.Tell(new StreamOwner.RegisterConsumer(
             consumerId, consumerRequests.Reader, optionsFactory, consumerResponses.Writer));
 
         await Task.Delay(500, TestContext.Current.CancellationToken);
@@ -82,7 +82,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
             Credentials: null,
             PreAuthenticate: false);
 
-        actor.Tell(new ClientStreamOwner.RegisterConsumer(
+        actor.Tell(new StreamOwner.RegisterConsumer(
             consumerId, consumerRequests.Reader, optionsFactory, consumerResponses.Writer));
 
         await Task.Delay(500, TestContext.Current.CancellationToken);
@@ -92,7 +92,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
             .ResolveOne(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
         Assert.NotNull(resolved);
 
-        actor.Tell(new ClientStreamOwner.UnregisterConsumer(consumerId));
+        actor.Tell(new StreamOwner.UnregisterConsumer(consumerId));
 
         await Task.Delay(500, TestContext.Current.CancellationToken);
 
@@ -110,7 +110,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
     {
         var actor = CreateClientStreamOwner();
 
-        actor.Tell(new ClientStreamOwner.Shutdown());
+        actor.Tell(new StreamOwner.Shutdown());
 
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
         Assert.True(stopped);
@@ -122,8 +122,8 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
         var actor = CreateClientStreamOwner();
         var probe = CreateTestProbe();
 
-        probe.Send(actor, new ClientStreamOwner.Shutdown());
-        probe.Send(actor, new ClientStreamOwner.Shutdown());
+        probe.Send(actor, new StreamOwner.Shutdown());
+        probe.Send(actor, new StreamOwner.Shutdown());
 
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
         Assert.True(stopped);
@@ -134,7 +134,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
     {
         var actor = CreateClientStreamOwner();
 
-        actor.Tell(new ClientStreamOwner.Shutdown());
+        actor.Tell(new StreamOwner.Shutdown());
 
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(5));
         Assert.True(stopped);
@@ -148,7 +148,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
 
         probe.Send(actor, "unknown message");
 
-        probe.Send(actor, new ClientStreamOwner.Shutdown());
+        probe.Send(actor, new StreamOwner.Shutdown());
         var stopped = await actor.GracefulStop(TimeSpan.FromSeconds(2));
         Assert.True(stopped);
     }
@@ -181,7 +181,7 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
             Credentials: null,
             PreAuthenticate: false);
 
-        actor.Tell(new ClientStreamOwner.RegisterConsumer(
+        actor.Tell(new StreamOwner.RegisterConsumer(
             consumerId, consumerRequests.Reader, optionsFactory, consumerResponses.Writer));
 
         await Task.Delay(500, TestContext.Current.CancellationToken);
