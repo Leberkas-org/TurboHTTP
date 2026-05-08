@@ -1,4 +1,5 @@
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http10;
 using TurboHTTP.Tests.Shared;
 
@@ -9,16 +10,16 @@ public sealed class Http10StateMachineReconnectSpec
     private static HttpRequestMessage MakeRequest() =>
         new(HttpMethod.Get, "http://example.com/");
 
-    private static (HttpRequestMessage Request, PendingRequest Pending, short Version) MakeTrackedRequest(
+    private static (HttpRequestMessage Request, PendingRequest Pending) MakeTrackedRequest(
         string uri = "http://example.com/", HttpContent? content = null)
     {
         var pending = PendingRequest.Rent();
         var version = pending.Version;
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         if (content != null) request.Content = content;
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, version);
-        return (request, pending, version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, version);
+        return (request, pending);
     }
 
     [Fact(Timeout = 5000)]
@@ -63,7 +64,7 @@ public sealed class Http10StateMachineReconnectSpec
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
         ops.Outbound.Clear(); // ignore ConnectTransport (reconnect)
 
-        sm.DecodeServerData(new TransportConnected(default!));
+        sm.DecodeServerData(new TransportConnected(null!));
 
         Assert.False(sm.IsReconnecting);
         Assert.True(sm.HasInFlightRequest); // re-encoded, back in flight
@@ -76,7 +77,7 @@ public sealed class Http10StateMachineReconnectSpec
     public void Http10StateMachine_should_fail_request_when_max_reconnect_attempts_exceeded()
     {
         var sm = new StateMachine(new FakeOps(), new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 1 } });
-        var (request, pending, _) = MakeTrackedRequest();
+        var (request, pending) = MakeTrackedRequest();
         sm.OnRequest(request);
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error)); // attempt 1
 

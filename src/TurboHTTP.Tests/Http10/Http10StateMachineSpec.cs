@@ -1,5 +1,6 @@
 using System.Net;
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http10;
 using TurboHTTP.Tests.Shared;
 
@@ -20,16 +21,16 @@ public sealed class Http10StateMachineSpec
         return request;
     }
 
-    private static (HttpRequestMessage Request, PendingRequest Pending, short Version) MakeTrackedRequest(
+    private static (HttpRequestMessage Request, PendingRequest Pending) MakeTrackedRequest(
         string uri = "http://example.com/", HttpContent? content = null)
     {
         var pending = PendingRequest.Rent();
         var version = pending.Version;
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         if (content != null) request.Content = content;
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, version);
-        return (request, pending, version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, version);
+        return (request, pending);
     }
 
     private static TransportBuffer CreateResponseBuffer(string responseText)
@@ -373,7 +374,7 @@ public sealed class Http10StateMachineSpec
         var config = MakeConfig();
         config.Http1.MaxReconnectAttempts = 0;
         var sm = new StateMachine(new FakeOps(), config);
-        var (request, pending, _) = MakeTrackedRequest();
+        var (request, pending) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var partialBuffer = CreateResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 100\r\n\r\nhello");
@@ -393,7 +394,7 @@ public sealed class Http10StateMachineSpec
         var config = MakeConfig();
         config.Http1.MaxReconnectAttempts = 0;
         var sm = new StateMachine(new FakeOps(), config);
-        var (request, pending, _) = MakeTrackedRequest();
+        var (request, pending) = MakeTrackedRequest();
         sm.OnRequest(request);
 
         var closeSignal = new TransportDisconnected(DisconnectReason.Error);

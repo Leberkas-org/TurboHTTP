@@ -1,4 +1,5 @@
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Tests.Shared;
 
@@ -15,8 +16,8 @@ public sealed class Http11StateMachineDisconnectSpec
         var pending = PendingRequest.Rent();
         var version = pending.Version;
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, version);
         return (request, pending);
     }
 
@@ -34,7 +35,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void Http11StateMachine_should_fail_inflight_on_abrupt_disconnect()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 0 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 0 } });
         var (request, pending) = MakeTrackedRequest();
 
         sm.OnRequest(request);
@@ -66,7 +68,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void Http11StateMachine_should_reconnect_on_disconnect_with_inflight()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
 
         sm.OnRequest(MakeRequest());
         ops.Outbound.Clear();
@@ -82,7 +85,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void Http11StateMachine_should_replay_buffered_requests_on_reconnect()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
 
         sm.OnRequest(MakeRequest());
         sm.OnRequest(MakeRequest("http://example.com/other"));
@@ -102,7 +106,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void Http11StateMachine_should_fail_buffered_on_max_reconnect_exceeded()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 1 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 1 } });
         var (request, pending) = MakeTrackedRequest();
 
         sm.OnRequest(request);
@@ -134,7 +139,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void OnUpstreamFinished_should_fail_buffered_queue_when_reconnecting()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
         var (request, pending) = MakeTrackedRequest();
 
         sm.OnRequest(request);
@@ -183,7 +189,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void PendingRequestCount_should_reflect_reconnect_buffer()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3, MaxPipelineDepth = 4 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3, MaxPipelineDepth = 4 } });
 
         sm.OnRequest(MakeRequest());
         sm.OnRequest(MakeRequest("http://example.com/b"));
@@ -211,7 +218,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void CanAcceptRequest_should_be_false_when_reconnecting()
     {
         var ops = new FakeOps();
-        var sm = new StateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
+        var sm = new StateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxReconnectAttempts = 3 } });
 
         sm.OnRequest(MakeRequest());
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));

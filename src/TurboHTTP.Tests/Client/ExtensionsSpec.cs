@@ -1,3 +1,5 @@
+using TurboHTTP.Internal;
+
 namespace TurboHTTP.Tests.Client;
 
 public sealed class ExtensionsSpec
@@ -7,11 +9,11 @@ public sealed class ExtensionsSpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
-        var task = request.GetResponseAsync();
+        var task = request.GetResponseAsync(ct: TestContext.Current.CancellationToken);
 
-        Assert.True(request.Options.TryGetValue(TcsCorrelation.Key, out var pending));
+        Assert.True(request.Options.TryGetValue(TurboClientCorrelation.Key, out var pending));
         Assert.NotNull(pending);
-        Assert.True(request.Options.TryGetValue(TcsCorrelation.VersionKey, out _));
+        Assert.True(request.Options.TryGetValue(TurboClientCorrelation.VersionKey, out _));
         Assert.False(task.IsCompleted);
     }
 
@@ -35,10 +37,10 @@ public sealed class ExtensionsSpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
 
-        var task = request.GetResponseAsync();
+        var task = request.GetResponseAsync(ct: TestContext.Current.CancellationToken);
 
-        request.Options.TryGetValue(TcsCorrelation.Key, out var pending);
-        request.Options.TryGetValue(TcsCorrelation.VersionKey, out var version);
+        request.Options.TryGetValue(TurboClientCorrelation.Key, out var pending);
+        request.Options.TryGetValue(TurboClientCorrelation.VersionKey, out var version);
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
         pending!.TrySetResult(response, version);
 

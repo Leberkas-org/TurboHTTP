@@ -1,5 +1,6 @@
 using System.Text;
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Tests.Shared;
 
@@ -50,8 +51,8 @@ public sealed class Http11StateMachineSpec
             Version = new Version(1, 1),
             Content = content
         };
-        req.Options.Set(TcsCorrelation.Key, pending);
-        req.Options.Set(TcsCorrelation.VersionKey, version);
+        req.Options.Set(TurboClientCorrelation.Key, pending);
+        req.Options.Set(TurboClientCorrelation.VersionKey, version);
 
         return (req, pending, version);
     }

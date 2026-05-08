@@ -1,3 +1,4 @@
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol;
 
 namespace TurboHTTP.Tests.Protocol;
@@ -11,8 +12,8 @@ public sealed class RequestFaultSpec
         var request = new HttpRequestMessage();
         var pending = PendingRequest.Rent();
         var version = pending.Version;
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, version);
 
         var exception = new InvalidOperationException("Test fault");
         var valueTask = new ValueTask<HttpResponseMessage>(pending, version);
@@ -49,13 +50,13 @@ public sealed class RequestFaultSpec
         var valueTasks = new List<ValueTask<HttpResponseMessage>>(3);
         var exception = new InvalidOperationException("Test fault");
 
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             var request = new HttpRequestMessage();
             var pending = PendingRequest.Rent();
             var version = pending.Version;
-            request.Options.Set(TcsCorrelation.Key, pending);
-            request.Options.Set(TcsCorrelation.VersionKey, version);
+            request.Options.Set(TurboClientCorrelation.Key, pending);
+            request.Options.Set(TurboClientCorrelation.VersionKey, version);
             requests.Add(request);
             pendings.Add(pending);
             versions.Add(version);
@@ -66,7 +67,7 @@ public sealed class RequestFaultSpec
         RequestFault.FailAll(requests, exception);
 
         // Assert
-        for (int i = 0; i < valueTasks.Count; i++)
+        for (var i = 0; i < valueTasks.Count; i++)
         {
             Assert.True(valueTasks[i].IsFaulted);
             await Assert.ThrowsAsync<InvalidOperationException>(async () => await valueTasks[i]);
@@ -89,13 +90,13 @@ public sealed class RequestFaultSpec
         var valueTasks = new List<ValueTask<HttpResponseMessage>>(2);
         var exception = new InvalidOperationException("Test fault");
 
-        for (int i = 0; i < 2; i++)
+        for (var i = 0; i < 2; i++)
         {
             var request = new HttpRequestMessage();
             var pending = PendingRequest.Rent();
             var version = pending.Version;
-            request.Options.Set(TcsCorrelation.Key, pending);
-            request.Options.Set(TcsCorrelation.VersionKey, version);
+            request.Options.Set(TurboClientCorrelation.Key, pending);
+            request.Options.Set(TurboClientCorrelation.VersionKey, version);
             queue.Enqueue(request);
             pendings.Add(pending);
             versions.Add(version);
@@ -109,7 +110,7 @@ public sealed class RequestFaultSpec
 
         // Assert
         Assert.Empty(queue);
-        for (int i = 0; i < valueTasks.Count; i++)
+        for (var i = 0; i < valueTasks.Count; i++)
         {
             Assert.True(valueTasks[i].IsFaulted);
             await Assert.ThrowsAsync<InvalidOperationException>(async () => await valueTasks[i]);

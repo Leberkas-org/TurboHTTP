@@ -1,5 +1,6 @@
 using System.Net;
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http11;
 using TurboHTTP.Tests.Shared;
 
@@ -21,8 +22,8 @@ public sealed class Http11StateMachineReconnectSpec
         {
             Version = new Version(1, 1)
         };
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, version);
         return (request, pending);
     }
 

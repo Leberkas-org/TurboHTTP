@@ -77,7 +77,7 @@ public sealed class EngineSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void Engine_should_use_default_request_options_factory_when_null()
+    public void Engine_should_use_default_options_when_provided()
     {
         // Arrange
         var engine = new Engine();
@@ -86,8 +86,7 @@ public sealed class EngineSpec
 
         // Act
         var flow = engine.CreateFlow(transports, descriptor,
-            options: new TurboClientOptions(),
-            requestOptionsFactory: null);
+            options: new TurboClientOptions());
 
         // Assert
         Assert.NotNull(flow);

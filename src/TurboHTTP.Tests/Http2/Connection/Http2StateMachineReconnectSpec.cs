@@ -1,5 +1,6 @@
 using System.Net;
 using Servus.Akka.Transport;
+using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http2;
 using TurboHTTP.Tests.Shared;
 
@@ -30,14 +31,14 @@ public sealed class Http2StateMachineReconnectSpec
     private static HttpRequestMessage MakePost(string path = "/") =>
         new(HttpMethod.Post, $"https://example.com{path}");
 
-    private static (HttpRequestMessage Request, PendingRequest Pending, short Version) MakeTrackedGet(string path = "/")
+    private static (HttpRequestMessage Request, PendingRequest Pending) MakeTrackedGet(string path = "/")
     {
         var pending = PendingRequest.Rent();
         var version = pending.Version;
         var req = new HttpRequestMessage(HttpMethod.Get, $"https://example.com{path}");
-        req.Options.Set(TcsCorrelation.Key, pending);
-        req.Options.Set(TcsCorrelation.VersionKey, version);
-        return (req, pending, version);
+        req.Options.Set(TurboClientCorrelation.Key, pending);
+        req.Options.Set(TurboClientCorrelation.VersionKey, version);
+        return (req, pending);
     }
 
     private static readonly ConnectionInfo DummyConnectionInfo = new(
@@ -121,7 +122,7 @@ public sealed class Http2StateMachineReconnectSpec
         var ops = new FakeOps();
         var sm = new StateMachine(MakeConfig(maxReconnect: 1), ops);
         sm.PreStart();
-        var (req, pending, _) = MakeTrackedGet();
+        var (req, pending) = MakeTrackedGet();
         sm.OnRequest(req);
 
         sm.DecodeServerData(new TransportDisconnected(DisconnectReason.Error));
