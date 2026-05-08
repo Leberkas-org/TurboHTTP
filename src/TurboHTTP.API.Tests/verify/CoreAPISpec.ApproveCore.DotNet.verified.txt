@@ -79,7 +79,6 @@ namespace TurboHTTP
         System.Net.Http.Headers.HttpRequestHeaders DefaultRequestHeaders { get; }
         System.Version DefaultRequestVersion { get; set; }
         System.Net.Http.HttpVersionPolicy DefaultVersionPolicy { get; set; }
-        long MaxResponseContentBufferSize { get; set; }
         System.Threading.Channels.ChannelWriter<System.Net.Http.HttpRequestMessage> Requests { get; }
         System.Threading.Channels.ChannelReader<System.Net.Http.HttpResponseMessage> Responses { get; }
         System.TimeSpan Timeout { get; set; }
@@ -153,7 +152,6 @@ namespace TurboHTTP
         public System.Net.Http.Headers.HttpRequestHeaders DefaultRequestHeaders { get; }
         public System.Version DefaultRequestVersion { get; set; }
         public System.Net.Http.HttpVersionPolicy DefaultVersionPolicy { get; set; }
-        public long MaxResponseContentBufferSize { get; set; }
         public System.Threading.Channels.ChannelWriter<System.Net.Http.HttpRequestMessage> Requests { get; }
         public System.Threading.Channels.ChannelReader<System.Net.Http.HttpResponseMessage> Responses { get; }
         public System.TimeSpan Timeout { get; set; }

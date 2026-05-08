@@ -12,7 +12,7 @@ using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
-internal sealed class StreamOwner : ReceiveActor, IWithTimers
+internal sealed class StreamOwner : ReceiveActor, IWithTimers, IWithStash
 {
     internal sealed record Shutdown;
     internal sealed record RegisterConsumer(
@@ -42,7 +42,6 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
 
     private readonly TurboClientOptions _clientOptions;
     private readonly PipelineDescriptor _pipeline;
-    private readonly List<RegisterConsumer> _pendingRegistrations = [];
 
     private int _retryAttempts;
     private Exception? _lastError;
@@ -60,14 +59,30 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
     private bool IsSystemTerminating => Context.System.WhenTerminated.IsCompleted;
 
     public ITimerScheduler Timers { get; set; } = null!;
+    public IStash Stash { get; set; } = null!;
 
     public StreamOwner(TurboClientOptions clientOptions, PipelineDescriptor pipeline)
     {
         _clientOptions = clientOptions;
         _pipeline = pipeline;
 
+        Initializing();
+    }
+
+    private void Initializing()
+    {
         Receive<Shutdown>(_ => HandleShutdown());
-        Receive<RegisterConsumer>(HandleRegisterConsumer);
+        Receive<RegisterConsumer>(_ => Stash.Stash());
+        Receive<UnregisterConsumer>(HandleUnregisterConsumer);
+        Receive<StreamSinkCompleted>(HandleStreamSinkCompleted);
+        Receive<RetryCreateInstance>(_ => ExecuteRetryCreate());
+        Receive<ShutdownTimeoutExpired>(_ => HandleShutdownTimeout());
+    }
+
+    private void Ready()
+    {
+        Receive<Shutdown>(_ => HandleShutdown());
+        Receive<RegisterConsumer>(msg => CreateConsumerChild(msg));
         Receive<UnregisterConsumer>(HandleUnregisterConsumer);
         Receive<StreamSinkCompleted>(HandleStreamSinkCompleted);
         Receive<RetryCreateInstance>(_ => ExecuteRetryCreate());
@@ -162,7 +177,7 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
             Tracing.For("Request").Debug(this, "Pipeline ready");
             _log.Debug("Stream pipeline materialized successfully");
 
-            ProcessPendingRegistrations();
+            BecomeReady();
         }
         catch (Exception ex)
         {
@@ -173,15 +188,10 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
         }
     }
 
-    private void HandleRegisterConsumer(RegisterConsumer message)
+    private void BecomeReady()
     {
-        if (!_streamRunning || _requestIngress is null || _responseFanoutSource is null || _materializer is null)
-        {
-            _pendingRegistrations.Add(message);
-            return;
-        }
-
-        CreateConsumerChild(message);
+        Become(Ready);
+        Stash.UnstashAll();
     }
 
     private void CreateConsumerChild(RegisterConsumer message)
@@ -197,16 +207,6 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
             _materializer!), childName);
 
         _consumerPartitions[message.ConsumerId] = _nextPartitionIndex++;
-    }
-
-    private void ProcessPendingRegistrations()
-    {
-        foreach (var pending in _pendingRegistrations)
-        {
-            CreateConsumerChild(pending);
-        }
-
-        _pendingRegistrations.Clear();
     }
 
     private void HandleUnregisterConsumer(UnregisterConsumer message)
@@ -266,6 +266,7 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
 
         Tracing.For("Request").Debug(this, "Pipeline retry {0}/{1}", _retryAttempts, MaxRetryAttempts);
         _log.Info("Executing retry attempt {0}/{1}", _retryAttempts, MaxRetryAttempts);
+        Become(Initializing);
         CleanupForRetry();
         MaterializeStream();
     }
@@ -409,7 +410,6 @@ internal sealed class StreamOwner : ReceiveActor, IWithTimers
         _consumerPartitions.Clear();
         _nextPartitionIndex = 1;
         _streamRunning = false;
-        _pendingRegistrations.Clear();
     }
 
     protected override SupervisorStrategy SupervisorStrategy()

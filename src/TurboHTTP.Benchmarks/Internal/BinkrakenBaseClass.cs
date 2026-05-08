@@ -1,3 +1,5 @@
+using BenchmarkDotNet.Attributes;
+
 namespace TurboHTTP.Benchmarks.Internal;
 
 /// <summary>
@@ -6,6 +8,8 @@ namespace TurboHTTP.Benchmarks.Internal;
 /// </summary>
 public abstract class BinkrakenBaseClass : BenchmarkSuiteBase
 {
+    [Params("1.1", "2.0")]
+    public new string HttpVersion { get; set; } = "1.1";
     /// <summary>
     /// Light endpoint: the SPA index page (~3 KB HTML).
     /// </summary>

@@ -13,7 +13,7 @@ public abstract class KestrelBaseClass : BenchmarkSuiteBase
     private static int _serverRefCount;
 
     /// <summary>Heavy payload: 10 KB deterministic byte array for POST benchmarks.</summary>
-    protected static readonly byte[] HeavyPayload = GeneratePayload(10 * 1024);
+    protected static readonly byte[] HeavyPayload = GeneratePayload(4 * 1024 * 1024);
 
     /// <summary>Port on which the HTTP/1.1 Kestrel listener is running. Set in GlobalSetup.</summary>
     protected int KestrelHttp11Port { get; private set; }

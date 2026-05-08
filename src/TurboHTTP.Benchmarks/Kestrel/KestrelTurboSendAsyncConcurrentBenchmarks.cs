@@ -90,10 +90,8 @@ public class KestrelTurboSendAsyncConcurrentBenchmarks : KestrelBaseClass
         await _fanOutGate.WaitAsync();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, HeavyUri)
-            {
-                Content = new ByteArrayContent(HeavyPayload)
-            };
+            using var request = new HttpRequestMessage(HttpMethod.Post, HeavyUri);
+            request.Content = new ByteArrayContent(HeavyPayload);
             using var response = await _clientHelper.Client.SendAsync(request, CancellationToken.None);
             response.EnsureSuccessStatusCode();
         }

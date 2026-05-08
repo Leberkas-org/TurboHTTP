@@ -118,22 +118,6 @@ public sealed class ClientHelper : IAsyncDisposable
         //    The ActorSystem must still be alive for this message to be delivered.
         Client.Dispose();
 
-        // 2) Wait for the owner actor to fully stop so all stream actors are
-        //    cleanly stopped before the next test materialises a new pipeline.
-        if (Client is TurboHttpClient concrete)
-        {
-            try
-            {
-                await concrete.Manager.WhenTerminatedAsync(TimeSpan.FromSeconds(6));
-            }
-            catch
-            {
-                // Actor may already be stopped or system shutting down — fine.
-            }
-        }
-
-        // 3) Terminate the system if we own it — safe now that the client
-        //    has already drained and the owner actor is stopped.
         if (_ownsSystem)
         {
             var system = _provider.GetService<ActorSystem>();
