@@ -32,8 +32,7 @@ internal static class FeaturePipelineBuilder
 {
     internal static Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> Build(
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> engineFlow,
-        PipelineDescriptor descriptor,
-        Func<TurboRequestOptions> requestOptionsFactory)
+        PipelineDescriptor descriptor)
     {
         // Collect active feature stages innermost-first.
         // Index 0 connects directly to the engine; the last index is the outermost layer.
@@ -91,15 +90,9 @@ internal static class FeaturePipelineBuilder
             layers.Add(new TracingBidiStage());
         }
 
-        // Inline enrichment as a Select() — avoids a separate GraphStage instance.
-        // Enrichment applies BaseAddress, default version, default headers, Referer
-        // sanitization, and If-Range validation per RFC 9110.
-        var enricher = new RequestEnricher(requestOptionsFactory);
-        var enriched = Flow.Create<HttpRequestMessage>().Select(enricher.Enrich);
-
         if (layers.Count == 0)
         {
-            return enriched.Via(engineFlow);
+            return engineFlow;
         }
 
         // Build a single Flow via GraphDsl — feature BidiLayers and engine wired in one graph,
@@ -132,6 +125,6 @@ internal static class FeaturePipelineBuilder
                     stages[^1].Outlet2);    // outermost response outlet
             }));
 
-        return enriched.Via(compositeFlow);
+        return compositeFlow;
     }
 }
