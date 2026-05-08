@@ -12,8 +12,8 @@ public abstract class KestrelBaseClass : BenchmarkSuiteBase
     private static readonly SemaphoreSlim _serverLock = new(1, 1);
     private static int _serverRefCount;
 
-    /// <summary>Heavy payload: 10 KB deterministic byte array for POST benchmarks.</summary>
-    protected static readonly byte[] HeavyPayload = GeneratePayload(4 * 1024 * 1024);
+    /// <summary>Heavy payload: 1 MB deterministic byte array for POST benchmarks.</summary>
+    protected static readonly byte[] HeavyPayload = GeneratePayload(1 * 1024 * 1024);
 
     /// <summary>Port on which the HTTP/1.1 Kestrel listener is running. Set in GlobalSetup.</summary>
     protected int KestrelHttp11Port { get; private set; }

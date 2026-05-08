@@ -40,8 +40,10 @@
         <InternalsVisibleTo Include="TurboHTTP.StreamTests"/>
         <InternalsVisibleTo Include="TurboHTTP.AcceptanceTests"/>
         <InternalsVisibleTo Include="TurboHTTP.IntegrationTests"/>
+        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Container"/>
         <InternalsVisibleTo Include="TurboHTTP.Tests.Shared"/>
         <InternalsVisibleTo Include="TurboHTTP.Benchmarks"/>
+        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Kestrel"/>
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\Servus.Akka\Servus.Akka.csproj" />

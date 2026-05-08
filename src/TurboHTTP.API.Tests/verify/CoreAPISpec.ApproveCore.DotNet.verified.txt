@@ -2,6 +2,8 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.AcceptanceTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Benchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.Container")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.Kestrel")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.StreamTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Tests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Tests.Shared")]
