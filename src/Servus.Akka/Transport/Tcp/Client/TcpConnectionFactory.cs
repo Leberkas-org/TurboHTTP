@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Security;
 
 namespace Servus.Akka.Transport.Tcp.Client;
 

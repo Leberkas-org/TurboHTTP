@@ -1,5 +1,4 @@
 using Servus.Akka.Transport;
-using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Http3.Qpack;
 using TurboHTTP.Streams.Stages;
 using static Servus.Core.Servus;

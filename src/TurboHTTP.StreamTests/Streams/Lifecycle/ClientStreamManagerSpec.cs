@@ -31,7 +31,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -49,11 +49,11 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
     public async Task ClientStreamManager_should_shutdown_gracefully()
     {
         var manager = Sys.ActorOf(ClientStreamManager.Props(), "shutdown-manager");
-        Watch(manager);
+        await WatchAsync(manager);
 
         manager.Tell(new ClientStreamManager.Shutdown());
 
-        ExpectTerminated(manager, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        await ExpectTerminatedAsync(manager, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 15_000)]
@@ -66,7 +66,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -75,7 +75,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -100,7 +100,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: consumerId,
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -123,7 +123,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -147,7 +147,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -174,7 +174,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: consumerId,
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -212,7 +212,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 
@@ -221,7 +221,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
             OptionsFactory: () => CreateRequestOptions(),
-            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
 

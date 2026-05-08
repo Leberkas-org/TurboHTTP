@@ -15,7 +15,7 @@ internal sealed class ClientStreamManager : ReceiveActor
         string Name,
         Guid ConsumerId,
         ChannelReader<HttpRequestMessage> RequestReader,
-        ChannelWriter<HttpResponseMessage> FallbackResponseWriter,
+        ChannelWriter<HttpResponseMessage> ResponseWriter,
         Func<TurboRequestOptions> OptionsFactory,
         TurboClientOptions ClientOptions,
         PipelineDescriptor Pipeline);
@@ -36,7 +36,6 @@ internal sealed class ClientStreamManager : ReceiveActor
     {
         Receive<RegisterConsumer>(HandleRegisterConsumer);
         Receive<UnregisterConsumer>(HandleUnregisterConsumer);
-        Receive<ClientStreamOwner.StreamInstanceCreated>(_ => { /* stream ready, noop */ });
         Receive<Shutdown>(_ => HandleShutdown());
     }
 
@@ -46,19 +45,15 @@ internal sealed class ClientStreamManager : ReceiveActor
         {
             var sanitizedName = SanitizeActorName(message.Name);
             var owner = Context.ActorOf(
-                Akka.Actor.Props.Create(() => new ClientStreamOwner()),
+                Akka.Actor.Props.Create(() => new ClientStreamOwner(
+                    message.ClientOptions,
+                    message.Pipeline)),
                 sanitizedName);
 
             var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>(
                 new UnboundedChannelOptions { SingleReader = true });
             var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>(
                 new UnboundedChannelOptions { SingleWriter = true });
-
-            owner.Tell(new ClientStreamOwner.CreateStreamInstance(
-                message.ClientOptions,
-                message.Pipeline,
-                requestChannel.Reader,
-                responseChannel.Writer));
 
             state = new OwnerState(owner, requestChannel, responseChannel);
             _owners[message.Name] = state;
@@ -68,7 +63,7 @@ internal sealed class ClientStreamManager : ReceiveActor
             message.ConsumerId,
             message.RequestReader,
             message.OptionsFactory,
-            message.FallbackResponseWriter));
+            message.ResponseWriter));
     }
 
     private void HandleUnregisterConsumer(UnregisterConsumer message)

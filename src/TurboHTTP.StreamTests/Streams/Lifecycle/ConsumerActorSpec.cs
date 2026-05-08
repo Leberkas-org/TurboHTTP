@@ -1,8 +1,6 @@
 using System.Net;
 using System.Threading.Channels;
 using Akka;
-using Akka.Actor;
-using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Lifecycle;
@@ -18,7 +16,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var consumerId = Guid.NewGuid();
         var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>();
         var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://test.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -38,9 +36,9 @@ public sealed class ConsumerActorSpec : StreamTestBase
             broadcastHubSource,
             Materializer));
 
-        Watch(actor);
+        await WatchAsync(actor);
         Sys.Stop(actor);
-        ExpectTerminated(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
+        await ExpectTerminatedAsync(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000)]
@@ -50,7 +48,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>();
         var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>();
         var enrichedRequests = new List<HttpRequestMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://test.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -73,7 +71,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.example/test");
         await requestChannel.Writer.WriteAsync(request, TestContext.Current.CancellationToken);
 
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.Single(enrichedRequests);
         var tappedRequest = enrichedRequests[0];
 
@@ -91,7 +89,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>();
         var baseAddress = new Uri("https://api.example");
         var enrichedRequests = new List<HttpRequestMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: baseAddress,
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -115,7 +113,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var request = new HttpRequestMessage(HttpMethod.Get, relativeUri);
         await requestChannel.Writer.WriteAsync(request, TestContext.Current.CancellationToken);
 
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.Single(enrichedRequests);
         var tappedRequest = enrichedRequests[0];
 
@@ -131,7 +129,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var consumerId = Guid.NewGuid();
         var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>();
         var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://test.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -177,7 +175,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>();
         var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>();
         var responseInjectChannel = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://test.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -220,7 +218,7 @@ public sealed class ConsumerActorSpec : StreamTestBase
         var consumerId = Guid.NewGuid();
         var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>();
         var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://test.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -240,9 +238,9 @@ public sealed class ConsumerActorSpec : StreamTestBase
             broadcastHubSource,
             Materializer));
 
-        Watch(actor);
+        await WatchAsync(actor);
         Sys.Stop(actor);
-        ExpectTerminated(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
+        await ExpectTerminatedAsync(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
     }
 
     private (Sink<HttpRequestMessage, NotUsed>, Source<HttpResponseMessage, NotUsed>) CreateTestHubs()

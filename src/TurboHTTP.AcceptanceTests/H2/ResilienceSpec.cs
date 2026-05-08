@@ -1,7 +1,5 @@
 ﻿using System.Net;
-using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.Transport;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.H2;

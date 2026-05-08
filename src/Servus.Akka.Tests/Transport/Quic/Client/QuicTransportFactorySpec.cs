@@ -1,5 +1,4 @@
 using Akka.Actor;
-using Servus.Akka.Transport.Quic;
 using Servus.Akka.Transport.Quic.Client;
 
 namespace Servus.Akka.Tests.Transport.Quic.Client;

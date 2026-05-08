@@ -14,13 +14,13 @@ internal sealed class ConsumerActor : ReceiveActor
     internal sealed record ConsumerSinkCompleted(Exception? Error);
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
+    private readonly IMaterializer _materializer = Context.Materializer();
     private readonly Guid _consumerId;
     private readonly ChannelReader<HttpRequestMessage> _requestReader;
     private readonly Func<TurboRequestOptions> _optionsFactory;
-    private readonly ChannelWriter<HttpResponseMessage> _fallbackResponseWriter;
+    private readonly ChannelWriter<HttpResponseMessage> _responseEgress;
     private readonly Sink<HttpRequestMessage, NotUsed> _requestIngress;
     private readonly Source<HttpResponseMessage, NotUsed> _responseFanoutSource;
-    private readonly IMaterializer _materializer;
 
     private UniqueKillSwitch? _sinkKillSwitch;
 
@@ -28,16 +28,13 @@ internal sealed class ConsumerActor : ReceiveActor
         Guid consumerId,
         ChannelReader<HttpRequestMessage> requestReader,
         Func<TurboRequestOptions> optionsFactory,
-        ChannelWriter<HttpResponseMessage> fallbackResponseWriter,
+        ChannelWriter<HttpResponseMessage> responseWriter,
         Sink<HttpRequestMessage, NotUsed> requestIngress,
         Source<HttpResponseMessage, NotUsed> responseFanoutSource,
-        IMaterializer materializer)
-    {
-        return Akka.Actor.Props.CreateBy(new ConsumerActorProducer(
+        IMaterializer materializer) => Akka.Actor.Props.CreateBy(new ConsumerActorProducer(
             consumerId, requestReader, optionsFactory,
-            fallbackResponseWriter, requestIngress,
-            responseFanoutSource, materializer));
-    }
+            responseWriter, requestIngress,
+            responseFanoutSource));
 
     private sealed class ConsumerActorProducer(
         Guid consumerId,
@@ -45,15 +42,14 @@ internal sealed class ConsumerActor : ReceiveActor
         Func<TurboRequestOptions> optionsFactory,
         ChannelWriter<HttpResponseMessage> fallbackResponseWriter,
         Sink<HttpRequestMessage, NotUsed> requestIngress,
-        Source<HttpResponseMessage, NotUsed> responseFanoutSource,
-        IMaterializer materializer) : IIndirectActorProducer
+        Source<HttpResponseMessage, NotUsed> responseFanoutSource) : IIndirectActorProducer
     {
         public Type ActorType => typeof(ConsumerActor);
 
         public ActorBase Produce() => new ConsumerActor(
             consumerId, requestReader,
             fallbackResponseWriter, optionsFactory,
-            requestIngress, responseFanoutSource, materializer);
+            requestIngress, responseFanoutSource);
 
         public void Release(ActorBase actor)
         {
@@ -63,19 +59,17 @@ internal sealed class ConsumerActor : ReceiveActor
     private ConsumerActor(
         Guid consumerId,
         ChannelReader<HttpRequestMessage> requestReader,
-        ChannelWriter<HttpResponseMessage> fallbackResponseWriter,
+        ChannelWriter<HttpResponseMessage> responseEgress,
         Func<TurboRequestOptions> optionsFactory,
         Sink<HttpRequestMessage, NotUsed> requestIngress,
-        Source<HttpResponseMessage, NotUsed> responseFanoutSource,
-        IMaterializer materializer)
+        Source<HttpResponseMessage, NotUsed> responseFanoutSource)
     {
         _consumerId = consumerId;
         _requestReader = requestReader;
         _optionsFactory = optionsFactory;
-        _fallbackResponseWriter = fallbackResponseWriter;
+        _responseEgress = responseEgress;
         _requestIngress = requestIngress;
         _responseFanoutSource = responseFanoutSource;
-        _materializer = materializer;
 
         Receive<ConsumerSinkCompleted>(HandleSinkCompleted);
     }
@@ -106,8 +100,7 @@ internal sealed class ConsumerActor : ReceiveActor
 
     private void MaterializeResponseSink()
     {
-        var fallback = _fallbackResponseWriter;
-
+        var fallback = _responseEgress;
         var (killSwitch, completionTask) = _responseFanoutSource
             .ViaMaterialized(KillSwitches.Single<HttpResponseMessage>(), Keep.Right)
             .ToMaterialized(

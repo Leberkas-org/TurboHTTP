@@ -1,5 +1,4 @@
 using System.Net;
-using Servus.Akka.Transport.Tcp;
 using Servus.Akka.Transport.Tcp.Client;
 
 namespace Servus.Akka.Tests.Transport.Tcp.Client;

@@ -6,26 +6,14 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
-using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Pooling;
-using TurboHTTP.Streams.Stages;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
 internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 {
-    internal sealed record CreateStreamInstance(
-        TurboClientOptions ClientOptions,
-        PipelineDescriptor Pipeline,
-        ChannelReader<HttpRequestMessage> RequestReader,
-        ChannelWriter<HttpResponseMessage> ResponseWriter);
-
-    internal sealed record StreamInstanceCreated;
-
-    internal sealed record StreamInstanceFailed(Exception Reason, int AttemptNumber);
-
     internal sealed record Shutdown;
     internal sealed record RegisterConsumer(
         Guid ConsumerId,
@@ -52,10 +40,12 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
 
+    private readonly TurboClientOptions _clientOptions;
+    private readonly PipelineDescriptor _pipeline;
+    private readonly List<RegisterConsumer> _pendingRegistrations = [];
+
     private int _retryAttempts;
     private Exception? _lastError;
-    private CreateStreamInstance? _createRequest;
-    private IActorRef _createRequester = Nobody.Instance;
     private bool _shuttingDown;
 
     private IActorRef? _tcpManager;
@@ -71,10 +61,11 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
     public ITimerScheduler Timers { get; set; } = null!;
 
-    public ClientStreamOwner()
+    public ClientStreamOwner(TurboClientOptions clientOptions, PipelineDescriptor pipeline)
     {
-        Receive<CreateStreamInstance>(HandleCreateStreamInstance);
-        Receive<StreamInstanceFailed>(HandleStreamInstanceFailed);
+        _clientOptions = clientOptions;
+        _pipeline = pipeline;
+
         Receive<Shutdown>(_ => HandleShutdown());
         Receive<RegisterConsumer>(HandleRegisterConsumer);
         Receive<UnregisterConsumer>(HandleUnregisterConsumer);
@@ -83,28 +74,24 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         Receive<ShutdownTimeoutExpired>(_ => HandleShutdownTimeout());
     }
 
-    private void HandleCreateStreamInstance(CreateStreamInstance create)
+    protected override void PreStart()
     {
-        _log.Debug("Creating stream instance (options: BaseAddress={0})",
-            create.ClientOptions.BaseAddress);
-
-        _createRequest = create;
-        _createRequester = Sender;
-        _retryAttempts = 0;
-        _lastError = null;
-
-        MaterializeStream(create);
+        base.PreStart();
+        if (!IsSystemTerminating)
+        {
+            MaterializeStream();
+        }
     }
 
-    private void MaterializeStream(CreateStreamInstance create)
+    private void MaterializeStream()
     {
         Tracing.For("Request").Info(this, "Materializing pipeline");
         _log.Debug("Materializing stream pipeline (BaseAddress={0})",
-            create.ClientOptions.BaseAddress);
+            _clientOptions.BaseAddress);
 
         try
         {
-            var opts = create.ClientOptions;
+            var opts = _clientOptions;
 
             var poolRegistry = new PoolConfigRegistry(new TcpPoolConfig(
                     1,
@@ -140,8 +127,8 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
             var engine = new Engine();
             var engineFlow = engine.CreateFlow(
                 transports,
-                create.Pipeline,
-                create.ClientOptions);
+                _pipeline,
+                _clientOptions);
 
             // Materialize the graph
             var materializerSettings = ActorMaterializerSettings.Create(Context.System)
@@ -169,21 +156,13 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
             _requestIngress = requestIngress;
 
-            ChannelSource.FromReader(create.RequestReader)
-                .RunWith(requestIngress, _materializer);
-
             _responseFanoutSource = fanoutSource;
-            StartLegacyResponseSink(create);
 
             _streamRunning = true;
             Tracing.For("Request").Debug(this, "Pipeline ready");
             _log.Debug("Stream pipeline materialized successfully");
 
-            // Notify requester of successful materialization
-            if (!_createRequester.IsNobody())
-            {
-                _createRequester.Tell(new StreamInstanceCreated());
-            }
+            ProcessPendingRegistrations();
         }
         catch (Exception ex)
         {
@@ -198,21 +177,36 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
     {
         if (!_streamRunning || _requestIngress is null || _responseFanoutSource is null || _materializer is null)
         {
-            _log.Warning("Cannot register consumer {0} — stream not running", message.ConsumerId);
+            _pendingRegistrations.Add(message);
             return;
         }
 
+        CreateConsumerChild(message);
+    }
+
+    private void CreateConsumerChild(RegisterConsumer message)
+    {
         var childName = $"consumer-{message.ConsumerId:N}";
         Context.ActorOf(ConsumerActor.Props(
             message.ConsumerId,
             message.RequestReader,
             message.OptionsFactory,
             message.FallbackResponseWriter,
-            _requestIngress,
-            _responseFanoutSource,
-            _materializer), childName);
+            _requestIngress!,
+            _responseFanoutSource!,
+            _materializer!), childName);
 
         _consumerPartitions[message.ConsumerId] = _nextPartitionIndex++;
+    }
+
+    private void ProcessPendingRegistrations()
+    {
+        foreach (var pending in _pendingRegistrations)
+        {
+            CreateConsumerChild(pending);
+        }
+
+        _pendingRegistrations.Clear();
     }
 
     private void HandleUnregisterConsumer(UnregisterConsumer message)
@@ -240,41 +234,6 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         return 0;
     }
 
-    private void StartLegacyResponseSink(CreateStreamInstance create)
-    {
-        if (_responseFanoutSource is null || _materializer is null)
-        {
-            return;
-        }
-
-        var completionTask = _responseFanoutSource
-            .RunWith(Sink.ForEach<HttpResponseMessage>(response => WriteLegacyResponse(create, response)), _materializer);
-
-        completionTask.PipeTo(Self, Self,
-            () => new StreamSinkCompleted(null),
-            ex => new StreamSinkCompleted(ex.GetBaseException()));
-    }
-
-    private void WriteLegacyResponse(CreateStreamInstance create, HttpResponseMessage response)
-    {
-        if (response.RequestMessage is { } req &&
-            req.Options.TryGetValue(TurboClientCorrelation.Key, out var pending) &&
-            req.Options.TryGetValue(TurboClientCorrelation.VersionKey, out var ver))
-        {
-            pending.TrySetResult(response, ver);
-            return;
-        }
-
-        if (response.RequestMessage is { } sharedCandidate &&
-            sharedCandidate.Options.TryGetValue(TurboClientCorrelation.ConsumerIdKey, out _))
-        {
-            _log.Warning("Dropping misrouted shared-runtime response from legacy fallback path");
-            return;
-        }
-
-        create.ResponseWriter.TryWrite(response);
-    }
-
     private void HandleMaterializationFailed(Exception ex)
     {
         _lastError = ex;
@@ -283,7 +242,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         _log.Warning("Stream materialization failed (attempt {0}/{1}): {2}",
             _retryAttempts, MaxRetryAttempts, ex.Message);
 
-        if (_retryAttempts <= MaxRetryAttempts && _createRequest is not null && !_shuttingDown && !IsSystemTerminating)
+        if (_retryAttempts <= MaxRetryAttempts && !_shuttingDown && !IsSystemTerminating)
         {
             var backoff = CalculateBackoff(_retryAttempts - 1);
             _log.Info("Scheduling retry attempt {0} after {1}ms backoff",
@@ -295,47 +254,12 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         {
             _log.Error("Stream materialization failed after {0} attempts. Last error: {1}",
                 _retryAttempts, _lastError?.Message);
-
-            if (!_createRequester.IsNobody())
-            {
-                _createRequester.Tell(new StreamInstanceFailed(_lastError!, _retryAttempts));
-            }
-        }
-    }
-
-    private void HandleStreamInstanceFailed(StreamInstanceFailed failed)
-    {
-        _lastError = failed.Reason;
-        _retryAttempts = failed.AttemptNumber;
-
-        _log.Warning("Stream instance failure reported (attempt {0}): {1}",
-            failed.AttemptNumber, failed.Reason.Message);
-
-        CleanupResources();
-
-        if (_retryAttempts < MaxRetryAttempts && _createRequest is not null && !_shuttingDown && !IsSystemTerminating)
-        {
-            var backoff = CalculateBackoff(_retryAttempts);
-            _retryAttempts++;
-            _log.Info("Scheduling retry attempt {0} after {1}ms backoff", _retryAttempts, backoff.TotalMilliseconds);
-
-            Timers.StartSingleTimer(RetryTimerKey, RetryCreateInstance.Instance, backoff);
-        }
-        else
-        {
-            _log.Error("Retries exhausted ({0} attempts). Last error: {1}",
-                _retryAttempts, _lastError?.Message);
-
-            if (!_createRequester.IsNobody())
-            {
-                _createRequester.Tell(new StreamInstanceFailed(_lastError!, _retryAttempts));
-            }
         }
     }
 
     private void ExecuteRetryCreate()
     {
-        if (_createRequest is null || _shuttingDown)
+        if (_shuttingDown)
         {
             return;
         }
@@ -343,7 +267,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         Tracing.For("Request").Debug(this, "Pipeline retry {0}/{1}", _retryAttempts, MaxRetryAttempts);
         _log.Info("Executing retry attempt {0}/{1}", _retryAttempts, MaxRetryAttempts);
         CleanupForRetry();
-        MaterializeStream(_createRequest);
+        MaterializeStream();
     }
 
     private void HandleShutdown()
@@ -485,6 +409,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         _consumerPartitions.Clear();
         _nextPartitionIndex = 1;
         _streamRunning = false;
+        _pendingRegistrations.Clear();
     }
 
     protected override SupervisorStrategy SupervisorStrategy()

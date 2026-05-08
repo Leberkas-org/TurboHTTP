@@ -3,7 +3,6 @@ using System.Net.Security;
 using System.Security.Authentication;
 using Servus.Akka.Tests.Utils;
 using Servus.Akka.Transport;
-using Servus.Akka.Transport.Quic;
 using Servus.Akka.Transport.Quic.Client;
 
 namespace Servus.Akka.Tests.Transport.Quic.Client;

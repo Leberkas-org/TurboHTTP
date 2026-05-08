@@ -2,7 +2,6 @@
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Cookies;
 using TurboHTTP.Protocol.Semantics;

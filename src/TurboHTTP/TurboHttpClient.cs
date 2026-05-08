@@ -118,12 +118,12 @@ public sealed class TurboHttpClient : ITurboHttpClient
     {
         ThrowIfDisposed();
 
-        request.Options.Set(TurboClientCorrelation.ConsumerIdKey, ConsumerId);
 
         var pending = PendingRequest.Rent();
         var version = pending.Version;
         request.Options.Set(TurboClientCorrelation.Key, pending);
         request.Options.Set(TurboClientCorrelation.VersionKey, version);
+        request.Options.Set(TurboClientCorrelation.ConsumerIdKey, ConsumerId);
 
         _pendingTcs.TryAdd(pending, 0);
 

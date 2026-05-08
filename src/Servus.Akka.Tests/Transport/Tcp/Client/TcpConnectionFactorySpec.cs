@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 using Servus.Akka.Transport;
-using Servus.Akka.Transport.Tcp;
 using Servus.Akka.Transport.Tcp.Client;
 
 namespace Servus.Akka.Tests.Transport.Tcp.Client;

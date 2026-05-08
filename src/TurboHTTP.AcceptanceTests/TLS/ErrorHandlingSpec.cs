@@ -1,8 +1,6 @@
 ﻿using System.Net;
 using System.Text;
-using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 

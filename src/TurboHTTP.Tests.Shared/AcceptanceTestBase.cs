@@ -1,7 +1,6 @@
 using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
-using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams;
 using Xunit;

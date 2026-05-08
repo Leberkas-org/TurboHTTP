@@ -2,7 +2,6 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.TestKit.Xunit;
 using Servus.Akka.Transport;
-using Servus.Akka.Transport.Quic;
 using Servus.Akka.Transport.Quic.Client;
 
 namespace Servus.Akka.Tests.Transport.Quic.Client;

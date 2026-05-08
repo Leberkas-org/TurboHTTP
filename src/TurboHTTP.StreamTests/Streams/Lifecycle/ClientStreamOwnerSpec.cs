@@ -9,25 +9,10 @@ namespace TurboHTTP.StreamTests.Streams.Lifecycle;
 
 public sealed class ClientStreamOwnerSpec : StreamTestBase
 {
-    private IActorRef CreateClientStreamOwner()
-        => Sys.ActorOf(Props.Create(() => new ClientStreamOwner()));
-
-    private static ClientStreamOwner.CreateStreamInstance CreateStreamInstanceMessage()
-    {
-        var options = new TurboClientOptions { BaseAddress = new Uri("http://localhost") };
-        var desc = PipelineDescriptor.Empty;
-
-        var requestChannel = Channel.CreateUnbounded<HttpRequestMessage>(
-            new UnboundedChannelOptions { SingleReader = true });
-        var responseChannel = Channel.CreateUnbounded<HttpResponseMessage>(
-            new UnboundedChannelOptions { SingleWriter = true });
-
-        return new ClientStreamOwner.CreateStreamInstance(
-            options,
-            desc,
-            requestChannel.Reader,
-            responseChannel.Writer);
-    }
+    private IActorRef CreateClientStreamOwner(TurboClientOptions? options = null, PipelineDescriptor? pipeline = null)
+        => Sys.ActorOf(Props.Create(() => new ClientStreamOwner(
+            options ?? new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
+            pipeline ?? PipelineDescriptor.Empty)));
 
     [Fact(Timeout = 10_000)]
     public void ClientStreamOwner_should_be_created_without_error()
@@ -47,38 +32,17 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
         await actor.GracefulStop(TimeSpan.FromSeconds(5));
     }
 
-    [Fact(Timeout = 15_000)]
-    public async Task ClientStreamOwner_should_respond_to_create_stream_instance_with_created()
-    {
-        var actor = CreateClientStreamOwner();
-        var probe = CreateTestProbe();
-
-        var message = CreateStreamInstanceMessage();
-        probe.Send(actor, message);
-
-        _ = probe.ExpectMsg<ClientStreamOwner.StreamInstanceCreated>(TimeSpan.FromSeconds(5),
-            "Should receive StreamInstanceCreated after creating stream instance",
-            TestContext.Current.CancellationToken);
-
-        await actor.GracefulStop(TimeSpan.FromSeconds(2));
-    }
 
     [Fact(Timeout = 10_000)]
     public async Task ClientStreamOwner_should_create_consumer_child_on_register()
     {
         var actor = CreateClientStreamOwner();
-        var probe = CreateTestProbe();
-        var create = CreateStreamInstanceMessage();
-
-        probe.Send(actor, create);
-        _ = probe.ExpectMsg<ClientStreamOwner.StreamInstanceCreated>(
-            TimeSpan.FromSeconds(5),
-            cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         var consumerId = Guid.NewGuid();
         var consumerRequests = Channel.CreateUnbounded<HttpRequestMessage>();
         var consumerResponses = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://consumer.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -104,18 +68,12 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
     public async Task ClientStreamOwner_should_stop_consumer_child_on_unregister()
     {
         var actor = CreateClientStreamOwner();
-        var probe = CreateTestProbe();
-        var create = CreateStreamInstanceMessage();
-
-        probe.Send(actor, create);
-        _ = probe.ExpectMsg<ClientStreamOwner.StreamInstanceCreated>(
-            TimeSpan.FromSeconds(5),
-            cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         var consumerId = Guid.NewGuid();
         var consumerRequests = Channel.CreateUnbounded<HttpRequestMessage>();
         var consumerResponses = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://consumer.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,
@@ -146,37 +104,6 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
         await actor.GracefulStop(TimeSpan.FromSeconds(2));
     }
 
-    [Fact(Timeout = 10_000)]
-    public async Task ClientStreamOwner_should_handle_failed_materialization()
-    {
-        var actor = CreateClientStreamOwner();
-        var probe = CreateTestProbe();
-
-        var failureMessage = new ClientStreamOwner.StreamInstanceFailed(
-            new InvalidOperationException("Test failure"), 1);
-
-        probe.Send(actor, failureMessage);
-
-        probe.Send(actor, new ClientStreamOwner.Shutdown());
-        await actor.GracefulStop(TimeSpan.FromSeconds(2));
-    }
-
-    [Fact(Timeout = 10_000)]
-    public async Task ClientStreamOwner_should_handle_multiple_failures_before_shutdown()
-    {
-        var actor = CreateClientStreamOwner();
-        var probe = CreateTestProbe();
-
-        for (var i = 1; i <= 3; i++)
-        {
-            var failureMessage = new ClientStreamOwner.StreamInstanceFailed(
-                new InvalidOperationException($"Test failure {i}"), i);
-            probe.Send(actor, failureMessage);
-        }
-
-        probe.Send(actor, new ClientStreamOwner.Shutdown());
-        await actor.GracefulStop(TimeSpan.FromSeconds(2));
-    }
 
     [Fact(Timeout = 10_000)]
     public async Task ClientStreamOwner_should_shutdown_gracefully()
@@ -240,18 +167,12 @@ public sealed class ClientStreamOwnerSpec : StreamTestBase
     public async Task ClientStreamOwner_should_materialize_per_consumer_ingress_flow_on_registration()
     {
         var actor = CreateClientStreamOwner();
-        var probe = CreateTestProbe();
-        var create = CreateStreamInstanceMessage();
-
-        probe.Send(actor, create);
-        _ = probe.ExpectMsg<ClientStreamOwner.StreamInstanceCreated>(
-            TimeSpan.FromSeconds(5),
-            cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         var consumerId = Guid.NewGuid();
         var consumerRequests = Channel.CreateUnbounded<HttpRequestMessage>();
         var consumerResponses = Channel.CreateUnbounded<HttpResponseMessage>();
-        Func<TurboRequestOptions> optionsFactory = () => new TurboRequestOptions(
+        var optionsFactory = () => new TurboRequestOptions(
             BaseAddress: new Uri("https://consumer.example"),
             DefaultRequestHeaders: new HttpRequestMessage().Headers,
             DefaultRequestVersion: HttpVersion.Version11,

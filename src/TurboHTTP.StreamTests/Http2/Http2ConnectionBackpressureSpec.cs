@@ -70,7 +70,7 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
             if (i == 0)
             {
                 // First request also emits ConnectTransport before TransportData
-                networkProbe.ExpectNext(TestContext.Current.CancellationToken);
+                await networkProbe.ExpectNextAsync(TestContext.Current.CancellationToken);
             }
 
             // Each request produces TransportData (frame data)
