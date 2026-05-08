@@ -1,3 +1,5 @@
+using TurboHTTP.Internal;
+
 namespace TurboHTTP;
 
 public static class Extensions
@@ -6,8 +8,8 @@ public static class Extensions
         CancellationToken ct = default)
     {
         var pending = PendingRequest.Rent();
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, pending.Version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, pending.Version);
 
         if (ct.CanBeCanceled)
         {

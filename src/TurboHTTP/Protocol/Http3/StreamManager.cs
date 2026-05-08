@@ -123,7 +123,7 @@ internal sealed class StreamManager
         OnStreamClosedCallback?.Invoke(streamId);
         ReturnDecoder(streamId);
 
-        if (request.Options.TryGetValue(TcsCorrelation.Key, out var pending))
+        if (request.Options.TryGetValue(TurboClientCorrelation.Key, out var pending))
         {
             pending.TrySetException(exception);
         }

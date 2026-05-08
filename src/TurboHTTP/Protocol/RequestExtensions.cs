@@ -1,10 +1,12 @@
+using TurboHTTP.Internal;
+
 namespace TurboHTTP.Protocol;
 
 internal static class RequestFault
 {
     public static void Fail(this HttpRequestMessage request, Exception exception)
     {
-        if (request.Options.TryGetValue(TcsCorrelation.Key, out var pending))
+        if (request.Options.TryGetValue(TurboClientCorrelation.Key, out var pending))
         {
             pending.TrySetException(exception);
         }
