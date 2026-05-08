@@ -2,9 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Threading.Channels;
-using Akka.Actor;
-using Servus.Akka.Transport;
-using TurboHTTP.Streams;
+using TurboHTTP.Internal;
 using TurboHTTP.Streams.Lifecycle;
 
 namespace TurboHTTP;
@@ -16,21 +14,20 @@ public sealed class TurboHttpClient : ITurboHttpClient
     private readonly HttpRequestMessage _defaultHeadersHolder = new();
 
     private readonly ConcurrentDictionary<PendingRequest, byte> _pendingTcs = new();
+    private readonly NamedClientConsumerRegistration _consumerRegistration;
+    private readonly CancellationTokenSource _disposeCts = new();
 
     private readonly ConcurrentStack<CancellationTokenSource> _ctsPool = new();
     private int _ctsPoolCount;
+    private int _disposed;
 
     private Uri? _baseAddress;
-    private Version _defaultRequestVersion = HttpVersion.Version11;
+    private Version _defaultRequestVersion;
     private HttpVersionPolicy _defaultVersionPolicy;
-    private TimeSpan _timeout = TimeSpan.FromSeconds(60);
+    private TimeSpan _timeout;
 
     private readonly ICredentials? _credentials;
     private readonly bool _preAuthenticate;
-
-    // Initialized to null! here; UpdateCachedOptions() is called first in the constructor
-    // (before Manager is created), so this field is always non-null when observable.
-    private TurboRequestOptions _cachedOptions = null!;
 
     public Uri? BaseAddress
     {
@@ -42,12 +39,6 @@ public sealed class TurboHttpClient : ITurboHttpClient
         }
     }
 
-    /// <summary>Gets the default request headers sent with each request.</summary>
-    /// <remarks>
-    /// The <see cref="HttpRequestHeaders"/> instance is stored by reference in the internal
-    /// <see cref="TurboRequestOptions"/> snapshot — it is NOT copied. Configure headers before
-    /// submitting requests; mutating them concurrently with active requests produces undefined behavior.
-    /// </remarks>
     public HttpRequestHeaders DefaultRequestHeaders => _defaultHeadersHolder.Headers;
 
     public Version DefaultRequestVersion
@@ -80,16 +71,17 @@ public sealed class TurboHttpClient : ITurboHttpClient
         }
     }
 
-    public long MaxResponseContentBufferSize { get; set; }
+    public ChannelWriter<HttpRequestMessage> Requests { get; }
 
-    public ChannelWriter<HttpRequestMessage> Requests => Manager.Requests;
-    public ChannelReader<HttpResponseMessage> Responses => Manager.Responses;
-    
-    internal ClientStreamManager Manager { get; }
+    public ChannelReader<HttpResponseMessage> Responses { get; }
+
+    internal Guid ConsumerId => _consumerRegistration.ConsumerId;
+
+    internal TurboRequestOptions CachedOptions { get; private set; } = null!;
 
     private void UpdateCachedOptions()
     {
-        _cachedOptions = new TurboRequestOptions(
+        CachedOptions = new TurboRequestOptions(
             _baseAddress,
             DefaultRequestHeaders,
             _defaultRequestVersion,
@@ -99,24 +91,39 @@ public sealed class TurboHttpClient : ITurboHttpClient
             _preAuthenticate);
     }
 
-    internal TurboHttpClient(TurboClientOptions clientOptions, ActorSystem system, PipelineDescriptor pipeline)
+    internal TurboHttpClient(
+        ChannelWriter<HttpRequestMessage> requests,
+        ChannelReader<HttpResponseMessage> responses,
+        TurboRequestOptions options,
+        NamedClientConsumerRegistration consumerRegistration)
     {
-        _credentials = clientOptions.Credentials;
-        _preAuthenticate = clientOptions.PreAuthenticate;
-        UpdateCachedOptions();
-        TransportBuffer.ConfigurePoolSize(512);
-        Manager = new ClientStreamManager(clientOptions, OptionsFactory, system, pipeline);
-        return;
+        _baseAddress = options.BaseAddress;
+        _defaultRequestVersion = options.DefaultRequestVersion;
+        _defaultVersionPolicy = options.DefaultVersionPolicy;
+        _timeout = options.Timeout;
+        _credentials = options.Credentials;
+        _preAuthenticate = options.PreAuthenticate;
+        foreach (var header in options.DefaultRequestHeaders)
+        {
+            _defaultHeadersHolder.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
 
-        TurboRequestOptions OptionsFactory() => _cachedOptions;
+        UpdateCachedOptions();
+        Requests = requests;
+        Responses = responses;
+        _consumerRegistration = consumerRegistration;
     }
 
     public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        ThrowIfDisposed();
+
+        request.Options.Set(TurboClientCorrelation.ConsumerIdKey, ConsumerId);
+
         var pending = PendingRequest.Rent();
         var version = pending.Version;
-        request.Options.Set(TcsCorrelation.Key, pending);
-        request.Options.Set(TcsCorrelation.VersionKey, version);
+        request.Options.Set(TurboClientCorrelation.Key, pending);
+        request.Options.Set(TurboClientCorrelation.VersionKey, version);
 
         _pendingTcs.TryAdd(pending, 0);
 
@@ -124,23 +131,18 @@ public sealed class TurboHttpClient : ITurboHttpClient
         {
             try
             {
-                await Manager.Requests.WriteAsync(request, cancellationToken);
+                await Requests.WriteAsync(request, cancellationToken);
             }
             catch (ChannelClosedException)
             {
-                throw new ObjectDisposedException(nameof(TurboHttpClient),
-                    "Cannot send request because the client has been disposed.");
+                throw CreateClientDisposedException();
             }
 
-            // Fast path: no timeout and no caller CT — skip CTS allocation entirely.
             if (Timeout == System.Threading.Timeout.InfiniteTimeSpan && !cancellationToken.CanBeCanceled)
             {
                 return await pending.GetValueTask();
             }
 
-            // Timeout + caller CT are combined via a linked CTS with UnsafeRegister,
-            // which cancels the PendingRequest without allocating a DelayPromise.
-            // Non-linked CTS is rented from pool and returned via TryReset() to avoid per-request allocation.
             var linkedCt = cancellationToken.CanBeCanceled;
             CancellationTokenSource cts;
             if (linkedCt)
@@ -187,15 +189,28 @@ public sealed class TurboHttpClient : ITurboHttpClient
         finally
         {
             _pendingTcs.TryRemove(pending, out _);
-
-            // Return to pool only after the ValueTask is consumed (version mismatch
-            // guard in TrySetResult prevents stale pipeline completions from corrupting
-            // the reused instance).
             PendingRequest.Return(pending);
         }
     }
 
-    public void Dispose() => Manager.Dispose();
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        _disposeCts.Cancel();
+        try
+        {
+            _consumerRegistration.Dispose();
+            CancelPendingRequests();
+        }
+        finally
+        {
+            _disposeCts.Dispose();
+        }
+    }
 
     public void CancelPendingRequests()
     {
@@ -204,5 +219,19 @@ public sealed class TurboHttpClient : ITurboHttpClient
             pending.TrySetCanceled();
             _pendingTcs.TryRemove(pending, out _);
         }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            throw CreateClientDisposedException();
+        }
+    }
+
+    private static ObjectDisposedException CreateClientDisposedException()
+    {
+        return new ObjectDisposedException(nameof(TurboHttpClient),
+            "Cannot send request because the client has been disposed.");
     }
 }

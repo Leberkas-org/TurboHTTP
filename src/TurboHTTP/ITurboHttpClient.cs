@@ -24,9 +24,6 @@ public interface ITurboHttpClient : IDisposable
     /// <summary>Gets or sets the timeout applied to each <see cref="SendAsync"/> call.</summary>
     TimeSpan Timeout { get; set; }
 
-    /// <summary>Gets or sets the maximum number of bytes to buffer in the response content.</summary>
-    long MaxResponseContentBufferSize { get; set; }
-
     /// <summary>
     /// Channel endpoint for writing requests directly into the pipeline.
     /// Use for high-throughput scenarios where multiple requests are submitted concurrently
