@@ -1,5 +1,6 @@
 using System.Net;
 using System.Threading.Channels;
+using Akka;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
@@ -8,6 +9,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Pooling;
+using TurboHTTP.Streams.Stages;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
@@ -16,7 +18,6 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 {
     internal sealed record CreateStreamInstance(
         TurboClientOptions ClientOptions,
-        Func<TurboRequestOptions> RequestOptionsFactory,
         PipelineDescriptor Pipeline,
         ChannelReader<HttpRequestMessage> RequestReader,
         ChannelWriter<HttpResponseMessage> ResponseWriter);
@@ -26,6 +27,12 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
     internal sealed record StreamInstanceFailed(Exception Reason, int AttemptNumber);
 
     internal sealed record Shutdown;
+    internal sealed record RegisterConsumer(
+        Guid ConsumerId,
+        ChannelReader<HttpRequestMessage> RequestReader,
+        Func<TurboRequestOptions> OptionsFactory,
+        ChannelWriter<HttpResponseMessage> FallbackResponseWriter);
+    internal sealed record UnregisterConsumer(Guid ConsumerId);
 
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(30);
@@ -54,8 +61,13 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
     private IActorRef? _tcpManager;
     private IActorRef? _quicConnectionManager;
     private ActorMaterializer? _materializer;
+    private Source<HttpResponseMessage, NotUsed>? _responseFanoutSource;
+    private Sink<HttpRequestMessage, NotUsed>? _requestIngress;
     private SharedKillSwitch? _killSwitch;
     private bool _streamRunning;
+    private readonly Dictionary<Guid, int> _consumerPartitions = [];
+    private int _nextPartitionIndex = 1;
+    private bool IsSystemTerminating => Context.System.WhenTerminated.IsCompleted;
 
     public ITimerScheduler Timers { get; set; } = null!;
 
@@ -64,6 +76,8 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         Receive<CreateStreamInstance>(HandleCreateStreamInstance);
         Receive<StreamInstanceFailed>(HandleStreamInstanceFailed);
         Receive<Shutdown>(_ => HandleShutdown());
+        Receive<RegisterConsumer>(HandleRegisterConsumer);
+        Receive<UnregisterConsumer>(HandleUnregisterConsumer);
         Receive<StreamSinkCompleted>(HandleStreamSinkCompleted);
         Receive<RetryCreateInstance>(_ => ExecuteRetryCreate());
         Receive<ShutdownTimeoutExpired>(_ => HandleShutdownTimeout());
@@ -127,8 +141,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
             var engineFlow = engine.CreateFlow(
                 transports,
                 create.Pipeline,
-                create.ClientOptions,
-                create.RequestOptionsFactory);
+                create.ClientOptions);
 
             // Materialize the graph
             var materializerSettings = ActorMaterializerSettings.Create(Context.System)
@@ -142,31 +155,25 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
             // channel writer completes while feature BidiStages still have re-injections.
             _killSwitch = KillSwitches.Shared($"client-{Self.Path.Name}");
 
-            // Use Sink.ForEach to write responses to the externally-owned writer.
-            // The sink does NOT own the writer — the manager completes it on shutdown.
-            // Sink.ForEach materializes a Task that completes when the stream terminates,
-            // which we use for completion monitoring.
-            var completionTask = ChannelSource.FromReader(create.RequestReader)
+            var requestIngressHub = MergeHub.Source<HttpRequestMessage>(perProducerBufferSize: 64);
+            var responseFanoutHub = PartitionHub.Sink<HttpResponseMessage>(
+                partitioner: ResolveResponsePartition,
+                startAfterNrOfConsumers: 1,
+                bufferSize: 256);
+
+            var (requestIngress, fanoutSource) = requestIngressHub
                 .Via(_killSwitch.Flow<HttpRequestMessage>())
                 .Via(engineFlow)
-                .RunWith(
-                    Sink.ForEach<HttpResponseMessage>(msg =>
-                    {
-                        if (msg.RequestMessage is { } req &&
-                            req.Options.TryGetValue(TcsCorrelation.Key, out var pending) &&
-                            req.Options.TryGetValue(TcsCorrelation.VersionKey, out var ver))
-                        {
-                            pending.TrySetResult(msg, ver);
-                            return;
-                        }
+                .ToMaterialized(responseFanoutHub, Keep.Both)
+                .Run(_materializer);
 
-                        create.ResponseWriter.TryWrite(msg);
-                    }),
-                    _materializer);
+            _requestIngress = requestIngress;
 
-            completionTask.PipeTo(Self, Self,
-                () => new StreamSinkCompleted(null),
-                ex => new StreamSinkCompleted(ex.GetBaseException()));
+            ChannelSource.FromReader(create.RequestReader)
+                .RunWith(requestIngress, _materializer);
+
+            _responseFanoutSource = fanoutSource;
+            StartLegacyResponseSink(create);
 
             _streamRunning = true;
             Tracing.For("Request").Debug(this, "Pipeline ready");
@@ -187,6 +194,87 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         }
     }
 
+    private void HandleRegisterConsumer(RegisterConsumer message)
+    {
+        if (!_streamRunning || _requestIngress is null || _responseFanoutSource is null || _materializer is null)
+        {
+            _log.Warning("Cannot register consumer {0} — stream not running", message.ConsumerId);
+            return;
+        }
+
+        var childName = $"consumer-{message.ConsumerId:N}";
+        Context.ActorOf(ConsumerActor.Props(
+            message.ConsumerId,
+            message.RequestReader,
+            message.OptionsFactory,
+            message.FallbackResponseWriter,
+            _requestIngress,
+            _responseFanoutSource,
+            _materializer), childName);
+
+        _consumerPartitions[message.ConsumerId] = _nextPartitionIndex++;
+    }
+
+    private void HandleUnregisterConsumer(UnregisterConsumer message)
+    {
+        _consumerPartitions.Remove(message.ConsumerId);
+        var childName = $"consumer-{message.ConsumerId:N}";
+        var child = Context.Child(childName);
+        if (!child.IsNobody())
+        {
+            Context.Stop(child);
+        }
+    }
+
+    private int ResolveResponsePartition(int consumerCount, HttpResponseMessage response)
+    {
+        if (response.RequestMessage is { } request &&
+            request.Options.TryGetValue(TurboClientCorrelation.ConsumerIdKey, out var consumerId) &&
+            _consumerPartitions.TryGetValue(consumerId, out var partition) &&
+            partition > 0 &&
+            partition < consumerCount)
+        {
+            return partition;
+        }
+
+        return 0;
+    }
+
+    private void StartLegacyResponseSink(CreateStreamInstance create)
+    {
+        if (_responseFanoutSource is null || _materializer is null)
+        {
+            return;
+        }
+
+        var completionTask = _responseFanoutSource
+            .RunWith(Sink.ForEach<HttpResponseMessage>(response => WriteLegacyResponse(create, response)), _materializer);
+
+        completionTask.PipeTo(Self, Self,
+            () => new StreamSinkCompleted(null),
+            ex => new StreamSinkCompleted(ex.GetBaseException()));
+    }
+
+    private void WriteLegacyResponse(CreateStreamInstance create, HttpResponseMessage response)
+    {
+        if (response.RequestMessage is { } req &&
+            req.Options.TryGetValue(TurboClientCorrelation.Key, out var pending) &&
+            req.Options.TryGetValue(TurboClientCorrelation.VersionKey, out var ver))
+        {
+            pending.TrySetResult(response, ver);
+            return;
+        }
+
+        if (response.RequestMessage is { } sharedCandidate &&
+            sharedCandidate.Options.TryGetValue(TurboClientCorrelation.ConsumerIdKey, out _))
+        {
+            _log.Warning("Dropping misrouted shared-runtime response from legacy fallback path");
+            return;
+        }
+
+        create.ResponseWriter.TryWrite(response);
+    }
+
     private void HandleMaterializationFailed(Exception ex)
     {
         _lastError = ex;
@@ -195,7 +283,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         _log.Warning("Stream materialization failed (attempt {0}/{1}): {2}",
             _retryAttempts, MaxRetryAttempts, ex.Message);
 
-        if (_retryAttempts <= MaxRetryAttempts && _createRequest is not null && !_shuttingDown)
+        if (_retryAttempts <= MaxRetryAttempts && _createRequest is not null && !_shuttingDown && !IsSystemTerminating)
         {
             var backoff = CalculateBackoff(_retryAttempts - 1);
             _log.Info("Scheduling retry attempt {0} after {1}ms backoff",
@@ -225,7 +313,7 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
 
         CleanupResources();
 
-        if (_retryAttempts < MaxRetryAttempts && _createRequest is not null && !_shuttingDown)
+        if (_retryAttempts < MaxRetryAttempts && _createRequest is not null && !_shuttingDown && !IsSystemTerminating)
         {
             var backoff = CalculateBackoff(_retryAttempts);
             _retryAttempts++;
@@ -392,7 +480,20 @@ internal sealed class ClientStreamOwner : ReceiveActor, IWithTimers
         }
 
         _killSwitch = null;
+        _responseFanoutSource = null;
+        _requestIngress = null;
+        _consumerPartitions.Clear();
+        _nextPartitionIndex = 1;
         _streamRunning = false;
+    }
+
+    protected override SupervisorStrategy SupervisorStrategy()
+    {
+        return new OneForOneStrategy(ex =>
+        {
+            _log.Warning("ConsumerActor failed: {0}", ex.Message);
+            return Directive.Stop;
+        });
     }
 
     protected override void PostStop()
