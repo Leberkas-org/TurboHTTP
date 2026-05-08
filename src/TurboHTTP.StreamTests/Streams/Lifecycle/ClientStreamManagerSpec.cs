@@ -1,3 +1,6 @@
+using System.Net;
+using System.Threading.Channels;
+using Akka.Actor;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Lifecycle;
 using TurboHTTP.Tests.Shared;
@@ -6,184 +9,107 @@ namespace TurboHTTP.StreamTests.Streams.Lifecycle;
 
 public sealed class ClientStreamManagerSpec : StreamTestBase
 {
-    private ClientStreamManager CreateStreamManager(
-        TurboClientOptions? clientOptions = null,
-        Func<TurboRequestOptions>? requestOptionsFactory = null,
-        PipelineDescriptor? pipeline = null)
+    private static TurboRequestOptions CreateRequestOptions()
     {
-        var options = clientOptions ?? new TurboClientOptions { BaseAddress = new Uri("http://localhost") };
-        var factory = requestOptionsFactory ??
-                      (() => throw new NotImplementedException("factory not used in tests"));
-        var desc = pipeline ?? PipelineDescriptor.Empty;
-
-        return new ClientStreamManager(options, factory, Sys, desc);
+        return new TurboRequestOptions(
+            BaseAddress: null,
+            DefaultRequestHeaders: new HttpRequestMessage().Headers,
+            DefaultRequestVersion: HttpVersion.Version11,
+            DefaultVersionPolicy: HttpVersionPolicy.RequestVersionOrLower,
+            Timeout: TimeSpan.FromSeconds(30),
+            Credentials: null,
+            PreAuthenticate: false);
     }
 
     [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_create_with_valid_options()
+    public async Task ClientStreamManager_should_create_owner_child_for_new_name()
     {
-        var manager = CreateStreamManager();
-        Assert.NotNull(manager.Requests);
-        Assert.NotNull(manager.Responses);
+        var manager = Sys.ActorOf(ClientStreamManager.Props(), "test-manager");
+
+        manager.Tell(new ClientStreamManager.RegisterConsumer(
+            Name: "my-api",
+            ConsumerId: Guid.NewGuid(),
+            RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
+            OptionsFactory: () => CreateRequestOptions(),
+            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
+            Pipeline: PipelineDescriptor.Empty));
+
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+
+        var ownerPath = manager.Path / "my-api";
+        var resolved = await Sys.ActorSelection(ownerPath)
+            .ResolveOne(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.NotNull(resolved);
+
+        manager.Tell(new ClientStreamManager.Shutdown());
     }
 
     [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_provide_request_channel_writer()
+    public async Task ClientStreamManager_should_shutdown_gracefully()
     {
-        var manager = CreateStreamManager();
-        Assert.NotNull(manager.Requests);
+        var manager = Sys.ActorOf(ClientStreamManager.Props(), "shutdown-manager");
+        Watch(manager);
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test")
-        {
-            Version = new Version(1, 1)
-        };
+        manager.Tell(new ClientStreamManager.Shutdown());
 
-        var written = manager.Requests.TryWrite(request);
-        Assert.True(written, "Should be able to write request to channel");
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_provide_response_channel_reader()
-    {
-        var manager = CreateStreamManager();
-        Assert.NotNull(manager.Responses);
-
-        var reader = manager.Responses;
-        Assert.NotNull(reader);
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_dispose_without_error()
-    {
-        var manager = CreateStreamManager();
-        manager.Dispose();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
-        var written = manager.Requests.TryWrite(request);
-        Assert.False(written, "Should not be able to write after dispose");
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_handle_multiple_dispose_calls()
-    {
-        var manager = CreateStreamManager();
-
-        manager.Dispose();
-        manager.Dispose();
-        manager.Dispose();
-
-        Assert.True(true);
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_complete_channels_on_dispose()
-    {
-        var manager = CreateStreamManager();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
-        manager.Requests.TryWrite(request);
-
-        manager.Dispose();
-
-        var completedRequests = manager.Requests.TryComplete();
-        Assert.False(completedRequests, "Request channel should already be completed");
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_allow_reading_response_channel_after_disposal()
-    {
-        var manager = CreateStreamManager();
-
-        manager.Dispose();
-
-        var reader = manager.Responses;
-        Assert.NotNull(reader);
+        ExpectTerminated(manager, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 15_000)]
-    public async Task ClientStreamManager_should_allow_graceful_termination_with_when_terminated()
+    public async Task ClientStreamManager_should_reuse_owner_for_same_name()
     {
-        var manager = CreateStreamManager();
+        var manager = Sys.ActorOf(ClientStreamManager.Props(), "reuse-manager");
 
-        var terminateTask = manager.WhenTerminatedAsync(TimeSpan.FromSeconds(5));
+        manager.Tell(new ClientStreamManager.RegisterConsumer(
+            Name: "shared",
+            ConsumerId: Guid.NewGuid(),
+            RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
+            OptionsFactory: () => CreateRequestOptions(),
+            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
+            Pipeline: PipelineDescriptor.Empty));
 
-        manager.Dispose();
+        manager.Tell(new ClientStreamManager.RegisterConsumer(
+            Name: "shared",
+            ConsumerId: Guid.NewGuid(),
+            RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
+            OptionsFactory: () => CreateRequestOptions(),
+            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
+            Pipeline: PipelineDescriptor.Empty));
 
-        await terminateTask.WaitAsync(TimeSpan.FromSeconds(6), TestContext.Current.CancellationToken);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+
+        var ownerPath = manager.Path / "shared";
+        var resolved = await Sys.ActorSelection(ownerPath)
+            .ResolveOne(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        Assert.NotNull(resolved);
+
+        manager.Tell(new ClientStreamManager.Shutdown());
     }
 
     [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_support_idempotent_channel_completion()
+    public async Task ClientStreamManager_should_unregister_consumer()
     {
-        var manager = CreateStreamManager();
+        var manager = Sys.ActorOf(ClientStreamManager.Props(), "unregister-manager");
+        var consumerId = Guid.NewGuid();
 
-        manager.Dispose();
+        manager.Tell(new ClientStreamManager.RegisterConsumer(
+            Name: "test",
+            ConsumerId: consumerId,
+            RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
+            OptionsFactory: () => CreateRequestOptions(),
+            FallbackResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
+            ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
+            Pipeline: PipelineDescriptor.Empty));
 
-        var requestsCompleted = manager.Requests.TryComplete();
-        Assert.False(requestsCompleted);
-    }
+        await Task.Delay(200, TestContext.Current.CancellationToken);
 
-    [Fact(Timeout = 15_000)]
-    public void ClientStreamManager_should_allow_configuration_before_disposal()
-    {
-        var clientOpts = new TurboClientOptions
-        {
-            BaseAddress = new Uri("https://api.example.com")
-        };
+        manager.Tell(new ClientStreamManager.UnregisterConsumer("test", consumerId));
 
-        var manager = CreateStreamManager(clientOptions: clientOpts);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/test")
-        {
-            Version = new Version(1, 1)
-        };
-        Assert.True(manager.Requests.TryWrite(request));
-
-        manager.Dispose();
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_create_owner_actor_synchronously()
-    {
-        var manager = CreateStreamManager();
-        Assert.NotNull(manager);
-
-        Assert.NotNull(manager.Requests);
-        Assert.NotNull(manager.Responses);
-
-        manager.Dispose();
-    }
-
-    [Fact(Timeout = 15_000)]
-    public async Task ClientStreamManager_should_handle_rapid_dispose_and_termination()
-    {
-        var manager = CreateStreamManager();
-
-        manager.Dispose();
-
-        var terminateTask = manager.WhenTerminatedAsync(TimeSpan.FromSeconds(2));
-
-        try
-        {
-            await terminateTask.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
-        }
-        catch (TimeoutException)
-        {
-            Assert.Fail("Should have terminated within timeout");
-        }
-    }
-
-    [Fact(Timeout = 10_000)]
-    public void ClientStreamManager_should_maintain_channel_semantics_on_disposal()
-    {
-        var manager = CreateStreamManager();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
-        var written = manager.Requests.TryWrite(request);
-        Assert.True(written);
-
-        manager.Dispose();
-
-        Assert.False(manager.Requests.TryComplete());
+        manager.Tell(new ClientStreamManager.Shutdown());
     }
 }
