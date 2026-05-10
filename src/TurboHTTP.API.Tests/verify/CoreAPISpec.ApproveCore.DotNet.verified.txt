@@ -4,7 +4,7 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.Container")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.Kestrel")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.StreamTests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.MicroBenchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Tests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Tests.Shared")]
 [assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]

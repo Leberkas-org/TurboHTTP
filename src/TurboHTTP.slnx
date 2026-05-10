@@ -4,6 +4,10 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/Benchmarks/">
+    <Project Path="TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj" />
+    <Project Path="TurboHTTP.MicroBenchmarks/TurboHTTP.MicroBenchmarks.csproj" />
+  </Folder>
   <Folder Name="/Items/">
     <File Path="../.github/workflows/docs.yml" />
     <File Path="../CLAUDE.md" />
@@ -22,13 +26,13 @@
     <Project Path="Servus.Akka.Tests/Servus.Akka.Tests.csproj" />
     <Project Path="Servus.Akka/Servus.Akka.csproj" />
   </Folder>
-  <Project Path="TurboHTTP.AcceptanceTests/TurboHTTP.AcceptanceTests.csproj" />
-  <Project Path="TurboHTTP.API.Tests/TurboHTTP.API.Tests.csproj" />
-  <Project Path="TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj" />
-  <Project Path="TurboHTTP.MicroBenchmarks/TurboHTTP.MicroBenchmarks.csproj" />
-  <Project Path="TurboHTTP.IntegrationTests.Container/TurboHTTP.IntegrationTests.Container.csproj" />
-  <Project Path="TurboHTTP.IntegrationTests.Kestrel/TurboHTTP.IntegrationTests.Kestrel.csproj" />
-  <Project Path="TurboHTTP.Tests.Shared/TurboHTTP.Tests.Shared.csproj" />
-  <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="TurboHTTP.AcceptanceTests/TurboHTTP.AcceptanceTests.csproj" />
+    <Project Path="TurboHTTP.API.Tests/TurboHTTP.API.Tests.csproj" />
+    <Project Path="TurboHTTP.IntegrationTests.Container/TurboHTTP.IntegrationTests.Container.csproj" />
+    <Project Path="TurboHTTP.IntegrationTests.Kestrel/TurboHTTP.IntegrationTests.Kestrel.csproj" />
+    <Project Path="TurboHTTP.Tests.Shared/TurboHTTP.Tests.Shared.csproj" />
+    <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
+  </Folder>
   <Project Path="TurboHTTP/TurboHTTP.csproj" />
 </Solution>

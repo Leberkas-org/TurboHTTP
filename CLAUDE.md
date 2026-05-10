@@ -49,8 +49,6 @@ Single source of truth for all non-code knowledge. **Use Obsidian MCP tools** (`
 
 `notes/RFC/RFC{number}/RFC{number}.md` (index) + `sections/` subfolder. Each section file has `rfc_section: "X.Y"` in frontmatter. Sub-sections (X.Y.Z) are `###` headings within the parent section file.
 
-Key vault guides: `Architecture/Guides/10-TEST_CONVENTIONS`, `11-STAGE_PORT_NAMING`, `12-OBSIDIAN_WORKFLOW`
-
 ## Workflow Rules
 
 - **Do NOT commit** unless the user explicitly asks
@@ -94,13 +92,9 @@ New tests use **component-based folders** (`Http10/`, `Http11/`, `Http2/`, etc.)
 - `[Fact(DisplayName = ...)]` is deprecated — method name IS the documentation
 - Max 500 lines per test class
 
-Full details: `notes/Architecture/Guides/10-TEST_CONVENTIONS`
-
 ## Stage Port Naming (Quick Reference)
 
 Ports follow `StageName.Direction` or `StageName.Direction.Role` (PascalCase). Drop `Stage` suffix, no protocol prefix, globally unique names.
-
-Full details: `notes/Architecture/Guides/11-STAGE_PORT_NAMING`
 
 ## Custom Agents (`.claude/agents/`)
 
