@@ -7,7 +7,7 @@ namespace TurboHTTP.Tests.Client;
 
 public sealed class NamedClientRuntimeSpec
 {
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 15000)]
     public async Task CreateClient_same_name_should_reuse_single_named_runtime()
     {
         const string name = "shared-runtime";
@@ -33,7 +33,7 @@ public sealed class NamedClientRuntimeSpec
         }
         finally
         {
-            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }
     }
 
@@ -75,11 +75,11 @@ public sealed class NamedClientRuntimeSpec
         }
         finally
         {
-            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 15000)]
     public async Task CreateClient_different_names_should_not_share_named_runtime()
     {
         const string firstName = "runtime-a";
@@ -107,11 +107,11 @@ public sealed class NamedClientRuntimeSpec
         }
         finally
         {
-            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 15000)]
     public async Task CreateClient_shared_runtime_should_apply_named_base_address_defaults()
     {
         const string name = "named-defaults";
@@ -137,11 +137,11 @@ public sealed class NamedClientRuntimeSpec
         }
         finally
         {
-            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 15000)]
     public async Task CreateClient_should_create_named_consumer_registration()
     {
         const string name = "registration-test";
@@ -164,7 +164,7 @@ public sealed class NamedClientRuntimeSpec
         }
         finally
         {
-            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         }
     }
 

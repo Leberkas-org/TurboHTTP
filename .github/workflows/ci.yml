@@ -59,6 +59,7 @@ jobs:
           --coverage
           --coverage-output-format cobertura
           --results-directory ${{ env.TEST_OUTPUT_DIRECTORY }}
+          --max-parallel-test-modules 2
           --solution *.slnx
 
       - name: Report Code Coverage

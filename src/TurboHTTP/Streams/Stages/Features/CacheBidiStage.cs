@@ -478,7 +478,6 @@ internal sealed class CacheStateMachine
                 success: result => result,
                 failure: ex => new BodyReadFailed(
                     ex.GetBaseException()));
-            return response;
         }
 
         return response;
@@ -520,7 +519,7 @@ internal sealed class CacheStateMachine
 
     private static async Task<BodyReadComplete> ReadBodyToPoolAsync(HttpResponseMessage response)
     {
-        await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        await using var stream = await response.Content.ReadAsStreamAsync();
         var length = (int)stream.Length;
         var owner = MemoryPool<byte>.Shared.Rent(length);
         stream.ReadExactly(owner.Memory.Span[..length]);
