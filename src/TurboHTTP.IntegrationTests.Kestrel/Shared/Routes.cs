@@ -395,7 +395,7 @@ internal static class Routes
             return Results.Content("ok", "text/plain");
         });
 
-        app.MapGet("/edge/close-mid-response", async (HttpContext ctx) =>
+        app.MapGet("/edge/close-mid-response", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             ctx.Response.ContentLength = 10000;
@@ -415,7 +415,7 @@ internal static class Routes
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        app.MapGet("/edge/unknown-encoding", async (HttpContext ctx) =>
+        app.MapGet("/edge/unknown-encoding", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             ctx.Response.Headers.ContentEncoding = "x-custom";
@@ -424,7 +424,7 @@ internal static class Routes
             await ctx.Response.Body.WriteAsync(body);
         });
 
-        app.MapGet("/edge/empty-body", async (HttpContext ctx) =>
+        app.MapGet("/edge/empty-body", async ctx =>
         {
             ctx.Response.ContentType = "text/plain";
             ctx.Response.ContentLength = 0;
@@ -1497,7 +1497,7 @@ internal static class Routes
 
         // GET /drain/slow → streams 1 KB very slowly (100 ms between chunks).
         // Used to test ResponseDrainTimeout.
-        app.MapGet("/drain/slow", async (HttpContext ctx) =>
+        app.MapGet("/drain/slow", async ctx =>
         {
             ctx.Response.ContentType = "application/octet-stream";
             ctx.Response.ContentLength = 1024;

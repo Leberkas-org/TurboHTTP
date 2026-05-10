@@ -12,25 +12,25 @@ public abstract class FeatureSpecBase
         _systemFixture = systemFixture;
     }
 
-    public static TheoryData<HttpProtocol> Protocols => new()
-    {
+    public static TheoryData<HttpProtocol> Protocols =>
+    [
         HttpProtocol.H10,
         HttpProtocol.H11,
         HttpProtocol.H2,
         HttpProtocol.Tls
-    };
+    ];
 
-    public static TheoryData<HttpProtocol> PlaintextProtocols => new()
-    {
+    public static TheoryData<HttpProtocol> PlaintextProtocols =>
+    [
         HttpProtocol.H10,
         HttpProtocol.H11
-    };
+    ];
 
-    public static TheoryData<HttpProtocol> TlsProtocols => new()
-    {
+    public static TheoryData<HttpProtocol> TlsProtocols =>
+    [
         HttpProtocol.H2,
         HttpProtocol.Tls
-    };
+    ];
 
     protected ClientHelper CreateClient(
         HttpProtocol protocol,
