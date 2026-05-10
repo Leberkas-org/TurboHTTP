@@ -11,8 +11,7 @@ dotnet restore ./src/TurboHTTP.slnx
 dotnet build --configuration Release ./src/TurboHTTP.slnx
 
 # Tests (xUnit v3 direct runner)
-dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj              # unit
-dotnet test --project TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj  # stage
+dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj              # unit + stage
 dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj  # integration (network)
 
 # Single class (preferred for integration — full suite is slow)
