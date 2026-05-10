@@ -18,8 +18,8 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>
-        <InternalsVisibleTo Include="TurboHTTP.StreamTests"/>
         <InternalsVisibleTo Include="TurboHTTP.AcceptanceTests"/>
+        <InternalsVisibleTo Include="TurboHTTP.MicroBenchmarks"/>
     </ItemGroup>
 
 </Project>

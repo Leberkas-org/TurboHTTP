@@ -4,8 +4,7 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/Solution Items/">
-    <File Path="../.github/workflows/build-and-release.yml" />
+  <Folder Name="/Items/">
     <File Path="../.github/workflows/docs.yml" />
     <File Path="../CLAUDE.md" />
     <File Path="../CONTRIBUTING.md" />
@@ -17,16 +16,18 @@
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
   </Folder>
-  <Project Path="Servus.Akka.Tests/Servus.Akka.Tests.csproj" />
-  <Project Path="Servus.Akka/Servus.Akka.csproj" />
-  <Project Path="Servus.Akka.TestKit/Servus.Akka.TestKit.csproj" />
-  <Project Path="Servus.Akka.TestKit.Tests/Servus.Akka.TestKit.Tests.csproj" />
+  <Folder Name="/Servus/">
+    <Project Path="Servus.Akka.TestKit.Tests/Servus.Akka.TestKit.Tests.csproj" />
+    <Project Path="Servus.Akka.TestKit/Servus.Akka.TestKit.csproj" />
+    <Project Path="Servus.Akka.Tests/Servus.Akka.Tests.csproj" />
+    <Project Path="Servus.Akka/Servus.Akka.csproj" />
+  </Folder>
   <Project Path="TurboHTTP.AcceptanceTests/TurboHTTP.AcceptanceTests.csproj" />
   <Project Path="TurboHTTP.API.Tests/TurboHTTP.API.Tests.csproj" />
   <Project Path="TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj" />
+  <Project Path="TurboHTTP.MicroBenchmarks/TurboHTTP.MicroBenchmarks.csproj" />
   <Project Path="TurboHTTP.IntegrationTests.Container/TurboHTTP.IntegrationTests.Container.csproj" />
   <Project Path="TurboHTTP.IntegrationTests.Kestrel/TurboHTTP.IntegrationTests.Kestrel.csproj" />
-  <Project Path="TurboHTTP.StreamTests/TurboHTTP.StreamTests.csproj" />
   <Project Path="TurboHTTP.Tests.Shared/TurboHTTP.Tests.Shared.csproj" />
   <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
   <Project Path="TurboHTTP/TurboHTTP.csproj" />
