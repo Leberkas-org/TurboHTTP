@@ -77,8 +77,7 @@ public sealed class ServerContainerFixture : IAsyncLifetime
 
         await _network.CreateAsync();
 
-        _httpBin = new ContainerBuilder()
-            .WithImage("mccutchen/go-httpbin:v2.15.0")
+        _httpBin = new ContainerBuilder("mccutchen/go-httpbin:v2.15.0")
             .WithName(HttpBinContainerName)
             .WithNetwork(_network)
             .WithNetworkAliases(HttpBinAlias)
@@ -124,15 +123,13 @@ public sealed class ServerContainerFixture : IAsyncLifetime
 
         try
         {
-            _nginxH2 = new ContainerBuilder()
-                .WithImage("macbre/nginx-http3:latest")
+            _nginxH2 = new ContainerBuilder("macbre/nginx-http3:latest")
                 .WithName(NginxH2ContainerName)
                 .WithNetwork(_network!)
                 .WithPortBinding(NginxInternalPort, true)
                 .WithResourceMapping(new FileInfo(confPath), "/etc/nginx/")
                 .WithResourceMapping(new DirectoryInfo(Path.Combine(_tempDir!, "ssl")), "/etc/nginx/ssl/")
-                .WithWaitStrategy(Wait.ForUnixContainer()
-                    .UntilPortIsAvailable(NginxInternalPort))
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(NginxInternalPort))
                 .Build();
 
             await _nginxH2.StartAsync();
@@ -159,8 +156,7 @@ public sealed class ServerContainerFixture : IAsyncLifetime
 
         try
         {
-            _nginxH3 = new ContainerBuilder()
-                .WithImage("macbre/nginx-http3:latest")
+            _nginxH3 = new ContainerBuilder("macbre/nginx-http3:latest")
                 .WithName(NginxH3ContainerName)
                 .WithNetwork(_network!)
                 .WithPortBinding(port, port)
