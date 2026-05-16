@@ -161,7 +161,6 @@ internal sealed class Http2ClientEncoder(bool useHuffman = false, int maxFrameSi
         }
     }
 
-
     /// <summary>
     /// Resets HPACK encoder state for reconnect.
     /// Must be called before replaying requests on a new connection.
@@ -184,10 +183,4 @@ internal sealed class Http2ClientEncoder(bool useHuffman = false, int maxFrameSi
 
         _rentedBodyOwners.Clear();
     }
-
-
-    /// <summary>
-    /// Returns the lowercase version of a header name without allocating if already lowercase.
-    /// HTTP header names from .NET's HttpRequestHeaders are typically already lowercase ASCII.
-    /// </summary>
 }

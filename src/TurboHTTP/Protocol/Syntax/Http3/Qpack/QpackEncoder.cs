@@ -7,10 +7,10 @@ internal sealed class QpackEncoder
 {
     private static readonly HashSet<string> SensitiveHeaders = new(StringComparer.OrdinalIgnoreCase)
     {
-        WellKnownHeaders.Authorization.Name,
-        WellKnownHeaders.ProxyAuthorization.Name,
-        WellKnownHeaders.Cookie.Name,
-        WellKnownHeaders.SetCookie.Name
+        WellKnownHeaders.Authorization,
+        WellKnownHeaders.ProxyAuthorization,
+        WellKnownHeaders.Cookie,
+        WellKnownHeaders.SetCookie
     };
 
     private int _maxTableCapacity;
@@ -161,7 +161,8 @@ internal sealed class QpackEncoder
         var staticName = QpackStaticTable.FindName(name);
         var dynamicName = _enableDynamicTable ? FindDynamicName(name) : -1;
 
-        if (TryDynamicInsert(name, value, isSensitive, staticName, dynamicName, ref maxAbsoluteIndexReferenced, out entry))
+        if (TryDynamicInsert(name, value, isSensitive, staticName, dynamicName, ref maxAbsoluteIndexReferenced,
+                out entry))
         {
             return entry;
         }
@@ -169,8 +170,8 @@ internal sealed class QpackEncoder
         return BuildLiteralEntry(isSensitive, staticName, dynamicName, ref maxAbsoluteIndexReferenced);
     }
 
-    private bool TryExactMatch(string name, string value, bool isSensitive,
-        ref int maxAbsoluteIndexReferenced, out HeaderEncodingEntry entry)
+    private bool TryExactMatch(string name, string value, bool isSensitive, ref int maxAbsoluteIndexReferenced,
+        out HeaderEncodingEntry entry)
     {
         entry = default;
 
@@ -206,8 +207,8 @@ internal sealed class QpackEncoder
         return false;
     }
 
-    private bool TryDynamicInsert(string name, string value, bool isSensitive,
-        int staticName, int dynamicName, ref int maxAbsoluteIndexReferenced, out HeaderEncodingEntry entry)
+    private bool TryDynamicInsert(string name, string value, bool isSensitive, int staticName, int dynamicName,
+        ref int maxAbsoluteIndexReferenced, out HeaderEncodingEntry entry)
     {
         entry = default;
 
@@ -237,22 +238,19 @@ internal sealed class QpackEncoder
     {
         if (staticName >= 0)
         {
-            WriteInstructionToBuffer(
-                (ref SpanWriter w) => QpackEncoderInstructionWriter.WriteInsertWithNameReference(
-                    staticName, true, value, ref w));
+            WriteInstructionToBuffer((ref w) => QpackEncoderInstructionWriter.WriteInsertWithNameReference(
+                staticName, true, value, ref w));
         }
         else if (dynamicName >= 0)
         {
             var relIdx = DynamicTable.InsertCount - 1 - dynamicName;
-            WriteInstructionToBuffer(
-                (ref SpanWriter w) => QpackEncoderInstructionWriter.WriteInsertWithNameReference(
-                    relIdx, false, value, ref w));
+            WriteInstructionToBuffer((ref w) => QpackEncoderInstructionWriter.WriteInsertWithNameReference(
+                relIdx, false, value, ref w));
         }
         else
         {
-            WriteInstructionToBuffer(
-                (ref SpanWriter w) => QpackEncoderInstructionWriter.WriteInsertWithLiteralName(
-                    name, value, ref w));
+            WriteInstructionToBuffer((ref w) => QpackEncoderInstructionWriter.WriteInsertWithLiteralName(
+                name, value, ref w));
         }
     }
 
@@ -261,9 +259,14 @@ internal sealed class QpackEncoder
     {
         if (isSensitive)
         {
-            return staticName >= 0
-                ? new HeaderEncodingEntry { Type = HeaderEncodingType.LiteralWithStaticNameNeverIndex, Index = staticName }
-                : new HeaderEncodingEntry { Type = HeaderEncodingType.LiteralNeverIndex, Index = -1 };
+            return staticName switch
+            {
+                >= 0 => new HeaderEncodingEntry
+                {
+                    Type = HeaderEncodingType.LiteralWithStaticNameNeverIndex, Index = staticName
+                },
+                _ => new HeaderEncodingEntry { Type = HeaderEncodingType.LiteralNeverIndex, Index = -1 }
+            };
         }
 
         if (staticName >= 0)

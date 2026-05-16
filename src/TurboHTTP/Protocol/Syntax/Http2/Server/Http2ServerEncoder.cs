@@ -92,8 +92,7 @@ internal sealed class Http2ServerEncoder
     private static void BuildHeaderList(HttpResponseMessage response, List<HpackHeader> headers)
     {
         // RFC 9113 §7.2: :status pseudo-header (required)
-        headers.Add(new HpackHeader(WellKnownHeaders.Status,
-            WellKnownHeaders.GetStatusCodeString((int)response.StatusCode)));
+        headers.Add(new HpackHeader(WellKnownHeaders.Status, WellKnownHeaders.GetStatusCodeString((int)response.StatusCode)));
 
         // Add regular headers
         foreach (var h in response.Headers)

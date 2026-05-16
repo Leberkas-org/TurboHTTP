@@ -67,7 +67,7 @@ internal sealed class Http2ClientDecoder(
             static h => h.Name,
             PseudoHeaderSection);
 
-        Semantics.FieldValidator.Validate(
+        FieldValidator.Validate(
             headers,
             static h => h.Name,
             static h => h.Value,

@@ -278,7 +278,8 @@ internal sealed class FrameDecoder : IDisposable
     {
         if (payload.Length != PingPayloadSize)
         {
-            throw new HttpProtocolException($"PING frame must be exactly {PingPayloadSize} bytes, got {payload.Length}");
+            throw new HttpProtocolException(
+                $"PING frame must be exactly {PingPayloadSize} bytes, got {payload.Length}");
         }
 
         return new PingFrame(payload, (flags & (byte)PingFlags.Ack) != 0);

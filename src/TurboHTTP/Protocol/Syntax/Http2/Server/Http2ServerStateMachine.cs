@@ -67,26 +67,23 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
         _sessionManager.DecodeClientData(buffer);
 
         var streamCount = _sessionManager.ActiveStreamCount;
-        if (streamCount > 0 && _activeStreamCount == 0)
+        switch (streamCount)
         {
-            _activeStreamCount = streamCount;
-            _ops.OnCancelTimer(KeepAliveTimeout);
-        }
-        else if (streamCount == 0 && _activeStreamCount > 0)
-        {
-            _activeStreamCount = 0;
-            _ops.OnScheduleTimer(KeepAliveTimeout, _keepAliveTimeout);
-        }
-        else
-        {
-            _activeStreamCount = streamCount;
+            case > 0 when _activeStreamCount == 0:
+                _activeStreamCount = streamCount;
+                _ops.OnCancelTimer(KeepAliveTimeout);
+                break;
+            case 0 when _activeStreamCount > 0:
+                _activeStreamCount = 0;
+                _ops.OnScheduleTimer(KeepAliveTimeout, _keepAliveTimeout);
+                break;
+            default:
+                _activeStreamCount = streamCount;
+                break;
         }
     }
 
-    public void OnResponse(HttpResponseMessage response)
-    {
-        _sessionManager.OnResponse(response);
-    }
+    public void OnResponse(HttpResponseMessage response) => _sessionManager.OnResponse(response);
 
     public void OnDownstreamFinished()
     {
@@ -126,10 +123,7 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnBodyMessage(object msg)
-    {
-        _sessionManager.OnBodyMessage(msg);
-    }
+    public void OnBodyMessage(object msg) => _sessionManager.OnBodyMessage(msg);
 
     public void Cleanup() => _sessionManager.Cleanup();
 }
