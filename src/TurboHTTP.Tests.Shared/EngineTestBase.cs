@@ -1,30 +1,17 @@
 using System.Text;
 using Akka;
-using Akka.Actor;
-using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.TestKit;
 using Servus.Akka.Transport;
+using Xunit;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http3;
-using Xunit;
 using FrameDecoder = TurboHTTP.Protocol.Syntax.Http2.FrameDecoder;
 
 namespace TurboHTTP.Tests.Shared;
 
-public abstract class EngineTestBase
+public abstract class EngineTestBase : StreamTestBase
 {
-    private static readonly ActorSystem _sharedSystem;
-    protected static readonly IMaterializer Materializer;
-
-    static EngineTestBase()
-    {
-        _sharedSystem = ActorSystem.Create("acceptance-tests");
-        Materializer = _sharedSystem.Materializer();
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-            _sharedSystem.Terminate().Wait(TimeSpan.FromSeconds(10));
-    }
-
     internal static TestConnectionStage CreateFakeConnection(Func<byte[]> responseFactory)
     {
         var stage = new TestConnectionStageBuilder()
@@ -228,7 +215,7 @@ public abstract class EngineTestBase
         return stage;
     }
 
-    internal static async Task<(HttpResponseMessage Response, string RawRequest)> SendAsync(
+    internal async Task<(HttpResponseMessage Response, string RawRequest)> SendAsync(
         BidiFlow<HttpRequestMessage, ITransportOutbound,
             ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
@@ -252,7 +239,7 @@ public abstract class EngineTestBase
         return (response, rawBuilder.ToString());
     }
 
-    internal static async Task<(IReadOnlyList<HttpResponseMessage> Responses, string RawRequests)> SendManyAsync(
+    internal async Task<(IReadOnlyList<HttpResponseMessage> Responses, string RawRequests)> SendManyAsync(
         BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         IEnumerable<HttpRequestMessage> requests,
         Func<byte[]> responseFactory,
@@ -276,7 +263,7 @@ public abstract class EngineTestBase
         return (results, rawBuilder.ToString());
     }
 
-    internal static async Task<(HttpResponseMessage Response, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2EngineAsync(
+    internal async Task<(HttpResponseMessage Response, IReadOnlyList<Http2Frame> OutboundFrames)> SendH2EngineAsync(
         BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         params byte[][] serverFrames)
@@ -301,7 +288,7 @@ public abstract class EngineTestBase
         return (response, frames);
     }
 
-    internal static async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
+    internal async Task<(List<HttpResponseMessage> Responses, IReadOnlyList<Http2Frame> OutboundFrames)>
         SendH2EngineAsyncMany(
             BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
             IEnumerable<HttpRequestMessage> requests,
@@ -336,7 +323,7 @@ public abstract class EngineTestBase
         return (results, frames);
     }
 
-    internal static async Task<(HttpResponseMessage Response, IReadOnlyList<Http3Frame> OutboundFrames)> SendH3EngineAsync(
+    internal async Task<(HttpResponseMessage Response, IReadOnlyList<Http3Frame> OutboundFrames)> SendH3EngineAsync(
         BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> engine,
         HttpRequestMessage request,
         params byte[][] serverFrames)
