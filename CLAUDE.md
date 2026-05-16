@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-High-performance HTTP client for .NET built on Akka.Streams. Implements HTTP/1.0, 1.1, 2, 3 (QUIC) with full RFC compliance.
+High-performance HTTP client and server for .NET built on Akka.Streams. Implements HTTP/1.0, 1.1, 2, 3 (QUIC) with full RFC compliance.
 
 ## Build & Test
 
@@ -42,8 +42,6 @@ Transport Layer (TurboHTTP/Transport/)      — Connection/, Tcp/, Quic/
 Single source of truth for all non-code knowledge. **Use Obsidian MCP tools** (`search_notes`, `read_note`, `write_note`, `patch_note`) — never `Read`/`Write`/`Edit` on `notes/` files.
 
 - Before RFC work → `search_notes("RFC XXXX")`
-- Before architecture decisions → `search_notes("component name")`
-- Before ending a session → write discoveries via `write_note` or `patch_note`
 
 ### RFC vault structure
 
@@ -53,7 +51,6 @@ Single source of truth for all non-code knowledge. **Use Obsidian MCP tools** (`
 
 - **Do NOT commit** unless the user explicitly asks
 - **Always respond in English** regardless of input language
-- **Write discoveries to Obsidian** after every session
 
 ## Code Style
 
@@ -65,7 +62,7 @@ Single source of truth for all non-code knowledge. **Use Obsidian MCP tools** (`
 - No decorative separator comments (`// ───`, `// ===`, `// ---` section dividers)
 - Allman braces, 4 spaces, `_fieldName` for private fields
 - `var` when type is apparent, `sealed` by default
-- No `#nullable enable` (project-level), no `async void` / `.Result` / `.Wait()`
+- No `#nullable enable` (project-level), no `async void` / `.Result` / `.Wait()` / `.GetAwaiter().GetResult()`
 - Always pass `CancellationToken`, always use braces (even single-line)
 - `Task<T>` not Future, `TimeSpan` not Duration
 - Extend-only public APIs, preserve wire format compatibility
