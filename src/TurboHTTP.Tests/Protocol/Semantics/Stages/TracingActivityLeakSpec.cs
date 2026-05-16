@@ -65,7 +65,8 @@ public sealed class TracingActivityLeakSpec : StreamTestBase
         reqInSub.SendNext(request);
         var forwarded = await reqOutProbe.ExpectNextAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(forwarded.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey, out var activity));
+        Assert.True(forwarded.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey,
+            out var activity));
         Assert.NotNull(activity);
 
         capturedActivity = activity;

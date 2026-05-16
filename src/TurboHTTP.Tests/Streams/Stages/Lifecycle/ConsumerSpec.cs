@@ -38,7 +38,8 @@ public sealed class ConsumerSpec : StreamTestBase
 
         await WatchAsync(actor);
         Sys.Stop(actor);
-        await ExpectTerminatedAsync(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
+        await ExpectTerminatedAsync(actor, TimeSpan.FromSeconds(2),
+            cancellationToken: TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000)]
@@ -240,7 +241,8 @@ public sealed class ConsumerSpec : StreamTestBase
 
         await WatchAsync(actor);
         Sys.Stop(actor);
-        await ExpectTerminatedAsync(actor, TimeSpan.FromSeconds(2), cancellationToken: TestContext.Current.CancellationToken);
+        await ExpectTerminatedAsync(actor, TimeSpan.FromSeconds(2),
+            cancellationToken: TestContext.Current.CancellationToken);
     }
 
     private (Sink<HttpRequestMessage, NotUsed>, Source<HttpResponseMessage, NotUsed>) CreateTestHubs()

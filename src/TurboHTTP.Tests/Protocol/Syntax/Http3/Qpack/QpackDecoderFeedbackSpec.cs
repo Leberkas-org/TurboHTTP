@@ -217,4 +217,3 @@ public sealed class QpackDecoderFeedbackSpec
         Assert.Equal(5, encoder.KnownReceivedCount);
     }
 }
-

@@ -150,4 +150,3 @@ public sealed class Http20ConnectionStageReconnectSpec : StreamTestBase
         await Task.Run(() => networkSub.ExpectComplete(), TestContext.Current.CancellationToken);
     }
 }
-

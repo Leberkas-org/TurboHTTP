@@ -25,10 +25,7 @@ public sealed class ConnectionActorSpec : TestKit
 
             Receive<ConnectionActor.ConnectionCompleted>(msg =>
             {
-                if (_testActor != null)
-                {
-                    _testActor.Tell(msg, ActorRefs.NoSender);
-                }
+                _testActor?.Tell(msg, ActorRefs.NoSender);
             });
         }
     }

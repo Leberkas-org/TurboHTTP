@@ -324,4 +324,3 @@ public sealed class HpackSensitiveHeaderSpec
         return encoder.EncodeToHpackBlock(request);
     }
 }
-

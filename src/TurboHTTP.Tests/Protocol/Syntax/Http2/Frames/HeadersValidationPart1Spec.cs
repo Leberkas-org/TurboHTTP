@@ -1,4 +1,3 @@
-using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Client;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 
@@ -30,8 +29,7 @@ public sealed class Http2ResponseHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_missing_status()
     {
         var headers = Decode(("content-type", "text/plain"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains(":status", ex.Message);
     }
 
@@ -40,8 +38,7 @@ public sealed class Http2ResponseHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_duplicate_status()
     {
         var headers = Decode((":status", "200"), (":status", "201"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains("Duplicate", ex.Message);
     }
 
@@ -50,8 +47,7 @@ public sealed class Http2ResponseHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_status_after_regular_header()
     {
         var headers = Decode(("content-type", "text/plain"), (":status", "200"));
-        Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -59,8 +55,7 @@ public sealed class Http2ResponseHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_request_pseudo_header_in_response()
     {
         var headers = Decode((":status", "200"), (":method", "GET"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains(":method", ex.Message);
     }
 
@@ -69,8 +64,7 @@ public sealed class Http2ResponseHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_unknown_pseudo_header()
     {
         var headers = Decode((":status", "200"), (":foobar", "baz"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains(":foobar", ex.Message);
     }
 
@@ -93,8 +87,7 @@ public sealed class Http2ResponseHeaderValidationSpec
     public void ValidateResponseHeaders_should_include_rfc_section_in_error()
     {
         var headers = Decode(("content-type", "text/plain"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains("RFC 9113", ex.Message);
     }
 

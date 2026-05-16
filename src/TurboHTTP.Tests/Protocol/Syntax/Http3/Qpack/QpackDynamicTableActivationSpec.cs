@@ -185,4 +185,3 @@ public sealed class QpackDynamicTableActivationSpec
         Assert.Equal("trace-456", decoded[1].Value);
     }
 }
-

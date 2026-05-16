@@ -364,4 +364,3 @@ public sealed class Http2ConnectionFlowControlSpec : StreamTestBase
         Assert.Empty(downstream);
     }
 }
-

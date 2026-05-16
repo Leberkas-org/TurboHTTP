@@ -12,7 +12,8 @@ public sealed class RequestLineParserSpec
     {
         var line = "GET / HTTP/1.1\r\n"u8.ToArray();
 
-        Assert.True(RequestLineParser.TryParse(line, out var method, out var target, out var version, out var consumed));
+        Assert.True(RequestLineParser.TryParse(line, out var method, out var target, out var version,
+            out var consumed));
         Assert.Equal("GET", method.Method);
         Assert.Equal("/", target);
         Assert.Equal(HttpVersion.Version11, version);

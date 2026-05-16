@@ -139,8 +139,8 @@ public sealed class TurboHttpClientSpec
         client.Dispose();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var ex = Assert.ThrowsAsync<ObjectDisposedException>(
-            () => client.SendAsync(request, TestContext.Current.CancellationToken));
+        var ex = Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            client.SendAsync(request, TestContext.Current.CancellationToken));
 
         Assert.NotNull(ex);
     }
@@ -157,8 +157,8 @@ public sealed class TurboHttpClientSpec
         requests.Writer.TryComplete();
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/");
-        var ex = await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => client.SendAsync(request, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            client.SendAsync(request, TestContext.Current.CancellationToken));
 
         Assert.NotNull(ex);
     }
@@ -179,8 +179,7 @@ public sealed class TurboHttpClientSpec
         await requests.Reader.ReadAsync(TestContext.Current.CancellationToken);
 
         // Wait for the timeout
-        var ex = await Assert.ThrowsAsync<OperationCanceledException>(
-            () => sendTask);
+        var ex = await Assert.ThrowsAsync<OperationCanceledException>(() => sendTask);
 
         Assert.NotNull(ex);
     }
@@ -197,8 +196,7 @@ public sealed class TurboHttpClientSpec
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        var ex = await Assert.ThrowsAsync<TaskCanceledException>(
-            () => client.SendAsync(request, cts.Token));
+        var ex = await Assert.ThrowsAsync<TaskCanceledException>(() => client.SendAsync(request, cts.Token));
 
         Assert.NotNull(ex);
     }

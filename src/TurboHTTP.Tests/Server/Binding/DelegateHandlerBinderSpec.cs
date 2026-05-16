@@ -101,11 +101,20 @@ public sealed class DelegateHandlerBinderSpec
         Assert.Equal(HttpStatusCode.Accepted, result.StatusCode);
     }
 
-    public interface ITestService { string GetValue(); }
+    private interface ITestService
+    {
+        string GetValue();
+    }
+
     private sealed class TestService : ITestService
     {
         private readonly string _value;
-        public TestService(string value) { _value = value; }
+
+        public TestService(string value)
+        {
+            _value = value;
+        }
+
         public string GetValue() => _value;
     }
 

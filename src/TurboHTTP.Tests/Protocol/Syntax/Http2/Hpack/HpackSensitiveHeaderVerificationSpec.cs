@@ -373,4 +373,3 @@ public sealed class HpackSensitiveHeaderVerificationSpec
         return str;
     }
 }
-

@@ -15,10 +15,7 @@ public sealed class TurboServerHostingSpec
     public void AddTurboServer_should_register_options()
     {
         var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddTurboServer(options =>
-        {
-            options.GracefulShutdownTimeout = TimeSpan.FromSeconds(60);
-        });
+        builder.Services.AddTurboServer(options => { options.GracefulShutdownTimeout = TimeSpan.FromSeconds(60); });
         var host = builder.Build();
         var options = host.Services.GetRequiredService<TurboServerOptions>();
         Assert.Equal(TimeSpan.FromSeconds(60), options.GracefulShutdownTimeout);
@@ -84,7 +81,8 @@ public sealed class TurboServerHostingSpec
 
     private sealed class FakeStage : IServerBidiStage
     {
-        public BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed> Create(IServiceProvider services)
+        public BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed>
+            Create(IServiceProvider services)
             => BidiFlow.FromFlows(
                 Flow.Create<HttpRequestMessage>(),
                 Flow.Create<HttpResponseMessage>());

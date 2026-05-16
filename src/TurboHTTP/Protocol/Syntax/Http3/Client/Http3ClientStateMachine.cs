@@ -84,86 +84,86 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
         switch (data)
         {
             case TransportConnected:
-            {
-                _clientSession.OnTransportConnected();
-                OnConnectionRestored();
-                return;
-            }
+                {
+                    _clientSession.OnTransportConnected();
+                    OnConnectionRestored();
+                    return;
+                }
 
             case TransportDisconnected when IsReconnecting:
-            {
-                OnReconnectAttemptFailed();
-                return;
-            }
+                {
+                    OnReconnectAttemptFailed();
+                    return;
+                }
 
             case TransportDisconnected when HasInFlightRequests:
-            {
-                OnConnectionLost();
-                return;
-            }
-
-            case TransportDisconnected:
-            {
-                _clientSession.OnTransportDisconnected();
-                return;
-            }
-
-            case ServerStreamAccepted { Id: var id }:
-            {
-                _serverStreamResolver.OnServerStreamOpened(id);
-                return;
-            }
-
-            case StreamOpened:
-            {
-                return;
-            }
-
-            case StreamReadCompleted { Id.Value: >= 0 } readCompleted:
-            {
-                _clientSession.FlushPendingResponse(readCompleted.Id.Value);
-                return;
-            }
-
-            case StreamReadCompleted:
-            {
-                return;
-            }
-
-            case StreamClosed { Id.Value: >= 0 } streamClosed:
-            {
-                Connection.OnStreamClosed();
-                if (streamClosed.Reason == DisconnectReason.Error)
                 {
                     OnConnectionLost();
-                }
-                else
-                {
-                    _clientSession.FlushPendingResponse(streamClosed.Id.Value);
+                    return;
                 }
 
-                return;
-            }
+            case TransportDisconnected:
+                {
+                    _clientSession.OnTransportDisconnected();
+                    return;
+                }
+
+            case ServerStreamAccepted { Id: var id }:
+                {
+                    _serverStreamResolver.OnServerStreamOpened(id);
+                    return;
+                }
+
+            case StreamOpened:
+                {
+                    return;
+                }
+
+            case StreamReadCompleted { Id.Value: >= 0 } readCompleted:
+                {
+                    _clientSession.FlushPendingResponse(readCompleted.Id.Value);
+                    return;
+                }
+
+            case StreamReadCompleted:
+                {
+                    return;
+                }
+
+            case StreamClosed { Id.Value: >= 0 } streamClosed:
+                {
+                    Connection.OnStreamClosed();
+                    if (streamClosed.Reason == DisconnectReason.Error)
+                    {
+                        OnConnectionLost();
+                    }
+                    else
+                    {
+                        _clientSession.FlushPendingResponse(streamClosed.Id.Value);
+                    }
+
+                    return;
+                }
 
             case StreamClosed:
-            {
-                _clientSession.FlushAllPendingResponses();
-                return;
-            }
+                {
+                    _clientSession.FlushAllPendingResponses();
+                    return;
+                }
 
             case MultiplexedData multiplexed:
-            {
-                HandleTaggedStreamData(multiplexed);
-                return;
-            }
+                {
+                    HandleTaggedStreamData(multiplexed);
+                    return;
+                }
 
             case TransportData rawData:
-            {
-                Tracing.For("Protocol").Warning(this,
-                    "Received untagged TransportData — dropping to prevent stream ID misrouting.");
-                rawData.Buffer.Dispose();
-                return;
-            }
+                {
+                    Tracing.For("Protocol").Warning(this,
+                        "Received untagged TransportData — dropping to prevent stream ID misrouting.");
+                    rawData.Buffer.Dispose();
+                    return;
+                }
         }
     }
 
@@ -393,27 +393,27 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
         switch (resolved.LogicalStreamId)
         {
             case CriticalStreamId.QpackDecoderId:
-            {
-                _clientSession.ProcessQpackDecoderBytes(resolved.Buffer.Memory);
-                resolved.Buffer.Dispose();
-                return;
-            }
+                {
+                    _clientSession.ProcessQpackDecoderBytes(resolved.Buffer.Memory);
+                    resolved.Buffer.Dispose();
+                    return;
+                }
             case CriticalStreamId.QpackEncoderId:
-            {
-                _clientSession.ProcessQpackEncoderBytes(resolved.Buffer.Memory);
-                resolved.Buffer.Dispose();
-                return;
-            }
+                {
+                    _clientSession.ProcessQpackEncoderBytes(resolved.Buffer.Memory);
+                    resolved.Buffer.Dispose();
+                    return;
+                }
             case CriticalStreamId.ControlId:
-            {
-                ProcessFrameData(resolved.Buffer, CriticalStreamId.ControlId);
-                return;
-            }
+                {
+                    ProcessFrameData(resolved.Buffer, CriticalStreamId.ControlId);
+                    return;
+                }
             default:
-            {
-                ProcessFrameData(resolved.Buffer, resolved.LogicalStreamId);
-                return;
-            }
+                {
+                    ProcessFrameData(resolved.Buffer, resolved.LogicalStreamId);
+                    return;
+                }
         }
     }
 

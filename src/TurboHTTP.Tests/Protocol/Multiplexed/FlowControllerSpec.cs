@@ -1,4 +1,3 @@
-using TurboHTTP.Protocol.Multiplexed;
 using TurboHTTP.Protocol.Syntax.Http2;
 
 namespace TurboHTTP.Tests.Protocol.Multiplexed;

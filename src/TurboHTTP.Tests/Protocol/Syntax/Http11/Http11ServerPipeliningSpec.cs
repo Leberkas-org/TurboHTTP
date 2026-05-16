@@ -121,8 +121,14 @@ public sealed class Http11ServerPipeliningSpec
 
         public void OnRequest(HttpRequestMessage request) => EmittedRequests.Add(request);
         public void OnOutbound(ITransportOutbound item) => EmittedOutbound.Add(item);
-        public void OnScheduleTimer(string name, TimeSpan delay) { }
-        public void OnCancelTimer(string name) { }
+
+        public void OnScheduleTimer(string name, TimeSpan delay)
+        {
+        }
+
+        public void OnCancelTimer(string name)
+        {
+        }
     }
 
     private static TransportBuffer MakeBuffer(string raw)

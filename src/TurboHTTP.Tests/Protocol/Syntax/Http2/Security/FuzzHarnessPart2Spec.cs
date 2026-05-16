@@ -220,7 +220,7 @@ public sealed class Http2FuzzHarnessPart2Spec
         var payload = new byte[4]; // all zeros → increment = 0
         var frame = BuildRawFrame(0x8, 0, 0, payload);
 
-        var ex = Assert.Throws<HttpProtocolException>(() => decoder.Decode(frame));
+        Assert.Throws<HttpProtocolException>(() => decoder.Decode(frame));
     }
 
     [Fact(Timeout = 5000)]

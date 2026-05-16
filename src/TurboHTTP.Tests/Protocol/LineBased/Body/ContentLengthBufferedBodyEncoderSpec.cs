@@ -46,6 +46,10 @@ public sealed class ContentLengthBufferedBodyEncoderSpec : TestKit
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
             => Task.FromException(new InvalidOperationException("content error"));
 
-        protected override bool TryComputeLength(out long length) { length = 0; return false; }
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
     }
 }

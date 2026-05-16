@@ -46,7 +46,7 @@ internal static class PrefaceBuilder
         }
 
         if (!needsWindowUpdate) return (owner, totalSize);
-        
+
         var windowUpdateIncrement = initialWindowSize - 65535;
         w.WriteUInt24BigEndian(windowUpdatePayloadSize);
         w.WriteByte((byte)FrameType.WindowUpdate);

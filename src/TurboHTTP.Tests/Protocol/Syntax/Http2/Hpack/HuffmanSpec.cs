@@ -273,4 +273,3 @@ public sealed class HuffmanSpec
         Assert.Equal(original, decoded);
     }
 }
-

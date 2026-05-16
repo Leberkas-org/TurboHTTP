@@ -141,7 +141,7 @@ public sealed class HpackHeaderListSizeSpec
         var encoder = new HpackEncoder(useHuffman: false);
         var headers = new List<(string Name, string Value)>
         {
-            ("x", "y")  // Should be: 1 + 1 + 32 = 34 bytes
+            ("x", "y") // Should be: 1 + 1 + 32 = 34 bytes
         };
 
         var block = encoder.Encode(headers);
@@ -157,7 +157,7 @@ public sealed class HpackHeaderListSizeSpec
         var decoder = new HpackDecoder();
         decoder.SetMaxHeaderListSize(100);
 
-        var block = new byte[] { };
+        var block = Array.Empty<byte>();
         var decoded = decoder.Decode(block);
 
         Assert.Empty(decoded);

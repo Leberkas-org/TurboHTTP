@@ -99,7 +99,7 @@ public sealed class Http2FrameParsingPart2Spec
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x01, 0x00, 0x00, 0x10, 0x00
         };
-        var ex = Assert.Throws<HttpProtocolException>(() => new FrameDecoder().Decode(frame));
+        Assert.Throws<HttpProtocolException>(() => new FrameDecoder().Decode(frame));
     }
 
     [Fact(Timeout = 5000)]

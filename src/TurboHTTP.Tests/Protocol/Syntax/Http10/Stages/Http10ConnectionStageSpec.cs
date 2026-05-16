@@ -173,7 +173,8 @@ public sealed class Http10ConnectionStageSpec : StreamTestBase
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
-        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nOK")));
+        serverSubscription.SendNext(
+            new TransportData(MakeResponseBuffer("HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nOK")));
 
         // Response
         await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);

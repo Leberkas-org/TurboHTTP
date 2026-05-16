@@ -5,7 +5,7 @@ namespace TurboHTTP.Tests.Features.Caching;
 
 public sealed class CacheInvalidationSpec
 {
-    private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     private static Cache CreateStoreWithEntry(string uri = "http://example.com/resource")
     {
@@ -13,10 +13,10 @@ public sealed class CacheInvalidationSpec
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
-        response.Headers.Date = _baseTime;
+        response.Headers.Date = BaseTime;
 
         var (owner, length) = Cache.RentBody([1, 2, 3]);
-        store.Put(request, response, owner, length, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(request, response, owner, length, BaseTime.AddSeconds(-1), BaseTime);
         return store;
     }
 
@@ -111,9 +111,9 @@ public sealed class CacheInvalidationSpec
         var locRequest = new HttpRequestMessage(HttpMethod.Get, locationUri);
         var locResponse = new HttpResponseMessage(HttpStatusCode.OK);
         locResponse.Headers.TryAddWithoutValidation("Cache-Control", "max-age=3600");
-        locResponse.Headers.Date = _baseTime;
+        locResponse.Headers.Date = BaseTime;
         var (locOwner, locLength) = Cache.RentBody([4, 5, 6]);
-        store.Put(locRequest, locResponse, locOwner, locLength, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(locRequest, locResponse, locOwner, locLength, BaseTime.AddSeconds(-1), BaseTime);
 
         Assert.NotNull(store.Get(new HttpRequestMessage(HttpMethod.Get, requestUri)));
         Assert.NotNull(store.Get(new HttpRequestMessage(HttpMethod.Get, locationUri)));

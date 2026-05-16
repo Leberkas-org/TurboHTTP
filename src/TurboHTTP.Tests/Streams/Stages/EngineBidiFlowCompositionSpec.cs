@@ -26,7 +26,7 @@ public sealed class EngineBidiFlowCompositionSpec : EngineTestBase
         "HTTP/1.1 200 OK\r\nSet-Cookie: token=xyz; Domain=example.com; Path=/\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
+        => CreateFakeConnectionFlow(() => []);
 
     private async Task<HttpResponseMessage> RunSingleAsync(
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> flow,

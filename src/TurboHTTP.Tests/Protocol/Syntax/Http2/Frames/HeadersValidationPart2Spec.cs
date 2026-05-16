@@ -15,8 +15,7 @@ public sealed class Http2ForbiddenHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_forbidden_connection_header(string headerName)
     {
         var headers = Decode((":status", "200"), (headerName, "value"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains("forbidden", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -25,8 +24,7 @@ public sealed class Http2ForbiddenHeaderValidationSpec
     public void ValidateResponseHeaders_should_reject_te_header_with_non_trailers_value()
     {
         var headers = Decode((":status", "200"), ("te", "gzip"));
-        var ex = Assert.Throws<HttpProtocolException>(
-            () => Http2ClientDecoder.ValidateResponseHeaders(headers));
+        var ex = Assert.Throws<HttpProtocolException>(() => Http2ClientDecoder.ValidateResponseHeaders(headers));
         Assert.Contains("trailers", ex.Message);
     }
 

@@ -102,4 +102,3 @@ public sealed class Http2ConnectionGoAwaySpec : StreamTestBase
             "Network task must not fault after GOAWAY + dropped request");
     }
 }
-

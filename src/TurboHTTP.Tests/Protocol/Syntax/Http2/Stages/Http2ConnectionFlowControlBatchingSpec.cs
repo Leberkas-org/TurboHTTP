@@ -26,7 +26,13 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
                 (b, dsSink, nwSink) =>
                 {
                     var stage = b.Add(new Http20ConnectionStage(new TurboClientOptions()
-                    { Http2 = { InitialConnectionWindowSize = initialWindowSize, InitialStreamWindowSize = DefaultStreamWindow } }));
+                    {
+                        Http2 =
+                        {
+                            InitialConnectionWindowSize = initialWindowSize,
+                            InitialStreamWindowSize = DefaultStreamWindow
+                        }
+                    }));
                     var serverSource = b.Add(Source.From(FramesToInputs(serverFrames)));
                     var requestSource = b.Add(Source.Never<HttpRequestMessage>());
 
@@ -141,4 +147,3 @@ public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
         Assert.Contains(windowUpdates, f => f is { StreamId: 3, Increment: 8192 });
     }
 }
-

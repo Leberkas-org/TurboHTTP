@@ -47,7 +47,8 @@ public sealed class TurboMiddlewareRegistrySpec
 
     private sealed class FakeStage : IServerBidiStage
     {
-        public BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed> Create(IServiceProvider services)
+        public BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed>
+            Create(IServiceProvider services)
             => BidiFlow.FromFlows(
                 Flow.Create<HttpRequestMessage>(),
                 Flow.Create<HttpResponseMessage>());
@@ -55,7 +56,8 @@ public sealed class TurboMiddlewareRegistrySpec
 
     private sealed class FakeStage2 : IServerBidiStage
     {
-        public BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed> Create(IServiceProvider services)
+        public BidiFlow<HttpRequestMessage, HttpRequestMessage, HttpResponseMessage, HttpResponseMessage, NotUsed>
+            Create(IServiceProvider services)
             => BidiFlow.FromFlows(
                 Flow.Create<HttpRequestMessage>(),
                 Flow.Create<HttpResponseMessage>());

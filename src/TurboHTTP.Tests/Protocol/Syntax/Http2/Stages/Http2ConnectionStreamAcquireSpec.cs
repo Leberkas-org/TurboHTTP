@@ -128,5 +128,3 @@ public sealed class Http2ConnectionStreamAcquireSpec : StreamTestBase
         // Verify that control signals are emitted (stream endpoint tracking)
     }
 }
-
-

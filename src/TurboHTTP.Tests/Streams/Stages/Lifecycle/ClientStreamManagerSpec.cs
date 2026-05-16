@@ -30,7 +30,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "my-api",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -53,7 +53,8 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
 
         manager.Tell(new ClientStreamManager.Shutdown());
 
-        await ExpectTerminatedAsync(manager, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        await ExpectTerminatedAsync(manager, TimeSpan.FromSeconds(5),
+            cancellationToken: TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 15_000)]
@@ -65,7 +66,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "shared",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -74,7 +75,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "shared",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -99,7 +100,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "test",
             ConsumerId: consumerId,
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -122,7 +123,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -146,7 +147,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "my api/v2",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -173,7 +174,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "test-consumer",
             ConsumerId: consumerId,
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -211,7 +212,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "api-v1",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));
@@ -220,7 +221,7 @@ public sealed class ClientStreamManagerSpec : StreamTestBase
             Name: "api-v2",
             ConsumerId: Guid.NewGuid(),
             RequestReader: Channel.CreateUnbounded<HttpRequestMessage>().Reader,
-            OptionsFactory: () => CreateRequestOptions(),
+            OptionsFactory: CreateRequestOptions,
             ResponseWriter: Channel.CreateUnbounded<HttpResponseMessage>().Writer,
             ClientOptions: new TurboClientOptions { BaseAddress = new Uri("http://localhost") },
             Pipeline: PipelineDescriptor.Empty));

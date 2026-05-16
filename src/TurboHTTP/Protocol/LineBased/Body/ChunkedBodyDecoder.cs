@@ -55,94 +55,94 @@ internal sealed class ChunkedBodyDecoder : IBodyDecoder
             switch (_phase)
             {
                 case Phase.ChunkSize:
-                {
-                    var crlf = BufferSearch.FindCrlf(work, pos);
-                    if (crlf < 0)
                     {
-                        goto stash;
-                    }
-
-                    var line = work[pos..crlf];
-                    var semi = line.IndexOf((byte)';');
-                    var sizeSpan = semi < 0 ? line : line[..semi];
-                    if (!int.TryParse(Encoding.ASCII.GetString(sizeSpan),
-                            NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _currentChunkRemaining))
-                    {
-                        throw new HttpProtocolException("Invalid chunk size.");
-                    }
-
-                    pos = crlf + 2;
-                    _phase = _currentChunkRemaining == 0 ? Phase.Trailer : Phase.ChunkData;
-                    break;
-                }
-                case Phase.ChunkData:
-                {
-                    var avail = work.Length - pos;
-                    var take = Math.Min(_currentChunkRemaining, avail);
-                    if (take > 0)
-                    {
-                        _handle.Feed(work.Slice(pos, take));
-                        _currentChunkRemaining -= take;
-                        pos += take;
-                    }
-
-                    if (_currentChunkRemaining == 0)
-                    {
-                        _phase = Phase.ChunkDataCrlf;
-                    }
-                    else
-                    {
-                        goto stash;
-                    }
-
-                    break;
-                }
-                case Phase.ChunkDataCrlf:
-                {
-                    if (work.Length - pos < 2)
-                    {
-                        goto stash;
-                    }
-
-                    if (work[pos] != (byte)'\r' || work[pos + 1] != (byte)'\n')
-                    {
-                        throw new HttpProtocolException("Missing CRLF after chunk-data.");
-                    }
-
-                    pos += 2;
-                    _phase = Phase.ChunkSize;
-                    break;
-                }
-                case Phase.Trailer:
-                {
-                    var crlf = BufferSearch.FindCrlf(work, pos);
-                    if (crlf < 0)
-                    {
-                        goto stash;
-                    }
-
-                    if (crlf == pos)
-                    {
-                        pos += 2;
-                        _phase = Phase.Complete;
-                        _handle.Complete();
-                        _stashLen = 0;
-                        consumed = pos - stashOffset;
-                        if (consumed < 0)
+                        var crlf = BufferSearch.FindCrlf(work, pos);
+                        if (crlf < 0)
                         {
-                            consumed = 0;
+                            goto stash;
                         }
 
-                        return true;
-                    }
+                        var line = work[pos..crlf];
+                        var semi = line.IndexOf((byte)';');
+                        var sizeSpan = semi < 0 ? line : line[..semi];
+                        if (!int.TryParse(Encoding.ASCII.GetString(sizeSpan),
+                                NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _currentChunkRemaining))
+                        {
+                            throw new HttpProtocolException("Invalid chunk size.");
+                        }
 
-                    pos = crlf + 2;
-                    break;
-                }
+                        pos = crlf + 2;
+                        _phase = _currentChunkRemaining == 0 ? Phase.Trailer : Phase.ChunkData;
+                        break;
+                    }
+                case Phase.ChunkData:
+                    {
+                        var avail = work.Length - pos;
+                        var take = Math.Min(_currentChunkRemaining, avail);
+                        if (take > 0)
+                        {
+                            _handle.Feed(work.Slice(pos, take));
+                            _currentChunkRemaining -= take;
+                            pos += take;
+                        }
+
+                        if (_currentChunkRemaining == 0)
+                        {
+                            _phase = Phase.ChunkDataCrlf;
+                        }
+                        else
+                        {
+                            goto stash;
+                        }
+
+                        break;
+                    }
+                case Phase.ChunkDataCrlf:
+                    {
+                        if (work.Length - pos < 2)
+                        {
+                            goto stash;
+                        }
+
+                        if (work[pos] != (byte)'\r' || work[pos + 1] != (byte)'\n')
+                        {
+                            throw new HttpProtocolException("Missing CRLF after chunk-data.");
+                        }
+
+                        pos += 2;
+                        _phase = Phase.ChunkSize;
+                        break;
+                    }
+                case Phase.Trailer:
+                    {
+                        var crlf = BufferSearch.FindCrlf(work, pos);
+                        if (crlf < 0)
+                        {
+                            goto stash;
+                        }
+
+                        if (crlf == pos)
+                        {
+                            pos += 2;
+                            _phase = Phase.Complete;
+                            _handle.Complete();
+                            _stashLen = 0;
+                            consumed = pos - stashOffset;
+                            if (consumed < 0)
+                            {
+                                consumed = 0;
+                            }
+
+                            return true;
+                        }
+
+                        pos = crlf + 2;
+                        break;
+                    }
             }
         }
 
-        stash:
+    stash:
         var remaining = work.Length - pos;
         if (remaining > 0)
         {

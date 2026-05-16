@@ -48,7 +48,8 @@ public sealed class ProtocolCoreBuilderLimitsSpec
     {
         var endpoint = EndpointForVersion(2, 0);
 
-        var result = ProtocolCoreBuilder.GetMaxConcurrencyPerSlot(endpoint, h2Streams: 100, h1Streams: 8, h3Streams: 200);
+        var result =
+            ProtocolCoreBuilder.GetMaxConcurrencyPerSlot(endpoint, h2Streams: 100, h1Streams: 8, h3Streams: 200);
 
         Assert.Equal(100, result);
     }
@@ -58,7 +59,8 @@ public sealed class ProtocolCoreBuilderLimitsSpec
     {
         var endpoint = EndpointForVersion(3, 0);
 
-        var result = ProtocolCoreBuilder.GetMaxConcurrencyPerSlot(endpoint, h2Streams: 100, h1Streams: 8, h3Streams: 200);
+        var result =
+            ProtocolCoreBuilder.GetMaxConcurrencyPerSlot(endpoint, h2Streams: 100, h1Streams: 8, h3Streams: 200);
 
         Assert.Equal(200, result);
     }

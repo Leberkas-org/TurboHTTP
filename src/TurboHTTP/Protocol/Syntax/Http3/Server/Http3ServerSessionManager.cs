@@ -67,36 +67,36 @@ internal sealed class Http3ServerSessionManager
         switch (data)
         {
             case ServerStreamAccepted { Id: var id }:
-            {
-                _streamResolver.OnServerStreamOpened(id);
-                return;
-            }
+                {
+                    _streamResolver.OnServerStreamOpened(id);
+                    return;
+                }
 
             case MultiplexedData multiplexed:
-            {
-                HandleTaggedStreamData(multiplexed);
-                return;
-            }
+                {
+                    HandleTaggedStreamData(multiplexed);
+                    return;
+                }
 
             case StreamReadCompleted { Id.Value: >= 0 } readCompleted:
-            {
-                FlushPendingRequest(readCompleted.Id.Value);
-                return;
-            }
+                {
+                    FlushPendingRequest(readCompleted.Id.Value);
+                    return;
+                }
 
             case StreamClosed { Id.Value: >= 0 } streamClosed:
-            {
-                FlushPendingRequest(streamClosed.Id.Value);
-                return;
-            }
+                {
+                    FlushPendingRequest(streamClosed.Id.Value);
+                    return;
+                }
 
             case TransportData rawData:
-            {
-                Tracing.For("Protocol").Warning(this,
-                    "Received untagged TransportData — dropping to prevent stream ID misrouting.");
-                rawData.Buffer.Dispose();
-                return;
-            }
+                {
+                    Tracing.For("Protocol").Warning(this,
+                        "Received untagged TransportData — dropping to prevent stream ID misrouting.");
+                    rawData.Buffer.Dispose();
+                    return;
+                }
         }
     }
 
@@ -367,37 +367,33 @@ internal sealed class Http3ServerSessionManager
                 switch (frame)
                 {
                     case HeadersFrame headersFrame:
-                    {
-                        var decoded = _requestDecoder.DecodeHeaders(headersFrame, state);
-                        if (decoded)
                         {
-                            var request = state.GetRequest();
-                            request.Options.Set(StreamIdKey.Http3, streamId);
-                        }
-                        else
-                        {
-                            _ops.OnScheduleTimer(string.Concat("headers-timeout:", streamId.ToString()),
-                                TimeSpan.FromSeconds(30));
-                        }
+                            var decoded = _requestDecoder.DecodeHeaders(headersFrame, state);
+                            if (decoded)
+                            {
+                                var request = state.GetRequest();
+                                request.Options.Set(StreamIdKey.Http3, streamId);
+                            }
+                            else
+                            {
+                                _ops.OnScheduleTimer(string.Concat("headers-timeout:", streamId.ToString()),
+                                    TimeSpan.FromSeconds(30));
+                            }
 
-                        break;
-                    }
+                            break;
+                        }
 
                     case DataFrame dataFrame:
-                    {
-                        HandleDataFrame(dataFrame, streamId, state);
-                        break;
-                    }
+                        {
+                            HandleDataFrame(dataFrame, streamId, state);
+                            break;
+                        }
 
                     case SettingsFrame:
-                    {
-                        break;
-                    }
-
                     case GoAwayFrame:
-                    {
-                        break;
-                    }
+                        {
+                            break;
+                        }
                 }
             }
             catch (HttpProtocolException ex)

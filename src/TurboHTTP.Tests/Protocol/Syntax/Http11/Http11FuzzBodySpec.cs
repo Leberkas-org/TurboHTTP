@@ -59,6 +59,7 @@ public sealed class Http11FuzzBodySpec
         {
             sb.Append($"{name}: {value}\r\n");
         }
+
         sb.Append("\r\n");
         sb.Append(body);
         return Encoding.ASCII.GetBytes(sb.ToString());
@@ -75,6 +76,7 @@ public sealed class Http11FuzzBodySpec
         {
             sb.Append($"{name}: {value}\r\n");
         }
+
         sb.Append("\r\n");
 
         foreach (var chunk in chunks)
@@ -89,6 +91,7 @@ public sealed class Http11FuzzBodySpec
         {
             sb.Append(trailerSection);
         }
+
         sb.Append("\r\n");
         return Encoding.ASCII.GetBytes(sb.ToString());
     }
@@ -183,6 +186,7 @@ public sealed class Http11FuzzBodySpec
             {
                 bodyBytes[j] = (byte)(bodyBytes[j] % 95 + 32);
             }
+
             sb.Append(Encoding.ASCII.GetString(bodyBytes));
 
             var data = Encoding.ASCII.GetBytes(sb.ToString());
@@ -269,6 +273,7 @@ public sealed class Http11FuzzBodySpec
                 {
                     bodyBytes[j] = (byte)(bodyBytes[j] % 95 + 32);
                 }
+
                 var body = Encoding.ASCII.GetString(bodyBytes);
                 fullResponse = BuildValidResponse(200, "OK", body,
                     ("Content-Length", body.Length.ToString()));
@@ -286,8 +291,10 @@ public sealed class Http11FuzzBodySpec
                     {
                         chunk[j] = (byte)(chunk[j] % 95 + 32);
                     }
+
                     chunks.Add(chunk);
                 }
+
                 fullResponse = BuildChunkedResponse(200, "OK", chunks);
             }
 
@@ -297,6 +304,7 @@ public sealed class Http11FuzzBodySpec
             {
                 offsets.Add(rng.Next(1, fullResponse.Length));
             }
+
             offsets.Sort();
             offsets.Add(fullResponse.Length);
 

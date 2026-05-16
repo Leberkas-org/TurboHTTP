@@ -88,7 +88,7 @@ public sealed class StageOrderingSpec : EngineTestBase
         => CreateFakeConnectionFlow(responseFactory);
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
+        => CreateFakeConnectionFlow(() => []);
 
     private static byte[] Ok11Response()
         => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();

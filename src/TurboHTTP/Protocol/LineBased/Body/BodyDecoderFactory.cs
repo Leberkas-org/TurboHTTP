@@ -17,15 +17,15 @@ internal static class BodyDecoderFactory
                 return new ContentLengthBufferedDecoder(0, pool);
 
             case BodyFraming.Length:
-            {
-                var n = classification.ContentLength ?? 0;
-                if (n <= streamingThreshold)
                 {
-                    return new ContentLengthBufferedDecoder((int)n, pool);
-                }
+                    var n = classification.ContentLength ?? 0;
+                    if (n <= streamingThreshold)
+                    {
+                        return new ContentLengthBufferedDecoder((int)n, pool);
+                    }
 
-                return new ContentLengthStreamedDecoder(n, maxBodySize);
-            }
+                    return new ContentLengthStreamedDecoder(n, maxBodySize);
+                }
 
             case BodyFraming.Chunked:
                 return new ChunkedBodyDecoder(maxBodySize);

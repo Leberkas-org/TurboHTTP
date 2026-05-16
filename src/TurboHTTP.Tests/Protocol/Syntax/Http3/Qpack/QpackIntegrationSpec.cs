@@ -178,5 +178,3 @@ public sealed class QpackIntegrationSpec
         Assert.Throws<ArgumentNullException>(() => encoder.Encode(request));
     }
 }
-
-

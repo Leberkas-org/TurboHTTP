@@ -93,7 +93,7 @@ public sealed class Http2SecuritySpec
         decoder.Decode(continuation1000);
         continuationCount++; // Add the 1000th frame
 
-        var ex = Assert.Throws<HttpProtocolException>(() =>
+        Assert.Throws<HttpProtocolException>(() =>
             EnforceContinuationFloodThreshold(continuationCount, threshold: 1000));
     }
 
@@ -151,7 +151,7 @@ public sealed class Http2SecuritySpec
             .Count(df => df.Data.Length == 0);
 
         // Enforce the threshold — should be exactly 10001 empty DATA frames.
-        var ex = Assert.Throws<HttpProtocolException>(() =>
+        Assert.Throws<HttpProtocolException>(() =>
             EnforceEmptyDataFloodThreshold(emptyDataCount, threshold: 10000));
     }
 
@@ -171,7 +171,7 @@ public sealed class Http2SecuritySpec
         var settingsF = Assert.IsType<SettingsFrame>(settings);
 
         // Enforcement helper should reject the invalid ENABLE_PUSH value.
-        var ex = Assert.Throws<HttpProtocolException>(() =>
+        Assert.Throws<HttpProtocolException>(() =>
             EnforceEnablePush(settingsF.Parameters));
     }
 
@@ -191,7 +191,7 @@ public sealed class Http2SecuritySpec
         var settingsF = Assert.IsType<SettingsFrame>(settings);
 
         // Enforcement helper should reject the overflow.
-        var ex = Assert.Throws<HttpProtocolException>(() =>
+        Assert.Throws<HttpProtocolException>(() =>
             EnforceInitialWindowSize(settingsF.Parameters));
     }
 

@@ -5,8 +5,7 @@ namespace TurboHTTP.Tests.Features.Caching;
 
 public sealed class CacheValidationSpec
 {
-    private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     private static CacheEntry MakeEntry(string? etag = null, DateTimeOffset? lastModified = null)
     {
@@ -17,13 +16,12 @@ public sealed class CacheValidationSpec
             Response = new HttpResponseMessage(HttpStatusCode.OK),
             BodyOwner = owner,
             BodyLength = length,
-            RequestTime = _baseTime.AddSeconds(-1),
-            ResponseTime = _baseTime,
+            RequestTime = BaseTime.AddSeconds(-1),
+            ResponseTime = BaseTime,
             ETag = etag,
             LastModified = lastModified
         };
     }
-
 
     [Trait("RFC", "RFC9111-4.3.1")]
     [Fact(Timeout = 5000)]
@@ -114,7 +112,7 @@ public sealed class CacheValidationSpec
     [Fact(Timeout = 5000)]
     public void CacheValidation_should_return_true_when_last_modified_present()
     {
-        var entry = MakeEntry(lastModified: _baseTime);
+        var entry = MakeEntry(lastModified: BaseTime);
         Assert.True(CacheValidationRequestBuilder.CanRevalidate(entry));
     }
 
@@ -176,7 +174,7 @@ public sealed class CacheValidationSpec
     [Fact(Timeout = 5000)]
     public void CacheValidation_should_build_head_request_when_stale_entry()
     {
-        var entry = MakeEntry(etag: "\"v1\"", lastModified: _baseTime);
+        var entry = MakeEntry(etag: "\"v1\"", lastModified: BaseTime);
         var original = new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource");
 
         var head = CacheValidationRequestBuilder.BuildHeadValidationRequest(original, entry);
@@ -187,7 +185,7 @@ public sealed class CacheValidationSpec
         var etag = string.Join("", head.Headers.GetValues("If-None-Match"));
         Assert.Equal("\"v1\"", etag);
         Assert.NotNull(head.Headers.IfModifiedSince);
-        Assert.Equal(_baseTime, head.Headers.IfModifiedSince!.Value);
+        Assert.Equal(BaseTime, head.Headers.IfModifiedSince!.Value);
     }
 
     [Trait("RFC", "RFC9111-4.3.5")]
@@ -296,7 +294,7 @@ public sealed class CacheValidationSpec
     [Fact(Timeout = 5000)]
     public void CacheValidation_should_not_freshen_when_entry_etag_null()
     {
-        var entry = MakeEntry(etag: null, lastModified: _baseTime);
+        var entry = MakeEntry(etag: null, lastModified: BaseTime);
         var head304 = new HttpResponseMessage(HttpStatusCode.NotModified);
         head304.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue("\"v1\"");
 

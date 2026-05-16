@@ -21,7 +21,7 @@ public sealed class FeedbackBufferOptimizationSpec : EngineTestBase
     }
 
     private static Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
+        => CreateFakeConnectionFlow(() => []);
 
     private static byte[] Redirect301(string location) =>
         System.Text.Encoding.Latin1.GetBytes(

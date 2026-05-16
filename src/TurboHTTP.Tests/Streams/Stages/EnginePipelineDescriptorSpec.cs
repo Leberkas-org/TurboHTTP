@@ -22,7 +22,7 @@ public sealed class EnginePipelineDescriptorSpec : EngineTestBase
         "HTTP/1.1 301 Moved Permanently\r\nLocation: http://example.com/new\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
     private Flow<ITransportOutbound, ITransportInbound, NotUsed> NoOpH2Flow()
-        => CreateFakeConnectionFlow(() => Array.Empty<byte>());
+        => CreateFakeConnectionFlow(() => []);
 
     private async Task<HttpResponseMessage> RunSingleAsync(
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> flow,

@@ -95,5 +95,3 @@ public sealed class Http2ConnectionPingSpec : StreamTestBase
         Assert.True(pingAck.IsAck);
     }
 }
-
-

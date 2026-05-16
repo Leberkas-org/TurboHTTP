@@ -231,4 +231,3 @@ public sealed class Http10DecompressionPipelineSpec : EngineTestBase
             response.Content.Headers.ContentType?.ToString() ?? "");
     }
 }
-

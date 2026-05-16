@@ -168,7 +168,11 @@ public sealed class Http11SecuritySpec
         var fixedPart = "HTTP/1.1 200 OK\r\nX-Padding: ";
         var suffix = "\r\nContent-Length: 0\r\n\r\n";
         var paddingLength = totalHeaderBytes - fixedPart.Length - suffix.Length;
-        if (paddingLength < 0) { paddingLength = 0; }
+        if (paddingLength < 0)
+        {
+            paddingLength = 0;
+        }
+
         var raw = fixedPart + new string('a', paddingLength) + suffix;
         return Encoding.ASCII.GetBytes(raw);
     }

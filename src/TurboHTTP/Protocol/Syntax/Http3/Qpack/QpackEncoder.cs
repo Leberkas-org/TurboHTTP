@@ -263,7 +263,8 @@ internal sealed class QpackEncoder
             {
                 >= 0 => new HeaderEncodingEntry
                 {
-                    Type = HeaderEncodingType.LiteralWithStaticNameNeverIndex, Index = staticName
+                    Type = HeaderEncodingType.LiteralWithStaticNameNeverIndex,
+                    Index = staticName
                 },
                 _ => new HeaderEncodingEntry { Type = HeaderEncodingType.LiteralNeverIndex, Index = -1 }
             };

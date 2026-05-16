@@ -27,13 +27,11 @@ public sealed class TurboHttpMetricsSpec : IDisposable
             }
         };
 
-        _listener.SetMeasurementEventCallback<long>(
-            (instrument, measurement, tags, _) =>
-                _longMeasurements.Add(new MetricMeasurement<long>(instrument.Name, measurement, tags)));
+        _listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
+            _longMeasurements.Add(new MetricMeasurement<long>(instrument.Name, measurement, tags)));
 
-        _listener.SetMeasurementEventCallback<double>(
-            (instrument, measurement, tags, _) =>
-                _doubleMeasurements.Add(new MetricMeasurement<double>(instrument.Name, measurement, tags)));
+        _listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+            _doubleMeasurements.Add(new MetricMeasurement<double>(instrument.Name, measurement, tags)));
 
         _listener.Start();
     }

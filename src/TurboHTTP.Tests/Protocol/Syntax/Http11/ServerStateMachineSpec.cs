@@ -314,4 +314,3 @@ public sealed class ServerStateMachineSpec
         Assert.False(sm.CanAcceptResponse);
     }
 }
-

@@ -174,7 +174,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void PendingRequestCount_should_reflect_inflight_queue()
     {
         var ops = new FakeOps();
-        var sm = new Http11ClientStateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxPipelineDepth = 4 } });
+        var sm = new Http11ClientStateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxPipelineDepth = 4 } });
 
         Assert.Equal(0, sm.PendingRequestCount);
 
@@ -206,7 +207,8 @@ public sealed class Http11StateMachineDisconnectSpec
     public void CanAcceptRequest_should_be_false_when_pipeline_full()
     {
         var ops = new FakeOps();
-        var sm = new Http11ClientStateMachine(ops, new TurboClientOptions { Http1 = new Http1Options { MaxPipelineDepth = 1 } });
+        var sm = new Http11ClientStateMachine(ops,
+            new TurboClientOptions { Http1 = new Http1Options { MaxPipelineDepth = 1 } });
 
         sm.OnRequest(MakeRequest());
 

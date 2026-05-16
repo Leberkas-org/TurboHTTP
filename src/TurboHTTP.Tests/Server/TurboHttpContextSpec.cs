@@ -34,7 +34,7 @@ public sealed class TurboHttpContextSpec
     public void TurboHttpContext_should_expose_mutable_response_body_source()
     {
         var ctx = CreateContext();
-        var source = Source.Single(new ReadOnlyMemory<byte>(new byte[] { 1, 2, 3 }));
+        var source = Source.Single(new ReadOnlyMemory<byte>([1, 2, 3]));
         ctx.ResponseBodySource = source;
         Assert.Same(source, ctx.ResponseBodySource);
     }

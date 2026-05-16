@@ -308,10 +308,10 @@ public sealed class Http2EncoderPseudoHeaderSpec
     {
         return
         [
-            new(":method", method),
-            new(":path", path),
-            new(":scheme", scheme),
-            new(":authority", authority),
+            new HpackHeader(":method", method),
+            new HpackHeader(":path", path),
+            new HpackHeader(":scheme", scheme),
+            new HpackHeader(":authority", authority),
         ];
     }
 

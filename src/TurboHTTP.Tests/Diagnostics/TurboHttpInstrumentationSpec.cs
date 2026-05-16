@@ -288,7 +288,8 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
 
         request.Options.Set(TurboHttpInstrumentationExtensions.RequestActivityKey, activity);
 
-        Assert.True(request.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey, out var retrieved));
+        Assert.True(request.Options.TryGetValue(TurboHttpInstrumentationExtensions.RequestActivityKey,
+            out var retrieved));
         Assert.Same(activity, retrieved);
     }
 
@@ -394,7 +395,8 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     public void InjectTraceContext_should_not_overwrite_existing_traceparent()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/traced");
-        request.Headers.TryAddWithoutValidation("traceparent", "00-11111111111111111111111111111111-2222222222222222-01");
+        request.Headers.TryAddWithoutValidation("traceparent",
+            "00-11111111111111111111111111111111-2222222222222222-01");
         var activity = Tracing.StartRequest(request)!;
 
         Tracing.InjectTraceContext(activity, request);
@@ -591,7 +593,8 @@ public sealed class TurboHttpInstrumentationSpec : IDisposable
     public void RedactUrl_with_complex_path_should_preserve_structure()
     {
         var uri = new Uri("https://api.example.com:8080/v1/users/123/profile?token=secret#top");
-        Assert.Equal("https://api.example.com:8080/v1/users/123/profile?*", TurboHttpInstrumentationExtensions.RedactUrl(uri));
+        Assert.Equal("https://api.example.com:8080/v1/users/123/profile?*",
+            TurboHttpInstrumentationExtensions.RedactUrl(uri));
     }
 
     [Fact(Timeout = 5000)]

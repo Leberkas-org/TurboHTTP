@@ -153,8 +153,7 @@ public sealed class Http3FrameFuzzSpec
             offset += QuicVarInt.Encode(42, payloadBuf.AsSpan(offset));
             var payload = payloadBuf[..offset];
 
-            var ex = Assert.Throws<HttpProtocolException>(
-                () => Settings.Deserialize(payload));
+            var ex = Assert.Throws<HttpProtocolException>(() => Settings.Deserialize(payload));
         }
     }
 
@@ -370,4 +369,3 @@ public sealed class Http3FrameFuzzSpec
         Assert.Equal(8192, deserialized.MaxFieldSectionSize);
     }
 }
-

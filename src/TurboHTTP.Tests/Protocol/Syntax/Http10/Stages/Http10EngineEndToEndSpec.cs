@@ -44,7 +44,8 @@ public sealed class Http10EngineEndToEndSpec : EngineTestBase
         };
 
         const string responseBody = "{\"ok\":true}";
-        var raw = $"HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nContent-Length: {responseBody.Length}\r\n\r\n{responseBody}";
+        var raw =
+            $"HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nContent-Length: {responseBody.Length}\r\n\r\n{responseBody}";
 
         var (response, rawRequest) = await SendAsync(
             Engine.CreateFlow(),

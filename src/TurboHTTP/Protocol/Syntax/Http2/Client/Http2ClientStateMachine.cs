@@ -107,30 +107,30 @@ internal sealed class Http2ClientStateMachine : IClientStateMachine
         switch (name)
         {
             case KeepAlivePingTimerKey:
-            {
-                var policy = _options.Http2.KeepAlivePingPolicy;
-                if (policy == HttpKeepAlivePingPolicy.WithActiveRequests && !_clientSession.HasInFlightRequests)
                 {
-                    return;
-                }
-
-                _clientSession.SendKeepAlivePing();
-                ScheduleKeepAlivePingTimeout();
-                break;
-            }
-            case KeepAlivePingTimeoutKey:
-            {
-                if (_clientSession.IsKeepAliveTimedOut(_options.Http2.KeepAlivePingTimeout))
-                {
-                    Tracing.For("Protocol").Info(this, "HTTP/2: Keep-alive PING timeout — closing connection");
-                    if (_clientSession.HasInFlightRequests)
+                    var policy = _options.Http2.KeepAlivePingPolicy;
+                    if (policy == HttpKeepAlivePingPolicy.WithActiveRequests && !_clientSession.HasInFlightRequests)
                     {
-                        OnConnectionLost(lastStreamId: 0);
+                        return;
                     }
-                }
 
-                break;
-            }
+                    _clientSession.SendKeepAlivePing();
+                    ScheduleKeepAlivePingTimeout();
+                    break;
+                }
+            case KeepAlivePingTimeoutKey:
+                {
+                    if (_clientSession.IsKeepAliveTimedOut(_options.Http2.KeepAlivePingTimeout))
+                    {
+                        Tracing.For("Protocol").Info(this, "HTTP/2: Keep-alive PING timeout — closing connection");
+                        if (_clientSession.HasInFlightRequests)
+                        {
+                            OnConnectionLost(lastStreamId: 0);
+                        }
+                    }
+
+                    break;
+                }
         }
     }
 

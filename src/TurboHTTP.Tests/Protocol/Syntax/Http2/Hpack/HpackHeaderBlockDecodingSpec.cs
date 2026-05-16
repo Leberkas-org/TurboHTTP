@@ -151,7 +151,7 @@ public sealed class HpackHeaderBlockDecodingSpec
     public void HpackHeaderBlockDecoding_should_decode_empty_block()
     {
         var decoder = new HpackDecoder();
-        var block = new byte[] { };
+        var block = Array.Empty<byte>();
 
         var decoded = decoder.Decode(block);
 

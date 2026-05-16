@@ -206,4 +206,3 @@ public sealed class Http2ConnectionBackpressureSpec : StreamTestBase
         ExpectRequestOutput(networkProbe);
     }
 }
-

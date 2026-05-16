@@ -92,7 +92,7 @@ public sealed class CacheLruEvictionSpec
         cache.Invalidate(new Uri("http://example.com/resource"));
 
         Assert.Equal(0, cache.Count);
-        Assert.Null(cache.Get(GetRequest("http://example.com/resource")));
+        Assert.Null(cache.Get(GetRequest()));
     }
 
     [Fact(Timeout = 5000)]

@@ -96,7 +96,8 @@ public sealed class ParameterBinderSpec
         Assert.Equal(3, result);
     }
 
-    public interface ITestService;
+    private interface ITestService;
+
     private sealed class TestService : ITestService;
 
     private static TurboHttpContext CreateContext(string path, CancellationToken cancellationToken = default)

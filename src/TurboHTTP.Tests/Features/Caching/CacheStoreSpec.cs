@@ -5,8 +5,7 @@ namespace TurboHTTP.Tests.Features.Caching;
 
 public sealed class CacheSpec
 {
-    private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
-
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     private static void Put(Cache store, HttpRequestMessage request, HttpResponseMessage response,
         byte[] body, DateTimeOffset requestTime, DateTimeOffset responseTime)
@@ -22,10 +21,9 @@ public sealed class CacheSpec
     {
         var r = new HttpResponseMessage(HttpStatusCode.OK);
         r.Headers.TryAddWithoutValidation("Cache-Control", $"max-age={maxAge}");
-        r.Headers.Date = _baseTime;
+        r.Headers.Date = BaseTime;
         return r;
     }
-
 
     [Trait("RFC", "RFC9111-3.1")]
     [Fact]
@@ -113,7 +111,7 @@ public sealed class CacheSpec
         var response = OkResponse();
         var body = new byte[] { 1, 2, 3 };
 
-        Put(store, request, response, body, _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request, response, body, BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(new HttpRequestMessage(HttpMethod.Get, "http://example.com/resource"));
         Assert.NotNull(entry);
@@ -126,7 +124,7 @@ public sealed class CacheSpec
     {
         var store = new Cache();
         var request = GetRequest();
-        Put(store, request, OkResponse(), [], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request, OkResponse(), [], BaseTime.AddSeconds(-1), BaseTime);
 
         store.Invalidate(new Uri("http://example.com/resource"));
 
@@ -146,7 +144,7 @@ public sealed class CacheSpec
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation("Vary", "Accept");
 
-        Put(store, request1, response, [], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request1, response, [], BaseTime.AddSeconds(-1), BaseTime);
 
         var request2 = GetRequest();
         request2.Headers.TryAddWithoutValidation("Accept", "text/html");
@@ -166,7 +164,7 @@ public sealed class CacheSpec
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation("Vary", "Accept");
 
-        Put(store, request1, response, [42], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request1, response, [42], BaseTime.AddSeconds(-1), BaseTime);
 
         var request2 = GetRequest();
         request2.Headers.TryAddWithoutValidation("Accept", "application/json");
@@ -184,7 +182,7 @@ public sealed class CacheSpec
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation("Vary", "*");
 
-        Put(store, GetRequest(), response, [], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, GetRequest(), response, [], BaseTime.AddSeconds(-1), BaseTime);
 
         Assert.Null(store.Get(GetRequest()));
     }
@@ -197,7 +195,7 @@ public sealed class CacheSpec
         var request = GetRequest();
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60, must-understand");
-        response.Headers.Date = _baseTime;
+        response.Headers.Date = BaseTime;
 
         Assert.True(Cache.ShouldStore(request, response));
     }
@@ -209,7 +207,7 @@ public sealed class CacheSpec
         var request = GetRequest();
         var response = new HttpResponseMessage((HttpStatusCode)299);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60, must-understand");
-        response.Headers.Date = _baseTime;
+        response.Headers.Date = BaseTime;
 
         Assert.False(Cache.ShouldStore(request, response));
     }
@@ -222,7 +220,7 @@ public sealed class CacheSpec
         // 200 is cacheable-by-default; without must-understand, any cacheable status is fine
         var response = new HttpResponseMessage(HttpStatusCode.OK);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
-        response.Headers.Date = _baseTime;
+        response.Headers.Date = BaseTime;
 
         Assert.True(Cache.ShouldStore(request, response));
     }
@@ -234,7 +232,7 @@ public sealed class CacheSpec
         var request = GetRequest();
         var response = new HttpResponseMessage(HttpStatusCode.PartialContent);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
-        response.Headers.Date = _baseTime;
+        response.Headers.Date = BaseTime;
 
         Assert.False(Cache.ShouldStore(request, response));
     }
@@ -249,7 +247,7 @@ public sealed class CacheSpec
         response.Content.Headers.ContentRange =
             new System.Net.Http.Headers.ContentRangeHeaderValue(0, 2, 100);
         response.Headers.TryAddWithoutValidation("Cache-Control", "max-age=60");
-        response.Headers.Date = _baseTime;
+        response.Headers.Date = BaseTime;
 
         Assert.False(Cache.ShouldStore(request, response));
     }
@@ -276,7 +274,7 @@ public sealed class CacheSpec
         response.TrailingHeaders.TryAddWithoutValidation("Checksum", "abc123");
         response.TrailingHeaders.TryAddWithoutValidation("Signature", "xyz789");
 
-        Put(store, request, response, [1, 2, 3], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request, response, [1, 2, 3], BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -304,7 +302,7 @@ public sealed class CacheSpec
         response.Headers.TryAddWithoutValidation("Connection", "keep-alive");
         response.Headers.TryAddWithoutValidation("Keep-Alive", "timeout=5");
 
-        Put(store, request, response, [1, 2, 3], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request, response, [1, 2, 3], BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -330,7 +328,7 @@ public sealed class CacheSpec
         var response = OkResponse();
         response.Headers.TryAddWithoutValidation(headerName, "some-value");
 
-        Put(store, request, response, [1, 2, 3], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request, response, [1, 2, 3], BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -350,7 +348,7 @@ public sealed class CacheSpec
         // Also add a connection-specific header to ensure it's stripped while custom headers survive
         response.Headers.TryAddWithoutValidation("Keep-Alive", "timeout=5");
 
-        Put(store, request, response, [1, 2, 3], _baseTime.AddSeconds(-1), _baseTime);
+        Put(store, request, response, [1, 2, 3], BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -374,7 +372,7 @@ public sealed class CacheSpec
         for (var i = 0; i < 3; i++)
         {
             var req = new HttpRequestMessage(HttpMethod.Get, $"http://example.com/r{i}");
-            Put(store, req, OkResponse(), [], _baseTime.AddSeconds(-1), _baseTime);
+            Put(store, req, OkResponse(), [], BaseTime.AddSeconds(-1), BaseTime);
         }
 
         // Store should have at most 2 entries

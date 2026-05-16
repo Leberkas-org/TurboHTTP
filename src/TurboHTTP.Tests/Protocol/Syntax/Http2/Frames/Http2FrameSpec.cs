@@ -88,10 +88,12 @@ public sealed class Http2FrameSpec
     public void Http2Frame_should_throw_argument_out_of_range_exception_when_stream_id_is_negative(int negativeStreamId)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new DataFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new HeadersFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new HeadersFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
         Assert.Throws<ArgumentOutOfRangeException>(() => new RstStreamFrame(negativeStreamId, Http2ErrorCode.Cancel));
         Assert.Throws<ArgumentOutOfRangeException>(() => new WindowUpdateFrame(negativeStreamId, 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ContinuationFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ContinuationFrame(negativeStreamId, ReadOnlyMemory<byte>.Empty));
     }
 
     [Theory(Timeout = 5000)]

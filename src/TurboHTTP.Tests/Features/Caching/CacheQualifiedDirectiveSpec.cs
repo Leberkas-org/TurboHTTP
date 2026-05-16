@@ -5,7 +5,7 @@ namespace TurboHTTP.Tests.Features.Caching;
 
 public sealed class CacheQualifiedDirectiveSpec
 {
-    private static readonly DateTimeOffset _baseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     private static HttpRequestMessage GetRequest(string uri = "http://example.com/resource")
         => new(HttpMethod.Get, uri);
@@ -14,7 +14,7 @@ public sealed class CacheQualifiedDirectiveSpec
     {
         var r = new HttpResponseMessage(HttpStatusCode.OK);
         r.Headers.TryAddWithoutValidation("Cache-Control", cacheControl);
-        r.Headers.Date = _baseTime;
+        r.Headers.Date = BaseTime;
         return r;
     }
 
@@ -24,7 +24,6 @@ public sealed class CacheQualifiedDirectiveSpec
         var (owner, length) = Cache.RentBody(body);
         store.Put(request, response, owner, length, requestTime, responseTime);
     }
-
 
     [Trait("RFC", "RFC9111-5.2.2.3")]
     [Fact]
@@ -36,7 +35,7 @@ public sealed class CacheQualifiedDirectiveSpec
         response.Headers.TryAddWithoutValidation("Set-Cookie", "session=abc123");
 
         var (owner, length) = Cache.RentBody([]);
-        store.Put(request, response, owner, length, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(request, response, owner, length, BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -45,7 +44,7 @@ public sealed class CacheQualifiedDirectiveSpec
         Assert.NotNull(entry.CacheControl.NoCacheFields);
         Assert.Contains("Set-Cookie", entry.CacheControl.NoCacheFields);
 
-        var result = CacheFreshnessEvaluator.Evaluate(entry, GetRequest(), _baseTime.AddSeconds(10));
+        var result = CacheFreshnessEvaluator.Evaluate(entry, GetRequest(), BaseTime.AddSeconds(10));
         Assert.Equal(CacheLookupStatus.Fresh, result.Status);
     }
 
@@ -61,7 +60,7 @@ public sealed class CacheQualifiedDirectiveSpec
         response.Headers.TryAddWithoutValidation("X-Keep", "val3");
 
         var (owner, length) = Cache.RentBody([]);
-        store.Put(request, response, owner, length, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(request, response, owner, length, BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -84,13 +83,13 @@ public sealed class CacheQualifiedDirectiveSpec
             Response = response,
             BodyOwner = bodyOwner1,
             BodyLength = bodyLength1,
-            RequestTime = _baseTime.AddSeconds(-1),
-            ResponseTime = _baseTime,
-            Date = _baseTime,
+            RequestTime = BaseTime.AddSeconds(-1),
+            ResponseTime = BaseTime,
+            Date = BaseTime,
             CacheControl = cc
         };
 
-        var result = CacheFreshnessEvaluator.Evaluate(entry, GetRequest(), _baseTime.AddSeconds(10));
+        var result = CacheFreshnessEvaluator.Evaluate(entry, GetRequest(), BaseTime.AddSeconds(10));
         Assert.Equal(CacheLookupStatus.MustRevalidate, result.Status);
     }
 
@@ -107,14 +106,14 @@ public sealed class CacheQualifiedDirectiveSpec
             Response = response,
             BodyOwner = bodyOwner2,
             BodyLength = bodyLength2,
-            RequestTime = _baseTime.AddSeconds(-1),
-            ResponseTime = _baseTime,
-            Date = _baseTime,
+            RequestTime = BaseTime.AddSeconds(-1),
+            ResponseTime = BaseTime,
+            Date = BaseTime,
             CacheControl = cc
         };
 
         // Qualified no-cache should NOT force revalidation — only the named fields are affected
-        var result = CacheFreshnessEvaluator.Evaluate(entry, GetRequest(), _baseTime.AddSeconds(10));
+        var result = CacheFreshnessEvaluator.Evaluate(entry, GetRequest(), BaseTime.AddSeconds(10));
         Assert.Equal(CacheLookupStatus.Fresh, result.Status);
     }
 
@@ -130,7 +129,7 @@ public sealed class CacheQualifiedDirectiveSpec
         response.Headers.TryAddWithoutValidation("X-Keep", "should-remain");
 
         var (owner, length) = Cache.RentBody([]);
-        store.Put(request, response, owner, length, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(request, response, owner, length, BaseTime.AddSeconds(-1), BaseTime);
 
         var entry = store.Get(GetRequest());
         Assert.NotNull(entry);
@@ -151,7 +150,7 @@ public sealed class CacheQualifiedDirectiveSpec
         var response = OkResponseWithCacheControl("max-age=3600, private");
 
         var (owner, length) = Cache.RentBody([]);
-        store.Put(request, response, owner, length, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(request, response, owner, length, BaseTime.AddSeconds(-1), BaseTime);
 
         // Unqualified private — shared cache must not store at all
         var entry = store.Get(GetRequest());
@@ -168,7 +167,7 @@ public sealed class CacheQualifiedDirectiveSpec
         var response = OkResponseWithCacheControl("max-age=3600, private");
 
         var (owner, length) = Cache.RentBody([]);
-        store.Put(request, response, owner, length, _baseTime.AddSeconds(-1), _baseTime);
+        store.Put(request, response, owner, length, BaseTime.AddSeconds(-1), BaseTime);
 
         // Private cache can store private responses
         var entry = store.Get(GetRequest());

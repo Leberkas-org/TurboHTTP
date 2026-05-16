@@ -32,7 +32,8 @@ internal static class Http2ConnectionTestHelper
         }
     }
 
-    public static IReadOnlyList<Http2Frame> DecodeFrames(IEnumerable<ITransportOutbound> items, bool skipPreface = false)
+    public static IReadOnlyList<Http2Frame> DecodeFrames(IEnumerable<ITransportOutbound> items,
+        bool skipPreface = false)
     {
         var decoder = new FrameDecoder();
         var result = new List<Http2Frame>();

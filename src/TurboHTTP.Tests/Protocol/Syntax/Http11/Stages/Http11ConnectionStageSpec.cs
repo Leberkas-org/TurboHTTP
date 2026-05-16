@@ -240,9 +240,12 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
 
         // All 3 requests should have been accepted and encoded.
         // Now send the 3 responses
-        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres1")));
-        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres2")));
-        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres3")));
+        serverSubscription.SendNext(
+            new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres1")));
+        serverSubscription.SendNext(
+            new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres2")));
+        serverSubscription.SendNext(
+            new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres3")));
 
         // Should get 3 responses
         var resp1 = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
@@ -316,7 +319,8 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
 
         // Send response for req2
-        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres2")));
+        serverSubscription.SendNext(
+            new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nres2")));
 
         var response2 = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response2.StatusCode);
@@ -417,7 +421,8 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
 
         // Continue response should be processed internally (not emitted downstream typically)
         // Send final response after 100 Continue
-        serverSubscription.SendNext(new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nSuccess")));
+        serverSubscription.SendNext(
+            new TransportData(MakeResponseBuffer("HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nSuccess")));
 
         var response = await responseSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -514,4 +519,3 @@ public sealed class Http11ConnectionStageSpec : StreamTestBase
         responseSub.ExpectComplete(TestContext.Current.CancellationToken);
     }
 }
-
