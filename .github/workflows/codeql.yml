@@ -13,7 +13,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "main", feature/*, ]
+    branches: [ "main" ]
     paths:
       - "src/**/*.cs"
       - "src/**/*.csproj"
