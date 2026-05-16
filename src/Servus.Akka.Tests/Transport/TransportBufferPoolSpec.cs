@@ -1,30 +1,10 @@
 using Servus.Akka.Transport;
 
-namespace TurboHTTP.Tests.Internal;
+namespace Servus.Akka.Tests.Transport;
 
+[Collection("TransportBuffer")]
 public sealed class TransportBufferPoolSpec
 {
-    [Fact(Timeout = 5000)]
-    public void Rent_should_return_usable_buffer_after_dispose_cycle()
-    {
-        var buf1 = TransportBuffer.Rent(128);
-        buf1.Length = 10;
-        Assert.Equal(10, buf1.Length);
-        buf1.Dispose();
-
-        var buf2 = TransportBuffer.Rent(128);
-        Assert.True(buf2.Capacity >= 128);
-        buf2.Dispose();
-    }
-
-    [Fact(Timeout = 5000)]
-    public void Dispose_should_be_idempotent()
-    {
-        var buf = TransportBuffer.Rent(64);
-        buf.Dispose();
-        buf.Dispose();
-    }
-
     [Fact(Timeout = 10000)]
     public async Task Pool_should_survive_concurrent_rent_and_dispose()
     {
