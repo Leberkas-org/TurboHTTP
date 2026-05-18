@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Frames;
 
-public sealed class FrameDecoderSpec
+public sealed class Http3FrameDecoderSpec
 {
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]

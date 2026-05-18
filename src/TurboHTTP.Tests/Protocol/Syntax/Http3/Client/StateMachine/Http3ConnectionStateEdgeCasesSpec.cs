@@ -568,6 +568,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.5")]
     public void MaxPushId_should_be_settable()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30))
@@ -579,6 +580,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
     public void RemoteMaxFieldSectionSize_should_return_null_before_settings()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));
@@ -587,6 +589,7 @@ public sealed class Http3ConnectionStateEdgeCasesSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
     public void RemoteMaxFieldSectionSize_should_return_value_after_settings()
     {
         var state = new ConnectionState(TimeSpan.FromSeconds(30));

@@ -4,7 +4,7 @@ using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 
-public sealed class TransportSelectionSpec
+public sealed class Http3TransportSelectionSpec
 {
     private static RequestEndpoint ToEndpoint(Uri uri, Version? version)
     {

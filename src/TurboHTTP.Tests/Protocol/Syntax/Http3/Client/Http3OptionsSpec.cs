@@ -1,4 +1,4 @@
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.Settings;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client;
 
 public sealed class Http3OptionsSpec
 {
@@ -39,6 +39,7 @@ public sealed class Http3OptionsSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.4.1")]
     public void TurboClientOptions_should_expose_Http3Options_with_defaults()
     {
         var clientOptions = new TurboClientOptions();

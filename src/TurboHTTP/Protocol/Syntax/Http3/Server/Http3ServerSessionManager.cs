@@ -2,6 +2,7 @@ using System.Buffers;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Multiplexed;
 using TurboHTTP.Protocol.Multiplexed.Body;
+using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Streams;
 using static Servus.Core.Servus;
@@ -17,6 +18,8 @@ internal sealed class Http3ServerSessionManager
     private readonly Http3ServerDecoder _requestDecoder;
     private readonly Http3ServerEncoder _responseEncoder;
     private readonly QpackTableSync _tableSync;
+    private readonly Http3ServerEncoderOptions _encoderOptions;
+    private readonly Http3ServerDecoderOptions _decoderOptions;
     private readonly long _maxRequestBodySize;
 
     private readonly Dictionary<long, (FrameDecoder Decoder, StreamState State)> _streams = new();
@@ -28,24 +31,27 @@ internal sealed class Http3ServerSessionManager
     public int ActiveStreamCount => _streams.Count;
 
     public Http3ServerSessionManager(
+        Http3ServerEncoderOptions encoderOptions,
+        Http3ServerDecoderOptions decoderOptions,
         IServerStageOperations ops,
-        long maxRequestBodySize = 30 * 1024 * 1024,
-        int maxConcurrentStreams = 100)
+        long maxRequestBodySize = 30 * 1024 * 1024)
     {
+        _encoderOptions = encoderOptions;
+        _decoderOptions = decoderOptions;
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
         _maxRequestBodySize = maxRequestBodySize;
 
         _tableSync = new QpackTableSync(
             encoderMaxCapacity: 0,
-            decoderMaxCapacity: 4096,
+            decoderMaxCapacity: encoderOptions.QpackMaxTableCapacity,
             maxBlockedStreams: 100,
-            configuredEncoderLimit: 4096);
+            configuredEncoderLimit: encoderOptions.QpackMaxTableCapacity);
 
         _requestDecoder = new Http3ServerDecoder(_tableSync, int.MaxValue);
         _responseEncoder = new Http3ServerEncoder(_tableSync);
 
         var statePoolCapacity = Math.Min(
-            maxConcurrentStreams > 0 ? maxConcurrentStreams : 100,
+            decoderOptions.MaxConcurrentStreams > 0 ? decoderOptions.MaxConcurrentStreams : 100,
             MaxStatePoolCapacity);
         _statePool = new StackStreamStatePool<StreamState>(
             statePoolCapacity,
@@ -516,7 +522,7 @@ internal sealed class Http3ServerSessionManager
         _controlPrefaceSent = true;
 
         var settings = new Settings();
-        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, 4096);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, _encoderOptions.QpackMaxTableCapacity);
         settings.Set(SettingsIdentifier.QpackBlockedStreams, 100);
         var settingsFrame = settings.ToFrame();
 

@@ -1,6 +1,7 @@
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Multiplexed;
+using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Streams.Stages;
 using static Servus.Core.Servus;
 
@@ -35,8 +36,29 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
     {
         _options = options;
         _ops = ops;
-        _clientSession = new Http3ClientSessionManager(options, ops);
-        _reconnect = new ReconnectionManager(options.Http3.MaxReconnectAttempts);
+
+        var shared = SharedHttpOptions.Default with
+        {
+            MaxBufferedBodySize = options.MaxBufferedBodySize,
+            MaxStreamedBodySize = options.MaxStreamedBodySize,
+        };
+
+        var encoderOpts = new Http3ClientEncoderOptions
+        {
+            QpackMaxTableCapacity = options.Http3.QpackMaxTableCapacity,
+            QpackBlockedStreams = options.Http3.QpackBlockedStreams,
+            Shared = shared,
+        };
+
+        var decoderOpts = new Http3ClientDecoderOptions
+        {
+            MaxConcurrentStreams = options.Http3.MaxConcurrentStreams,
+            MaxFieldSectionSize = options.Http3.MaxFieldSectionSize,
+            Shared = shared,
+        };
+
+        _clientSession = new Http3ClientSessionManager(encoderOpts, decoderOpts, options, ops);
+        _reconnect = new ReconnectionManager(options.Http3.MaxReconnectAttempts, options.Http3.MaxReconnectBufferSize);
         _serverStreamResolver = new Server.ServerStreamResolver
         {
             OnPushStreamDetected = HandleIncomingPushStream
@@ -52,13 +74,6 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
     public void PreStart()
     {
         _clientSession.OpenCriticalStreams();
-
-        var preface = _clientSession.TryBuildControlPreface();
-        if (preface is not null)
-        {
-            _ops.OnOutbound(preface);
-        }
-
         ScheduleIdleCheck();
     }
 
@@ -310,7 +325,10 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
 
     private void BufferForReconnect(HttpRequestMessage request)
     {
-        _reconnect.Buffer(request);
+        if (!_reconnect.Buffer(request))
+        {
+            request.Fail(new HttpRequestException("HTTP/3 reconnect buffer full."));
+        }
     }
 
 

@@ -5,7 +5,7 @@ using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 
-public sealed class SniTlsEnforcementSpec
+public sealed class Http3SniTlsEnforcementSpec
 {
     private static RequestEndpoint ToEndpoint(Uri uri, Version version)
     {

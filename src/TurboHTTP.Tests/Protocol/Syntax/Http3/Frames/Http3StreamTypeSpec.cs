@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Frames;
 
-public sealed class StreamTypeSpec
+public sealed class Http3StreamTypeSpec
 {
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-6.2")]

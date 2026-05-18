@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.Encoder;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
 [Trait("Component", "Http3ServerResponseEncoder")]
 public sealed class ServerResponseEncoderSpec
@@ -17,6 +17,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_200_OK_returns_single_HEADERS_frame()
     {
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
@@ -34,6 +35,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_200_with_body_returns_HEADERS_frame_only()
     {
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
@@ -54,6 +56,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_status_is_first_header()
     {
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.Created)
@@ -79,6 +82,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_forbidden_headers_are_filtered()
     {
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
@@ -104,6 +108,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_header_names_are_lowercase()
     {
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
@@ -129,6 +134,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_content_headers_are_included()
     {
         var content = new ByteArrayContent("data"u8.ToArray());
@@ -157,6 +163,7 @@ public sealed class ServerResponseEncoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void EncodeHeaders_with_large_body_returns_HEADERS_frame_only()
     {
         var largeData = new byte[32768]; // Larger than max frame size (16384)

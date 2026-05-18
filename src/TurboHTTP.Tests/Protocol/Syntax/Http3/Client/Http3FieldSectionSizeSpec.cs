@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Client;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.Settings;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client;
 
 public sealed class Http3FieldSectionSizeSpec
 {

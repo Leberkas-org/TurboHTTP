@@ -432,7 +432,7 @@ internal sealed class QpackDecoder
         string name;
         if (isStatic)
         {
-            if (index < 0 || index >= QpackStaticTable.Count)
+            if (index is < 0 or >= QpackStaticTable.Count)
             {
                 throw new QpackException($"RFC 9204 §4.5.4 violation: Static table index {index} out of range.");
             }
@@ -517,7 +517,7 @@ internal sealed class QpackDecoder
 
     private static (string Name, string Value) LookupStaticEntry(int index)
     {
-        if (index < 0 || index >= QpackStaticTable.Count)
+        if (index is < 0 or >= QpackStaticTable.Count)
         {
             throw new QpackException(
                 $"RFC 9204 §3.1 violation: Static table index {index} out of range (0–{QpackStaticTable.Count - 1}).");

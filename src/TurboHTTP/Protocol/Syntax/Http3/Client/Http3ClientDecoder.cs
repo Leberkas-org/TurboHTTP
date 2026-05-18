@@ -1,4 +1,5 @@
 using System.Net;
+using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 
 namespace TurboHTTP.Protocol.Syntax.Http3.Client;
@@ -26,12 +27,14 @@ internal sealed class Http3ClientDecoder
     /// <summary>
     /// Decode a HEADERS frame into response headers on the given stream state.
     /// Returns true if a new response was created (first HEADERS),
-    /// false if this was a trailing HEADERS (trailers not yet supported).
+    /// false if this was a trailing HEADERS (trailers are stored in response).
     /// </summary>
     public bool DecodeHeaders(HeadersFrame frame, StreamState state)
     {
         if (state.HasResponse)
         {
+            var trailerHeaders = _tableSync.Decoder.Decode(frame.HeaderBlock.Span);
+            ApplyTrailers(trailerHeaders, state);
             return false;
         }
 
@@ -43,11 +46,13 @@ internal sealed class Http3ClientDecoder
     /// Assembles response headers from pre-decoded QPACK header fields.
     /// Used when headers are decoded via <see cref="Qpack.QpackTableSync.TryDecodeOrBlock"/>
     /// for proper RFC 9204 §2.1.2 blocked stream handling.
+    /// Trailers are stored in response when a response already exists.
     /// </summary>
     public bool AssembleHeaders(IReadOnlyList<(string Name, string Value)> headers, StreamState state)
     {
         if (state.HasResponse)
         {
+            ApplyTrailers(headers, state);
             return false;
         }
 
@@ -100,6 +105,24 @@ internal sealed class Http3ClientDecoder
         {
             throw new HttpProtocolException(
                 "RFC 9114 §4.2.2: Received field section exceeds SETTINGS_MAX_FIELD_SECTION_SIZE");
+        }
+    }
+
+    private static void ApplyTrailers(IReadOnlyList<(string Name, string Value)> headers, StreamState state)
+    {
+        var response = state.GetResponse();
+        foreach (var (name, value) in headers)
+        {
+            if (name.StartsWith(':'))
+            {
+                throw new HttpProtocolException(
+                    "RFC 9114 §4.3: Pseudo-header fields MUST NOT appear in trailer sections");
+            }
+
+            if (TrailerFieldValidator.IsAllowedInTrailer(name))
+            {
+                response.TrailingHeaders.TryAddWithoutValidation(name, value);
+            }
         }
     }
 }

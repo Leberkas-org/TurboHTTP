@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Frames;
 
-public sealed class FrameRoundTripSpec
+public sealed class Http3FrameRoundTripSpec
 {
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-7")]

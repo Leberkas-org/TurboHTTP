@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 
-public sealed class ErrorCodeSpec
+public sealed class Http3ErrorCodeSpec
 {
     [Theory(Timeout = 5000)]
     [Trait("RFC", "RFC9114-8.1")]

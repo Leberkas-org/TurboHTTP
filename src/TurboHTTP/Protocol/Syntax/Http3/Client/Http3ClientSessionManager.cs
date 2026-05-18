@@ -3,6 +3,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Multiplexed;
 using TurboHTTP.Protocol.Multiplexed.Body;
+using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Streams.Stages;
 using static Servus.Core.Servus;
@@ -11,6 +12,8 @@ namespace TurboHTTP.Protocol.Syntax.Http3.Client;
 
 internal sealed class Http3ClientSessionManager
 {
+    private readonly Http3ClientEncoderOptions _encoderOptions;
+    private readonly Http3ClientDecoderOptions _decoderOptions;
     private readonly TurboClientOptions _options;
     private readonly IStageOperations _ops;
 
@@ -33,21 +36,27 @@ internal sealed class Http3ClientSessionManager
     public bool HasInFlightRequests => _correlationMap.Count > 0 || _streamManager.HasInFlightRequests;
     public RequestEndpoint Endpoint { get; private set; }
 
-    public Http3ClientSessionManager(TurboClientOptions options, IStageOperations ops)
+    public Http3ClientSessionManager(
+        Http3ClientEncoderOptions encoderOptions,
+        Http3ClientDecoderOptions decoderOptions,
+        TurboClientOptions options,
+        IStageOperations ops)
     {
+        _encoderOptions = encoderOptions;
+        _decoderOptions = decoderOptions;
         _options = options;
         _ops = ops;
 
-        _tracker = new QuicStreamTracker(initialNextStreamId: 0, options.Http3.MaxConcurrentStreams);
+        _tracker = new QuicStreamTracker(initialNextStreamId: 0, decoderOptions.MaxConcurrentStreams);
 
         _tableSync = new QpackTableSync(
             encoderMaxCapacity: 0,
-            decoderMaxCapacity: options.Http3.QpackMaxTableCapacity,
-            maxBlockedStreams: options.Http3.QpackBlockedStreams,
-            configuredEncoderLimit: options.Http3.QpackMaxTableCapacity);
+            decoderMaxCapacity: encoderOptions.QpackMaxTableCapacity,
+            maxBlockedStreams: encoderOptions.QpackBlockedStreams,
+            configuredEncoderLimit: encoderOptions.QpackMaxTableCapacity);
 
         _requestEncoder = new Http3ClientEncoder(_tableSync);
-        _responseDecoder = new Http3ClientDecoder(_tableSync, options.Http3.MaxFieldSectionSize);
+        _responseDecoder = new Http3ClientDecoder(_tableSync, decoderOptions.MaxFieldSectionSize);
         _qpackStreamManager = new QpackStreamManager(ops, _requestEncoder, _responseDecoder, _tableSync);
         _streamManager = new StreamManager(ops, _responseDecoder, _tableSync)
         {
@@ -71,6 +80,12 @@ internal sealed class Http3ClientSessionManager
             Endpoint = endpoint;
             var transportOptions = OptionsFactory.Build(Endpoint, _options);
             _ops.OnOutbound(new ConnectTransport(transportOptions));
+
+            var preface = TryBuildControlPreface();
+            if (preface is not null)
+            {
+                _ops.OnOutbound(preface);
+            }
         }
 
         var streamId = _tracker.AllocateStreamId();
@@ -157,9 +172,9 @@ internal sealed class Http3ClientSessionManager
         _controlPrefaceSent = true;
 
         var settings = new Settings();
-        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, _options.Http3.QpackMaxTableCapacity);
-        settings.Set(SettingsIdentifier.QpackBlockedStreams, _options.Http3.QpackBlockedStreams);
-        settings.Set(SettingsIdentifier.MaxFieldSectionSize, _options.Http3.MaxFieldSectionSize);
+        settings.Set(SettingsIdentifier.QpackMaxTableCapacity, _encoderOptions.QpackMaxTableCapacity);
+        settings.Set(SettingsIdentifier.QpackBlockedStreams, _encoderOptions.QpackBlockedStreams);
+        settings.Set(SettingsIdentifier.MaxFieldSectionSize, _decoderOptions.MaxFieldSectionSize);
         var settingsFrame = settings.ToFrame();
 
         var streamTypeSize = QuicVarInt.EncodedLength((long)StreamType.Control);

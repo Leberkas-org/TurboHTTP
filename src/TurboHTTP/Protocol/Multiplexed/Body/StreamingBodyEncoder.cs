@@ -7,7 +7,7 @@ internal sealed class StreamingBodyEncoder : IBodyEncoder
     private readonly int _chunkSize;
     private readonly CancellationTokenSource _cts = new();
 
-    public StreamingBodyEncoder(int chunkSize = 16_384)
+    public StreamingBodyEncoder(int chunkSize = 16 * 1024)
     {
         _chunkSize = chunkSize;
     }

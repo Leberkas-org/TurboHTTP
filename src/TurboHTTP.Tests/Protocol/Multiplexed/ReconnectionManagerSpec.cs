@@ -89,4 +89,41 @@ public sealed class ReconnectionManagerSpec
         Assert.False(mgr.IsReconnecting);
         Assert.Equal(0, mgr.BufferedCount);
     }
+
+    [Fact(Timeout = 5000)]
+    public void ReconnectionManager_should_reject_buffer_when_full()
+    {
+        var mgr = new ReconnectionManager(maxAttempts: 3, maxBufferSize: 2);
+        mgr.OnConnectionLost([]);
+
+        Assert.True(mgr.Buffer(Get("http://host/a")));
+        Assert.True(mgr.Buffer(Get("http://host/b")));
+        Assert.False(mgr.Buffer(Get("http://host/c")));
+        Assert.Equal(2, mgr.BufferedCount);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ReconnectionManager_should_count_initial_replayable_toward_limit()
+    {
+        var mgr = new ReconnectionManager(maxAttempts: 3, maxBufferSize: 3);
+        mgr.OnConnectionLost([Get("http://host/a"), Get("http://host/b")]);
+
+        Assert.True(mgr.Buffer(Get("http://host/c")));
+        Assert.False(mgr.Buffer(Get("http://host/d")));
+        Assert.Equal(3, mgr.BufferedCount);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ReconnectionManager_should_accept_again_after_restore_clears_buffer()
+    {
+        var mgr = new ReconnectionManager(maxAttempts: 3, maxBufferSize: 1);
+        mgr.OnConnectionLost([]);
+        mgr.Buffer(Get("http://host/a"));
+        Assert.False(mgr.Buffer(Get("http://host/b")));
+
+        mgr.OnConnectionRestored();
+        mgr.OnConnectionLost([]);
+
+        Assert.True(mgr.Buffer(Get("http://host/c")));
+    }
 }

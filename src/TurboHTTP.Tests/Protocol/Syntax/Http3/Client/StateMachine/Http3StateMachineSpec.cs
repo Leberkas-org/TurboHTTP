@@ -39,6 +39,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void PreStart_should_emit_control_stream_setup()
     {
         var sm = CreateMachine();
@@ -51,6 +52,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
     public void DecodeServerData_should_absorb_settings_frame()
     {
         var sm = CreateMachine();
@@ -65,6 +67,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
     public void DecodeServerData_should_absorb_duplicate_settings()
     {
         var sm = CreateMachine();
@@ -80,6 +83,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.6")]
     public void CanAcceptRequest_should_be_false_after_goaway()
     {
         var sm = CreateMachine();
@@ -93,6 +97,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.6")]
     public void DecodeServerData_should_absorb_goaway_frame()
     {
         var sm = CreateMachine();
@@ -107,6 +112,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.6")]
     public void DecodeServerData_should_accept_decreasing_goaway_stream_ids()
     {
         var sm = CreateMachine();
@@ -126,6 +132,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.6")]
     public void DecodeServerData_should_absorb_invalid_goaway_stream_id()
     {
         var sm = CreateMachine();
@@ -139,6 +146,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.6")]
     public void DecodeServerData_should_absorb_non_divisible_by_four_goaway()
     {
         var sm = CreateMachine();
@@ -150,6 +158,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2.3")]
     public void DecodeServerData_should_reject_push_promise_with_cancel_push()
     {
         var sm = CreateMachine();
@@ -165,6 +174,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2.3")]
     public void DecodeServerData_should_absorb_push_promise_when_no_pending_request()
     {
         var sm = CreateMachine();
@@ -176,6 +186,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2.3")]
     public void DecodeServerData_should_absorb_cancel_push_frame()
     {
         var sm = CreateMachine();
@@ -188,6 +199,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2.3")]
     public void DecodeServerData_should_absorb_max_push_id_frame()
     {
         var sm = CreateMachine();
@@ -199,6 +211,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void DecodeServerData_should_forward_headers_frame_to_app()
     {
         var sm = CreateMachine();
@@ -218,6 +231,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void DecodeServerData_should_forward_data_frame_to_app()
     {
         var sm = CreateMachine();
@@ -233,6 +247,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void OnRequest_should_emit_serialized_frames_via_outbound_callback()
     {
         var sm = CreateMachine();
@@ -245,6 +260,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.6")]
     public void OnRequest_should_reject_after_goaway()
     {
         var sm = CreateMachine();
@@ -257,6 +273,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void CanAcceptRequest_should_be_true_initially()
     {
         var sm = CreateMachine();
@@ -265,6 +282,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void CanAcceptRequest_should_be_false_during_reconnect()
     {
         var sm = CreateMachine();
@@ -278,6 +296,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void OnConnectionLost_should_enter_reconnect_state()
     {
         var sm = CreateMachine();
@@ -291,6 +310,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void OnRequest_should_buffer_frames_during_reconnect()
     {
         var sm = CreateMachine();
@@ -306,6 +326,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void OnConnectionRestored_should_replay_buffered_frames()
     {
         var sm = CreateMachine();
@@ -326,6 +347,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void OnConnectionRestored_should_clear_reconnect_state()
     {
         var sm = CreateMachine();
@@ -340,6 +362,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void DecodeServerData_should_handle_stream_read_completed()
     {
         var sm = CreateMachine();
@@ -354,6 +377,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void HasInFlightRequests_should_track_requests()
     {
         var sm = CreateMachine();
@@ -373,6 +397,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void OnUpstreamFinished_should_flush_all_pending_responses()
     {
         var sm = CreateMachine();
@@ -487,6 +512,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-7.2.4")]
     public void OnTimerFired_should_handle_idle_timeout()
     {
         var sm = CreateMachine(new TurboClientOptions
@@ -501,6 +527,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void OnTimerFired_should_ignore_unknown_timers()
     {
         var sm = CreateMachine();
@@ -512,6 +539,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3")]
     public void Cleanup_should_dispose_resources()
     {
         var sm = CreateMachine();
@@ -524,6 +552,7 @@ public sealed class Http3StateMachineSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-3.1")]
     public void Endpoint_should_be_accessible()
     {
         var sm = CreateMachine();

@@ -7,6 +7,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Security;
 public sealed class QpackSecuritySpec
 {
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDynamicTable_should_bound_table_size_when_encoder_instruction_flooding()
     {
         // Attack: Flood the QPACK dynamic table with many insert instructions.
@@ -33,6 +34,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDynamicTable_should_store_no_entries_when_table_capacity_is_zero()
     {
         // Attack: Try to insert into a disabled (capacity=0) table
@@ -46,6 +48,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDynamicTable_should_evict_old_entries_when_table_is_full()
     {
         // Attack: Fill table completely, then insert more — verify eviction
@@ -68,6 +71,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDynamicTable_should_evict_all_when_capacity_set_to_zero()
     {
         var table = new QpackDynamicTable(4096);
@@ -86,6 +90,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDecoder_should_throw_when_blocked_stream_limit_exceeded()
     {
         // Attack: Flood with header blocks requiring insert count > known,
@@ -116,6 +121,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDecoder_should_throw_immediately_when_blocked_stream_limit_is_zero()
     {
         // No blocking allowed — any RIC > known insert count is an error
@@ -134,6 +140,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDecoder_should_allow_new_streams_when_unblock_streams_called_after_limit()
     {
         var decoder = new QpackDecoder(maxTableCapacity: 4096, maxBlockedStreams: 1);
@@ -159,6 +166,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackIntegerCodec_should_throw_when_integer_overflows()
     {
         // Attack: Craft continuation bytes that push the decoded integer past MaxIntegerValue
@@ -175,6 +183,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackIntegerCodec_should_throw_when_integer_encoding_too_long()
     {
         // Attack: Very long integer encoding (>9 continuation bytes)
@@ -193,6 +202,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackIntegerCodec_should_throw_when_integer_truncated()
     {
         // Attack: Integer with continuation bit set but no more data
@@ -226,6 +236,7 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDynamicTable_should_never_exceed_capacity_after_1000_inserts()
     {
         // Memory assertion: table size is always <= Capacity after every insert
@@ -276,12 +287,14 @@ public sealed class QpackSecuritySpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackDynamicTable_should_throw_when_negative_table_capacity()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new QpackDynamicTable(-1));
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204-7")]
     public void QpackEncoder_should_bound_encoder_instructions_when_encoder_flooded()
     {
         // Attack: Many headers encoded with dynamic table → encoder instructions

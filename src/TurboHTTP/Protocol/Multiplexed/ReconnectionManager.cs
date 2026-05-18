@@ -3,12 +3,14 @@ namespace TurboHTTP.Protocol.Multiplexed;
 internal sealed class ReconnectionManager
 {
     private readonly int _maxAttempts;
+    private readonly int _maxBufferSize;
     private readonly List<HttpRequestMessage> _buffer = [];
     private int _attempts;
 
-    public ReconnectionManager(int maxAttempts)
+    public ReconnectionManager(int maxAttempts, int maxBufferSize = int.MaxValue)
     {
         _maxAttempts = maxAttempts;
+        _maxBufferSize = maxBufferSize;
     }
 
     public bool IsReconnecting { get; private set; }
@@ -44,9 +46,15 @@ internal sealed class ReconnectionManager
         return true;
     }
 
-    public void Buffer(HttpRequestMessage request)
+    public bool Buffer(HttpRequestMessage request)
     {
+        if (_buffer.Count >= _maxBufferSize)
+        {
+            return false;
+        }
+
         _buffer.Add(request);
+        return true;
     }
 
     public void FailAllBuffered(Exception reason)

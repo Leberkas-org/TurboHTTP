@@ -25,6 +25,7 @@ public sealed class Http3DecoderStreamSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public void PreStart_should_emit_decoder_stream_opening()
     {
         var sm = CreateMachine();
@@ -41,6 +42,7 @@ public sealed class Http3DecoderStreamSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public void PreStart_should_emit_control_stream_preface()
     {
         var opts = new TurboClientOptions
@@ -65,6 +67,7 @@ public sealed class Http3DecoderStreamSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public void OnConnectionLost_should_emit_control_streams()
     {
         var sm = CreateMachine();
@@ -89,6 +92,7 @@ public sealed class Http3DecoderStreamSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9204")]
     public void DecodeServerData_with_qpack_encoder_updates_should_be_routed_to_encoder_stream()
     {
         var sm = CreateMachine();

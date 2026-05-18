@@ -52,21 +52,19 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         netSubscription.Request(20);
         resSubscription.Request(10);
 
-        serverSubscription.SendNext(new TransportConnected(default!));
+        serverSubscription.SendNext(new TransportConnected(null!));
 
         // Send two requests — each should be routed to a different QUIC stream
         appSubscription.SendNext(MakeRequest("/stream1"));
         appSubscription.SendNext(MakeRequest("/stream2"));
 
-        // After TransportConnected: PreStart items (3x OpenStream + preface) are flushed,
-        // then request encoding emits ConnectTransport + OpenStream + MultiplexedData + CompleteWrites per request.
-        // Verify we get at least the PreStart batch + first request items.
+        // After TransportConnected: PreStart items (3x OpenStream) are flushed + preface,
+        // then request encoding emits ConnectTransport + MultiplexedData + CompleteWrites per request.
         for (var i = 0; i < 8; i++)
         {
             await networkSub.ExpectNextAsync(TestContext.Current.CancellationToken);
         }
     }
-
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9114-5.2")]
@@ -115,7 +113,6 @@ public sealed class Http30ConnectionStageSpec : StreamTestBase
         // Should handle timeout gracefully (may emit keep-alive or close gracefully)
         Assert.True(true);
     }
-
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9114-3")]

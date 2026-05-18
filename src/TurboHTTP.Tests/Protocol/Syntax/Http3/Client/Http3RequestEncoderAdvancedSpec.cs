@@ -3,7 +3,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Client;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.Encoder;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client;
 
 public sealed class Http3RequestEncoderAdvancedSpec
 {

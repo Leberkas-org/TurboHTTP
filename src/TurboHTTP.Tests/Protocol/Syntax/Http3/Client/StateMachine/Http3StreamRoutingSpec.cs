@@ -53,6 +53,7 @@ public sealed class Http3StreamRoutingSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public async Task DecodeServerData_should_use_per_stream_decoders()
     {
         var sm = CreateMachine();
@@ -82,6 +83,7 @@ public sealed class Http3StreamRoutingSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public async Task AssembleResponse_should_route_data_to_correct_stream_with_60KB_bodies()
     {
         var sm = CreateMachine();
@@ -125,6 +127,7 @@ public sealed class Http3StreamRoutingSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public void DecodeServerData_should_handle_fragmented_data_across_multiple_calls()
     {
         var sm = CreateMachine();
@@ -172,6 +175,7 @@ public sealed class Http3StreamRoutingSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6.2")]
     public void DecodeServerData_should_isolate_control_stream_from_request_streams()
     {
         var sm = CreateMachine();

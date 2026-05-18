@@ -5,6 +5,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 public sealed class Http3StreamTrackerSpec
 {
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void AllocateStreamId_should_return_zero_for_first_allocation()
     {
         var tracker = new StreamTracker();
@@ -15,6 +16,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void AllocateStreamId_should_increment_by_four()
     {
         var tracker = new StreamTracker();
@@ -29,6 +31,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void AllocateStreamId_should_use_custom_initial_id()
     {
         var tracker = new StreamTracker(initialNextStreamId: 12);
@@ -40,6 +43,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void NextStreamId_should_reflect_current_counter()
     {
         var tracker = new StreamTracker();
@@ -52,6 +56,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void CanOpenStream_should_return_true_when_below_limit()
     {
         var tracker = new StreamTracker(maxConcurrentStreams: 2);
@@ -60,6 +65,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void CanOpenStream_should_return_false_when_at_limit()
     {
         var tracker = new StreamTracker(maxConcurrentStreams: 2);
@@ -70,6 +76,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void CanOpenStream_should_return_true_after_stream_closed()
     {
         var tracker = new StreamTracker(maxConcurrentStreams: 1);
@@ -83,6 +90,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void OnStreamOpened_should_increment_active_count()
     {
         var tracker = new StreamTracker();
@@ -95,6 +103,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void OnStreamClosed_should_decrement_active_count()
     {
         var tracker = new StreamTracker();
@@ -107,6 +116,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void OnStreamClosed_should_return_false_for_unknown_stream()
     {
         var tracker = new StreamTracker();
@@ -118,6 +128,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void OnStreamClosed_should_return_true_for_tracked_stream()
     {
         var tracker = new StreamTracker();
@@ -129,6 +140,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void Reset_should_clear_active_streams()
     {
         var tracker = new StreamTracker();
@@ -141,6 +153,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void Reset_should_restart_stream_id_allocation_from_zero()
     {
         var tracker = new StreamTracker();
@@ -154,6 +167,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void MaxConcurrentStreams_should_be_settable()
     {
         var tracker = new StreamTracker(maxConcurrentStreams: 1);
@@ -167,6 +181,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void StreamIds_should_support_large_values()
     {
         // QUIC uses 62-bit variable-length integers — verify long works for large IDs
@@ -181,6 +196,7 @@ public sealed class Http3StreamTrackerSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-6")]
     public void StreamTracker_should_use_configured_max_concurrent_streams()
     {
         var tracker = new StreamTracker(maxConcurrentStreams: 250);

@@ -7,7 +7,7 @@ using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 using TurboHTTP.Streams;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.StateMachine;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
 /// <summary>
 /// Unit tests for HTTP/3 Http3ServerStateMachine.

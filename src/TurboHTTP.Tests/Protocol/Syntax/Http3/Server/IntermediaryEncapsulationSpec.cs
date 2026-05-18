@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Client;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.Decoder;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
 public sealed class IntermediaryEncapsulationSpec
 {
@@ -182,7 +182,7 @@ public sealed class IntermediaryEncapsulationSpec
             ("x-custom", "value\r\ninjected: evil"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]

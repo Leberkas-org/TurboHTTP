@@ -3,7 +3,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Client;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.Decoder;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client;
 
 public sealed class Http3ResponseDecoderEdgeCasesSpec
 {
@@ -63,10 +63,11 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
         var result = _decoder.DecodeHeaders(frame, state);
         Assert.True(result);
 
-        // The state now has a response, so subsequent DecodeHeaders returns false (trailing)
+        // The state now has a response, so subsequent DecodeHeaders is treated as trailers
+        // RFC 9114 §4.3: Pseudo-header fields MUST NOT appear in trailer sections
         var frame2 = EncodeHeaders((":status", "201"));
-        var result2 = _decoder.DecodeHeaders(frame2, state);
-        Assert.False(result2);
+        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeaders(frame2, state));
+        Assert.Contains("pseudo", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact(Timeout = 5000)]
@@ -442,5 +443,57 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
 
         Assert.Equal(HttpStatusCode.OK, state1.GetResponse().StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, state2.GetResponse().StatusCode);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.3")]
+    public void DecodeHeaders_should_reject_method_pseudo_header_in_trailers()
+    {
+        var state = new StreamState();
+
+        // First decode with valid :status response
+        var responseFrame = EncodeHeaders((":status", "200"));
+        _decoder.DecodeHeaders(responseFrame, state);
+
+        // Now attempt to decode trailers with :method pseudo-header
+        var trailerFrame = EncodeHeaders((":method", "GET"), ("x-checksum", "abc"));
+
+        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeaders(trailerFrame, state));
+        Assert.Contains("pseudo", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.3")]
+    public void DecodeHeaders_should_reject_path_pseudo_header_in_trailers()
+    {
+        var state = new StreamState();
+
+        // First decode with valid :status response
+        var responseFrame = EncodeHeaders((":status", "200"));
+        _decoder.DecodeHeaders(responseFrame, state);
+
+        // Now attempt to decode trailers with :path pseudo-header
+        var trailerFrame = EncodeHeaders((":path", "/"), ("x-checksum", "abc"));
+
+        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeaders(trailerFrame, state));
+        Assert.Contains("pseudo", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.3")]
+    public void DecodeHeaders_should_accept_regular_headers_in_trailers()
+    {
+        var state = new StreamState();
+
+        // First decode with valid :status response
+        var responseFrame = EncodeHeaders((":status", "200"));
+        _decoder.DecodeHeaders(responseFrame, state);
+
+        // Now decode trailers with only regular headers (should succeed)
+        var trailerFrame = EncodeHeaders(("x-checksum", "abc123"));
+
+        var result = _decoder.DecodeHeaders(trailerFrame, state);
+        // Trailers return false, indicating non-response headers
+        Assert.False(result);
     }
 }

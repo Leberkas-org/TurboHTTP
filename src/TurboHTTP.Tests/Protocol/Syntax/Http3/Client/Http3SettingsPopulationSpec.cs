@@ -4,7 +4,7 @@ using TurboHTTP.Protocol.Syntax.Http3.Client;
 using Http3Settings = TurboHTTP.Protocol.Syntax.Http3.Settings;
 using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.Settings;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client;
 
 /// <summary>
 /// Tests for HTTP/3 SETTINGS frame population during connection preface.

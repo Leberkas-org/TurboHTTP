@@ -2,7 +2,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.Decoder;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
 [Trait("Component", "Http3ServerRequestDecoder")]
 public sealed class ServerRequestDecoderSpec
@@ -17,6 +17,7 @@ public sealed class ServerRequestDecoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void DecodeHeaders_GET_with_all_pseudoheaders_returns_correct_method_and_uri()
     {
         var headers = new List<(string Name, string Value)>
@@ -50,6 +51,7 @@ public sealed class ServerRequestDecoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void DecodeHeaders_POST_with_content_type_includes_content_headers()
     {
         var headers = new List<(string Name, string Value)>
@@ -84,6 +86,7 @@ public sealed class ServerRequestDecoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.3")]
     public void DecodeHeaders_missing_method_throws_HttpProtocolException()
     {
         var headers = new List<(string Name, string Value)>
@@ -112,6 +115,7 @@ public sealed class ServerRequestDecoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.3")]
     public void DecodeHeaders_missing_path_for_non_CONNECT_throws_HttpProtocolException()
     {
         var headers = new List<(string Name, string Value)>
@@ -140,6 +144,7 @@ public sealed class ServerRequestDecoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.4")]
     public void DecodeHeaders_CONNECT_without_path_and_scheme_succeeds()
     {
         var headers = new List<(string Name, string Value)>
@@ -170,6 +175,7 @@ public sealed class ServerRequestDecoderSpec
 
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.1")]
     public void DecodeHeaders_with_regular_headers_includes_them_in_request()
     {
         var headers = new List<(string Name, string Value)>
@@ -203,6 +209,7 @@ public sealed class ServerRequestDecoderSpec
     }
 
     [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9114-4.3")]
     public void DecodeHeaders_missing_authority_for_non_CONNECT_throws_HttpProtocolException()
     {
         var headers = new List<(string Name, string Value)>

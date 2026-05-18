@@ -1,4 +1,5 @@
 using Servus.Akka.Transport;
+using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Streams;
 
 namespace TurboHTTP.Protocol.Syntax.Http3.Server;
@@ -31,7 +32,19 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
         TimeSpan? bodyRateGracePeriod = null)
     {
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
-        _sessionManager = new Http3ServerSessionManager(ops, maxRequestBodySize);
+
+        var encoderOpts = new Http3ServerEncoderOptions
+        {
+            QpackMaxTableCapacity = 4096,
+        };
+
+        var decoderOpts = new Http3ServerDecoderOptions
+        {
+            MaxConcurrentStreams = 100,
+            MaxFieldSectionSize = 64 * 1024,
+        };
+
+        _sessionManager = new Http3ServerSessionManager(encoderOpts, decoderOpts, ops, maxRequestBodySize);
 
         _keepAliveTimeout = keepAliveTimeout ?? TimeSpan.FromSeconds(130);
         _requestHeadersTimeout = requestHeadersTimeout ?? TimeSpan.FromSeconds(30);

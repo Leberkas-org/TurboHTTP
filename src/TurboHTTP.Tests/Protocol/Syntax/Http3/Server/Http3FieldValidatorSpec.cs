@@ -1,6 +1,6 @@
 using TurboHTTP.Protocol.Syntax.Http3;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.Decoder;
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
 public sealed class Http3FieldValidatorSpec
 {
