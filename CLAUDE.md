@@ -4,28 +4,31 @@ High-performance HTTP client and server for .NET built on Akka.Streams. Implemen
 
 ## Build & Test
 
-All commands run from `src/` (where `global.json` lives). Restore/build use full paths from repo root.
+All commands run from `src/` (where `global.json` lives).
 
 ```bash
-dotnet restore ./src/TurboHTTP.slnx
-dotnet build --configuration Release ./src/TurboHTTP.slnx
+dotnet restore TurboHTTP.slnx
+dotnet build --configuration Release TurboHTTP.slnx
 
-# Tests (xUnit v3 direct runner)
-dotnet test --project TurboHTTP.Tests/TurboHTTP.Tests.csproj              # unit + stage
-dotnet test --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj  # integration (network)
+# Tests (xUnit v3 — use dotnet run, not dotnet test)
+dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj                          # all unit + stage
+dotnet run --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj    # integration (network)
 
 # Single class (preferred for integration — full suite is slow)
 dotnet run --project TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj -- -class "TurboHTTP.IntegrationTests.H2.ConnectionSpec"
 
-# Single method / namespace
-dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- -namespace "TurboHTTP.Tests.RFC9113"
-dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- -class "TurboHTTP.Tests.RFC9113.Http2DecoderErrorCodeTests"
+# Single class / filter
+dotnet run --project TurboHTTP.Tests/TurboHTTP.Tests.csproj -- -class "TurboHTTP.Tests.Protocol.Syntax.Http2.Frames.Http2DecoderErrorCodeSpec"
+
+# Integration tests with specific backend (default: auto-detect Docker, fallback Kestrel)
+$env:TURBOHTTP_TEST_BACKEND = "kestrel"   # force Kestrel (no Docker needed)
+$env:TURBOHTTP_TEST_BACKEND = "docker"    # force Docker (fails if unavailable)
 
 # Benchmarks
 dotnet run --configuration Release --project TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj
 
 # Docs site (Node.js 20+)
-cd docs && npm install && npm run docs:dev
+cd ../docs && npm install && npm run docs:dev
 ```
 
 ## Architecture
@@ -67,6 +70,7 @@ Single source of truth for all non-code knowledge. **Use Obsidian MCP tools** (`
 - `Task<T>` not Future, `TimeSpan` not Duration
 - Extend-only public APIs, preserve wire format compatibility
 - Include unit tests with all changes
+- **Size literals**: Always `N * 1024` or `N * 1024 * 1024`, never raw numbers like `65536` or `2_097_152`
 
 ## Performance Patterns
 
@@ -88,6 +92,31 @@ New tests use **component-based folders** (`Http10/`, `Http11/`, `Http2/`, etc.)
 - `[Trait("RFC", "RFC9113-4.1")]` for traceability, `[Fact(Timeout = 5000)]` required
 - `[Fact(DisplayName = ...)]` is deprecated — method name IS the documentation
 - Max 500 lines per test class
+
+### Test File Naming Convention
+
+**File name = class name, always.** Pattern: `{ProtocolPrefix?}{ProductionClassName}{TestConcern?}Spec`
+
+- Protocol prefix (`Http2`, `Http3`, `Hpack`, `Qpack`) required when test is under `Protocol/Syntax/{HttpVersion}/` or class name is shared across namespaces
+- Omit prefix when class is globally unique (`CookieJar`, `CacheStore`) or in protocol-agnostic folders (`Client/`, `Features/`)
+- When a SUT has multiple test files, suffix describes **test concern** — never `Part1`/`Part2`/numbered
+- Duplicates disambiguated by test focus, not location
+
+### H2/H3 Test Folder Placement
+
+| Folder | What belongs here | Types under test |
+|--------|------------------|-----------------|
+| **Frames/** | Wire format: serialize, deserialize, parse, validate | `FrameDecoder`, `Http2Frame`/`Http3Frame` subtypes |
+| **Client/** | Client behavioral logic (subfolders at 5+ files) | `*ClientStateMachine`, `FlowController`, `*ClientEncoder`, `*ClientDecoder` |
+| **Server/** | Server behavioral logic (subfolders at 5+ files) | `*ServerStateMachine`, `*ServerEncoder`, `*ServerDecoder` |
+| **Hpack/** / **Qpack/** | Header compression (own RFC) | `HpackEncoder`/`QpackEncoder`, dynamic/static tables |
+| **Security/** | Fuzz, adversarial, resource exhaustion | Any, from attacker perspective |
+| **Stages/** | Akka Streams integration (GraphDsl) | `*ConnectionStage` |
+| **Options/** | Configuration validation stubs | `*Options` types |
+
+**Decision rule**: `FrameDecoder` + frame assertions → Frames/. `*StateMachine`/`*Encoder`/`*Decoder` → Client/ or Server/. Akka Streams graph → Stages/.
+
+Http10/Http11 use flat `Client/` and `Server/` (no subfolders).
 
 ## Stage Port Naming (Quick Reference)
 
@@ -111,26 +140,14 @@ Prefer retrieval-led reasoning over pretraining for any .NET work.
 
 ## Sequential Thinking MCP (`mcp__sequential-thinking__sequentialthinking`)
 
-Use for multi-step reasoning where the full scope isn't clear upfront. The tool lets you think
-step-by-step with the ability to revise, branch, and extend as understanding deepens.
+Use for multi-step reasoning where the full scope isn't clear upfront.
 
 **When to use:**
-
 - Complex debugging where the root cause isn't obvious
 - Architecture/design decisions with multiple trade-offs
 - RFC compliance analysis requiring cross-referencing multiple sections
-- Any problem where early assumptions may need revision
 
-**How it works:** Call the tool repeatedly, once per thought step. Each call takes:
-
-- `thought` — your current reasoning step (analysis, revision, hypothesis, verification)
-- `thoughtNumber` / `totalThoughts` — track position; adjust `totalThoughts` up/down as needed
-- `nextThoughtNeeded` — `true` to continue, `false` when done
-- `isRevision` + `revisesThought` — mark a step as reconsidering an earlier thought
-- `branchFromThought` + `branchId` — explore an alternative path without losing the main line
-
-**Pattern:** Analyze → Hypothesize → Verify → Conclude. Revise or branch whenever new
-information contradicts earlier steps. Don't force linear progression — backtrack freely.
+Call repeatedly, one thought per step. Revise or branch freely when new information contradicts earlier steps.
 
 ## Roslyn Navigator — Required Before Commit
 

@@ -216,8 +216,6 @@ See [Connection Pooling guide](/guide/connection-pooling) for pool lifecycle det
 | `Http1.MaxBatchWeight`           | `65536` (64 KiB) | Max batch weight for request encoding         |
 | `Http1.MaxResponseHeadersLength` | `64` (KB)        | Max response header size                      |
 | `Http1.MaxReconnectAttempts`     | `3`              | Max reconnect attempts on connection drop     |
-| `Http1.MaxResponseDrainSize`     | `1048576` (1 MB) | Max bytes to drain from incomplete response   |
-| `Http1.ResponseDrainTimeout`     | `2 s`            | Timeout for draining incomplete response body |
 
 ### HTTP/2 options
 
