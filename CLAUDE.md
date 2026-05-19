@@ -34,10 +34,12 @@ cd ../docs && npm install && npm run docs:dev
 ## Architecture
 
 ```
-Client Surface  (TurboHTTP/)                — ITurboHttpClient, factory, builder, DI
-Streams Layer   (TurboHTTP/Streams/)        — Engines (Http10/11/20/30Engine), Stages/{Encoding,Decoding,Features,Routing}
-Protocol Layer  (TurboHTTP/Protocol/)       — Http10/, Http11/, Http2/, Http3/, Cookies/, Caching/, Semantics/, AltSvc/
-Transport Layer (TurboHTTP/Transport/)      — Connection/, Tcp/, Quic/
+Client Surface  (TurboHTTP/Client/)          - ITurboHttpClient, factory, builder, DI, options
+Server Surface  (TurboHTTP/Server/)          - TurboServerOptions, TurboHttpContext, Context/
+Server Domains  (TurboHTTP/Server/{domain}/) - Middleware, Routing, Binding, Entity, Hosting, Lifecycle
+Streams Layer   (TurboHTTP/Streams/)         - Engines, Stages/{Client,Server,Features,Internal}
+Protocol Layer  (TurboHTTP/Protocol/)        - Http10/, Http11/, Http2/, Http3/, Semantics/
+Features        (TurboHTTP/Features/)        - Cookies/, Caching/, AltSvc/
 ```
 
 ## Obsidian Vault (`notes/`)
