@@ -122,3 +122,18 @@ QPACK is the HTTP/3 equivalent of HPACK, adapted for QUIC's out-of-order deliver
 **No head-of-line blocking:**
 
 Unlike HTTP/2 where a single lost TCP packet can stall all streams, HTTP/3's QUIC transport delivers each stream independently. A lost packet on one stream does not affect other in-flight requests.
+
+---
+
+## Server Protocol Engines
+
+When a connection arrives at TurboHTTP Server, the server mirrors the client architecture with protocol-specific server engines. Each server engine handles request parsing and response encoding for a particular HTTP version.
+
+| Engine                  | Protocol | Characteristics                                                                                                       |
+| ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `Http10ServerEngine`    | HTTP/1.0 | Each connection = one request/response pair; closes after sending response. No keep-alive, no pipelining.             |
+| `Http11ServerEngine`    | HTTP/1.1 | Persistent connections with `Connection: keep-alive`; supports pipelining (multiple requests queued). Chunked responses.  |
+| `Http20ServerEngine`    | HTTP/2   | Stream multiplexing over a single connection; uses HPACK header compression; flow-control windows at connection and stream level |
+| `Http30ServerEngine`    | HTTP/3   | QUIC-based multiplexing with per-stream flow control; uses QPACK header compression; eliminates head-of-line blocking          |
+
+Each server engine implements `IServerProtocolEngine` and registers itself with the `ProtocolRouter`. When a connection arrives, the router detects the protocol from the initial bytes (HTTP/1.x format, HTTP/2 preface `PRI * HTTP/2.0`, or QUIC Initial packet) and routes the connection to the appropriate engine's state machine for the duration of that connection.

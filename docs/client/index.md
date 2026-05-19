@@ -6,6 +6,10 @@ TurboHTTP is a high-performance HTTP client for .NET built on Akka.Streams. It s
 See [Installation & Setup](./installation) for DI registration, named clients, and the fluent builder API. Coming from HttpClient? Check the [Migration Guide](./migration).
 :::
 
+::: info Looking for the server?
+TurboHTTP also provides a server with middleware, routing, and entity gateway. See the [Server Guide](/server/).
+:::
+
 ## Quick Start
 
 ```bash
@@ -134,4 +138,4 @@ TurboHTTP works out of the box — no middleware to wire up, no Polly policies t
 
 **Deep dive:**
 
-- [Architecture Overview](/architecture/) — four-layer design, data flow, protocol engines, end-to-end scenarios
+- [Architecture Overview](/architecture/) — client and server pipeline, protocol engines, end-to-end scenarios

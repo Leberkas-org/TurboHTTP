@@ -21,7 +21,7 @@ var client = factory.CreateClient();          // extension method: CreateClient(
 var searchClient = factory.CreateClient("search");
 ```
 
-See [Configuration guide](/guide/configuration) for DI setup and named client registration.
+See [Configuration guide](/client/configuration) for DI setup and named client registration.
 
 ---
 
@@ -83,7 +83,7 @@ client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
 
 Per-request version overrides are also supported via `HttpRequestMessage.Version` and `HttpRequestMessage.VersionPolicy`.
 
-See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing details.
+See [HTTP/2 & Multiplexing guide](/client/http2) for multiplexing details.
 
 ### Timeout
 
@@ -121,7 +121,7 @@ await foreach (var response in client.Responses.ReadAllAsync(ct))
 }
 ```
 
-Requests are matched to responses in submission order (HTTP/1.x) or by stream ID (HTTP/2). See [Getting Started guide](/guide/#high-throughput-usage) for batch patterns and backpressure.
+Requests are matched to responses in submission order (HTTP/1.x) or by stream ID (HTTP/2). See [Getting Started guide](/client/#high-throughput-usage) for batch patterns and backpressure.
 
 ### CancelPendingRequests
 
@@ -205,7 +205,7 @@ Per-version connection limits are configured on the nested options objects:
 | `Http2.MaxConcurrentStreams`    | `100`   | Max concurrent streams per HTTP/2 connection   |
 | `Http3.MaxConnectionsPerServer` | `4`     | Max concurrent QUIC connections per host       |
 
-See [Connection Pooling guide](/guide/connection-pooling) for pool lifecycle details.
+See [Connection Pooling guide](/client/connection-pooling) for pool lifecycle details.
 
 ### HTTP/1.x options
 
@@ -273,13 +273,13 @@ options.ClientCertificates = new X509CertificateCollection
 options.Http2.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB
 ```
 
-See [HTTP/2 & Multiplexing guide](/guide/http2) for multiplexing configuration and [HTTP/3 & QUIC guide](/guide/http3) for QUIC-specific settings.
+See [HTTP/2 & Multiplexing guide](/client/http2) for multiplexing configuration and [HTTP/3 & QUIC guide](/client/http3) for QUIC-specific settings.
 
 ---
 
 ## Feature Options
 
-Feature options configure optional features and are applied via the builder API, not through `TurboClientOptions`. All `With*` methods accept an optional configuration delegate; calling them without arguments enables the feature with its defaults. See [Configuration guide](/guide/configuration) for builder usage.
+Feature options configure optional features and are applied via the builder API, not through `TurboClientOptions`. All `With*` methods accept an optional configuration delegate; calling them without arguments enables the feature with its defaults. See [Configuration guide](/client/configuration) for builder usage.
 
 ### RedirectOptions
 
@@ -301,7 +301,7 @@ builder.Services.AddTurboHttpClient("api", ...).WithRedirect(r => { r.MaxRedirec
 // Disable redirect following (default — no .WithRedirect() call)
 ```
 
-See [Redirects guide](/guide/redirects) for method rewriting and security details.
+See [Redirects guide](/client/redirects) for method rewriting and security details.
 
 ### RetryOptions
 
@@ -322,7 +322,7 @@ builder.Services.AddTurboHttpClient("api", ...)
     .WithRetry(r => { r.MaxRetries = 5; r.RespectRetryAfter = false; });
 ```
 
-See [Automatic Retries guide](/guide/retries) for which methods and status codes are retried.
+See [Automatic Retries guide](/client/retries) for which methods and status codes are retried.
 
 ### CacheOptions
 
@@ -348,7 +348,7 @@ var sharedStore = new CacheStore();
 builder.Services.AddTurboHttpClient("api", ...).WithCache(sharedStore);
 ```
 
-See [HTTP Caching guide](/guide/caching) for freshness rules and conditional requests.
+See [HTTP Caching guide](/client/caching) for freshness rules and conditional requests.
 
 ### CompressionOptions
 
@@ -379,7 +379,7 @@ builder.Services.AddTurboHttpClient("api", ...)
     .WithExpectContinue(e => { e.MinBodySizeBytes = 8192; });
 ```
 
-See [Content Encoding guide](/guide/content-encoding) for request compression and Expect: 100-continue.
+See [Content Encoding guide](/client/content-encoding) for request compression and Expect: 100-continue.
 
 ---
 
@@ -389,10 +389,93 @@ These types are part of the public API and can be customized via the builder ext
 
 | Type              | Purpose                                                                | Guide                                             |
 | ----------------- | ---------------------------------------------------------------------- | ------------------------------------------------- |
-| `CookieJar`       | Cookie storage and injection — provided via `.WithCookies()`           | [Cookies](/guide/cookies)                         |
-| `CacheStore`      | In-memory LRU cache backend — provided via `.WithCache(store)`         | [Caching](/guide/caching)                         |
-| `RedirectHandler` | Built-in HTTP redirect handling — controlled via `.WithRedirect()`     | [Redirects](/guide/redirects)                     |
-| `RetryEvaluator`  | Built-in idempotent method retry — controlled via `.WithRetry()`       | [Retries](/guide/retries)                         |
+| `CookieJar`       | Cookie storage and injection — provided via `.WithCookies()`           | [Cookies](/client/cookies)                         |
+| `CacheStore`      | In-memory LRU cache backend — provided via `.WithCache(store)`         | [Caching](/client/caching)                         |
+| `RedirectHandler` | Built-in HTTP redirect handling — controlled via `.WithRedirect()`     | [Redirects](/client/redirects)                     |
+| `RetryEvaluator`  | Built-in idempotent method retry — controlled via `.WithRetry()`       | [Retries](/client/retries)                         |
 | `TurboHandler`    | Custom request/response middleware — registered via `.AddHandler<T>()` | [Extending the Pipeline](/architecture/extending) |
 
-See the [Configuration guide](/guide/configuration) and [Extending the Pipeline](/architecture/extending) for integration patterns.
+See the [Configuration guide](/client/configuration) and [Extending the Pipeline](/architecture/extending) for integration patterns.
+
+---
+
+## Server API
+
+### TurboServerOptions
+
+```csharp
+public sealed class TurboServerOptions
+{
+    public int MaxConcurrentConnections { get; set; }
+    public int MaxConcurrentUpgradedConnections { get; set; }
+    public TimeSpan KeepAliveTimeout { get; set; }            // Default: 120 s
+    public TimeSpan RequestHeadersTimeout { get; set; }       // Default: 30 s
+    public TimeSpan GracefulShutdownTimeout { get; set; }     // Default: 30 s
+    public Http1ServerOptions Http1 { get; }
+    public Http2ServerOptions Http2 { get; }
+    public Http3ServerOptions Http3 { get; }
+}
+```
+
+See [Server Configuration](/server/configuration) for full option tables.
+
+### Registration & Routing
+
+```csharp
+// DI registration
+builder.Services.AddTurboKestrel(options => { ... });
+builder.Services.AddTurboKestrel(configuration, options => { ... });
+
+// Routing (extension methods on WebApplication)
+app.MapTurboGet(pattern, handler);
+app.MapTurboPost(pattern, handler);
+app.MapTurboPut(pattern, handler);
+app.MapTurboDelete(pattern, handler);
+app.MapTurboPatch(pattern, handler);
+app.MapTurboMethods(pattern, methods, handler);
+app.MapTurboGroup(prefix);
+app.MapTurboEntity<TKey>(pattern, configure);
+
+// Middleware (extension methods on WebApplication)
+app.UseTurbo(middleware);
+app.UseTurbo<T>();
+app.RunTurbo(handler);
+app.MapTurbo(pathPrefix, configure);
+app.MapTurboWhen(predicate, configure);
+```
+
+See [Server Routing](/server/routing) for route patterns and [Middleware Pipeline](/server/middleware) for composition patterns.
+
+### ITurboMiddleware
+
+```csharp
+public interface ITurboMiddleware
+{
+    Task InvokeAsync(TurboHttpContext context, TurboRequestDelegate next);
+}
+
+public delegate Task TurboRequestDelegate(TurboHttpContext context);
+```
+
+See [Middleware Pipeline](/server/middleware) for usage patterns.
+
+### TurboEntityBuilder&lt;TKey&gt;
+
+```csharp
+public sealed class TurboEntityBuilder<TKey>
+{
+    public TurboEntityMethodBuilder OnGet(Delegate messageFactory);
+    public TurboEntityMethodBuilder OnPost(Delegate messageFactory);
+    public TurboEntityMethodBuilder OnPut(Delegate messageFactory);
+    public TurboEntityMethodBuilder OnDelete(Delegate messageFactory);
+    public TurboEntityMethodBuilder OnPatch(Delegate messageFactory);
+    public TurboEntityBuilder<TKey> MapResponse<TResponse>(
+        Func<TurboHttpContext, TResponse, Task> mapper);
+    public TurboEntityBuilder<TKey> WithTimeout(TimeSpan timeout);
+    public TurboEntityBuilder<TKey> WithEntityKey(string paramName);
+    public TurboEntityBuilder<TKey> UseResolver<TResolver>()
+        where TResolver : IEntityActorResolver, new();
+}
+```
+
+See [Entity Gateway](/server/entity-gateway) for complete examples.

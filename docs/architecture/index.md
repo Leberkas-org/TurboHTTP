@@ -61,8 +61,38 @@ Each stage does one thing well. Most of the time you don't think about them — 
 - **Correct**: Follows HTTP specifications for freshness, method rewriting, retry idempotency
 - **Observable**: See exactly what happens at each stage via built-in tracing
 
+## The Server Pipeline
+
+When a request arrives at TurboHTTP Server, it passes through a complementary pipeline:
+
+```
+Incoming TCP/QUIC Connection
+    ↓
+[Transport] — accepts connection via ListenerActor
+    ↓
+[Protocol Decoder] — parses HTTP/1.0, 1.1, 2, or 3 bytes
+    ↓
+[HttpContext Builder] — creates TurboHttpContext from parsed request
+    ↓
+[Middleware Pipeline] — runs registered middleware (Use/Run/Map/MapWhen)
+    ↓
+[Router] — matches request to registered route
+    ↓
+[Dispatcher] — DelegateDispatcher (handler) or EntityDispatcher (actor)
+    ↓
+[Parameter Binding] — binds route values, query, body, headers to handler parameters
+    ↓
+[Handler / Actor] — executes your code
+    ↓
+[Response] — writes response back through the pipeline
+```
+
+Each connection is managed by a `ConnectionActor` that owns the full Akka.Streams graph for that connection — from transport bytes through to response serialisation.
+
 ## Learn More
 
 - [**Pipeline Details**](./pipeline) — All stages and how they interact
 - [**Scenarios**](./scenarios) — End-to-end walkthroughs for HTTP/1.0, 1.1, 2, and 3
-- [**Connection Pooling**](../guide/connection-pooling) — How connections are reused
+- [**Connection Pooling**](../client/connection-pooling) — How connections are reused
+- [**Server Guide**](/server/) — middleware, routing, entity gateway
+- [**Server Hosting & Lifecycle**](/server/hosting) — actor hierarchy and graceful shutdown

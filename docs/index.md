@@ -3,26 +3,29 @@ layout: home
 
 hero:
   name: TurboHTTP
-  text: High-Performance HTTP Client for .NET
-  tagline: Built on Akka.Streams — automatic retries, caching, cookies, and HTTP/2 & HTTP/3 multiplexing out of the box.
+  text: High-Performance HTTP Client & Server for .NET
+  tagline: Built on Akka.Streams — HTTP/1.0 through HTTP/3 with automatic retries, caching, cookies, middleware pipeline, routing, and entity gateway.
   image:
     src: /logo/logo.png
     alt: TurboHTTP
   actions:
     - theme: brand
-      text: Get Started
-      link: /guide/
+      text: Quick Guide
+      link: /quickstart/
+    - theme: alt
+      text: Client Guide
+      link: /client/
+    - theme: alt
+      text: Server Guide
+      link: /server/
     - theme: alt
       text: Architecture
       link: /architecture/
-    - theme: alt
-      text: GitHub
-      link: https://github.com/st0o0/TurboHTTP
 
 features:
   - icon: ⚡
     title: HTTP/1.0, HTTP/1.1, HTTP/2 & HTTP/3
-    details: Automatic version negotiation, HPACK/QPACK compression, flow control, and multiplexed streams over TCP and QUIC. One client handles all versions.
+    details: Automatic version negotiation, HPACK/QPACK compression, flow control, and multiplexed streams over TCP and QUIC. One library handles all versions — client and server.
 
   - icon: 🔄
     title: Automatic Retries
@@ -50,5 +53,21 @@ features:
 
   - icon: 🚀
     title: Zero-Allocation Internals
-    details: Span<T>, Memory<byte>, and IBufferWriter throughout. Pooled buffers, stateful decoders, zero GC pressure on the hot path.
+    details: Span<T>, Memory<byte>, and pooled buffers throughout. Stateful decoders, zero GC pressure on the hot path.
+
+  - icon: 🔧
+    title: Middleware Pipeline
+    details: ASP.NET Core-style middleware with Use, Run, Map, and MapWhen. Compose request processing from reusable components.
+
+  - icon: 🗺️
+    title: Routing & Entity Gateway
+    details: Minimal API-style route registration with MapGet/Post/Put/Delete. Route directly to Akka.NET actors for stateful entity handling.
+
+  - icon: 🏗️
+    title: Actor Lifecycle
+    details: Supervisor → Listener → Connection actor hierarchy with graceful shutdown, drain phases, and coordinated termination.
+
+  - icon: 🔒
+    title: Kestrel Integration
+    details: Runs alongside ASP.NET Core via AddTurboKestrel. Full HTTPS support with certificate configuration and protocol negotiation.
 ---

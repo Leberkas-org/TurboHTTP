@@ -87,4 +87,50 @@ The pipeline uses actor-based connection managers (from Servus.Akka) to reuse TC
 
 This all happens automatically. You don't manage connections — TurboHTTP does.
 
-See [Connection Pooling Guide](../guide/connection-pooling) for tuning options.
+See [Connection Pooling Guide](../client/connection-pooling) for tuning options.
+
+---
+
+## Server Pipeline
+
+The server pipeline mirrors the client architecture, transforming incoming bytes into responses:
+
+```
+Incoming TCP/QUIC Bytes
+    ↓
+[Transport] — accepts connection; ListenerActor spawns ConnectionActor
+    ↓
+[ProtocolRouter] — detects HTTP version from initial bytes
+    ↓
+[Server Protocol Engine] — Http10/11/20/30ServerEngine decodes request, encodes response
+    ↓
+[HttpContextBidiStage] — wraps parsed request as TurboHttpContext (request/response object)
+    ↓
+[MiddlewarePipelineStage] — runs registered middleware (Use/Run/Map/MapWhen)
+    ↓
+[RoutingStage] — matches request path to registered route pattern
+    ↓
+[DispatcherStage] — delegates to DelegateDispatcher (handler function) or EntityDispatcher (actor)
+    ↓
+[Handler / Entity Actor] — executes your code; returns response
+    ↓
+[Server Protocol Engine] — encodes response to bytes
+    ↓
+Outgoing TCP/QUIC Bytes
+```
+
+Each connection is bound to a single `ConnectionActor` that owns the entire Akka.Streams graph — from transport bytes through protocol parsing, middleware execution, routing, and response serialisation.
+
+### Server Pipeline Stages
+
+| Stage                        | Role                                                                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ProtocolRouter`             | Inspects initial bytes to detect HTTP/1.0, 1.1, 2, or 3; routes to the appropriate server engine state machine                                                                                                     |
+| `Http*ServerEngine`          | Protocol-specific state machine: parses request bytes, manages connection/stream-level flow control, encodes response frames                                                                                        |
+| `HttpContextBidiStage`       | Wraps the parsed protocol request as a `TurboHttpContext` object with `.Request` and `.Response` properties                                                                                                         |
+| `MiddlewarePipelineStage`    | Runs all registered middleware in order (outermost-first for request, innermost-first for response). Middleware can short-circuit by not calling `next(ctx)`                                                          |
+| `RoutingStage`               | Matches the request path against registered route patterns; extracts route parameters (`{id}`, etc.) into `ctx.RouteValues`                                                                                        |
+| `DispatcherStage`            | Selects and invokes the handler: `DelegateDispatcher` for function-based routes (`MapTurboGet`), `EntityDispatcher` for actor-based routes (`MapTurboEntity`)                                                         |
+| `ParameterBindingStage`      | (within dispatcher) Binds route parameters, query string, body, and headers to handler parameters using reflection and model binding                                                                                 |
+
+After the handler returns a response, the response object flows back through the pipeline in reverse — middleware response hooks can transform or log the response, and the protocol engine serialises it back to wire bytes.

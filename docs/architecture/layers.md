@@ -71,4 +71,64 @@ client.DefaultRequestHeaders.Add("User-Agent", "MyApp/1.0");
 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 ```
 
-See [Configuration Guide](../guide/configuration) for full options.
+See [Configuration Guide](../client/configuration) for full options.
+
+## Server API
+
+TurboHTTP Server provides an ASP.NET Core-style programming model for handling incoming HTTP requests through Akka actors.
+
+### Registration
+
+Register the server via `AddTurboKestrel` and configure endpoints:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTurboKestrel(options =>
+{
+    options.ListenLocalhost(5100);
+    options.ListenLocalhost(5101, listen => listen.UseHttps());
+});
+
+var app = builder.Build();
+```
+
+### Middleware
+
+Register middleware and routes on the `WebApplication` instance:
+
+```csharp
+app.UseTurbo(async (context, next) =>
+{
+    // process request
+    await next(context);
+    // process response
+});
+```
+
+### Routes
+
+Define routes with Minimal API-style methods:
+
+```csharp
+app.MapTurboGet("/users/{id:int}", (int id) => GetUser(id));
+app.MapTurboPost("/users", (CreateUserRequest req) => Results.Created($"/users/{req.Id}", req));
+```
+
+### Entity Gateway
+
+Route to Akka.NET actors for stateful request handling:
+
+```csharp
+app.MapTurboEntity<int>("/orders/{id:int}", entity =>
+{
+    entity.WithEntityKey("id");
+    entity.UseResolver<OrderActorResolver>();
+    entity.OnGet((int id) => new GetOrder(id));
+    entity.MapResponse<OrderResponse>(async (ctx, response) =>
+    {
+        ctx.Response.StatusCode = 200;
+        await ctx.Response.WriteAsJsonAsync(response);
+    });
+});
+```

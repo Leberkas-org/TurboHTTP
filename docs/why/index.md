@@ -2,7 +2,7 @@
 
 .NET already ships `HttpClient`. It handles the common case well — single requests, basic headers, response deserialization. So why would you reach for something else?
 
-TurboHTTP is designed for situations where `HttpClient` alone isn't enough: high-throughput request pipelines, automatic retry and caching without Polly boilerplate, full cookie lifecycle management, and true HTTP/2 multiplexing — all built in, not bolted on.
+TurboHTTP is designed for situations where `HttpClient` alone isn't enough: high-throughput request pipelines, automatic retry and caching without Polly boilerplate, full cookie lifecycle management, and true HTTP/2 multiplexing — all built in, not bolted on. On the server side, TurboHTTP Server provides a lightweight, actor-integrated HTTP server for stateful request handling with middleware pipelines.
 
 ## Feature Comparison
 
@@ -45,6 +45,21 @@ TurboHTTP is not the right tool for every job. Be honest about the trade-offs:
 - **You're already on Polly** — If your team is invested in Polly's retry and circuit-breaker policies, sticking with `HttpClient` + Polly is a reasonable choice. TurboHTTP's built-in retry is simpler but not as composable.
 - **You're making simple one-off requests** — `HttpClient.GetAsync(url)` is two words. TurboHTTP requires a bit more setup. Use the simpler tool for simple problems.
 - **You have no Akka.NET in your stack** — TurboHTTP uses Akka.Streams for the request/response pipeline. It pulls in the Akka.NET dependency. If that's unwanted, a plain `HttpClient` is lighter.
+
+## Server: When to Use TurboHTTP Server
+
+TurboHTTP Server is a good fit when:
+
+- **You need actor-based request handling** — route HTTP requests directly to Akka.NET actors for stateful entity management, CQRS, or event sourcing
+- **You want a lightweight middleware pipeline** — ASP.NET Core-style `Use`/`Run`/`Map`/`MapWhen` without the full ASP.NET Core middleware stack
+- **You're already using Akka.NET** — TurboHTTP Server integrates natively with your existing actor system
+- **You need graceful connection draining** — actor-based lifecycle with coordinated shutdown phases
+
+## Server: When NOT to Use TurboHTTP Server
+
+- **You need the full ASP.NET Core feature set** — TurboHTTP Server does not support SignalR, Blazor Server, gRPC, or Razor Pages
+- **You need WebSocket support** — not yet implemented
+- **You have no Akka.NET in your stack** — the actor-based lifecycle adds complexity; use Kestrel + Minimal APIs directly
 
 ## HttpClient vs TurboHTTP: A Closer Look
 
