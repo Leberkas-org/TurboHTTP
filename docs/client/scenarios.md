@@ -281,6 +281,111 @@ Internal service-to-service communication, calling backend APIs from frontend se
 
 ---
 
+## Akka.Streams Integration
+
+**The problem:** You're already using Akka.Streams for data processing and want to plug TurboHTTP's channel API into an Akka.Streams graph — applying backpressure, throttling, transformation, and fan-out using the full Akka.Streams DSL.
+
+**Features in play:** `client.Requests` / `client.Responses` channels bridged to Akka.Streams via `ChannelSource.FromReader()` and `ChannelSink.AsWriter()`.
+
+### Setup
+
+```csharp
+builder.Services.AddTurboHttpClient("stream-api", options =>
+{
+    options.BaseAddress = new Uri("https://api.example.com/");
+    options.Http2.MaxConcurrentStreams = 100;
+})
+.WithRetry()
+.WithDecompression();
+```
+
+### Bridge Channels to Akka.Streams
+
+TurboHTTP exposes `ChannelWriter<HttpRequestMessage>` and `ChannelReader<HttpResponseMessage>` on the client. Use Akka.Streams' `ChannelSource` and `ChannelSink` to bridge these into a stream graph:
+
+```csharp
+using Akka.Streams;
+using Akka.Streams.Dsl;
+
+var client = factory.CreateClient("stream-api");
+client.DefaultRequestVersion = HttpVersion.Version20;
+
+var materializer = actorSystem.Materializer();
+
+// Bridge: ChannelReader<HttpResponseMessage> → Akka.Streams Source
+var responseSource = ChannelSource.FromReader(client.Responses);
+
+// Bridge: Akka.Streams Sink → ChannelWriter<HttpRequestMessage>
+var requestSink = ChannelSink.AsWriter(client.Requests);
+```
+
+### Example: Throttled Request Pipeline
+
+Feed URLs through an Akka.Streams graph that throttles requests, sends them via TurboHTTP, and processes responses — all with backpressure end to end:
+
+```csharp
+var urls = Enumerable.Range(1, 10_000)
+    .Select(id => $"items/{id}");
+
+// Request pipeline: throttle → build request → send to TurboHTTP
+Source.From(urls)
+    .Throttle(50, TimeSpan.FromSeconds(1), 10, ThrottleMode.Shaping)
+    .Select(url => new HttpRequestMessage(HttpMethod.Get, url))
+    .RunWith(requestSink, materializer);
+
+// Response pipeline: receive from TurboHTTP → deserialize → process
+await responseSource
+    .SelectAsync(4, async response =>
+    {
+        var body = await response.Content.ReadFromJsonAsync<ItemResult>();
+        return body;
+    })
+    .Where(item => item is not null)
+    .RunForeach(item =>
+    {
+        Console.WriteLine($"Processed: {item!.Name}");
+    }, materializer);
+```
+
+### Example: Fan-Out with BroadcastHub
+
+Share a single TurboHTTP response stream across multiple consumers:
+
+```csharp
+// Create a broadcast hub from the response source
+var (broadcastSink, broadcastSource) = BroadcastHub.Sink<HttpResponseMessage>(256)
+    .PreMaterialize(materializer);
+
+// Feed TurboHTTP responses into the hub
+responseSource.RunWith(broadcastSink, materializer);
+
+// Consumer 1: log all responses
+broadcastSource
+    .RunForeach(r =>
+        Console.WriteLine($"[log] {r.RequestMessage?.RequestUri} → {r.StatusCode}"),
+        materializer);
+
+// Consumer 2: collect only successful responses
+broadcastSource
+    .Where(r => r.IsSuccessStatusCode)
+    .SelectAsync(4, async r => await r.Content.ReadAsStringAsync())
+    .RunForeach(body => ProcessResult(body), materializer);
+```
+
+**How they interact:**
+
+- **ChannelSource/ChannelSink** bridge `System.Threading.Channels` to Akka.Streams without copying — backpressure flows through the channel boundary naturally
+- **Throttle** limits request rate at the Akka.Streams level; when the sink can't keep up, backpressure pauses the throttle
+- **SelectAsync** allows parallel response deserialization while preserving ordering
+- **BroadcastHub** lets multiple consumers process the same response stream independently
+- TurboHTTP's built-in **retry** and **decompression** still apply — the Akka.Streams graph sees clean, retried, decompressed responses
+
+::: tip When to use this pattern
+Use this when you need stream-level control that the channel API alone doesn't provide: throttling, fan-out, windowing, grouping, merging multiple clients, or integrating TurboHTTP into a larger Akka.Streams data pipeline.
+:::
+
+---
+
 ## Combining These Patterns
 
 The four scenarios above show different feature combinations, but there is no rule against mixing them further. For example:
