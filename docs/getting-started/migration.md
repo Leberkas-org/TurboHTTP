@@ -114,7 +114,7 @@ No Polly dependency needed. TurboHTTP automatically:
 - Respects `Retry-After` headers
 - Applies exponential backoff
 
-Retry behavior is controlled via the built-in `.WithRetry()` builder extension — see [Automatic Retries](./retries) for custom policies.
+Retry behavior is controlled via the built-in `.WithRetry()` builder extension — see [Automatic Retries](/client/retries) for custom policies.
 
 ## Cookie Management
 
@@ -218,7 +218,7 @@ var client = factory.CreateClient("my-api");
 client.DefaultRequestVersion = HttpVersion.Version20;
 ```
 
-TurboHTTP provides full HTTP/2 multiplexing — all requests to the same host share a single TCP connection with concurrent streams. See [HTTP/2 & Multiplexing](./http2).
+TurboHTTP provides full HTTP/2 multiplexing — all requests to the same host share a single TCP connection with concurrent streams. See [HTTP/2 & Multiplexing](/client/http2).
 
 ## Timeout
 
