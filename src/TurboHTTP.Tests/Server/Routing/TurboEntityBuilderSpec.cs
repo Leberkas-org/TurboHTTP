@@ -9,8 +9,6 @@ public sealed class TurboEntityBuilderSpec
 
     private sealed record TestMessage(string Id);
 
-    private sealed record TestResponse(string Value);
-
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_register_get_route()
     {
@@ -117,7 +115,7 @@ public sealed class TurboEntityBuilderSpec
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get"));
-        builder.UseResolver<RegistryResolver<TestActorKey>>();
+        builder.UseActorRef<TestActorKey>();
 
         var table = new TurboRouteTable();
         builder.AddToRouteTable(table);

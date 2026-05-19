@@ -72,9 +72,8 @@ public sealed class TurboHttpContextSpec
     [Fact(Timeout = 5000)]
     public void TurboHttpContext_should_expose_request_aborted()
     {
-        using var cts = new CancellationTokenSource();
-        var ctx = CreateContext(cancellationToken: cts.Token);
-        Assert.Equal(cts.Token, ctx.RequestAborted);
+        var ctx = CreateContext();
+        Assert.Equal(TestContext.Current.CancellationToken, ctx.RequestAborted);
     }
 
     [Fact(Timeout = 5000)]
@@ -88,8 +87,7 @@ public sealed class TurboHttpContextSpec
     private static TurboHttpContext CreateContext(
         HttpRequestMessage? request = null,
         TurboConnectionInfo? connection = null,
-        IServiceProvider? services = null,
-        CancellationToken cancellationToken = default)
+        IServiceProvider? services = null)
     {
         var req = request ?? new HttpRequestMessage(HttpMethod.Get, "http://localhost/");
         var conn = connection ?? new TurboConnectionInfo("test", IPAddress.Loopback, 0, IPAddress.Loopback, 0);
@@ -100,6 +98,6 @@ public sealed class TurboHttpContextSpec
         features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(conn));
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
 
-        return new TurboHttpContext(features, conn, services, cancellationToken);
+        return new TurboHttpContext(features, conn, services, TestContext.Current.CancellationToken);
     }
 }
