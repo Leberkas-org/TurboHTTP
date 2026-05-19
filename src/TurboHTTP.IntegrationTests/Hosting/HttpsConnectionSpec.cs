@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.Server;
-using TurboHTTP.Hosting;
 
 namespace TurboHTTP.IntegrationTests.Hosting;
 

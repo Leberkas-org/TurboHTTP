@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Routing;
-using TurboHTTP.Routing.Builder;
-using TurboHTTP.Routing.Resolvers;
 using TurboHTTP.Streams.Stages.Server;
 using TurboHTTP.Tests.Shared;
 
@@ -67,9 +65,9 @@ public sealed class EntityDispatcherSpec : StreamTestBase
             .BuildServiceProvider();
 
         var turboTable = new TurboRouteTable();
-        var builder = new TurboEntityBuilder<OrderActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet((TurboHttpContext ctx) => new GetOrder(ctx.Request.RouteValues["id"]!.ToString()!));
-        builder.UseResolver<RegistryResolver<OrderActorKey>>();
+        builder.UseActorRef<OrderActorKey>();
         builder.MapResponse<OrderResult>((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
@@ -113,9 +111,9 @@ public sealed class EntityDispatcherSpec : StreamTestBase
             .BuildServiceProvider();
 
         var turboTable = new TurboRouteTable();
-        var builder = new TurboEntityBuilder<OrderActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnPost((TurboHttpContext _) => new GetOrder("new")).AcceptedResponse();
-        builder.UseResolver<RegistryResolver<OrderActorKey>>();
+        builder.UseActorRef<OrderActorKey>();
         builder.AddToRouteTable(turboTable);
 
         var stage = new RoutingStage(turboTable.Freeze());
@@ -141,9 +139,9 @@ public sealed class EntityDispatcherSpec : StreamTestBase
             .BuildServiceProvider();
 
         var turboTable = new TurboRouteTable();
-        var builder = new TurboEntityBuilder<OrderActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet((TurboHttpContext ctx) => new GetOrder(ctx.Request.RouteValues["id"]!.ToString()!));
-        builder.UseResolver<RegistryResolver<OrderActorKey>>();
+        builder.UseActorRef<OrderActorKey>();
         builder.WithTimeout(TimeSpan.FromMilliseconds(100));
         builder.AddToRouteTable(turboTable);
 
@@ -169,9 +167,9 @@ public sealed class EntityDispatcherSpec : StreamTestBase
             .BuildServiceProvider();
 
         var turboTable = new TurboRouteTable();
-        var builder = new TurboEntityBuilder<OrderActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet((TurboHttpContext ctx) => new GetOrder(ctx.Request.RouteValues["id"]!.ToString()!));
-        builder.UseResolver<RegistryResolver<OrderActorKey>>();
+        builder.UseActorRef<OrderActorKey>();
         builder.AddToRouteTable(turboTable);
 
         var stage = new RoutingStage(turboTable.Freeze());

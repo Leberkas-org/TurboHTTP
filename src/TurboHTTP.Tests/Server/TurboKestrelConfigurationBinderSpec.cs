@@ -1,7 +1,7 @@
 using System.Security.Authentication;
 using Microsoft.Extensions.Configuration;
-using TurboHTTP.Hosting;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Hosting;
 
 namespace TurboHTTP.Tests.Server;
 

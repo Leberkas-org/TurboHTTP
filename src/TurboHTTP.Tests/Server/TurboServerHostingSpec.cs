@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using TurboHTTP.Hosting;
 using TurboHTTP.Routing;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Middleware;

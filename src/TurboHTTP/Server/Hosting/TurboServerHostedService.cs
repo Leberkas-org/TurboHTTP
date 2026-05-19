@@ -7,12 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TurboHTTP.Routing;
-using TurboHTTP.Server;
 using TurboHTTP.Server.Internal;
 using TurboHTTP.Server.Middleware;
 using TurboHTTP.Streams.Lifecycle;
 
-namespace TurboHTTP.Hosting;
+namespace TurboHTTP.Server.Hosting;
 
 internal sealed class TurboServerHostedService : IHostedService, IDisposable
 {

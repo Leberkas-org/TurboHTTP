@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.Routing;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Server.Routing;
 

@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using TurboHTTP.Server;
 using TurboHTTP.Server.Middleware;
 
-namespace TurboHTTP.Hosting;
+namespace TurboHTTP.Server;
 
 public static class TurboMiddlewareExtensions
 {

@@ -1,21 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Authors>st0o0</Authors>
+        <Authors>leberkas-org</Authors>
         <Title>TurboHTTP</Title>
         <PackageTags>HttpClient;Kestrel;Akka;Streams;Turbo</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageProjectUrl>https://github.com/st0o0/TurboHTTP</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/st0o0/TurboHTTP.git</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/leberkas-org/TurboHTTP</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/leberkas-org/TurboHTTP.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <Copyright>Copyright (c) 2025-$([System.DateTime]::Now.Year) st0o0</Copyright>
+        <Copyright>Copyright (c) 2025-$([System.DateTime]::Now.Year) leberkas-org</Copyright>
     </PropertyGroup>
     <PropertyGroup>
         <IsPackable>true</IsPackable>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <LangVersion>14</LangVersion>
     </PropertyGroup>
     <PropertyGroup>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -38,7 +37,7 @@
         <PackageReference Include="Akka.Hosting"/>
         <PackageReference Include="Akka.Streams"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream"/>
-        <PackageReference Include="Servus.Akka" />
+        <PackageReference Include="Servus.Akka"/>
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>
@@ -51,9 +50,6 @@
         <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Kestrel"/>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Servus.Akka\Servus.Akka.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Features\" />
+        <ProjectReference Include="..\Servus.Akka\Servus.Akka.csproj"/>
     </ItemGroup>
 </Project>

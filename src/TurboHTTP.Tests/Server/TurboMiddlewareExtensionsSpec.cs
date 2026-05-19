@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using TurboHTTP.Hosting;
+using TurboHTTP.Server;
 using TurboHTTP.Server.Middleware;
 
 namespace TurboHTTP.Tests.Server;

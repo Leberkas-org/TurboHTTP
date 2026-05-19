@@ -4,7 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
-using TurboHTTP.Hosting;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Lifecycle;
 

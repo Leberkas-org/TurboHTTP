@@ -1,4 +1,4 @@
-namespace TurboHTTP.Server.Middleware;
+namespace TurboHTTP.Server;
 
 public interface ITurboPipelineBuilder
 {

@@ -3,10 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using TurboHTTP.Routing;
-using TurboHTTP.Server;
+using TurboHTTP.Server.Hosting;
 using TurboHTTP.Server.Middleware;
 
-namespace TurboHTTP.Hosting;
+namespace TurboHTTP.Server;
 
 public static class TurboServerServiceCollectionExtensions
 {

@@ -1,4 +1,6 @@
-namespace TurboHTTP.Routing;
+using TurboHTTP.Routing;
+
+namespace TurboHTTP.Server;
 
 public sealed class TurboRouteHandlerBuilder
 {

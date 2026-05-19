@@ -1,16 +1,18 @@
-using TurboHTTP.Server;
+using Akka.Actor;
+using Akka.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using TurboHTTP.Routing;
 using TurboHTTP.Server.Binding;
 
-namespace TurboHTTP.Routing.Builder;
+namespace TurboHTTP.Server;
 
-public sealed class TurboEntityBuilder<TKey>
+public sealed class TurboEntityBuilder
 {
     private readonly string _pattern;
     private readonly Dictionary<HttpMethod, TurboEntityMethodBuilder> _methods = new();
     private readonly EntityResponseMapperCollection _responseMappers = new();
     private TimeSpan _timeout = TimeSpan.FromSeconds(5);
-    private string? _entityKeyParam;
-    private Func<IServiceProvider, IEntityActorResolver>? _resolverFactory;
+    private IEntityActorResolver _resolver = new GenericActorRefFactory(_ => ActorRefs.Nobody);
 
     public TurboEntityBuilder(string pattern)
     {
@@ -32,43 +34,46 @@ public sealed class TurboEntityBuilder<TKey>
     public TurboEntityMethodBuilder OnPatch(Delegate messageFactory)
         => AddMethod(HttpMethod.Patch, messageFactory);
 
-    public TurboEntityBuilder<TKey> MapResponse<TResponse>(Func<TurboHttpContext, TResponse, Task> mapper)
+    public TurboEntityBuilder MapResponse<TResponse>(Func<TurboHttpContext, TResponse, Task> mapper)
     {
         _responseMappers.Add(mapper);
         return this;
     }
 
-    public TurboEntityBuilder<TKey> WithTimeout(TimeSpan timeout)
+    public TurboEntityBuilder WithTimeout(TimeSpan timeout)
     {
         _timeout = timeout;
         return this;
     }
 
-    public TurboEntityBuilder<TKey> WithEntityKey(string paramName)
+    public TurboEntityBuilder UseResolver(IEntityActorResolver resolver)
     {
-        _entityKeyParam = paramName;
+        _resolver = resolver;
         return this;
     }
 
-    public TurboEntityBuilder<TKey> UseResolver<TResolver>() where TResolver : IEntityActorResolver, new()
-    {
-        _resolverFactory = _ => new TResolver();
-        return this;
-    }
+    public TurboEntityBuilder UseResolver<TResolver>() where TResolver : IEntityActorResolver, new()
+        => UseResolver(new TResolver());
+
+    public TurboEntityBuilder UseActorRef<TActorKey>()
+        => UseActorRef(x => x.Get<TActorKey>());
+
+    public TurboEntityBuilder UseActorRef(Func<IServiceProvider, IActorRef> factory)
+        => UseResolver(new GenericActorRefFactory(factory));
+
+    public TurboEntityBuilder UseActorRef(Func<IReadOnlyActorRegistry, IActorRef> actorRefFactory)
+        => UseActorRef(sp => actorRefFactory(sp.GetRequiredService<IReadOnlyActorRegistry>()));
 
     internal void AddToRouteTable(TurboRouteTable table)
     {
-        var entityKeyParam = _entityKeyParam ?? ExtractLastParam(_pattern);
-
         foreach (var kv in _methods)
         {
             var methodConfig = kv.Value.ToConfig();
             var dispatcher = new EntityDispatcher(
-                entityKeyParam,
                 methodConfig,
                 _responseMappers,
                 _timeout,
-                _resolverFactory);
+                _resolver);
             table.AddWithDispatcher(kv.Key, _pattern, dispatcher);
         }
     }
@@ -81,17 +86,9 @@ public sealed class TurboEntityBuilder<TKey>
         return builder;
     }
 
-    private static string ExtractLastParam(string pattern)
+    private record GenericActorRefFactory(Func<IServiceProvider, IActorRef> Factory) : IEntityActorResolver
     {
-        var segments = pattern.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        for (var i = segments.Length - 1; i >= 0; i--)
-        {
-            if (segments[i].StartsWith('{') && segments[i].EndsWith('}'))
-            {
-                return segments[i][1..^1];
-            }
-        }
-
-        return "id";
+        public ValueTask<IActorRef> ResolveAsync(IServiceProvider services, CancellationToken cancellationToken)
+            => ValueTask.FromResult(Factory(services));
     }
 }

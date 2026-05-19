@@ -2,9 +2,8 @@ using Akka.Actor;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using TurboHTTP.Hosting;
 using TurboHTTP.Routing;
-using TurboHTTP.Routing.Builder;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Server.Routing;
 
@@ -47,15 +46,14 @@ public sealed class EntityDelegateBindingSpec
 
     private sealed class FakeResolver : IEntityActorResolver
     {
-        public ValueTask<IActorRef> ResolveAsync(
-            string entityKey, IServiceProvider services, CancellationToken ct)
+        public ValueTask<IActorRef> ResolveAsync(IServiceProvider services, CancellationToken ct)
         {
             IActorRef? nobody = ActorRefs.Nobody;
             return ValueTask.FromResult(nobody!);
         }
     }
 
-    private static TurboRouteTable CreateApp(Action<TurboEntityBuilder<string>> configure)
+    private static TurboRouteTable CreateApp(Action<TurboEntityBuilder> configure)
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddTurboKestrel();

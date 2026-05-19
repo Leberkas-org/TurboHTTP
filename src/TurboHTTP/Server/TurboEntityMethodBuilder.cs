@@ -1,6 +1,6 @@
-using TurboHTTP.Server;
+using TurboHTTP.Routing;
 
-namespace TurboHTTP.Routing.Builder;
+namespace TurboHTTP.Server;
 
 public sealed class TurboEntityMethodBuilder
 {

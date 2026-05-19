@@ -6,41 +6,36 @@ namespace TurboHTTP.Routing;
 
 internal sealed class EntityDispatcher : IRouteDispatcher
 {
-    private readonly string _entityKeyParam;
     private readonly EntityMethodConfig _methodConfig;
     private readonly EntityResponseMapperCollection _responseMappers;
     private readonly TimeSpan _timeout;
-    private readonly Func<IServiceProvider, IEntityActorResolver>? _resolverFactory;
+    private readonly IEntityActorResolver _resolver;
 
     public EntityDispatcher(
-        string entityKeyParam,
         EntityMethodConfig methodConfig,
         EntityResponseMapperCollection responseMappers,
         TimeSpan timeout,
-        Func<IServiceProvider, IEntityActorResolver>? resolverFactory)
+        IEntityActorResolver resolver)
     {
-        _entityKeyParam = entityKeyParam;
         _methodConfig = methodConfig;
         _responseMappers = responseMappers;
         _timeout = timeout;
-        _resolverFactory = resolverFactory;
+        _resolver = resolver;
     }
 
     public Task DispatchAsync(TurboHttpContext context, CancellationToken ct)
     {
-        var entityKey = context.Request.RouteValues[_entityKeyParam]?.ToString() ?? string.Empty;
-
         return _methodConfig.IsTell
-            ? ExecuteTell(context, entityKey)
-            : ExecuteAsk(context, entityKey, ct);
+            ? ExecuteTell(context, ct)
+            : ExecuteAsk(context, ct);
     }
 
-    private async Task ExecuteAsk(TurboHttpContext ctx, string entityKey, CancellationToken ct)
+    private async Task ExecuteAsk(TurboHttpContext ctx, CancellationToken ct)
     {
         try
         {
             var timeout = _methodConfig.TimeoutOverride ?? _timeout;
-            var actorRef = await ResolveActor(entityKey, ctx.RequestServices);
+            var actorRef = await ResolveActor(ctx.RequestServices, ct);
             var message = await _methodConfig.MessageFactory(ctx, ctx.RequestServices);
             var response = await actorRef.Ask<object>(message, timeout, ct);
 
@@ -75,11 +70,11 @@ internal sealed class EntityDispatcher : IRouteDispatcher
         }
     }
 
-    private async Task ExecuteTell(TurboHttpContext ctx, string entityKey)
+    private async Task ExecuteTell(TurboHttpContext ctx, CancellationToken cancellationToken)
     {
         try
         {
-            var actorRef = await ResolveActor(entityKey, ctx.RequestServices);
+            var actorRef = await ResolveActor(ctx.RequestServices, cancellationToken);
             var message = await _methodConfig.MessageFactory(ctx, ctx.RequestServices);
             actorRef.Tell(message);
             ctx.Response.StatusCode = 202;
@@ -98,14 +93,13 @@ internal sealed class EntityDispatcher : IRouteDispatcher
         }
     }
 
-    private async ValueTask<IActorRef> ResolveActor(string entityKey, IServiceProvider services)
+    private async ValueTask<IActorRef> ResolveActor(IServiceProvider services, CancellationToken ct = default)
     {
-        if (_resolverFactory is null)
+        if (_resolver is null)
         {
             throw new InvalidOperationException("No resolver configured for entity actor");
         }
 
-        var resolver = _resolverFactory(services);
-        return await resolver.ResolveAsync(entityKey, services, CancellationToken.None);
+        return await _resolver.ResolveAsync(services, ct);
     }
 }

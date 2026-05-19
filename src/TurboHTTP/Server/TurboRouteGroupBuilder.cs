@@ -1,6 +1,6 @@
-using TurboHTTP.Routing.Builder;
+using TurboHTTP.Routing;
 
-namespace TurboHTTP.Routing;
+namespace TurboHTTP.Server;
 
 public sealed class TurboRouteGroupBuilder
 {
@@ -74,10 +74,17 @@ public sealed class TurboRouteGroupBuilder
         return this;
     }
 
-    public TurboRouteHandlerBuilder MapEntity<TKey>(
-        string pattern, Action<TurboEntityBuilder<TKey>> configure)
+    public TurboRouteHandlerBuilder MapEntity(string pattern, Action<TurboEntityBuilder> configure)
     {
-        var entityBuilder = new TurboEntityBuilder<TKey>(_prefix + pattern);
+        var entityBuilder = new TurboEntityBuilder(_prefix + pattern);
+        configure(entityBuilder);
+        entityBuilder.AddToRouteTable(_table);
+        return new TurboRouteHandlerBuilder();
+    }
+
+    public TurboRouteHandlerBuilder MapEntity<TActorKey>(string pattern, Action<TurboEntityBuilder> configure)
+    {
+        var entityBuilder = new TurboEntityBuilder(_prefix + pattern).UseActorRef(x => x.Get<TActorKey>());
         configure(entityBuilder);
         entityBuilder.AddToRouteTable(_table);
         return new TurboRouteHandlerBuilder();

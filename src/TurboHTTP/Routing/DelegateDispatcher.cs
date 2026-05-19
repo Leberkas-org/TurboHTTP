@@ -2,17 +2,10 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.Routing;
 
-internal sealed class DelegateDispatcher : IRouteDispatcher
+internal sealed class DelegateDispatcher(Func<TurboHttpContext, Task> handler) : IRouteDispatcher
 {
-    private readonly Func<TurboHttpContext, Task> _handler;
-
-    public DelegateDispatcher(Func<TurboHttpContext, Task> handler)
-    {
-        _handler = handler;
-    }
-
     public Task DispatchAsync(TurboHttpContext context, CancellationToken ct)
     {
-        return _handler(context);
+        return handler(context);
     }
 }

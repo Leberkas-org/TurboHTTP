@@ -1,6 +1,4 @@
 using TurboHTTP.Routing;
-using TurboHTTP.Routing.Builder;
-using TurboHTTP.Routing.Resolvers;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Server.Routing;
@@ -16,7 +14,7 @@ public sealed class TurboEntityBuilderSpec
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_register_get_route()
     {
-        var builder = new TurboEntityBuilder<TestActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet((TurboHttpContext ctx) => new TestMessage(ctx.Request.RouteValues["id"]!.ToString()!));
 
         var table = new TurboRouteTable();
@@ -31,7 +29,7 @@ public sealed class TurboEntityBuilderSpec
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_register_tell_route()
     {
-        var builder = new TurboEntityBuilder<TestActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnPost(() => new TestMessage("new")).AcceptedResponse();
 
         var table = new TurboRouteTable();
@@ -44,7 +42,7 @@ public sealed class TurboEntityBuilderSpec
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_register_multiple_methods()
     {
-        var builder = new TurboEntityBuilder<TestActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get"));
         builder.OnPut(() => new TestMessage("put"));
         builder.OnDelete(() => new TestMessage("del"));
@@ -62,7 +60,7 @@ public sealed class TurboEntityBuilderSpec
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_extract_route_values()
     {
-        var builder = new TurboEntityBuilder<TestActorKey>("/tenants/{tenantId}/orders/{orderId}");
+        var builder = new TurboEntityBuilder("/tenants/{tenantId}/orders/{orderId}");
         builder.OnGet(() => new TestMessage("get"));
 
         var table = new TurboRouteTable();
@@ -78,7 +76,7 @@ public sealed class TurboEntityBuilderSpec
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_not_match_unregistered_method()
     {
-        var builder = new TurboEntityBuilder<TestActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get"));
 
         var table = new TurboRouteTable();
@@ -99,7 +97,7 @@ public sealed class TurboEntityBuilderSpec
             return Task.CompletedTask;
         });
 
-        var builder = new TurboEntityBuilder<TestActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get"));
         builder.AddToRouteTable(table);
 
@@ -117,7 +115,7 @@ public sealed class TurboEntityBuilderSpec
     [Fact(Timeout = 5000)]
     public void Builder_should_accept_custom_resolver()
     {
-        var builder = new TurboEntityBuilder<TestActorKey>("/orders/{id}");
+        var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get"));
         builder.UseResolver<RegistryResolver<TestActorKey>>();
 

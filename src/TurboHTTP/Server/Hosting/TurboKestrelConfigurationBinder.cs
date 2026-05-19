@@ -1,9 +1,8 @@
 using System.Net;
 using System.Security.Authentication;
 using Microsoft.Extensions.Configuration;
-using TurboHTTP.Server;
 
-namespace TurboHTTP.Hosting;
+namespace TurboHTTP.Server.Hosting;
 
 internal static class TurboKestrelConfigurationBinder
 {

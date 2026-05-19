@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Routing;
-using TurboHTTP.Routing.Builder;
 
-namespace TurboHTTP.Hosting;
+namespace TurboHTTP.Server;
 
 public static class TurboRoutingExtensions
 {
@@ -49,12 +48,21 @@ public static class TurboRoutingExtensions
         return app.Services.GetRequiredService<TurboRouteTable>().CreateGroup(prefix);
     }
 
-    public static TurboRouteHandlerBuilder MapTurboEntity<TKey>(
-        this WebApplication app, string pattern, Action<TurboEntityBuilder<TKey>> configure)
+    public static TurboRouteHandlerBuilder MapTurboEntity(this WebApplication app, string pattern,
+        Action<TurboEntityBuilder> configure)
     {
-        var entityBuilder = new TurboEntityBuilder<TKey>(pattern);
+        var entityBuilder = new TurboEntityBuilder(pattern);
         configure(entityBuilder);
         entityBuilder.AddToRouteTable(app.Services.GetRequiredService<TurboRouteTable>());
         return new TurboRouteHandlerBuilder();
     }
+    public static TurboRouteHandlerBuilder MapTurboEntity<TActorKey>(this WebApplication app, string pattern,
+        Action<TurboEntityBuilder> configure)
+    {
+        var entityBuilder = new TurboEntityBuilder(pattern).UseActorRef(x => x.Get<TActorKey>());
+        configure(entityBuilder);
+        entityBuilder.AddToRouteTable(app.Services.GetRequiredService<TurboRouteTable>());
+        return new TurboRouteHandlerBuilder();
+    }
+    
 }
