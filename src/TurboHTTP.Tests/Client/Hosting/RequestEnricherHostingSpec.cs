@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using TurboHTTP.Client;
 using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Tests.Client.Hosting;

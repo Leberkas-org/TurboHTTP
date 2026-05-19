@@ -1,6 +1,6 @@
 using System.Net.Security;
 using TurboHTTP.Server;
-using TurboHTTP.Server.Streams;
+using TurboHTTP.Streams;
 
 namespace TurboHTTP.Tests.Streams;
 

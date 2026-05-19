@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using BenchmarkDotNet.Attributes;
 using TurboHTTP.Benchmarks.Internal;
 

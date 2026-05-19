@@ -22,7 +22,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\TurboHTTP\TurboHTTP.csproj"/>
-        <ProjectReference Include="..\TurboHTTP.Server\TurboHTTP.Server.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

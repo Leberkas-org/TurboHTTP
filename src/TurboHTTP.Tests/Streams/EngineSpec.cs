@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using Akka;
 using Akka.Actor;
 using Akka.Streams.Dsl;

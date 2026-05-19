@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using Akka.Actor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using System.IO.Compression;
 using System.Net;
 using Akka.Streams.Dsl;

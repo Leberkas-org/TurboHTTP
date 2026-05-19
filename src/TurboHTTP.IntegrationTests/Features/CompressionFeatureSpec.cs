@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using TurboHTTP.Client;
 using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Features;

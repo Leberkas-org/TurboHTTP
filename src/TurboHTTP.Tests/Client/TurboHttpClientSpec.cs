@@ -2,6 +2,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading.Channels;
 using Akka.Actor;
+using TurboHTTP.Client;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Lifecycle;
 

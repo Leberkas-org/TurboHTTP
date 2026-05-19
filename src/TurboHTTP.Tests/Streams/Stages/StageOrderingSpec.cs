@@ -3,6 +3,7 @@ using System.Net;
 using Akka;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
+using TurboHTTP.Client;
 using TurboHTTP.Features.Caching;
 using TurboHTTP.Features.Cookies;
 using TurboHTTP.Protocol.Semantics;

@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+using TurboHTTP.Client;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using Akka;

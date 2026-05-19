@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Servus.Akka.Transport;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Internal;
 
 namespace TurboHTTP.Tests.Server;
 

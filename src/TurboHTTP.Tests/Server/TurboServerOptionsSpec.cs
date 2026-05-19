@@ -55,13 +55,6 @@ public sealed class TurboServerOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void MiddlewareFactories_should_be_empty_by_default()
-    {
-        var options = new TurboHTTP.Server.TurboServerOptions();
-        Assert.Empty(options.MiddlewareFactories);
-    }
-
-    [Fact(Timeout = 5000)]
     public void Endpoints_should_be_empty_by_default()
     {
         var options = new TurboHTTP.Server.TurboServerOptions();

@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using System.Net;
 using System.Text;
 using Akka.Streams;

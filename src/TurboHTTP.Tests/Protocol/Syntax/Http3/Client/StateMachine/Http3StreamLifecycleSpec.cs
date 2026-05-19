@@ -1,5 +1,6 @@
 using System.Net;
 using Servus.Akka.Transport;
+using TurboHTTP.Client;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Client;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;

@@ -1,5 +1,6 @@
 using System.Net;
 using Akka.Streams.Dsl;
+using TurboHTTP.Client;
 using TurboHTTP.Streams.Stages;
 using TurboHTTP.Tests.Shared;
 

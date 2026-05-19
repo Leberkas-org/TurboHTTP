@@ -1,4 +1,5 @@
 using System.Net;
+using TurboHTTP.Client;
 using TurboHTTP.IntegrationTests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Features;

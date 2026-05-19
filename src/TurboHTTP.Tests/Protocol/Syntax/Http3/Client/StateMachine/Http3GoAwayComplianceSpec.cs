@@ -3,6 +3,7 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Client;
 using TurboHTTP.Tests.Shared;
 using System.Net;
+using TurboHTTP.Client;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 

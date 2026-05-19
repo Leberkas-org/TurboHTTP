@@ -1,6 +1,7 @@
 using Akka.TestKit.Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using TurboHTTP.Client;
 
 namespace TurboHTTP.Tests.Client;
 

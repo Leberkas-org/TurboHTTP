@@ -1,5 +1,6 @@
 using System.Net.Security;
 using System.Security.Authentication;
+using TurboHTTP.Client;
 
 namespace TurboHTTP.Tests.Client;
 

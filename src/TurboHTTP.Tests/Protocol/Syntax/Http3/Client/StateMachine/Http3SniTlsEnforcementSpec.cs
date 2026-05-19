@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Security;
 using Servus.Akka.Transport;
+using TurboHTTP.Client;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;

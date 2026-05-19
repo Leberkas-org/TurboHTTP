@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using TurboHTTP.Hosting;
+using TurboHTTP.Routing;
 using TurboHTTP.Server;
-using TurboHTTP.Server.Hosting;
-using TurboHTTP.Server.Routing;
 
 namespace TurboHTTP.Tests.Server.Binding;
 

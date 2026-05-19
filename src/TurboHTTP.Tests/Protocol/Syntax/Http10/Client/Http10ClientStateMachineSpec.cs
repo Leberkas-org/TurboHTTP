@@ -3,6 +3,7 @@ using System.Text;
 using Akka.Actor;
 using Akka.TestKit.Xunit;
 using Servus.Akka.Transport;
+using TurboHTTP.Client;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http10.Client;
 using TurboHTTP.Tests.Shared;

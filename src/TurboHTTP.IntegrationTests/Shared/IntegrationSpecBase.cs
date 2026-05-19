@@ -1,3 +1,5 @@
+using TurboHTTP.Client;
+
 namespace TurboHTTP.IntegrationTests.Shared;
 
 public abstract class IntegrationSpecBase : IAsyncLifetime

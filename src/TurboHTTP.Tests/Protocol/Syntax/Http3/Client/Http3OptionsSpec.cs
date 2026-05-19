@@ -1,3 +1,5 @@
+using TurboHTTP.Client;
+
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client;
 
 public sealed class Http3OptionsSpec
