@@ -15,11 +15,11 @@
       },
       "Akka.Streams": {
         "type": "Direct",
-        "requested": "[1.5.67, )",
-        "resolved": "1.5.67",
-        "contentHash": "DfxpWPMOCGV7TuYO1Kh1gOVoXDxFWPMtuaFi/h/a+5Fph31fTB7TEHW4oAIQ9QRmk/YuRyLFrHr97uIcBja/8Q==",
+        "requested": "[1.5.68, )",
+        "resolved": "1.5.68",
+        "contentHash": "oEjZ68IiDFakfembDptkBdYHS5d8BSwfl4Ab39cd7v9ye1toZhcWaJ+E6TKkF4kY3anYOqvwFTq1HLsik2UWRA==",
         "dependencies": {
-          "Akka": "1.5.67",
+          "Akka": "1.5.68",
           "Google.Protobuf": "3.26.1",
           "Reactive.Streams": "1.0.4"
         }
@@ -32,8 +32,8 @@
       },
       "Akka": {
         "type": "Transitive",
-        "resolved": "1.5.67",
-        "contentHash": "LCqHtJsvxStcwvHBnGpFSRQ1RLfMkGsL50jCd24N0Z1qm/3GRmRKbMYbzhtgxWJvVsYTUMkhMMwGSK7X0xUJTQ==",
+        "resolved": "1.5.68",
+        "contentHash": "N/bBk9MnlIPfhqxPQVggoCdW2n0EUZAbvyxDHOk5zg5acTOffFqTSIpCcfH4e257LlyUPrDuE2EaikbUmG/01w==",
         "dependencies": {
           "Akka.Analyzers": "0.3.3",
           "Newtonsoft.Json": "13.0.1",
