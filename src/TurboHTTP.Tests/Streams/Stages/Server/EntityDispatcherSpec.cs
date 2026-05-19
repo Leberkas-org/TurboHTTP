@@ -32,7 +32,7 @@ public sealed class EntityDispatcherSpec : StreamTestBase
         }
     }
 
-    private static TurboHttpContext CreateTestContext(
+    private TurboHttpContext CreateTestContext(
         HttpMethod method,
         string uri,
         IServiceProvider services)
@@ -52,7 +52,7 @@ public sealed class EntityDispatcherSpec : StreamTestBase
             features,
             new TurboConnectionInfo("test", null, 0, null, 0),
             services,
-            CancellationToken.None);
+            CancellationToken.None, Materializer);
     }
 
     private (RouteTable Table, IServiceProvider Services) SetupAskRoute(IActorRef actorRef)

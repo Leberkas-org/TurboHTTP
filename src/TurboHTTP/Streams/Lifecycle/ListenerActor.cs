@@ -35,6 +35,8 @@ internal sealed class ListenerActor : ReceiveActor
 
     internal sealed record IncomingConnection(Flow<ITransportOutbound, ITransportInbound, NotUsed> ConnectionFlow);
 
+    internal sealed record ListeningStarted;
+
     internal sealed record ListenerStopped;
 
     internal sealed record ListenerFailed(Exception? Error);
@@ -83,6 +85,8 @@ internal sealed class ListenerActor : ReceiveActor
             .Run(_materializer);
 
         _listenerKillSwitch = killSwitch;
+
+        Sender.Tell(new ListeningStarted());
 
         completionTask.PipeTo(Self,
             success: () => new ListenerStopped(),

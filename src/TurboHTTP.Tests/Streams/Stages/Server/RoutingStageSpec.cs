@@ -11,7 +11,7 @@ namespace TurboHTTP.Tests.Streams.Stages.Server;
 
 public sealed class RoutingStageSpec : StreamTestBase
 {
-    private static TurboHttpContext CreateTestContext(HttpMethod method, string uri)
+    private TurboHttpContext CreateTestContext(HttpMethod method, string uri)
     {
         var request = new HttpRequestMessage(method, uri);
 
@@ -28,7 +28,7 @@ public sealed class RoutingStageSpec : StreamTestBase
             features,
             new TurboConnectionInfo("test", null, 0, null, 0),
             new ServiceCollection().BuildServiceProvider(),
-            CancellationToken.None);
+            CancellationToken.None, Materializer);
     }
 
     [Fact(Timeout = 5000)]

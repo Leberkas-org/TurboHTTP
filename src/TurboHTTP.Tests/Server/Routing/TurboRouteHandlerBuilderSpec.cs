@@ -1,4 +1,3 @@
-using TurboHTTP.Routing;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Server.Routing;

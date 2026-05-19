@@ -98,7 +98,7 @@ public sealed class TurboStreamResultsSpec : IDisposable
             features,
             new TurboConnectionInfo("test", null, 0, null, 0),
             new FakeServiceProvider(),
-            CancellationToken.None)
+            CancellationToken.None, null!)
         {
             Materializer = _materializer
         };

@@ -148,10 +148,8 @@ internal sealed class HttpContextBidiStage
                 features,
                 _stage._connectionInfo,
                 _stage._services,
-                _stage._connectionAborted)
-            {
-                Materializer = _materializer!
-            };
+                _stage._connectionAborted,
+                _materializer!);
         }
 
         private static HttpResponseMessage ExtractResponse(TurboHttpContext ctx)

@@ -527,7 +527,7 @@ namespace TurboHTTP.Server
     }
     public sealed class TurboHttpContext : Microsoft.AspNetCore.Http.HttpContext
     {
-        public TurboHttpContext(Microsoft.AspNetCore.Http.Features.IFeatureCollection features, TurboHTTP.Server.TurboConnectionInfo connectionInfo, System.IServiceProvider? services, System.Threading.CancellationToken requestAborted) { }
+        public TurboHttpContext(Microsoft.AspNetCore.Http.Features.IFeatureCollection features, TurboHTTP.Server.TurboConnectionInfo connectionInfo, System.IServiceProvider? services, System.Threading.CancellationToken requestAborted, Akka.Streams.IMaterializer materializer) { }
         public override Microsoft.AspNetCore.Http.ConnectionInfo Connection { get; }
         public override Microsoft.AspNetCore.Http.Features.IFeatureCollection Features { get; }
         public override System.Collections.Generic.IDictionary<object, object?> Items { get; set; }

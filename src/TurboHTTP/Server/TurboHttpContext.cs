@@ -14,12 +14,14 @@ public sealed class TurboHttpContext : HttpContext
         IFeatureCollection features,
         TurboConnectionInfo connectionInfo,
         IServiceProvider? services,
-        CancellationToken requestAborted)
+        CancellationToken requestAborted,
+        IMaterializer materializer)
     {
         Features = features;
         _connectionInfo = connectionInfo;
         RequestServices = services!;
         RequestAborted = requestAborted;
+        Materializer = materializer;
         TraceIdentifier = Guid.NewGuid().ToString("N");
 
         TurboRequest = new TurboHttpRequest(features);

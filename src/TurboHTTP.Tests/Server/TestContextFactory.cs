@@ -27,7 +27,7 @@ internal static class TestContextFactory
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<ITurboResponseBodyFeature>(bodyFeature);
 
-        return new TurboHttpContext(features, conn, services, cancellationToken);
+        return new TurboHttpContext(features, conn, services, cancellationToken, null!);
     }
 
     public static TurboHttpContext Create(string path)

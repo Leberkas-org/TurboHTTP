@@ -33,6 +33,6 @@ internal static class TurboTestContextFactory
             features,
             new TurboConnectionInfo("test", null, 0, null, 0),
             new ServiceCollection().BuildServiceProvider(),
-            CancellationToken.None);
+            CancellationToken.None, null!);
     }
 }

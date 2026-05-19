@@ -42,7 +42,7 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
         _loggerFactory = loggerFactory;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         _system = _services.GetService<ActorSystem>();
         if (_system is null)
@@ -78,7 +78,10 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
             Props.Create(() => new ServerSupervisorActor()),
             "turbo-server");
 
-        _supervisor.Tell(new ServerSupervisorActor.StartListeners(listenerProps));
+        await _supervisor.Ask<ServerSupervisorActor.ListenersReady>(
+            new ServerSupervisorActor.StartListeners(listenerProps),
+            TimeSpan.FromSeconds(30),
+            cancellationToken);
 
         var cs = CoordinatedShutdown.Get(_system);
 
@@ -100,7 +103,6 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
             return Done.Instance;
         });
 
-        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

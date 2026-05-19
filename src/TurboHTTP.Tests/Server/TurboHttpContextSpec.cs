@@ -98,6 +98,6 @@ public sealed class TurboHttpContextSpec
         features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(conn));
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
 
-        return new TurboHttpContext(features, conn, services, TestContext.Current.CancellationToken);
+        return new TurboHttpContext(features, conn, services, TestContext.Current.CancellationToken, null!);
     }
 }

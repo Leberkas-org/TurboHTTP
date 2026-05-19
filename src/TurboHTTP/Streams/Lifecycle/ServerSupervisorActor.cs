@@ -8,8 +8,11 @@ internal sealed class ServerSupervisorActor : ReceiveActor
     private readonly ILoggingAdapter _log = Context.GetLogger();
     private readonly Dictionary<string, IActorRef> _activeConnections = new();
     private readonly List<IActorRef> _listeners = [];
+    private IActorRef _startRequester = ActorRefs.Nobody;
+    private int _pendingListenerCount;
 
     public sealed record StartListeners(IReadOnlyList<Props> ListenerProps);
+    public sealed record ListenersReady;
     public sealed record StopAccepting;
     public sealed record BeginDrain(TimeSpan Timeout);
     public sealed record DrainComplete;
@@ -18,6 +21,7 @@ internal sealed class ServerSupervisorActor : ReceiveActor
     public ServerSupervisorActor()
     {
         Receive<StartListeners>(OnStartListeners);
+        Receive<ListenerActor.ListeningStarted>(_ => OnListenerReady());
         Receive<StopAccepting>(_ => OnStopAccepting());
         Receive<BeginDrain>(OnBeginDrain);
         Receive<ListenerActor.ConnectionStarted>(OnConnectionStarted);
@@ -27,6 +31,15 @@ internal sealed class ServerSupervisorActor : ReceiveActor
 
     private void OnStartListeners(StartListeners msg)
     {
+        _startRequester = Sender;
+        _pendingListenerCount = msg.ListenerProps.Count;
+
+        if (_pendingListenerCount == 0)
+        {
+            _startRequester.Tell(new ListenersReady());
+            return;
+        }
+
         for (var i = 0; i < msg.ListenerProps.Count; i++)
         {
             var name = string.Concat("listener-", i);
@@ -34,8 +47,17 @@ internal sealed class ServerSupervisorActor : ReceiveActor
             listener.Tell(new ListenerActor.StartListening());
             _listeners.Add(listener);
         }
+    }
 
-        _log.Info("Started {0} listener(s)", _listeners.Count);
+    private void OnListenerReady()
+    {
+        _pendingListenerCount--;
+        if (_pendingListenerCount <= 0)
+        {
+            _log.Info("All {0} listener(s) ready", _listeners.Count);
+            _startRequester.Tell(new ListenersReady());
+            _startRequester = ActorRefs.Nobody;
+        }
     }
 
     private void OnStopAccepting()

@@ -6,10 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Binding;
 using TurboHTTP.Server.Context.Features;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Server.Binding;
 
-public sealed class DelegateHandlerBinderSpec
+public sealed class DelegateHandlerBinderSpec : StreamTestBase
 {
     [Fact(Timeout = 5000)]
     public async Task Bind_should_handle_no_params_IResult_return()
@@ -137,7 +138,7 @@ public sealed class DelegateHandlerBinderSpec
             .BuildServiceProvider();
     }
 
-    private static TurboHttpContext CreateContext(string path)
+    private TurboHttpContext CreateContext(string path)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost" + path);
         var connection = new TurboConnectionInfo("test", null, 0, null, 0);
@@ -152,6 +153,6 @@ public sealed class DelegateHandlerBinderSpec
             .AddLogging()
             .BuildServiceProvider();
 
-        return new TurboHttpContext(features, connection, services, CancellationToken.None);
+        return new TurboHttpContext(features, connection, services, CancellationToken.None, Materializer);
     }
 }
