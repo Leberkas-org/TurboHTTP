@@ -1,4 +1,5 @@
 using PublicApiGenerator;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.API.Tests;
 
@@ -14,7 +15,7 @@ public class CoreAPISpec
         ]
     };
 
-    static Task VerifyAssembly<T>()
+    private static Task VerifyAssembly<T>()
     {
         return Verify(typeof(T).Assembly.GeneratePublicApi(ApiOptions));
     }
@@ -23,5 +24,11 @@ public class CoreAPISpec
     public Task ApproveCore()
     {
         return VerifyAssembly<ITurboHttpClient>();
+    }
+
+    [Fact]
+    public Task ApproveServer()
+    {
+        return VerifyAssembly<TurboHttpContext>();
     }
 }

@@ -18,6 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\TurboHTTP.Server\TurboHTTP.Server.csproj" />
       <ProjectReference Include="..\TurboHTTP\TurboHTTP.csproj" />
     </ItemGroup>
 
