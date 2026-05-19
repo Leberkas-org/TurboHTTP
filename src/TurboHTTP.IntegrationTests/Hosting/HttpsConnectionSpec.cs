@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -16,14 +18,14 @@ public sealed class HttpsConnectionSpec : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         _port = GetFreePort();
-        var certPath = Path.Combine(AppContext.BaseDirectory, "TestCertificates", "test.pfx");
+        var certificate = CreateSelfSignedCertificate();
 
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddTurboKestrel(options =>
         {
             options.ListenLocalhost(_port, listen =>
             {
-                listen.UseHttps(certPath, "testpassword");
+                listen.UseHttps(certificate);
                 listen.Protocols = HttpProtocols.Http1;
             });
         });
@@ -80,5 +82,32 @@ public sealed class HttpsConnectionSpec : IAsyncLifetime
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return (ushort)port;
+    }
+
+    private static X509Certificate2 CreateSelfSignedCertificate()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(
+            "CN=localhost",
+            rsa,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+
+        request.CertificateExtensions.Add(
+            new X509BasicConstraintsExtension(false, false, 0, false));
+
+        var sanBuilder = new SubjectAlternativeNameBuilder();
+        sanBuilder.AddDnsName("localhost");
+        sanBuilder.AddIpAddress(IPAddress.Loopback);
+        request.CertificateExtensions.Add(sanBuilder.Build());
+
+        var cert = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddMinutes(-1),
+            DateTimeOffset.UtcNow.AddHours(1));
+
+        return X509CertificateLoader.LoadPkcs12(
+            cert.Export(X509ContentType.Pfx),
+            null,
+            X509KeyStorageFlags.Exportable);
     }
 }

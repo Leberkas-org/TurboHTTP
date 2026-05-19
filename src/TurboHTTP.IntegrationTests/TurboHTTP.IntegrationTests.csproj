@@ -30,10 +30,5 @@
       </Content>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Update="TestCertificates\test.pfx">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
 
 </Project>
