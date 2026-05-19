@@ -14,97 +14,60 @@ export default defineConfig({
         },
 
         nav: [
-            { text: 'Home', link: '/' },
-            { text: 'Quick Guide', link: '/quickstart/' },
+            { text: 'Getting Started', link: '/getting-started/' },
             { text: 'Client', link: '/client/' },
             { text: 'Server', link: '/server/' },
-            { text: 'Architecture', link: '/architecture/' },
             { text: 'API', link: '/api/' },
-            { text: 'Why TurboHTTP?', link: '/why/' },
         ],
 
         sidebar: {
-            '/quickstart/': [
+            '/getting-started/': [
                 {
-                    text: 'Quick Guide',
+                    text: 'Getting Started',
                     items: [
-                        { text: 'Quick Guide', link: '/quickstart/' },
+                        { text: 'Overview', link: '/getting-started/' },
+                        { text: 'Client Quick Start', link: '/getting-started/client' },
+                        { text: 'Server Quick Start', link: '/getting-started/server' },
+                        { text: 'Architecture Overview', link: '/getting-started/architecture' },
+                        { text: 'Migration from HttpClient', link: '/getting-started/migration' },
                     ],
                 },
             ],
             '/client/': [
                 {
-                    text: 'Getting Started',
+                    text: 'Client',
                     items: [
-                        { text: 'Quick Start', link: '/client/' },
+                        { text: 'Overview', link: '/client/' },
                         { text: 'Installation & Setup', link: '/client/installation' },
                         { text: 'Configuration', link: '/client/configuration' },
-                        { text: 'Migration from HttpClient', link: '/client/migration' },
-                    ],
-                },
-                {
-                    text: 'Features',
-                    items: [
+                        { text: 'Connection Pooling', link: '/client/connection-pooling' },
                         { text: 'Automatic Retries', link: '/client/retries' },
                         { text: 'HTTP Caching', link: '/client/caching' },
                         { text: 'Cookie Management', link: '/client/cookies' },
                         { text: 'Redirects', link: '/client/redirects' },
                         { text: 'Content Encoding', link: '/client/content-encoding' },
-                        { text: 'Connection Pooling', link: '/client/connection-pooling' },
                         { text: 'HTTP/2 & Multiplexing', link: '/client/http2' },
                         { text: 'HTTP/3 & QUIC', link: '/client/http3' },
-                    ],
-                },
-                {
-                    text: 'Help',
-                    items: [
-                        { text: 'Troubleshooting & FAQ', link: '/client/troubleshooting' },
+                        { text: 'Real-World Scenarios', link: '/client/scenarios' },
+                        { text: 'Troubleshooting', link: '/client/troubleshooting' },
                     ],
                 },
             ],
             '/server/': [
                 {
-                    text: 'Getting Started',
+                    text: 'Server',
                     items: [
-                        { text: 'Quick Start', link: '/server/' },
+                        { text: 'Overview', link: '/server/' },
                         { text: 'Installation & Setup', link: '/server/installation' },
                         { text: 'Configuration', link: '/server/configuration' },
                         { text: 'Hosting & Lifecycle', link: '/server/hosting' },
-                    ],
-                },
-                {
-                    text: 'Features',
-                    items: [
                         { text: 'Middleware Pipeline', link: '/server/middleware' },
                         { text: 'Routing', link: '/server/routing' },
-                        { text: 'Entity Gateway', link: '/server/entity-gateway' },
-                    ],
-                },
-                {
-                    text: 'Advanced',
-                    items: [
                         { text: 'Parameter Binding', link: '/server/binding' },
                         { text: 'Validation', link: '/server/validation' },
-                    ],
-                },
-                {
-                    text: 'Help',
-                    items: [
+                        { text: 'Entity Gateway', link: '/server/entity-gateway' },
+                        { text: 'Real-World Scenarios', link: '/server/scenarios' },
                         { text: 'Troubleshooting', link: '/server/troubleshooting' },
-                    ],
-                },
-            ],
-            '/architecture/': [
-                {
-                    text: 'Architecture',
-                    items: [
-                        { text: 'Overview', link: '/architecture/' },
-                        { text: 'Handler Design', link: '/architecture/handlers' },
-                        { text: 'Architectural Layers', link: '/architecture/layers' },
-                        { text: 'Protocol Engines', link: '/architecture/engines' },
-                        { text: 'Request Pipeline', link: '/architecture/pipeline' },
-                        { text: 'End-to-End Scenarios', link: '/architecture/scenarios' },
-                        { text: 'Extending the Pipeline', link: '/architecture/extending' },
                     ],
                 },
             ],
@@ -113,14 +76,23 @@ export default defineConfig({
                     text: 'API Reference',
                     items: [
                         { text: 'Overview', link: '/api/' },
+                        { text: 'Client API', link: '/api/client' },
+                        { text: 'Client Options', link: '/api/client-options' },
+                        { text: 'Feature Options', link: '/api/feature-options' },
+                        { text: 'Server API', link: '/api/server' },
+                        { text: 'Entity Gateway API', link: '/api/entity-gateway' },
                     ],
                 },
             ],
-            '/why/': [
+            '/architecture/': [
                 {
-                    text: 'Why TurboHTTP?',
+                    text: 'Architecture',
                     items: [
-                        { text: 'Comparison', link: '/why/' },
+                        { text: 'Request Pipeline', link: '/architecture/pipeline' },
+                        { text: 'Protocol Engines', link: '/architecture/engines' },
+                        { text: 'Handler Design', link: '/architecture/handlers' },
+                        { text: 'E2E Scenarios', link: '/architecture/scenarios' },
+                        { text: 'Extending the Pipeline', link: '/architecture/extending' },
                     ],
                 },
             ],
