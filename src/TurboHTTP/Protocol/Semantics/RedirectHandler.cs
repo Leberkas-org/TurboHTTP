@@ -65,7 +65,9 @@ internal sealed class RedirectHandler
         // Register the current URL on first call (before first redirect)
         if (RedirectCount == 0)
         {
-            _visitedUris.Add(NormalizeUriForComparison(original.RequestUri));
+            var normalized = NormalizeUriForComparison(original.RequestUri);
+            System.Diagnostics.Debug.WriteLine($"[Redirect] Initial URI: {original.RequestUri} → normalized: {normalized}");
+            _visitedUris.Add(normalized);
         }
 
         // Enforce max redirects
@@ -77,6 +79,7 @@ internal sealed class RedirectHandler
         }
 
         var locationUri = ResolveLocationUri(original.RequestUri, response);
+        System.Diagnostics.Debug.WriteLine($"[Redirect] Redirect #{RedirectCount + 1}: LocationUri={locationUri}");
 
         // Detect HTTPS → HTTP downgrade
         if (!_policy.AllowHttpsToHttpDowngrade &&
@@ -92,6 +95,7 @@ internal sealed class RedirectHandler
         // Detect redirect loops — normalized comparison is case-insensitive for
         // scheme/host and case-sensitive for path/query; fragments are ignored.
         var normalizedLocation = NormalizeUriForComparison(locationUri);
+        System.Diagnostics.Debug.WriteLine($"[Redirect] Normalized location: {normalizedLocation}, visited count: {_visitedUris.Count}, visited: {string.Join(", ", _visitedUris)}");
         if (!_visitedUris.Add(normalizedLocation))
         {
             throw new RedirectException(
@@ -179,6 +183,18 @@ internal sealed class RedirectHandler
         {
             throw new RedirectException("RFC 9110 §15.4: Location header is empty.",
                 RedirectError.MissingLocationHeader);
+        }
+
+        // Handle "http:///path" or "https:///path" — empty authority.
+        // .NET Uri rejects these, but HTTP/1.0 backends that lack a Host header
+        // may produce them. Strip scheme+empty-authority and resolve as relative.
+        if (locationValue.StartsWith("http:///", StringComparison.OrdinalIgnoreCase))
+        {
+            locationValue = locationValue[("http://".Length)..];
+        }
+        else if (locationValue.StartsWith("https:///", StringComparison.OrdinalIgnoreCase))
+        {
+            locationValue = locationValue[("https://".Length)..];
         }
 
         // Resolve relative URIs against the request URI (RFC 9110 §10.2.2).

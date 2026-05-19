@@ -1,5 +1,4 @@
 using System.Text;
-using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http11.Server;

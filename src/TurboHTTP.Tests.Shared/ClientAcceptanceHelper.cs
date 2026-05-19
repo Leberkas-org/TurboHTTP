@@ -1,5 +1,4 @@
 using Akka.Actor;
-using Akka.Configuration;
 using Akka.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

@@ -233,8 +233,6 @@ internal static class WellKnownHeaders
     public static readonly WellKnownHeader ZeroValue = new("0");
     public static readonly WellKnownHeader OneValue = new("1");
 
-
-    public static readonly WellKnownHeader CrlfCrlf = Crlf + Crlf;
     public static readonly WellKnownHeader ColonSpace = Colon + Space;
     public static readonly WellKnownHeader CommaSpace = Comma + Space;
 

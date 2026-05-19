@@ -27,7 +27,11 @@ internal sealed class Http11ServerEncoder
 
         var headers = response.GetHeaderCollection();
 
-        if (!isChunked)
+        if (isChunked)
+        {
+            headers.Add(WellKnownHeaders.TransferEncoding, WellKnownHeaders.ChunkedValue);
+        }
+        else
         {
             var contentLength = response.Content.Headers.ContentLength ?? 0L;
             headers.Add(WellKnownHeaders.ContentLength, contentLength.ToString(CultureInfo.InvariantCulture));

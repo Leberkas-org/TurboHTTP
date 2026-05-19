@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 

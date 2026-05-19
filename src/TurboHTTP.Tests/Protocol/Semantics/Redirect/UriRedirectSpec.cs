@@ -14,7 +14,7 @@ public sealed class UriRedirectSpec
     {
         var buffer = new byte[bufferSize];
         var written = Encoder.Encode(buffer, request, ActorRefs.Nobody);
-        return global::System.Text.Encoding.ASCII.GetString(buffer, 0, written);
+        return System.Text.Encoding.ASCII.GetString(buffer, 0, written);
     }
 
     private static HttpResponseMessage RedirectResponse(HttpStatusCode status, string location)

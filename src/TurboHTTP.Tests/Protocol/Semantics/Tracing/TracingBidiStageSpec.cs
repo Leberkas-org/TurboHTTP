@@ -18,7 +18,7 @@ public sealed class TracingBidiStageSpec : StreamTestBase, IDisposable
 
     public TracingBidiStageSpec()
     {
-        var sourceName = global::Servus.Core.Servus.Tracing.Source.Name;
+        var sourceName = Servus.Core.Servus.Tracing.Source.Name;
         _listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == sourceName,

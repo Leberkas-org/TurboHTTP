@@ -15,6 +15,7 @@
     <PropertyGroup>
         <IsPackable>true</IsPackable>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <LangVersion>14</LangVersion>
     </PropertyGroup>
     <PropertyGroup>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>

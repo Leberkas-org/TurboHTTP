@@ -8,7 +8,7 @@ namespace TurboHTTP.Protocol;
 
 internal static class HttpMessageSize
 {
-    private static readonly Http11ClientEncoderOptions DefaultOptions = new Http11ClientEncoderOptions();
+    private static readonly Http11ClientEncoderOptions DefaultOptions = new();
 
     public static int Estimate(HttpRequestMessage request, int bodyLength)
     {

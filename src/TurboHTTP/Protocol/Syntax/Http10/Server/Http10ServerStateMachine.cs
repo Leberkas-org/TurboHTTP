@@ -45,6 +45,11 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
 
         try
         {
+            if (ShouldComplete)
+            {
+                return;
+            }
+
             var outcome = _decoder.Feed(buffer.Memory.Span, out _);
 
             if (outcome == DecodeOutcome.Complete)

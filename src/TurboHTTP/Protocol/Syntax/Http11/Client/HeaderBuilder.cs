@@ -27,6 +27,7 @@ internal static class HeaderBuilder
         {
             AddAcceptEncodingIfNeeded(collection, request.Headers);
         }
+
         AddHeaders(collection, request.Headers, skipHost: true);
 
         if (request.Content != null)
@@ -126,7 +127,7 @@ internal static class HeaderBuilder
             var start = 0;
             while (true)
             {
-                var comma = span[start..].IndexOf(',');
+                var comma = span[start..].IndexOf(WellKnownHeaders.Comma);
                 var end = comma >= 0 ? start + comma : span.Length;
                 var token = span[start..end].Trim();
 
@@ -246,7 +247,7 @@ internal static class HeaderBuilder
             var start = 0;
             while (true)
             {
-                var comma = span[start..].IndexOf(',');
+                var comma = span[start..].IndexOf(WellKnownHeaders.Comma);
                 var end = comma >= 0 ? start + comma : span.Length;
                 var token = span[start..end].Trim();
 

@@ -14,7 +14,7 @@ public sealed class HeaderValidationSpec
     [Trait("RFC", "RFC9110-5.6.2")]
     public void IsToken_should_match_RFC_tchar_rules(string value, bool expected)
     {
-        Assert.Equal(expected, HeaderValidation.IsToken(global::System.Text.Encoding.UTF8.GetBytes(value)));
+        Assert.Equal(expected, HeaderValidation.IsToken(System.Text.Encoding.UTF8.GetBytes(value)));
     }
 
     [Theory(Timeout = 5000)]
@@ -28,7 +28,7 @@ public sealed class HeaderValidationSpec
     [Trait("RFC", "RFC9110-5.5")]
     public void IsValidFieldValue_should_match_RFC_field_value_rules(string value, bool expected)
     {
-        Assert.Equal(expected, HeaderValidation.IsValidFieldValue(global::System.Text.Encoding.UTF8.GetBytes(value)));
+        Assert.Equal(expected, HeaderValidation.IsValidFieldValue(System.Text.Encoding.UTF8.GetBytes(value)));
     }
 
     [Theory(Timeout = 5000)]

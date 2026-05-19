@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using TurboHTTP.Features.Caching;
 using TurboHTTP.Streams;
 using TurboHTTP.Tests.Shared;
 

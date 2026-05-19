@@ -99,7 +99,6 @@ internal static class Extensions
     {
         var headerCollection = new HeaderCollection();
         response.Headers.GetHeaderCollection(ref headerCollection);
-        response.Content.GetHeaderCollection(ref headerCollection);
         return headerCollection;
     }
 

@@ -330,9 +330,9 @@ internal sealed class RedirectStateMachine
             _ops.OnSignalPullResponse();
             _ops.OnSignalPullRequest();
         }
-        catch (RedirectException)
+        catch (RedirectException ex)
         {
-            Tracing.For("Redirect").Warning(_ops, "Max redirects exceeded for {0}", original.RequestUri);
+            Tracing.For("Redirect").Warning(_ops, "Redirect error: {0} (for {1})", ex.Message, original.RequestUri);
             _inFlightCount--;
             _ops.OnPushResponse(response);
         }

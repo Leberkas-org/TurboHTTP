@@ -52,6 +52,11 @@ internal sealed class Http10ServerEncoder
                 continue;
             }
 
+            if (ConnectionSemantics.IsHopByHop(h.Key))
+            {
+                continue;
+            }
+
             foreach (var v in h.Value)
             {
                 headers.Add(h.Key, v);
