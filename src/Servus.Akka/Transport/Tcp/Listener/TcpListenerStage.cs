@@ -14,6 +14,10 @@ internal sealed record TcpClientAccepted(TcpClient Client);
 
 internal sealed record TcpAcceptFailed(Exception Error);
 
+internal sealed record TcpConnectionReady(Flow<ITransportOutbound, ITransportInbound, NotUsed> Flow);
+
+internal sealed record TcpConnectionInitFailed(Exception Error);
+
 internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>>
 {
     private readonly TcpListenerOptions _options;
@@ -116,10 +120,22 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
                 case TcpAcceptFailed failed:
                     OnAcceptError(failed.Error);
                     break;
+                case TcpConnectionReady ready:
+                    _pendingConnections.Enqueue(ready.Flow);
+                    TryPush();
+                    break;
+                case TcpConnectionInitFailed failed:
+                    Log.Warning(failed.Error, "Failed to initialize accepted connection");
+                    break;
             }
         }
 
         private void OnClientAccepted(TcpClient client)
+        {
+            _ = InitializeConnectionAsync(client);
+        }
+
+        private async Task InitializeConnectionAsync(TcpClient client)
         {
             Stream stream;
             try
@@ -139,12 +155,12 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
                     client.ReceiveBufferSize = recvBuf;
                 }
 
-                stream = GetStream(client);
+                stream = await GetStreamAsync(client);
             }
             catch (Exception ex)
             {
                 client.Dispose();
-                Log.Warning(ex, "Failed to initialize accepted connection");
+                _self.Tell(new TcpConnectionInitFailed(ex));
                 return;
             }
 
@@ -159,8 +175,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             var connectionFlow = Flow.FromGraph(
                 new TcpServerConnectionStage(stream, connectionInfo));
 
-            _pendingConnections.Enqueue(connectionFlow);
-            TryPush();
+            _self.Tell(new TcpConnectionReady(connectionFlow));
         }
 
         private void TryPush()
@@ -171,7 +186,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             }
         }
 
-        private Stream GetStream(TcpClient client)
+        private async Task<Stream> GetStreamAsync(TcpClient client)
         {
             if (_stage._options.ServerCertificate is null)
             {
@@ -183,11 +198,16 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
                 leaveInnerStreamOpen: false,
                 _stage._options.ClientCertificateValidationCallback);
 
-            sslStream.AuthenticateAsServer(
-                _stage._options.ServerCertificate,
-                clientCertificateRequired: _stage._options.ClientCertificateValidationCallback is not null,
-                _stage._options.EnabledSslProtocols,
-                checkCertificateRevocation: false);
+            var authOptions = new SslServerAuthenticationOptions
+            {
+                ServerCertificate = _stage._options.ServerCertificate,
+                ClientCertificateRequired = _stage._options.ClientCertificateValidationCallback is not null,
+                EnabledSslProtocols = _stage._options.EnabledSslProtocols,
+                ApplicationProtocols = _stage._options.ApplicationProtocols
+            };
+
+            await sslStream.AuthenticateAsServerAsync(authOptions, CancellationToken.None)
+                .WaitAsync(_stage._options.HandshakeTimeout, CancellationToken.None);
 
             return sslStream;
         }

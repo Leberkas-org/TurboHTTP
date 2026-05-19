@@ -12,4 +12,5 @@ public sealed record TcpListenerOptions : ListenerOptions
     public SslProtocols EnabledSslProtocols { get; init; } = SslProtocols.None;
     public List<SslApplicationProtocol>? ApplicationProtocols { get; init; }
     public RemoteCertificateValidationCallback? ClientCertificateValidationCallback { get; init; }
+    public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(10);
 }
