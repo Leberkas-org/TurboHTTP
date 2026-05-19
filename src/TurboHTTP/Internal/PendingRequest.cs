@@ -48,8 +48,13 @@ internal sealed class PendingRequest : IValueTaskSource<HttpResponseMessage>
         }
     }
 
-    public bool TrySetException(Exception exception)
+    public bool TrySetException(Exception exception, short expectedVersion)
     {
+        if (_core.Version != expectedVersion)
+        {
+            return false;
+        }
+
         try
         {
             _core.SetException(exception);
@@ -61,7 +66,18 @@ internal sealed class PendingRequest : IValueTaskSource<HttpResponseMessage>
         }
     }
 
-    public bool TrySetCanceled(CancellationToken ct = default) => TrySetException(new OperationCanceledException(ct));
+    public bool TrySetCanceled(CancellationToken ct = default)
+    {
+        try
+        {
+            _core.SetException(new OperationCanceledException(ct));
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
 
     public HttpResponseMessage GetResult(short token) => _core.GetResult(token);
     public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);

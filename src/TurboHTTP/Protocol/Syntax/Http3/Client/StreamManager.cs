@@ -133,9 +133,10 @@ internal sealed class StreamManager
         OnStreamClosedCallback?.Invoke(streamId);
         ReturnDecoder(streamId);
 
-        if (request.Options.TryGetValue(OptionsKey.Key, out var pending))
+        if (request.Options.TryGetValue(OptionsKey.Key, out var pending)
+            && request.Options.TryGetValue(OptionsKey.VersionKey, out var ver))
         {
-            pending.TrySetException(exception);
+            pending.TrySetException(exception, ver);
         }
     }
 

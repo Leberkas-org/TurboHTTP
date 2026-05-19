@@ -6,9 +6,10 @@ internal static class RequestFault
 {
     public static void Fail(this HttpRequestMessage request, Exception exception)
     {
-        if (request.Options.TryGetValue(OptionsKey.Key, out var pending))
+        if (request.Options.TryGetValue(OptionsKey.Key, out var pending)
+            && request.Options.TryGetValue(OptionsKey.VersionKey, out var ver))
         {
-            pending.TrySetException(exception);
+            pending.TrySetException(exception, ver);
         }
     }
 

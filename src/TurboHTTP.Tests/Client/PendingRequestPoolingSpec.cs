@@ -114,7 +114,7 @@ public sealed class PendingRequestPoolingSpec
         var pending = PendingRequest.Rent();
         var exception = new InvalidOperationException("test");
 
-        var result = pending.TrySetException(exception);
+        var result = pending.TrySetException(exception, pending.Version);
 
         Assert.True(result);
     }
@@ -128,7 +128,7 @@ public sealed class PendingRequestPoolingSpec
         var exception = new InvalidOperationException("test");
 
         pending.TrySetResult(response, version);
-        var result = pending.TrySetException(exception);
+        var result = pending.TrySetException(exception, version);
 
         Assert.False(result);
     }
@@ -140,7 +140,7 @@ public sealed class PendingRequestPoolingSpec
         var task = pending.GetValueTask();
         var exception = new InvalidOperationException("test error");
 
-        pending.TrySetException(exception);
+        pending.TrySetException(exception, pending.Version);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
         Assert.Equal("test error", ex.Message);
@@ -222,7 +222,7 @@ public sealed class PendingRequestPoolingSpec
         var version = pending.Version;
         var exception = new InvalidOperationException("test");
 
-        pending.TrySetException(exception);
+        pending.TrySetException(exception, version);
         var status = pending.GetStatus(version);
 
         Assert.Equal(ValueTaskSourceStatus.Faulted, status);

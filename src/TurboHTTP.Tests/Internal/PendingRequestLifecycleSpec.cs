@@ -64,7 +64,7 @@ public sealed class PendingRequestLifecycleSpec
         var pr = PendingRequest.Rent();
         var exception = new InvalidOperationException("test error");
 
-        Assert.True(pr.TrySetException(exception));
+        Assert.True(pr.TrySetException(exception, pr.Version));
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await pr.GetValueTask());
 
