@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using TurboHTTP.Features.AltSvc;
 using TurboHTTP.Features.Caching;
 using TurboHTTP.Features.Cookies;

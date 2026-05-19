@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using Akka.Streams;
 using Akka.Streams.Stage;
 using Servus.Akka.Transport;

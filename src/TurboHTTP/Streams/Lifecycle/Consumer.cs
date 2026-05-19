@@ -4,6 +4,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using TurboHTTP.Client;
 using TurboHTTP.Internal;
 using TurboHTTP.Streams.Stages;
 

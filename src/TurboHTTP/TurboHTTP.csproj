@@ -24,6 +24,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\"/>
         <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\"/>
         <None Include="../../docs/public/logo/icon.png" Visible="false" Pack="true" PackagePath="\"/>
@@ -38,8 +42,6 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>
-        <InternalsVisibleTo Include="TurboHTTP.Server"/>
-        <InternalsVisibleTo Include="TurboHTTP.Server.Tests"/>
         <InternalsVisibleTo Include="TurboHTTP.AcceptanceTests"/>
         <InternalsVisibleTo Include="TurboHTTP.IntegrationTests"/>
         <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Container"/>

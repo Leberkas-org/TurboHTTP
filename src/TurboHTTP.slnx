@@ -35,5 +35,4 @@
     <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
   </Folder>
   <Project Path="TurboHTTP/TurboHTTP.csproj" />
-  <Project Path="TurboHTTP.Server/TurboHTTP.Server.csproj" />
 </Solution>

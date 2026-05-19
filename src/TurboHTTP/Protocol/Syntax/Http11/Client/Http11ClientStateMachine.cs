@@ -1,4 +1,5 @@
 using Servus.Akka.Transport;
+using TurboHTTP.Client;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Streams.Stages;

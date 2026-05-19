@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using TurboHTTP.Client;
 using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Streams.Stages;
