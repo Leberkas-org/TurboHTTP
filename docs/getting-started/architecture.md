@@ -93,16 +93,11 @@ Each connection is managed by a `ConnectionActor` that owns the full Akka.Stream
 
 TurboHTTP Server is a standalone HTTP server — it does not use Kestrel. Instead, it uses its own transport layer via Servus.Akka.Transport.
 
-### Actor Hierarchy
+<ClientOnly>
+  <LikeC4Diagram viewId="serverHierarchy" :height="400" />
+</ClientOnly>
 
-```
-ServerSupervisorActor
-├── ListenerActor (one per endpoint)
-│   ├── ConnectionActor (one per client)
-│   └── ConnectionActor
-└── ListenerActor
-    └── ConnectionActor
-```
+### Actor Hierarchy
 
 - **ServerSupervisorActor** — manages all listeners and tracks connection counts
 - **ListenerActor** — binds TCP or QUIC transport, accepts incoming connections

@@ -35,6 +35,10 @@ When `app.RunAsync()` is called, the TurboServerHostedService:
 
 ## Actor Hierarchy
 
+<ClientOnly>
+  <LikeC4Diagram viewId="serverHierarchy" :height="400" />
+</ClientOnly>
+
 TurboHTTP Server uses this actor structure:
 
 ```

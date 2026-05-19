@@ -302,6 +302,16 @@ The engine reads this descriptor and wires up only the stages you have actually 
 | Factory       | `IHttpClientFactory`                              | `ITurboHttpClientFactory`                  |
 | Typed Clients | `AddHttpClient<TClient>()`                        | `AddTurboHttpClient<TClient>()`            |
 
+## Server Request Pipeline
+
+On the server side, incoming requests flow through a different pipeline. Each `ConnectionActor` materialises this graph:
+
+<ClientOnly>
+  <LikeC4Diagram viewId="serverPipeline" :height="400" />
+</ClientOnly>
+
+Network bytes arrive at the protocol-specific `ConnectionStage`, are decoded into HTTP requests, wrapped in a `TurboHttpContext` by the `HttpContextBidiStage`, pass through the middleware pipeline, and reach the routing stage which dispatches to the matched handler.
+
 ## Related Guides
 
 - [Middleware Pipeline](/server/middleware) — server middleware composition

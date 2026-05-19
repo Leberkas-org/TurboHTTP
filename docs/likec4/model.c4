@@ -48,6 +48,120 @@ model {
       }
     }
 
+    server = container 'Server Layer' {
+      #server
+      description 'Standalone HTTP server with actor-based lifecycle, middleware, and routing'
+      technology 'C# / Akka.NET / Servus.Akka.Transport'
+
+      TurboServerHostedService = component 'TurboServerHostedService' {
+        #server
+        technology 'IHostedService'
+        description 'ASP.NET Core hosted service entry point: creates ActorSystem, materializer, and spawns ServerSupervisorActor on startup'
+      }
+
+      ServerSupervisorActor = actor 'ServerSupervisorActor' {
+        #server
+        technology 'ReceiveActor'
+        description 'Top-level supervisor: spawns one ListenerActor per configured endpoint, tracks connection counts, coordinates graceful shutdown'
+      }
+
+      ListenerActor = actor 'ListenerActor' {
+        #server
+        technology 'ReceiveActor'
+        description 'Per-endpoint listener: binds TCP or QUIC transport via Servus.Akka, accepts incoming connections, spawns a ConnectionActor for each client'
+      }
+
+      ConnectionActor = actor 'ConnectionActor' {
+        #server
+        technology 'ReceiveActor'
+        description 'Per-connection actor: materialises the server-side Akka.Streams graph (protocol engine + middleware + routing) for a single client connection'
+      }
+
+      ProtocolRouter = component 'ProtocolRouter' {
+        #server
+        technology 'Static class'
+        description 'Selects the server protocol engine (HTTP/1.0, 1.1, 2, or 3) based on ALPN negotiation result or configured default'
+      }
+
+      TurboServerOptions = component 'TurboServerOptions' {
+        #server
+        technology 'Class'
+        description 'Server configuration: endpoints, protocols, timeouts, graceful shutdown, per-protocol Http1/Http2/Http3 server options'
+      }
+    }
+
+    serverStages = container 'Server Stages' {
+      #server
+      description 'Server-side Akka.Streams stages — protocol decoding, context creation, middleware, routing'
+      technology 'Akka.Streams / C#'
+
+      HttpContextBidiStage = component 'HttpContextBidiStage' {
+        #stage #server
+        technology 'BidiStage'
+        description 'Creates TurboHttpContext from decoded HTTP requests; writes response back to the protocol layer'
+      }
+
+      MiddlewarePipelineStage = component 'MiddlewarePipelineStage' {
+        #stage #server
+        technology 'GraphStage'
+        description 'Executes the middleware chain (Use/Run/Map/MapWhen) for each request; middleware can short-circuit or delegate to next'
+      }
+
+      RoutingStage = component 'RoutingStage' {
+        #stage #server
+        technology 'GraphStage'
+        description 'Matches incoming requests to registered route handlers (MapTurboGet/Post/Put/Delete/Patch); dispatches to handler delegates or entity gateway'
+      }
+
+      ServerHttp10ConnectionStage = component 'Http10ConnectionStage (Server)' {
+        #stage #server
+        technology 'GraphStage<ConnectionShape>'
+        description 'Server-side HTTP/1.0: decodes request bytes, encodes response bytes, closes connection after each response'
+      }
+
+      ServerHttp11ConnectionStage = component 'Http11ConnectionStage (Server)' {
+        #stage #server
+        technology 'GraphStage<ConnectionShape>'
+        description 'Server-side HTTP/1.1: decodes requests (chunked TE, Host header), encodes responses, evaluates keep-alive for connection reuse'
+      }
+
+      ServerHttp20ConnectionStage = component 'Http20ConnectionStage (Server)' {
+        #stage #server #http2
+        technology 'GraphStage<ConnectionShape>'
+        description 'Server-side HTTP/2: HPACK decompression, frame decoding, stream multiplexing, flow control, SETTINGS/PING/GOAWAY, response frame encoding'
+      }
+
+      ServerHttp30ConnectionStage = component 'Http30ConnectionStage (Server)' {
+        #stage #server #http3
+        technology 'GraphStage<ConnectionShape>'
+        description 'Server-side HTTP/3: QPACK decompression, frame decoding over QUIC streams, flow control, GOAWAY, response encoding'
+      }
+
+      Http10ServerEngine = component 'Http10ServerEngine' {
+        #server
+        technology 'IServerProtocolEngine'
+        description 'HTTP/1.0 server BidiFlow: wraps server-side Http10ConnectionStage'
+      }
+
+      Http11ServerEngine = component 'Http11ServerEngine' {
+        #server
+        technology 'IServerProtocolEngine'
+        description 'HTTP/1.1 server BidiFlow: wraps server-side Http11ConnectionStage with keep-alive support'
+      }
+
+      Http20ServerEngine = component 'Http20ServerEngine' {
+        #server #http2
+        technology 'IServerProtocolEngine'
+        description 'HTTP/2 server BidiFlow: wraps server-side Http20ConnectionStage with multiplexing'
+      }
+
+      Http30ServerEngine = component 'Http30ServerEngine' {
+        #server #http3
+        technology 'IServerProtocolEngine'
+        description 'HTTP/3 server BidiFlow: wraps server-side Http30ConnectionStage over QUIC'
+      }
+    }
+
     streams = container 'Streams Layer' {
       description 'Akka.Streams GraphStages — request enrichment, protocol routing, response processing'
       technology 'Akka.Streams / C#'
@@ -196,6 +310,18 @@ model {
       technology 'GraphStage<FlowShape>'
       description 'QUIC transport bridge: acquires a QUIC connection from QuicConnectionManagerActor, writes outbound bytes, reads inbound bytes; used by the HTTP/3 engine'
     }
+
+    TcpListenerFactory = component 'TcpListenerFactory' {
+      #server
+      technology 'IListenerFactory'
+      description 'Binds a TCP/TLS socket and produces a Source<IncomingConnection> — each element represents an accepted client connection'
+    }
+
+    QuicListenerFactory = component 'QuicListenerFactory' {
+      #server
+      technology 'IListenerFactory'
+      description 'Binds a QUIC socket and produces a Source<IncomingConnection> — each element represents an accepted QUIC client connection'
+    }
   }
 
   // Overview (for index and turbohttp views where intermediate elements are not included)
@@ -227,5 +353,34 @@ model {
   turbohttp.streams.Http11Engine -> servus.TcpConnectionStage 'TCP transport'
   turbohttp.streams.Http20Engine -> servus.TcpConnectionStage 'TCP transport'
   turbohttp.streams.Http30Engine -> servus.QuicConnectionStage 'QUIC transport'
+
+  // Server actor hierarchy
+  turbohttp.server.TurboServerHostedService -> turbohttp.server.ServerSupervisorActor 'Creates on startup'
+  turbohttp.server.TurboServerHostedService -> turbohttp.server.TurboServerOptions 'Reads configuration'
+  turbohttp.server.ServerSupervisorActor -> turbohttp.server.ListenerActor 'Spawns per endpoint'
+  turbohttp.server.ListenerActor -> turbohttp.server.ConnectionActor 'Spawns per client'
+  turbohttp.server.ListenerActor -> turbohttp.server.ProtocolRouter 'Selects protocol engine'
+  turbohttp.server.ConnectionActor -> turbohttp.server.ProtocolRouter 'Resolves engine via ALPN'
+
+  // Server transport
+  turbohttp.server.ListenerActor -> servus.TcpListenerFactory 'Binds TCP/TLS'
+  turbohttp.server.ListenerActor -> servus.QuicListenerFactory 'Binds QUIC'
+  servus.TcpListenerFactory -> network 'Accepts TCP connections'
+  servus.QuicListenerFactory -> network 'Accepts QUIC connections'
+
+  // Server pipeline (ConnectionActor materialises these stages)
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.Http10ServerEngine 'HTTP/1.0'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.Http11ServerEngine 'HTTP/1.1'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.Http20ServerEngine 'HTTP/2'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.Http30ServerEngine 'HTTP/3'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.HttpContextBidiStage 'Creates HTTP context'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.MiddlewarePipelineStage 'Runs middleware'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.RoutingStage 'Dispatches to routes'
+
+  // Server engine -> connection stage
+  turbohttp.serverStages.Http10ServerEngine -> turbohttp.serverStages.ServerHttp10ConnectionStage 'Wire protocol'
+  turbohttp.serverStages.Http11ServerEngine -> turbohttp.serverStages.ServerHttp11ConnectionStage 'Wire protocol'
+  turbohttp.serverStages.Http20ServerEngine -> turbohttp.serverStages.ServerHttp20ConnectionStage 'Wire protocol'
+  turbohttp.serverStages.Http30ServerEngine -> turbohttp.serverStages.ServerHttp30ConnectionStage 'Wire protocol'
 
 }

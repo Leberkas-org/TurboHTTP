@@ -1,0 +1,38 @@
+// TurboHTTP — Server Pipeline Flow Relationships
+// Extends model.c4 with ordered flow relationships for the server-side
+// request processing pipeline.
+//
+// SERVER PIPELINE (per connection):
+//   Network → ConnectionStage → HttpContextBidiStage → MiddlewarePipelineStage → RoutingStage
+//   Response flows back through the same stages in reverse.
+
+model {
+  // Inbound: Network → Server ConnectionStage (wire decode)
+  network -[flows]-> turbohttp.serverStages.ServerHttp10ConnectionStage 'inbound bytes'
+  network -[flows]-> turbohttp.serverStages.ServerHttp11ConnectionStage 'inbound bytes'
+  network -[flows]-> turbohttp.serverStages.ServerHttp20ConnectionStage 'inbound bytes'
+  network -[flows]-> turbohttp.serverStages.ServerHttp30ConnectionStage 'inbound bytes'
+
+  // ConnectionStage → HttpContextBidiStage (decoded request → TurboHttpContext)
+  turbohttp.serverStages.ServerHttp10ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.ServerHttp11ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.ServerHttp20ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.ServerHttp30ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+
+  // HttpContextBidiStage → MiddlewarePipelineStage (TurboHttpContext)
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.MiddlewarePipelineStage 'TurboHttpContext'
+
+  // MiddlewarePipelineStage → RoutingStage (request after middleware)
+  turbohttp.serverStages.MiddlewarePipelineStage -[flows]-> turbohttp.serverStages.RoutingStage 'request (middleware applied)'
+
+  // Response: RoutingStage → MiddlewarePipelineStage → HttpContextBidiStage → ConnectionStage → Network
+  turbohttp.serverStages.RoutingStage -[flows]-> turbohttp.serverStages.MiddlewarePipelineStage 'response'
+  turbohttp.serverStages.MiddlewarePipelineStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'response (after middleware)'
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.ServerHttp11ConnectionStage 'response bytes'
+
+  // Outbound: Server ConnectionStage → Network (wire encode)
+  turbohttp.serverStages.ServerHttp10ConnectionStage -[flows]-> network 'outbound bytes'
+  turbohttp.serverStages.ServerHttp11ConnectionStage -[flows]-> network 'outbound bytes'
+  turbohttp.serverStages.ServerHttp20ConnectionStage -[flows]-> network 'outbound bytes'
+  turbohttp.serverStages.ServerHttp30ConnectionStage -[flows]-> network 'outbound bytes'
+}

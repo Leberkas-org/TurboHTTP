@@ -41,6 +41,7 @@ specification {
 
   // Tags for visual grouping
   tag stage
+  tag server
   tag http2
   tag http3
   tag cache
