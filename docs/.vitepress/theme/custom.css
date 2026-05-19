@@ -61,3 +61,50 @@
     background-color: var(--vp-c-brand-2) !important;
     border-color: var(--vp-c-brand-2) !important;
 }
+
+/* Enhanced content page styles */
+
+/* Better code block styling */
+.vp-doc div[class*='language-'] {
+    border-radius: 8px;
+    border: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc div[class*='language-'] code {
+    font-size: 13.5px;
+}
+
+/* Improved callout boxes */
+.vp-doc .custom-block {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.vp-doc .custom-block .custom-block-title {
+    font-weight: 600;
+}
+
+/* Feature table styling */
+.vp-doc table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.vp-doc table th {
+    background: var(--vp-c-bg-soft);
+    font-weight: 600;
+}
+
+/* Subtle heading anchors */
+.vp-doc h2 {
+    border-top: 1px solid var(--vp-c-divider);
+    padding-top: 24px;
+    margin-top: 48px;
+}
+
+/* Inline code styling */
+.vp-doc :not(pre) > code {
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+}
