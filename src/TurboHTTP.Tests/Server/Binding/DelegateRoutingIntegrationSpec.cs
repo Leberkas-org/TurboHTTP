@@ -1,7 +1,6 @@
-using System.Net;
-using Akka.Streams.Dsl;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Hosting;
 using TurboHTTP.Server.Routing;
@@ -13,56 +12,55 @@ public sealed class DelegateRoutingIntegrationSpec
     [Fact(Timeout = 5000)]
     public void MapTurboGet_with_delegate_should_register_route()
     {
-        var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddTurboServer();
-        var host = builder.Build();
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddTurboKestrel();
+        var app = builder.Build();
 
-        host.MapTurboGet("/health", () => "ok");
+        app.MapTurboGet("/health", () => TypedResults.Ok("ok"));
 
-        var table = host.Services.GetRequiredService<TurboRouteTable>();
-        var result = table.Freeze().Match("GET", "/health");
+        var table = app.Services.GetRequiredService<TurboRouteTable>();
+        var result = table.Freeze().Match(HttpMethod.Get, "/health");
         Assert.True(result.IsMatch);
     }
 
     [Fact(Timeout = 5000)]
     public async Task MapTurboGet_with_delegate_should_invoke_handler()
     {
-        var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddTurboServer();
-        var host = builder.Build();
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddTurboKestrel();
+        var app = builder.Build();
 
-        host.MapTurboGet("/health", () => "healthy");
+        app.MapTurboGet("/health", () => TypedResults.Ok("healthy"));
 
-        var table = host.Services.GetRequiredService<TurboRouteTable>();
-        var result = table.Freeze().Match("GET", "/health");
+        var table = app.Services.GetRequiredService<TurboRouteTable>();
+        var result = table.Freeze().Match(HttpMethod.Get, "/health");
         Assert.True(result.IsMatch);
 
         var ctx = CreateContext("/health");
-        ctx.RequestServices = host.Services;
-        var response = await result.Handler!(ctx);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("healthy", await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        ctx.RequestServices = app.Services;
+        await result.Dispatcher!.DispatchAsync(ctx, CancellationToken.None);
+
+        Assert.Equal(200, ctx.Response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
     public void MapTurboGroup_with_delegate_should_register_prefixed_route()
     {
-        var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddTurboServer();
-        var host = builder.Build();
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddTurboKestrel();
+        var app = builder.Build();
 
-        var api = host.MapTurboGroup("/api");
-        api.MapGet("/users", () => "users");
+        var api = app.MapTurboGroup("/api");
+        api.MapGet("/users", () => TypedResults.Ok("users"));
 
-        var table = host.Services.GetRequiredService<TurboRouteTable>();
-        Assert.True(table.Freeze().Match("GET", "/api/users").IsMatch);
+        var table = app.Services.GetRequiredService<TurboRouteTable>();
+        Assert.True(table.Freeze().Match(HttpMethod.Get, "/api/users").IsMatch);
     }
 
     private static TurboHttpContext CreateContext(string path)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost" + path);
         var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-        return new TurboHttpContext(request, connection,
-            Source.Empty<ReadOnlyMemory<byte>>(), CancellationToken.None);
+        return TestContextFactory.Create(request: request, connection: connection);
     }
 }

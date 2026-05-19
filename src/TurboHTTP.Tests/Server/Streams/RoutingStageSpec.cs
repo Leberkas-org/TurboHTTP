@@ -1,7 +1,8 @@
-using System.Net;
 using Akka.Streams.Dsl;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Server.Routing;
 using TurboHTTP.Server.Streams.Stages;
 using TurboHTTP.Tests.Shared;
@@ -10,72 +11,100 @@ namespace TurboHTTP.Tests.Server.Streams;
 
 public sealed class RoutingStageSpec : StreamTestBase
 {
+    private static TurboHttpContext CreateTestContext(HttpMethod method, string uri)
+    {
+        var request = new HttpRequestMessage(method, uri);
+
+        var features = new FeatureCollection();
+        var requestFeature = new TurboHttpRequestFeature(request, Source.Empty<ReadOnlyMemory<byte>>());
+        features.Set<IHttpRequestFeature>(requestFeature);
+        features.Set<ITurboRequestBodyFeature>(requestFeature);
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+
+        return new TurboHttpContext(
+            features,
+            new TurboConnectionInfo("test", null, 0, null, 0),
+            new ServiceCollection().BuildServiceProvider(),
+            CancellationToken.None);
+    }
+
     [Fact(Timeout = 5000)]
     public async Task Stage_should_route_request_to_matching_handler()
     {
         var routeTable = new RouteTableBuilder()
-            .Add("GET", "/api/health", _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)))
+            .Add(HttpMethod.Get, "/api/health",
+                new DelegateDispatcher(ctx =>
+                {
+                    ctx.Response.StatusCode = 200;
+                    return Task.CompletedTask;
+                }))
             .Build();
 
-        var stage = new RoutingStage(
-            routeTable,
-            new TurboConnectionInfo("test", null, 0, null, 0),
-            new ServiceCollection().BuildServiceProvider(),
-            CancellationToken.None);
-        var flow = Flow.FromGraph(stage);
+        var stage = new RoutingStage(routeTable);
+        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/health");
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/health");
-        var result = await Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
+        var result = await Source.Single(ctx)
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.First<TurboHttpContext>(), Materializer);
 
-        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
+        Assert.Equal(200, result.Response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
-    public async Task Stage_should_return_404_for_unmatched_route_without_fallback()
+    public async Task Stage_should_return_404_for_unmatched_route()
     {
         var routeTable = new RouteTableBuilder().Build();
+        var stage = new RoutingStage(routeTable);
+        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/unknown");
 
-        var stage = new RoutingStage(
-            routeTable,
-            new TurboConnectionInfo("test", null, 0, null, 0),
-            new ServiceCollection().BuildServiceProvider(),
-            CancellationToken.None);
-        var flow = Flow.FromGraph(stage);
+        var result = await Source.Single(ctx)
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.First<TurboHttpContext>(), Materializer);
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/unknown");
-        var result = await Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
-
-        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+        Assert.Equal(404, result.Response.StatusCode);
     }
 
     [Fact(Timeout = 5000)]
-    public async Task Stage_should_populate_route_values_in_context()
+    public async Task Stage_should_populate_route_values()
     {
         string? capturedId = null;
         var routeTable = new RouteTableBuilder()
-            .Add("GET", "/api/orders/{id}", ctx =>
+            .Add(HttpMethod.Get, "/api/orders/{id}", new DelegateDispatcher(ctx =>
             {
-                capturedId = ctx.RouteValues["id"]?.ToString();
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
-            })
+                capturedId = ctx.Request.RouteValues["id"]?.ToString();
+                ctx.Response.StatusCode = 200;
+                return Task.CompletedTask;
+            }))
             .Build();
 
-        var stage = new RoutingStage(
-            routeTable,
-            new TurboConnectionInfo("test", null, 0, null, 0),
-            new ServiceCollection().BuildServiceProvider(),
-            CancellationToken.None);
-        var flow = Flow.FromGraph(stage);
+        var stage = new RoutingStage(routeTable);
+        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/orders/42");
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/orders/42");
-        await Source.Single(request)
-            .Via(flow)
-            .RunWith(Sink.First<HttpResponseMessage>(), Materializer);
+        await Source.Single(ctx)
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.First<TurboHttpContext>(), Materializer);
 
         Assert.Equal("42", capturedId);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Stage_should_return_500_on_dispatch_failure()
+    {
+        var routeTable = new RouteTableBuilder()
+            .Add(HttpMethod.Get, "/api/fail",
+                new DelegateDispatcher(_ => throw new InvalidOperationException("boom")))
+            .Build();
+
+        var stage = new RoutingStage(routeTable);
+        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/fail");
+
+        var result = await Source.Single(ctx)
+            .Via(Flow.FromGraph(stage))
+            .RunWith(Sink.First<TurboHttpContext>(), Materializer);
+
+        Assert.Equal(500, result.Response.StatusCode);
     }
 }

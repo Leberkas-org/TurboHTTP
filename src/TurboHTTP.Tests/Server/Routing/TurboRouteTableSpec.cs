@@ -1,4 +1,4 @@
-using System.Net;
+using Microsoft.AspNetCore.Http;
 using TurboHTTP.Server.Routing;
 
 namespace TurboHTTP.Tests.Server.Routing;
@@ -9,9 +9,9 @@ public sealed class TurboRouteTableSpec
     public void Add_should_register_route()
     {
         var table = new TurboRouteTable();
-        table.Add("GET", "/health", _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        table.Add(HttpMethod.Get, "/health", _ => Results.Ok().ExecuteAsync(null!));
         var frozen = table.Freeze();
-        var result = frozen.Match("GET", "/health");
+        var result = frozen.Match(HttpMethod.Get, "/health");
         Assert.True(result.IsMatch);
     }
 
@@ -19,7 +19,7 @@ public sealed class TurboRouteTableSpec
     public void Freeze_should_return_same_instance_on_second_call()
     {
         var table = new TurboRouteTable();
-        table.Add("GET", "/test", _ => Task.FromResult(new HttpResponseMessage()));
+        table.Add(HttpMethod.Get, "/test", _ => Results.Ok().ExecuteAsync(null!));
         var first = table.Freeze();
         var second = table.Freeze();
         Assert.Same(first, second);
@@ -30,9 +30,9 @@ public sealed class TurboRouteTableSpec
     {
         var table = new TurboRouteTable();
         var group = table.CreateGroup("/api/v1");
-        group.MapGet("/users", _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        group.MapGet("/users", () => Results.Ok());
         var frozen = table.Freeze();
-        var result = frozen.Match("GET", "/api/v1/users");
+        var result = frozen.Match(HttpMethod.Get, "/api/v1/users");
         Assert.True(result.IsMatch);
     }
 
@@ -42,9 +42,9 @@ public sealed class TurboRouteTableSpec
         var table = new TurboRouteTable();
         var api = table.CreateGroup("/api");
         var v1 = api.MapGroup("/v1");
-        v1.MapGet("/items", _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        v1.MapGet("/items", () => Results.Ok());
         var frozen = table.Freeze();
-        var result = frozen.Match("GET", "/api/v1/items");
+        var result = frozen.Match(HttpMethod.Get, "/api/v1/items");
         Assert.True(result.IsMatch);
     }
 
@@ -52,8 +52,8 @@ public sealed class TurboRouteTableSpec
     public void RouteBuilder_should_return_from_map_methods()
     {
         var table = new TurboRouteTable();
-        var builder = table.Add("GET", "/test", _ => Task.FromResult(new HttpResponseMessage()));
+        var builder = table.Add(HttpMethod.Get, "/test", _ => Results.Ok().ExecuteAsync(null!));
         Assert.NotNull(builder);
-        Assert.IsAssignableFrom<ITurboRouteBuilder>(builder);
+        Assert.IsType<TurboRouteHandlerBuilder>(builder);
     }
 }
