@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Net.Security;
 using Akka.Actor;
 
 namespace Servus.Akka.Transport.Tcp.Listener;
@@ -9,6 +10,8 @@ internal sealed class TcpServerStateMachine
     private readonly IActorRef _self;
     private readonly ClientState _state;
     private readonly ConnectionInfo _connectionInfo;
+    private readonly SslStream? _sslStream;
+    private readonly bool _allowDelayedNegotiation;
 
     private ConnectionHandle? _handle;
     private int _connectionGen;
@@ -19,12 +22,16 @@ internal sealed class TcpServerStateMachine
         ITransportOperations ops,
         IActorRef self,
         ClientState state,
-        ConnectionInfo connectionInfo)
+        ConnectionInfo connectionInfo,
+        SslStream? sslStream = null,
+        bool allowDelayedNegotiation = false)
     {
         _ops = ops;
         _self = self;
         _state = state;
         _connectionInfo = connectionInfo;
+        _sslStream = sslStream;
+        _allowDelayedNegotiation = allowDelayedNegotiation;
     }
 
     public void Start()
@@ -36,6 +43,11 @@ internal sealed class TcpServerStateMachine
         _pumpManager.StartPumps(_state, _connectionGen);
 
         _ops.OnPushInbound(new TransportConnected(_connectionInfo));
+
+        if (_sslStream is not null || _allowDelayedNegotiation)
+        {
+            _ops.OnPushInbound(new TransportTlsState(_sslStream, _allowDelayedNegotiation));
+        }
     }
 
     internal void Dispatch(ITcpTransportEvent evt)

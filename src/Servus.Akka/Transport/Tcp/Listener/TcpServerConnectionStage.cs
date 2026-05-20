@@ -1,3 +1,4 @@
+using System.Net.Security;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
@@ -9,16 +10,24 @@ internal sealed class TcpServerConnectionStage : GraphStage<FlowShape<ITransport
 {
     private readonly Stream _stream;
     private readonly ConnectionInfo _connectionInfo;
+    private readonly SslStream? _sslStream;
+    private readonly bool _allowDelayedNegotiation;
 
     private readonly Inlet<ITransportOutbound> _in = new("TcpServerConnection.In");
     private readonly Outlet<ITransportInbound> _out = new("TcpServerConnection.Out");
 
     public override FlowShape<ITransportOutbound, ITransportInbound> Shape { get; }
 
-    public TcpServerConnectionStage(Stream stream, ConnectionInfo connectionInfo)
+    public TcpServerConnectionStage(
+        Stream stream,
+        ConnectionInfo connectionInfo,
+        SslStream? sslStream = null,
+        bool allowDelayedNegotiation = false)
     {
         _stream = stream;
         _connectionInfo = connectionInfo;
+        _sslStream = sslStream;
+        _allowDelayedNegotiation = allowDelayedNegotiation;
         Shape = new FlowShape<ITransportOutbound, ITransportInbound>(_in, _out);
     }
 
@@ -58,7 +67,9 @@ internal sealed class TcpServerConnectionStage : GraphStage<FlowShape<ITransport
         {
             var stageActor = GetStageActor(OnReceive);
             var state = new ClientState(_stage._stream);
-            _sm = new TcpServerStateMachine(this, stageActor.Ref, state, _stage._connectionInfo);
+            _sm = new TcpServerStateMachine(
+                this, stageActor.Ref, state, _stage._connectionInfo,
+                _stage._sslStream, _stage._allowDelayedNegotiation);
             _sm.Start();
             Pull(_stage._in);
         }

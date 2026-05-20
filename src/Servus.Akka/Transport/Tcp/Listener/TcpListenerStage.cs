@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using Akka;
 using Akka.Actor;
 using Akka.Event;
@@ -137,7 +138,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
 
         private async Task InitializeConnectionAsync(TcpClient client)
         {
-            Stream stream;
+            TlsConnectionResult tlsResult;
             try
             {
                 if (_stage._options.NoDelay)
@@ -155,7 +156,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
                     client.ReceiveBufferSize = recvBuf;
                 }
 
-                stream = await GetStreamAsync(client);
+                tlsResult = await GetTlsStreamAsync(client);
             }
             catch (Exception ex)
             {
@@ -181,11 +182,15 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             var connectionInfo = new ConnectionInfo(
                 localEndPoint,
                 remoteEndPoint,
-                protocol,
-                security);
+                tlsResult.Security is not null ? TransportProtocol.Tls : TransportProtocol.Tcp,
+                tlsResult.Security);
 
             var connectionFlow = Flow.FromGraph(
-                new TcpServerConnectionStage(stream, connectionInfo));
+                new TcpServerConnectionStage(
+                    tlsResult.Stream,
+                    connectionInfo,
+                    tlsResult.SslStream,
+                    tlsResult.AllowDelayedNegotiation));
 
             _self.Tell(new TcpConnectionReady(connectionFlow));
         }
@@ -198,30 +203,114 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             }
         }
 
-        private async Task<Stream> GetStreamAsync(TcpClient client)
+        private async Task<TlsConnectionResult> GetTlsStreamAsync(TcpClient client)
         {
-            if (_stage._options.ServerCertificate is null)
+            var options = _stage._options;
+
+            if (options.HandshakeCallback is not null)
             {
-                return client.GetStream();
+                return await AuthenticateWithCallbackAsync(client, options);
             }
 
+            if (options.ServerCertificate is null && options.ServerCertificateSelector is null)
+            {
+                return new TlsConnectionResult(client.GetStream(), Security: null, SslStream: null,
+                    AllowDelayedNegotiation: false);
+            }
+
+            return await AuthenticateWithOptionsAsync(client, options);
+        }
+
+        private async Task<TlsConnectionResult> AuthenticateWithCallbackAsync(
+            TcpClient client, TcpListenerOptions options)
+        {
             var sslStream = new SslStream(
                 client.GetStream(),
                 leaveInnerStreamOpen: false,
-                _stage._options.ClientCertificateValidationCallback);
+                options.ClientCertificateValidationCallback);
 
-            var authOptions = new SslServerAuthenticationOptions
+            string? hostname = null;
+            var allowDelayed = false;
+
+            await sslStream.AuthenticateAsServerAsync(
+                async (stream, clientHelloInfo, state, ct) =>
+                {
+                    hostname = clientHelloInfo.ServerName;
+                    var context = new TlsHandshakeContext(
+                        sslStream, clientHelloInfo,
+                        client.Client.LocalEndPoint!,
+                        client.Client.RemoteEndPoint!,
+                        ct);
+                    var authOptions = await options.HandshakeCallback!(context);
+                    allowDelayed = context.AllowDelayedClientCertificateNegotiation;
+                    return authOptions;
+                },
+                state: null,
+                CancellationToken.None).WaitAsync(options.HandshakeTimeout, CancellationToken.None);
+
+            var security = CaptureSecurityInfo(sslStream, hostname);
+            return new TlsConnectionResult(sslStream, security, sslStream, allowDelayed);
+        }
+
+        private async Task<TlsConnectionResult> AuthenticateWithOptionsAsync(
+            TcpClient client, TcpListenerOptions options)
+        {
+            var sslStream = new SslStream(
+                client.GetStream(),
+                leaveInnerStreamOpen: false,
+                options.ClientCertificateValidationCallback);
+
+            string? hostname = null;
+            var clientCertRequired = options.ClientCertificateMode is ClientCertificateMode.RequireCertificate
+                or ClientCertificateMode.AllowCertificate;
+
+            SslServerAuthenticationOptions authOptions;
+
+            if (options.ServerCertificateSelector is { } selector)
             {
-                ServerCertificate = _stage._options.ServerCertificate,
-                ClientCertificateRequired = _stage._options.ClientCertificateValidationCallback is not null,
-                EnabledSslProtocols = _stage._options.EnabledSslProtocols,
-                ApplicationProtocols = _stage._options.ApplicationProtocols
-            };
+                authOptions = new SslServerAuthenticationOptions
+                {
+                    ServerCertificateSelectionCallback = (_, host) =>
+                    {
+                        hostname = host;
+                        return selector(host) ?? options.ServerCertificate!;
+                    },
+                    ClientCertificateRequired = clientCertRequired,
+                    EnabledSslProtocols = options.EnabledSslProtocols,
+                    ApplicationProtocols = options.ApplicationProtocols
+                };
+            }
+            else
+            {
+                authOptions = new SslServerAuthenticationOptions
+                {
+                    ServerCertificate = options.ServerCertificate,
+                    ClientCertificateRequired = clientCertRequired,
+                    EnabledSslProtocols = options.EnabledSslProtocols,
+                    ApplicationProtocols = options.ApplicationProtocols
+                };
+            }
 
             await sslStream.AuthenticateAsServerAsync(authOptions, CancellationToken.None)
-                .WaitAsync(_stage._options.HandshakeTimeout, CancellationToken.None);
+                .WaitAsync(options.HandshakeTimeout, CancellationToken.None);
 
-            return sslStream;
+            if (hostname is null && sslStream.TargetHostName is { Length: > 0 } targetHost)
+            {
+                hostname = targetHost;
+            }
+
+            var security = CaptureSecurityInfo(sslStream, hostname);
+            var allowDelayed = options.ClientCertificateMode is ClientCertificateMode.DelayCertificate;
+            return new TlsConnectionResult(sslStream, security, sslStream, allowDelayed);
+        }
+
+        private static SecurityInfo CaptureSecurityInfo(SslStream sslStream, string? hostname)
+        {
+            return new SecurityInfo(
+                sslStream.SslProtocol,
+                sslStream.NegotiatedApplicationProtocol,
+                sslStream.NegotiatedCipherSuite,
+                hostname);
         }
 
         private void OnAcceptError(Exception ex)
