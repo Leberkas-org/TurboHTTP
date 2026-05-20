@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.7.1](https://github.com/Leberkas-org/TurboHTTP/compare/v0.7.0...v0.7.1) (2026-05-20)
+
+
+### Documentation
+
+* align LikeC4 models and docs with actual class names ([75a0a0f](https://github.com/Leberkas-org/TurboHTTP/commit/75a0a0f0e4e5bf7a2233baa96b181b55822a1dd3))
+* **likec4:** consolidate model-server.c4 into model-pipeline.c4 ([7fdf75e](https://github.com/Leberkas-org/TurboHTTP/commit/7fdf75ef7809243e214841132c150f4faf4b4768))
+* remove Extending the Pipeline pages ([16b0196](https://github.com/Leberkas-org/TurboHTTP/commit/16b0196b0219e003c87094e171aa5d3ad86a1203))
+* Update README with server features ([1f26bb8](https://github.com/Leberkas-org/TurboHTTP/commit/1f26bb80ab21762ae51853ac475a5bd7a22e70b5))
+
+
+### Dependencies
+
+* Bump Akka.Streams, Akka.Streams.TestKit and Akka.TestKit.Xunit ([b2c3c36](https://github.com/Leberkas-org/TurboHTTP/commit/b2c3c362df304acc44ace4a3023d06da845845b0))
+* Bump Microsoft.Testing.Extensions.CodeCoverage from 18.6.2 to 18.7.0 ([6d518f7](https://github.com/Leberkas-org/TurboHTTP/commit/6d518f707c119620bcbb819dfa236c5dd7911445))
+* Bump Testcontainers from 4.11.0 to 4.12.0 ([780d25a](https://github.com/Leberkas-org/TurboHTTP/commit/780d25a4b06f79a181e566e5d89688f6394b78cd))
+
 ## [0.7.0](https://github.com/Leberkas-org/TurboHTTP/compare/v0.6.0...v0.7.0) (2026-05-20)
 
 
