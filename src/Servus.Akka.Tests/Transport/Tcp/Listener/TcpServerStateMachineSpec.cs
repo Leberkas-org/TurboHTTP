@@ -23,6 +23,16 @@ public sealed class TcpServerStateMachineSpec
         return (sm, ops);
     }
 
+    private static (TcpServerStateMachine Sm, MockTransportOperations Ops) CreateStateMachineWithTls(
+        bool allowDelayedNegotiation)
+    {
+        var ops = new MockTransportOperations();
+        var state = new ClientState(Stream.Null);
+        var sm = new TcpServerStateMachine(ops, ActorRefs.Nobody, state, TestConnectionInfo,
+            sslStream: null, allowDelayedNegotiation: allowDelayedNegotiation);
+        return (sm, ops);
+    }
+
     private static TransportBuffer CreateTestBuffer(params byte[] data)
     {
         var buf = TransportBuffer.Rent(data.Length);
@@ -288,5 +298,41 @@ public sealed class TcpServerStateMachineSpec
         Assert.Single(ops.PushedInbound);
         var disconnected = Assert.IsType<TransportDisconnected>(ops.PushedInbound[0]);
         Assert.Equal(DisconnectReason.Error, disconnected.Reason);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Start_should_not_emit_TransportTlsState_without_tls()
+    {
+        var (sm, ops) = CreateStateMachine();
+
+        sm.Start();
+
+        Assert.Single(ops.PushedInbound);
+        Assert.IsType<TransportConnected>(ops.PushedInbound[0]);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Start_should_emit_TransportTlsState_when_allow_delayed_is_true()
+    {
+        var (sm, ops) = CreateStateMachineWithTls(allowDelayedNegotiation: true);
+
+        sm.Start();
+
+        Assert.Equal(2, ops.PushedInbound.Count);
+        Assert.IsType<TransportConnected>(ops.PushedInbound[0]);
+        var tlsState = Assert.IsType<TransportTlsState>(ops.PushedInbound[1]);
+        Assert.True(tlsState.AllowDelayedNegotiation);
+        Assert.Null(tlsState.SslStream);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Start_should_not_emit_TransportTlsState_when_no_ssl_and_no_delay()
+    {
+        var (sm, ops) = CreateStateMachineWithTls(allowDelayedNegotiation: false);
+
+        sm.Start();
+
+        Assert.Single(ops.PushedInbound);
+        Assert.IsType<TransportConnected>(ops.PushedInbound[0]);
     }
 }

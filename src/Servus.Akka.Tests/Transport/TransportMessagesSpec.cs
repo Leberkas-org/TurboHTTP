@@ -127,4 +127,82 @@ public sealed class TransportMessagesSpec
 
         Assert.Null(info.Security);
     }
+
+    [Fact(Timeout = 5000)]
+    public void SecurityInfo_should_default_negotiated_cipher_suite_to_null()
+    {
+        var info = new SecurityInfo(SslProtocols.Tls13, SslApplicationProtocol.Http2);
+
+        Assert.Null(info.NegotiatedCipherSuite);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void SecurityInfo_should_default_hostname_to_null()
+    {
+        var info = new SecurityInfo(SslProtocols.Tls13, SslApplicationProtocol.Http2);
+
+        Assert.Null(info.HostName);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void SecurityInfo_should_store_negotiated_cipher_suite()
+    {
+        var info = new SecurityInfo(
+            SslProtocols.Tls13,
+            SslApplicationProtocol.Http2,
+            TlsCipherSuite.TLS_AES_256_GCM_SHA384);
+
+        Assert.Equal(TlsCipherSuite.TLS_AES_256_GCM_SHA384, info.NegotiatedCipherSuite);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void SecurityInfo_should_store_hostname()
+    {
+        var info = new SecurityInfo(
+            SslProtocols.Tls13,
+            SslApplicationProtocol.Http2,
+            HostName: "example.com");
+
+        Assert.Equal("example.com", info.HostName);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void SecurityInfo_should_store_all_fields()
+    {
+        var info = new SecurityInfo(
+            SslProtocols.Tls13,
+            SslApplicationProtocol.Http2,
+            TlsCipherSuite.TLS_AES_128_GCM_SHA256,
+            "host.example.com");
+
+        Assert.Equal(SslProtocols.Tls13, info.Protocol);
+        Assert.Equal(SslApplicationProtocol.Http2, info.ApplicationProtocol);
+        Assert.Equal(TlsCipherSuite.TLS_AES_128_GCM_SHA256, info.NegotiatedCipherSuite);
+        Assert.Equal("host.example.com", info.HostName);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TransportTlsState_should_implement_ITransportInbound()
+    {
+        ITransportInbound msg = new TransportTlsState(SslStream: null, AllowDelayedNegotiation: false);
+
+        Assert.IsType<TransportTlsState>(msg);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TransportTlsState_should_carry_allow_delayed_flag()
+    {
+        var msg = new TransportTlsState(SslStream: null, AllowDelayedNegotiation: true);
+
+        Assert.True(msg.AllowDelayedNegotiation);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TransportTlsState_should_allow_null_ssl_stream()
+    {
+        var msg = new TransportTlsState(SslStream: null, AllowDelayedNegotiation: false);
+
+        Assert.Null(msg.SslStream);
+        Assert.False(msg.AllowDelayedNegotiation);
+    }
 }

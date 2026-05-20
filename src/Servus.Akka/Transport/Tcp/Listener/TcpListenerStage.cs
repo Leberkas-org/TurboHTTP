@@ -48,7 +48,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
         {
             _stage = stage;
 
-            SetHandler(stage._out, onPull: () => TryPush());
+            SetHandler(stage._out, onPull: TryPush);
         }
 
         public override void PreStart()
@@ -167,17 +167,6 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             var localEndPoint = client.Client.LocalEndPoint!;
             var remoteEndPoint = client.Client.RemoteEndPoint!;
 
-            SecurityInfo? security = null;
-            var protocol = TransportProtocol.Tcp;
-
-            if (stream is SslStream sslStream)
-            {
-                security = new SecurityInfo(
-                    sslStream.SslProtocol,
-                    sslStream.NegotiatedApplicationProtocol);
-                protocol = TransportProtocol.Tls;
-            }
-
             var connectionInfo = new ConnectionInfo(
                 localEndPoint,
                 remoteEndPoint,
@@ -220,8 +209,8 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             return await AuthenticateWithOptionsAsync(client, options);
         }
 
-        private async Task<TlsConnectionResult> AuthenticateWithCallbackAsync(
-            TcpClient client, TcpListenerOptions options)
+        private static async Task<TlsConnectionResult> AuthenticateWithCallbackAsync(TcpClient client,
+            TcpListenerOptions options)
         {
             var sslStream = new SslStream(
                 client.GetStream(),
@@ -232,7 +221,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             var allowDelayed = false;
 
             await sslStream.AuthenticateAsServerAsync(
-                async (stream, clientHelloInfo, state, ct) =>
+                async (_, clientHelloInfo, _, ct) =>
                 {
                     hostname = clientHelloInfo.ServerName;
                     var context = new TlsHandshakeContext(
