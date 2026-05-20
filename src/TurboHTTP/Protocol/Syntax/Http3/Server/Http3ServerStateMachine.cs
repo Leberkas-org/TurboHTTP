@@ -1,5 +1,6 @@
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -24,33 +25,37 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
     public bool CanAcceptResponse => _sessionManager.ActiveStreamCount > 0;
     public bool ShouldComplete => false;
 
-    public Http3ServerStateMachine(
-        IServerStageOperations ops,
-        long maxRequestBodySize = 30 * 1024 * 1024,
-        TimeSpan? keepAliveTimeout = null,
-        TimeSpan? requestHeadersTimeout = null,
-        int minBodyDataRate = 240,
-        TimeSpan? bodyRateGracePeriod = null)
+    public Http3ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
+        ArgumentNullException.ThrowIfNull(options);
+
+        var shared = SharedHttpOptions.Default with
+        {
+            MaxBufferedBodySize = options.BodyBufferThreshold,
+            MaxStreamedBodySize = options.Http3.MaxRequestBodySize,
+            MaxHeaderBytes = options.Http3.MaxHeaderListSize,
+        };
 
         var encoderOpts = new Http3ServerEncoderOptions
         {
-            QpackMaxTableCapacity = 4096,
+            Shared = shared,
+            QpackMaxTableCapacity = options.Http3.QpackMaxTableCapacity,
         };
 
         var decoderOpts = new Http3ServerDecoderOptions
         {
-            MaxConcurrentStreams = 100,
-            MaxFieldSectionSize = 64 * 1024,
+            Shared = shared,
+            MaxConcurrentStreams = options.Http3.MaxConcurrentStreams,
+            MaxFieldSectionSize = options.Http3.MaxHeaderListSize,
         };
 
-        _sessionManager = new Http3ServerSessionManager(encoderOpts, decoderOpts, ops, maxRequestBodySize);
+        _sessionManager = new Http3ServerSessionManager(encoderOpts, decoderOpts, ops, options.Http3.MaxRequestBodySize);
 
-        _keepAliveTimeout = keepAliveTimeout ?? TimeSpan.FromSeconds(130);
-        _requestHeadersTimeout = requestHeadersTimeout ?? TimeSpan.FromSeconds(30);
-        _minBodyDataRate = minBodyDataRate;
-        _bodyRateGracePeriod = bodyRateGracePeriod ?? TimeSpan.FromSeconds(5);
+        _keepAliveTimeout = options.Http3.KeepAliveTimeout;
+        _requestHeadersTimeout = options.Http3.RequestHeadersTimeout;
+        _minBodyDataRate = options.Http3.MinRequestBodyDataRate;
+        _bodyRateGracePeriod = options.Http3.MinRequestBodyDataRateGracePeriod;
     }
 
     public void PreStart()
