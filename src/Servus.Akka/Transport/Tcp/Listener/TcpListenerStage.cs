@@ -167,10 +167,22 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             var localEndPoint = client.Client.LocalEndPoint!;
             var remoteEndPoint = client.Client.RemoteEndPoint!;
 
+            SecurityInfo? security = null;
+            var protocol = TransportProtocol.Tcp;
+
+            if (stream is SslStream sslStream)
+            {
+                security = new SecurityInfo(
+                    sslStream.SslProtocol,
+                    sslStream.NegotiatedApplicationProtocol);
+                protocol = TransportProtocol.Tls;
+            }
+
             var connectionInfo = new ConnectionInfo(
                 localEndPoint,
                 remoteEndPoint,
-                TransportProtocol.Tcp);
+                protocol,
+                security);
 
             var connectionFlow = Flow.FromGraph(
                 new TcpServerConnectionStage(stream, connectionInfo));

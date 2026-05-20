@@ -23,4 +23,9 @@ internal static class ProtocolRouter
             _ => new Http11ServerEngine(options)
         };
     }
+
+    internal static IServerProtocolEngine ResolveNegotiating(TurboServerOptions options)
+    {
+        return new NegotiatingServerEngine(options);
+    }
 }

@@ -79,4 +79,13 @@ public sealed class ProtocolRouterSpec
         Assert.NotNull(engine);
         Assert.IsType<Http11ServerEngine>(engine);
     }
+
+    [Fact(Timeout = 5000)]
+    public void ResolveNegotiating_should_return_negotiating_engine()
+    {
+        var engine = ProtocolRouter.ResolveNegotiating(DefaultOptions);
+
+        Assert.NotNull(engine);
+        Assert.IsType<NegotiatingServerEngine>(engine);
+    }
 }

@@ -182,12 +182,7 @@ internal sealed class ListenerActor : ReceiveActor
             return ProtocolRouter.ResolveEngine(new Version(3, 0), _serverOptions);
         }
 
-        if (_listenerOptions is TcpListenerOptions { ApplicationProtocols: [var preferred, ..] })
-        {
-            return ProtocolRouter.ResolveEngine(preferred, _serverOptions);
-        }
-
-        return ProtocolRouter.ResolveEngine(new Version(1, 1), _serverOptions);
+        return ProtocolRouter.ResolveNegotiating(_serverOptions);
     }
 
     public static Props Create(
