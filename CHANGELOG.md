@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.5.0](https://github.com/Leberkas-org/TurboHTTP/compare/v0.4.0...v0.5.0) (2026-05-20)
+
+
+### Features
+
+* **diagnostics:** add HexDumpFormatter for Kestrel-style wire dumps ([cbcfb5a](https://github.com/Leberkas-org/TurboHTTP/commit/cbcfb5af406764faeaf80df02b8bbb042c0401f7))
+* **h2:** wire InitialStreamWindowSize into server SETTINGS frame ([861a7c4](https://github.com/Leberkas-org/TurboHTTP/commit/861a7c4988a8bcb1862ebee6552ae0f2dedc2d12))
+* **server:** add ConnectionLoggingBidiStage for wire-level hex dump logging ([02dc33c](https://github.com/Leberkas-org/TurboHTTP/commit/02dc33cdc3e26c3a728b2b02a6e816eac1f74f3f))
+* **server:** add UseConnectionLogging() and wire through to ConnectionActor ([b46eb6f](https://github.com/Leberkas-org/TurboHTTP/commit/b46eb6f7cd028fc27bd247eb4dffbe57c3042268))
+* **server:** enforce MaxConcurrentConnections per listener ([eaa333a](https://github.com/Leberkas-org/TurboHTTP/commit/eaa333abb9818286ec9dbca521d79e942eeb396d))
+* **server:** split Http2ServerOptions.InitialWindowSize into connection and stream properties ([e19191a](https://github.com/Leberkas-org/TurboHTTP/commit/e19191ad96d9a85169eca599b952eb1723a097ae))
+
+
+### Bug Fixes
+
+* align test expectations with corrected server option defaults ([ced7837](https://github.com/Leberkas-org/TurboHTTP/commit/ced7837300852b53174c885784bfc29120785c9d))
+
+
+### Documentation
+
+* add Akka.Streams integration scenario for client ([357ce16](https://github.com/Leberkas-org/TurboHTTP/commit/357ce1697825c5cc1fbae2fbcda5dbe627d78095))
+* add Architecture as top-level nav with Client/Server groups ([6a9866a](https://github.com/Leberkas-org/TurboHTTP/commit/6a9866a3ba4b0f7ba35cb36e6f6288f54eb5b4ff))
+* add HomePage and CodeTabs Vue components ([909d3b7](https://github.com/Leberkas-org/TurboHTTP/commit/909d3b7b948c3d3363dd3bb3b99f3e5fc13c726c))
+* add LikeC4 server architecture diagrams ([10b16a5](https://github.com/Leberkas-org/TurboHTTP/commit/10b16a5163bcbe50d4b3155d348f7a8dc748d4c7))
+* add real-world client scenario examples ([0a4dab7](https://github.com/Leberkas-org/TurboHTTP/commit/0a4dab7fa9d6b9e861147b169325bfd9ce2f1960))
+* add real-world server scenario examples ([bd68625](https://github.com/Leberkas-org/TurboHTTP/commit/bd6862575bc6cb677e8707c682c7ec51197a706a))
+* add symmetric server architecture pages (pipeline, engines, extending) ([34dc02a](https://github.com/Leberkas-org/TurboHTTP/commit/34dc02abf22912494e3ec5d06752c16d961d2989))
+* add test restructuring spec ([a8c4dd2](https://github.com/Leberkas-org/TurboHTTP/commit/a8c4dd2fce3df4d49eaf1463bbfddf82b7f55644))
+* add VitePress redesign implementation plan ([bb535e5](https://github.com/Leberkas-org/TurboHTTP/commit/bb535e5c67e8a72deb8e494f36e4e0d262f5f014))
+* add VitePress redesign spec ([390a611](https://github.com/Leberkas-org/TurboHTTP/commit/390a611997139e2ba0ee13299fb3156ed14bedcf))
+* complete API reference split (server, entity gateway, overview) ([d9a7471](https://github.com/Leberkas-org/TurboHTTP/commit/d9a747165870436f3f3e0ed376fd7478e9fdf927))
+* correct server narrative — standalone server, not Kestrel-basedr ([3aa50bb](https://github.com/Leberkas-org/TurboHTTP/commit/3aa50bbbf595226090f1b28ba30444befb5624d6))
+* create Getting Started section with quick starts and architecture overview ([320afd0](https://github.com/Leberkas-org/TurboHTTP/commit/320afd0ee92db821e303171940e0c8b51cb51606))
+* create split API reference pages (client, options, features) ([423a479](https://github.com/Leberkas-org/TurboHTTP/commit/423a479d75fdf2dc9e616e38ba70be7ddc8f9610))
+* fix broken links and stale references ([01be53e](https://github.com/Leberkas-org/TurboHTTP/commit/01be53e219c5eed699bbbb1d886521fd180d2c54))
+* fix code tab layout shift and add emerald/violet two-tone theme ([8d37607](https://github.com/Leberkas-org/TurboHTTP/commit/8d37607d632da573f3ad24e0cddc569d9152a22b))
+* **likec4:** clean up server model to match client detail level ([6688f59](https://github.com/Leberkas-org/TurboHTTP/commit/6688f59fe6a282c88127800ba609926b4dd928d1))
+* make architecture page symmetric between Client and Server ([9964e4d](https://github.com/Leberkas-org/TurboHTTP/commit/9964e4d3c81f7b49ee598a2a409ef7e026f875f5))
+* register HomePage and CodeTabs theme components ([eed439f](https://github.com/Leberkas-org/TurboHTTP/commit/eed439f9e6b2403d1bf27fbe6eafdc12c349d49a))
+* restructure content — overview pages, delete old dirs, add cross-links ([8e409a2](https://github.com/Leberkas-org/TurboHTTP/commit/8e409a27ad2a6a568f3a36186d33c837d6993bf9))
+* update CLAUDE.md architecture section for new project structure ([bdee559](https://github.com/Leberkas-org/TurboHTTP/commit/bdee559e2b1b6686c758f342c7be1bc4334ca3be))
+* update homepage layout and enhance content page CSS ([3df570e](https://github.com/Leberkas-org/TurboHTTP/commit/3df570e84eb9c20a3a218d81d1effe2274d78e8c))
+* update MapTurboEntity examples to new API and fix landing page table ([4f5ef25](https://github.com/Leberkas-org/TurboHTTP/commit/4f5ef257912078c9e39bf4efe22d6ab216eb47db))
+* update VitePress config with new nav and sidebar structure ([33dc752](https://github.com/Leberkas-org/TurboHTTP/commit/33dc752afb118ada31af9e8b346d149693f94b10))
+
 ## [0.4.0](https://github.com/Leberkas-org/TurboHTTP/compare/v0.3.0...v0.4.0) (2026-05-19)
 
 
