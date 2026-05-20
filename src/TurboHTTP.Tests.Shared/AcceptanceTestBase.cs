@@ -10,36 +10,36 @@ namespace TurboHTTP.Tests.Shared;
 
 public abstract class AcceptanceTestBase : EngineTestBase
 {
-    internal static IHttpProtocolEngine CreateHttp10Engine(Action<Http1Options>? configure = null)
+    internal static IClientProtocolEngine CreateHttp10Engine(Action<Http1Options>? configure = null)
     {
         var clientOptions = new TurboClientOptions();
         configure?.Invoke(clientOptions.Http1);
-        return new Http10Engine(clientOptions);
+        return new Http10ClientEngine(clientOptions);
     }
 
-    internal static IHttpProtocolEngine CreateHttp11Engine(Action<Http1Options>? configure = null)
+    internal static IClientProtocolEngine CreateHttp11Engine(Action<Http1Options>? configure = null)
     {
         var clientOptions = new TurboClientOptions();
         configure?.Invoke(clientOptions.Http1);
-        return new Http11Engine(clientOptions);
+        return new Http11ClientEngine(clientOptions);
     }
 
-    internal static IHttpProtocolEngine CreateHttp20Engine(Action<Http2Options>? configure = null)
+    internal static IClientProtocolEngine CreateHttp20Engine(Action<Http2Options>? configure = null)
     {
         var clientOptions = new TurboClientOptions();
         configure?.Invoke(clientOptions.Http2);
-        return new Http20Engine(clientOptions);
+        return new Http20ClientEngine(clientOptions);
     }
 
-    internal static IHttpProtocolEngine CreateHttp30Engine(Action<Http3Options>? configure = null)
+    internal static IClientProtocolEngine CreateHttp30Engine(Action<Http3Options>? configure = null)
     {
         var clientOptions = new TurboClientOptions();
         configure?.Invoke(clientOptions.Http3);
-        return new Http30Engine(clientOptions);
+        return new Http30ClientEngine(clientOptions);
     }
 
     internal async Task<HttpResponseMessage> SendScriptedAsync(
-        IHttpProtocolEngine engine,
+        IClientProtocolEngine engine,
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {
@@ -55,7 +55,7 @@ public abstract class AcceptanceTestBase : EngineTestBase
     }
 
     internal async Task<(HttpResponseMessage Response, string RawRequest)> SendScriptedWithCaptureAsync(
-        IHttpProtocolEngine engine,
+        IClientProtocolEngine engine,
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory)
     {

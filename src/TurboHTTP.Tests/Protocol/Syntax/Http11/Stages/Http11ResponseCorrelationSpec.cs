@@ -9,7 +9,7 @@ public sealed class Http11ResponseCorrelationSpec : EngineTestBase
 {
     private static readonly Func<byte[]> Ok200 = () => "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"u8.ToArray();
 
-    private static Http11Engine Engine => new(new TurboClientOptions());
+    private static Http11ClientEngine Engine => new(new TurboClientOptions());
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9112-9.3")]

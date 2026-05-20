@@ -13,7 +13,7 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class CompressionSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
@@ -262,4 +262,5 @@ public sealed class CompressionSpec : AcceptanceTestBase
         }
     }
 }
+
 

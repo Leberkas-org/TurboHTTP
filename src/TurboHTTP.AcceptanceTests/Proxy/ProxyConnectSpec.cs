@@ -10,7 +10,7 @@ namespace TurboHTTP.AcceptanceTests.Proxy;
 
 public sealed class ProxyConnectSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK)
@@ -170,4 +170,5 @@ public sealed class ProxyConnectSpec : AcceptanceTestBase
         Assert.Contains("GET /auth HTTP/1.1", tunneledRequest);
     }
 }
+
 

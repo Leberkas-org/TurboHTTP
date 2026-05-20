@@ -11,7 +11,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Stages;
 
 public sealed class Http30EngineEndToEndSpec : EngineTestBase
 {
-    private static Http30Engine Engine => new(new TurboClientOptions());
+    private static Http30ClientEngine Engine => new(new TurboClientOptions());
 
     private readonly QpackEncoder _qpack = new(maxTableCapacity: 0);
 

@@ -9,7 +9,7 @@ namespace TurboHTTP.AcceptanceTests.H11;
 
 public sealed class ConnectionSpec : ClientAcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK,
@@ -122,3 +122,4 @@ public sealed class ConnectionSpec : ClientAcceptanceTestBase
         Assert.Equal("keep-alive", body);
     }
 }
+

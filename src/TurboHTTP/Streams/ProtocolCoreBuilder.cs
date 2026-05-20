@@ -57,12 +57,12 @@ internal static class ProtocolCoreBuilder
         Flow<HttpRequestMessage, HttpResponseMessage, NotUsed> CreateFlowForEndpoint(RequestEndpoint endpoint)
         {
             var version = endpoint.Version;
-            IHttpProtocolEngine engine = version switch
+            IClientProtocolEngine engine = version switch
             {
-                { Major: 1, Minor: 0 } => new Http10Engine(clientOptions),
-                { Major: 1, Minor: 1 } => new Http11Engine(clientOptions),
-                { Major: 2, Minor: 0 } => new Http20Engine(clientOptions),
-                { Major: 3, Minor: 0 } => new Http30Engine(clientOptions),
+                { Major: 1, Minor: 0 } => new Http10ClientEngine(clientOptions),
+                { Major: 1, Minor: 1 } => new Http11ClientEngine(clientOptions),
+                { Major: 2, Minor: 0 } => new Http20ClientEngine(clientOptions),
+                { Major: 3, Minor: 0 } => new Http30ClientEngine(clientOptions),
                 _ => throw new ArgumentOutOfRangeException(nameof(version), version,
                     $"Unsupported HTTP version: {version}")
             };

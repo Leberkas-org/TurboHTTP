@@ -9,7 +9,7 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class SmokeSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     [Fact(Timeout = 5000)]
@@ -40,3 +40,4 @@ public sealed class SmokeSpec : AcceptanceTestBase
         Assert.Equal("Hello World", responseBody);
     }
 }
+

@@ -7,7 +7,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Stages;
 
 public sealed class Http11KeepAliveCloseSpec : EngineTestBase
 {
-    private static Http11Engine Engine => new(new TurboClientOptions());
+    private static Http11ClientEngine Engine => new(new TurboClientOptions());
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC9112-9.6")]

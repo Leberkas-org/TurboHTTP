@@ -15,7 +15,7 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class RequestCompressionSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static byte[] MakePayload(int size)
@@ -331,4 +331,5 @@ public sealed class RequestCompressionSpec : AcceptanceTestBase
         Assert.Equal(1024, decompressedBody.Length);
     }
 }
+
 

@@ -4,7 +4,7 @@ using Servus.Akka.Transport;
 
 namespace TurboHTTP.Streams;
 
-internal interface IHttpProtocolEngine
+internal interface IClientProtocolEngine
 {
     BidiFlow<
         HttpRequestMessage,

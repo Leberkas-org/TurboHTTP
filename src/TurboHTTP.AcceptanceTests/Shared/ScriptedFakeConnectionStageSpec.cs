@@ -10,7 +10,7 @@ namespace TurboHTTP.AcceptanceTests.Shared;
 
 public sealed class ScriptedFakeConnectionStageSpec : EngineTestBase
 {
-    private static Http10Engine Engine =>
+    private static Http10ClientEngine Engine =>
         new(new TurboClientOptions());
 
     [Fact(Timeout = 5000)]

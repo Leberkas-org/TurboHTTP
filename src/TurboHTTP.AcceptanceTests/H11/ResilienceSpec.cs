@@ -12,7 +12,7 @@ namespace TurboHTTP.AcceptanceTests.H11;
 
 public sealed class ResilienceSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed>
@@ -247,4 +247,5 @@ public sealed class ResilienceSpec : AcceptanceTestBase
             await tcs.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken));
     }
 }
+
 

@@ -8,7 +8,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http10.Stages;
 
 public sealed class Http10EngineEndToEndSpec : EngineTestBase
 {
-    private static Http10Engine Engine => new(new TurboClientOptions());
+    private static Http10ClientEngine Engine => new(new TurboClientOptions());
 
     [Fact(Timeout = 10_000)]
     [Trait("RFC", "RFC1945-4.1")]

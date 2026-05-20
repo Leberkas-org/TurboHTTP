@@ -9,7 +9,7 @@ namespace TurboHTTP.AcceptanceTests.H11;
 
 public sealed class ErrorHandlingSpec : ClientAcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK,
@@ -320,3 +320,4 @@ public sealed class ErrorHandlingSpec : ClientAcceptanceTestBase
         Assert.Equal("baz", string.Join("", barValues));
     }
 }
+

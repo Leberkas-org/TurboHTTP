@@ -9,7 +9,7 @@ namespace TurboHTTP.AcceptanceTests.TLS;
 
 public sealed class ErrorHandlingSpec : AcceptanceTestBase
 {
-    private static Http11Engine Engine =>
+    private static Http11ClientEngine Engine =>
         new(new TurboClientOptions());
 
     private static byte[] BuildResponse(string body, HttpStatusCode status = HttpStatusCode.OK,
@@ -274,3 +274,4 @@ public sealed class ErrorHandlingSpec : AcceptanceTestBase
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 }
+

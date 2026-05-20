@@ -7,7 +7,7 @@ using TurboHTTP.Streams.Stages;
 
 namespace TurboHTTP.Streams;
 
-internal sealed class Http30Engine(TurboClientOptions options) : IHttpProtocolEngine
+internal sealed class Http30ClientEngine(TurboClientOptions options) : IClientProtocolEngine
 {
     public BidiFlow<HttpRequestMessage, ITransportOutbound, ITransportInbound, HttpResponseMessage, NotUsed> CreateFlow()
     {
