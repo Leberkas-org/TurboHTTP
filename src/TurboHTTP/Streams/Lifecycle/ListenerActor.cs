@@ -95,6 +95,15 @@ internal sealed class ListenerActor : ReceiveActor
 
     private void OnIncomingConnection(IncomingConnection msg)
     {
+        var limit = _serverOptions.MaxConcurrentConnections;
+        if (limit > 0 && _activeConnections.Count >= limit)
+        {
+            _log.Warning("Connection rejected: limit {0} reached ({1} active)",
+                limit, _activeConnections.Count);
+            RejectConnection(msg.ConnectionFlow);
+            return;
+        }
+
         var connectionId = string.Concat("conn-", ++_connectionCounter);
         var connectionInfo = new TurboConnectionInfo(connectionId, null, 0, null, _listenerOptions.Port);
 
@@ -148,6 +157,18 @@ internal sealed class ListenerActor : ReceiveActor
     private void OnChildTerminated(Terminated msg)
     {
         _activeConnections.Remove(msg.ActorRef);
+    }
+
+    private void RejectConnection(Flow<ITransportOutbound, ITransportInbound, NotUsed> connectionFlow)
+    {
+        var killSwitch = KillSwitches.Shared("reject");
+
+        Source.Empty<ITransportOutbound>()
+            .Via(connectionFlow)
+            .Via(killSwitch.Flow<ITransportInbound>())
+            .RunWith(Sink.Ignore<ITransportInbound>().MapMaterializedValue(_ => NotUsed.Instance), _materializer);
+
+        killSwitch.Shutdown();
     }
 
     private IServerProtocolEngine ResolveEngineForListener()
