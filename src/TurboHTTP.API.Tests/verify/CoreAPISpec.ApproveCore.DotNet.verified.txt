@@ -426,7 +426,8 @@ namespace TurboHTTP.Server
     public sealed class Http2ServerOptions
     {
         public Http2ServerOptions() { }
-        public int InitialWindowSize { get; set; }
+        public int InitialConnectionWindowSize { get; set; }
+        public int InitialStreamWindowSize { get; set; }
         public System.TimeSpan KeepAliveTimeout { get; set; }
         public int MaxConcurrentStreams { get; set; }
         public int MaxFrameSize { get; set; }
