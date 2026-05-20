@@ -30,9 +30,11 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: docs/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Generate static png fallback diagrams
         run: npx likec4 export png --output public/diagrams ./likec4
