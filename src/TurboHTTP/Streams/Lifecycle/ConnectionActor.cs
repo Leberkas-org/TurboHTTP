@@ -1,3 +1,4 @@
+using System.Net.Security;
 using Akka;
 using Akka.Actor;
 using Akka.Event;
@@ -77,10 +78,29 @@ internal sealed class ConnectionActor : ReceiveActor
         var inboundTap = Flow.Create<ITransportInbound>()
             .Select(item =>
             {
-                if (item is TransportConnected { Info.Remote: System.Net.IPEndPoint remote })
+                switch (item)
                 {
-                    connectionInfo.RemoteIpAddress = remote.Address;
-                    connectionInfo.RemotePort = remote.Port;
+                    case TransportConnected { Info: { Remote: System.Net.IPEndPoint remote } } connected:
+                        connectionInfo.RemoteIpAddress = remote.Address;
+                        connectionInfo.RemotePort = remote.Port;
+                        if (connected.Info is { Local: System.Net.IPEndPoint local })
+                        {
+                            connectionInfo.LocalIpAddress = local.Address;
+                            connectionInfo.LocalPort = local.Port;
+                        }
+                        if (connected.Info.Security is { } security)
+                        {
+                            connectionInfo.SetSecurityInfo(security);
+                            connectionInfo.SetNegotiatedProtocol(security.ApplicationProtocol);
+                        }
+                        break;
+                    case TransportTlsState tlsState:
+                        connectionInfo.SetTlsState(tlsState.SslStream, tlsState.AllowDelayedNegotiation);
+                        if (tlsState.SslStream is not null)
+                        {
+                            connectionInfo.SetClientCertificateFromHandshake(tlsState.SslStream);
+                        }
+                        break;
                 }
 
                 return item;
