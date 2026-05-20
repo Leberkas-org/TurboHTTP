@@ -10,6 +10,10 @@ public sealed record TransportDisconnected(DisconnectReason Reason) : ITransport
 
 public sealed record TransportError(Exception Exception, bool Fatal) : ITransportInbound;
 
+public sealed record TransportTlsState(
+    System.Net.Security.SslStream? SslStream,
+    bool AllowDelayedNegotiation) : ITransportInbound;
+
 public sealed record StreamOpened(StreamTarget Id, StreamDirection Direction) : ITransportInbound;
 
 public sealed record StreamClosed(StreamTarget Id, DisconnectReason Reason) : ITransportInbound;
