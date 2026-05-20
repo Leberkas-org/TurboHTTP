@@ -1,6 +1,7 @@
 using System.Buffers;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http10.Options;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
@@ -21,13 +22,23 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     public bool CanAcceptResponse => true;
     public bool ShouldComplete { get; private set; }
 
-    public Http10ServerStateMachine(IServerStageOperations ops, long maxRequestBodySize = 10_485_760)
+    public Http10ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
-        _maxRequestBodySize = maxRequestBodySize;
+        ArgumentNullException.ThrowIfNull(options);
+        _maxRequestBodySize = options.Http1.MaxRequestBodySize;
 
-        var decoderOpts = Http10ServerDecoderOptions.Default;
-        var encoderOpts = Http10ServerEncoderOptions.Default;
+        var shared = SharedHttpOptions.Default with
+        {
+            MaxBufferedBodySize = options.BodyBufferThreshold,
+            MaxStreamedBodySize = options.Http1.MaxRequestBodySize,
+            MaxHeaderBytes = options.Http1.MaxHeaderListSize,
+            HeaderLineMaxLength = options.Http1.MaxRequestLineLength,
+            RequestLineMaxLength = options.Http1.MaxRequestLineLength,
+        };
+
+        var decoderOpts = new Http10ServerDecoderOptions { Shared = shared };
+        var encoderOpts = new Http10ServerEncoderOptions { Shared = shared };
 
         _decoder = new Http10ServerDecoder(decoderOpts);
         _encoder = new Http10ServerEncoder(encoderOpts);
