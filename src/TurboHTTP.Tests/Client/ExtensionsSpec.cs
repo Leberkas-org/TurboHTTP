@@ -1,3 +1,4 @@
+using TurboHTTP.Client;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Client;

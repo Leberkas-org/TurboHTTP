@@ -47,13 +47,6 @@ public sealed class TurboEntityMethodBuilder
         }
     }
 
-    [Obsolete("Use .IsTell() instead")]
-    public TurboEntityMethodBuilder AcceptedResponse()
-    {
-        Tell();
-        return this;
-    }
-
     public TurboEntityMethodBuilder WithTimeout(TimeSpan timeout)
     {
         _timeoutOverride = timeout;

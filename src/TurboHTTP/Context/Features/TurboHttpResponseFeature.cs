@@ -21,20 +21,14 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
 
     public void OnStarting(Func<object, Task> callback, object state)
     {
-        if (callback == null)
-        {
-            throw new ArgumentNullException(nameof(callback));
-        }
+        ArgumentNullException.ThrowIfNull(callback);
 
         _onStartingCallbacks.Add((callback, state)!);
     }
 
     public void OnCompleted(Func<object, Task> callback, object state)
     {
-        if (callback == null)
-        {
-            throw new ArgumentNullException(nameof(callback));
-        }
+        ArgumentNullException.ThrowIfNull(callback);
 
         _onCompletedCallbacks.Add((callback, state)!);
     }

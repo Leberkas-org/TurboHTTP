@@ -17,10 +17,7 @@ internal sealed class TurboRequestHeaderDictionary(
     {
         get
         {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentNullException.ThrowIfNull(key);
 
             if (_requestHeaders.TryGetValues(key, out var requestValues))
             {
@@ -36,10 +33,7 @@ internal sealed class TurboRequestHeaderDictionary(
         }
         set
         {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
+            ArgumentNullException.ThrowIfNull(key);
 
             _requestHeaders.Remove(key);
             contentHeaders?.Remove(key);
@@ -124,10 +118,7 @@ internal sealed class TurboRequestHeaderDictionary(
 
     public void Add(string key, StringValues value)
     {
-        if (key == null)
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         foreach (var v in value)
         {
@@ -158,10 +149,7 @@ internal sealed class TurboRequestHeaderDictionary(
 
     public bool ContainsKey(string key)
     {
-        if (key == null)
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         if (_requestHeaders.TryGetValues(key, out _))
         {
@@ -178,10 +166,7 @@ internal sealed class TurboRequestHeaderDictionary(
 
     public void CopyTo(KeyValuePair<string, StringValues>[] array, int arrayIndex)
     {
-        if (array == null)
-        {
-            throw new ArgumentNullException(nameof(array));
-        }
+        ArgumentNullException.ThrowIfNull(array);
 
         if (arrayIndex < 0 || arrayIndex > array.Length)
         {
@@ -248,10 +233,7 @@ internal sealed class TurboRequestHeaderDictionary(
 
     public bool Remove(string key)
     {
-        if (key == null)
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         var removed = _requestHeaders.Remove(key);
         if (contentHeaders != null)
@@ -274,10 +256,7 @@ internal sealed class TurboRequestHeaderDictionary(
 
     public bool TryGetValue(string key, out StringValues value)
     {
-        if (key == null)
-        {
-            throw new ArgumentNullException(nameof(key));
-        }
+        ArgumentNullException.ThrowIfNull(key);
 
         if (_requestHeaders.TryGetValues(key, out var requestValues))
         {

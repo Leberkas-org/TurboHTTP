@@ -1,6 +1,6 @@
 using TurboHTTP.Internal;
 
-namespace TurboHTTP;
+namespace TurboHTTP.Client;
 
 public static class Extensions
 {

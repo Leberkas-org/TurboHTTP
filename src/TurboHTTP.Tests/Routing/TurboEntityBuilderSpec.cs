@@ -25,19 +25,6 @@ public sealed class TurboEntityBuilderSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void AddToRouteTable_should_register_tell_route()
-    {
-        var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnPost(() => new TestMessage("new")).AcceptedResponse();
-
-        var table = new TurboRouteTable();
-        builder.AddToRouteTable(table);
-        var frozen = table.Freeze();
-
-        Assert.True(frozen.Match(HttpMethod.Post, "/orders/1").IsMatch);
-    }
-
-    [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_register_multiple_methods()
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
@@ -141,10 +128,7 @@ public sealed class TurboEntityBuilderSpec
     public void IsTell_with_callback_should_register_tell_route()
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnPost(() => new TestMessage("new")).Tell(tell =>
-        {
-            tell.Response(204);
-        });
+        builder.OnPost(() => new TestMessage("new")).Tell(tell => { tell.Response(204); });
 
         var table = new TurboRouteTable();
         builder.AddToRouteTable(table);
@@ -159,7 +143,7 @@ public sealed class TurboEntityBuilderSpec
         var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get")).Ask(ask =>
         {
-            ask.Response<TestMessage>((ctx, msg) => Task.CompletedTask);
+            ask.Response<TestMessage>((_, _) => Task.CompletedTask);
         });
 
         var table = new TurboRouteTable();
@@ -176,21 +160,6 @@ public sealed class TurboEntityBuilderSpec
         var methodBuilder = builder.OnGet(() => new TestMessage("get"));
 
         Assert.Throws<InvalidOperationException>(() =>
-            methodBuilder.Ask(ask => { }));
-    }
-
-    [Fact(Timeout = 5000)]
-    public void AcceptedResponse_should_still_work()
-    {
-#pragma warning disable CS0618
-        var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnPost(() => new TestMessage("new")).AcceptedResponse();
-#pragma warning restore CS0618
-
-        var table = new TurboRouteTable();
-        builder.AddToRouteTable(table);
-        var frozen = table.Freeze();
-
-        Assert.True(frozen.Match(HttpMethod.Post, "/orders/1").IsMatch);
+            methodBuilder.Ask(_ => { }));
     }
 }

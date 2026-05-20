@@ -114,7 +114,7 @@ public sealed class EntityDispatcherSpec : StreamTestBase
 
         var turboTable = new TurboRouteTable();
         var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnPost((TurboHttpContext _) => new GetOrder("new")).AcceptedResponse();
+        builder.OnPost((TurboHttpContext _) => new GetOrder("new")).Tell();
         builder.UseActorRef<OrderActorKey>();
         builder.AddToRouteTable(turboTable);
 

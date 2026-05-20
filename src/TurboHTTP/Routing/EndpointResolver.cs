@@ -26,27 +26,51 @@ internal sealed class EndpointResolver
         {
             if (listen.IsHttps)
             {
-                ApplyHttpsDefaults(listen.HttpsOptions!, options.HttpsDefaultsCallback);
-                var cert = ResolveCertificate(listen.HttpsOptions!);
-
-                if (cert is null)
+                if (listen.TlsCallbackOptions is { } callbackOptions)
                 {
-                    throw new InvalidOperationException(
-                        string.Concat(
-                            "No server certificate configured for HTTPS endpoint '",
-                            listen.Address, ":", listen.Port.ToString(),
-                            "'. Provide a certificate via UseHttps() or ConfigureHttpsDefaults()."));
+                    var tcpProtocols = listen.Protocols & ~HttpProtocols.Http3;
+                    if (tcpProtocols != HttpProtocols.None)
+                    {
+                        bindings.Add(CreateTcpBindingFromCallback(listen, callbackOptions, tcpProtocols));
+                    }
+
+                    if ((listen.Protocols & HttpProtocols.Http3) != 0)
+                    {
+                        throw new InvalidOperationException(
+                            "TurboTlsCallbackOptions is not supported for HTTP/3 (QUIC) endpoints. " +
+                            "Use TurboHttpsOptions with a static certificate for HTTP/3.");
+                    }
                 }
-
-                var tcpProtocols = listen.Protocols & ~HttpProtocols.Http3;
-                if (tcpProtocols != HttpProtocols.None)
+                else
                 {
-                    bindings.Add(CreateTcpBinding(listen, cert, tcpProtocols));
-                }
+                    ApplyHttpsDefaults(listen.HttpsOptions!, options.HttpsDefaultsCallback);
+                    var cert = ResolveCertificate(listen.HttpsOptions!);
 
-                if ((listen.Protocols & HttpProtocols.Http3) != 0)
-                {
-                    bindings.Add(CreateQuicBinding(listen, cert));
+                    if (cert is null && listen.HttpsOptions!.ServerCertificateSelector is null)
+                    {
+                        throw new InvalidOperationException(
+                            string.Concat(
+                                "No server certificate configured for HTTPS endpoint '",
+                                listen.Address, ":", listen.Port.ToString(),
+                                "'. Provide a certificate via UseHttps(), ServerCertificateSelector, or TurboTlsCallbackOptions."));
+                    }
+
+                    var tcpProtocols = listen.Protocols & ~HttpProtocols.Http3;
+                    if (tcpProtocols != HttpProtocols.None)
+                    {
+                        bindings.Add(CreateTcpBinding(listen, cert, tcpProtocols));
+                    }
+
+                    if ((listen.Protocols & HttpProtocols.Http3) != 0)
+                    {
+                        if (cert is null)
+                        {
+                            throw new InvalidOperationException(
+                                "HTTP/3 requires a static certificate. ServerCertificateSelector is not supported for QUIC.");
+                        }
+
+                        bindings.Add(CreateQuicBinding(listen, cert));
+                    }
                 }
             }
             else
@@ -135,6 +159,7 @@ internal sealed class EndpointResolver
         httpsOptions.CertificatePath ??= defaults.CertificatePath;
         httpsOptions.CertificatePassword ??= defaults.CertificatePassword;
         httpsOptions.ClientCertificateValidationCallback ??= defaults.ClientCertificateValidationCallback;
+        httpsOptions.ServerCertificateSelector ??= defaults.ServerCertificateSelector;
 
         if (httpsOptions.EnabledSslProtocols == SslProtocols.None)
         {
@@ -145,6 +170,12 @@ internal sealed class EndpointResolver
             defaults.HandshakeTimeout != TimeSpan.FromSeconds(10))
         {
             httpsOptions.HandshakeTimeout = defaults.HandshakeTimeout;
+        }
+
+        if (httpsOptions.ClientCertificateMode == ClientCertificateMode.NoCertificate &&
+            defaults.ClientCertificateMode != ClientCertificateMode.NoCertificate)
+        {
+            httpsOptions.ClientCertificateMode = defaults.ClientCertificateMode;
         }
     }
 
@@ -181,16 +212,19 @@ internal sealed class EndpointResolver
         HttpProtocols protocols)
     {
         var alpn = protocols.ToAlpnProtocols();
+        var httpsOptions = listen.HttpsOptions;
+
         var tcpOptions = new TcpListenerOptions
         {
             Host = listen.Address.ToString(),
             Port = listen.Port,
             ServerCertificate = certificate,
-            EnabledSslProtocols = listen.HttpsOptions?.EnabledSslProtocols ??
-                                  SslProtocols.None,
+            EnabledSslProtocols = httpsOptions?.EnabledSslProtocols ?? SslProtocols.None,
             ApplicationProtocols = alpn.Count > 0 ? alpn : null,
-            ClientCertificateValidationCallback = listen.HttpsOptions?.ClientCertificateValidationCallback,
-            HandshakeTimeout = listen.HttpsOptions?.HandshakeTimeout ?? TimeSpan.FromSeconds(10)
+            ClientCertificateValidationCallback = httpsOptions?.ClientCertificateValidationCallback,
+            HandshakeTimeout = httpsOptions?.HandshakeTimeout ?? TimeSpan.FromSeconds(10),
+            ClientCertificateMode = httpsOptions?.ClientCertificateMode ?? ClientCertificateMode.NoCertificate,
+            ServerCertificateSelector = httpsOptions?.ServerCertificateSelector
         };
 
         return new ListenerBinding
@@ -218,6 +252,42 @@ internal sealed class EndpointResolver
         {
             Options = quicOptions,
             Factory = new QuicListenerFactory(),
+            ConnectionLoggingCategory = listen.ConnectionLoggingCategory
+        };
+    }
+
+    private static ListenerBinding CreateTcpBindingFromCallback(
+        TurboListenOptions listen,
+        TurboTlsCallbackOptions callbackOptions,
+        HttpProtocols protocols)
+    {
+        var alpn = protocols.ToAlpnProtocols();
+
+        var tcpOptions = new TcpListenerOptions
+        {
+            Host = listen.Address.ToString(),
+            Port = listen.Port,
+            ApplicationProtocols = alpn.Count > 0 ? alpn : null,
+            HandshakeTimeout = callbackOptions.HandshakeTimeout,
+            HandshakeCallback = context =>
+            {
+                var turboContext = new TurboTlsCallbackContext(
+                    context.ClientHelloInfo,
+                    context.LocalEndPoint,
+                    context.RemoteEndPoint,
+                    context.CancellationToken);
+
+                var result = callbackOptions.OnConnection(turboContext);
+                context.AllowDelayedClientCertificateNegotiation =
+                    turboContext.AllowDelayedClientCertificateNegotiation;
+                return result;
+            }
+        };
+
+        return new ListenerBinding
+        {
+            Options = tcpOptions,
+            Factory = new TcpListenerFactory(),
             ConnectionLoggingCategory = listen.ConnectionLoggingCategory
         };
     }
