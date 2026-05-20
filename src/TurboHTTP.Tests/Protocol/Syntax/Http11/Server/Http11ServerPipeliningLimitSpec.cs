@@ -3,8 +3,8 @@ using System.Text;
 using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
-using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -17,8 +17,9 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_should_accept_requests_up_to_limit()
     {
         var ops = new FakeServerOps();
-        var decoderOpts = new Http11ServerDecoderOptions { MaxPipelinedRequests = 3 };
-        var sm = new Http11ServerStateMachine(ops, decoderOptions: decoderOpts);
+        var options = new TurboServerOptions();
+        options.Http1.MaxPipelinedRequests = 3;
+        var sm = new Http11ServerStateMachine(options, ops);
         var request = BuildPipelinedRequests(3);
         var buffer = MakeBuffer(request);
 
@@ -33,8 +34,9 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_should_enforce_pipelining_limit()
     {
         var ops = new FakeServerOps();
-        var decoderOpts = new Http11ServerDecoderOptions { MaxPipelinedRequests = 2 };
-        var sm = new Http11ServerStateMachine(ops, decoderOptions: decoderOpts);
+        var options = new TurboServerOptions();
+        options.Http1.MaxPipelinedRequests = 2;
+        var sm = new Http11ServerStateMachine(options, ops);
         var request = BuildPipelinedRequests(4); // Try to send 4 requests
         var buffer = MakeBuffer(request);
 
@@ -51,8 +53,9 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_should_close_after_limit_reached_response()
     {
         var ops = new FakeServerOps();
-        var decoderOpts = new Http11ServerDecoderOptions { MaxPipelinedRequests = 1 };
-        var sm = new Http11ServerStateMachine(ops, decoderOptions: decoderOpts);
+        var options = new TurboServerOptions();
+        options.Http1.MaxPipelinedRequests = 1;
+        var sm = new Http11ServerStateMachine(options, ops);
         var request = BuildPipelinedRequests(2); // Try to send 2 requests with limit 1
         var buffer = MakeBuffer(request);
 
@@ -77,7 +80,7 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_default_limit_should_be_10()
     {
         var ops = new FakeServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
         var request = BuildPipelinedRequests(10);
         var buffer = MakeBuffer(request);
 
@@ -92,7 +95,7 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_should_reject_11th_request_with_default_limit()
     {
         var ops = new FakeServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
         var request = BuildPipelinedRequests(11);
         var buffer = MakeBuffer(request);
 
@@ -107,8 +110,9 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_should_accept_high_limit()
     {
         var ops = new FakeServerOps();
-        var decoderOpts = new Http11ServerDecoderOptions { MaxPipelinedRequests = 100 };
-        var sm = new Http11ServerStateMachine(ops, decoderOptions: decoderOpts);
+        var options = new TurboServerOptions();
+        options.Http1.MaxPipelinedRequests = 100;
+        var sm = new Http11ServerStateMachine(options, ops);
         var request = BuildPipelinedRequests(100);
         var buffer = MakeBuffer(request);
 
@@ -124,8 +128,13 @@ public sealed class Http11ServerPipeliningLimitSpec
     {
         var ops = new FakeServerOps();
 
-        Assert.Throws<ArgumentException>(() => new Http11ServerStateMachine(ops, decoderOptions: new Http11ServerDecoderOptions { MaxPipelinedRequests = 0 }));
-        Assert.Throws<ArgumentException>(() => new Http11ServerStateMachine(ops, decoderOptions: new Http11ServerDecoderOptions { MaxPipelinedRequests = -1 }));
+        var invalidOpts1 = new TurboServerOptions();
+        invalidOpts1.Http1.MaxPipelinedRequests = 0;
+        Assert.Throws<ArgumentException>(() => new Http11ServerStateMachine(invalidOpts1, ops));
+
+        var invalidOpts2 = new TurboServerOptions();
+        invalidOpts2.Http1.MaxPipelinedRequests = -1;
+        Assert.Throws<ArgumentException>(() => new Http11ServerStateMachine(invalidOpts2, ops));
     }
 
     [Fact(Timeout = 5000)]
@@ -133,8 +142,9 @@ public sealed class Http11ServerPipeliningLimitSpec
     public void ServerStateMachine_limit_applies_per_buffer()
     {
         var ops = new FakeServerOps();
-        var decoderOpts = new Http11ServerDecoderOptions { MaxPipelinedRequests = 2 };
-        var sm = new Http11ServerStateMachine(ops, decoderOptions: decoderOpts);
+        var options = new TurboServerOptions();
+        options.Http1.MaxPipelinedRequests = 2;
+        var sm = new Http11ServerStateMachine(options, ops);
 
         // First buffer with 2 requests
         var buffer1 = MakeBuffer(BuildPipelinedRequests(2));

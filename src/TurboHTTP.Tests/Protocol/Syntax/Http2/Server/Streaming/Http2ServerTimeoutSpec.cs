@@ -4,6 +4,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -122,9 +123,9 @@ public sealed class Http2ServerTimeoutSpec
     public void PreStart_should_schedule_keep_alive_timeout()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(
-            ops,
-            keepAliveTimeout: TimeSpan.FromSeconds(130));
+        var options = new TurboServerOptions();
+        options.Http2.KeepAliveTimeout = TimeSpan.FromSeconds(130);
+        var sm = new Http2ServerStateMachine(options, ops);
 
         sm.PreStart();
 
@@ -140,7 +141,7 @@ public sealed class Http2ServerTimeoutSpec
     public void KeepAlive_timeout_should_emit_goaway()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
         ops.EmittedOutbound.Clear();
@@ -161,7 +162,7 @@ public sealed class Http2ServerTimeoutSpec
     public void KeepAlive_should_cancel_on_stream_open()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
         ops.CancelledTimers.Clear();
@@ -186,9 +187,9 @@ public sealed class Http2ServerTimeoutSpec
     public void Headers_timeout_should_rst_stream_on_continuation_timeout()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(
-            ops,
-            requestHeadersTimeout: TimeSpan.FromSeconds(30));
+        var options = new TurboServerOptions();
+        options.Http2.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+        var sm = new Http2ServerStateMachine(options, ops);
 
         sm.PreStart();
 
@@ -231,9 +232,9 @@ public sealed class Http2ServerTimeoutSpec
     public void Headers_timeout_should_cancel_on_endheaders()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(
-            ops,
-            requestHeadersTimeout: TimeSpan.FromSeconds(30));
+        var options = new TurboServerOptions();
+        options.Http2.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+        var sm = new Http2ServerStateMachine(options, ops);
 
         sm.PreStart();
 
@@ -271,7 +272,7 @@ public sealed class Http2ServerTimeoutSpec
     public void Body_rate_check_should_schedule_on_data_frame()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
 

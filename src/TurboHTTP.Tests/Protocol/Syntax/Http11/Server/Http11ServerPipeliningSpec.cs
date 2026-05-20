@@ -4,6 +4,7 @@ using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -16,7 +17,7 @@ public sealed class Http11ServerPipeliningSpec
     public void ServerStateMachine_should_decode_two_pipelined_requests_from_single_buffer()
     {
         var ops = new FakeServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
         var request = string.Concat(
             "GET / HTTP/1.1\r\n",
             "Host: example.com\r\n",
@@ -40,7 +41,7 @@ public sealed class Http11ServerPipeliningSpec
     public void ServerStateMachine_should_process_responses_fifo_for_pipelined_requests()
     {
         var ops = new FakeServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
         var request = string.Concat(
             "GET / HTTP/1.1\r\n",
             "Host: example.com\r\n",
@@ -74,7 +75,7 @@ public sealed class Http11ServerPipeliningSpec
     public void ServerStateMachine_should_throw_when_responding_without_pending_request()
     {
         var ops = new FakeServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -89,7 +90,7 @@ public sealed class Http11ServerPipeliningSpec
     public void ServerStateMachine_should_handle_three_pipelined_requests()
     {
         var ops = new FakeServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
         var request = string.Concat(
             "GET /page1 HTTP/1.1\r\n",
             "Host: example.com\r\n",

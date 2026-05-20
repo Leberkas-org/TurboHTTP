@@ -4,6 +4,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -147,7 +148,7 @@ public sealed class Http2ServerResponseBufferSpec
     public void OnResponse_with_no_body_should_send_headers_with_endstream()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         // Send HEADERS frame for stream 1
         var headerBlock = EncodeHeaders("GET", "/api/status", "example.com");
@@ -184,7 +185,7 @@ public sealed class Http2ServerResponseBufferSpec
     public void OnResponse_with_body_should_schedule_drain_timer_and_not_set_endstream()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         // Send HEADERS frame for stream 1
         var headerBlock = EncodeHeaders("GET", "/api/data", "example.com");
@@ -221,7 +222,7 @@ public sealed class Http2ServerResponseBufferSpec
     public void WindowUpdate_should_drain_outbound_buffer()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         var headerBlock = EncodeHeaders("GET", "/api/data", "example.com");
         var headersFrameData = BuildHeadersFrame(streamId: 1, headerBlock, endStream: true, endHeaders: true);

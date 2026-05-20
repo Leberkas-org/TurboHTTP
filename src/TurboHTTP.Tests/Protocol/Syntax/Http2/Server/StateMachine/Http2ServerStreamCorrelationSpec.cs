@@ -5,6 +5,7 @@ using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -93,7 +94,7 @@ public sealed class Http2ServerStreamCorrelationSpec
     public void Multiple_concurrent_streams_should_correlate_responses_to_correct_stream_ids()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         // Send HEADERS on stream 1
         var headerBlock1 = EncodeHeaders("GET", "/path1", "example.com");
@@ -203,7 +204,7 @@ public sealed class Http2ServerStreamCorrelationSpec
     public void Stream_IDs_should_preserve_request_response_correlation_across_interleaved_processing()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         // Send three requests on streams 1, 3, 5
         for (var streamId = 1; streamId <= 5; streamId += 2)
@@ -279,7 +280,7 @@ public sealed class Http2ServerStreamCorrelationSpec
     public void Concurrent_streams_should_maintain_independent_state()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         // Send multiple requests without waiting for responses
         var headerBlock1 = EncodeHeaders("GET", "/");

@@ -4,6 +4,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -67,7 +68,9 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void PreStart_should_schedule_keep_alive_timer()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http3ServerStateMachine(ops, keepAliveTimeout: TimeSpan.FromSeconds(130));
+        var options = new TurboServerOptions();
+        options.Http3.KeepAliveTimeout = TimeSpan.FromSeconds(130);
+        var sm = new Http3ServerStateMachine(options, ops);
 
         sm.PreStart();
 
@@ -83,7 +86,7 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void ShouldComplete_should_always_be_false()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         Assert.False(sm.ShouldComplete, "ShouldComplete should be false after construction");
 
@@ -99,7 +102,7 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void Stream_open_should_cancel_keep_alive()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
 
@@ -121,7 +124,7 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void OnTimerFired_headers_timeout_should_emit_RstStream()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 4;
 
@@ -147,7 +150,7 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void Cleanup_should_be_idempotent()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
         SendRequest(sm, 4);
@@ -167,7 +170,7 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void OnDownstreamFinished_should_flush_pending()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 4;
 

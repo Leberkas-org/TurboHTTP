@@ -6,6 +6,7 @@ using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -42,7 +43,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void ShouldComplete_should_be_true_when_connection_close_on_request()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
@@ -58,7 +59,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void ShouldComplete_should_be_true_for_http10_request_on_h11_connection()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var requestData = "GET / HTTP/1.0\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
@@ -74,7 +75,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void OnResponse_should_include_connection_close_when_ShouldComplete()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
@@ -99,7 +100,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void DecodeClientData_should_set_ShouldComplete_on_decode_error()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var invalidRequest = "INVALID REQUEST DATA\r\n\r\n";
         var buffer = MakeBuffer(invalidRequest);
@@ -114,7 +115,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void OnBodyMessage_OutboundBodyFailed_should_clear_pending_flag()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
@@ -146,7 +147,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void OnBodyMessage_multi_chunk_should_emit_all_chunks()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
@@ -188,7 +189,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void Cleanup_should_be_idempotent()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
@@ -215,7 +216,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
     public void OnResponse_should_throw_when_no_pending_requests()
     {
         var ops = new TrackingServerOps();
-        var sm = new Http11ServerStateMachine(ops);
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {

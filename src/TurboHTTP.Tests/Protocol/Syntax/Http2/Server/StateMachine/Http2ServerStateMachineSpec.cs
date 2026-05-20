@@ -4,6 +4,7 @@ using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
@@ -139,7 +140,7 @@ public sealed class Http2ServerStateMachineSpec
     public void PreStart_should_emit_settings_frame()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
 
@@ -152,7 +153,7 @@ public sealed class Http2ServerStateMachineSpec
     public void DecodeClientData_with_headers_should_produce_request_with_stream_id()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         var headerBlock = EncodeHeaders("GET", "/", "example.com");
         var headersFrameData = BuildHeadersFrame(streamId: 1, headerBlock, endStream: true, endHeaders: true);
@@ -180,7 +181,7 @@ public sealed class Http2ServerStateMachineSpec
     public void DecodeClientData_with_headers_incomplete_should_not_emit_request_until_end_headers()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         var headerBlock = EncodeHeaders("GET", "/", "example.com");
         // Split header block: first part without EndHeaders
@@ -206,7 +207,7 @@ public sealed class Http2ServerStateMachineSpec
     public void DecodeClientData_with_ping_should_echo_ack()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
         ops.EmittedOutbound.Clear();
@@ -235,7 +236,7 @@ public sealed class Http2ServerStateMachineSpec
     public void DecodeClientData_with_settings_should_ack()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
         ops.EmittedOutbound.Clear();
@@ -264,7 +265,7 @@ public sealed class Http2ServerStateMachineSpec
     public void OnResponse_should_encode_and_emit_frames()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         // Receive a request first
         var headerBlock = EncodeHeaders("GET", "/", "example.com");
@@ -302,7 +303,7 @@ public sealed class Http2ServerStateMachineSpec
     public void CanAcceptResponse_should_be_true_when_request_received()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         Assert.False(sm.CanAcceptResponse);
 
@@ -323,7 +324,7 @@ public sealed class Http2ServerStateMachineSpec
     public void Cleanup_should_dispose_decoder()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
 

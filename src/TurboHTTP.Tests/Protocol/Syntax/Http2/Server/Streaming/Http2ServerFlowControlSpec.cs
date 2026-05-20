@@ -4,6 +4,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -150,11 +151,11 @@ public sealed class Http2ServerFlowControlSpec
         // Create SM with small window so we can easily exceed threshold
         const int initialWindowSize = 16384;
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(
-            ops,
-            maxConcurrentStreams: 100,
-            initialConnectionWindowSize: 65535,
-            initialStreamWindowSize: initialWindowSize);
+        var options = new TurboServerOptions();
+        options.Http2.MaxConcurrentStreams = 100;
+        options.Http2.InitialConnectionWindowSize = 65535;
+        options.Http2.InitialStreamWindowSize = initialWindowSize;
+        var sm = new Http2ServerStateMachine(options, ops);
 
         // Send HEADERS on stream 1 with endStream=false to accept body data
         var headerBlock = EncodeHeaders("POST", "/upload", "example.com");
@@ -238,7 +239,7 @@ public sealed class Http2ServerFlowControlSpec
     public void DecodeClientData_with_window_update_should_not_emit_goaway()
     {
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(ops);
+        var sm = new Http2ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
         ops.EmittedOutbound.Clear();
@@ -277,11 +278,11 @@ public sealed class Http2ServerFlowControlSpec
     {
         const int initialWindowSize = 20000;
         var ops = new FakeServerOps();
-        var sm = new Http2ServerStateMachine(
-            ops,
-            maxConcurrentStreams: 100,
-            initialConnectionWindowSize: 65535,
-            initialStreamWindowSize: initialWindowSize);
+        var options = new TurboServerOptions();
+        options.Http2.MaxConcurrentStreams = 100;
+        options.Http2.InitialConnectionWindowSize = 65535;
+        options.Http2.InitialStreamWindowSize = initialWindowSize;
+        var sm = new Http2ServerStateMachine(options, ops);
 
         // Send HEADERS
         var headerBlock = EncodeHeaders("POST", "/", "example.com");

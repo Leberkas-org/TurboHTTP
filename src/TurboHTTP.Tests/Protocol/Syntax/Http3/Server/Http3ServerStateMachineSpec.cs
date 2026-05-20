@@ -5,6 +5,7 @@ using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -90,7 +91,7 @@ public sealed class Http3ServerStateMachineSpec
     public void PreStart_should_open_control_and_qpack_streams()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
 
@@ -117,7 +118,7 @@ public sealed class Http3ServerStateMachineSpec
     public void PreStart_should_emit_settings_on_control_stream()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         sm.PreStart();
 
@@ -136,7 +137,7 @@ public sealed class Http3ServerStateMachineSpec
     public void DecodeClientData_with_headers_should_produce_request_with_stream_id()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 4; // Client-initiated bidirectional stream
 
@@ -175,7 +176,7 @@ public sealed class Http3ServerStateMachineSpec
     public async Task DecodeClientData_with_headers_and_data_should_accumulate_body()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 8; // Different stream ID
         const string bodyContent = "Hello, World!";
@@ -225,7 +226,7 @@ public sealed class Http3ServerStateMachineSpec
     public void OnResponse_no_body_should_emit_HEADERS_and_CompleteWrites()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 12;
 
@@ -276,7 +277,7 @@ public sealed class Http3ServerStateMachineSpec
     public void OnResponse_with_body_should_schedule_drain_timer()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 12;
 
@@ -322,7 +323,7 @@ public sealed class Http3ServerStateMachineSpec
     public void DecodeClientData_with_multiple_streams_should_multiplex()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         // Stream 1
         const long stream1 = 0;
@@ -374,7 +375,7 @@ public sealed class Http3ServerStateMachineSpec
     public void OnDownstreamFinished_should_flush_pending_requests()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 4;
 
@@ -403,7 +404,7 @@ public sealed class Http3ServerStateMachineSpec
     public void Cleanup_should_dispose_stream_decoders()
     {
         var ops = new FakeServerOps();
-        var sm = new Http3ServerStateMachine(ops);
+        var sm = new Http3ServerStateMachine(new TurboServerOptions(), ops);
 
         const long streamId = 4;
 
