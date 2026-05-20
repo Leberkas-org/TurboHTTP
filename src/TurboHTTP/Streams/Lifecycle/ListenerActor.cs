@@ -20,6 +20,7 @@ internal sealed class ListenerActor : ReceiveActor
     private readonly RouteTable _routeTable;
     private readonly IServiceProvider _services;
     private readonly IMaterializer _materializer;
+    private readonly string? _connectionLoggingCategory;
 
     private UniqueKillSwitch? _listenerKillSwitch;
     private int _connectionCounter;
@@ -48,7 +49,8 @@ internal sealed class ListenerActor : ReceiveActor
         TurboRequestDelegate pipeline,
         RouteTable routeTable,
         IServiceProvider services,
-        IMaterializer materializer)
+        IMaterializer materializer,
+        string? connectionLoggingCategory = null)
     {
         _factory = factory;
         _listenerOptions = listenerOptions;
@@ -57,6 +59,7 @@ internal sealed class ListenerActor : ReceiveActor
         _routeTable = routeTable;
         _services = services;
         _materializer = materializer;
+        _connectionLoggingCategory = connectionLoggingCategory;
 
         Receive<StartListening>(_ => OnStartListening());
         Receive<IncomingConnection>(OnIncomingConnection);
@@ -120,7 +123,8 @@ internal sealed class ListenerActor : ReceiveActor
             _routeTable,
             connectionInfo,
             _services,
-            _materializer));
+            _materializer,
+            _connectionLoggingCategory));
 
         Context.Parent.Tell(new ConnectionStarted(connectionId, child));
     }
@@ -193,8 +197,10 @@ internal sealed class ListenerActor : ReceiveActor
         TurboRequestDelegate pipeline,
         RouteTable routeTable,
         IServiceProvider services,
-        IMaterializer materializer)
+        IMaterializer materializer,
+        string? connectionLoggingCategory = null)
         => Props.Create(() => new ListenerActor(
             factory, listenerOptions, serverOptions,
-            pipeline, routeTable, services, materializer));
+            pipeline, routeTable, services, materializer,
+            connectionLoggingCategory));
 }

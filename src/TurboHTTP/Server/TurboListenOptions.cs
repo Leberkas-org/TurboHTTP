@@ -52,4 +52,16 @@ public sealed class TurboListenOptions(IPAddress address, ushort port)
         };
         configure(HttpsOptions);
     }
+
+    internal string? ConnectionLoggingCategory { get; private set; }
+
+    public void UseConnectionLogging()
+    {
+        ConnectionLoggingCategory = "TurboHTTP.Server.ConnectionLogging";
+    }
+
+    public void UseConnectionLogging(string loggerName)
+    {
+        ConnectionLoggingCategory = loggerName;
+    }
 }

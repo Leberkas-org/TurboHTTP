@@ -195,7 +195,8 @@ internal sealed class EndpointResolver
         return new ListenerBinding
         {
             Options = tcpOptions,
-            Factory = new TcpListenerFactory()
+            Factory = new TcpListenerFactory(),
+            ConnectionLoggingCategory = listen.ConnectionLoggingCategory
         };
     }
 
@@ -215,7 +216,8 @@ internal sealed class EndpointResolver
         return new ListenerBinding
         {
             Options = quicOptions,
-            Factory = new QuicListenerFactory()
+            Factory = new QuicListenerFactory(),
+            ConnectionLoggingCategory = listen.ConnectionLoggingCategory
         };
     }
 }

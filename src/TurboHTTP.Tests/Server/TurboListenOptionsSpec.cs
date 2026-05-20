@@ -114,6 +114,29 @@ public sealed class TurboListenOptionsSpec
         Assert.Null(options.HttpsOptions.CertificatePath);
     }
 
+    [Fact(Timeout = 5000)]
+    public void ConnectionLoggingCategory_should_be_null_by_default()
+    {
+        var options = new TurboListenOptions(IPAddress.Loopback, 80);
+        Assert.Null(options.ConnectionLoggingCategory);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void UseConnectionLogging_should_set_default_category()
+    {
+        var options = new TurboListenOptions(IPAddress.Loopback, 80);
+        options.UseConnectionLogging();
+        Assert.Equal("TurboHTTP.Server.ConnectionLogging", options.ConnectionLoggingCategory);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void UseConnectionLogging_with_name_should_set_custom_category()
+    {
+        var options = new TurboListenOptions(IPAddress.Loopback, 80);
+        options.UseConnectionLogging("MyApp.WireLog");
+        Assert.Equal("MyApp.WireLog", options.ConnectionLoggingCategory);
+    }
+
     private static X509Certificate2 CreateSelfSignedCert()
     {
         using var rsa = System.Security.Cryptography.RSA.Create(2048);

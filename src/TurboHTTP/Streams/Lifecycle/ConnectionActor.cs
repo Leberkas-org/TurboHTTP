@@ -3,7 +3,10 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
+using TurboHTTP.Diagnostics;
 using TurboHTTP.Routing;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Middleware;
@@ -34,7 +37,8 @@ internal sealed class ConnectionActor : ReceiveActor
         RouteTable RouteTable,
         TurboConnectionInfo ConnectionInfo,
         IServiceProvider Services,
-        IMaterializer Materializer);
+        IMaterializer Materializer,
+        string? ConnectionLoggingCategory = null);
 
     public sealed record GracefulStop(TimeSpan Timeout);
 
@@ -82,9 +86,38 @@ internal sealed class ConnectionActor : ReceiveActor
                 return item;
             });
 
-        var completionTask = msg.ConnectionFlow
+        Flow<ITransportInbound, ITransportInbound, NotUsed>? loggingFlow = null;
+        if (msg.ConnectionLoggingCategory is { } loggingCategory)
+        {
+            var loggerFactory = msg.Services.GetRequiredService<ILoggerFactory>();
+            var logger = loggerFactory.CreateLogger(loggingCategory);
+            if (logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+            {
+                loggingFlow = Flow.Create<ITransportInbound>()
+                    .Select(item =>
+                    {
+                        if (item is TransportData { Buffer: var buffer })
+                        {
+                            var dump = HexDumpFormatter.Format(buffer.Span);
+                            logger.LogDebug("ReadAsync[{Length}]{NewLine}{Dump}",
+                                buffer.Length, Environment.NewLine, dump);
+                        }
+
+                        return item;
+                    });
+            }
+        }
+
+        var pipeline = msg.ConnectionFlow
             .Via(_killSwitch.Flow<ITransportInbound>())
-            .Via(inboundTap)
+            .Via(inboundTap);
+
+        if (loggingFlow is not null)
+        {
+            pipeline = pipeline.Via(loggingFlow);
+        }
+
+        var completionTask = pipeline
             .ViaMaterialized(
                 Flow.Create<ITransportInbound>().WatchTermination(Keep.Right),
                 Keep.Right)

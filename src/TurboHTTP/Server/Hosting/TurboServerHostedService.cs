@@ -71,7 +71,8 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
                 pipeline,
                 routeTable,
                 _services,
-                materializer));
+                materializer,
+                endpoint.ConnectionLoggingCategory));
         }
 
         _supervisor = _system.ActorOf(
