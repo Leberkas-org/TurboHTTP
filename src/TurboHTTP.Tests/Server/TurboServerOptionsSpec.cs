@@ -6,10 +6,10 @@ namespace TurboHTTP.Tests.Server;
 public sealed class TurboServerOptionsSpec
 {
     [Fact(Timeout = 5000)]
-    public void TurboServerOptions_should_default_keep_alive_to_120_seconds()
+    public void TurboServerOptions_should_default_keep_alive_to_130_seconds()
     {
         var options = new TurboHTTP.Server.TurboServerOptions();
-        Assert.Equal(TimeSpan.FromSeconds(120), options.KeepAliveTimeout);
+        Assert.Equal(TimeSpan.FromSeconds(130), options.KeepAliveTimeout);
     }
 
     [Fact(Timeout = 5000)]
@@ -117,16 +117,16 @@ public sealed class TurboServerOptionsSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void Http2ServerOptions_should_default_initial_connection_window_to_65535()
+    public void Http2ServerOptions_should_default_initial_connection_window_to_1MB()
     {
         var options = new TurboHTTP.Server.TurboServerOptions();
-        Assert.Equal(65535, options.Http2.InitialConnectionWindowSize);
+        Assert.Equal(1 * 1024 * 1024, options.Http2.InitialConnectionWindowSize);
     }
 
     [Fact(Timeout = 5000)]
-    public void Http2ServerOptions_should_default_initial_stream_window_to_65535()
+    public void Http2ServerOptions_should_default_initial_stream_window_to_768KB()
     {
         var options = new TurboHTTP.Server.TurboServerOptions();
-        Assert.Equal(65535, options.Http2.InitialStreamWindowSize);
+        Assert.Equal(768 * 1024, options.Http2.InitialStreamWindowSize);
     }
 }

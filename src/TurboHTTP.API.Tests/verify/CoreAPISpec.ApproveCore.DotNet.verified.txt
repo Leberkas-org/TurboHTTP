@@ -183,6 +183,63 @@ namespace TurboHTTP.Client
         public System.TimeSpan Timeout { get; init; }
     }
 }
+namespace TurboHTTP.Context.Features
+{
+    public interface ITurboRequestBodyFeature
+    {
+        Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
+    }
+    public interface ITurboResponseBodyFeature
+    {
+        Akka.Streams.Dsl.Sink<System.ReadOnlyMemory<byte>, System.Threading.Tasks.Task> BodySink { get; }
+    }
+}
+namespace TurboHTTP.Context
+{
+    public sealed class TurboHttpRequest : Microsoft.AspNetCore.Http.HttpRequest
+    {
+        public TurboHttpRequest(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
+        public override System.IO.Stream Body { get; set; }
+        public override System.IO.Pipelines.PipeReader BodyReader { get; }
+        public Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
+        public System.Net.Http.HttpContent? Content { get; }
+        public override long? ContentLength { get; set; }
+        public override string? ContentType { get; set; }
+        public override Microsoft.AspNetCore.Http.IRequestCookieCollection Cookies { get; set; }
+        public override Microsoft.AspNetCore.Http.IFormCollection Form { get; set; }
+        public override bool HasFormContentType { get; }
+        public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
+        public override Microsoft.AspNetCore.Http.HostString Host { get; set; }
+        public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
+        public override bool IsHttps { get; set; }
+        public override string Method { get; set; }
+        public override Microsoft.AspNetCore.Http.PathString Path { get; set; }
+        public override Microsoft.AspNetCore.Http.PathString PathBase { get; set; }
+        public override string Protocol { get; set; }
+        public override Microsoft.AspNetCore.Http.IQueryCollection Query { get; set; }
+        public override Microsoft.AspNetCore.Http.QueryString QueryString { get; set; }
+        public System.Uri? RequestUri { get; }
+        public override Microsoft.AspNetCore.Routing.RouteValueDictionary RouteValues { get; set; }
+        public override string Scheme { get; set; }
+        public override System.Threading.Tasks.Task<Microsoft.AspNetCore.Http.IFormCollection> ReadFormAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class TurboHttpResponse : Microsoft.AspNetCore.Http.HttpResponse
+    {
+        public TurboHttpResponse(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
+        public override System.IO.Stream Body { get; set; }
+        public override System.IO.Pipelines.PipeWriter BodyWriter { get; }
+        public override long? ContentLength { get; set; }
+        public override string? ContentType { get; set; }
+        public override Microsoft.AspNetCore.Http.IResponseCookies Cookies { get; }
+        public override bool HasStarted { get; }
+        public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
+        public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
+        public override int StatusCode { get; set; }
+        public override void OnCompleted(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
+        public override void OnStarting(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
+        public override void Redirect(string location, bool permanent = false) { }
+    }
+}
 namespace TurboHTTP.Diagnostics
 {
     public static class TurboTraceExtensions
@@ -355,77 +412,25 @@ namespace TurboHTTP.Routing
         public TurboHTTP.Server.TurboRouteGroupBuilder CreateGroup(string prefix) { }
     }
 }
-namespace TurboHTTP.Context.Features
-{
-    public interface ITurboRequestBodyFeature
-    {
-        Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
-    }
-    public interface ITurboResponseBodyFeature
-    {
-        Akka.Streams.Dsl.Sink<System.ReadOnlyMemory<byte>, System.Threading.Tasks.Task> BodySink { get; }
-    }
-}
-namespace TurboHTTP.Context
-{
-    public sealed class TurboHttpRequest : Microsoft.AspNetCore.Http.HttpRequest
-    {
-        public TurboHttpRequest(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
-        public override System.IO.Stream Body { get; set; }
-        public override System.IO.Pipelines.PipeReader BodyReader { get; }
-        public Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
-        public System.Net.Http.HttpContent? Content { get; }
-        public override long? ContentLength { get; set; }
-        public override string? ContentType { get; set; }
-        public override Microsoft.AspNetCore.Http.IRequestCookieCollection Cookies { get; set; }
-        public override Microsoft.AspNetCore.Http.IFormCollection Form { get; set; }
-        public override bool HasFormContentType { get; }
-        public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
-        public override Microsoft.AspNetCore.Http.HostString Host { get; set; }
-        public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
-        public override bool IsHttps { get; set; }
-        public override string Method { get; set; }
-        public override Microsoft.AspNetCore.Http.PathString Path { get; set; }
-        public override Microsoft.AspNetCore.Http.PathString PathBase { get; set; }
-        public override string Protocol { get; set; }
-        public override Microsoft.AspNetCore.Http.IQueryCollection Query { get; set; }
-        public override Microsoft.AspNetCore.Http.QueryString QueryString { get; set; }
-        public System.Uri? RequestUri { get; }
-        public override Microsoft.AspNetCore.Routing.RouteValueDictionary RouteValues { get; set; }
-        public override string Scheme { get; set; }
-        public override System.Threading.Tasks.Task<Microsoft.AspNetCore.Http.IFormCollection> ReadFormAsync(System.Threading.CancellationToken cancellationToken = default) { }
-    }
-    public sealed class TurboHttpResponse : Microsoft.AspNetCore.Http.HttpResponse
-    {
-        public TurboHttpResponse(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
-        public override System.IO.Stream Body { get; set; }
-        public override System.IO.Pipelines.PipeWriter BodyWriter { get; }
-        public override long? ContentLength { get; set; }
-        public override string? ContentType { get; set; }
-        public override Microsoft.AspNetCore.Http.IResponseCookies Cookies { get; }
-        public override bool HasStarted { get; }
-        public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
-        public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
-        public override int StatusCode { get; set; }
-        public override void OnCompleted(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
-        public override void OnStarting(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
-        public override void Redirect(string location, bool permanent = false) { }
-    }
-}
 namespace TurboHTTP.Server
 {
     public sealed class Http1ServerOptions
     {
         public Http1ServerOptions() { }
         public System.TimeSpan BodyReadTimeout { get; set; }
+        public System.TimeSpan? KeepAliveTimeout { get; set; }
         public int MaxChunkExtensionLength { get; set; }
+        public int MaxHeaderListSize { get; set; }
         public int MaxPipelinedRequests { get; set; }
+        public long MaxRequestBodySize { get; set; }
         public int MaxRequestLineLength { get; set; }
         public int MaxRequestTargetLength { get; set; }
+        public System.TimeSpan? RequestHeadersTimeout { get; set; }
     }
     public sealed class Http2ServerOptions
     {
         public Http2ServerOptions() { }
+        public int HeaderTableSize { get; set; }
         public int InitialConnectionWindowSize { get; set; }
         public int InitialStreamWindowSize { get; set; }
         public System.TimeSpan KeepAliveTimeout { get; set; }
@@ -448,6 +453,7 @@ namespace TurboHTTP.Server
         public long MaxRequestBodySize { get; set; }
         public int MinRequestBodyDataRate { get; set; }
         public System.TimeSpan MinRequestBodyDataRateGracePeriod { get; set; }
+        public int QpackMaxTableCapacity { get; set; }
         public System.TimeSpan RequestHeadersTimeout { get; set; }
     }
     [System.Flags]

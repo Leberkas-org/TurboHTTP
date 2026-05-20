@@ -77,31 +77,31 @@ public sealed class Http11ServerPipeliningLimitSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.4")]
-    public void ServerStateMachine_default_limit_should_be_10()
+    public void ServerStateMachine_default_limit_should_be_16()
     {
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
-        var request = BuildPipelinedRequests(10);
+        var request = BuildPipelinedRequests(16);
         var buffer = MakeBuffer(request);
 
         sm.DecodeClientData(new TransportData(buffer));
 
-        Assert.Equal(10, ops.EmittedRequests.Count);
+        Assert.Equal(16, ops.EmittedRequests.Count);
         Assert.False(sm.ShouldComplete);
     }
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.4")]
-    public void ServerStateMachine_should_reject_11th_request_with_default_limit()
+    public void ServerStateMachine_should_reject_17th_request_with_default_limit()
     {
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
-        var request = BuildPipelinedRequests(11);
+        var request = BuildPipelinedRequests(17);
         var buffer = MakeBuffer(request);
 
         sm.DecodeClientData(new TransportData(buffer));
 
-        Assert.Equal(10, ops.EmittedRequests.Count);
+        Assert.Equal(16, ops.EmittedRequests.Count);
         Assert.True(sm.ShouldComplete);
     }
 
