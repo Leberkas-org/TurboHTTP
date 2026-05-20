@@ -98,7 +98,8 @@ public sealed class Http1ServerOptions
 public sealed class Http2ServerOptions
 {
     public int MaxConcurrentStreams { get; set; } = 100;
-    public int InitialWindowSize { get; set; } = 65535;
+    public int InitialConnectionWindowSize { get; set; } = 65535;
+    public int InitialStreamWindowSize { get; set; } = 65535;
     public int MaxFrameSize { get; set; } = 16384;
     public int MaxHeaderListSize { get; set; } = 8192;
     public long MaxRequestBodySize { get; set; } = 30 * 1024 * 1024;

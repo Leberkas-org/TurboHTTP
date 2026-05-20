@@ -115,4 +115,18 @@ public sealed class TurboServerOptionsSpec
         var options = new TurboHTTP.Server.TurboServerOptions();
         Assert.Equal(16384, options.ResponseBodyChunkSize);
     }
+
+    [Fact(Timeout = 5000)]
+    public void Http2ServerOptions_should_default_initial_connection_window_to_65535()
+    {
+        var options = new TurboHTTP.Server.TurboServerOptions();
+        Assert.Equal(65535, options.Http2.InitialConnectionWindowSize);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Http2ServerOptions_should_default_initial_stream_window_to_65535()
+    {
+        var options = new TurboHTTP.Server.TurboServerOptions();
+        Assert.Equal(65535, options.Http2.InitialStreamWindowSize);
+    }
 }
