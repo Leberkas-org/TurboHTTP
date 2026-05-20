@@ -2,42 +2,25 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Streams;
 
 internal sealed class Http30ServerEngine : IServerProtocolEngine
 {
-    private readonly long _maxRequestBodySize;
-    private readonly TimeSpan _keepAliveTimeout;
-    private readonly TimeSpan _requestHeadersTimeout;
-    private readonly int _minBodyDataRate;
-    private readonly TimeSpan _bodyRateGracePeriod;
+    private readonly TurboServerOptions _options;
 
-    public Http30ServerEngine(
-        long maxRequestBodySize = 30 * 1024 * 1024,
-        TimeSpan? keepAliveTimeout = null,
-        TimeSpan? requestHeadersTimeout = null,
-        int minBodyDataRate = 240,
-        TimeSpan? bodyRateGracePeriod = null)
+    public Http30ServerEngine(TurboServerOptions options)
     {
-        _maxRequestBodySize = maxRequestBodySize;
-        _keepAliveTimeout = keepAliveTimeout ?? TimeSpan.FromSeconds(130);
-        _requestHeadersTimeout = requestHeadersTimeout ?? TimeSpan.FromSeconds(30);
-        _minBodyDataRate = minBodyDataRate;
-        _bodyRateGracePeriod = bodyRateGracePeriod ?? TimeSpan.FromSeconds(5);
+        _options = options;
     }
 
     public BidiFlow<ITransportInbound, HttpRequestMessage, HttpResponseMessage, ITransportOutbound, NotUsed> CreateFlow()
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
-            var connection = b.Add(new Http30ServerConnectionStage(
-                _maxRequestBodySize,
-                _keepAliveTimeout,
-                _requestHeadersTimeout,
-                _minBodyDataRate,
-                _bodyRateGracePeriod));
+            var connection = b.Add(new Http30ServerConnectionStage(_options));
 
             return new BidiShape<
                 ITransportInbound,
