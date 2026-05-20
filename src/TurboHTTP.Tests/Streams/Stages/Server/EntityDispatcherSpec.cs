@@ -69,12 +69,12 @@ public sealed class EntityDispatcherSpec : StreamTestBase
         var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet((TurboHttpContext ctx) => new GetOrder(ctx.Request.RouteValues["id"]!.ToString()!));
         builder.UseActorRef<OrderActorKey>();
-        builder.MapResponse<OrderResult>((ctx, _) =>
+        builder.Response<OrderResult>((ctx, _) =>
         {
             ctx.Response.StatusCode = 200;
             return Task.CompletedTask;
         });
-        builder.MapResponse<OrderDeleted>((ctx, _) =>
+        builder.Response<OrderDeleted>((ctx, _) =>
         {
             ctx.Response.StatusCode = 204;
             return Task.CompletedTask;

@@ -15,7 +15,7 @@ public sealed class TurboEntityMethodBuilder
         MessageFactory = messageFactory;
     }
 
-    public void IsAsk(Action<TurboEntityAskBuilder> configure)
+    public void Ask(Action<TurboEntityAskBuilder> configure)
     {
         _isTell = false;
         _endpointMappers = null;
@@ -34,7 +34,7 @@ public sealed class TurboEntityMethodBuilder
         _timeoutOverride = builder.TimeoutOverride ?? _timeoutOverride;
     }
 
-    public void IsTell(Action<TurboEntityTellBuilder>? configure = null)
+    public void Tell(Action<TurboEntityTellBuilder>? configure = null)
     {
         _isTell = true;
         _endpointMappers = null;
@@ -50,7 +50,7 @@ public sealed class TurboEntityMethodBuilder
     [Obsolete("Use .IsTell() instead")]
     public TurboEntityMethodBuilder AcceptedResponse()
     {
-        IsTell();
+        Tell();
         return this;
     }
 

@@ -128,7 +128,7 @@ public sealed class TurboEntityBuilderSpec
     public void IsTell_should_set_tell_flag_in_config()
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnPost(() => new TestMessage("new")).IsTell();
+        builder.OnPost(() => new TestMessage("new")).Tell();
 
         var table = new TurboRouteTable();
         builder.AddToRouteTable(table);
@@ -141,7 +141,7 @@ public sealed class TurboEntityBuilderSpec
     public void IsTell_with_callback_should_register_tell_route()
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnPost(() => new TestMessage("new")).IsTell(tell =>
+        builder.OnPost(() => new TestMessage("new")).Tell(tell =>
         {
             tell.Response(204);
         });
@@ -157,7 +157,7 @@ public sealed class TurboEntityBuilderSpec
     public void IsAsk_should_register_ask_route()
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
-        builder.OnGet(() => new TestMessage("get")).IsAsk(ask =>
+        builder.OnGet(() => new TestMessage("get")).Ask(ask =>
         {
             ask.Response<TestMessage>((ctx, msg) => Task.CompletedTask);
         });
@@ -176,7 +176,7 @@ public sealed class TurboEntityBuilderSpec
         var methodBuilder = builder.OnGet(() => new TestMessage("get"));
 
         Assert.Throws<InvalidOperationException>(() =>
-            methodBuilder.IsAsk(ask => { }));
+            methodBuilder.Ask(ask => { }));
     }
 
     [Fact(Timeout = 5000)]

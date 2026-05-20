@@ -39,7 +39,8 @@ internal sealed class EntityDispatcher : IRouteDispatcher
             var message = await _methodConfig.MessageFactory(ctx, ctx.RequestServices);
             var response = await actorRef.Ask<object>(message, timeout, ct);
 
-            var mapper = _responseMappers.FindMapper(response.GetType());
+            var mapper = _methodConfig.EndpointMappers?.FindMapper(response.GetType())
+                      ?? _responseMappers.FindMapper(response.GetType());
             if (mapper is null)
             {
                 ctx.Response.StatusCode = 500;
@@ -77,7 +78,15 @@ internal sealed class EntityDispatcher : IRouteDispatcher
             var actorRef = await ResolveActor(ctx.RequestServices, cancellationToken);
             var message = await _methodConfig.MessageFactory(ctx, ctx.RequestServices);
             actorRef.Tell(message);
-            ctx.Response.StatusCode = 202;
+
+            if (_methodConfig.TellResponseHandler is not null)
+            {
+                await _methodConfig.TellResponseHandler(ctx);
+            }
+            else
+            {
+                ctx.Response.StatusCode = 202;
+            }
         }
         catch (BindingValidationException ex)
         {

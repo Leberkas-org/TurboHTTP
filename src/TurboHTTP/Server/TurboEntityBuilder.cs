@@ -34,7 +34,7 @@ public sealed class TurboEntityBuilder
     public TurboEntityMethodBuilder OnPatch(Delegate messageFactory)
         => AddMethod(HttpMethod.Patch, messageFactory);
 
-    public TurboEntityBuilder MapResponse<TResponse>(Func<TurboHttpContext, TResponse, Task> mapper)
+    public TurboEntityBuilder Response<TResponse>(Func<TurboHttpContext, TResponse, Task> mapper)
     {
         _responseMappers.Add(mapper);
         return this;

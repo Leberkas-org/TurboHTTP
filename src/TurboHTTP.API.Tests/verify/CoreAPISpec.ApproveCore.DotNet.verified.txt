@@ -511,15 +511,22 @@ namespace TurboHTTP.Server
         public override int RemotePort { get; set; }
         public override System.Threading.Tasks.Task<System.Security.Cryptography.X509Certificates.X509Certificate2?> GetClientCertificateAsync(System.Threading.CancellationToken cancellationToken = default) { }
     }
+    public sealed class TurboEntityAskBuilder
+    {
+        public TurboEntityAskBuilder() { }
+        public TurboHTTP.Server.TurboEntityAskBuilder Produces<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, Microsoft.AspNetCore.Http.IResult> handler) { }
+        public TurboHTTP.Server.TurboEntityAskBuilder Response<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, System.Threading.Tasks.Task> handler) { }
+        public TurboHTTP.Server.TurboEntityAskBuilder WithTimeout(System.TimeSpan timeout) { }
+    }
     public sealed class TurboEntityBuilder
     {
         public TurboEntityBuilder(string pattern) { }
-        public TurboHTTP.Server.TurboEntityBuilder MapResponse<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, System.Threading.Tasks.Task> mapper) { }
         public TurboHTTP.Server.TurboEntityMethodBuilder OnDelete(System.Delegate messageFactory) { }
         public TurboHTTP.Server.TurboEntityMethodBuilder OnGet(System.Delegate messageFactory) { }
         public TurboHTTP.Server.TurboEntityMethodBuilder OnPatch(System.Delegate messageFactory) { }
         public TurboHTTP.Server.TurboEntityMethodBuilder OnPost(System.Delegate messageFactory) { }
         public TurboHTTP.Server.TurboEntityMethodBuilder OnPut(System.Delegate messageFactory) { }
+        public TurboHTTP.Server.TurboEntityBuilder Response<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, System.Threading.Tasks.Task> mapper) { }
         public TurboHTTP.Server.TurboEntityBuilder UseActorRef(System.Func<Akka.Hosting.IReadOnlyActorRegistry, Akka.Actor.IActorRef> actorRefFactory) { }
         public TurboHTTP.Server.TurboEntityBuilder UseActorRef(System.Func<System.IServiceProvider, Akka.Actor.IActorRef> factory) { }
         public TurboHTTP.Server.TurboEntityBuilder UseActorRef<TActorKey>() { }
@@ -530,8 +537,18 @@ namespace TurboHTTP.Server
     }
     public sealed class TurboEntityMethodBuilder
     {
+        [System.Obsolete("Use .IsTell() instead")]
         public TurboHTTP.Server.TurboEntityMethodBuilder AcceptedResponse() { }
+        public void Ask(System.Action<TurboHTTP.Server.TurboEntityAskBuilder> configure) { }
+        public void Tell(System.Action<TurboHTTP.Server.TurboEntityTellBuilder>? configure = null) { }
         public TurboHTTP.Server.TurboEntityMethodBuilder WithTimeout(System.TimeSpan timeout) { }
+    }
+    public sealed class TurboEntityTellBuilder
+    {
+        public TurboEntityTellBuilder() { }
+        public void Produces(System.Func<TurboHTTP.Server.TurboHttpContext, Microsoft.AspNetCore.Http.IResult> factory) { }
+        public void Response(int statusCode) { }
+        public void Response(int statusCode, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> writer) { }
     }
     public sealed class TurboHttpContext : Microsoft.AspNetCore.Http.HttpContext
     {
