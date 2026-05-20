@@ -235,4 +235,44 @@ public sealed class Http2SettingsGoawaySpec
         // Should not crash or throw
         Assert.True(true);
     }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9113-6.5")]
+    public void PreStart_should_emit_settings_with_configured_stream_window_size()
+    {
+        var ops = new TrackingServerOps();
+        var encoderOptions = new Http2ServerEncoderOptions();
+        var decoderOptions = new Http2ServerDecoderOptions();
+        var customStreamWindow = 256 * 1024;
+        var sessionManager = new Http2ServerSessionManager(
+            encoderOptions, decoderOptions, ops,
+            initialStreamWindowSize: customStreamWindow);
+
+        sessionManager.PreStart();
+
+        var settingsData = Assert.IsType<TransportData>(ops.Outbound[0]);
+        var settingsBytes = settingsData.Buffer.Span;
+
+        var found = false;
+        var offset = 9;
+        var payloadLength = (settingsBytes[0] << 16) | (settingsBytes[1] << 8) | settingsBytes[2];
+        var end = 9 + payloadLength;
+        while (offset + 6 <= end)
+        {
+            var id = (ushort)((settingsBytes[offset] << 8) | settingsBytes[offset + 1]);
+            var value = (uint)((settingsBytes[offset + 2] << 24)
+                              | (settingsBytes[offset + 3] << 16)
+                              | (settingsBytes[offset + 4] << 8)
+                              | settingsBytes[offset + 5]);
+            if (id == (ushort)SettingsParameter.InitialWindowSize)
+            {
+                Assert.Equal((uint)customStreamWindow, value);
+                found = true;
+            }
+            offset += 6;
+        }
+
+        Assert.True(found, "SETTINGS frame should contain INITIAL_WINDOW_SIZE");
+        settingsData.Buffer.Dispose();
+    }
 }

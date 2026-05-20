@@ -22,6 +22,7 @@ internal sealed class Http2ServerSessionManager
     private readonly FlowController _flow;
     private readonly StreamTracker _tracker;
     private readonly long _maxRequestBodySize;
+    private readonly int _initialStreamWindowSize;
 
     private readonly Dictionary<int, StreamState> _streams = new();
     private readonly StackStreamStatePool<StreamState> _statePool;
@@ -47,6 +48,7 @@ internal sealed class Http2ServerSessionManager
         _flow = new FlowController(initialConnectionWindowSize, initialStreamWindowSize);
         _tracker = new StreamTracker(initialNextStreamId: 1, decoderOptions.MaxConcurrentStreams);
         _maxRequestBodySize = maxRequestBodySize;
+        _initialStreamWindowSize = initialStreamWindowSize;
 
         var statePoolCapacity = Math.Min(
             decoderOptions.MaxConcurrentStreams > 0 ? decoderOptions.MaxConcurrentStreams : 100,
@@ -61,7 +63,7 @@ internal sealed class Http2ServerSessionManager
         var settingsParams = new[]
         {
             (SettingsParameter.MaxConcurrentStreams, (uint)_decoderOptions.MaxConcurrentStreams),
-            (SettingsParameter.InitialWindowSize, 65535u),
+            (SettingsParameter.InitialWindowSize, (uint)_initialStreamWindowSize),
             (SettingsParameter.MaxFrameSize, (uint)_encoderOptions.MaxFrameSize),
             (SettingsParameter.HeaderTableSize, (uint)_encoderOptions.HeaderTableSize),
         };
