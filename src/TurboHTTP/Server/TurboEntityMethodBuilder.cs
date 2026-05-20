@@ -25,5 +25,5 @@ public sealed class TurboEntityMethodBuilder
         return this;
     }
 
-    internal EntityMethodConfig ToConfig() => new(MessageFactory, IsTell, TimeoutOverride);
+    internal EntityMethodConfig ToConfig() => new(MessageFactory, IsTell, TimeoutOverride, null, null);
 }
