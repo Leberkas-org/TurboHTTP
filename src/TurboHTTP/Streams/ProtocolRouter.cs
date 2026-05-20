@@ -10,7 +10,8 @@ internal static class ProtocolRouter
         return protocol == SslApplicationProtocol.Http2
             ? new Http20ServerEngine(
                 options.Http2.MaxConcurrentStreams,
-                options.Http2.InitialWindowSize,
+                options.Http2.InitialConnectionWindowSize,
+                options.Http2.InitialStreamWindowSize,
                 options.Http2.MaxFrameSize,
                 options.Http2.KeepAliveTimeout,
                 options.Http2.RequestHeadersTimeout,
@@ -27,7 +28,8 @@ internal static class ProtocolRouter
             { Major: 1, Minor: 1 } => new Http11ServerEngine(),
             { Major: 2, Minor: 0 } => new Http20ServerEngine(
                 options.Http2.MaxConcurrentStreams,
-                options.Http2.InitialWindowSize,
+                options.Http2.InitialConnectionWindowSize,
+                options.Http2.InitialStreamWindowSize,
                 options.Http2.MaxFrameSize,
                 options.Http2.KeepAliveTimeout,
                 options.Http2.RequestHeadersTimeout,

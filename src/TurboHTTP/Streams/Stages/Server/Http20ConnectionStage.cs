@@ -13,7 +13,8 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
     private readonly Outlet<ITransportOutbound> _outNetwork = new("Http20Connection.Out.Network");
 
     private readonly int _maxConcurrentStreams;
-    private readonly int _initialWindowSize;
+    private readonly int _initialConnectionWindowSize;
+    private readonly int _initialStreamWindowSize;
     private readonly int _maxFrameSize;
     private readonly TimeSpan _keepAliveTimeout;
     private readonly TimeSpan _requestHeadersTimeout;
@@ -22,7 +23,8 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
 
     public Http20ConnectionStage(
         int maxConcurrentStreams = 100,
-        int initialWindowSize = 65535,
+        int initialConnectionWindowSize = 65535,
+        int initialStreamWindowSize = 65535,
         int maxFrameSize = 16384,
         TimeSpan? keepAliveTimeout = null,
         TimeSpan? requestHeadersTimeout = null,
@@ -30,7 +32,8 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
         TimeSpan? bodyRateGracePeriod = null)
     {
         _maxConcurrentStreams = maxConcurrentStreams;
-        _initialWindowSize = initialWindowSize;
+        _initialConnectionWindowSize = initialConnectionWindowSize;
+        _initialStreamWindowSize = initialStreamWindowSize;
         _maxFrameSize = maxFrameSize;
         _keepAliveTimeout = keepAliveTimeout ?? TimeSpan.FromSeconds(130);
         _requestHeadersTimeout = requestHeadersTimeout ?? TimeSpan.FromSeconds(30);
@@ -45,8 +48,8 @@ internal sealed class Http20ConnectionStage : GraphStage<ConnectionShape>
             ops => new Http2ServerStateMachine(
                 ops,
                 _maxConcurrentStreams,
-                _initialWindowSize,
-                _initialWindowSize,
+                _initialConnectionWindowSize,
+                _initialStreamWindowSize,
                 keepAliveTimeout: _keepAliveTimeout,
                 requestHeadersTimeout: _requestHeadersTimeout,
                 minRequestBodyDataRate: _minBodyDataRate,
