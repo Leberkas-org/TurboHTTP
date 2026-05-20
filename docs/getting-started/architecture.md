@@ -151,4 +151,3 @@ Protocol engines (`Http10ServerEngine`, `Http11ServerEngine`, `Http20ServerEngin
 - [Protocol Engines](/architecture/engines) — engine internals and protocol selection
 - [Handler Design](/architecture/handlers) — handler patterns and server request pipeline
 - [E2E Scenarios](/architecture/scenarios) — end-to-end request scenarios
-- [Extending the Pipeline](/architecture/extending) — custom stages and handlers

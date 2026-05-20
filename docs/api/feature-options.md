@@ -235,7 +235,7 @@ builder.Services.AddTurboHttpClient("api", ...)
     .UseRequest(req => { req.Headers.Add("X-Custom", "value"); return req; });
 ```
 
-See [Extending the Pipeline](/architecture/extending) for integration patterns and handler composition.
+See [Configuration guide](/client/configuration) for integration patterns and handler composition.
 
 ---
 
@@ -247,6 +247,6 @@ These types are part of the public API and can be customized:
 |------|---------|-------|
 | `CookieJar` | Cookie storage and injection — provided via `.WithCookies()` | [Cookies](/client/cookies) |
 | `CacheStore` | In-memory LRU cache backend — provided via `.WithCache(store)` | [Caching](/client/caching) |
-| `TurboHandler` | Custom request/response middleware — registered via `.AddHandler<T>()` | [Extending the Pipeline](/architecture/extending) |
+| `TurboHandler` | Custom request/response middleware — registered via `.AddHandler<T>()` | [Configuration](/client/configuration) |
 
 See [Configuration guide](/client/configuration) for integration patterns.

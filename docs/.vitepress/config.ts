@@ -91,7 +91,6 @@ export default defineConfig({
                     items: [
                         { text: 'Request Pipeline', link: '/architecture/pipeline' },
                         { text: 'Protocol Engines', link: '/architecture/engines' },
-                        { text: 'Extending the Pipeline', link: '/architecture/extending' },
                     ],
                 },
                 {
@@ -99,7 +98,6 @@ export default defineConfig({
                     items: [
                         { text: 'Request Pipeline', link: '/architecture/server-pipeline' },
                         { text: 'Protocol Engines', link: '/architecture/server-engines' },
-                        { text: 'Extending the Pipeline', link: '/architecture/server-extending' },
                     ],
                 },
             ],
