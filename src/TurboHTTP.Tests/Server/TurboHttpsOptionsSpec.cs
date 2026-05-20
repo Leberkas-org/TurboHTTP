@@ -1,4 +1,5 @@
 using System.Security.Authentication;
+using Servus.Akka.Transport;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Server;
@@ -65,5 +66,19 @@ public sealed class TurboHttpsOptionsSpec
             HandshakeTimeout = TimeSpan.FromSeconds(30)
         };
         Assert.Equal(TimeSpan.FromSeconds(30), options.HandshakeTimeout);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboHttpsOptions_should_default_client_certificate_mode_to_no_certificate()
+    {
+        var options = new TurboHttpsOptions();
+        Assert.Equal(ClientCertificateMode.NoCertificate, options.ClientCertificateMode);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboHttpsOptions_should_default_server_certificate_selector_to_null()
+    {
+        var options = new TurboHttpsOptions();
+        Assert.Null(options.ServerCertificateSelector);
     }
 }
