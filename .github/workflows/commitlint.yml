@@ -10,7 +10,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  lint-pr-title:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,10 +31,6 @@ jobs:
             build
             deps
 
-  lint-commits:
-    runs-on: ubuntu-latest
-
-    steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
