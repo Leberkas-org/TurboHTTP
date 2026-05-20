@@ -5,4 +5,6 @@ namespace Servus.Akka.Transport;
 
 public sealed record SecurityInfo(
     SslProtocols Protocol,
-    SslApplicationProtocol ApplicationProtocol);
+    SslApplicationProtocol ApplicationProtocol,
+    TlsCipherSuite? NegotiatedCipherSuite = null,
+    string? HostName = null);
