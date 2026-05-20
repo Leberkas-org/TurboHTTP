@@ -1,6 +1,6 @@
-// TurboHTTP — Pipeline Flow Relationships
+// TurboHTTP — Pipeline Flow Relationships (Client & Server)
 // Extends model.c4 with ordered flow and feedback relationships
-// that represent BuildExtendedPipeline's data paths and control loops.
+// for both client and server request processing pipelines.
 //
 // PIPELINE STACKING (outermost -> innermost):
 //   Handler -> Tracing -> Redirect -> Cookie -> Retry -> Expect100 -> Cache -> ContentEncoding -> AltSvc -> Engine
@@ -90,4 +90,40 @@ model {
 
   // Feedback: retry re-enters at ExpectContinue (same URL, cookies already set)
   turbohttp.streams.RetryBidiStage -[feedback]-> turbohttp.streams.ExpectContinueBidiStage 'retry (re-enters below cookies)'
+
+  // ─── Server: Inbound — Network → ConnectionStage (wire decode) ────
+
+  network -[flows]-> turbohttp.serverStages.ServerHttp10ConnectionStage 'inbound bytes'
+  network -[flows]-> turbohttp.serverStages.ServerHttp11ConnectionStage 'inbound bytes'
+  network -[flows]-> turbohttp.serverStages.ServerHttp20ConnectionStage 'inbound bytes'
+  network -[flows]-> turbohttp.serverStages.ServerHttp30ConnectionStage 'inbound bytes'
+
+  // ─── Server: ConnectionStage → HttpContextBidiStage (decoded request)
+
+  turbohttp.serverStages.ServerHttp10ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.ServerHttp11ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.ServerHttp20ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.ServerHttp30ConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+
+  // ─── Server: Request chain — HttpContext → Middleware → Routing ────
+
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.MiddlewarePipelineStage 'TurboHttpContext'
+  turbohttp.serverStages.MiddlewarePipelineStage -[flows]-> turbohttp.serverStages.RoutingStage 'request (middleware applied)'
+
+  // ─── Server: Response chain — Routing → Middleware → HttpContext → ConnectionStage
+
+  turbohttp.serverStages.RoutingStage -[flows]-> turbohttp.serverStages.MiddlewarePipelineStage 'response'
+  turbohttp.serverStages.MiddlewarePipelineStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'response (after middleware)'
+
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.ServerHttp10ConnectionStage 'response'
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.ServerHttp11ConnectionStage 'response'
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.ServerHttp20ConnectionStage 'response'
+  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.ServerHttp30ConnectionStage 'response'
+
+  // ─── Server: Outbound — ConnectionStage → Network (wire encode) ───
+
+  turbohttp.serverStages.ServerHttp10ConnectionStage -[flows]-> network 'outbound bytes'
+  turbohttp.serverStages.ServerHttp11ConnectionStage -[flows]-> network 'outbound bytes'
+  turbohttp.serverStages.ServerHttp20ConnectionStage -[flows]-> network 'outbound bytes'
+  turbohttp.serverStages.ServerHttp30ConnectionStage -[flows]-> network 'outbound bytes'
 }

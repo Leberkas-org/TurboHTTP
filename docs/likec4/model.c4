@@ -1,7 +1,7 @@
 // TurboHTTP — Model
 // All elements (person, system, containers, components, actors) and their
-// structural relationships. Pipeline-specific flow/feedback/delegates
-// relationships live in model-pipeline.c4 (client) and model-server.c4 (server).
+// structural relationships. Pipeline-specific flow/feedback relationships
+// for both client and server live in model-pipeline.c4.
 
 model {
   app = person 'Application' {
