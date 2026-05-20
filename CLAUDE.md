@@ -35,11 +35,13 @@ cd ../docs && npm install && npm run docs:dev
 
 ```
 Client Surface  (TurboHTTP/Client/)          - ITurboHttpClient, factory, builder, DI, options
-Server Surface  (TurboHTTP/Server/)          - TurboServerOptions, TurboHttpContext, Context/
-Server Domains  (TurboHTTP/Server/{domain}/) - Middleware, Routing, Binding, Entity, Hosting, Lifecycle
-Streams Layer   (TurboHTTP/Streams/)         - Engines, Stages/{Client,Server,Features,Internal}
+Server Surface  (TurboHTTP/Server/)          - TurboServerOptions, TurboHttpContext, Hosting, Middleware
+Context         (TurboHTTP/Context/)         - TurboHttpRequest, TurboHttpResponse, Adapters, Features
+Routing         (TurboHTTP/Routing/)         - RouteTable, dispatchers, Binding/
+Streams Layer   (TurboHTTP/Streams/)         - Engines, Stages/{Client,Server,Features,Routing}, Lifecycle, Pooling
 Protocol Layer  (TurboHTTP/Protocol/)        - Http10/, Http11/, Http2/, Http3/, Semantics/
 Features        (TurboHTTP/Features/)        - Cookies/, Caching/, AltSvc/
+Diagnostics     (TurboHTTP/Diagnostics/)     - Metrics, tracing, logging
 ```
 
 ## Obsidian Vault (`notes/`)
