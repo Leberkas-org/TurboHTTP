@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TurboHTTP.Server.Binding;
+using TurboHTTP.Routing.Binding;
 
 namespace TurboHTTP.Tests.Server.Binding;
 

@@ -1,4 +1,6 @@
-namespace TurboHTTP.Server.Binding;
+using TurboHTTP.Server;
+
+namespace TurboHTTP.Routing.Binding;
 
 internal sealed class ServiceBinder(Type serviceType) : ParameterBinder
 {

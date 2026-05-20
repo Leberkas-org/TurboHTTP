@@ -1,6 +1,6 @@
 using Akka.Actor;
 using TurboHTTP.Server;
-using TurboHTTP.Server.Binding;
+using TurboHTTP.Routing.Binding;
 
 namespace TurboHTTP.Routing;
 

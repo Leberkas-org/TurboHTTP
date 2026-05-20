@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TurboHTTP.Routing;
-using TurboHTTP.Server.Internal;
 using TurboHTTP.Server.Middleware;
 using TurboHTTP.Streams.Lifecycle;
 

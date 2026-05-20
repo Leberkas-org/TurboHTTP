@@ -2,8 +2,9 @@ using System.Globalization;
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using TurboHTTP.Server;
 
-namespace TurboHTTP.Server.Binding;
+namespace TurboHTTP.Routing.Binding;
 
 internal sealed class ParameterParseException(string message, Exception innerException) : Exception(message, innerException);
 

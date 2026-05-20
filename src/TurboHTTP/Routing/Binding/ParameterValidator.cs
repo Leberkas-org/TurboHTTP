@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using TurboHTTP.Server;
 
-namespace TurboHTTP.Server.Binding;
+namespace TurboHTTP.Routing.Binding;
 
 internal static class ParameterValidator
 {

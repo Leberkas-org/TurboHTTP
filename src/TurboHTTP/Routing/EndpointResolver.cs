@@ -5,8 +5,9 @@ using System.Security.Cryptography.X509Certificates;
 using Servus.Akka.Transport;
 using Servus.Akka.Transport.Quic.Listener;
 using Servus.Akka.Transport.Tcp.Listener;
+using TurboHTTP.Server;
 
-namespace TurboHTTP.Server.Internal;
+namespace TurboHTTP.Routing;
 
 internal sealed class EndpointResolver
 {

@@ -1,6 +1,7 @@
 using TurboHTTP.Context;
+using TurboHTTP.Server;
 
-namespace TurboHTTP.Server.Binding;
+namespace TurboHTTP.Routing.Binding;
 
 internal sealed class QueryStringBinder(string name, Type type) : ParameterBinder
 {

@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using TurboHTTP.Server.Binding;
+using TurboHTTP.Routing.Binding;
 
 namespace TurboHTTP.Tests.Server.Binding;
 

@@ -2,7 +2,7 @@ using Akka.Actor;
 using Akka.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Routing;
-using TurboHTTP.Server.Binding;
+using TurboHTTP.Routing.Binding;
 
 namespace TurboHTTP.Server;
 

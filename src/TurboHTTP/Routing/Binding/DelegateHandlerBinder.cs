@@ -1,8 +1,9 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using TurboHTTP.Server;
 
-namespace TurboHTTP.Server.Binding;
+namespace TurboHTTP.Routing.Binding;
 
 internal sealed class BindingValidationException(int statusCode, Dictionary<string, List<string>>? errors = null)
     : Exception("Parameter validation failed.")
