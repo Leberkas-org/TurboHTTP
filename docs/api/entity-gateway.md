@@ -26,9 +26,10 @@ public static class TurboRoutingExtensions
 When no type parameter is provided, entity keys are boxed `object`:
 
 ```csharp
-app.MapTurboEntity("/users/{id}", builder =>
+app.MapTurboEntity("/users/{id}", entity =>
 {
-    builder.OnGet(ctx => new GetUser(ctx.RouteValues["id"]));
+    entity.UseActorRef<UserActor>();
+    entity.OnGet((string id) => new GetUser(id));
 });
 ```
 
@@ -37,13 +38,11 @@ app.MapTurboEntity("/users/{id}", builder =>
 Specify a typed key for type safety:
 
 ```csharp
-app.MapTurboEntity<int>("/orders/{orderId}", builder =>
+app.MapTurboEntity<int>("/orders/{orderId}", entity =>
 {
-    builder.OnGet(ctx => 
-    {
-        var orderId = (int)ctx.RouteValues["orderId"];
-        return new GetOrder(orderId);
-    });
+    entity.UseResolver<OrderEntityResolver>();
+    entity.OnGet((int orderId) => new GetOrder(orderId));
+    entity.OnPost((int orderId, CreateOrderRequest req) => new CreateOrder(orderId, req.Items));
 });
 ```
 
@@ -88,29 +87,28 @@ public sealed class TurboEntityBuilder
 Specify what message to send for each HTTP method:
 
 ```csharp
-builder.OnGet(ctx => new GetUser(ctx.RouteValues["id"]));
-builder.OnPost(ctx => JsonConvert.DeserializeObject<CreateUserRequest>(
-    Encoding.UTF8.GetString(ctx.Request.Body)));
-builder.OnPut(ctx => new UpdateUser(ctx.RouteValues["id"], ctx.Request.Body));
-builder.OnDelete(ctx => new DeleteUser(ctx.RouteValues["id"]));
-builder.OnPatch(ctx => new PatchUser(ctx.RouteValues["id"], ctx.Request.Body));
+entity.OnGet((int id) => new GetUser(id));
+entity.OnPost((int id, CreateUserRequest req) => new CreateUser(id, req.Name));
+entity.OnPut((int id, UpdateUserRequest req) => new UpdateUser(id, req.Name));
+entity.OnDelete((int id) => new DeleteUser(id));
+entity.OnPatch((int id, PatchUserRequest req) => new PatchUser(id, req));
 ```
 
-Each handler receives the `TurboHttpContext` and returns a message to send to the actor.
+Each handler receives typed parameters from the route and request body, and returns a message to send to the actor.
 
 ### Response Mapping
 
 By default, responses from actors are serialized as JSON. Customize mapping with `MapResponse<T>`:
 
 ```csharp
-builder.MapResponse<User>(async (context, user) =>
+entity.MapResponse<User>(async (context, user) =>
 {
     context.Response.StatusCode = 200;
     context.Response.ContentType = "application/json";
     await context.Response.WriteAsJsonAsync(user);
 });
 
-builder.MapResponse<ErrorResponse>(async (context, error) =>
+entity.MapResponse<ErrorResponse>(async (context, error) =>
 {
     context.Response.StatusCode = error.StatusCode;
     await context.Response.WriteAsJsonAsync(new { error = error.Message });
@@ -123,7 +121,7 @@ Set per-route timeout for actor responses:
 
 ```csharp
 // Default: 30 seconds
-builder.WithTimeout(TimeSpan.FromSeconds(60));
+entity.WithTimeout(TimeSpan.FromSeconds(60));
 ```
 
 If the actor doesn't respond within the timeout, the response is `504 Gateway Timeout`.
@@ -145,7 +143,7 @@ public sealed class TurboEntityMethodBuilder
 Respond with `202 Accepted` instead of waiting for the actor's full response:
 
 ```csharp
-builder.OnPost(ctx => new CreateUser(...))
+entity.OnPost((int id, CreateUserRequest req) => new CreateUser(id, req.Name))
     .AcceptedResponse();
 ```
 
@@ -156,10 +154,10 @@ Useful for long-running operations where you want to return immediately.
 Override the route-level timeout for a specific method:
 
 ```csharp
-builder.OnGet(ctx => new GetUser(...))
+entity.OnGet((int id) => new GetUser(id))
     .WithTimeout(TimeSpan.FromSeconds(5));
 
-builder.OnPost(ctx => new CreateUser(...))
+entity.OnPost((int id, CreateUserRequest req) => new CreateUser(id, req.Name))
     .WithTimeout(TimeSpan.FromSeconds(30));
 ```
 
@@ -196,9 +194,9 @@ public class OrderActorResolver : IEntityActorResolver
 }
 
 // Register it
-builder.UseResolver(new OrderActorResolver(orderManagerRef));
+entity.UseResolver(new OrderActorResolver(orderManagerRef));
 // Or as a type
-builder.UseResolver<OrderActorResolver>();
+entity.UseResolver<OrderActorResolver>();
 ```
 
 ### 2. ActorRef Factory
@@ -207,13 +205,13 @@ Direct reference to a specific actor:
 
 ```csharp
 // From dependency injection
-builder.UseActorRef((serviceProvider) =>
+entity.UseActorRef((serviceProvider) =>
 {
     return serviceProvider.GetRequiredService<IActorRef>("userActorRef");
 });
 
 // From actor registry
-builder.UseActorRef((registry) =>
+entity.UseActorRef((registry) =>
 {
     return registry.Resolve<UserActor>();
 });
@@ -224,7 +222,7 @@ builder.UseActorRef((registry) =>
 Use the type system to locate actors by type:
 
 ```csharp
-builder.UseActorRef<UserActor>();
+entity.UseActorRef<UserActor>();
 ```
 
 This looks up `UserActor` in the actor registry.
@@ -259,36 +257,20 @@ public class UserActor : ReceiveActor
 }
 
 // Route registration
-app.MapTurboEntity<int>("/users/{id}", builder =>
+app.MapTurboEntity<int>("/users/{id}", entity =>
 {
-    // GET /users/123
-    builder.OnGet(ctx =>
-    {
-        var id = (int)ctx.RouteValues["id"];
-        return new UserActor.GetUser { Id = id };
-    });
+    entity.UseActorRef<UserActor>();
 
-    // POST /users (body contains name)
-    builder.OnPost(async ctx =>
-    {
-        var body = await ctx.Request.BodyReader.ReadAsync();
-        var json = Encoding.UTF8.GetString(body.Buffer);
-        var req = JsonConvert.DeserializeObject<CreateUserRequest>(json);
-        return new UserActor.CreateUser { Name = req.Name };
-    });
+    entity.OnGet((int id) => new UserActor.GetUser { Id = id });
+    entity.OnPost((int id, CreateUserRequest req) => new UserActor.CreateUser { Name = req.Name });
 
-    // Custom response mapping
-    builder.MapResponse<UserActor.User>(async (context, user) =>
+    entity.MapResponse<UserActor.User>(async (context, user) =>
     {
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(user);
     });
 
-    // 30-second timeout for responses
-    builder.WithTimeout(TimeSpan.FromSeconds(30));
-
-    // Resolve to the UserActor
-    builder.UseActorRef<UserActor>();
+    entity.WithTimeout(TimeSpan.FromSeconds(30));
 });
 ```
 
@@ -314,7 +296,7 @@ If the actor doesn't respond within the timeout, the response is `504 Gateway Ti
 If the actor throws an exception or the message doesn't match a handler, the gateway responds with `500 Internal Server Error`. Use status code routing or custom response mappers to handle errors from the actor:
 
 ```csharp
-builder.MapResponse<Result<User>>(async (context, result) =>
+entity.MapResponse<Result<User>>(async (context, result) =>
 {
     if (result.IsSuccess)
     {
@@ -332,7 +314,7 @@ builder.MapResponse<Result<User>>(async (context, result) =>
 Or use a wrapper response type:
 
 ```csharp
-builder.MapResponse<ApiResponse>(async (context, response) =>
+entity.MapResponse<ApiResponse>(async (context, response) =>
 {
     context.Response.StatusCode = response.StatusCode;
     await context.Response.WriteAsJsonAsync(response);

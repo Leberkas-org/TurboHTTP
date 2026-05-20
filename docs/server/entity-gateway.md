@@ -21,30 +21,14 @@ var builder = WebApplication.CreateBuilder();
 builder.Services.AddTurboKestrel();
 var app = builder.Build();
 
-// Register an entity route
-app.MapTurboEntity<OrderId>("/orders/{id}", config =>
+app.MapTurboEntity<int>("/orders/{id}", entity =>
 {
-    config.OnGet((string id) => new GetOrder(id))
-        .WithTimeout(TimeSpan.FromSeconds(10));
-    
-    config.OnPost((string id, [FromBody] CreateOrderRequest req) =>
-        new PlaceOrder(id, req.Amount))
-        .WithTimeout(TimeSpan.FromSeconds(5));
-    
-    config.OnPut((string id, [FromBody] UpdateOrderRequest req) =>
-        new UpdateOrder(id, req.Status))
-        .WithTimeout(TimeSpan.FromSeconds(5));
-    
-    config.MapResponse<OrderResponse>((ctx, resp) =>
-        ctx.Response.WriteAsJsonAsync(resp));
-    
-    config.MapResponse<NotFoundResponse>((ctx, _) =>
-    {
-        ctx.Response.StatusCode = 404;
-        return Task.CompletedTask;
-    });
-    
-    config.UseResolver<ChildPerEntityResolver>();
+    entity.UseResolver<OrderEntityResolver>();
+
+    entity.OnGet((int id) => new GetOrder(id));
+    entity.OnPost((int id, CreateOrderRequest req) => new CreateOrder(id, req.Items));
+    entity.OnPut((int id, UpdateOrderRequest req) => new UpdateOrder(id, req.Status));
+    entity.OnDelete((int id) => new CancelOrder(id));
 });
 
 await app.RunAsync();
@@ -52,9 +36,8 @@ await app.RunAsync();
 
 The configuration fluent API allows you to:
 - Define HTTP methods and their message factories
-- Specify response mappers for different actor response types
-- Set global and per-method timeouts
 - Choose an actor resolver strategy
+- Optionally specify response mappers and timeouts
 
 ## Message Factories
 
@@ -70,7 +53,7 @@ A message factory is a delegate that receives the HTTP request (including route 
 ### Simple Message Factory
 
 ```csharp
-config.OnGet((string id) => new GetOrder(id));
+entity.OnGet((int id) => new GetOrder(id));
 ```
 
 Extract the entity key from the route and construct a message.
@@ -80,25 +63,24 @@ Extract the entity key from the route and construct a message.
 ```csharp
 public record CreateOrderDto(decimal Amount);
 
-config.OnPost((string id, [FromBody] CreateOrderDto dto) =>
-    new PlaceOrder(id, dto.Amount));
+entity.OnPost((int id, CreateOrderDto dto) => new PlaceOrder(id, dto.Amount));
 ```
 
-Use `[FromBody]` to bind the request body as JSON to the message factory parameter.
+The second parameter is automatically bound from the request body as JSON.
 
 ### Message Factory with Multiple Parameters
 
 ```csharp
 public record UpdateOrderDto(string Status, string Notes);
 
-config.OnPut((string id, [FromBody] UpdateOrderDto dto, [FromHeader] string authorization) =>
+entity.OnPut((int id, UpdateOrderDto dto, [FromHeader] string authorization) =>
     new UpdateOrder(id, dto.Status, dto.Notes, authorization));
 ```
 
 ### Message Factory with Dependency Injection
 
 ```csharp
-config.OnPost((string id, [FromBody] CreateOrderDto dto, IValidator<CreateOrderDto> validator) =>
+entity.OnPost((int id, CreateOrderDto dto, IValidator<CreateOrderDto> validator) =>
 {
     var result = validator.Validate(dto);
     if (!result.IsValid)
@@ -178,7 +160,7 @@ A resolver locates the actor for a given entity key. TurboHTTP includes two buil
 Creates a child actor per entity key on demand. The first request for an entity key creates a new actor; subsequent requests reuse the same actor:
 
 ```csharp
-config.UseResolver<ChildPerEntityResolver>();
+entity.UseResolver<ChildPerEntityResolver>();
 ```
 
 The resolver expects a parent actor (usually created during startup) that acts as a factory. This is useful for short-lived or dynamically created entities.
@@ -203,7 +185,7 @@ public sealed class RegistryResolver<TKey> : IEntityActorResolver
 }
 
 // Usage
-config.UseResolver<RegistryResolver<OrderId>>();
+entity.UseResolver<RegistryResolver<OrderId>>();
 ```
 
 Setup:
@@ -235,7 +217,7 @@ public sealed class PooledResolver<TKey> : IEntityActorResolver
 }
 
 // Usage
-config.UseResolver<PooledResolver<OrderId>>();
+entity.UseResolver<PooledResolver<OrderId>>();
 ```
 
 The resolver is instantiated at request time. Return the actor reference corresponding to the entity key.
@@ -249,7 +231,7 @@ Entity Gateway supports two dispatch patterns: **Ask** (default) and **Tell** (f
 The handler sends a message to the actor and waits for a response:
 
 ```csharp
-config.OnGet((string id) => new GetOrder(id));
+entity.OnGet((int id) => new GetOrder(id));
 // Returns 200 and the actor's response mapped to JSON
 ```
 
@@ -270,8 +252,7 @@ config.OnGet((string id) => new GetOrder(id));
 Call `AcceptedResponse()` to use fire-and-forget semantics:
 
 ```csharp
-config.OnPost((string id, [FromBody] CreateOrderDto dto) =>
-    new PlaceOrder(id, dto.Amount))
+entity.OnPost((int id, CreateOrderDto dto) => new PlaceOrder(id, dto.Amount))
     .AcceptedResponse();
 // Returns 202 Accepted immediately, actor processes asynchronously
 ```
@@ -295,16 +276,16 @@ Use Tell for long-running operations where the client doesn't need the result, o
 Register mappers to convert actor responses to HTTP responses. Each mapper handles a specific response type:
 
 ```csharp
-config.MapResponse<OrderResponse>((ctx, resp) =>
+entity.MapResponse<OrderResponse>((ctx, resp) =>
     ctx.Response.WriteAsJsonAsync(resp));
 
-config.MapResponse<NotFoundResponse>((ctx, _) =>
+entity.MapResponse<NotFoundResponse>((ctx, _) =>
 {
     ctx.Response.StatusCode = 404;
     return Task.CompletedTask;
 });
 
-config.MapResponse<ValidationErrorResponse>((ctx, err) =>
+entity.MapResponse<ValidationErrorResponse>((ctx, err) =>
 {
     ctx.Response.StatusCode = 400;
     return ctx.Response.WriteAsJsonAsync(new { errors = err.Errors });
@@ -321,7 +302,7 @@ When an actor responds, the gateway finds the mapper matching the response type 
 If you register a mapper for `OrderResponse`, it matches responses of type `OrderResponse` exactly:
 
 ```csharp
-config.MapResponse<OrderResponse>((ctx, resp) => ...);
+entity.MapResponse<OrderResponse>((ctx, resp) => ...);
 
 Sender.Tell(new OrderResponse(...)); // Matches
 Sender.Tell(new SuccessfulOrderResponse(...)); // Doesn't match (different type)
@@ -335,7 +316,7 @@ If a more specific mapper doesn't match, the gateway falls back to base type map
 public record OrderResponse(string Id);
 public record SuccessfulOrderResponse(string Id, string Status) : OrderResponse(Id);
 
-config.MapResponse<OrderResponse>((ctx, resp) =>
+entity.MapResponse<OrderResponse>((ctx, resp) =>
     ctx.Response.WriteAsJsonAsync(resp));
 
 Sender.Tell(new SuccessfulOrderResponse("1", "complete")); // Matches OrderResponse mapper
@@ -358,7 +339,7 @@ Timeouts apply to the Ask pattern, protecting against hanging requests. Set defa
 ### Global Timeout
 
 ```csharp
-config.WithTimeout(TimeSpan.FromSeconds(10));
+entity.WithTimeout(TimeSpan.FromSeconds(10));
 ```
 
 Applies to all methods unless overridden. Default is 5 seconds.
@@ -366,11 +347,10 @@ Applies to all methods unless overridden. Default is 5 seconds.
 ### Per-Method Timeout
 
 ```csharp
-config.OnGet((string id) => new GetOrder(id))
+entity.OnGet((int id) => new GetOrder(id))
     .WithTimeout(TimeSpan.FromSeconds(30));
 
-config.OnPost((string id, [FromBody] CreateOrderDto dto) =>
-    new PlaceOrder(id, dto.Amount))
+entity.OnPost((int id, CreateOrderDto dto) => new PlaceOrder(id, dto.Amount))
     .WithTimeout(TimeSpan.FromSeconds(5));
 ```
 
@@ -471,36 +451,13 @@ builder.Services.AddAkka("order-system", cfg =>
 var app = builder.Build();
 
 // Register entity route
-app.MapTurboEntity<OrderId>("/orders/{id}", config =>
+app.MapTurboEntity<int>("/orders/{id}", entity =>
 {
-    // GET /orders/{id}
-    config.OnGet((string id) => new GetOrder(id))
-        .WithTimeout(TimeSpan.FromSeconds(10));
+    entity.UseActorRef<OrderActor>();
 
-    // POST /orders/{id}
-    config.OnPost((string id, [FromBody] CreateOrderRequest req) =>
-        new PlaceOrder(id, req.Amount))
-        .WithTimeout(TimeSpan.FromSeconds(5));
-
-    // DELETE /orders/{id}
-    config.OnDelete((string id) => new CancelOrder(id))
-        .WithTimeout(TimeSpan.FromSeconds(5));
-
-    // Response mapping
-    config.MapResponse<OrderResponse>((ctx, resp) =>
-    {
-        ctx.Response.StatusCode = 200;
-        return ctx.Response.WriteAsJsonAsync(resp);
-    });
-
-    config.MapResponse<NotFoundResponse>((ctx, _) =>
-    {
-        ctx.Response.StatusCode = 404;
-        return Task.CompletedTask;
-    });
-
-    // Use registry resolver (pre-registered actor)
-    config.UseResolver<RegistryResolver<OrderId>>();
+    entity.OnGet((int id) => new GetOrder(id));
+    entity.OnPost((int id, CreateOrderRequest req) => new PlaceOrder(id, req.Amount));
+    entity.OnDelete((int id) => new CancelOrder(id));
 });
 
 await app.RunAsync();

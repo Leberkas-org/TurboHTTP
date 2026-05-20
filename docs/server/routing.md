@@ -381,12 +381,12 @@ For actor-based CQRS or event-driven request handling, TurboHTTP provides entity
 Entity routes are a specialized feature that integrate with Akka.Streams and actor systems. See [Entity Gateway](./entity-gateway.md) for full details on configuring entity routes, request/response mapping, and actor resolution.
 
 ```csharp
-// Quick example:
-app.MapTurboEntity<string>("/items/{id}", config =>
+app.MapTurboEntity<string>("/items/{id}", entity =>
 {
-    config.OnGet(ctx => new GetItemRequest(ctx.Request.RouteValues["id"].ToString()))
-        .MapResponse<ItemResponse>((ctx, response) =>
-            ctx.Response.WriteAsJsonAsync(response));
+    entity.UseActorRef<ItemActor>();
+    entity.OnGet((string id) => new GetItemRequest(id));
+    entity.OnPut((string id, UpdateItemRequest req) => new UpdateItem(id, req));
+    entity.OnDelete((string id) => new DeleteItem(id));
 });
 ```
 

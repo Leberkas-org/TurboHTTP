@@ -144,39 +144,36 @@ app.UseTurbo<ContentTypeValidationMiddleware>();
 app.MapTurboGet("/health", () => new { status = "healthy" });
 
 // Entity gateway for orders
-app.MapTurboEntity<OrderId>("/orders/{id}", config =>
+app.MapTurboEntity<int>("/orders/{id}", entity =>
 {
-    config.OnGet((string id) =>
-        new GetOrder(id))
+    entity.UseResolver<OrderEntityResolver>();
+
+    entity.OnGet((int id) => new GetOrder(id))
         .WithTimeout(TimeSpan.FromSeconds(10));
 
-    config.OnPost((string id, [FromBody] CreateOrderRequest req) =>
+    entity.OnPost((int id, CreateOrderRequest req) =>
         new CreateOrder(req.CustomerId, req.Amount, req.ItemIds))
         .WithTimeout(TimeSpan.FromSeconds(5));
 
-    config.OnPut((string id, [FromBody] UpdateOrderRequest req) =>
+    entity.OnPut((int id, UpdateOrderRequest req) =>
         new UpdateOrder(id, req.Status))
         .WithTimeout(TimeSpan.FromSeconds(5));
 
-    config.OnDelete((string id) =>
-        new CancelOrder(id))
+    entity.OnDelete((int id) => new CancelOrder(id))
         .WithTimeout(TimeSpan.FromSeconds(5));
 
     // Response mappers
-    config.MapResponse<OrderResponse>((ctx, resp) =>
+    entity.MapResponse<OrderResponse>((ctx, resp) =>
     {
         ctx.Response.StatusCode = 200;
         return ctx.Response.WriteAsJsonAsync(resp);
     });
 
-    config.MapResponse<NotFoundResponse>((ctx, _) =>
+    entity.MapResponse<NotFoundResponse>((ctx, _) =>
     {
         ctx.Response.StatusCode = 404;
         return ctx.Response.WriteAsJsonAsync(new { error = "Order not found" });
     });
-
-    // Use pre-registered actor from Akka.Hosting registry
-    config.UseResolver<RegistryResolver<OrderId>>();
 });
 
 await app.RunAsync();
@@ -478,44 +475,19 @@ builder.Services.AddAkka("cqrs-system", cfg =>
 var app = builder.Build();
 
 // CQRS entity gateway — same actor, different message paths
-app.MapTurboEntity<UserId>("/users/{id}", config =>
+app.MapTurboEntity<int>("/users/{id}", entity =>
 {
-    // Read path (query) — generous timeout, returns UserReadModel
-    config.OnGet((string id) => new GetUserQuery(id))
-        .WithTimeout(TimeSpan.FromSeconds(30));
+    entity.UseActorRef<UserActor>();
 
-    // Write path (command) — tight timeout, returns UserWriteResult
-    config.OnPost((string id, [FromBody] CreateUserRequest req) =>
-        new CreateUserCommand(id, req.Name, req.Email))
-        .WithTimeout(TimeSpan.FromSeconds(5));
+    // Read path (query)
+    entity.OnGet((int id) => new GetUserQuery(id));
 
-    config.OnPut((string id, [FromBody] UpdateUserRequest req) =>
-        new UpdateUserCommand(id, req.Name))
-        .WithTimeout(TimeSpan.FromSeconds(5));
+    // Write path (commands)
+    entity.OnPost((int id, CreateUserRequest req) =>
+        new CreateUserCommand(id, req.Name, req.Email));
 
-    // Response mappers — different handlers for read vs. write
-    // Query responses
-    config.MapResponse<UserReadModel>((ctx, resp) =>
-    {
-        ctx.Response.StatusCode = 200;
-        return ctx.Response.WriteAsJsonAsync(resp);
-    });
-
-    // Command responses
-    config.MapResponse<UserWriteResult>((ctx, resp) =>
-    {
-        ctx.Response.StatusCode = 200;
-        return ctx.Response.WriteAsJsonAsync(resp);
-    });
-
-    // Error response (used by both paths)
-    config.MapResponse<UserNotFound>((ctx, resp) =>
-    {
-        ctx.Response.StatusCode = 404;
-        return ctx.Response.WriteAsJsonAsync(new { error = $"User {resp.UserId} not found" });
-    });
-
-    config.UseResolver<RegistryResolver<UserId>>();
+    entity.OnPut((int id, UpdateUserRequest req) =>
+        new UpdateUserCommand(id, req.Name));
 });
 
 await app.RunAsync();
@@ -708,8 +680,7 @@ app.MapTurboGet("/trace", context =>
 Use `AcceptedResponse()` to return 202 Accepted immediately without waiting for the actor:
 
 ```csharp
-config.OnPost((string id, [FromBody] CreateOrderRequest req) =>
-    new PlaceOrder(id, req.Amount))
+entity.OnPost((int id, CreateOrderRequest req) => new PlaceOrder(id, req.Amount))
     .AcceptedResponse();  // Returns 202 immediately, actor processes async
 ```
 
@@ -718,19 +689,19 @@ config.OnPost((string id, [FromBody] CreateOrderRequest req) =>
 Map different error types in the same entity route:
 
 ```csharp
-config.MapResponse<ValidationError>((ctx, err) =>
+entity.MapResponse<ValidationError>((ctx, err) =>
 {
     ctx.Response.StatusCode = 400;
     return ctx.Response.WriteAsJsonAsync(new { errors = err.Messages });
 });
 
-config.MapResponse<NotFoundError>((ctx, _) =>
+entity.MapResponse<NotFoundError>((ctx, _) =>
 {
     ctx.Response.StatusCode = 404;
     return Task.CompletedTask;
 });
 
-config.MapResponse<TimeoutError>((ctx, _) =>
+entity.MapResponse<TimeoutError>((ctx, _) =>
 {
     ctx.Response.StatusCode = 504;
     return ctx.Response.WriteAsJsonAsync(new { error = "Request timeout" });

@@ -188,12 +188,18 @@ services.AddScoped<IEntityActorResolver, UserActorResolver>();
 Then dispatch to actors via `MapTurboEntity()`:
 
 ```csharp
-app.MapTurboEntity<UserActor>("/users/{id}", entityId: ctx => ctx.RouteValues["id"]?.ToString() ?? "");
+app.MapTurboEntity<int>("/users/{id}", entity =>
+{
+    entity.UseResolver<UserActorResolver>();
+    entity.OnGet((int id) => new GetUser(id));
+    entity.OnPost((int id, CreateUserRequest req) => new CreateUser(id, req.Name));
+    entity.OnDelete((int id) => new DeleteUser(id));
+});
 ```
 
 The dispatcher automatically:
-1. Resolves the actor using `IEntityActorResolver`
-2. Sends the `TurboHttpContext` message to the actor
+1. Resolves the actor using the configured resolver
+2. Sends the mapped message to the actor
 3. Waits for the response
 4. Sends the response back to the client
 

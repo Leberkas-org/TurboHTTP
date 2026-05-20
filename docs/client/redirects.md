@@ -133,4 +133,3 @@ catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)
 ::: info How it works
 See [Architecture: Request Pipeline](/architecture/pipeline) to understand how this feature fits into the processing pipeline.
 :::
-```

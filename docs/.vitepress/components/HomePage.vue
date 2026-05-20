@@ -382,6 +382,8 @@ const activeTab = ref<'client' | 'server'>('client')
 
 .table-wrapper {
     overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--vp-c-divider);
 }
 
 .comparison table {
@@ -403,24 +405,30 @@ const activeTab = ref<'client' | 'server'>('client')
     background: var(--vp-c-bg-soft);
 }
 
+.comparison th.highlight {
+    background: var(--vp-c-bg-soft);
+    color: var(--vp-c-text-1);
+}
+
 .comparison td {
-    color: var(--vp-c-text-2);
+    color: var(--vp-c-text-1);
+}
+
+.comparison tbody tr:nth-child(odd) {
+    background: var(--vp-c-brand-soft);
+}
+
+.comparison tbody tr:nth-child(even) {
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.dark .comparison tbody tr:nth-child(even) {
+    background: rgba(167, 139, 250, 0.08);
 }
 
 .comparison .highlight {
     font-weight: 600;
-}
-
-.comparison tr:nth-child(odd) .highlight {
-    color: var(--vp-c-brand-1);
-}
-
-.comparison tr:nth-child(even) .highlight {
-    color: #8b5cf6;
-}
-
-.dark .comparison tr:nth-child(even) .highlight {
-    color: #a78bfa;
+    color: var(--vp-c-text-1);
 }
 
 .comparison tbody tr {
@@ -428,15 +436,19 @@ const activeTab = ref<'client' | 'server'>('client')
 }
 
 .comparison tbody tr:nth-child(odd):hover {
-    background: var(--vp-c-brand-soft);
+    background: rgba(16, 185, 129, 0.22);
+}
+
+.dark .comparison tbody tr:nth-child(odd):hover {
+    background: rgba(52, 211, 153, 0.22);
 }
 
 .comparison tbody tr:nth-child(even):hover {
-    background: rgba(139, 92, 246, 0.08);
+    background: rgba(139, 92, 246, 0.16);
 }
 
 .dark .comparison tbody tr:nth-child(even):hover {
-    background: rgba(167, 139, 250, 0.08);
+    background: rgba(167, 139, 250, 0.16);
 }
 
 /* Install */

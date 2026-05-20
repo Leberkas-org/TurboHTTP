@@ -11,7 +11,7 @@ See [Installation & Setup](./installation) for NuGet packages and endpoint confi
 Add the NuGet package to your ASP.NET Core project:
 
 ```bash
-dotnet add package TurboHTTP.Server
+dotnet add package TurboHTTP
 ```
 
 Configure the server in `Program.cs`:

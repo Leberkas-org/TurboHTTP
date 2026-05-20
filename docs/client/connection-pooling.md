@@ -113,4 +113,3 @@ client.Dispose();
 ::: info How it works
 See [Architecture: Request Pipeline](/architecture/pipeline) to understand how this feature fits into the processing pipeline.
 :::
-```
