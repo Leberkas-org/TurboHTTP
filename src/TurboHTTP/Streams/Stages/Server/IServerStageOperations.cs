@@ -2,7 +2,7 @@ using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 
-namespace TurboHTTP.Streams;
+namespace TurboHTTP.Streams.Stages.Server;
 
 internal interface IServerStageOperations
 {

@@ -5,6 +5,7 @@ using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Streams;
+using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;

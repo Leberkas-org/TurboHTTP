@@ -1,6 +1,7 @@
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Streams;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http2.Server;
 

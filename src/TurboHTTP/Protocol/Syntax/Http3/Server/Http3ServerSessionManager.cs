@@ -5,6 +5,7 @@ using TurboHTTP.Protocol.Multiplexed.Body;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Streams;
+using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Protocol.Syntax.Http3.Server;

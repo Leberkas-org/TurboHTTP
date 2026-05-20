@@ -11,7 +11,7 @@ public sealed class TurboServerOptions
     public int MaxConcurrentConnections { get; set; }
     public int MaxConcurrentUpgradedConnections { get; set; }
 
-    public TimeSpan KeepAliveTimeout { get; set; } = TimeSpan.FromSeconds(120);
+    public TimeSpan KeepAliveTimeout { get; set; } = TimeSpan.FromSeconds(130);
     public TimeSpan RequestHeadersTimeout { get; set; } = TimeSpan.FromSeconds(30);
     public TimeSpan GracefulShutdownTimeout { get; set; } = TimeSpan.FromSeconds(30);
 

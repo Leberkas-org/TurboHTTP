@@ -2,6 +2,7 @@ using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Shared;
 
