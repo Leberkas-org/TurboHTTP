@@ -9,8 +9,9 @@ public sealed class TurboListenOptions(IPAddress address, ushort port)
     public ushort Port { get; } = port;
     public HttpProtocols Protocols { get; set; } = HttpProtocols.Http1AndHttp2;
 
-    internal bool IsHttps => HttpsOptions is not null;
+    internal bool IsHttps => HttpsOptions is not null || TlsCallbackOptions is not null;
     internal TurboHttpsOptions? HttpsOptions { get; private set; }
+    internal TurboTlsCallbackOptions? TlsCallbackOptions { get; private set; }
 
     public void UseHttps()
     {
@@ -51,6 +52,11 @@ public sealed class TurboListenOptions(IPAddress address, ushort port)
             CertificatePassword = password
         };
         configure(HttpsOptions);
+    }
+
+    public void UseHttps(TurboTlsCallbackOptions callbackOptions)
+    {
+        TlsCallbackOptions = callbackOptions ?? throw new ArgumentNullException(nameof(callbackOptions));
     }
 
     internal string? ConnectionLoggingCategory { get; private set; }
