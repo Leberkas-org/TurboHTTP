@@ -1,6 +1,6 @@
 using System.Net;
 using TurboHTTP.Server;
-using TurboHTTP.Server.Context.Features;
+using TurboHTTP.Context.Features;
 
 namespace TurboHTTP.Tests.Server.Context;
 

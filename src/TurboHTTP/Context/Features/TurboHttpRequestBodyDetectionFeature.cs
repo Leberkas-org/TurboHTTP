@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 
-namespace TurboHTTP.Server.Context.Features;
+namespace TurboHTTP.Context.Features;
 
 internal sealed class TurboHttpRequestBodyDetectionFeature(HttpRequestMessage request)
     : IHttpRequestBodyDetectionFeature

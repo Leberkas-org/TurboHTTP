@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
-namespace TurboHTTP.Server.Context.Adapters;
+namespace TurboHTTP.Context.Adapters;
 
 internal sealed class TurboRequestHeaderDictionary(
     HttpRequestHeaders requestHeaders,

@@ -1,6 +1,6 @@
 using Akka.Streams.Dsl;
 
-namespace TurboHTTP.Server.Context.Features;
+namespace TurboHTTP.Context.Features;
 
 public interface ITurboResponseBodyFeature
 {

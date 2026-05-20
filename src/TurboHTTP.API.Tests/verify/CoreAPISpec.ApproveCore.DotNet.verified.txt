@@ -1,4 +1,4 @@
-﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/leberkas-org/TurboHTTP.git")]
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/leberkas-org/TurboHTTP.git")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.AcceptanceTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Benchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests")]
@@ -355,7 +355,7 @@ namespace TurboHTTP.Routing
         public TurboHTTP.Server.TurboRouteGroupBuilder CreateGroup(string prefix) { }
     }
 }
-namespace TurboHTTP.Server.Context.Features
+namespace TurboHTTP.Context.Features
 {
     public interface ITurboRequestBodyFeature
     {
@@ -366,7 +366,7 @@ namespace TurboHTTP.Server.Context.Features
         Akka.Streams.Dsl.Sink<System.ReadOnlyMemory<byte>, System.Threading.Tasks.Task> BodySink { get; }
     }
 }
-namespace TurboHTTP.Server.Context
+namespace TurboHTTP.Context
 {
     public sealed class TurboHttpRequest : Microsoft.AspNetCore.Http.HttpRequest
     {
@@ -540,8 +540,8 @@ namespace TurboHTTP.Server
         public override Microsoft.AspNetCore.Http.HttpResponse Response { get; }
         public override Microsoft.AspNetCore.Http.ISession Session { get; set; }
         public override string TraceIdentifier { get; set; }
-        public TurboHTTP.Server.Context.TurboHttpRequest TurboRequest { get; }
-        public TurboHTTP.Server.Context.TurboHttpResponse TurboResponse { get; }
+        public TurboHTTP.Context.TurboHttpRequest TurboRequest { get; }
+        public TurboHTTP.Context.TurboHttpResponse TurboResponse { get; }
         public override System.Security.Claims.ClaimsPrincipal User { get; set; }
         public override Microsoft.AspNetCore.Http.WebSocketManager WebSockets { get; }
         public override void Abort() { }

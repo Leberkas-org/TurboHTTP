@@ -2,7 +2,7 @@ using System.Collections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
-namespace TurboHTTP.Server.Context;
+namespace TurboHTTP.Context;
 
 internal sealed class TurboFormCollection(Dictionary<string, StringValues> fields, IFormFileCollection files) : IFormCollection
 {

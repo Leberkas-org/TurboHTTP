@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
-using TurboHTTP.Server.Context.Adapters;
-using TurboHTTP.Server.Context.Features;
+using TurboHTTP.Context.Adapters;
+using TurboHTTP.Context.Features;
 
-namespace TurboHTTP.Server.Context;
+namespace TurboHTTP.Context;
 
 public sealed class TurboHttpRequest : HttpRequest
 {

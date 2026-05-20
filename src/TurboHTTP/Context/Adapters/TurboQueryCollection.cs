@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 
-namespace TurboHTTP.Server.Context.Adapters;
+namespace TurboHTTP.Context.Adapters;
 
 internal sealed class TurboQueryCollection : IQueryCollection
 {

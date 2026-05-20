@@ -1,7 +1,7 @@
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Server.Context;
-using TurboHTTP.Server.Context.Features;
+using TurboHTTP.Context;
+using TurboHTTP.Context.Features;
 
 namespace TurboHTTP.Tests.Server.Context;
 

@@ -4,7 +4,7 @@ using Akka.Streams.Dsl;
 using Akka.Util;
 using Microsoft.AspNetCore.Http.Features;
 
-namespace TurboHTTP.Server.Context.Features;
+namespace TurboHTTP.Context.Features;
 
 internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature, ITurboResponseBodyFeature
 {

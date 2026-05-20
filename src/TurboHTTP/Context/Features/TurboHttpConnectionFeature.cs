@@ -1,7 +1,8 @@
 using System.Net;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Server;
 
-namespace TurboHTTP.Server.Context.Features;
+namespace TurboHTTP.Context.Features;
 
 internal sealed class TurboHttpConnectionFeature(TurboConnectionInfo info) : IHttpConnectionFeature
 {

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Server.Context.Adapters;
+using TurboHTTP.Context.Adapters;
 
-namespace TurboHTTP.Server.Context.Features;
+namespace TurboHTTP.Context.Features;
 
 internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
 {

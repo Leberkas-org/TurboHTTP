@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using TurboHTTP.Protocol;
 
-namespace TurboHTTP.Server.Context.Adapters;
+namespace TurboHTTP.Context.Adapters;
 
 internal sealed class TurboResponseHeaderDictionary : IHeaderDictionary
 {

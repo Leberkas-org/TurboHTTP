@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Binding;
-using TurboHTTP.Server.Context.Features;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Server.Binding;

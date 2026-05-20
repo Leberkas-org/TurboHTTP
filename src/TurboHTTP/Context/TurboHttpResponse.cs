@@ -2,7 +2,7 @@ using System.IO.Pipelines;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 
-namespace TurboHTTP.Server.Context;
+namespace TurboHTTP.Context;
 
 public sealed class TurboHttpResponse : HttpResponse
 {

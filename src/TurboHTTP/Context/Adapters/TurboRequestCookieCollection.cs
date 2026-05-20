@@ -2,7 +2,7 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http;
 
-namespace TurboHTTP.Server.Context.Adapters;
+namespace TurboHTTP.Context.Adapters;
 
 internal sealed class TurboRequestCookieCollection : IRequestCookieCollection
 {

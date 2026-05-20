@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Primitives;
-using TurboHTTP.Server.Context.Adapters;
+using TurboHTTP.Context.Adapters;
 
 namespace TurboHTTP.Tests.Server.Context;
 
