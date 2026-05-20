@@ -139,6 +139,16 @@ internal sealed class HttpContextBidiStage
             var responseFeature = new TurboHttpResponseFeature();
             features.Set<IHttpResponseFeature>(responseFeature);
             features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(_stage._connectionInfo));
+            if (_stage._connectionInfo.SecurityInfo is { } secInfo)
+            {
+                features.Set<ITlsHandshakeFeature>(new TlsHandshakeFeature
+                {
+                    Protocol = secInfo.Protocol,
+                    NegotiatedCipherSuite = secInfo.NegotiatedCipherSuite,
+                    HostName = secInfo.HostName,
+                    NegotiatedApplicationProtocol = secInfo.ApplicationProtocol
+                });
+            }
             var bodyFeature = new TurboHttpResponseBodyFeature();
             features.Set<IHttpResponseBodyFeature>(bodyFeature);
             features.Set<ITurboResponseBodyFeature>(bodyFeature);
