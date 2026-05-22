@@ -135,7 +135,7 @@ internal sealed class Http3ServerSessionManager
 
         var responseFeature = context.Features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
-        var hasBody = contentLength.HasValue && contentLength.Value > 0;
+        var hasBody = contentLength is not 0;
 
         if (!hasBody)
         {
