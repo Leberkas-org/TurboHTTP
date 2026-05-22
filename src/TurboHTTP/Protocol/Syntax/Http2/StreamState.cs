@@ -87,6 +87,8 @@ internal sealed class StreamState
         _contentHeaders.Add((name, value));
     }
 
+    public IReadOnlyList<(string Name, string Value)>? ContentHeaders => _contentHeaders;
+
     public void ApplyContentHeadersTo(HttpContent content)
     {
         if (_contentHeaders is null)
