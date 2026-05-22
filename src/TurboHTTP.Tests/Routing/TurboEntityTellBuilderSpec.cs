@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing;
 
@@ -28,7 +28,8 @@ public sealed class TurboEntityTellBuilderSpec
         var builder = new TurboEntityTellBuilder();
         builder.Produces(204);
 
-        var ctx = TestContextFactory.Create(cancellationToken: TestContext.Current.CancellationToken);
+        var ctx = ServerTestContext.Request().Get("/")
+            .RequestAborted(TestContext.Current.CancellationToken).Build();
         await builder.ResponseHandler!(ctx);
 
         Assert.Equal(204, ctx.Response.StatusCode);
@@ -46,7 +47,8 @@ public sealed class TurboEntityTellBuilderSpec
             return Task.CompletedTask;
         });
 
-        var ctx = TestContextFactory.Create(cancellationToken: TestContext.Current.CancellationToken);
+        var ctx = ServerTestContext.Request().Get("/")
+            .RequestAborted(TestContext.Current.CancellationToken).Build();
         await builder.ResponseHandler!(ctx);
 
         Assert.Equal(202, ctx.Response.StatusCode);
@@ -59,7 +61,8 @@ public sealed class TurboEntityTellBuilderSpec
         var builder = new TurboEntityTellBuilder();
         builder.Produces(_ => new TestResult(201));
 
-        var ctx = TestContextFactory.Create(cancellationToken: TestContext.Current.CancellationToken);
+        var ctx = ServerTestContext.Request().Get("/")
+            .RequestAborted(TestContext.Current.CancellationToken).Build();
         await builder.ResponseHandler!(ctx);
 
         Assert.Equal(201, ctx.Response.StatusCode);
@@ -72,7 +75,8 @@ public sealed class TurboEntityTellBuilderSpec
         builder.Produces(204);
         builder.Produces(202);
 
-        var ctx = TestContextFactory.Create(cancellationToken: TestContext.Current.CancellationToken);
+        var ctx = ServerTestContext.Request().Get("/")
+            .RequestAborted(TestContext.Current.CancellationToken).Build();
         await builder.ResponseHandler!(ctx);
 
         Assert.Equal(202, ctx.Response.StatusCode);

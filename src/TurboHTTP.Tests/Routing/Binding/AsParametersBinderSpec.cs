@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Routing.Binding;
-using TurboHTTP.Tests.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing.Binding;
 
@@ -93,9 +93,9 @@ public sealed class AsParametersBinderSpec
 
     private static TurboHttpContext CreateContext(string path)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost" + path);
-        var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-        var services = CreateServiceProvider();
-        return TestContextFactory.Create(request: request, connection: connection, services: services);
+        return ServerTestContext.Request()
+            .Get(path)
+            .Services(CreateServiceProvider())
+            .Build();
     }
 }

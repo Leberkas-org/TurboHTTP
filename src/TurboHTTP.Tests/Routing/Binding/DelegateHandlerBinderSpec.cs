@@ -1,11 +1,8 @@
 using System.Net;
-using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Routing.Binding;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing.Binding;
@@ -140,19 +137,11 @@ public sealed class DelegateHandlerBinderSpec : StreamTestBase
 
     private TurboHttpContext CreateContext(string path)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost" + path);
-        var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-
-        var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(ServerTestContext.CreateRequestFeature(request));
-        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
-        features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(connection));
-        features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-
-        var services = new ServiceCollection()
-            .AddLogging()
-            .BuildServiceProvider();
-
-        return new TurboHttpContext(features, connection, services, CancellationToken.None, Materializer);
+        return ServerTestContext.Request()
+            .Get(path)
+            .Connection(new TurboConnectionInfo("test", null, 0, null, 0))
+            .Services(new ServiceCollection().AddLogging().BuildServiceProvider())
+            .Materializer(Materializer)
+            .Build();
     }
 }

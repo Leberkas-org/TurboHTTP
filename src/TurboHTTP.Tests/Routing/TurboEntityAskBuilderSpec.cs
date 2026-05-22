@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing;
 
@@ -64,7 +64,8 @@ public sealed class TurboEntityAskBuilderSpec
         var mapper = builder.Mappers.FindMapper(typeof(OrderDto));
         Assert.NotNull(mapper);
 
-        var ctx = TestContextFactory.Create(cancellationToken: TestContext.Current.CancellationToken);
+        var ctx = ServerTestContext.Request().Get("/")
+            .RequestAborted(TestContext.Current.CancellationToken).Build();
         await mapper(ctx, new OrderDto("1"));
         Assert.True(resultExecuted);
         Assert.Equal(200, ctx.Response.StatusCode);

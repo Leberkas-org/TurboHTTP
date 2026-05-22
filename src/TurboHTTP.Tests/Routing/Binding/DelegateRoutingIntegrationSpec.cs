@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Routing;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing.Binding;
 
@@ -59,8 +59,8 @@ public sealed class DelegateRoutingIntegrationSpec
 
     private static TurboHttpContext CreateContext(string path)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost" + path);
-        var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-        return TestContextFactory.Create(request: request, connection: connection);
+        return ServerTestContext.Request()
+            .Get(path)
+            .Build();
     }
 }

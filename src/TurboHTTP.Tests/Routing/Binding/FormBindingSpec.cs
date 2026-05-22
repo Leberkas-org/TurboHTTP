@@ -1,10 +1,9 @@
-using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Routing.Binding;
-using TurboHTTP.Tests.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing.Binding;
 
@@ -84,25 +83,18 @@ public sealed class FormBindingSpec
 
     private static TurboHttpContext CreateUrlEncodedContext(string path, string formData)
     {
-        var content = new StringContent(formData, Encoding.UTF8, "application/x-www-form-urlencoded");
-        var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost" + path)
-        {
-            Content = content
-        };
-        var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-        return TestContextFactory.Create(request: request, connection: connection);
+        return ServerTestContext.Request()
+            .Post(path)
+            .FormBody(formData)
+            .Build();
     }
 
     private static TurboHttpContext CreateMultipartContext(
         string path, string fieldName, string fileName, byte[] fileContent)
     {
-        var multipart = new MultipartFormDataContent();
-        multipart.Add(new ByteArrayContent(fileContent), fieldName, fileName);
-        var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost" + path)
-        {
-            Content = multipart
-        };
-        var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-        return TestContextFactory.Create(request: request, connection: connection);
+        return ServerTestContext.Request()
+            .Post(path)
+            .MultipartBody(m => m.Add(new ByteArrayContent(fileContent), fieldName, fileName))
+            .Build();
     }
 }

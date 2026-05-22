@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Routing.Binding;
-using TurboHTTP.Tests.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Routing.Binding;
 
@@ -131,9 +131,9 @@ public sealed class ParameterBinderSpec
 
     private static TurboHttpContext CreateContext(string path, CancellationToken cancellationToken = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost" + path);
-        var connection = new TurboConnectionInfo("test", null, 0, null, 0);
-        return TestContextFactory.Create(request: request, connection: connection,
-            cancellationToken: cancellationToken);
+        return ServerTestContext.Request()
+            .Get(path)
+            .RequestAborted(cancellationToken)
+            .Build();
     }
 }
