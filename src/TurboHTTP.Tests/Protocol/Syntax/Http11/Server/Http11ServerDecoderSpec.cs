@@ -126,4 +126,21 @@ public sealed class Http11ServerDecoderSpec
         Assert.Equal(HttpMethod.Get, request.Method);
         Assert.Contains("/path", request.RequestUri?.ToString() ?? "");
     }
+
+    [Fact(Timeout = 5000)]
+    public void GetRequestFeature_should_parse_method_and_path()
+    {
+        var decoder = new Http11ServerDecoder(Http11ServerDecoderOptions.Default);
+        var data = "POST /api/items?page=2 HTTP/1.1\r\nHost: example.com\r\nContent-Length: 0\r\n\r\n"u8;
+        var outcome = decoder.Feed(data, out _);
+        Assert.Equal(DecodeOutcome.Complete, outcome);
+
+        var feature = decoder.GetRequestFeature();
+
+        Assert.Equal("POST", feature.Method);
+        Assert.Equal("/api/items", feature.Path);
+        Assert.Equal("?page=2", feature.QueryString);
+        Assert.Equal("HTTP/1.1", feature.Protocol);
+        Assert.Equal("example.com", feature.Headers["Host"]);
+    }
 }

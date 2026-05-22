@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.LineBased;
 using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Semantics;
@@ -107,5 +109,41 @@ internal sealed class Http10ServerDecoder
         HeaderRouter.ApplyToRequest(msg, _headerReader.GetHeaders());
         _request = msg;
         return msg;
+    }
+
+    public TurboHttpRequestFeature GetRequestFeature()
+    {
+        var headers = new HeaderDictionary();
+        HeaderRouter.ApplyToHeaderDictionary(headers, _headerReader.GetHeaders());
+        var body = _bodyDecoder?.GetBodyStream() ?? Stream.Null;
+
+        return new TurboHttpRequestFeature
+        {
+            Protocol = _version switch
+            {
+                { Major: 1, Minor: 0 } => "HTTP/1.0",
+                { Major: 1, Minor: 1 } => "HTTP/1.1",
+                _ => "HTTP/1.1"
+            },
+            Method = _method.Method,
+            Path = ParsePath(_target),
+            QueryString = ParseQueryString(_target),
+            RawTarget = _target,
+            Headers = headers,
+            Body = body,
+        };
+    }
+
+    private static string ParsePath(string target)
+    {
+        var queryIdx = target.IndexOf('?');
+        var pathPart = queryIdx >= 0 ? target[..queryIdx] : target;
+        return string.IsNullOrEmpty(pathPart) ? "/" : pathPart;
+    }
+
+    private static string ParseQueryString(string target)
+    {
+        var queryIdx = target.IndexOf('?');
+        return queryIdx >= 0 ? target[queryIdx..] : string.Empty;
     }
 }

@@ -65,4 +65,22 @@ public sealed class Http10ServerDecoderSpec
         var request = decoder.GetRequest();
         Assert.Contains("%20", request.RequestUri?.OriginalString ?? "");
     }
+
+    [Fact(Timeout = 5000)]
+    public void GetRequestFeature_should_parse_method_and_path()
+    {
+        var decoder = MakeDecoder();
+        var data = "GET /hello?q=1 HTTP/1.0\r\nHost: example.com\r\n\r\n"u8.ToArray();
+        var outcome = decoder.Feed(data, out _);
+        Assert.Equal(DecodeOutcome.Complete, outcome);
+
+        var feature = decoder.GetRequestFeature();
+
+        Assert.Equal("GET", feature.Method);
+        Assert.Equal("/hello", feature.Path);
+        Assert.Equal("?q=1", feature.QueryString);
+        Assert.Equal("/hello?q=1", feature.RawTarget);
+        Assert.Equal("HTTP/1.0", feature.Protocol);
+        Assert.Equal("example.com", feature.Headers["Host"]);
+    }
 }
