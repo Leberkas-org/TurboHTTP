@@ -8,7 +8,6 @@ using TurboHTTP.Features.Caching;
 using TurboHTTP.Features.Cookies;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages;
 using TurboHTTP.Streams.Stages.Client;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;

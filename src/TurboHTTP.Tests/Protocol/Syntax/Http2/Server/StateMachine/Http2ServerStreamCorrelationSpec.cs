@@ -1,12 +1,13 @@
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
@@ -17,6 +18,17 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 /// </summary>
 public sealed class Http2ServerStreamCorrelationSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class FakeServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> EmittedRequests { get; } = [];
@@ -129,13 +141,8 @@ public sealed class Http2ServerStreamCorrelationSpec
 
         // Now respond to stream 3 first
         ops.EmittedOutbound.Clear();
-        var response3 = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            RequestMessage = request3,
-            Content = new StringContent("Response for stream 3")
-        };
-
-        sm.OnResponse(response3);
+        var context3 = CreateResponseContext();
+        sm.OnResponse(context3);
 
         // Verify HEADERS frame for stream 3 was emitted
         Assert.NotEmpty(ops.EmittedOutbound);
@@ -163,13 +170,8 @@ public sealed class Http2ServerStreamCorrelationSpec
 
         // Now respond to stream 1
         ops.EmittedOutbound.Clear();
-        var response1 = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            RequestMessage = request1,
-            Content = new StringContent("Response for stream 1")
-        };
-
-        sm.OnResponse(response1);
+        var context1 = CreateResponseContext();
+        sm.OnResponse(context1);
 
         // Verify HEADERS frame for stream 1 was emitted
         Assert.NotEmpty(ops.EmittedOutbound);
@@ -238,14 +240,10 @@ public sealed class Http2ServerStreamCorrelationSpec
         {
             var request = ops.EmittedRequests[idx];
             _ = request.Options.TryGetValue(StreamIdKey.Http2, out var reqStreamId);
-            var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-            {
-                RequestMessage = request,
-                Content = new StringContent($"Response for stream {reqStreamId}")
-            };
 
             ops.EmittedOutbound.Clear();
-            sm.OnResponse(response);
+            var context = CreateResponseContext();
+            sm.OnResponse(context);
 
             // Find HEADERS frame in outbound
             var foundCorrectStreamId = false;

@@ -4,13 +4,12 @@ using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
-using TurboHTTP.Streams;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
-using TurboHTTP.Server;
 
-
+namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
 /// <summary>
 /// Unit tests for HTTP/2 SessionManager CONTINUATION state machine.
@@ -330,6 +329,3 @@ public sealed class Http2ContinuationStateSpec
         Assert.Single(ops.Requests);
     }
 }
-
-
-

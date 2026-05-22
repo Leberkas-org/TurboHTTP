@@ -3,13 +3,12 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
-using TurboHTTP.Streams;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
-using TurboHTTP.Server;
 
-
+namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
 /// <summary>
 /// Unit tests for HTTP/2 SessionManager SETTINGS and GOAWAY handling.
@@ -263,9 +262,9 @@ public sealed class Http2SettingsGoawaySpec
         {
             var id = (ushort)((settingsBytes[offset] << 8) | settingsBytes[offset + 1]);
             var value = (uint)((settingsBytes[offset + 2] << 24)
-                              | (settingsBytes[offset + 3] << 16)
-                              | (settingsBytes[offset + 4] << 8)
-                              | settingsBytes[offset + 5]);
+                               | (settingsBytes[offset + 3] << 16)
+                               | (settingsBytes[offset + 4] << 8)
+                               | settingsBytes[offset + 5]);
             if (id == (ushort)SettingsParameter.InitialWindowSize)
             {
                 Assert.Equal((uint)customStreamWindow, value);
@@ -278,6 +277,3 @@ public sealed class Http2SettingsGoawaySpec
         settingsData.Buffer.Dispose();
     }
 }
-
-
-

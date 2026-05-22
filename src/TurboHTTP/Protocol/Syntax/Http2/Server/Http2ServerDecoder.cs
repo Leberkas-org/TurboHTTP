@@ -28,39 +28,6 @@ internal sealed class Http2ServerDecoder
         _hpack = new HpackDecoder();
     }
 
-    public HttpRequestMessage? DecodeHeaders(int streamId, bool endStream, StreamState state)
-    {
-        var headers = _hpack.Decode(state.GetHeaderSpan());
-        ValidateHeaderSize(headers, streamId);
-        ValidateRequestHeaders(headers);
-
-        var request = new HttpRequestMessage();
-        var isConnect = AssembleRequest(headers, request, state);
-
-        if (!isConnect)
-        {
-            var path = state.GetPseudoHeader(WellKnownHeaders.Path);
-            var scheme = state.GetPseudoHeader(WellKnownHeaders.Scheme);
-            var authority = state.GetPseudoHeader(WellKnownHeaders.Authority);
-
-            request.RequestUri = new Uri(string.Concat(scheme, "://", authority, path));
-        }
-
-        request.Version = new Version(2, 0);
-
-        state.InitRequest(request);
-
-        if (!endStream)
-        {
-            return null;
-        }
-
-        request.Content = new ByteArrayContent([]);
-        state.ApplyContentHeadersTo(request.Content);
-
-        return request;
-    }
-
     public TurboHttpRequestFeature? DecodeHeadersToFeature(int streamId, bool endStream, StreamState state)
     {
         var headers = _hpack.Decode(state.GetHeaderSpan());
@@ -139,7 +106,7 @@ internal sealed class Http2ServerDecoder
         return feature;
     }
 
-    internal static void ValidateRequestHeaders(List<HpackHeader> headers)
+    private static void ValidateRequestHeaders(List<HpackHeader> headers)
     {
         PseudoHeaderValidator.ValidateRequestPseudoHeaders(
             headers,
@@ -155,46 +122,6 @@ internal sealed class Http2ServerDecoder
             TokenSection,
             FieldValueSection,
             ConnectionSection);
-    }
-
-    private static bool AssembleRequest(List<HpackHeader> headers, HttpRequestMessage request, StreamState state)
-    {
-        var isConnect = false;
-
-        foreach (var h in headers)
-        {
-            if (h.Name == WellKnownHeaders.Method)
-            {
-                request.Method = new HttpMethod(h.Value);
-                if (h.Value == WellKnownHeaders.Connect)
-                {
-                    isConnect = true;
-                }
-            }
-            else if (h.Name == WellKnownHeaders.Path)
-            {
-                state.AddPseudoHeader(WellKnownHeaders.Path, h.Value);
-            }
-            else if (h.Name == WellKnownHeaders.Scheme)
-            {
-                state.AddPseudoHeader(WellKnownHeaders.Scheme, h.Value);
-            }
-            else if (h.Name == WellKnownHeaders.Authority)
-            {
-                state.AddPseudoHeader(WellKnownHeaders.Authority, h.Value);
-            }
-            else if (!h.Name.StartsWith(WellKnownHeaders.Colon))
-            {
-                request.Headers.TryAddWithoutValidation(h.Name, h.Value);
-
-                if (ContentHeaderClassifier.IsContentHeader(h.Name))
-                {
-                    state.AddContentHeader(h.Name, h.Value);
-                }
-            }
-        }
-
-        return isConnect;
     }
 
     private void ValidateHeaderSize(List<HpackHeader> headers, int streamId)

@@ -1,6 +1,4 @@
-using Akka;
 using Akka.Streams.Dsl;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
 
@@ -104,72 +102,5 @@ public sealed class TurboHttpRequestFeatureSpec
     {
         var feature = new TurboHttpRequestFeature();
         Assert.IsAssignableFrom<ITurboRequestBodyFeature>(feature);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_method()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost/test");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Equal("POST", feature.Method);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_path()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/users");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Equal("/api/users", feature.Path);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_querystring()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test?page=1&size=10");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Equal("?page=1&size=10", feature.QueryString);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_scheme()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://localhost/test");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Equal("https", feature.Scheme);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_protocol()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test") { Version = new Version(2, 0) };
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Equal("HTTP/2", feature.Protocol);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_headers()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
-        request.Headers.Add("X-Custom", "value");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Equal("value", feature.Headers["X-Custom"].ToString());
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_map_rawtarget()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test?a=1");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
-        Assert.Contains("/test", feature.RawTarget);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void FromHttpRequestMessage_should_expose_body_source()
-    {
-        var source = Source.Single(new ReadOnlyMemory<byte>(new byte[] { 1, 2, 3 }));
-        var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost/test");
-        var feature = TurboHttpRequestFeature.FromHttpRequestMessage(request, source);
-        var bodyFeature = (ITurboRequestBodyFeature)feature;
-        Assert.Same(source, bodyFeature.BodySource);
     }
 }

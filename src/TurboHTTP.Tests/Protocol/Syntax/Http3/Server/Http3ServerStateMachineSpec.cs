@@ -1,12 +1,13 @@
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
@@ -18,6 +19,17 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 /// </summary>
 public sealed class Http3ServerStateMachineSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class FakeServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> EmittedRequests { get; } = [];
@@ -251,12 +263,8 @@ public sealed class Http3ServerStateMachineSpec
         ops.EmittedOutbound.Clear();
 
         // Send response without body
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            RequestMessage = request
-        };
-
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // Should emit HEADERS frame + CompleteWrites immediately (no body)
         var frameItems = ops.EmittedOutbound.OfType<MultiplexedData>().ToList();
@@ -298,13 +306,8 @@ public sealed class Http3ServerStateMachineSpec
         ops.EmittedOutbound.Clear();
 
         // Send response with body
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            RequestMessage = request,
-            Content = new ByteArrayContent("test"u8.ToArray())
-        };
-
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // Should emit HEADERS frame immediately
         var frameItems = ops.EmittedOutbound.OfType<MultiplexedData>().ToList();

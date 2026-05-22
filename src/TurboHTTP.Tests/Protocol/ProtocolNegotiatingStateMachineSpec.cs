@@ -5,8 +5,6 @@ using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
-using TurboHTTP.Protocol.Syntax.Http11.Server;
-using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 

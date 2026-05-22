@@ -25,7 +25,6 @@ internal sealed class Http10ServerDecoder
     private string _target = null!;
     private Version _version = null!;
     private IBodyDecoder? _bodyDecoder;
-    private HttpRequestMessage? _request;
 
     public Http10ServerDecoder(Http10ServerDecoderOptions options)
     {
@@ -90,25 +89,6 @@ internal sealed class Http10ServerDecoder
 
         consumed = pos;
         return DecodeOutcome.Complete;
-    }
-
-    public HttpRequestMessage GetRequest()
-    {
-        if (_request is not null)
-        {
-            return _request;
-        }
-
-        var content = _bodyDecoder?.GetContent() ?? new ByteArrayContent([]);
-
-        var msg = new HttpRequestMessage(_method, _target)
-        {
-            Version = _version,
-            Content = content,
-        };
-        HeaderRouter.ApplyToRequest(msg, _headerReader.GetHeaders());
-        _request = msg;
-        return msg;
     }
 
     public TurboHttpRequestFeature GetRequestFeature()

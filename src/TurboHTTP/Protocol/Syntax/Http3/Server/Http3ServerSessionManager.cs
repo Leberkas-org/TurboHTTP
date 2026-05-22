@@ -406,10 +406,10 @@ internal sealed class Http3ServerSessionManager
                 {
                     case HeadersFrame headersFrame:
                         {
-                            var decoded = _requestDecoder.DecodeHeaders(headersFrame, state);
-                            if (decoded)
+                            var requestFeature = _requestDecoder.DecodeHeadersToFeature(headersFrame, state, endStream: false);
+                            if (requestFeature is not null)
                             {
-                                // Headers decoded but will be emitted later in FlushPendingRequest
+                                state.InitRequestFeature(requestFeature);
                             }
                             else
                             {
@@ -450,9 +450,9 @@ internal sealed class Http3ServerSessionManager
 
         var (_, state) = streamData;
 
-        if (state.HasRequest)
+        var requestFeature = state.GetRequestFeature();
+        if (requestFeature is not null)
         {
-            var requestFeature = state.GetRequestFeature();
             _ops.OnCancelTimer(string.Concat("headers-timeout:", streamId.ToString()));
 
             var hasBody = state.HasBodyDecoder;
@@ -465,7 +465,7 @@ internal sealed class Http3ServerSessionManager
             var streamIdFeature = new TurboHttp3StreamIdFeature(streamId);
             context.Features.Set<ITurboHttp3StreamIdFeature>(streamIdFeature);
 
-            if (hasBody && requestFeature is not null)
+            if (hasBody)
             {
                 requestFeature.Body = state.GetBodyStream();
             }

@@ -3,6 +3,7 @@ using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Server;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Server;
 
@@ -18,7 +19,7 @@ internal static class TestContextFactory
         var conn = connection ?? new TurboConnectionInfo("test", IPAddress.Loopback, 0, IPAddress.Loopback, 0);
 
         var features = new FeatureCollection();
-        var requestFeature = TurboHttpRequestFeature.FromHttpRequestMessage(req, Source.Empty<ReadOnlyMemory<byte>>());
+        var requestFeature = ServerTestContext.CreateRequestFeature(req);
         features.Set<IHttpRequestFeature>(requestFeature);
         features.Set<ITurboRequestBodyFeature>(requestFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());

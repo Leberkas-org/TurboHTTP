@@ -17,7 +17,6 @@ internal sealed class StreamState
     private Memory<byte> _headerBuffer;
     private int _headerLength;
     private HttpResponseMessage? _response;
-    private HttpRequestMessage? _request;
     private TurboHttpRequestFeature? _requestFeature;
     private List<(string Name, string Value)>? _contentHeaders;
     private Dictionary<string, string>? _pseudoHeaders;
@@ -26,8 +25,6 @@ internal sealed class StreamState
     private Queue<StreamBodyChunk<int>>? _outboundBuffer;
 
     public bool HasResponse => _response is not null;
-
-    public bool HasRequest => _request is not null;
 
     public bool HasContentHeaders => _contentHeaders is not null;
 
@@ -59,21 +56,6 @@ internal sealed class StreamState
     public HttpResponseMessage GetResponse()
     {
         return _response ?? throw new InvalidOperationException("No response has been initialized.");
-    }
-
-    public void InitRequest(HttpRequestMessage request)
-    {
-        _request = request;
-    }
-
-    public HttpRequestMessage GetOrCreateRequest()
-    {
-        return _request ??= new HttpRequestMessage();
-    }
-
-    public HttpRequestMessage GetRequest()
-    {
-        return _request ?? throw new InvalidOperationException("No request has been initialized.");
     }
 
     public void InitRequestFeature(TurboHttpRequestFeature feature)
@@ -249,7 +231,6 @@ internal sealed class StreamState
         _headerBuffer = default;
         _headerLength = 0;
         _response = null;
-        _request = null;
         _requestFeature = null;
         _contentHeaders = null;
         _pseudoHeaders = null;

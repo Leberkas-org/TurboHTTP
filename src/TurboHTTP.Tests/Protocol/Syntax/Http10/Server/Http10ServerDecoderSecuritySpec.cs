@@ -71,8 +71,8 @@ public sealed class Http10ServerDecoderSecuritySpec
         var outcome = decoder.Feed(raw, out _);
         Assert.Equal(DecodeOutcome.Complete, outcome);
 
-        var request = decoder.GetRequest();
-        Assert.Equal(HttpMethod.Post, request.Method);
+        var request = decoder.GetRequestFeature();
+        Assert.Equal(HttpMethod.Post.Method, request.Method);
     }
 
     [Fact(Timeout = 5000)]

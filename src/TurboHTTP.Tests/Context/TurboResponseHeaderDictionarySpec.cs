@@ -95,7 +95,7 @@ public sealed class TurboResponseHeaderDictionarySpec
             ["X-B"] = "2"
         };
         dict.Clear();
-        Assert.Equal(0, dict.Count);
+        Assert.Empty(dict);
     }
 
     [Fact(Timeout = 5000)]

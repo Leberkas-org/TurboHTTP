@@ -1,8 +1,9 @@
-using System.Net;
 using System.Text;
 using Akka.Actor;
 using Akka.TestKit.Xunit;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http10.Server;
 using TurboHTTP.Server;
@@ -13,6 +14,17 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http10.Server;
 public sealed class Http10ServerStateMachineErrorSpec : TestKit
 {
     private static FakeServerOps MakeOps() => new();
+
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
 
     private static TransportBuffer CreateRequestBuffer(string requestText)
     {
@@ -73,11 +85,8 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
         var sm = new Http10ServerStateMachine(new TurboServerOptions(), ops);
         sm.PreStart();
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent("test body"u8.ToArray())
-        };
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         var msg = await Task.Run(() => inbox.Receive(TimeSpan.FromSeconds(3)));
         var chunk = Assert.IsType<OutboundBodyChunk>(msg);

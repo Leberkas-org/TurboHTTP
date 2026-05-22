@@ -1,18 +1,28 @@
-using System.Net;
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerStateMachineTimerSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
     private sealed class TrackingServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> Requests { get; } = [];
@@ -116,9 +126,9 @@ public sealed class Http11ServerStateMachineTimerSpec
         Assert.True(sm.CanAcceptResponse);
 
         // Send a 204 No Content response (has EmptyContent automatically)
-        var response = new HttpResponseMessage(HttpStatusCode.NoContent);
+        var context = CreateResponseContext();
 
-        sm.OnResponse(response);
+        sm.OnResponse(context);
 
         // Clear timers to isolate the keep-alive timer from request-headers timer
         var timersBeforeBodyComplete = ops.ScheduledTimers.ToList();
@@ -144,14 +154,9 @@ public sealed class Http11ServerStateMachineTimerSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         // Send response with body
-        var responseBody = "Hello"u8.ToArray();
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent(responseBody)
-        };
-        response.Content.Headers.ContentLength = responseBody.Length;
+        var context = CreateResponseContext();
 
-        sm.OnResponse(response);
+        sm.OnResponse(context);
 
         // Send body chunks and completion
         var bodyBytes = "Hello"u8.ToArray();

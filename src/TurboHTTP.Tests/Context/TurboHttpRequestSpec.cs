@@ -2,6 +2,7 @@ using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Context;
 
@@ -95,7 +96,7 @@ public sealed class TurboHttpRequestSpec
     private static FeatureCollection CreateFeatures(HttpRequestMessage msg)
     {
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(msg, Source.Empty<ReadOnlyMemory<byte>>()));
+        features.Set<IHttpRequestFeature>(ServerTestContext.CreateRequestFeature(msg));
         return features;
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Server.Middleware;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Server;
 
@@ -12,8 +13,7 @@ public sealed class TurboPipelineBuilderSpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(
-            request, Akka.Streams.Dsl.Source.Empty<ReadOnlyMemory<byte>>()));
+        features.Set<IHttpRequestFeature>(ServerTestContext.CreateRequestFeature(request));
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
 
         return new TurboHttpContext(
@@ -76,8 +76,7 @@ public sealed class TurboPipelineBuilderSpec
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/admin/dashboard");
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(
-            request, Akka.Streams.Dsl.Source.Empty<ReadOnlyMemory<byte>>()));
+        features.Set<IHttpRequestFeature>(ServerTestContext.CreateRequestFeature(request));
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
 
         var ctx = new TurboHttpContext(

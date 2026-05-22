@@ -21,68 +21,6 @@ internal sealed class Http10ServerEncoder
         _options = options;
     }
 
-    public int Encode(Span<byte> _, HttpResponseMessage response, IActorRef stageActor)
-    {
-        // HTTP/1.0 always defers — buffer body to learn Content-Length
-        var bodyEncoder = new ContentLengthBufferedBodyEncoder();
-        bodyEncoder.Start(response.Content, stageActor);
-        return 0;
-    }
-
-    public int EncodeDeferred(Span<byte> destination, HttpResponseMessage response, ReadOnlySpan<byte> body)
-    {
-        var writer = SpanWriter.Create(destination);
-        StatusLineWriter.Write(ref writer, HttpVersion.Version10, (int)response.StatusCode);
-
-        var headers = new HeaderCollection();
-        foreach (var h in response.Headers)
-        {
-            if (ConnectionSemantics.IsHopByHop(h.Key))
-            {
-                continue;
-            }
-
-            foreach (var v in h.Value)
-            {
-                headers.Add(h.Key, v);
-            }
-        }
-
-        foreach (var h in response.Content.Headers)
-        {
-            if (string.Equals(h.Key, WellKnownHeaders.ContentLength, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (ConnectionSemantics.IsHopByHop(h.Key))
-            {
-                continue;
-            }
-
-            foreach (var v in h.Value)
-            {
-                headers.Add(h.Key, v);
-            }
-        }
-
-        headers.Add(WellKnownHeaders.ContentLength, body.Length.ToString(CultureInfo.InvariantCulture));
-
-        if (_options.WriteDateHeader && !headers.Contains(WellKnownHeaders.Date))
-        {
-            headers.Add(WellKnownHeaders.Date, DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture));
-        }
-
-        HeaderBlockWriter.Write(ref writer, headers);
-
-        if (body.Length > 0)
-        {
-            writer.WriteBytes(body);
-        }
-
-        return writer.BytesWritten;
-    }
-
     public int Encode(Span<byte> _, TurboHttpContext context, IActorRef stageActor)
     {
         // HTTP/1.0 always defers — body sink will be handled by caller

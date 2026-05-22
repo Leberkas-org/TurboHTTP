@@ -25,7 +25,6 @@ internal sealed class Http11ServerDecoder
     private string _target = null!;
     private Version _version = null!;
     private IBodyDecoder? _bodyDecoder;
-    private HttpRequestMessage? _request;
 
     public Http11ServerDecoder(Http11ServerDecoderOptions options)
     {
@@ -108,25 +107,6 @@ internal sealed class Http11ServerDecoder
         }
     }
 
-    public HttpRequestMessage GetRequest()
-    {
-        if (_request is not null)
-        {
-            return _request;
-        }
-
-        var content = _bodyDecoder?.GetContent() ?? new ByteArrayContent([]);
-
-        var msg = new HttpRequestMessage(_method, _target)
-        {
-            Version = _version,
-            Content = content,
-        };
-        HeaderRouter.ApplyToRequest(msg, _headerReader.GetHeaders());
-        _request = msg;
-        return msg;
-    }
-
     public TurboHttpRequestFeature GetRequestFeature()
     {
         var headers = new HeaderDictionary();
@@ -170,7 +150,6 @@ internal sealed class Http11ServerDecoder
         _target = null!;
         _version = null!;
         _bodyDecoder = null;
-        _request = null;
         _headerReader.Reset();
     }
 }

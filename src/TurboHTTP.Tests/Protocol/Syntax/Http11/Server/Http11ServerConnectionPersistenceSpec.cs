@@ -1,17 +1,28 @@
-using System.Net;
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerConnectionPersistenceSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.3")]
     public void ServerStateMachine_should_default_to_persistent_connection_for_http11()
@@ -75,11 +86,8 @@ public sealed class Http11ServerConnectionPersistenceSpec
 
         sm.DecodeClientData(new TransportData(buffer));
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("")
-        };
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         Assert.Single(ops.EmittedOutbound);
         var outbound = ops.EmittedOutbound[0];

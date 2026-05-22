@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Server;
 
@@ -16,7 +17,7 @@ internal static class TurboTestContextFactory
         var request = new HttpRequestMessage(new HttpMethod(method), uri);
 
         var features = new FeatureCollection();
-        var requestFeature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
+        var requestFeature = ServerTestContext.CreateRequestFeature(request);
         features.Set<IHttpRequestFeature>(requestFeature);
         features.Set<ITurboRequestBodyFeature>(requestFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());

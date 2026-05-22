@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Streams.Stages.Server;
 using TurboHTTP.Tests.Shared;
 

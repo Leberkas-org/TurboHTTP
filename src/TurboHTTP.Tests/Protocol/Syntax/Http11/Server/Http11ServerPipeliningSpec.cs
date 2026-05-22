@@ -1,17 +1,28 @@
-using System.Net;
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerPipeliningSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9112-9.4")]
     public void ServerStateMachine_should_decode_two_pipelined_requests_from_single_buffer()
@@ -55,17 +66,11 @@ public sealed class Http11ServerPipeliningSpec
 
         sm.DecodeClientData(new TransportData(buffer));
 
-        var response1 = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("Response 1")
-        };
-        sm.OnResponse(response1);
+        var context1 = CreateResponseContext();
+        sm.OnResponse(context1);
 
-        var response2 = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("Response 2")
-        };
-        sm.OnResponse(response2);
+        var context2 = CreateResponseContext();
+        sm.OnResponse(context2);
 
         Assert.Equal(2, ops.EmittedOutbound.Count);
     }
@@ -77,12 +82,9 @@ public sealed class Http11ServerPipeliningSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("")
-        };
+        var context = CreateResponseContext();
 
-        Assert.Throws<InvalidOperationException>(() => sm.OnResponse(response));
+        Assert.Throws<InvalidOperationException>(() => sm.OnResponse(context));
     }
 
     [Fact(Timeout = 5000)]

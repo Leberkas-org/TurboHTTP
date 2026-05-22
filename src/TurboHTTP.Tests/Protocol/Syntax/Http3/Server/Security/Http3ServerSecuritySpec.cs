@@ -29,8 +29,6 @@ public sealed class Http3ServerSecuritySpec
         return s;
     }
 
-    #region Field Section Size Validation Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.2.2")]
     public void Field_section_exceeding_max_size_should_be_rejected()
@@ -79,10 +77,6 @@ public sealed class Http3ServerSecuritySpec
         Assert.Contains("SETTINGS_MAX_FIELD_SECTION_SIZE", ex.Message);
     }
 
-    #endregion
-
-    #region Header Name Validation Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.2")]
     public void Uppercase_header_name_should_be_rejected()
@@ -104,10 +98,6 @@ public sealed class Http3ServerSecuritySpec
         var ex = Assert.Throws<HttpProtocolException>(() => decoder.DecodeHeaders(frame, state));
         Assert.Contains("uppercase", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
-
-    #endregion
-
-    #region Header Value Validation Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-10.3")]
@@ -151,6 +141,4 @@ public sealed class Http3ServerSecuritySpec
         var ex = Assert.Throws<QpackException>(() => EncodeAndSync(headers));
         Assert.Contains("empty", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
-
-    #endregion
 }

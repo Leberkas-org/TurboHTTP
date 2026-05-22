@@ -4,12 +4,10 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
-using TurboHTTP.Streams;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 
-using TurboHTTP.Server;
-
-
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
 /// <summary>
 /// Unit tests for HTTP/3 Http3ServerSessionManager critical streams and SETTINGS frame.
@@ -116,5 +114,3 @@ public sealed class Http3CriticalStreamsSpec
         Assert.Equal(0, sm.ActiveStreamCount);
     }
 }
-
-

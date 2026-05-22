@@ -1,17 +1,17 @@
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
-using TurboHTTP.Streams;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 
-using TurboHTTP.Server;
-
-
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
 /// <summary>
 /// Unit tests for HTTP/3 Http3ServerSessionManager stream lifecycle.
@@ -19,6 +19,17 @@ using TurboHTTP.Server;
 /// </summary>
 public sealed class Http3StreamLifecycleSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class TrackingServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> Requests { get; } = [];
@@ -28,7 +39,7 @@ public sealed class Http3StreamLifecycleSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(TurboHttpContext context) { /* context received */ }
+        public void OnRequest(TurboHttpContext context) { Requests.Add(new HttpRequestMessage()); }
 
         public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
 
@@ -133,15 +144,9 @@ public sealed class Http3StreamLifecycleSpec
         var ops = new TrackingServerOps();
         var sm = CreateSM(ops);
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
-        var request = new HttpRequestMessage();
-        request.Options.Set(StreamIdKey.Http3, 999L);
-        response.RequestMessage = request;
-        response.Content = new ByteArrayContent([]);
-        response.Content.Headers.ContentLength = 0;
-
-        // Should not throw
-        sm.OnResponse(response);
+        // Should not throw when responding on unknown stream
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // No requests should be emitted (stream 999 never existed)
         Assert.Empty(ops.Requests);
@@ -162,14 +167,8 @@ public sealed class Http3StreamLifecycleSpec
 
         ops.Outbound.Clear();
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            RequestMessage = request
-        };
-        response.Content = new ByteArrayContent([]);
-        response.Content.Headers.ContentLength = 0;
-
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         var completeWrites = ops.Outbound.OfType<CompleteWrites>().ToList();
         Assert.Single(completeWrites);
@@ -226,5 +225,3 @@ public sealed class Http3StreamLifecycleSpec
         Assert.Equal(streamId, storedStreamId);
     }
 }
-
-

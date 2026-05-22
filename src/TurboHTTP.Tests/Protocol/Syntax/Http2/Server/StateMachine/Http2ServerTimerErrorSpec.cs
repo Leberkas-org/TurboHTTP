@@ -1,10 +1,11 @@
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
@@ -16,6 +17,17 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 /// </summary>
 public sealed class Http2ServerTimerErrorSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class TrackingServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> Requests { get; } = [];
@@ -211,16 +223,9 @@ public sealed class Http2ServerTimerErrorSpec
 
         sm.PreStart();
 
-        // Create a response with an unknown stream ID
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
-        var request = new HttpRequestMessage();
-        request.Options.Set(new HttpRequestOptionsKey<int>("TurboHTTP.StreamId.H2"), 999);
-        response.RequestMessage = request;
-        response.Content = new ByteArrayContent([]);
-        response.Content.Headers.ContentLength = 0;
-
         // Should not throw when responding on unknown stream
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
     }
 }
 

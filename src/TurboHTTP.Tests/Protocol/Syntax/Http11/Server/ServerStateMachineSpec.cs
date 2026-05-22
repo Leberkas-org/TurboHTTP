@@ -1,7 +1,6 @@
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Primitives;
 using Servus.Akka.Transport;
@@ -9,7 +8,6 @@ using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
@@ -23,7 +21,9 @@ public sealed class ServerStateMachineSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(TurboHttpContext context) { }
+        public void OnRequest(TurboHttpContext context)
+        {
+        }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -409,19 +409,18 @@ public sealed class ServerStateMachineSpec
         {
             foreach (var header in response.Content.Headers)
             {
-                responseFeature.Headers.Add(header.Key, new StringValues(header.Value.ToArray()));
+                responseFeature.Headers[header.Key] = new StringValues(header.Value.ToArray());
             }
         }
 
         foreach (var header in response.Headers)
         {
-            responseFeature.Headers.Add(header.Key, new StringValues(header.Value.ToArray()));
+            responseFeature.Headers[header.Key] = new StringValues(header.Value.ToArray());
         }
 
         if (response.Content is not null)
         {
-            var body = response.Content.ReadAsStream();
-            var bodyFeature = new TurboHttpResponseBodyFeature(body);
+            var bodyFeature = new TurboHttpResponseBodyFeature();
             features.Set<IHttpResponseBodyFeature>(bodyFeature);
             features.Set<ITurboResponseBodyFeature>(bodyFeature);
         }
@@ -430,5 +429,3 @@ public sealed class ServerStateMachineSpec
         return new TurboHttpContext(features);
     }
 }
-
-

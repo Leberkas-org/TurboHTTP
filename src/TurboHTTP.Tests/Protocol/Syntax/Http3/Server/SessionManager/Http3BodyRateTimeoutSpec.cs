@@ -5,12 +5,10 @@ using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
-using TurboHTTP.Streams;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 
-using TurboHTTP.Server;
-
-
+namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
 /// <summary>
 /// Unit tests for HTTP/3 Http3ServerSessionManager body rate checking and timeout handling.
@@ -187,5 +185,3 @@ public sealed class Http3BodyRateTimeoutSpec
         Assert.Equal("https://localhost/", request.RequestUri?.ToString());
     }
 }
-
-

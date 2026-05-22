@@ -15,7 +15,7 @@ public sealed class MiddlewarePipelineStageSpec : StreamTestBase
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
 
         var features = new FeatureCollection();
-        var requestFeature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
+        var requestFeature = ServerTestContext.CreateRequestFeature(request);
         features.Set<IHttpRequestFeature>(requestFeature);
         features.Set<ITurboRequestBodyFeature>(requestFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());

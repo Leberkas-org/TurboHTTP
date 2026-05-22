@@ -1,16 +1,17 @@
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
-using TurboHTTP.Streams;
+using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
-using TurboHTTP.Server;
 
-
+namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
 /// <summary>
 /// Unit tests for HTTP/2 SessionManager stream lifecycle and max concurrent streams.
@@ -18,6 +19,17 @@ using TurboHTTP.Server;
 /// </summary>
 public sealed class Http2StreamLifecycleSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class TrackingServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> Requests { get; } = [];
@@ -29,6 +41,8 @@ public sealed class Http2StreamLifecycleSpec
 
         public void OnRequest(TurboHttpContext context)
         {
+            // Dummy request for tracking test calls
+            Requests.Add(new HttpRequestMessage());
         }
 
         public void OnOutbound(ITransportOutbound item)
@@ -311,22 +325,10 @@ public sealed class Http2StreamLifecycleSpec
         ops.Outbound.Clear();
         ops.ScheduledTimers.Clear();
 
-        // Create response for stream 999 (never opened)
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
-        var request = new HttpRequestMessage();
-        request.Options.Set(
-            new HttpRequestOptionsKey<int>("TurboHTTP.StreamId.H2"),
-            999);
-        response.RequestMessage = request;
-        response.Content = new ByteArrayContent([]);
-        response.Content.Headers.ContentLength = 0;
-
-        // Should not throw
-        sm.OnResponse(response);
+        // Should not throw when responding on unknown stream
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // No crash, test passes
     }
 }
-
-
-

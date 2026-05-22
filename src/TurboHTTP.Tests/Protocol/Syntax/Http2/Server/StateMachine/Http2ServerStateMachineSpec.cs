@@ -1,11 +1,12 @@
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
@@ -17,6 +18,17 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 /// </summary>
 public sealed class Http2ServerStateMachineSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class FakeServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> EmittedRequests { get; } = [];
@@ -278,14 +290,9 @@ public sealed class Http2ServerStateMachineSpec
         var request = ops.EmittedRequests[0];
 
         // Now send a response
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            RequestMessage = request,
-            Content = new StringContent("Hello, World!")
-        };
-
         ops.EmittedOutbound.Clear();
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // Should emit response frames
         Assert.NotEmpty(ops.EmittedOutbound);

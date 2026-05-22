@@ -144,7 +144,7 @@ public sealed class DelegateHandlerBinderSpec : StreamTestBase
         var connection = new TurboConnectionInfo("test", null, 0, null, 0);
 
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>()));
+        features.Set<IHttpRequestFeature>(ServerTestContext.CreateRequestFeature(request));
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(connection));
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());

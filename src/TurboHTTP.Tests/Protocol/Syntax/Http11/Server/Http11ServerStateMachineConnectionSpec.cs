@@ -1,19 +1,29 @@
 using System.Buffers;
-using System.Net;
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerStateMachineConnectionSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
     private sealed class TrackingServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> Requests { get; } = [];
@@ -83,12 +93,9 @@ public sealed class Http11ServerStateMachineConnectionSpec
         sm.DecodeClientData(new TransportData(buffer));
         Assert.True(sm.ShouldComplete);
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent([])
-        };
+        var context = CreateResponseContext();
 
-        sm.OnResponse(response);
+        sm.OnResponse(context);
 
         var transportData = ops.Outbound.OfType<TransportData>().First();
         var responseText = Encoding.ASCII.GetString(transportData.Buffer.Span);
@@ -123,12 +130,9 @@ public sealed class Http11ServerStateMachineConnectionSpec
         sm.DecodeClientData(new TransportData(buffer));
         Assert.True(sm.CanAcceptResponse);
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent("test"u8.ToArray())
-        };
+        var context = CreateResponseContext();
 
-        sm.OnResponse(response);
+        sm.OnResponse(context);
 
         // After response, CanAcceptResponse should be false because body is pending
         Assert.False(sm.CanAcceptResponse);
@@ -154,12 +158,9 @@ public sealed class Http11ServerStateMachineConnectionSpec
 
         sm.DecodeClientData(new TransportData(buffer));
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent("hello world"u8.ToArray())
-        };
+        var context = CreateResponseContext();
 
-        sm.OnResponse(response);
+        sm.OnResponse(context);
         var headerCount = ops.Outbound.Count;
 
         // Send first chunk
@@ -196,12 +197,8 @@ public sealed class Http11ServerStateMachineConnectionSpec
 
         sm.DecodeClientData(new TransportData(buffer));
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent("test"u8.ToArray())
-        };
-
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // Call Cleanup twice
         sm.Cleanup();
@@ -218,12 +215,9 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new TrackingServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent([])
-        };
+        var context = CreateResponseContext();
 
-        var ex = Assert.Throws<InvalidOperationException>(() => sm.OnResponse(response));
+        var ex = Assert.Throws<InvalidOperationException>(() => sm.OnResponse(context));
         Assert.Contains("no requests are pending", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

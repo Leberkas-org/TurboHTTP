@@ -30,42 +30,6 @@ internal sealed class Http3ServerEncoder
     /// Encodes a response to HTTP/3 HEADERS frame only.
     /// Body is handled asynchronously via IBodyEncoder and StreamState outbound buffer.
     /// </summary>
-    public HeadersFrame EncodeHeaders(HttpResponseMessage response)
-    {
-        ArgumentNullException.ThrowIfNull(response);
-
-        _reusableHeaders.Clear();
-        BuildHeaderList(response, _reusableHeaders);
-
-        var headerBlock = _tableSync.Encoder.Encode(_reusableHeaders);
-
-        return new HeadersFrame(headerBlock);
-    }
-
-    private static void BuildHeaderList(HttpResponseMessage response, List<(string Name, string Value)> headers)
-    {
-        // RFC 9114 §6.3: :status pseudo-header (required, must be first)
-        headers.Add((WellKnownHeaders.Status, ((int)response.StatusCode).ToString()));
-
-        // Add regular headers (lowercase per RFC 9114)
-        foreach (var h in response.Headers)
-        {
-            if (!ContentHeaderClassifier.IsForbiddenConnectionHeader(h.Key))
-            {
-                headers.Add((ContentHeaderClassifier.ToLowerAscii(h.Key), ContentHeaderClassifier.JoinHeaderValues(h.Value)));
-            }
-        }
-
-        // Add content headers if content is present
-        if (response.Content is not null)
-        {
-            foreach (var h in response.Content.Headers)
-            {
-                headers.Add((ContentHeaderClassifier.ToLowerAscii(h.Key), ContentHeaderClassifier.JoinHeaderValues(h.Value)));
-            }
-        }
-    }
-
     public HeadersFrame EncodeHeaders(TurboHttpContext context)
     {
         ArgumentNullException.ThrowIfNull(context);

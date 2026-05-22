@@ -12,7 +12,6 @@ namespace TurboHTTP.Protocol.Syntax.Http3;
 internal sealed class StreamState
 {
     private HttpResponseMessage? _response;
-    private HttpRequestMessage? _request;
     private TurboHttpRequestFeature? _requestFeature;
     private List<(string Name, string Value)>? _contentHeaders;
     private Dictionary<string, string>? _pseudoHeaders;
@@ -23,8 +22,6 @@ internal sealed class StreamState
     public long StreamId { get; private set; } = -1;
 
     public bool HasResponse => _response is not null;
-
-    public bool HasRequest => _request is not null;
 
     public bool HasContentHeaders => _contentHeaders is not null;
 
@@ -54,16 +51,6 @@ internal sealed class StreamState
         return _response ?? throw new InvalidOperationException("No response has been initialized.");
     }
 
-    public void InitRequest(HttpRequestMessage request)
-    {
-        _request = request;
-    }
-
-    public HttpRequestMessage GetRequest()
-    {
-        return _request ?? throw new InvalidOperationException("No request has been initialized.");
-    }
-
     public void InitRequestFeature(TurboHttpRequestFeature feature)
     {
         _requestFeature = feature;
@@ -72,11 +59,6 @@ internal sealed class StreamState
     public TurboHttpRequestFeature? GetRequestFeature()
     {
         return _requestFeature;
-    }
-
-    public HttpRequestMessage GetOrCreateRequest()
-    {
-        return _request ??= new HttpRequestMessage();
     }
 
     public void AddPseudoHeader(string name, string value)
@@ -236,7 +218,6 @@ internal sealed class StreamState
     {
         StreamId = -1;
         _response = null;
-        _request = null;
         _requestFeature = null;
         ExpectedContentLength = null;
         _contentHeaders = null;

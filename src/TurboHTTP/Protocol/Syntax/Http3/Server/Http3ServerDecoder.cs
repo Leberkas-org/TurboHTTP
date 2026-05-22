@@ -25,41 +25,6 @@ internal sealed class Http3ServerDecoder
 
     public ReadOnlyMemory<byte> DecoderInstructions => _tableSync.Decoder.DecoderInstructions;
 
-    public bool DecodeHeaders(HeadersFrame frame, StreamState state)
-    {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(state);
-
-        var result = _tableSync.TryDecodeOrBlock(frame.HeaderBlock, (int)state.StreamId);
-
-        if (result.IsBlocked)
-        {
-            return false;
-        }
-
-        var headers = result.Headers!;
-        ValidateRequestHeaders(headers);
-        ValidateFieldSectionSize(headers, state.StreamId);
-
-        var request = new HttpRequestMessage();
-        var isConnect = AssembleRequest(headers, request, state);
-
-        if (!isConnect)
-        {
-            var path = state.GetPseudoHeader(WellKnownHeaders.Path);
-            var scheme = state.GetPseudoHeader(WellKnownHeaders.Scheme);
-            var authority = state.GetPseudoHeader(WellKnownHeaders.Authority);
-
-            request.RequestUri = new Uri(string.Concat(scheme, "://", authority, path));
-        }
-
-        request.Version = new Version(3, 0);
-
-        state.InitRequest(request);
-
-        return true;
-    }
-
     public TurboHttpRequestFeature? DecodeHeadersToFeature(HeadersFrame frame, StreamState state, bool endStream)
     {
         ArgumentNullException.ThrowIfNull(frame);
@@ -157,49 +122,6 @@ internal sealed class Http3ServerDecoder
             TokenSection,
             FieldValueSection,
             ConnectionSection);
-    }
-
-    private static bool AssembleRequest(
-        IReadOnlyList<(string Name, string Value)> headers,
-        HttpRequestMessage request,
-        StreamState state)
-    {
-        var isConnect = false;
-
-        foreach (var h in headers)
-        {
-            if (h.Name == WellKnownHeaders.Method.Name)
-            {
-                request.Method = new HttpMethod(h.Value);
-                if (h.Value == WellKnownHeaders.Connect)
-                {
-                    isConnect = true;
-                }
-            }
-            else if (h.Name == WellKnownHeaders.Path)
-            {
-                state.AddPseudoHeader(WellKnownHeaders.Path, h.Value);
-            }
-            else if (h.Name == WellKnownHeaders.Scheme)
-            {
-                state.AddPseudoHeader(WellKnownHeaders.Scheme, h.Value);
-            }
-            else if (h.Name == WellKnownHeaders.Authority)
-            {
-                state.AddPseudoHeader(WellKnownHeaders.Authority, h.Value);
-            }
-            else if (!h.Name.StartsWith(':'))
-            {
-                request.Headers.TryAddWithoutValidation(h.Name, h.Value);
-
-                if (ContentHeaderClassifier.IsContentHeader(h.Name))
-                {
-                    state.AddContentHeader(h.Name, h.Value);
-                }
-            }
-        }
-
-        return isConnect;
     }
 
     private void ValidateFieldSectionSize(IReadOnlyList<(string Name, string Value)> headers, long streamId)

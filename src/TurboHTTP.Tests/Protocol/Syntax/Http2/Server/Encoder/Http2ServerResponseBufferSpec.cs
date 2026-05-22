@@ -1,11 +1,12 @@
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
@@ -16,6 +17,17 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 /// </summary>
 public sealed class Http2ServerResponseBufferSpec
 {
+    private static TurboHttpContext CreateResponseContext()
+    {
+        var features = new FeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
+        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
+        var bodyFeature = new TurboHttpResponseBodyFeature();
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
+        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        return new TurboHttpContext(features);
+    }
+
     private sealed class FakeServerOps : IServerStageOperations
     {
         public List<HttpRequestMessage> EmittedRequests { get; } = [];
@@ -155,17 +167,11 @@ public sealed class Http2ServerResponseBufferSpec
         Assert.Single(ops.EmittedRequests);
         var request = ops.EmittedRequests[0];
 
-        // Create response with no body
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.NoContent)
-        {
-            Content = new ByteArrayContent([]),
-            RequestMessage = request
-        };
-
         var initialOutboundCount = ops.EmittedOutbound.Count;
 
         // Send response
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // Extract frames after response
         var frames = ExtractFrames(ops.EmittedOutbound, initialOutboundCount);
@@ -192,18 +198,11 @@ public sealed class Http2ServerResponseBufferSpec
         Assert.Single(ops.EmittedRequests);
         var request = ops.EmittedRequests[0];
 
-        // Create response with body
-        var bodyData = "Hello, Client!"u8.ToArray();
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent(bodyData),
-            RequestMessage = request
-        };
-
         var initialOutboundCount = ops.EmittedOutbound.Count;
 
         // Send response
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         // Extract frames after response
         var framesAfterResponse = ExtractFrames(ops.EmittedOutbound, initialOutboundCount);
@@ -228,13 +227,8 @@ public sealed class Http2ServerResponseBufferSpec
         Assert.Single(ops.EmittedRequests);
         var request = ops.EmittedRequests[0];
 
-        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-        {
-            Content = new ByteArrayContent("test"u8.ToArray()),
-            RequestMessage = request
-        };
-
-        sm.OnResponse(response);
+        var context = CreateResponseContext();
+        sm.OnResponse(context);
 
         var windowUpdateData = BuildWindowUpdateFrame(streamId: 1, increment: 50000);
         DecodeFramesAsStream(ops, sm, windowUpdateData);

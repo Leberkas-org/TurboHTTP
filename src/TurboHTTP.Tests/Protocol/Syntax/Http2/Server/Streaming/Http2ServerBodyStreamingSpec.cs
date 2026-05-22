@@ -5,7 +5,6 @@ using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Streaming;
@@ -18,12 +17,15 @@ public sealed class Http2ServerBodyStreamingSpec
 {
     private sealed class FakeServerOps : IServerStageOperations
     {
-        public List<HttpRequestMessage> EmittedRequests { get; } = [];
+        public List<TurboHttpContext> EmittedRequests { get; } = [];
         public List<ITransportOutbound> EmittedOutbound { get; } = [];
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(TurboHttpContext context) { }
+        public void OnRequest(TurboHttpContext context)
+        {
+            EmittedRequests.Add(context);
+        }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -130,11 +132,12 @@ public sealed class Http2ServerBodyStreamingSpec
 
         // Request should be emitted immediately
         Assert.Single(ops.EmittedRequests);
-        var request = ops.EmittedRequests[0];
+        var context = ops.EmittedRequests[0];
 
-        // Content should be PipeBodyContent
-        Assert.NotNull(request.Content);
-        Assert.IsType<StreamContent>(request.Content);
+        // Request should have a body stream
+        var bodyStream = context.Request.Body;
+        Assert.NotNull(bodyStream);
+        Assert.True(bodyStream.CanRead);
 
         // Now send DATA frame
         var bodyData = "Hello, Server!"u8.ToArray();
@@ -146,9 +149,9 @@ public sealed class Http2ServerBodyStreamingSpec
 
         sm.DecodeClientData(new TransportData(buffer2));
 
-        // Read from PipeBodyContent's stream
+        // Read from body stream
         using var stream = new MemoryStream();
-        await request.Content.CopyToAsync(stream, TestContext.Current.CancellationToken);
+        await bodyStream.CopyToAsync(stream, TestContext.Current.CancellationToken);
         var receivedData = stream.ToArray();
         Assert.Equal(bodyData, receivedData);
     }
@@ -172,11 +175,14 @@ public sealed class Http2ServerBodyStreamingSpec
 
         // Request should be emitted
         Assert.Single(ops.EmittedRequests);
-        var request = ops.EmittedRequests[0];
+        var context = ops.EmittedRequests[0];
 
-        // Content should NOT be PipeBodyContent (will be ByteArrayContent for empty body)
-        Assert.NotNull(request.Content);
-        Assert.False(request.Content is StreamContent);
+        // Request should have empty body stream
+        var bodyStream = context.Request.Body;
+        Assert.NotNull(bodyStream);
+        using var ms = new MemoryStream();
+        bodyStream.CopyTo(ms);
+        Assert.Empty(ms.ToArray());
     }
 
     [Fact(Timeout = 5000)]
@@ -247,8 +253,9 @@ public sealed class Http2ServerBodyStreamingSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         Assert.Single(ops.EmittedRequests);
-        var request = ops.EmittedRequests[0];
-        Assert.IsType<StreamContent>(request.Content);
+        var context = ops.EmittedRequests[0];
+        var bodyStream = context.Request.Body;
+        Assert.NotNull(bodyStream);
 
         // Send first DATA frame
         var data1 = "First "u8.ToArray();
@@ -270,9 +277,9 @@ public sealed class Http2ServerBodyStreamingSpec
 
         sm.DecodeClientData(new TransportData(buffer2));
 
-        // Read aggregated data from pipe
+        // Read aggregated data from body stream
         using var stream = new MemoryStream();
-        await request.Content.CopyToAsync(stream, TestContext.Current.CancellationToken);
+        await bodyStream.CopyToAsync(stream, TestContext.Current.CancellationToken);
         var receivedData = System.Text.Encoding.UTF8.GetString(stream.ToArray());
         Assert.Equal("First Second", receivedData);
     }
@@ -295,8 +302,9 @@ public sealed class Http2ServerBodyStreamingSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         Assert.Single(ops.EmittedRequests);
-        var request = ops.EmittedRequests[0];
-        Assert.IsType<StreamContent>(request.Content);
+        var context = ops.EmittedRequests[0];
+        var bodyStream = context.Request.Body;
+        Assert.NotNull(bodyStream);
 
         // Send partial DATA frame
         var partialData = "partial"u8.ToArray();
