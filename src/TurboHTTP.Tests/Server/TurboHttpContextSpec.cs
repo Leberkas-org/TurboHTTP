@@ -93,7 +93,7 @@ public sealed class TurboHttpContextSpec
         var conn = connection ?? new TurboConnectionInfo("test", IPAddress.Loopback, 0, IPAddress.Loopback, 0);
 
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature(req, Source.Empty<ReadOnlyMemory<byte>>()));
+        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(req, Source.Empty<ReadOnlyMemory<byte>>()));
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(conn));
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());

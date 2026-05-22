@@ -6,116 +6,111 @@ using TurboHTTP.Context.Adapters;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpRequestFeature(
-    HttpRequestMessage request,
-    Source<ReadOnlyMemory<byte>, NotUsed> bodySource)
-    : IHttpRequestFeature, ITurboRequestBodyFeature
+internal sealed class TurboHttpRequestFeature : IHttpRequestFeature, ITurboRequestBodyFeature
 {
-    public string Protocol
+    public string Protocol { get; set; } = "HTTP/1.1";
+
+    public string Scheme { get; set; } = "http";
+
+    public string Method { get; set; } = "GET";
+
+    public string PathBase { get; set; } = string.Empty;
+
+    public string Path { get; set; } = "/";
+
+    public string QueryString { get; set; } = string.Empty;
+
+    public string RawTarget { get; set; } = "/";
+
+    public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
+
+    public Stream Body { get; set; } = Stream.Null;
+
+    public Source<ReadOnlyMemory<byte>, NotUsed> BodySource { get; init; } =
+        Source.Empty<ReadOnlyMemory<byte>>();
+
+    /// <summary>
+    /// Stores the Host header value extracted from RequestUri.
+    /// This is used by TurboHttpRequest.RequestUri to reconstruct the full URI.
+    /// </summary>
+    internal string? ExtractedHost { get; set; }
+
+    internal static TurboHttpRequestFeature FromHttpRequestMessage(
+        HttpRequestMessage request,
+        Source<ReadOnlyMemory<byte>, NotUsed> bodySource)
     {
-        get
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(bodySource);
+
+        var protocol = request.Version switch
         {
-            return RequestMessage.Version switch
-            {
-                { Major: 1, Minor: 0 } => "HTTP/1.0",
-                { Major: 1, Minor: 1 } => "HTTP/1.1",
-                { Major: 2 } => "HTTP/2",
-                { Major: 3 } => "HTTP/3",
-                _ => "HTTP/1.1"
-            };
-        }
-        set { }
-    }
+            { Major: 1, Minor: 0 } => "HTTP/1.0",
+            { Major: 1, Minor: 1 } => "HTTP/1.1",
+            { Major: 2 } => "HTTP/2",
+            { Major: 3 } => "HTTP/3",
+            _ => "HTTP/1.1"
+        };
 
-    public string Scheme
-    {
-        get => RequestMessage.RequestUri is { IsAbsoluteUri: true } uri ? uri.Scheme : "http";
-        set { }
-    }
+        var scheme = request.RequestUri is { IsAbsoluteUri: true } uri ? uri.Scheme : "http";
 
-    public string Method
-    {
-        get => RequestMessage.Method.Method;
-        set => RequestMessage.Method = new HttpMethod(value);
-    }
+        var path = request.RequestUri == null
+            ? "/"
+            : request.RequestUri.IsAbsoluteUri
+                ? string.IsNullOrEmpty(request.RequestUri.AbsolutePath)
+                    ? "/"
+                    : request.RequestUri.AbsolutePath
+                : ExtractPathFromRelativeUri(request.RequestUri.OriginalString);
 
-    public string PathBase
-    {
-        get => string.Empty;
-        set { }
-    }
+        var queryString = request.RequestUri == null
+            ? string.Empty
+            : request.RequestUri.IsAbsoluteUri
+                ? string.IsNullOrEmpty(request.RequestUri.Query)
+                    ? string.Empty
+                    : request.RequestUri.Query
+                : ExtractQueryStringFromRelativeUri(request.RequestUri.OriginalString);
 
-    public string Path
-    {
-        get
+        var rawTarget = request.RequestUri?.OriginalString ?? "/";
+
+        var headers = new TurboRequestHeaderDictionary(
+            request.Headers,
+            request.Content?.Headers);
+
+        // Extract host from RequestUri for later use in reconstructing full URIs
+        string? extractedHost = null;
+        if (request.RequestUri is { IsAbsoluteUri: true })
         {
-            if (RequestMessage.RequestUri == null)
-            {
-                return "/";
-            }
-
-            if (RequestMessage.RequestUri.IsAbsoluteUri)
-            {
-                var path = RequestMessage.RequestUri.AbsolutePath;
-                return string.IsNullOrEmpty(path) ? "/" : path;
-            }
-
-            var original = RequestMessage.RequestUri.OriginalString;
-            var queryIdx = original.IndexOf('?');
-            var pathPart = queryIdx >= 0 ? original[..queryIdx] : original;
-            return string.IsNullOrEmpty(pathPart) ? "/" : pathPart;
+            var host = request.RequestUri.Host;
+            var port = request.RequestUri.Port;
+            extractedHost = port == 80 || port == 443 ? host : string.Concat(host, ":", port);
         }
-        set { }
-    }
 
-    public string QueryString
-    {
-        get
+        var body = request.Content is not null ? request.Content.ReadAsStream() : Stream.Null;
+
+        return new TurboHttpRequestFeature
         {
-            if (RequestMessage.RequestUri == null)
-            {
-                return string.Empty;
-            }
-
-            if (RequestMessage.RequestUri.IsAbsoluteUri)
-            {
-                var query = RequestMessage.RequestUri.Query;
-                return string.IsNullOrEmpty(query) ? string.Empty : query;
-            }
-
-            var original = RequestMessage.RequestUri.OriginalString;
-            var queryIdx = original.IndexOf('?');
-            return queryIdx >= 0 ? original[queryIdx..] : string.Empty;
-        }
-        set { }
+            Protocol = protocol,
+            Scheme = scheme,
+            Method = request.Method.Method,
+            Path = path,
+            QueryString = queryString,
+            RawTarget = rawTarget,
+            Headers = headers,
+            Body = body,
+            BodySource = bodySource,
+            ExtractedHost = extractedHost
+        };
     }
 
-    public string RawTarget
+    private static string ExtractPathFromRelativeUri(string original)
     {
-        get => RequestMessage.RequestUri?.OriginalString ?? "/";
-        set { }
+        var queryIdx = original.IndexOf('?');
+        var pathPart = queryIdx >= 0 ? original[..queryIdx] : original;
+        return string.IsNullOrEmpty(pathPart) ? "/" : pathPart;
     }
 
-    public IHeaderDictionary Headers
+    private static string ExtractQueryStringFromRelativeUri(string original)
     {
-        get
-        {
-            field ??= new TurboRequestHeaderDictionary(
-                RequestMessage.Headers,
-                RequestMessage.Content?.Headers);
-            return field;
-        }
-        set { }
+        var queryIdx = original.IndexOf('?');
+        return queryIdx >= 0 ? original[queryIdx..] : string.Empty;
     }
-
-    public Stream Body
-    {
-        get => RequestMessage.Content?.ReadAsStream() ?? Stream.Null;
-        set { }
-    }
-
-    public Source<ReadOnlyMemory<byte>, NotUsed> BodySource { get; } =
-        bodySource ?? throw new ArgumentNullException(nameof(bodySource));
-
-    internal HttpRequestMessage RequestMessage { get; } = request ?? throw new ArgumentNullException(nameof(request));
 }

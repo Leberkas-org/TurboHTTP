@@ -2,10 +2,8 @@ using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpRequestBodyDetectionFeature(HttpRequestMessage request)
+internal sealed class TurboHttpRequestBodyDetectionFeature(bool canHaveBody)
     : IHttpRequestBodyDetectionFeature
 {
-    private readonly HttpRequestMessage _request = request ?? throw new ArgumentNullException(nameof(request));
-
-    public bool CanHaveBody => _request.Content is not null;
+    public bool CanHaveBody { get; } = canHaveBody;
 }

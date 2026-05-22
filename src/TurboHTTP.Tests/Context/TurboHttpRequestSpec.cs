@@ -95,7 +95,7 @@ public sealed class TurboHttpRequestSpec
     private static FeatureCollection CreateFeatures(HttpRequestMessage msg)
     {
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature(msg, Source.Empty<ReadOnlyMemory<byte>>()));
+        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(msg, Source.Empty<ReadOnlyMemory<byte>>()));
         return features;
     }
 }

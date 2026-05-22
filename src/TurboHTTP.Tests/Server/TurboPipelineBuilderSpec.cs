@@ -12,7 +12,7 @@ public sealed class TurboPipelineBuilderSpec
     {
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/test");
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature(
+        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(
             request, Akka.Streams.Dsl.Source.Empty<ReadOnlyMemory<byte>>()));
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
 
@@ -76,7 +76,7 @@ public sealed class TurboPipelineBuilderSpec
 
         var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/admin/dashboard");
         var features = new FeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature(
+        features.Set<IHttpRequestFeature>(TurboHttpRequestFeature.FromHttpRequestMessage(
             request, Akka.Streams.Dsl.Source.Empty<ReadOnlyMemory<byte>>()));
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
 

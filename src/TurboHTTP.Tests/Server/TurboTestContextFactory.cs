@@ -16,7 +16,7 @@ internal static class TurboTestContextFactory
         var request = new HttpRequestMessage(new HttpMethod(method), uri);
 
         var features = new FeatureCollection();
-        var requestFeature = new TurboHttpRequestFeature(request, Source.Empty<ReadOnlyMemory<byte>>());
+        var requestFeature = TurboHttpRequestFeature.FromHttpRequestMessage(request, Source.Empty<ReadOnlyMemory<byte>>());
         features.Set<IHttpRequestFeature>(requestFeature);
         features.Set<ITurboRequestBodyFeature>(requestFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());

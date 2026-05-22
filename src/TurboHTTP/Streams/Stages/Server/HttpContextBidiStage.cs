@@ -133,7 +133,7 @@ internal sealed class HttpContextBidiStage
                 : Source.Empty<ReadOnlyMemory<byte>>();
 
             var features = new FeatureCollection();
-            var requestFeature = new TurboHttpRequestFeature(request, bodySource);
+            var requestFeature = TurboHttpRequestFeature.FromHttpRequestMessage(request, bodySource);
             features.Set<IHttpRequestFeature>(requestFeature);
             features.Set<ITurboRequestBodyFeature>(requestFeature);
             var responseFeature = new TurboHttpResponseFeature();
@@ -152,7 +152,7 @@ internal sealed class HttpContextBidiStage
             var bodyFeature = new TurboHttpResponseBodyFeature();
             features.Set<IHttpResponseBodyFeature>(bodyFeature);
             features.Set<ITurboResponseBodyFeature>(bodyFeature);
-            features.Set<IHttpRequestBodyDetectionFeature>(new TurboHttpRequestBodyDetectionFeature(request));
+            features.Set<IHttpRequestBodyDetectionFeature>(new TurboHttpRequestBodyDetectionFeature(request.Content is not null));
 
             return new TurboHttpContext(
                 features,

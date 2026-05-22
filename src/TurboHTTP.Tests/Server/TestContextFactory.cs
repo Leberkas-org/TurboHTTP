@@ -18,7 +18,7 @@ internal static class TestContextFactory
         var conn = connection ?? new TurboConnectionInfo("test", IPAddress.Loopback, 0, IPAddress.Loopback, 0);
 
         var features = new FeatureCollection();
-        var requestFeature = new TurboHttpRequestFeature(req, Source.Empty<ReadOnlyMemory<byte>>());
+        var requestFeature = TurboHttpRequestFeature.FromHttpRequestMessage(req, Source.Empty<ReadOnlyMemory<byte>>());
         features.Set<IHttpRequestFeature>(requestFeature);
         features.Set<ITurboRequestBodyFeature>(requestFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());

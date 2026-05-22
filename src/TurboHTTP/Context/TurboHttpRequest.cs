@@ -37,8 +37,18 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            var feature = _features.Get<ITurboRequestBodyFeature>() as TurboHttpRequestFeature;
-            return feature?.RequestMessage.RequestUri;
+            var scheme = Scheme;
+            var host = Host.Value;
+            var path = Path.Value;
+            var query = QueryString.Value;
+
+            if (string.IsNullOrEmpty(host))
+            {
+                return null;
+            }
+
+            var uriString = string.Concat(scheme, "://", host, path, query);
+            return new Uri(uriString);
         }
     }
 
@@ -46,8 +56,8 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            var feature = _features.Get<ITurboRequestBodyFeature>() as TurboHttpRequestFeature;
-            return feature?.RequestMessage.Content;
+            var feature = RequestFeature;
+            return feature.Body != Stream.Null ? new StreamContent(feature.Body) : null;
         }
     }
 
@@ -74,6 +84,15 @@ public sealed class TurboHttpRequest : HttpRequest
         get
         {
             var hostHeader = Headers["Host"].ToString();
+            if (string.IsNullOrEmpty(hostHeader))
+            {
+                // Fallback to extracted host from RequestUri if Host header is not set
+                var feature = RequestFeature;
+                if (feature is TurboHttpRequestFeature turboFeature && !string.IsNullOrEmpty(turboFeature.ExtractedHost))
+                {
+                    return new HostString(turboFeature.ExtractedHost);
+                }
+            }
             return new HostString(hostHeader);
         }
         set => Headers["Host"] = value.Value ?? string.Empty;
@@ -221,13 +240,14 @@ public sealed class TurboHttpRequest : HttpRequest
 
     private async Task<IFormCollection> ParseUrlEncodedFormAsync(CancellationToken ct)
     {
-        var feature = _features.Get<ITurboRequestBodyFeature>() as TurboHttpRequestFeature;
-        if (feature?.RequestMessage.Content is null)
+        var feature = RequestFeature;
+        if (feature.Body == Stream.Null)
         {
             return EmptyForm();
         }
 
-        var body = await feature.RequestMessage.Content.ReadAsStringAsync(ct);
+        using var reader = new StreamReader(feature.Body);
+        var body = await reader.ReadToEndAsync(ct);
         var fields = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var pair in body.Split('&', StringSplitOptions.RemoveEmptyEntries))
@@ -253,8 +273,8 @@ public sealed class TurboHttpRequest : HttpRequest
 
     private async Task<IFormCollection> ParseMultipartFormAsync(string contentType, CancellationToken ct)
     {
-        var feature = _features.Get<ITurboRequestBodyFeature>() as TurboHttpRequestFeature;
-        if (feature?.RequestMessage.Content is null)
+        var feature = RequestFeature;
+        if (feature.Body == Stream.Null)
         {
             return EmptyForm();
         }
@@ -268,8 +288,7 @@ public sealed class TurboHttpRequest : HttpRequest
         var fields = new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>(StringComparer.OrdinalIgnoreCase);
         var files = new List<IFormFile>();
 
-        var stream = await feature.RequestMessage.Content.ReadAsStreamAsync(ct);
-        var reader = new MultipartReader(boundary, stream);
+        var reader = new MultipartReader(boundary, feature.Body);
 
         var section = await reader.ReadNextSectionAsync(ct);
         while (section is not null)
