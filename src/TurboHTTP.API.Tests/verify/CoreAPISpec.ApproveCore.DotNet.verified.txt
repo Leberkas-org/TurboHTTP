@@ -1,4 +1,4 @@
-[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/leberkas-org/TurboHTTP.git")]
+﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/leberkas-org/TurboHTTP.git")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.AcceptanceTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Benchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests")]
@@ -198,9 +198,10 @@ namespace TurboHTTP.Context.Features
     }
     public interface ITurboRequestBodyFeature
     {
+        System.IO.Stream Body { get; }
         Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
     }
-    public interface ITurboResponseBodyFeature
+    public interface ITurboResponseBodyFeature : Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature
     {
         Akka.Streams.Dsl.Sink<System.ReadOnlyMemory<byte>, System.Threading.Tasks.Task> BodySink { get; }
     }
