@@ -3,10 +3,10 @@ using System.Collections.Immutable;
 using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
-using TurboHTTP.Streams.Stages.Server;
+using TurboHTTP.Streams.Stages.Client;
 using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.Tests.Streams.Stages.Server;
+namespace TurboHTTP.Tests.Streams.Stages.Client;
 
 public sealed class HandlerBidiStageSpec : StreamTestBase
 {

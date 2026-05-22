@@ -4,7 +4,7 @@ using Akka.Streams.Dsl;
 using TurboHTTP.Features.Cookies;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages.Features;
-using TurboHTTP.Streams.Stages.Server;
+using TurboHTTP.Streams.Stages.Client;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.AcceptanceTests.H11;
