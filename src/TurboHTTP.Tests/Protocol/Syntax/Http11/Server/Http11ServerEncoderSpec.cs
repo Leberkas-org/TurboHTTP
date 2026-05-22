@@ -1,5 +1,4 @@
 using System.Text;
-using Akka.Actor;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Tests.Shared;
@@ -16,7 +15,7 @@ public sealed class Http11ServerEncoderSpec
         var ctx = ServerTestContext.CreateResponse();
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = _encoder.Encode(buffer, ctx, isChunked: false);
 
         Assert.True(written > 0);
         var result = Encoding.ASCII.GetString(buffer, 0, written);
@@ -30,7 +29,7 @@ public sealed class Http11ServerEncoderSpec
         ctx.Response.Headers["Content-Length"] = "9";
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = _encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.Contains("Content-Length: 9", result);
@@ -42,7 +41,7 @@ public sealed class Http11ServerEncoderSpec
         var ctx = ServerTestContext.CreateResponse();
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: true);
+        var written = _encoder.Encode(buffer, ctx, isChunked: true);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.Contains("HTTP/1.1 200", result);
@@ -55,7 +54,7 @@ public sealed class Http11ServerEncoderSpec
         var ctx = ServerTestContext.CreateResponse();
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = _encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.Contains("Date:", result);
@@ -69,7 +68,7 @@ public sealed class Http11ServerEncoderSpec
         ctx.Response.Headers["X-Test"] = "value\rwith\rcr";
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = _encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         for (var i = 0; i < result.Length; i++)
@@ -89,7 +88,7 @@ public sealed class Http11ServerEncoderSpec
         ctx.Response.Headers["X-Long"] = new string('a', 200);
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = _encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.DoesNotContain("\r\n ", result.Replace("\r\n\r\n", "<<END>>"));
@@ -103,7 +102,7 @@ public sealed class Http11ServerEncoderSpec
         var ctx = ServerTestContext.CreateResponse();
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: true);
+        var written = _encoder.Encode(buffer, ctx, isChunked: true);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         var teCount = result.Split("chunked").Length - 1;
@@ -118,7 +117,7 @@ public sealed class Http11ServerEncoderSpec
         ctx.Response.Headers["Content-Length"] = "15";
         var buffer = new byte[4096];
 
-        var written = _encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = _encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.Contains("Content-Length: 15", result);

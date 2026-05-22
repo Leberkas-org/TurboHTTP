@@ -2,6 +2,7 @@ using Akka.Event;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
@@ -161,19 +162,29 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         var responseFeature = context.Features.Get<IHttpResponseFeature>();
         var responseBody = context.Features.Get<ITurboResponseBodyFeature>();
 
-        var isChunked = responseFeature?.Headers?.Any(h =>
+        var contentLength = ExtractContentLength(responseFeature);
+        var hasExplicitChunked = responseFeature?.Headers?.Any(h =>
             h.Key.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)
             && h.Value.Any(v => v.Equals(WellKnownHeaders.ChunkedValue, StringComparison.OrdinalIgnoreCase))) ?? false;
+        var isChunked = contentLength is null || hasExplicitChunked;
 
         var responseBuffer = TransportBuffer.Rent(8192);
         var span = responseBuffer.FullMemory.Span;
-        var written = _encoder.Encode(span, context, _ops.StageActor, isChunked, connectionClose: ShouldComplete);
+        var written = _encoder.Encode(span, context, isChunked, connectionClose: ShouldComplete);
         responseBuffer.Length = written;
         _ops.OnOutbound(new TransportData(responseBuffer));
 
-        if (responseBody is not null)
+        if (responseBody is TurboHttpResponseBodyFeature turboBody)
         {
             _outboundBodyPending = true;
+
+            var bodyStream = turboBody.GetResponseStream();
+            var encoder = BodyEncoderFactory.Create(bodyStream, contentLength, HttpVersion.Version11);
+            if (encoder is not null)
+            {
+                _encoder.SetActiveBodyEncoder(encoder);
+                encoder.Start(bodyStream, _ops.StageActor);
+            }
         }
         else
         {
@@ -230,6 +241,27 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                 _ops.Log.Warning("Failed to encode HTTP/1.1 response body: {0}", failed.Reason.Message);
                 break;
         }
+    }
+
+    private static long? ExtractContentLength(IHttpResponseFeature? responseFeature)
+    {
+        if (responseFeature?.Headers is null)
+        {
+            return null;
+        }
+
+        foreach (var header in responseFeature.Headers)
+        {
+            if (header.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+            {
+                if (header.Value.FirstOrDefault() is { } value && long.TryParse(value, out var length))
+                {
+                    return length;
+                }
+            }
+        }
+
+        return null;
     }
 
     private bool TryHandleH2cUpgrade(TurboHttpContext context)

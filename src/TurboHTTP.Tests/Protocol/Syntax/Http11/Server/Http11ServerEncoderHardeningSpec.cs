@@ -1,5 +1,4 @@
 using System.Text;
-using Akka.Actor;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Tests.Shared;
@@ -28,7 +27,7 @@ public sealed class Http11ServerEncoderHardeningSpec
         ctx.Response.Headers[headerName] = "test-value";
 
         var buffer = new byte[4096];
-        var written = encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.DoesNotContain($"{headerName}:", result);
@@ -42,7 +41,7 @@ public sealed class Http11ServerEncoderHardeningSpec
         var ctx = ServerTestContext.CreateResponse();
         var buffer = new byte[4096];
 
-        var written = encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false, connectionClose: true);
+        var written = encoder.Encode(buffer, ctx, isChunked: false, connectionClose: true);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.Contains("Connection: close", result);
@@ -56,7 +55,7 @@ public sealed class Http11ServerEncoderHardeningSpec
         var ctx = ServerTestContext.CreateResponse();
         var buffer = new byte[4096];
 
-        var written = encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: true);
+        var written = encoder.Encode(buffer, ctx, isChunked: true);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         Assert.DoesNotContain("Content-Length:", result);
@@ -72,7 +71,7 @@ public sealed class Http11ServerEncoderHardeningSpec
         ctx.Response.Headers["Date"] = existingDate;
         var buffer = new byte[4096];
 
-        var written = encoder.Encode(buffer, ctx, ActorRefs.Nobody, isChunked: false);
+        var written = encoder.Encode(buffer, ctx, isChunked: false);
 
         var result = Encoding.ASCII.GetString(buffer, 0, written);
         var dateCount = result.Split("Date:").Length - 1;

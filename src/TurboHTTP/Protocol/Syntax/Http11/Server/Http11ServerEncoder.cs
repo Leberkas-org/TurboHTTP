@@ -20,14 +20,19 @@ internal sealed class Http11ServerEncoder
         _options = options;
     }
 
+    public void SetActiveBodyEncoder(IBodyEncoder encoder)
+    {
+        _activeBodyEncoder?.Dispose();
+        _activeBodyEncoder = encoder;
+    }
+
     public void CancelActiveBody()
     {
         _activeBodyEncoder?.Dispose();
         _activeBodyEncoder = null;
     }
 
-    public int Encode(Span<byte> destination, TurboHttpContext context, IActorRef stageActor,
-        bool isChunked = false, bool connectionClose = false)
+    public int Encode(Span<byte> destination, TurboHttpContext context, bool isChunked = false, bool connectionClose = false)
     {
         var writer = SpanWriter.Create(destination);
 

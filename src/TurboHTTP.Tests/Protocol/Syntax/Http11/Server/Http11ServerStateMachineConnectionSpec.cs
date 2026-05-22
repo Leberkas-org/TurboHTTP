@@ -220,6 +220,56 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ex = Assert.Throws<InvalidOperationException>(() => sm.OnResponse(context));
         Assert.Contains("no requests are pending", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112-6.3")]
+    public void OnResponse_should_set_chunked_transfer_encoding_when_no_content_length()
+    {
+        var ops = new TrackingServerOps();
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
+
+        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        var buffer = MakeBuffer(requestData);
+        sm.DecodeClientData(new TransportData(buffer));
+
+        var context = CreateResponseContext();
+        context.Response.StatusCode = 200;
+        context.Response.ContentType = "text/event-stream";
+
+        sm.OnResponse(context);
+
+        var transportData = ops.Outbound.OfType<TransportData>().First();
+        var responseText = Encoding.ASCII.GetString(transportData.Buffer.Span);
+        Assert.Contains("Transfer-Encoding: chunked", responseText);
+        Assert.False(sm.CanAcceptResponse);
+
+        sm.Cleanup();
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9112-6.2")]
+    public void OnResponse_should_not_set_chunked_when_content_length_present()
+    {
+        var ops = new TrackingServerOps();
+        var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
+
+        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        var buffer = MakeBuffer(requestData);
+        sm.DecodeClientData(new TransportData(buffer));
+
+        var context = CreateResponseContext();
+        context.Response.StatusCode = 200;
+        context.Response.Headers["Content-Length"] = "5";
+
+        sm.OnResponse(context);
+
+        var transportData = ops.Outbound.OfType<TransportData>().First();
+        var responseText = Encoding.ASCII.GetString(transportData.Buffer.Span);
+        Assert.DoesNotContain("Transfer-Encoding: chunked", responseText);
+        Assert.Contains("Content-Length: 5", responseText);
+
+        sm.Cleanup();
+    }
 }
 
 
