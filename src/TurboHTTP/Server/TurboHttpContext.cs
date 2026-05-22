@@ -30,6 +30,16 @@ public sealed class TurboHttpContext : HttpContext
         TurboResponse.SetHttpContext(this);
     }
 
+    internal TurboHttpContext(IFeatureCollection features)
+        : this(
+            features,
+            new TurboConnectionInfo(Guid.NewGuid().ToString("N"), null, 0, null, 0),
+            services: null,
+            requestAborted: CancellationToken.None,
+            materializer: null!)
+    {
+    }
+
     public override IFeatureCollection Features { get; }
 
     public override HttpRequest Request => TurboRequest;
