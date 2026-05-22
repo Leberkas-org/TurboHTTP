@@ -31,6 +31,11 @@ internal sealed class StreamingBodyDecoder : IBodyDecoder
         return new StreamContent(_handle.AsStream());
     }
 
+    public Stream GetBodyStream()
+    {
+        return _handle.AsStream();
+    }
+
     public void Abort()
     {
         _handle.Abort(new OperationCanceledException());

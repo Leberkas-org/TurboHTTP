@@ -4,6 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using static Servus.Core.Servus;
 
@@ -13,12 +14,12 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
     where TSM : IServerStateMachine
 {
     private readonly Inlet<ITransportInbound> _inNetwork;
-    private readonly Outlet<HttpRequestMessage> _outRequest;
-    private readonly Inlet<HttpResponseMessage> _inResponse;
+    private readonly Outlet<TurboHttpContext> _outRequest;
+    private readonly Inlet<TurboHttpContext> _inResponse;
     private readonly Outlet<ITransportOutbound> _outNetwork;
 
     private readonly TSM _sm;
-    private readonly Queue<HttpRequestMessage> _requestQueue = new();
+    private readonly Queue<TurboHttpContext> _requestQueue = new();
     private readonly Queue<ITransportOutbound> _outboundQueue = new();
     private IActorRef _stageActor = ActorRefs.Nobody;
 
@@ -154,9 +155,9 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
         }
     }
 
-    void IServerStageOperations.OnRequest(HttpRequestMessage request)
+    void IServerStageOperations.OnRequest(TurboHttpContext context)
     {
-        _requestQueue.Enqueue(request);
+        _requestQueue.Enqueue(context);
         TryPushRequest();
     }
 
@@ -217,7 +218,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
 
         while (_requestQueue.Count > 0)
         {
-            _requestQueue.Dequeue().Dispose();
+            _requestQueue.Dequeue();
         }
 
         _sm.Cleanup();

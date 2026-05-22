@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
@@ -24,10 +24,7 @@ public sealed class Http2ServerStreamCorrelationSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
-        {
-            EmittedRequests.Add(request);
-        }
+        public void OnRequest(TurboHttpContext context) { }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -327,3 +324,5 @@ public sealed class Http2ServerStreamCorrelationSpec
         Assert.Equal("/status", ops.EmittedRequests[2].RequestUri?.AbsolutePath);
     }
 }
+
+

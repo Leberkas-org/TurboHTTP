@@ -15,7 +15,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     private readonly Http10ServerEncoder _encoder;
     private readonly long _maxRequestBodySize;
 
-    private HttpResponseMessage? _deferredResponse;
+    private TurboHttpContext? _deferredContext;
     private IMemoryOwner<byte>? _deferredBodyOwner;
     private int _deferredBodyLength;
 
@@ -67,8 +67,10 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
             if (outcome == DecodeOutcome.Complete)
             {
                 ShouldComplete = true;
-                var request = _decoder.GetRequest();
-                _ops.OnRequest(request);
+                var feature = _decoder.GetRequestFeature();
+                var hasBody = feature.Body != Stream.Null;
+                var context = ServerContextFactory.Create(feature, hasBody);
+                _ops.OnRequest(context);
             }
         }
         catch (Exception)
@@ -81,17 +83,14 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(HttpResponseMessage response)
+    public void OnResponse(TurboHttpContext context)
     {
-        response.Headers.Connection.Clear();
-        response.Headers.Connection.Add(WellKnownHeaders.CloseValue);
-
         // Http10ServerEncoder always returns 0 — it starts the buffered body encoder
         // and sends OutboundBodyChunk/OutboundBodyComplete to the stage actor.
         var tempBuffer = TransportBuffer.Rent(1);
         try
         {
-            var written = _encoder.Encode(tempBuffer.FullMemory.Span, response, _ops.StageActor);
+            var written = _encoder.Encode(tempBuffer.FullMemory.Span, context, _ops.StageActor);
             if (written > 0)
             {
                 // Synchronous path (not currently used, kept for safety)
@@ -109,7 +108,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         tempBuffer.Dispose();
 
         // Deferred — waiting for OutboundBodyChunk + OutboundBodyComplete via OnBodyMessage
-        _deferredResponse = response;
+        _deferredContext = context;
     }
 
     public void OnDownstreamFinished()
@@ -124,20 +123,20 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     {
         switch (msg)
         {
-            case OutboundBodyChunk chunk when _deferredResponse is not null:
+            case OutboundBodyChunk chunk when _deferredContext is not null:
                 _deferredBodyOwner?.Dispose();
                 _deferredBodyOwner = chunk.Owner;
                 _deferredBodyLength = chunk.Length;
                 break;
 
-            case OutboundBodyComplete when _deferredResponse is not null && _deferredBodyOwner is not null:
+            case OutboundBodyComplete when _deferredContext is not null && _deferredBodyOwner is not null:
                 TransportBuffer? item = null;
                 try
                 {
                     var body = _deferredBodyOwner.Memory.Span[.._deferredBodyLength];
                     var bufferSize = 8192 + _deferredBodyLength;
                     item = TransportBuffer.Rent(bufferSize);
-                    var written = _encoder.EncodeDeferred(item.FullMemory.Span, _deferredResponse, body);
+                    var written = _encoder.EncodeDeferred(item.FullMemory.Span, _deferredContext, body);
                     item.Length = written;
                     _ops.OnOutbound(new TransportData(item));
                 }
@@ -150,17 +149,17 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
                 {
                     _deferredBodyOwner.Dispose();
                     _deferredBodyOwner = null;
-                    _deferredResponse = null;
+                    _deferredContext = null;
                 }
                 break;
 
             case OutboundBodyFailed failed:
                 _deferredBodyOwner?.Dispose();
                 _deferredBodyOwner = null;
-                if (_deferredResponse is not null)
+                if (_deferredContext is not null)
                 {
                     Tracing.For("Protocol").Error(this, "Failed to read HTTP/1.0 response body: {0}", failed.Reason.Message);
-                    _deferredResponse = null;
+                    _deferredContext = null;
                 }
                 break;
         }
@@ -170,6 +169,6 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     {
         _deferredBodyOwner?.Dispose();
         _deferredBodyOwner = null;
-        _deferredResponse = null;
+        _deferredContext = null;
     }
 }

@@ -1,4 +1,5 @@
 using Servus.Akka.Transport;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Protocol;
 
@@ -8,7 +9,7 @@ internal interface IServerStateMachine
     bool ShouldComplete { get; }
 
     void PreStart();
-    void OnResponse(HttpResponseMessage response);
+    void OnResponse(TurboHttpContext context);
     void DecodeClientData(ITransportInbound data);
     void OnDownstreamFinished();
     void OnTimerFired(string name);

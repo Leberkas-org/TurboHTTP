@@ -1,7 +1,11 @@
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Primitives;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
@@ -19,10 +23,7 @@ public sealed class ServerStateMachineSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
-        {
-            EmittedRequests.Add(request);
-        }
+        public void OnRequest(TurboHttpContext context) { }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -89,7 +90,7 @@ public sealed class ServerStateMachineSpec
         };
         response.Content.Headers.ContentLength = responseBody.Length;
 
-        sm.OnResponse(response);
+        sm.OnResponse(MakeResponseContext(response));
 
         Assert.True(ops.EmittedOutbound.Count >= 1);
         var outbound = ops.EmittedOutbound[0];
@@ -203,7 +204,7 @@ public sealed class ServerStateMachineSpec
             Content = new ByteArrayContent([])
         };
 
-        sm.OnResponse(response);
+        sm.OnResponse(MakeResponseContext(response));
 
         var outbound = ops.EmittedOutbound[0];
         var transportData = (TransportData)outbound;
@@ -235,7 +236,7 @@ public sealed class ServerStateMachineSpec
             Content = new ByteArrayContent("hello world"u8.ToArray())
         };
 
-        sm.OnResponse(response);
+        sm.OnResponse(MakeResponseContext(response));
 
         var outboundItems = ops.EmittedOutbound.OfType<TransportData>().ToList();
         Assert.NotEmpty(outboundItems);
@@ -268,7 +269,7 @@ public sealed class ServerStateMachineSpec
             Content = new ByteArrayContent("hello world"u8.ToArray())
         };
 
-        sm.OnResponse(response);
+        sm.OnResponse(MakeResponseContext(response));
         var countAfterHeaders = ops.EmittedOutbound.Count;
 
         var bodyBytes = "hello world"u8.ToArray();
@@ -307,7 +308,7 @@ public sealed class ServerStateMachineSpec
             Content = new ByteArrayContent("hello world"u8.ToArray())
         };
 
-        sm.OnResponse(response);
+        sm.OnResponse(MakeResponseContext(response));
 
         Assert.False(sm.CanAcceptResponse);
 
@@ -359,7 +360,7 @@ public sealed class ServerStateMachineSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         var response = new HttpResponseMessage(System.Net.HttpStatusCode.NoContent);
-        sm.OnResponse(response);
+        sm.OnResponse(MakeResponseContext(response));
 
         var outbound = ops.EmittedOutbound.OfType<TransportData>().ToList();
         if (outbound.Count > 0)
@@ -394,4 +395,40 @@ public sealed class ServerStateMachineSpec
         Assert.Single(ops.EmittedRequests);
         Assert.Equal("POST", ops.EmittedRequests[0].Method.Method);
     }
+
+    private static TurboHttpContext MakeResponseContext(HttpResponseMessage response)
+    {
+        var features = new FeatureCollection();
+        var responseFeature = new TurboHttpResponseFeature
+        {
+            StatusCode = (int)response.StatusCode,
+            ReasonPhrase = response.ReasonPhrase,
+        };
+
+        if (response.Content is not null)
+        {
+            foreach (var header in response.Content.Headers)
+            {
+                responseFeature.Headers.Add(header.Key, new StringValues(header.Value.ToArray()));
+            }
+        }
+
+        foreach (var header in response.Headers)
+        {
+            responseFeature.Headers.Add(header.Key, new StringValues(header.Value.ToArray()));
+        }
+
+        if (response.Content is not null)
+        {
+            var body = response.Content.ReadAsStream();
+            var bodyFeature = new TurboHttpResponseBodyFeature(body);
+            features.Set<IHttpResponseBodyFeature>(bodyFeature);
+            features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        }
+
+        features.Set<IHttpResponseFeature>(responseFeature);
+        return new TurboHttpContext(features);
+    }
 }
+
+

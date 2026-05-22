@@ -6,5 +6,6 @@ internal interface IBodyDecoder : IDisposable
     bool IsComplete { get; }
     void Feed(ReadOnlySpan<byte> data, bool endStream);
     HttpContent GetContent();
+    Stream GetBodyStream();
     void Abort();
 }

@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
@@ -25,10 +25,7 @@ public sealed class Http2ServerTimeoutSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
-        {
-            EmittedRequests.Add(request);
-        }
+        public void OnRequest(TurboHttpContext context) { }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -328,3 +325,5 @@ public sealed class Http2ServerTimeoutSpec
         return frame;
     }
 }
+
+

@@ -9,7 +9,9 @@ using TurboHTTP.Protocol.Syntax.Http3.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
+using TurboHTTP.Server;
+
+
 
 /// <summary>
 /// Unit tests for HTTP/3 Http3ServerSessionManager stream lifecycle.
@@ -26,7 +28,7 @@ public sealed class Http3StreamLifecycleSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request) => Requests.Add(request);
+        public void OnRequest(TurboHttpContext context) { /* context received */ }
 
         public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
 
@@ -224,3 +226,5 @@ public sealed class Http3StreamLifecycleSpec
         Assert.Equal(streamId, storedStreamId);
     }
 }
+
+

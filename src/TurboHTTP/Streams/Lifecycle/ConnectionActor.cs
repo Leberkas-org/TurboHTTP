@@ -63,15 +63,11 @@ internal sealed class ConnectionActor : ReceiveActor
 
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
 
-        var contextBidi = BidiFlow.FromGraph(
-            new HttpContextBidiStage(msg.ConnectionInfo, msg.Services, _cts.Token));
         var middleware = Flow.FromGraph(new MiddlewarePipelineStage(msg.Pipeline));
         var routing = Flow.FromGraph(new RoutingStage(msg.RouteTable));
         var innerFlow = middleware.Via(routing);
-        var httpFlow = contextBidi.Join(innerFlow);
-
         var protocolBidi = msg.Engine.CreateFlow();
-        var composed = protocolBidi.Join(httpFlow);
+        var composed = protocolBidi.Join(innerFlow);
 
         var self = Self;
         var connectionInfo = msg.ConnectionInfo;

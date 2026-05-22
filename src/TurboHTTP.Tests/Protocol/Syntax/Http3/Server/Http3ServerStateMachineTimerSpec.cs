@@ -26,7 +26,7 @@ public sealed class Http3ServerStateMachineTimerSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request) => Requests.Add(request);
+        public void OnRequest(TurboHttpContext context) { /* context received */ }
 
         public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
 
@@ -211,3 +211,5 @@ public sealed class Http3ServerStateMachineTimerSpec
         Assert.Equal("https://localhost/", request.RequestUri?.ToString());
     }
 }
+
+

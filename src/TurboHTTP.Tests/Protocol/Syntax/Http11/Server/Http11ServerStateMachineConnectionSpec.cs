@@ -23,7 +23,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request) => Requests.Add(request);
+        public void OnRequest(TurboHttpContext context) { /* context received */ }
         public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => ScheduledTimers.Add((name, delay));
         public void OnCancelTimer(string name) => CancelledTimers.Add(name);
@@ -227,3 +227,5 @@ public sealed class Http11ServerStateMachineConnectionSpec
         Assert.Contains("no requests are pending", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+

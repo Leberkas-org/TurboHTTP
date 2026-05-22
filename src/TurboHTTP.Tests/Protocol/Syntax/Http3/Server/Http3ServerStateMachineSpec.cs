@@ -26,10 +26,7 @@ public sealed class Http3ServerStateMachineSpec
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
         public Dictionary<string, (string Name, TimeSpan Delay)> ScheduledTimers { get; } = [];
 
-        public void OnRequest(HttpRequestMessage request)
-        {
-            EmittedRequests.Add(request);
-        }
+        public void OnRequest(TurboHttpContext context) { }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -422,3 +419,5 @@ public sealed class Http3ServerStateMachineSpec
         sm.Cleanup();
     }
 }
+
+

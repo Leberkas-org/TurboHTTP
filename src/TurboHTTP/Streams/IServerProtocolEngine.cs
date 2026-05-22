@@ -1,11 +1,12 @@
 using Akka;
 using Akka.Streams.Dsl;
 using Servus.Akka.Transport;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Streams;
 
 internal interface IServerProtocolEngine
 {
-    BidiFlow<ITransportInbound, HttpRequestMessage, HttpResponseMessage, ITransportOutbound, NotUsed> CreateFlow();
+    BidiFlow<ITransportInbound, TurboHttpContext, TurboHttpContext, ITransportOutbound, NotUsed> CreateFlow();
 }
 

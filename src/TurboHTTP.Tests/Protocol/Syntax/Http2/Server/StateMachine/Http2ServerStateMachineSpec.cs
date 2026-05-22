@@ -1,4 +1,4 @@
-﻿using Akka.Event;
+using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http2;
@@ -24,10 +24,7 @@ public sealed class Http2ServerStateMachineSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public AkkaActor.IActorRef StageActor { get; set; } = AkkaActor.ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
-        {
-            EmittedRequests.Add(request);
-        }
+        public void OnRequest(TurboHttpContext context) { }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -332,3 +329,5 @@ public sealed class Http2ServerStateMachineSpec
         sm.Cleanup();
     }
 }
+
+

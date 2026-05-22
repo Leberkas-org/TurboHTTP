@@ -22,7 +22,7 @@ public sealed class Http11ServerStateMachineTimerSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request) => Requests.Add(request);
+        public void OnRequest(TurboHttpContext context) { /* context received */ }
         public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => ScheduledTimers.Add((name, delay));
         public void OnCancelTimer(string name) => CancelledTimers.Add(name);
@@ -186,3 +186,5 @@ public sealed class Http11ServerStateMachineTimerSpec
         Assert.Contains(ops.CancelledTimers, t => t == "keep-alive");
     }
 }
+
+

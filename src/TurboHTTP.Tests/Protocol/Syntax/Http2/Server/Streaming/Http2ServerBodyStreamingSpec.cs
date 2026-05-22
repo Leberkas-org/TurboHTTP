@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Event;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
@@ -23,10 +23,7 @@ public sealed class Http2ServerBodyStreamingSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
-        {
-            EmittedRequests.Add(request);
-        }
+        public void OnRequest(TurboHttpContext context) { }
 
         public void OnOutbound(ITransportOutbound item)
         {
@@ -340,3 +337,5 @@ public sealed class Http2ServerBodyStreamingSpec
         sm.DecodeClientData(new TransportData(buffer2));
     }
 }
+
+

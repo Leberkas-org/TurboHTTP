@@ -1,5 +1,7 @@
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
@@ -117,21 +119,23 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                     ShouldComplete = true;
                 }
 
-                var request = _decoder.GetRequest();
+                var feature = _decoder.GetRequestFeature();
+                var hasBody = feature.Body != Stream.Null;
+                var context = ServerContextFactory.Create(feature, hasBody);
 
-                if (!ShouldComplete && request.Version == HttpVersion.Version10)
+                if (!ShouldComplete && feature.Protocol == "HTTP/1.0")
                 {
                     ShouldComplete = true;
                 }
 
-                if (TryHandleH2cUpgrade(request))
+                if (TryHandleH2cUpgrade(context))
                 {
                     _decoder.Reset();
                     break;
                 }
 
                 _pendingResponseCount++;
-                _ops.OnRequest(request);
+                _ops.OnRequest(context);
                 _decoder.Reset();
             }
         }
@@ -145,7 +149,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(HttpResponseMessage response)
+    public void OnResponse(TurboHttpContext context)
     {
         if (_pendingResponseCount == 0)
         {
@@ -154,20 +158,20 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
         _pendingResponseCount--;
 
-        if (ShouldComplete)
-        {
-            response.Headers.Connection.Add(WellKnownHeaders.CloseValue);
-        }
+        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var responseBody = context.Features.Get<ITurboResponseBodyFeature>();
 
-        var isChunked = response.Headers.TransferEncoding.Any(te => te.Value == WellKnownHeaders.ChunkedValue);
+        var isChunked = responseFeature?.Headers?.Any(h =>
+            h.Key.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)
+            && h.Value.Any(v => v.Equals(WellKnownHeaders.ChunkedValue, StringComparison.OrdinalIgnoreCase))) ?? false;
 
         var responseBuffer = TransportBuffer.Rent(8192);
         var span = responseBuffer.FullMemory.Span;
-        var written = _encoder.Encode(span, response, _ops.StageActor, isChunked, connectionClose: ShouldComplete);
+        var written = _encoder.Encode(span, context, _ops.StageActor, isChunked, connectionClose: ShouldComplete);
         responseBuffer.Length = written;
         _ops.OnOutbound(new TransportData(responseBuffer));
 
-        if (response.Content is not null)
+        if (responseBody is not null)
         {
             _outboundBodyPending = true;
         }
@@ -228,20 +232,30 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         }
     }
 
-    private bool TryHandleH2cUpgrade(HttpRequestMessage request)
+    private bool TryHandleH2cUpgrade(TurboHttpContext context)
     {
         if (_ops is not IProtocolSwitchCapable switchable)
         {
             return false;
         }
 
-        if (!request.Headers.TryGetValues("Upgrade", out var upgradeValues)
-            || !upgradeValues.Any(v => v.Equals("h2c", StringComparison.OrdinalIgnoreCase)))
+        var requestFeature = context.Features.Get<IHttpRequestFeature>();
+        var requestHeaders = requestFeature?.Headers;
+        if (requestHeaders is null)
         {
             return false;
         }
 
-        if (!request.Headers.TryGetValues("HTTP2-Settings", out _))
+        var hasUpgrade = requestHeaders.TryGetValue("Upgrade", out var upgradeValue)
+            && !string.IsNullOrEmpty(upgradeValue)
+            && upgradeValue.ToString().Split(',').Any(v => v.Trim().Equals("h2c", StringComparison.OrdinalIgnoreCase));
+
+        if (!hasUpgrade)
+        {
+            return false;
+        }
+
+        if (!requestHeaders.TryGetValue("HTTP2-Settings", out _))
         {
             return false;
         }

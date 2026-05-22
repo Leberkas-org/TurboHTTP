@@ -1,9 +1,15 @@
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Multiplexed;
 using TurboHTTP.Protocol.Multiplexed.Body;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
@@ -120,18 +126,20 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    public void OnResponse(HttpResponseMessage response)
+    public void OnResponse(TurboHttpContext context)
     {
-        var streamId = GetStreamIdFromResponse(response);
+        var streamId = GetStreamIdFromContext(context);
         if (!_streams.TryGetValue(streamId, out var state))
         {
             Tracing.For("Protocol").Warning(this, "HTTP/2: Response for unknown stream {0}", streamId);
             return;
         }
 
-        var hasBody = response.Content.Headers.ContentLength is not 0;
+        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var contentLength = ExtractContentLength(responseFeature);
+        var hasBody = contentLength.HasValue && contentLength.Value > 0;
 
-        var frames = _responseEncoder.EncodeHeaders(response, streamId, hasBody);
+        var frames = _responseEncoder.EncodeHeaders(context, streamId, hasBody);
         for (var i = 0; i < frames.Count; i++)
         {
             EmitFrame(frames[i]);
@@ -143,7 +151,15 @@ internal sealed class Http2ServerSessionManager
             return;
         }
 
-        var encoder = BodyEncoderFactory.Create(response.Content);
+        var responseBody = context.Features.Get<ITurboResponseBodyFeature>();
+        if (responseBody is not TurboHttpResponseBodyFeature turboBody)
+        {
+            CloseStream(streamId);
+            return;
+        }
+
+        var bodyStream = turboBody.GetResponseStream();
+        var encoder = BodyEncoderFactory.Create(bodyStream, contentLength);
         if (encoder is null)
         {
             CloseStream(streamId);
@@ -151,7 +167,28 @@ internal sealed class Http2ServerSessionManager
         }
 
         state.InitBodyEncoder(encoder);
-        state.StartBodyEncoder(response.Content, streamId, _ops.StageActor);
+        state.StartBodyEncoder(bodyStream, streamId, _ops.StageActor);
+    }
+
+    private static long? ExtractContentLength(IHttpResponseFeature? responseFeature)
+    {
+        if (responseFeature?.Headers is null)
+        {
+            return null;
+        }
+
+        foreach (var header in responseFeature.Headers)
+        {
+            if (header.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+            {
+                if (header.Value.FirstOrDefault() is string value && long.TryParse(value, out var length))
+                {
+                    return length;
+                }
+            }
+        }
+
+        return null;
     }
 
     public void OnBodyMessage(object msg)
@@ -447,24 +484,33 @@ internal sealed class Http2ServerSessionManager
     {
         try
         {
-            var request = _requestDecoder.DecodeHeaders(streamId, endStream: true, state);
-            if (request is null)
+            var requestFeature = _requestDecoder.DecodeHeadersToFeature(streamId, endStream: true, state);
+            if (requestFeature is null)
             {
                 return;
             }
 
-            request.Options.Set(OptionsKey.Http2, streamId);
+            state.InitRequestFeature(requestFeature);
 
             _tracker.OnStreamOpened(streamId);
             _flow.InitStreamSendWindow(streamId);
 
-            if (!endStream)
+            var hasBody = !endStream;
+            var context = ServerContextFactory.Create(requestFeature, hasBody);
+
+            var streamIdFeature = new TurboHttp2StreamIdFeature(streamId);
+            context.Features.Set<IHttp2StreamIdFeature>(streamIdFeature);
+
+            if (hasBody)
             {
                 state.InitBodyDecoder(new StreamingBodyDecoder(_maxRequestBodySize));
-                request.Content = state.GetContent();
+                if (requestFeature is not null)
+                {
+                    requestFeature.Body = state.GetBodyStream();
+                }
             }
 
-            _ops.OnRequest(request);
+            _ops.OnRequest(context);
         }
         catch (HttpProtocolException ex)
         {
@@ -474,15 +520,16 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    private int GetStreamIdFromResponse(HttpResponseMessage response)
+    private int GetStreamIdFromContext(TurboHttpContext context)
     {
-        if (response.RequestMessage?.Options.TryGetValue(OptionsKey.Http2, out var streamId) is true)
+        var streamIdFeature = context.Features.Get<IHttp2StreamIdFeature>();
+        if (streamIdFeature is not null)
         {
-            return streamId;
+            return streamIdFeature.StreamId;
         }
 
         throw new InvalidOperationException(
-            "Response missing stream ID. Expected StreamIdKey.Http2 in request options.");
+            "Response missing stream ID. Expected IHttp2StreamIdFeature in context features.");
     }
 
     private StreamState GetOrCreateStreamState(int streamId)

@@ -1,9 +1,14 @@
 using System.Buffers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Context;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Multiplexed;
 using TurboHTTP.Protocol.Multiplexed.Body;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
+using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
@@ -107,17 +112,13 @@ internal sealed class Http3ServerSessionManager
         }
     }
 
-    public void OnResponse(HttpResponseMessage response)
+    public void OnResponse(TurboHttpContext context)
     {
-        var streamId = -1L;
-        if (response.RequestMessage?.Options.TryGetValue(StreamIdKey.Http3, out var id) is true)
-        {
-            streamId = id;
-        }
+        var streamId = GetStreamIdFromContext(context);
 
         if (streamId < 0)
         {
-            Tracing.For("Protocol").Warning(this, "HTTP/3 response missing StreamId in RequestMessage.Options");
+            Tracing.For("Protocol").Warning(this, "HTTP/3 response missing stream ID");
             return;
         }
 
@@ -129,19 +130,28 @@ internal sealed class Http3ServerSessionManager
 
         var (_, state) = streamData;
 
-        var headersFrame = _responseEncoder.EncodeHeaders(response);
+        var headersFrame = _responseEncoder.EncodeHeaders(context);
         EmitDataFrame(headersFrame, streamId);
 
-        var contentLength = response.Content.Headers.ContentLength;
-        var hasContent = contentLength is > 0;
+        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var contentLength = ExtractContentLength(responseFeature);
+        var hasBody = contentLength.HasValue && contentLength.Value > 0;
 
-        if (!hasContent)
+        if (!hasBody)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));
             return;
         }
 
-        var encoder = BodyEncoderFactory.Create(response.Content);
+        var responseBody = context.Features.Get<ITurboResponseBodyFeature>();
+        if (responseBody is not TurboHttpResponseBodyFeature turboBody)
+        {
+            _ops.OnOutbound(new CompleteWrites(streamId));
+            return;
+        }
+
+        var bodyStream = turboBody.GetResponseStream();
+        var encoder = BodyEncoderFactory.Create(bodyStream, contentLength);
         if (encoder is null)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));
@@ -149,8 +159,29 @@ internal sealed class Http3ServerSessionManager
         }
 
         state.InitBodyEncoder(encoder);
-        state.StartBodyEncoder(response.Content, streamId, _ops.StageActor);
+        state.StartBodyEncoder(bodyStream, streamId, _ops.StageActor);
         _ops.OnScheduleTimer(string.Concat("drain-body:", streamId.ToString()), TimeSpan.FromMilliseconds(0));
+    }
+
+    private static long? ExtractContentLength(IHttpResponseFeature? responseFeature)
+    {
+        if (responseFeature?.Headers is null)
+        {
+            return null;
+        }
+
+        foreach (var header in responseFeature.Headers)
+        {
+            if (header.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+            {
+                if (header.Value.FirstOrDefault() is string value && long.TryParse(value, out var length))
+                {
+                    return length;
+                }
+            }
+        }
+
+        return null;
     }
 
     public void OnBodyMessage(object msg)
@@ -378,8 +409,7 @@ internal sealed class Http3ServerSessionManager
                             var decoded = _requestDecoder.DecodeHeaders(headersFrame, state);
                             if (decoded)
                             {
-                                var request = state.GetRequest();
-                                request.Options.Set(StreamIdKey.Http3, streamId);
+                                // Headers decoded but will be emitted later in FlushPendingRequest
                             }
                             else
                             {
@@ -422,22 +452,26 @@ internal sealed class Http3ServerSessionManager
 
         if (state.HasRequest)
         {
-            var request = state.GetRequest();
+            var requestFeature = state.GetRequestFeature();
             _ops.OnCancelTimer(string.Concat("headers-timeout:", streamId.ToString()));
 
-            if (state.HasBodyDecoder)
+            var hasBody = state.HasBodyDecoder;
+            if (hasBody)
             {
                 state.FeedBody(ReadOnlySpan<byte>.Empty, endStream: true);
-                request.Content = state.GetContent();
             }
-            else
+
+            var context = ServerContextFactory.Create(requestFeature, hasBody);
+            var streamIdFeature = new TurboHttp3StreamIdFeature(streamId);
+            context.Features.Set<ITurboHttp3StreamIdFeature>(streamIdFeature);
+
+            if (hasBody && requestFeature is not null)
             {
-                request.Content = new ByteArrayContent([]);
-                state.ApplyContentHeadersTo(request.Content);
+                requestFeature.Body = state.GetBodyStream();
             }
 
             _bodyRateStates.Remove(streamId);
-            _ops.OnRequest(request);
+            _ops.OnRequest(context);
         }
     }
 
@@ -469,6 +503,17 @@ internal sealed class Http3ServerSessionManager
         {
             _bodyRateStates[streamId].TotalBytes += dataFrame.Data.Length;
         }
+    }
+
+    private long GetStreamIdFromContext(TurboHttpContext context)
+    {
+        var streamIdFeature = context.Features.Get<ITurboHttp3StreamIdFeature>();
+        if (streamIdFeature is not null)
+        {
+            return streamIdFeature.StreamId;
+        }
+
+        return -1L;
     }
 
     private void CloseStream(long streamId)

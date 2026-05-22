@@ -7,7 +7,9 @@ using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using AkkaActor = Akka.Actor;
 
-namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
+using TurboHTTP.Server;
+
+
 
 /// <summary>
 /// Unit tests for HTTP/2 SessionManager SETTINGS and GOAWAY handling.
@@ -25,9 +27,8 @@ public sealed class Http2SettingsGoawaySpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public AkkaActor.IActorRef StageActor { get; set; } = AkkaActor.ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
+        public void OnRequest(TurboHttpContext context)
         {
-            Requests.Add(request);
         }
 
         public void OnOutbound(ITransportOutbound item)
@@ -277,3 +278,6 @@ public sealed class Http2SettingsGoawaySpec
         settingsData.Buffer.Dispose();
     }
 }
+
+
+

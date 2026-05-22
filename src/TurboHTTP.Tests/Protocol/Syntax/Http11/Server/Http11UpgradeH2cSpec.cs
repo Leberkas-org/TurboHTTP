@@ -19,7 +19,7 @@ public sealed class Http11UpgradeH2cSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request) => EmittedRequests.Add(request);
+        public void OnRequest(TurboHttpContext context) { /* OnRequest called */ }
         public void OnOutbound(ITransportOutbound item) => EmittedOutbound.Add(item);
         public void OnScheduleTimer(string name, TimeSpan delay) { }
         public void OnCancelTimer(string name) { }
@@ -35,7 +35,7 @@ public sealed class Http11UpgradeH2cSpec
         public ILoggingAdapter Log => _inner.Log;
         public IActorRef StageActor { get => _inner.StageActor; set => _inner.StageActor = value; }
 
-        public void OnRequest(HttpRequestMessage request) => _inner.OnRequest(request);
+        public void OnRequest(TurboHttpContext context) => _inner.OnRequest(context);
         public void OnOutbound(ITransportOutbound item) => _inner.OnOutbound(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => _inner.OnScheduleTimer(name, delay);
         public void OnCancelTimer(string name) => _inner.OnCancelTimer(name);
@@ -118,3 +118,5 @@ public sealed class Http11UpgradeH2cSpec
         Assert.Single(ops.EmittedRequests);
     }
 }
+
+

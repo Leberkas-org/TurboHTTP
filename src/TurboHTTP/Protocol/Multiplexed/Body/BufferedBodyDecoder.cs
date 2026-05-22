@@ -37,6 +37,17 @@ internal sealed class BufferedBodyDecoder : IBodyDecoder
         return new ByteArrayContent(bytes);
     }
 
+    public Stream GetBodyStream()
+    {
+        if (_length == 0)
+        {
+            return Stream.Null;
+        }
+
+        var bytes = _owner!.Memory[.._length].ToArray();
+        return new MemoryStream(bytes, writable: false);
+    }
+
     public void Abort()
     {
         Dispose();

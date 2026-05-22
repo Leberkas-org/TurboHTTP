@@ -53,7 +53,7 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(HttpResponseMessage response) => _inner!.OnResponse(response);
+    public void OnResponse(TurboHttpContext context) => _inner!.OnResponse(context);
     public void OnDownstreamFinished() => _inner?.OnDownstreamFinished();
     public void OnTimerFired(string name) => _inner?.OnTimerFired(name);
     public void OnBodyMessage(object msg) => _inner?.OnBodyMessage(msg);
@@ -165,7 +165,7 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
             _parent = parent;
         }
 
-        public void OnRequest(HttpRequestMessage request) => _real.OnRequest(request);
+        public void OnRequest(TurboHttpContext context) => _real.OnRequest(context);
         public void OnOutbound(ITransportOutbound item) => _real.OnOutbound(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => _real.OnScheduleTimer(name, delay);
         public void OnCancelTimer(string name) => _real.OnCancelTimer(name);

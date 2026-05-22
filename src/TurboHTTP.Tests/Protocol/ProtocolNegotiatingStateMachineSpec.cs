@@ -22,7 +22,7 @@ public sealed class ProtocolNegotiatingStateMachineSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request) => EmittedRequests.Add(request);
+        public void OnRequest(TurboHttpContext context) { /* OnRequest called */ }
         public void OnOutbound(ITransportOutbound item) => EmittedOutbound.Add(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => ScheduledTimers.Add(name);
         public void OnCancelTimer(string name) { }
@@ -162,3 +162,4 @@ public sealed class ProtocolNegotiatingStateMachineSpec
         Assert.False(sm.ShouldComplete);
     }
 }
+

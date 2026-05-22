@@ -9,8 +9,8 @@ namespace TurboHTTP.Streams.Stages.Server;
 internal sealed class Http20ServerConnectionStage : GraphStage<ServerConnectionShape>
 {
     private readonly Inlet<ITransportInbound> _inNetwork = new("Http20Connection.In.Network");
-    private readonly Outlet<HttpRequestMessage> _outRequest = new("Http20Connection.Out.Request");
-    private readonly Inlet<HttpResponseMessage> _inResponse = new("Http20Connection.In.Response");
+    private readonly Outlet<TurboHttpContext> _outRequest = new("Http20Connection.Out.Request");
+    private readonly Inlet<TurboHttpContext> _inResponse = new("Http20Connection.In.Response");
     private readonly Outlet<ITransportOutbound> _outNetwork = new("Http20Connection.Out.Network");
     private readonly TurboServerOptions _options;
 

@@ -25,9 +25,8 @@ public sealed class Http2ServerTimerErrorSpec
         public ILoggingAdapter Log { get; } = NoLogger.Instance;
         public AkkaActor.IActorRef StageActor { get; set; } = AkkaActor.ActorRefs.Nobody;
 
-        public void OnRequest(HttpRequestMessage request)
+        public void OnRequest(TurboHttpContext context)
         {
-            Requests.Add(request);
         }
 
         public void OnOutbound(ITransportOutbound item)
@@ -224,3 +223,6 @@ public sealed class Http2ServerTimerErrorSpec
         sm.OnResponse(response);
     }
 }
+
+
+
