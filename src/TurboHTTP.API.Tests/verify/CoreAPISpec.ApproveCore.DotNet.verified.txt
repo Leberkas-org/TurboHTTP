@@ -595,7 +595,6 @@ namespace TurboHTTP.Server
         public void UseHttps() { }
         public void UseHttps(System.Action<TurboHTTP.Server.TurboHttpsOptions> configure) { }
         public void UseHttps(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) { }
-        public void UseHttps(TurboHTTP.Server.TurboTlsCallbackOptions callbackOptions) { }
         public void UseHttps(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate, System.Action<TurboHTTP.Server.TurboHttpsOptions> configure) { }
         public void UseHttps(string path, string? password = null) { }
         public void UseHttps(string path, string? password, System.Action<TurboHTTP.Server.TurboHttpsOptions> configure) { }
@@ -687,21 +686,6 @@ namespace TurboHTTP.Server
     {
         public static Microsoft.AspNetCore.Http.IResult EventStream(Akka.Streams.Dsl.Source<string, Akka.NotUsed> source) { }
         public static Microsoft.AspNetCore.Http.IResult Stream(Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> source, string? contentType = null) { }
-    }
-    public sealed class TurboTlsCallbackContext
-    {
-        public TurboTlsCallbackContext(System.Net.Security.SslClientHelloInfo clientHelloInfo, System.Net.EndPoint localEndPoint, System.Net.EndPoint remoteEndPoint, System.Threading.CancellationToken cancellationToken) { }
-        public bool AllowDelayedClientCertificateNegotiation { get; set; }
-        public System.Threading.CancellationToken CancellationToken { get; }
-        public System.Net.Security.SslClientHelloInfo ClientHelloInfo { get; }
-        public System.Net.EndPoint LocalEndPoint { get; }
-        public System.Net.EndPoint RemoteEndPoint { get; }
-    }
-    public sealed class TurboTlsCallbackOptions
-    {
-        public TurboTlsCallbackOptions() { }
-        public System.TimeSpan HandshakeTimeout { get; init; }
-        public required System.Func<TurboHTTP.Server.TurboTlsCallbackContext, System.Threading.Tasks.ValueTask<System.Net.Security.SslServerAuthenticationOptions>> OnConnection { get; init; }
     }
 }
 namespace TurboHTTP.Server.Middleware

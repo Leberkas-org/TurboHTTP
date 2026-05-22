@@ -26,51 +26,33 @@ internal sealed class EndpointResolver
         {
             if (listen.IsHttps)
             {
-                if (listen.TlsCallbackOptions is { } callbackOptions)
-                {
-                    var tcpProtocols = listen.Protocols & ~HttpProtocols.Http3;
-                    if (tcpProtocols != HttpProtocols.None)
-                    {
-                        bindings.Add(CreateTcpBindingFromCallback(listen, callbackOptions, tcpProtocols));
-                    }
+                ApplyHttpsDefaults(listen.HttpsOptions!, options.HttpsDefaultsCallback);
+                var cert = ResolveCertificate(listen.HttpsOptions!);
 
-                    if ((listen.Protocols & HttpProtocols.Http3) != 0)
-                    {
-                        throw new InvalidOperationException(
-                            "TurboTlsCallbackOptions is not supported for HTTP/3 (QUIC) endpoints. " +
-                            "Use TurboHttpsOptions with a static certificate for HTTP/3.");
-                    }
+                if (cert is null && listen.HttpsOptions!.ServerCertificateSelector is null)
+                {
+                    throw new InvalidOperationException(
+                        string.Concat(
+                            "No server certificate configured for HTTPS endpoint '",
+                            listen.Address, ":", listen.Port.ToString(),
+                            "'. Provide a certificate via UseHttps() or ServerCertificateSelector."));
                 }
-                else
-                {
-                    ApplyHttpsDefaults(listen.HttpsOptions!, options.HttpsDefaultsCallback);
-                    var cert = ResolveCertificate(listen.HttpsOptions!);
 
-                    if (cert is null && listen.HttpsOptions!.ServerCertificateSelector is null)
+                var tcpProtocols = listen.Protocols & ~HttpProtocols.Http3;
+                if (tcpProtocols != HttpProtocols.None)
+                {
+                    bindings.Add(CreateTcpBinding(listen, cert, tcpProtocols));
+                }
+
+                if ((listen.Protocols & HttpProtocols.Http3) != 0)
+                {
+                    if (cert is null)
                     {
                         throw new InvalidOperationException(
-                            string.Concat(
-                                "No server certificate configured for HTTPS endpoint '",
-                                listen.Address, ":", listen.Port.ToString(),
-                                "'. Provide a certificate via UseHttps(), ServerCertificateSelector, or TurboTlsCallbackOptions."));
+                            "HTTP/3 requires a static certificate. ServerCertificateSelector is not supported for QUIC.");
                     }
 
-                    var tcpProtocols = listen.Protocols & ~HttpProtocols.Http3;
-                    if (tcpProtocols != HttpProtocols.None)
-                    {
-                        bindings.Add(CreateTcpBinding(listen, cert, tcpProtocols));
-                    }
-
-                    if ((listen.Protocols & HttpProtocols.Http3) != 0)
-                    {
-                        if (cert is null)
-                        {
-                            throw new InvalidOperationException(
-                                "HTTP/3 requires a static certificate. ServerCertificateSelector is not supported for QUIC.");
-                        }
-
-                        bindings.Add(CreateQuicBinding(listen, cert));
-                    }
+                    bindings.Add(CreateQuicBinding(listen, cert));
                 }
             }
             else
@@ -256,39 +238,4 @@ internal sealed class EndpointResolver
         };
     }
 
-    private static ListenerBinding CreateTcpBindingFromCallback(
-        TurboListenOptions listen,
-        TurboTlsCallbackOptions callbackOptions,
-        HttpProtocols protocols)
-    {
-        var alpn = protocols.ToAlpnProtocols();
-
-        var tcpOptions = new TcpListenerOptions
-        {
-            Host = listen.Address.ToString(),
-            Port = listen.Port,
-            ApplicationProtocols = alpn.Count > 0 ? alpn : null,
-            HandshakeTimeout = callbackOptions.HandshakeTimeout,
-            HandshakeCallback = context =>
-            {
-                var turboContext = new TurboTlsCallbackContext(
-                    context.ClientHelloInfo,
-                    context.LocalEndPoint,
-                    context.RemoteEndPoint,
-                    context.CancellationToken);
-
-                var result = callbackOptions.OnConnection(turboContext);
-                context.AllowDelayedClientCertificateNegotiation =
-                    turboContext.AllowDelayedClientCertificateNegotiation;
-                return result;
-            }
-        };
-
-        return new ListenerBinding
-        {
-            Options = tcpOptions,
-            Factory = new TcpListenerFactory(),
-            ConnectionLoggingCategory = listen.ConnectionLoggingCategory
-        };
-    }
 }
