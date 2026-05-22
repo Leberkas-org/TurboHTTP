@@ -42,7 +42,7 @@ internal static class ServerTestContext
             QueryString = query,
             RawTarget = string.IsNullOrEmpty(query) ? path : string.Concat(path, query),
             Protocol = $"HTTP/{request.Version.Major}.{request.Version.Minor}",
-            Headers = new Microsoft.Extensions.Primitives.HeaderDictionary(),
+            Headers = new HeaderDictionary(),
             Body = Stream.Null,
             BodySource = bodySource,
             ExtractedHost = host
