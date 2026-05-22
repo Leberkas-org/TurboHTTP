@@ -462,8 +462,7 @@ internal sealed class Http3ServerSessionManager
             }
 
             var context = ServerContextFactory.Create(requestFeature, hasBody);
-            var streamIdFeature = new TurboHttp3StreamIdFeature(streamId);
-            context.Features.Set<ITurboHttp3StreamIdFeature>(streamIdFeature);
+            context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             if (hasBody)
             {
@@ -507,7 +506,7 @@ internal sealed class Http3ServerSessionManager
 
     private long GetStreamIdFromContext(TurboHttpContext context)
     {
-        var streamIdFeature = context.Features.Get<ITurboHttp3StreamIdFeature>();
+        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)
         {
             return streamIdFeature.StreamId;

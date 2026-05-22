@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
 
@@ -24,14 +23,14 @@ internal static class ServerTestContext
     internal static TurboHttpContext CreateH2Response(int streamId, int statusCode = 200)
     {
         var ctx = CreateResponse(statusCode);
-        ctx.Features.Set<IHttp2StreamIdFeature>(new TurboHttp2StreamIdFeature(streamId));
+        ctx.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
         return ctx;
     }
 
     internal static TurboHttpContext CreateH3Response(long streamId, int statusCode = 200)
     {
         var ctx = CreateResponse(statusCode);
-        ctx.Features.Set<ITurboHttp3StreamIdFeature>(new TurboHttp3StreamIdFeature(streamId));
+        ctx.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
         return ctx;
     }
 }

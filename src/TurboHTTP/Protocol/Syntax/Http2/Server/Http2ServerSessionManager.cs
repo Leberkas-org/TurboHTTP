@@ -1,7 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Context;
 using TurboHTTP.Context.Features;
@@ -498,8 +497,7 @@ internal sealed class Http2ServerSessionManager
             var hasBody = !endStream;
             var context = ServerContextFactory.Create(requestFeature, hasBody);
 
-            var streamIdFeature = new TurboHttp2StreamIdFeature(streamId);
-            context.Features.Set<IHttp2StreamIdFeature>(streamIdFeature);
+            context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             if (hasBody)
             {
@@ -522,14 +520,14 @@ internal sealed class Http2ServerSessionManager
 
     private int GetStreamIdFromContext(TurboHttpContext context)
     {
-        var streamIdFeature = context.Features.Get<IHttp2StreamIdFeature>();
+        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)
         {
-            return streamIdFeature.StreamId;
+            return (int)streamIdFeature.StreamId;
         }
 
         throw new InvalidOperationException(
-            "Response missing stream ID. Expected IHttp2StreamIdFeature in context features.");
+            "Response missing stream ID. Expected IHttpStreamIdFeature in context features.");
     }
 
     private StreamState GetOrCreateStreamState(int streamId)
