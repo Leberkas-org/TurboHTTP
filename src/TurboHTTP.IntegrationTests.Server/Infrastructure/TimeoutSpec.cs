@@ -37,11 +37,12 @@ public sealed class TimeoutSpec : ServerSpecBase
             new Uri($"http://127.0.0.1:{Port}/fast"), CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // Wait past keep-alive timeout
+        // Wait past keep-alive timeout (2s configured, wait 3s)
         await Task.Delay(TimeSpan.FromSeconds(3), CancellationToken);
 
-        // New request on new connection should still work (server is alive)
-        response = await Client.GetAsync(
+        // New request with fresh client should still work (server is alive, old connection timed out)
+        using var freshClient = new HttpClient();
+        response = await freshClient.GetAsync(
             new Uri($"http://127.0.0.1:{Port}/fast"), CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
