@@ -13,4 +13,6 @@ internal interface IServerStageOperations
     void OnCancelTimer(string name);
     ILoggingAdapter Log { get; }
     IActorRef StageActor { get; }
+    IServiceProvider? Services => null;
+    TurboConnectionInfo? ConnectionInfo => null;
 }

@@ -28,7 +28,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
     private sealed record DispatchCompleted(TurboHttpContext Context);
     private sealed record DispatchFailed(TurboHttpContext Context, Exception Error);
     private sealed record ResponseReady(TurboHttpContext Context, Task HandlerTask);
-    private sealed record HandlerFinished;
+    private sealed record HandlerFinished(TurboHttpContext Context);
     private sealed record HandlerFaulted(TurboHttpContext Context, Exception Error);
 
     private sealed class Logic : GraphStageLogic
@@ -72,6 +72,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
             if (match is not { IsMatch: true, Dispatcher: not null })
             {
                 ctx.Response.StatusCode = 404;
+                CompleteResponseBody(ctx);
                 Push(_stage._out, ctx);
                 return;
             }
@@ -89,6 +90,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                 if (task.IsCompletedSuccessfully)
                 {
                     _dispatching = false;
+                    CompleteResponseBody(ctx);
                     Push(_stage._out, ctx);
                     if (_upstreamFinished)
                     {
@@ -99,6 +101,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                 {
                     _dispatching = false;
                     ctx.Response.StatusCode = 500;
+                    CompleteResponseBody(ctx);
                     Push(_stage._out, ctx);
                     if (_upstreamFinished)
                     {
@@ -151,12 +154,17 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                         }
                     }
 
+                    if (handlerTask.IsCompleted)
+                    {
+                        CompleteResponseBody(ctx);
+                    }
+
                     Push(_stage._out, ctx);
 
                     if (!handlerTask.IsCompleted)
                     {
                         handlerTask.PipeTo(_stageActor!,
-                            success: () => new HandlerFinished(),
+                            success: () => new HandlerFinished(ctx),
                             failure: ex => new HandlerFaulted(ctx, ex));
                     }
                     else
@@ -169,7 +177,8 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                     }
                     break;
 
-                case HandlerFinished:
+                case HandlerFinished(var finishedCtx):
+                    CompleteResponseBody(finishedCtx);
                     _dispatching = false;
                     if (_upstreamFinished)
                     {
@@ -177,7 +186,8 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                     }
                     break;
 
-                case HandlerFaulted:
+                case HandlerFaulted(var faultedCtx, _):
+                    CompleteResponseBody(faultedCtx);
                     _dispatching = false;
                     if (_upstreamFinished)
                     {
@@ -187,6 +197,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
 
                 case DispatchCompleted completed:
                     _dispatching = false;
+                    CompleteResponseBody(completed.Context);
                     Push(_stage._out, completed.Context);
                     if (_upstreamFinished)
                     {
@@ -197,6 +208,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                 case DispatchFailed failed:
                     _dispatching = false;
                     failed.Context.Response.StatusCode = 500;
+                    CompleteResponseBody(failed.Context);
                     Push(_stage._out, failed.Context);
                     if (_upstreamFinished)
                     {
@@ -204,6 +216,12 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                     }
                     break;
             }
+        }
+
+        private static void CompleteResponseBody(TurboHttpContext ctx)
+        {
+            var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+            bodyFeature?.Complete();
         }
     }
 }

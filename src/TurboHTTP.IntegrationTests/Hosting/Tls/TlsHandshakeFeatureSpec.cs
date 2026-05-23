@@ -28,7 +28,7 @@ public sealed class TlsHandshakeFeatureSpec : IAsyncLifetime
             options.ListenLocalhost(_port, listen =>
             {
                 listen.UseHttps(certificate);
-                listen.Protocols = TurboHTTP.Server.HttpProtocols.Http1;
+                listen.Protocols = HttpProtocols.Http1;
             });
         });
 

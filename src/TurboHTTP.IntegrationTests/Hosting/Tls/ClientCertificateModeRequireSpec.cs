@@ -33,7 +33,7 @@ public sealed class ClientCertificateModeRequireSpec : IAsyncLifetime
                     httpsOptions.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
                     httpsOptions.ClientCertificateValidationCallback = (_, cert, _, _) => cert is not null;
                 });
-                listen.Protocols = TurboHTTP.Server.HttpProtocols.Http1;
+                listen.Protocols = HttpProtocols.Http1;
             });
         });
 

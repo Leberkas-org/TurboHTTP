@@ -22,16 +22,22 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
     private readonly Queue<TurboHttpContext> _requestQueue = new();
     private readonly Queue<ITransportOutbound> _outboundQueue = new();
     private IActorRef _stageActor = ActorRefs.Nobody;
+    private readonly IServiceProvider? _services;
+    private readonly TurboConnectionInfo? _connectionInfo;
 
     public HttpConnectionServerStageLogic(
         GraphStage<ServerConnectionShape> stage,
-        Func<IServerStageOperations, TSM> smFactory) : base(stage.Shape)
+        Func<IServerStageOperations, TSM> smFactory,
+        IServiceProvider? services = null,
+        TurboConnectionInfo? connectionInfo = null) : base(stage.Shape)
     {
         var shape = stage.Shape;
         _inNetwork = shape.InNetwork;
         _outRequest = shape.OutRequest;
         _inResponse = shape.InResponse;
         _outNetwork = shape.OutNetwork;
+        _services = services;
+        _connectionInfo = connectionInfo;
 
         _sm = smFactory(this);
 
@@ -176,6 +182,10 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
     ILoggingAdapter IServerStageOperations.Log => Log;
 
     IActorRef IServerStageOperations.StageActor => _stageActor;
+
+    IServiceProvider? IServerStageOperations.Services => _services;
+
+    TurboConnectionInfo? IServerStageOperations.ConnectionInfo => _connectionInfo;
 
     private void TryPushRequest()
     {

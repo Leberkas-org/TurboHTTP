@@ -66,7 +66,7 @@ internal sealed class ConnectionActor : ReceiveActor
         var middleware = Flow.FromGraph(new MiddlewarePipelineStage(msg.Pipeline));
         var routing = Flow.FromGraph(new RoutingStage(msg.RouteTable));
         var innerFlow = middleware.Via(routing);
-        var protocolBidi = msg.Engine.CreateFlow();
+        var protocolBidi = msg.Engine.CreateFlow(msg.Services, msg.ConnectionInfo);
         var composed = protocolBidi.Join(innerFlow);
 
         var self = Self;

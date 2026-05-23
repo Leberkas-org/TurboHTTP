@@ -171,6 +171,8 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
         public void OnCancelTimer(string name) => _real.OnCancelTimer(name);
         public ILoggingAdapter Log => _real.Log;
         public IActorRef StageActor => _real.StageActor;
+        public IServiceProvider? Services => _real.Services;
+        public TurboConnectionInfo? ConnectionInfo => _real.ConnectionInfo;
 
         public void RequestProtocolSwitch(Func<IServerStageOperations, IServerStateMachine> newSmFactory)
         {

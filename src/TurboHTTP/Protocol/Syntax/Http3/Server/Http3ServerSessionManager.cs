@@ -462,7 +462,7 @@ internal sealed class Http3ServerSessionManager
                 requestFeature.Body = state.GetBodyStream();
             }
 
-            var context = ServerContextFactory.Create(requestFeature, hasBody);
+            var context = ServerContextFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionInfo);
             context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             _bodyRateStates.Remove(streamId);

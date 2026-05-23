@@ -37,7 +37,7 @@ public sealed class SniCertSelectionSpec : IAsyncLifetime
                         return hostname == "host-a.local" ? _certA : _certB;
                     };
                 });
-                listen.Protocols = TurboHTTP.Server.HttpProtocols.Http1;
+                listen.Protocols = HttpProtocols.Http1;
             });
         });
 
