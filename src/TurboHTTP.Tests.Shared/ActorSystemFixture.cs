@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Servus.Core.Diagnostics;
 using TurboHTTP.Diagnostics;
 
-namespace TurboHTTP.IntegrationTests.Shared;
+namespace TurboHTTP.Tests.Shared;
 
 public sealed class ActorSystemFixture : IAsyncLifetime
 {

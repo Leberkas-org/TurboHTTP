@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.Server;
 
-namespace TurboHTTP.IntegrationTests.Shared;
+namespace TurboHTTP.Tests.Shared;
 
 public class TurboServerFixture : IAsyncLifetime
 {

@@ -1,4 +1,4 @@
-namespace TurboHTTP.IntegrationTests.Shared;
+namespace TurboHTTP.Tests.Shared;
 
 public enum TestHttpVersion
 {

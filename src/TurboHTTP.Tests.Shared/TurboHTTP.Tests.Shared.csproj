@@ -7,6 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Akka.Streams.TestKit"/>
         <PackageReference Include="Akka.TestKit.Xunit"/>
     </ItemGroup>
@@ -20,6 +24,9 @@
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>
         <InternalsVisibleTo Include="TurboHTTP.AcceptanceTests"/>
         <InternalsVisibleTo Include="TurboHTTP.MicroBenchmarks"/>
+        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Client"/>
+        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Server"/>
+        <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.E2E"/>
     </ItemGroup>
 
 </Project>

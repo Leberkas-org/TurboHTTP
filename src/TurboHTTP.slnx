@@ -33,7 +33,6 @@
     <Project Path="TurboHTTP.IntegrationTests.Client/TurboHTTP.IntegrationTests.Client.csproj" />
     <Project Path="TurboHTTP.IntegrationTests.E2E/TurboHTTP.IntegrationTests.E2E.csproj" />
     <Project Path="TurboHTTP.IntegrationTests.Server/TurboHTTP.IntegrationTests.Server.csproj" />
-    <Project Path="TurboHTTP.IntegrationTests.Shared/TurboHTTP.IntegrationTests.Shared.csproj" />
     <Project Path="TurboHTTP.Tests.Shared/TurboHTTP.Tests.Shared.csproj" />
     <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
   </Folder>

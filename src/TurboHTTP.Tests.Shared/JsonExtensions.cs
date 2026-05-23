@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace TurboHTTP.IntegrationTests.Shared;
+namespace TurboHTTP.Tests.Shared;
 
 public static class JsonExtensions
 {

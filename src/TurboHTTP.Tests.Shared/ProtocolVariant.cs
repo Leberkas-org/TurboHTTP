@@ -1,6 +1,6 @@
 using Xunit.Sdk;
 
-namespace TurboHTTP.IntegrationTests.Shared;
+namespace TurboHTTP.Tests.Shared;
 
 public sealed class ProtocolVariant : IXunitSerializable
 {

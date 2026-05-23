@@ -6,7 +6,7 @@ using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.Client;
 using TurboHTTP.Features.Sse;
-using TurboHTTP.IntegrationTests.Shared;
+using TurboHTTP.Tests.Shared;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.E2E;
@@ -24,7 +24,7 @@ public sealed class SseEndToEndSpec : Xunit.IAsyncLifetime
         {
             app.MapTurboGet("/events", () =>
             {
-                var source = Source.From(new[] { "hello", "world" })
+                var source = Source.From(["hello", "world"])
                     .Select(msg => msg);
                 return TurboStreamResults.EventStream(source);
             });

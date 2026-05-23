@@ -20,7 +20,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\TurboHTTP\TurboHTTP.csproj" />
-        <ProjectReference Include="..\TurboHTTP.IntegrationTests.Shared\TurboHTTP.IntegrationTests.Shared.csproj" />
+        <ProjectReference Include="..\TurboHTTP.Tests.Shared\TurboHTTP.Tests.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>

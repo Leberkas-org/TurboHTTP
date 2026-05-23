@@ -1,4 +1,4 @@
-namespace TurboHTTP.IntegrationTests.Shared;
+namespace TurboHTTP.Tests.Shared;
 
 /// <summary>
 /// Stub interface to support test fixtures without requiring xunit.v3.mtp-v2 in a non-executable project.
