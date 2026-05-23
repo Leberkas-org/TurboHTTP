@@ -70,4 +70,60 @@ public sealed class ServerContextFactorySpec
         var turboResponseBody = ctx.Features.Get<ITurboResponseBodyFeature>();
         Assert.NotNull(turboResponseBody);
     }
+
+    [Fact(Timeout = 5000)]
+    public void Create_should_set_request_lifetime_feature()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
+
+        var lifetime = ctx.Features.Get<IHttpRequestLifetimeFeature>();
+        Assert.NotNull(lifetime);
+        Assert.Equal(ctx.RequestAborted, lifetime.RequestAborted);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void RequestLifetimeFeature_should_delegate_abort_to_context()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
+
+        var lifetime = ctx.Features.Get<IHttpRequestLifetimeFeature>()!;
+        lifetime.Abort();
+
+        Assert.True(ctx.RequestAborted.IsCancellationRequested);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Create_should_set_request_identifier_feature()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
+
+        var identifier = ctx.Features.Get<IHttpRequestIdentifierFeature>();
+        Assert.NotNull(identifier);
+        Assert.Equal(ctx.TraceIdentifier, identifier.TraceIdentifier);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void RequestIdentifierFeature_should_sync_with_context()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
+
+        var identifier = ctx.Features.Get<IHttpRequestIdentifierFeature>()!;
+        identifier.TraceIdentifier = "custom-id";
+
+        Assert.Equal("custom-id", ctx.TraceIdentifier);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Create_should_set_reset_feature_as_null_for_http11()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
+
+        var reset = ctx.Features.Get<IHttpResetFeature>();
+        Assert.Null(reset);
+    }
 }

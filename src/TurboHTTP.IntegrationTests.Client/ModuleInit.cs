@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace TurboHTTP.IntegrationTests;
+namespace TurboHTTP.IntegrationTests.Client;
 
 internal static class ModuleInit
 {

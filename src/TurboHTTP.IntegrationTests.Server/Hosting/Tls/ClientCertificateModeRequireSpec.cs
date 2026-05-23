@@ -10,7 +10,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
-public sealed class ClientCertificateModeRequireSpec : Xunit.IAsyncLifetime
+public sealed class ClientCertificateModeRequireSpec : IAsyncLifetime
 {
     private WebApplication? _app;
     private ushort _port;

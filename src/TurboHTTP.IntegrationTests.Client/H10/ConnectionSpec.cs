@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using TurboHTTP.Tests.Shared;
 using TurboHTTP.IntegrationTests.Client.Shared;
+using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.IntegrationTests.H10;
+namespace TurboHTTP.IntegrationTests.Client.H10;
 
 [Collection("H10")]
 public sealed class ConnectionSpec : IntegrationSpecBase

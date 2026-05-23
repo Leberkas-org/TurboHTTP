@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using TurboHTTP.Tests.Shared;
 using TurboHTTP.IntegrationTests.Client.Shared;
+using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.IntegrationTests.H3;
+namespace TurboHTTP.IntegrationTests.Client.H3;
 
 [Collection("H3")]
 public sealed class SmokeSpec : IntegrationSpecBase

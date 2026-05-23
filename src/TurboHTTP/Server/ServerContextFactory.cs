@@ -29,16 +29,22 @@ internal static class ServerContextFactory
             features.Set<ITlsHandshakeFeature>(tlsFeature);
         }
 
+        TurboHttpContext ctx;
         if (connectionInfo is not null)
         {
-            return new TurboHttpContext(features, connectionInfo, services, CancellationToken.None, null!);
+            ctx = new TurboHttpContext(features, connectionInfo, services, CancellationToken.None, null!);
+        }
+        else
+        {
+            ctx = new TurboHttpContext(features);
+            if (services is not null)
+            {
+                ctx.RequestServices = services;
+            }
         }
 
-        var ctx = new TurboHttpContext(features);
-        if (services is not null)
-        {
-            ctx.RequestServices = services;
-        }
+        features.Set<IHttpRequestLifetimeFeature>(new TurboHttpRequestLifetimeFeature(ctx));
+        features.Set<IHttpRequestIdentifierFeature>(new TurboHttpRequestIdentifierFeature(ctx));
 
         return ctx;
     }

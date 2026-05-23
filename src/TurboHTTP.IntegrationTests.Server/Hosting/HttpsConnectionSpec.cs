@@ -9,7 +9,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting;
 
-public sealed class HttpsConnectionSpec : Xunit.IAsyncLifetime
+public sealed class HttpsConnectionSpec : IAsyncLifetime
 {
     private WebApplication? _app;
     private ushort _port;

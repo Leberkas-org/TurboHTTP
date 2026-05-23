@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text.Json;
 using TurboHTTP.Client;
-using TurboHTTP.Tests.Shared;
 using TurboHTTP.IntegrationTests.Client.Shared;
+using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.IntegrationTests.Features;
+namespace TurboHTTP.IntegrationTests.Client.Features;
 
 public sealed class CompressionFeatureSpec : FeatureSpecBase
 {

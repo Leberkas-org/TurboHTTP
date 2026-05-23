@@ -1,8 +1,8 @@
 using System.Net;
-using TurboHTTP.Tests.Shared;
 using TurboHTTP.IntegrationTests.Client.Shared;
+using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.IntegrationTests.H11;
+namespace TurboHTTP.IntegrationTests.Client.H11;
 
 [Collection("H11")]
 public sealed class ConcurrencySpec : IntegrationSpecBase

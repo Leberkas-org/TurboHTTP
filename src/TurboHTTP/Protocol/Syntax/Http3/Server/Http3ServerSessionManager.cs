@@ -465,6 +465,10 @@ internal sealed class Http3ServerSessionManager
             var context = ServerContextFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionInfo, _ops.TlsHandshakeFeature);
             context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
+            var capturedStreamId = streamId;
+            context.Features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
+                errorCode => EmitRstStream(capturedStreamId, (ErrorCode)errorCode)));
+
             _bodyRateStates.Remove(streamId);
             _ops.OnRequest(context);
         }

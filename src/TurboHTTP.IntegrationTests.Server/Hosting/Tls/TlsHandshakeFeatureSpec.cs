@@ -11,7 +11,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
-public sealed class TlsHandshakeFeatureSpec : Xunit.IAsyncLifetime
+public sealed class TlsHandshakeFeatureSpec : IAsyncLifetime
 {
     private WebApplication? _app;
     private ushort _port;

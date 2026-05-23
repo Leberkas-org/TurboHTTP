@@ -1,17 +1,9 @@
-using System.Net.Security;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Streams;
 
 internal static class ProtocolRouter
 {
-    internal static IServerProtocolEngine ResolveEngine(SslApplicationProtocol protocol, TurboServerOptions options)
-    {
-        return protocol == SslApplicationProtocol.Http2
-            ? new Http20ServerEngine(options)
-            : new Http11ServerEngine(options);
-    }
-
     internal static IServerProtocolEngine ResolveEngine(Version version, TurboServerOptions options)
     {
         return version switch

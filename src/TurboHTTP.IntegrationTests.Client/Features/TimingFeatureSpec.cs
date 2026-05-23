@@ -1,8 +1,8 @@
 using System.Net;
-using TurboHTTP.Tests.Shared;
 using TurboHTTP.IntegrationTests.Client.Shared;
+using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.IntegrationTests.Features;
+namespace TurboHTTP.IntegrationTests.Client.Features;
 
 public sealed class TimingFeatureSpec : FeatureSpecBase
 {

@@ -8,7 +8,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Lifecycle;
 
-public sealed class ServerSmokeSpec : Xunit.IAsyncLifetime
+public sealed class ServerSmokeSpec : IAsyncLifetime
 {
     private WebApplication? _app;
     private int _port;

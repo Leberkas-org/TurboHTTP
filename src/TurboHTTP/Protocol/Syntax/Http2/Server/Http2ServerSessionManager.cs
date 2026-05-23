@@ -504,6 +504,10 @@ internal sealed class Http2ServerSessionManager
             var context = ServerContextFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionInfo, _ops.TlsHandshakeFeature);
             context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
+            var capturedStreamId = streamId;
+            context.Features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
+                errorCode => EmitRstStream(capturedStreamId, (Http2ErrorCode)errorCode)));
+
             _ops.OnRequest(context);
         }
         catch (HttpProtocolException ex)

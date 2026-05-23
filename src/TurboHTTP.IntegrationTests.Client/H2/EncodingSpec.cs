@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text.Json;
-using TurboHTTP.Tests.Shared;
 using TurboHTTP.IntegrationTests.Client.Shared;
+using TurboHTTP.Tests.Shared;
 
-namespace TurboHTTP.IntegrationTests.H2;
+namespace TurboHTTP.IntegrationTests.Client.H2;
 
 [Collection("H2")]
 public sealed class EncodingSpec : IntegrationSpecBase
