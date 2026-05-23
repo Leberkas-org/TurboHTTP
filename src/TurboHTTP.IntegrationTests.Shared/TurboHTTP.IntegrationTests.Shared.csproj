@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsTestProject>false</IsTestProject>
+        <OutputType>Library</OutputType>
+        <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Akka.TestKit.Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TurboHTTP\TurboHTTP.csproj" />
+    </ItemGroup>
+
+</Project>
