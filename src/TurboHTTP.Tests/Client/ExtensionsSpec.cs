@@ -1,10 +1,23 @@
+using System.Text;
+using Akka.Actor;
+using Akka.Streams;
+using Akka.Streams.Dsl;
+using Akka.TestKit.Xunit;
 using TurboHTTP.Client;
+using TurboHTTP.Features.Sse;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Client;
 
-public sealed class ExtensionsSpec
+public sealed class ExtensionsSpec : TestKit
 {
+    private readonly IMaterializer _materializer;
+
+    public ExtensionsSpec() : base(ActorSystem.Create("test"))
+    {
+        _materializer = Sys.Materializer();
+    }
+
     [Fact(Timeout = 5000)]
     public void GetResponseAsync_should_attach_pending_request_to_options()
     {
@@ -47,5 +60,43 @@ public sealed class ExtensionsSpec
 
         var result = await task;
         Assert.Same(response, result);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task AsEventStream_should_parse_sse_from_response_content()
+    {
+        // Create a response with SSE content
+        var content = "data: hello\n\ndata: world\n\n";
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent(content, Encoding.UTF8, "text/event-stream")
+        };
+
+        // Parse the SSE stream
+        var result = await response.AsEventStream()
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("hello", result[0].Data);
+        Assert.Equal("world", result[1].Data);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task AsEventStream_should_parse_events_with_all_fields()
+    {
+        var content = "event: update\ndata: payload\nid: 42\nretry: 3000\n\n";
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent(content, Encoding.UTF8, "text/event-stream")
+        };
+
+        var result = await response.AsEventStream()
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Single(result);
+        Assert.Equal("payload", result[0].Data);
+        Assert.Equal("update", result[0].EventType);
+        Assert.Equal("42", result[0].Id);
+        Assert.Equal(TimeSpan.FromMilliseconds(3000), result[0].Retry);
     }
 }
