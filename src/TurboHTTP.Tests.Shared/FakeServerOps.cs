@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Akka.Event;
+using Akka.Streams;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Context;
@@ -35,4 +36,5 @@ internal sealed class FakeServerOps : IServerStageOperations
 
     public ILoggingAdapter Log => NoLogger.Instance;
     public IActorRef StageActor { get; set; } = ActorRefs.Nobody;
+    public IMaterializer Materializer { get; set; } = null!;
 }

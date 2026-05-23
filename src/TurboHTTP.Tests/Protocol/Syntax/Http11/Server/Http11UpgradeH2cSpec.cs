@@ -1,6 +1,7 @@
 using System.Text;
 using Akka.Actor;
 using Akka.Event;
+using Akka.Streams;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
@@ -23,6 +24,7 @@ public sealed class Http11UpgradeH2cSpec
         public List<string> CancelledTimers => _inner.CancelledTimers;
         public ILoggingAdapter Log => _inner.Log;
         public IActorRef StageActor { get => _inner.StageActor; set => _inner.StageActor = value; }
+        public IMaterializer Materializer { get => _inner.Materializer; set => _inner.Materializer = value; }
 
         public void OnRequest(TurboHttpContext context) => _inner.OnRequest(context);
         public void OnOutbound(ITransportOutbound item) => _inner.OnOutbound(item);
