@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using TurboHTTP.Client;
-using TurboHTTP.IntegrationTests.Shared;
+using TurboHTTP.Tests.Shared;
+using TurboHTTP.IntegrationTests.Client.Shared;
 
 namespace TurboHTTP.IntegrationTests.Features;
 

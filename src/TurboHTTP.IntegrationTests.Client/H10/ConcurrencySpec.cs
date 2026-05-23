@@ -1,5 +1,6 @@
 using System.Net;
-using TurboHTTP.IntegrationTests.Shared;
+using TurboHTTP.Tests.Shared;
+using TurboHTTP.IntegrationTests.Client.Shared;
 
 namespace TurboHTTP.IntegrationTests.H10;
 
