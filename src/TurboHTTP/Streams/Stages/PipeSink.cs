@@ -1,5 +1,6 @@
 using System.IO.Pipelines;
 using Akka.Streams.Dsl;
+using Servus.Akka.Streams.IO;
 
 namespace TurboHTTP.Streams.Stages;
 
@@ -21,7 +22,7 @@ internal sealed class PipeSink : IAsyncDisposable
     {
         get
         {
-            field ??= Akka.Streams.Dsl.Sink.FromGraph(new PipeWriterSinkStage(_pipe.Writer));
+            field ??= StreamSink.To(_pipe.Writer);
             return field;
         }
     }
