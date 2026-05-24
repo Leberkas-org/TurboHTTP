@@ -6,6 +6,7 @@ internal sealed class CloseDelimitedBodyDecoder : IBodyDecoder
 
     public bool IsBuffered => false;
     public IReadOnlyList<(string Name, string Value)> Trailers => [];
+    public bool IsComplete => false;
 
     public CloseDelimitedBodyDecoder(long maxBodySize = 10_485_760)
     {
@@ -27,6 +28,11 @@ internal sealed class CloseDelimitedBodyDecoder : IBodyDecoder
     {
         _handle.Complete();
         return true;
+    }
+
+    public int Drain(ReadOnlySpan<byte> data)
+    {
+        return 0;
     }
 
     public Stream GetBodyStream() => _handle.AsStream();

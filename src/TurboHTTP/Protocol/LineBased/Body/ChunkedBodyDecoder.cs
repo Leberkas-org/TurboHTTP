@@ -25,6 +25,7 @@ internal sealed class ChunkedBodyDecoder : IBodyDecoder
 
     public bool IsBuffered => false;
     public IReadOnlyList<(string Name, string Value)> Trailers => _trailers ?? (IReadOnlyList<(string Name, string Value)>)[];
+    public bool IsComplete => _phase == Phase.Complete;
 
     public ChunkedBodyDecoder(long maxBodySize = 10_485_760)
     {
@@ -186,6 +187,19 @@ internal sealed class ChunkedBodyDecoder : IBodyDecoder
         }
 
         return _phase == Phase.Complete;
+    }
+
+    public int Drain(ReadOnlySpan<byte> data)
+    {
+        var consumed = 0;
+        if (_phase == Phase.Complete)
+        {
+            return 0;
+        }
+
+        var beforePhase = _phase;
+        Feed(data, out consumed);
+        return consumed;
     }
 
     public Stream GetBodyStream() => _handle.AsStream();

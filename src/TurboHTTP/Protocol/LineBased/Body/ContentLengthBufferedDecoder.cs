@@ -11,6 +11,7 @@ internal sealed class ContentLengthBufferedDecoder : IBodyDecoder
 
     public bool IsBuffered => true;
     public IReadOnlyList<(string Name, string Value)> Trailers => [];
+    public bool IsComplete => _complete;
 
     public ContentLengthBufferedDecoder(int expected, MemoryPool<byte> pool)
     {
@@ -36,6 +37,24 @@ internal sealed class ContentLengthBufferedDecoder : IBodyDecoder
     }
 
     public bool OnEof() => _complete;
+
+    public int Drain(ReadOnlySpan<byte> data)
+    {
+        if (_complete)
+        {
+            return 0;
+        }
+
+        var need = _expected - _received;
+        var take = Math.Min(need, data.Length);
+        if (take > 0)
+        {
+            _received += take;
+        }
+
+        _complete = _received == _expected;
+        return take;
+    }
 
     public Stream GetBodyStream() => new MemoryStream(_owner.Memory[.._expected].ToArray());
 
