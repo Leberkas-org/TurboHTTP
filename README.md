@@ -2,8 +2,8 @@
   <img src="docs/logo/logo.svg" alt="TurboHTTP" width="200" />
   <p><strong>High-performance HTTP client and server for .NET — built on Akka.Streams with full protocol support from HTTP/1.0 through HTTP/3 (QUIC).</strong></p>
 
-  [![CI](https://img.shields.io/github/actions/workflow/status/st0o0/TurboHTTP/ci.yml?label=CI)](https://github.com/st0o0/TurboHTTP/actions/workflows/ci.yml)
-  [![Release](https://img.shields.io/github/actions/workflow/status/st0o0/TurboHTTP/release.yml?label=Release)](https://github.com/st0o0/TurboHTTP/actions/workflows/release.yml)
+  [![CI](https://img.shields.io/github/actions/workflow/status/Leberkas-org/TurboHTTP/ci.yml?label=CI)](https://github.com/Leberkas-org/TurboHTTP/actions/workflows/ci.yml)
+  [![Release](https://img.shields.io/github/actions/workflow/status/Leberkas-org/TurboHTTP/release.yml?label=Release)](https://github.com/Leberkas-org/TurboHTTP/actions/workflows/release.yml)
   [![NuGet](https://img.shields.io/nuget/v/TurboHTTP.svg)](https://www.nuget.org/packages/TurboHTTP)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 </div>
