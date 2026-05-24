@@ -45,6 +45,13 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Install libmsquic (QUIC/HTTP3 support)
+        run: |
+          wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libmsquic > /dev/null
+
       - name: Install .NET
         uses: actions/setup-dotnet@v5
         with:
