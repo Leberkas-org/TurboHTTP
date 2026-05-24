@@ -420,13 +420,13 @@ namespace TurboHTTP.Routing
     }
     public sealed class RouteTable
     {
-        public TurboHTTP.Routing.RouteMatchResult Match(System.Net.Http.HttpMethod method, string path) { }
+        public TurboHTTP.Routing.RouteMatchResult Match(string method, string path) { }
     }
     public sealed class TurboRouteTable
     {
         public TurboRouteTable() { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder Add(System.Net.Http.HttpMethod method, string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder Add(System.Net.Http.HttpMethod method, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
+        public TurboHTTP.Server.TurboRouteHandlerBuilder Add(string method, string pattern, System.Delegate handler) { }
+        public TurboHTTP.Server.TurboRouteHandlerBuilder Add(string method, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
         public TurboHTTP.Server.TurboRouteGroupBuilder CreateGroup(string prefix) { }
     }
 }
@@ -631,7 +631,7 @@ namespace TurboHTTP.Server
         public TurboHTTP.Server.TurboRouteHandlerBuilder MapEntity<TActorKey>(string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
         public TurboHTTP.Server.TurboRouteHandlerBuilder MapGet(string pattern, System.Delegate handler) { }
         public TurboHTTP.Server.TurboRouteGroupBuilder MapGroup(string prefix) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapMethods(string pattern, System.Collections.Generic.IEnumerable<System.Net.Http.HttpMethod> methods, System.Delegate handler) { }
+        public TurboHTTP.Server.TurboRouteHandlerBuilder MapMethods(string pattern, System.Collections.Generic.IEnumerable<string> methods, System.Delegate handler) { }
         public TurboHTTP.Server.TurboRouteHandlerBuilder MapPatch(string pattern, System.Delegate handler) { }
         public TurboHTTP.Server.TurboRouteHandlerBuilder MapPost(string pattern, System.Delegate handler) { }
         public TurboHTTP.Server.TurboRouteHandlerBuilder MapPut(string pattern, System.Delegate handler) { }
@@ -658,7 +658,7 @@ namespace TurboHTTP.Server
         public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboEntity<TActorKey>(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
         public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboGet(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
         public static TurboHTTP.Server.TurboRouteGroupBuilder MapTurboGroup(this Microsoft.AspNetCore.Builder.WebApplication app, string prefix) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboMethods(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Collections.Generic.IEnumerable<System.Net.Http.HttpMethod> methods, System.Delegate handler) { }
+        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboMethods(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Collections.Generic.IEnumerable<string> methods, System.Delegate handler) { }
         public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboPatch(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
         public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboPost(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
         public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboPut(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
