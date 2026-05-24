@@ -4,7 +4,7 @@ using Akka.Streams.Dsl;
 
 namespace Servus.Akka.Streams.IO;
 
-public class PipeSource
+public static class PipeSource
 {
     public static Source<ReadOnlyMemory<byte>, NotUsed> From(PipeReader reader)
     {

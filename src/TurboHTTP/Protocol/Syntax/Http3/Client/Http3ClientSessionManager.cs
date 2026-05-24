@@ -92,6 +92,8 @@ internal sealed class Http3ClientSessionManager
         var streamId = _tracker.AllocateStreamId();
         _tracker.OnStreamOpened(streamId);
 
+        EmitOutbound(new OpenStream(StreamTarget.FromId(streamId), StreamDirection.Bidirectional));
+
         _correlationMap.TryAdd(streamId, request);
         _streamManager.Correlate(streamId, request);
 
