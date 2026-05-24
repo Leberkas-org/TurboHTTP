@@ -3,7 +3,8 @@
     <PropertyGroup>
         <Authors>leberkas-org</Authors>
         <Title>TurboHTTP</Title>
-        <PackageTags>HttpClient;Kestrel;Akka;Streams;Turbo</PackageTags>
+        <Description>High-performance HTTP client and server for .NET built on Akka.Streams. Supports HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with backpressure, connection pooling, retries, cookies, caching, and an actor-based entity gateway.</Description>
+        <PackageTags>http;http2;http3;quic;akka;akka-streams;reactive;backpressure;httpclient;httpserver</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>

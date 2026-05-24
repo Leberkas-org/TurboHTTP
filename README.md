@@ -166,7 +166,9 @@ dotnet build --configuration Release ./src/TurboHTTP.slnx
 
 # Tests (xUnit v3 — use dotnet run, not dotnet test)
 dotnet run --project ./src/TurboHTTP.Tests/TurboHTTP.Tests.csproj
-dotnet run --project ./src/TurboHTTP.IntegrationTests/TurboHTTP.IntegrationTests.csproj
+dotnet run --project ./src/TurboHTTP.IntegrationTests.Client/TurboHTTP.IntegrationTests.Client.csproj
+dotnet run --project ./src/TurboHTTP.IntegrationTests.Server/TurboHTTP.IntegrationTests.Server.csproj
+dotnet run --project ./src/TurboHTTP.IntegrationTests.End2End/TurboHTTP.IntegrationTests.End2End.csproj
 dotnet run --project ./src/TurboHTTP.AcceptanceTests/TurboHTTP.AcceptanceTests.csproj
 
 # Benchmarks
@@ -177,7 +179,7 @@ dotnet run --configuration Release --project ./src/TurboHTTP.Benchmarks/TurboHTT
 
 ## Documentation
 
-Full documentation — including feature guides, architecture deep-dives, and API references — is available at **[turbohttp.st0o0.net](https://turbohttp.leberkas.org/)**.
+Full documentation — including feature guides, architecture deep-dives, and API references — is available at **[turbohttp.leberkas.org](https://turbohttp.leberkas.org/)**.
 
 ---
 
