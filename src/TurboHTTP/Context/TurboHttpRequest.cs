@@ -14,9 +14,15 @@ namespace TurboHTTP.Context;
 
 public sealed class TurboHttpRequest : HttpRequest
 {
-    private readonly IFeatureCollection _features;
+    private IFeatureCollection _features;
     private HttpContext? _httpContext;
     private IFormCollection? _parsedForm;
+    private Uri? _cachedRequestUri;
+    private IHttpRequestFeature? _requestFeature;
+    private IQueryCollection? _query;
+    private IRequestCookieCollection? _cookies;
+    private RouteValueDictionary? _routeValues;
+    private PipeReader? _bodyReader;
 
     public TurboHttpRequest(IFeatureCollection features)
     {
@@ -24,7 +30,7 @@ public sealed class TurboHttpRequest : HttpRequest
     }
 
     private IHttpRequestFeature RequestFeature
-        => field ??= _features.Get<IHttpRequestFeature>() ??
+        => _requestFeature ??= _features.Get<IHttpRequestFeature>() ??
                      throw new InvalidOperationException("IHttpRequestFeature not found in feature collection");
 
     public override HttpContext HttpContext => _httpContext!;
@@ -38,18 +44,20 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            var scheme = Scheme;
-            var host = Host.Value;
-            var path = Path.Value;
-            var query = QueryString.Value;
+            if (_cachedRequestUri is not null)
+            {
+                return _cachedRequestUri;
+            }
 
+            var host = Host.Value;
             if (string.IsNullOrEmpty(host))
             {
                 return null;
             }
 
-            var uriString = string.Concat(scheme, "://", host, path, query);
-            return new Uri(uriString);
+            var uriString = string.Concat(Scheme, "://", host, Path.Value, QueryString.Value);
+            _cachedRequestUri = new Uri(uriString);
+            return _cachedRequestUri;
         }
     }
 
@@ -84,7 +92,7 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            var hostHeader = Headers["Host"].ToString();
+            var hostHeader = (string?)Headers["Host"] ?? string.Empty;
             if (string.IsNullOrEmpty(hostHeader))
             {
                 // Fallback to extracted host from RequestUri if Host header is not set
@@ -121,10 +129,10 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            field ??= new TurboQueryCollection(RequestFeature.QueryString);
-            return field;
+            _query ??= new TurboQueryCollection(RequestFeature.QueryString);
+            return _query;
         }
-        set;
+        set => _query = value;
     }
 
     public override string Protocol
@@ -139,10 +147,10 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            field ??= new TurboRequestCookieCollection(Headers["Cookie"].ToString());
-            return field;
+            _cookies ??= new TurboRequestCookieCollection(Headers["Cookie"].ToString());
+            return _cookies;
         }
-        set;
+        set => _cookies = value;
     }
 
     public override long? ContentLength
@@ -153,7 +161,7 @@ public sealed class TurboHttpRequest : HttpRequest
 
     public override string? ContentType
     {
-        get => Headers["Content-Type"].ToString();
+        get => (string?)Headers["Content-Type"] ?? string.Empty;
         set => Headers["Content-Type"] = value ?? string.Empty;
     }
 
@@ -167,8 +175,8 @@ public sealed class TurboHttpRequest : HttpRequest
     {
         get
         {
-            field ??= PipeReader.Create(Body);
-            return field;
+            _bodyReader ??= PipeReader.Create(Body);
+            return _bodyReader;
         }
     }
 
@@ -228,8 +236,8 @@ public sealed class TurboHttpRequest : HttpRequest
 
     public override RouteValueDictionary RouteValues
     {
-        get => field ??= new RouteValueDictionary();
-        set;
+        get => _routeValues ??= new RouteValueDictionary();
+        set => _routeValues = value;
     }
 
     private static IFormCollection EmptyForm()
@@ -341,5 +349,17 @@ public sealed class TurboHttpRequest : HttpRequest
         }
 
         return null;
+    }
+
+    internal void Reset(IFeatureCollection features)
+    {
+        _features = features;
+        _requestFeature = null;
+        _cachedRequestUri = null;
+        _parsedForm = null;
+        _query = null;
+        _cookies = null;
+        _routeValues = null;
+        _bodyReader = null;
     }
 }

@@ -2,6 +2,7 @@ using System.Collections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using TurboHTTP.Protocol;
+using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Context.Adapters;
 
@@ -31,7 +32,8 @@ internal sealed class TurboResponseHeaderDictionary : IHeaderDictionary
         get
         {
             if (_headers.TryGetValue(WellKnownHeaders.ContentLength, out var value)
-                && long.TryParse(value.ToString(), out var length))
+                && value.Count > 0
+                && long.TryParse(value[0], out var length))
             {
                 return length;
             }
@@ -42,7 +44,7 @@ internal sealed class TurboResponseHeaderDictionary : IHeaderDictionary
         {
             if (value.HasValue)
             {
-                _headers[WellKnownHeaders.ContentLength] = value.Value.ToString();
+                _headers[WellKnownHeaders.ContentLength] = ContentLengthCache.GetValue(value.Value);
             }
             else
             {
@@ -117,5 +119,10 @@ internal sealed class TurboResponseHeaderDictionary : IHeaderDictionary
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    internal void Reset()
+    {
+        _headers.Clear();
     }
 }

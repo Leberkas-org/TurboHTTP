@@ -1,13 +1,16 @@
 using System.IO.Pipelines;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context.Features;
 
 namespace TurboHTTP.Context;
 
 public sealed class TurboHttpResponse : HttpResponse
 {
-    private readonly IFeatureCollection _features;
+    private IFeatureCollection _features;
     private HttpContext? _httpContext;
+    private IHttpResponseFeature? _responseFeature;
+    private IHttpResponseBodyFeature? _bodyFeature;
 
     public TurboHttpResponse(IFeatureCollection features)
     {
@@ -15,10 +18,10 @@ public sealed class TurboHttpResponse : HttpResponse
     }
 
     private IHttpResponseFeature ResponseFeature
-        => field ??= _features.Get<IHttpResponseFeature>() ?? throw new InvalidOperationException("IHttpResponseFeature not found in feature collection");
+        => _responseFeature ??= _features.Get<IHttpResponseFeature>() ?? throw new InvalidOperationException("IHttpResponseFeature not found in feature collection");
 
     private IHttpResponseBodyFeature? BodyFeature
-        => field ??= _features.Get<IHttpResponseBodyFeature>();
+        => _bodyFeature ??= _features.Get<IHttpResponseBodyFeature>();
 
     public override HttpContext HttpContext => _httpContext!;
 
@@ -88,5 +91,16 @@ public sealed class TurboHttpResponse : HttpResponse
 
         StatusCode = permanent ? 301 : 302;
         Headers["Location"] = location;
+    }
+
+    internal void Reset(IFeatureCollection features)
+    {
+        _features = features;
+        _responseFeature = null;
+        _bodyFeature = null;
+        if (features.Get<IHttpResponseFeature>() is TurboHttpResponseFeature turboFeature)
+        {
+            turboFeature.Reset();
+        }
     }
 }

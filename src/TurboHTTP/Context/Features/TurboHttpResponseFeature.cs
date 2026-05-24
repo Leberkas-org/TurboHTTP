@@ -49,4 +49,22 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
             await callback(state);
         }
     }
+
+    internal void Reset()
+    {
+        StatusCode = 200;
+        ReasonPhrase = null;
+        HasStarted = false;
+        Body = Stream.Null;
+        _onStartingCallbacks.Clear();
+        _onCompletedCallbacks.Clear();
+        if (Headers is TurboResponseHeaderDictionary turboHeaders)
+        {
+            turboHeaders.Reset();
+        }
+        else
+        {
+            Headers = new TurboResponseHeaderDictionary();
+        }
+    }
 }

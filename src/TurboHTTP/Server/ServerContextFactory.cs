@@ -5,6 +5,10 @@ namespace TurboHTTP.Server;
 
 internal static class ServerContextFactory
 {
+    [ThreadStatic]
+    private static Stack<TurboHttpContext>? t_pool;
+
+    private const int MaxPoolSize = 32;
     public static TurboHttpContext Create(
         TurboHttpRequestFeature requestFeature,
         bool hasBody,
@@ -30,7 +34,15 @@ internal static class ServerContextFactory
         }
 
         TurboHttpContext ctx;
-        if (connectionInfo is not null)
+        var pooledConnection = connectionInfo is not null;
+        var pooledServices = services is not null;
+
+        if ((t_pool?.Count ?? 0) > 0 && pooledConnection && pooledServices)
+        {
+            ctx = t_pool!.Pop();
+            ctx.Reset(features, connectionInfo!, services, CancellationToken.None, null!);
+        }
+        else if (pooledConnection)
         {
             ctx = new TurboHttpContext(features, connectionInfo, services, CancellationToken.None, null!);
         }
@@ -47,5 +59,15 @@ internal static class ServerContextFactory
         features.Set<IHttpRequestIdentifierFeature>(new TurboHttpRequestIdentifierFeature(ctx));
 
         return ctx;
+    }
+
+    internal static void Return(TurboHttpContext context)
+    {
+        t_pool ??= new Stack<TurboHttpContext>(MaxPoolSize);
+
+        if (t_pool.Count < MaxPoolSize)
+        {
+            t_pool.Push(context);
+        }
     }
 }
