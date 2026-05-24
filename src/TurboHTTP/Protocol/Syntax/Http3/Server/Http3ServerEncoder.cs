@@ -45,14 +45,14 @@ internal sealed class Http3ServerEncoder
     private static void BuildHeaderList(TurboHttpContext context, List<(string Name, string Value)> headers)
     {
         // RFC 9114 §6.3: :status pseudo-header (required, must be first)
-        headers.Add((WellKnownHeaders.Status, context.Response.StatusCode.ToString()));
+        headers.Add((WellKnownHeaders.Status, WellKnownHeaders.GetStatusCodeString(context.Response.StatusCode)));
 
         // Add regular headers (lowercase per RFC 9114)
         foreach (var h in context.Response.Headers)
         {
             if (!ContentHeaderClassifier.IsForbiddenConnectionHeader(h.Key))
             {
-                var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value.ToArray());
+                var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value);
                 headers.Add((ContentHeaderClassifier.ToLowerAscii(h.Key), value));
             }
         }

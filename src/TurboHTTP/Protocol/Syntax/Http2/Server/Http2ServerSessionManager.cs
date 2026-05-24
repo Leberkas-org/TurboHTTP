@@ -38,6 +38,7 @@ internal sealed class Http2ServerSessionManager
     private readonly Dictionary<int, BodyRateState> _bodyRateStates = new();
 
     public int ActiveStreamCount => _streams.Count;
+    public int MaxConcurrentStreams => _decoderOptions.MaxConcurrentStreams;
 
     public Http2ServerSessionManager(
         Http2ServerEncoderOptions encoderOptions,

@@ -47,8 +47,39 @@ internal static class ContentHeaderClassifier
     public static bool TryGetForbiddenCanonicalName(string name, out string canonicalName)
         => ForbiddenConnectionHeadersExcludingTeMap.TryGetValue(name, out canonicalName!);
 
+    private static readonly Dictionary<string, string> LowerCaseCache = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Content-Type"] = "content-type",
+        ["Content-Length"] = "content-length",
+        ["Content-Encoding"] = "content-encoding",
+        ["Content-Language"] = "content-language",
+        ["Content-Location"] = "content-location",
+        ["Content-Range"] = "content-range",
+        ["Content-Disposition"] = "content-disposition",
+        ["Cache-Control"] = "cache-control",
+        ["Date"] = "date",
+        ["Server"] = "server",
+        ["Set-Cookie"] = "set-cookie",
+        ["Transfer-Encoding"] = "transfer-encoding",
+        ["ETag"] = "etag",
+        ["Last-Modified"] = "last-modified",
+        ["Location"] = "location",
+        ["Vary"] = "vary",
+        ["Accept-Ranges"] = "accept-ranges",
+        ["Access-Control-Allow-Origin"] = "access-control-allow-origin",
+        ["Access-Control-Allow-Methods"] = "access-control-allow-methods",
+        ["Access-Control-Allow-Headers"] = "access-control-allow-headers",
+        ["X-Content-Type-Options"] = "x-content-type-options",
+        ["Strict-Transport-Security"] = "strict-transport-security",
+    };
+
     public static string ToLowerAscii(string name)
     {
+        if (LowerCaseCache.TryGetValue(name, out var cached))
+        {
+            return cached;
+        }
+
         if (!name.AsSpan().ContainsAnyInRange('A', 'Z'))
         {
             return name;

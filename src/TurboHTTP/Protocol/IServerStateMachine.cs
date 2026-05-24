@@ -7,6 +7,7 @@ internal interface IServerStateMachine
 {
     bool CanAcceptResponse { get; }
     bool ShouldComplete { get; }
+    int MaxQueuedRequests { get; }
 
     void PreStart();
     void OnResponse(TurboHttpContext context);

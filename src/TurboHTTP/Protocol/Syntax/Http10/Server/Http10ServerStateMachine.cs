@@ -26,6 +26,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
 
     public bool CanAcceptResponse => true;
     public bool ShouldComplete { get; private set; }
+    public int MaxQueuedRequests => 1;
 
     public Http10ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {

@@ -24,6 +24,7 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
 
     public bool CanAcceptResponse => _sessionManager.ActiveStreamCount > 0;
     public bool ShouldComplete => false;
+    public int MaxQueuedRequests => _sessionManager.MaxConcurrentStreams;
 
     public Http3ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {

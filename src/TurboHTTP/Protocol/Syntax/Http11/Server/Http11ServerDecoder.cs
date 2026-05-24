@@ -35,6 +35,8 @@ internal sealed class Http11ServerDecoder
             new HeaderBlockReader(s.MaxHeaderBytes, s.MaxHeaderCount, s.HeaderLineMaxLength, s.AllowObsFold);
     }
 
+    public IBodyDecoder? CurrentBodyDecoder => _bodyDecoder;
+
     public DecodeOutcome Feed(ReadOnlySpan<byte> data, out int consumed)
     {
         consumed = 0;

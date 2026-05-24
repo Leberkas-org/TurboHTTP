@@ -35,6 +35,7 @@ internal sealed class Http3ServerSessionManager
     private bool _controlPrefaceSent;
 
     public int ActiveStreamCount => _streams.Count;
+    public int MaxConcurrentStreams => _decoderOptions.MaxConcurrentStreams;
 
     public Http3ServerSessionManager(
         Http3ServerEncoderOptions encoderOptions,

@@ -23,6 +23,7 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
 
     public bool CanAcceptResponse => _phase == Phase.Running && _inner!.CanAcceptResponse;
     public bool ShouldComplete => _phase == Phase.Running && _inner!.ShouldComplete;
+    public int MaxQueuedRequests => _phase == Phase.Running ? _inner!.MaxQueuedRequests : 1;
 
     public ProtocolNegotiatingStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {

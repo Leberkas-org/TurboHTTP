@@ -25,10 +25,12 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
     private int _pendingResponseCount;
     private bool _outboundBodyPending;
     private bool _requestHeadersTimerActive;
+    private bool _draining;
     private readonly TurboServerOptions _serverOptions;
 
     public bool CanAcceptResponse => !_outboundBodyPending && _pendingResponseCount > 0;
     public bool ShouldComplete { get; private set; }
+    public int MaxQueuedRequests => _maxPipelineDepth;
 
     public Http11ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {
@@ -81,15 +83,27 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
         try
         {
+            var span = buffer.Memory.Span;
+            var pos = 0;
+
+            if (_draining && _decoder.CurrentBodyDecoder is { } bodyDecoder)
+            {
+                var drained = bodyDecoder.Drain(span[pos..]);
+                pos += drained;
+
+                if (bodyDecoder.IsComplete)
+                {
+                    _draining = false;
+                    _decoder.Reset();
+                }
+            }
+
             // Schedule request headers timeout if not already active
             if (!_requestHeadersTimerActive && _pendingResponseCount == 0 && _requestHeadersTimeout > TimeSpan.Zero)
             {
                 _ops.OnScheduleTimer("request-headers", _requestHeadersTimeout);
                 _requestHeadersTimerActive = true;
             }
-
-            var span = buffer.Memory.Span;
-            var pos = 0;
 
             while (pos < span.Length)
             {
@@ -184,6 +198,11 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                 _ops.OnScheduleTimer("keep-alive", _keepAliveTimeout);
             }
             return;
+        }
+
+        if (!_draining && _decoder.CurrentBodyDecoder is { } bodyDecoder && !bodyDecoder.IsComplete)
+        {
+            _draining = true;
         }
 
         if (responseBody is TurboHttpResponseBodyFeature turboBody)

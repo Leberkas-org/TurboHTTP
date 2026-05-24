@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using Akka.Actor;
 using Microsoft.AspNetCore.Http.Features;
@@ -14,6 +13,7 @@ namespace TurboHTTP.Protocol.Syntax.Http10.Server;
 internal sealed class Http10ServerEncoder
 {
     private readonly Http10ServerEncoderOptions _options;
+    private readonly HeaderCollection _reusableHeaders = new();
 
     public Http10ServerEncoder(Http10ServerEncoderOptions options)
     {
@@ -32,7 +32,8 @@ internal sealed class Http10ServerEncoder
         var writer = SpanWriter.Create(destination);
         StatusLineWriter.Write(ref writer, HttpVersion.Version10, context.Response.StatusCode);
 
-        var headers = new HeaderCollection();
+        _reusableHeaders.Clear();
+        var headers = _reusableHeaders;
         foreach (var h in context.Response.Headers)
         {
             if (ConnectionSemantics.IsHopByHop(h.Key))
@@ -49,11 +50,11 @@ internal sealed class Http10ServerEncoder
             }
         }
 
-        headers.Add(WellKnownHeaders.ContentLength, body.Length.ToString(CultureInfo.InvariantCulture));
+        headers.Add(WellKnownHeaders.ContentLength, ContentLengthCache.GetValue(body.Length));
 
         if (_options.WriteDateHeader && !headers.Contains(WellKnownHeaders.Date))
         {
-            headers.Add(WellKnownHeaders.Date, DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture));
+            headers.Add(WellKnownHeaders.Date, DateHeaderCache.GetValue());
         }
 
         HeaderBlockWriter.Write(ref writer, headers);

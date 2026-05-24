@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using Akka.Actor;
 using TurboHTTP.Protocol.LineBased;
@@ -12,6 +11,7 @@ namespace TurboHTTP.Protocol.Syntax.Http11.Server;
 internal sealed class Http11ServerEncoder
 {
     private readonly Http11ServerEncoderOptions _options;
+    private readonly HeaderCollection _reusableHeaders = new();
     private IBodyEncoder? _activeBodyEncoder;
 
     public Http11ServerEncoder(Http11ServerEncoderOptions options)
@@ -38,7 +38,8 @@ internal sealed class Http11ServerEncoder
 
         StatusLineWriter.Write(ref writer, HttpVersion.Version11, context.Response.StatusCode);
 
-        var headers = new HeaderCollection();
+        _reusableHeaders.Clear();
+        var headers = _reusableHeaders;
         foreach (var h in context.Response.Headers)
         {
             if (ConnectionSemantics.IsHopByHop(h.Key))
@@ -62,12 +63,12 @@ internal sealed class Http11ServerEncoder
         else
         {
             var contentLength = context.Response.ContentLength ?? 0L;
-            headers.Add(WellKnownHeaders.ContentLength, contentLength.ToString(CultureInfo.InvariantCulture));
+            headers.Add(WellKnownHeaders.ContentLength, ContentLengthCache.GetValue(contentLength));
         }
 
         if (_options.WriteDateHeader && !headers.Contains(WellKnownHeaders.Date))
         {
-            headers.Add(WellKnownHeaders.Date, DateTime.UtcNow.ToString("r", CultureInfo.InvariantCulture));
+            headers.Add(WellKnownHeaders.Date, DateHeaderCache.GetValue());
         }
 
         if (connectionClose)

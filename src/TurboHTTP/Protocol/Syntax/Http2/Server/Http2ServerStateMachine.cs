@@ -24,6 +24,7 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
 
     public bool CanAcceptResponse => _sessionManager.ActiveStreamCount > 0;
     public bool ShouldComplete => false;
+    public int MaxQueuedRequests => _sessionManager.MaxConcurrentStreams;
 
     public Http2ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
     {
