@@ -20,42 +20,40 @@ internal static class ConnectionSemantics
 
     public static bool IsPersistent(HeaderCollection headers, Version version)
     {
-        var tokens = new List<string>();
+        var hasKeepAlive = false;
+        var hasClose = false;
+
         foreach (var v in headers.GetValues(WellKnownHeaders.Connection))
         {
             foreach (var part in v.AsSpan().Split(','))
             {
                 var t = HeaderValidation.TrimOws(v[part.Start..part.End]);
-                if (!string.IsNullOrEmpty(t))
+                if (string.IsNullOrEmpty(t))
                 {
-                    tokens.Add(t);
+                    continue;
+                }
+
+                if (string.Equals(t, WellKnownHeaders.KeepAliveValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    hasKeepAlive = true;
+                }
+                else if (string.Equals(t, WellKnownHeaders.CloseValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    hasClose = true;
                 }
             }
         }
 
         if (version.Equals(HttpVersion.Version10))
         {
-            return Has(WellKnownHeaders.KeepAliveValue);
+            return hasKeepAlive;
         }
 
         if (version.Equals(HttpVersion.Version11))
         {
-            return !Has(WellKnownHeaders.CloseValue);
+            return !hasClose;
         }
 
         return true;
-
-        bool Has(string needle)
-        {
-            for (var i = 0; i < tokens.Count; i++)
-            {
-                if (string.Equals(tokens[i], needle, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 }
