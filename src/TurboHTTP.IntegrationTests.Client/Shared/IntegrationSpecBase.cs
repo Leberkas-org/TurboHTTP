@@ -21,6 +21,8 @@ public abstract class IntegrationSpecBase : Xunit.IAsyncLifetime
 
     protected ITurboHttpClient Client => _helper!.Client;
 
+    protected Akka.Actor.ActorSystem ActorSystem => _systemFixture.System;
+
     protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
     private ServerContainerFixture Server { get; }

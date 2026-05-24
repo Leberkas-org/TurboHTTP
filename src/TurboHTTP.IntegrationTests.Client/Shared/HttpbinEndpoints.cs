@@ -42,6 +42,13 @@ internal static class HttpbinEndpoints
         app.MapGet("/relative-redirect/{n:int}", HandleRelativeRedirect);
         app.MapGet("/cookies/delete", HandleDeleteCookies);
         app.MapGet("/bearer", HandleBearer);
+        app.MapGet("/sse/simple", HandleSseSimple);
+        app.MapGet("/sse/typed", HandleSseTyped);
+        app.MapGet("/sse/multi", HandleSseMulti);
+        app.MapGet("/sse/multiline", HandleSseMultiline);
+        app.MapGet("/sse/with-comments", HandleSseWithComments);
+        app.MapGet("/sse/with-id-retry", HandleSseWithIdRetry);
+        app.MapGet("/sse/empty", HandleSseEmpty);
     }
 
     private static async Task HandleGet(HttpContext ctx)
@@ -778,6 +785,68 @@ internal static class HttpbinEndpoints
         }
 
         return false;
+    }
+
+    private static async Task HandleSseSimple(HttpContext ctx)
+    {
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        await ctx.Response.WriteAsync("data: hello\n\n");
+        await ctx.Response.WriteAsync("data: world\n\n");
+    }
+
+    private static async Task HandleSseTyped(HttpContext ctx)
+    {
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        await ctx.Response.WriteAsync("event: greeting\ndata: hello\n\n");
+        await ctx.Response.WriteAsync("event: farewell\ndata: goodbye\n\n");
+    }
+
+    private static async Task HandleSseMulti(HttpContext ctx)
+    {
+        var countStr = ctx.Request.Query["n"].FirstOrDefault();
+        var count = 5;
+        if (countStr is not null && int.TryParse(countStr, out var parsed))
+        {
+            count = Math.Clamp(parsed, 1, 100);
+        }
+
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        for (var i = 0; i < count; i++)
+        {
+            await ctx.Response.WriteAsync(string.Concat("data: event-", i, "\n\n"));
+            await ctx.Response.Body.FlushAsync();
+        }
+    }
+
+    private static async Task HandleSseMultiline(HttpContext ctx)
+    {
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        await ctx.Response.WriteAsync("data: line1\ndata: line2\ndata: line3\n\n");
+    }
+
+    private static async Task HandleSseWithComments(HttpContext ctx)
+    {
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        await ctx.Response.WriteAsync(": keepalive\ndata: visible\n\n");
+    }
+
+    private static async Task HandleSseWithIdRetry(HttpContext ctx)
+    {
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        await ctx.Response.WriteAsync("id: 42\nretry: 3000\nevent: update\ndata: payload\n\n");
+    }
+
+    private static async Task HandleSseEmpty(HttpContext ctx)
+    {
+        ctx.Response.ContentType = "text/event-stream";
+        ctx.Response.Headers.CacheControl = "no-cache";
+        await ctx.Response.Body.FlushAsync();
     }
 
     private static bool ValidateBasicAuth(string authHeader, string expectedUser, string expectedPass)
