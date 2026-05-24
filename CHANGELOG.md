@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.9.1](https://github.com/Leberkas-org/TurboHTTP/compare/v0.9.0...v0.9.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* **ci:** upgrade Node to 22 and regenerate docs lockfile ([e599b78](https://github.com/Leberkas-org/TurboHTTP/commit/e599b781d2bd9a2e732345234480e11a966ed62f))
+
+
+### Performance
+
+* **routing:** eliminate per-request allocations in route matching ([5ac31d2](https://github.com/Leberkas-org/TurboHTTP/commit/5ac31d21cf1300a647b30515a85ed88b794503a3))
+* **routing:** replace linear scan with dictionary lookup in RouteTable ([b3be40a](https://github.com/Leberkas-org/TurboHTTP/commit/b3be40a7d7a7683b271e0f59a6ac12ce77d394da))
+* **server:** add server-side micro and throughput benchmarks ([b6bf348](https://github.com/Leberkas-org/TurboHTTP/commit/b6bf348b51bc0b3f20ee5c810e879918c0d8336d))
+
+
+### Documentation
+
+* Update README links to new organization ([770150c](https://github.com/Leberkas-org/TurboHTTP/commit/770150cfd0af3d295e1d202ef05e78984d5dffc4))
+
+
+### Dependencies
+
+* bump actions/download-artifact from 4 to 8 ([262114c](https://github.com/Leberkas-org/TurboHTTP/commit/262114ce2377df106bf34f0a9fe2a6d5cdb43aa4))
+* bump actions/upload-artifact from 4 to 7 ([bdd7d51](https://github.com/Leberkas-org/TurboHTTP/commit/bdd7d518501ba6029111a34a766023a4ce1e3be0))
+* Bump the akka group with 1 update ([4edbee8](https://github.com/Leberkas-org/TurboHTTP/commit/4edbee8a16572580be06385984939448aacaebd9))
+* Bump Verify.XunitV3 from 31.16.3 to 31.17.0 ([a2933ed](https://github.com/Leberkas-org/TurboHTTP/commit/a2933ed059af7763db8b93c34929fc4f5f0c48aa))
+
 ## [0.9.0](https://github.com/Leberkas-org/TurboHTTP/compare/v0.8.0...v0.9.0) (2026-05-24)
 
 
