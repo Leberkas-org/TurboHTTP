@@ -8,6 +8,7 @@ internal sealed class RouteEntry
     public string Pattern { get; }
     public string[] Segments { get; }
     public IRouteDispatcher Dispatcher { get; }
+    public bool IsStatic { get; }
 
     public RouteEntry(string method, string pattern, IRouteDispatcher dispatcher)
     {
@@ -15,6 +16,7 @@ internal sealed class RouteEntry
         Pattern = pattern;
         Segments = pattern.Split('/', StringSplitOptions.RemoveEmptyEntries);
         Dispatcher = dispatcher;
+        IsStatic = !Array.Exists(Segments, s => s.StartsWith('{'));
     }
 
     public bool TryMatch(string method, ReadOnlySpan<char> path, RouteValueDictionary routeValues)
