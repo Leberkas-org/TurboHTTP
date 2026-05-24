@@ -21,13 +21,13 @@ public sealed class RouteMatchResult
 
 public sealed class RouteTable
 {
-    private readonly Dictionary<string, IRouteDispatcher> _staticRoutes;
+    private readonly Dictionary<string, Dictionary<string, IRouteDispatcher>> _staticByPath;
     private readonly Dictionary<string, RouteEntry[]> _parameterizedByMethod;
     private readonly RouteEntry[] _wildcardParameterized;
 
     internal RouteTable(RouteEntry[] entries)
     {
-        var staticRoutes = new Dictionary<string, IRouteDispatcher>(StringComparer.OrdinalIgnoreCase);
+        var staticByPath = new Dictionary<string, Dictionary<string, IRouteDispatcher>>(StringComparer.OrdinalIgnoreCase);
         var paramByMethod = new Dictionary<string, List<RouteEntry>>(StringComparer.OrdinalIgnoreCase);
         var wildcardParam = new List<RouteEntry>();
 
@@ -35,18 +35,25 @@ public sealed class RouteTable
         {
             if (entry.IsStatic)
             {
-                var key = string.Concat(entry.Method, " ", entry.Pattern);
-                staticRoutes.TryAdd(key, entry.Dispatcher);
+                if (!staticByPath.TryGetValue(entry.Pattern, out var methodMap))
+                {
+                    methodMap = new Dictionary<string, IRouteDispatcher>(StringComparer.OrdinalIgnoreCase);
+                    staticByPath[entry.Pattern] = methodMap;
+                }
 
                 if (entry.Method == "*")
                 {
-                    staticRoutes.TryAdd(string.Concat("GET ", entry.Pattern), entry.Dispatcher);
-                    staticRoutes.TryAdd(string.Concat("POST ", entry.Pattern), entry.Dispatcher);
-                    staticRoutes.TryAdd(string.Concat("PUT ", entry.Pattern), entry.Dispatcher);
-                    staticRoutes.TryAdd(string.Concat("DELETE ", entry.Pattern), entry.Dispatcher);
-                    staticRoutes.TryAdd(string.Concat("PATCH ", entry.Pattern), entry.Dispatcher);
-                    staticRoutes.TryAdd(string.Concat("HEAD ", entry.Pattern), entry.Dispatcher);
-                    staticRoutes.TryAdd(string.Concat("OPTIONS ", entry.Pattern), entry.Dispatcher);
+                    methodMap.TryAdd("GET", entry.Dispatcher);
+                    methodMap.TryAdd("POST", entry.Dispatcher);
+                    methodMap.TryAdd("PUT", entry.Dispatcher);
+                    methodMap.TryAdd("DELETE", entry.Dispatcher);
+                    methodMap.TryAdd("PATCH", entry.Dispatcher);
+                    methodMap.TryAdd("HEAD", entry.Dispatcher);
+                    methodMap.TryAdd("OPTIONS", entry.Dispatcher);
+                }
+                else
+                {
+                    methodMap.TryAdd(entry.Method, entry.Dispatcher);
                 }
             }
             else if (entry.Method == "*")
@@ -64,7 +71,7 @@ public sealed class RouteTable
             }
         }
 
-        _staticRoutes = staticRoutes;
+        _staticByPath = staticByPath;
         _parameterizedByMethod = new Dictionary<string, RouteEntry[]>(paramByMethod.Count, StringComparer.OrdinalIgnoreCase);
         foreach (var kv in paramByMethod)
         {
@@ -75,17 +82,18 @@ public sealed class RouteTable
 
     public RouteMatchResult Match(string method, string path)
     {
-        var key = string.Concat(method, " ", path);
-        if (_staticRoutes.TryGetValue(key, out var dispatcher))
+        if (_staticByPath.TryGetValue(path, out var methodMap)
+            && methodMap.TryGetValue(method, out var dispatcher))
         {
             return new RouteMatchResult(true, dispatcher, RouteMatchResult.EmptyRouteValues);
         }
 
         if (_parameterizedByMethod.TryGetValue(method, out var methodEntries))
         {
+            var routeValues = new RouteValueDictionary();
             foreach (var entry in methodEntries)
             {
-                var routeValues = new RouteValueDictionary();
+                routeValues.Clear();
                 if (entry.TryMatch(method, path, routeValues))
                 {
                     return new RouteMatchResult(true, entry.Dispatcher, routeValues);
@@ -93,12 +101,15 @@ public sealed class RouteTable
             }
         }
 
-        foreach (var entry in _wildcardParameterized)
         {
             var routeValues = new RouteValueDictionary();
-            if (entry.TryMatch(method, path, routeValues))
+            foreach (var entry in _wildcardParameterized)
             {
-                return new RouteMatchResult(true, entry.Dispatcher, routeValues);
+                routeValues.Clear();
+                if (entry.TryMatch(method, path, routeValues))
+                {
+                    return new RouteMatchResult(true, entry.Dispatcher, routeValues);
+                }
             }
         }
 

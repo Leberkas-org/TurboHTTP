@@ -152,17 +152,15 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                 var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
                 var headersReady = bodyFeature?.WhenHeadersReady;
 
-                Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod, cts.Token).ContinueWith(
-                        _ => new HandlerTimedOut(seq, ctx),
-                        TaskScheduler.Default)
-                    .PipeTo(_stageActor!);
+                Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod, cts.Token)
+                    .PipeTo(_stageActor!,
+                        success: () => new HandlerTimedOut(seq, ctx));
 
                 if (headersReady is not null)
                 {
-                    Task.WhenAny(headersReady, task).ContinueWith(
-                            _ => new ResponseReady(seq, ctx, task),
-                            TaskScheduler.Default)
-                        .PipeTo(_stageActor!);
+                    Task.WhenAny(headersReady, task)
+                        .PipeTo(_stageActor!,
+                            success: () => new ResponseReady(seq, ctx, task));
                 }
                 else
                 {
