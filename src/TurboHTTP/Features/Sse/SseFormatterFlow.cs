@@ -7,11 +7,7 @@ namespace TurboHTTP.Features.Sse;
 
 internal static class SseFormatterFlow
 {
-    private static readonly byte[] EventPrefix = "event: "u8.ToArray();
-    private static readonly byte[] IdPrefix = "id: "u8.ToArray();
-    private static readonly byte[] RetryPrefix = "retry: "u8.ToArray();
-    private static readonly byte[] DataPrefix = "data: "u8.ToArray();
-    private static readonly byte[] Lf = [(byte)'\n'];
+    private const byte Lf = (byte)'\n';
 
     public static Flow<ServerSentEvent, ReadOnlyMemory<byte>, NotUsed> Instance { get; }
         = Flow.Create<ServerSentEvent>().Select(Format);
@@ -24,38 +20,25 @@ internal static class SseFormatterFlow
 
         if (evt.EventType is not null && evt.EventType != "message")
         {
-            pos += Write(buffer.AsSpan(pos), EventPrefix, evt.EventType);
+            pos += WriteField(buffer.AsSpan(pos), "event: "u8, evt.EventType.AsSpan());
         }
 
-        if (evt.Id is not null && !evt.Id.Contains('\0'))
+        WriteLinesWithPrefix(buffer, ref pos, "data: "u8, evt.Data.AsSpan());
+        buffer[pos++] = Lf;
+
+        if (evt.Id is not null && !evt.Id.Contains('\0') && !evt.Id.AsSpan().ContainsAny('\r', '\n'))
         {
-            pos += Write(buffer.AsSpan(pos), IdPrefix, evt.Id);
+            pos += WriteField(buffer.AsSpan(pos), "id: "u8, evt.Id.AsSpan());
         }
 
-        if (evt.Retry is not null)
+        if (evt.Retry is not null && evt.Retry.Value >= TimeSpan.Zero)
         {
-            var ms = (long)evt.Retry.Value.TotalMilliseconds;
-            if (ms >= 0)
-            {
-                pos += Write(buffer.AsSpan(pos), RetryPrefix, ms.ToString());
-            }
+            Span<byte> retryBuf = stackalloc byte[20];
+            ((long)evt.Retry.Value.TotalMilliseconds).TryFormat(retryBuf, out var retryLen);
+            pos += WriteFieldBytes(buffer.AsSpan(pos), "retry: "u8, retryBuf[..retryLen]);
         }
 
-        var data = evt.Data.AsSpan();
-        while (data.Length > 0)
-        {
-            var nlIndex = data.IndexOf('\n');
-            var line = nlIndex >= 0 ? data[..nlIndex] : data;
-
-            DataPrefix.CopyTo(buffer.AsSpan(pos));
-            pos += DataPrefix.Length;
-            pos += Encoding.UTF8.GetBytes(line, buffer.AsSpan(pos));
-            buffer[pos++] = (byte)'\n';
-
-            data = nlIndex >= 0 ? data[(nlIndex + 1)..] : default;
-        }
-
-        buffer[pos++] = (byte)'\n';
+        buffer[pos++] = Lf;
 
         var result = new byte[pos];
         buffer.AsSpan(0, pos).CopyTo(result);
@@ -64,21 +47,72 @@ internal static class SseFormatterFlow
         return result.AsMemory();
     }
 
-    private static int Write(Span<byte> dest, byte[] prefix, string value)
+    private static int WriteField(Span<byte> dest, ReadOnlySpan<byte> prefix, ReadOnlySpan<char> value)
     {
         prefix.CopyTo(dest);
         var written = prefix.Length;
         written += Encoding.UTF8.GetBytes(value, dest[written..]);
-        dest[written++] = (byte)'\n';
+        dest[written++] = Lf;
         return written;
+    }
+
+    private static int WriteFieldBytes(Span<byte> dest, ReadOnlySpan<byte> prefix, ReadOnlySpan<byte> value)
+    {
+        prefix.CopyTo(dest);
+        var written = prefix.Length;
+        value.CopyTo(dest[written..]);
+        written += value.Length;
+        dest[written++] = Lf;
+        return written;
+    }
+
+    private static void WriteLinesWithPrefix(byte[] buffer, ref int pos, ReadOnlySpan<byte> prefix, ReadOnlySpan<char> data)
+    {
+        while (true)
+        {
+            prefix.CopyTo(buffer.AsSpan(pos));
+            pos += prefix.Length;
+
+            var nlIndex = data.IndexOfAny('\r', '\n');
+            if (nlIndex < 0)
+            {
+                break;
+            }
+
+            pos += Encoding.UTF8.GetBytes(data[..nlIndex], buffer.AsSpan(pos));
+            buffer[pos++] = Lf;
+
+            if (data[nlIndex] == '\r' && nlIndex + 1 < data.Length && data[nlIndex + 1] == '\n')
+            {
+                data = data[(nlIndex + 2)..];
+            }
+            else
+            {
+                data = data[(nlIndex + 1)..];
+            }
+        }
+
+        pos += Encoding.UTF8.GetBytes(data, buffer.AsSpan(pos));
     }
 
     private static int EstimateSize(ServerSentEvent evt)
     {
-        var size = evt.Data.Length * 2 + 32;
-        if (evt.EventType is not null) size += evt.EventType.Length + 10;
-        if (evt.Id is not null) size += evt.Id.Length + 6;
-        if (evt.Retry is not null) size += 24;
+        var size = Encoding.UTF8.GetMaxByteCount(evt.Data.Length) + evt.Data.Length + 32;
+        if (evt.EventType is not null)
+        {
+            size += Encoding.UTF8.GetMaxByteCount(evt.EventType.Length) + 10;
+        }
+
+        if (evt.Id is not null)
+        {
+            size += Encoding.UTF8.GetMaxByteCount(evt.Id.Length) + 6;
+        }
+
+        if (evt.Retry is not null)
+        {
+            size += 28;
+        }
+
         return size;
     }
 }
