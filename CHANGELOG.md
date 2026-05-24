@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/Leberkas-org/TurboHTTP/compare/v0.9.1...v0.9.2) (2026-05-24)
+
+
+### Documentation
+
+* update NuGet metadata and fix README links ([f4882d4](https://github.com/Leberkas-org/TurboHTTP/commit/f4882d4b552970bef3f44e449dfdae066b74b55d))
+
 ## [0.9.1](https://github.com/Leberkas-org/TurboHTTP/compare/v0.9.0...v0.9.1) (2026-05-24)
 
 
