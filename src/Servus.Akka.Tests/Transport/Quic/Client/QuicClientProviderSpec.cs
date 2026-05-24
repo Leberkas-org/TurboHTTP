@@ -163,18 +163,21 @@ public sealed class QuicClientProviderSpec
         }
 
         var server = await LoopbackQuicServer.CreateAsync();
+        var serverReady = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var acceptTask = Task.Run(async () =>
         {
             try
             {
                 var conn = await server.AcceptConnectionAsync(TestContext.Current.CancellationToken);
-                var stream = await conn.AcceptInboundStreamAsync(TestContext.Current.CancellationToken);
+                serverReady.SetResult();
+                var stream = await conn.OpenOutboundStreamAsync(QuicStreamType.Bidirectional, TestContext.Current.CancellationToken);
                 await stream.WriteAsync(new byte[] { 42 }, TestContext.Current.CancellationToken);
                 stream.CompleteWrites();
                 return conn;
             }
             catch
             {
+                serverReady.TrySetResult();
                 return null;
             }
         });
@@ -193,6 +196,7 @@ public sealed class QuicClientProviderSpec
         try
         {
             await ConnectOrSkipAsync(provider, TestContext.Current.CancellationToken);
+            await serverReady.Task;
             var stream = await provider.AcceptInboundStreamAsync(TestContext.Current.CancellationToken);
             Assert.NotNull(stream);
             Assert.IsAssignableFrom<QuicStream>(stream);
