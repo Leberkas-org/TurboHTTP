@@ -4,7 +4,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup Label="Akka.NET">
-    <PackageVersion Include="Akka.Hosting" Version="1.5.67" />
+    <PackageVersion Include="Akka.Hosting" Version="1.5.68" />
     <PackageVersion Include="Akka.Streams" Version="1.5.68" />
     <PackageVersion Include="Akka.Streams.TestKit" Version="1.5.68" />
     <PackageVersion Include="Akka.TestKit.Xunit" Version="1.5.68" />

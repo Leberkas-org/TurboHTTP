@@ -4,13 +4,13 @@
     "net10.0": {
       "Akka.Hosting": {
         "type": "Direct",
-        "requested": "[1.5.67, )",
-        "resolved": "1.5.67",
-        "contentHash": "856rV6pqOSvYk+izS7Ca5f7p+Fu27oZHPV0oe2dyvNeK5SWKkikqj/AQNeAAfxGJ/3ZMCZIQSQJhXfetfx4y6w==",
+        "requested": "[1.5.68, )",
+        "resolved": "1.5.68",
+        "contentHash": "KugrnBKwHVrQWH1ZfsJcAVIv0cs+85rNgs0Dj6/0tXSn4n+FENPhvyqH8V5+AgzJ+TXBNeFXybndLuFxP9X/uA==",
         "dependencies": {
-          "Akka.DependencyInjection": "1.5.67",
-          "Akka.Streams": "1.5.67",
-          "OpenTelemetry": "1.9.0"
+          "Akka.DependencyInjection": "1.5.68",
+          "Akka.Streams": "1.5.68",
+          "OpenTelemetry": "1.10.0"
         }
       },
       "Akka.Streams": {
@@ -47,10 +47,10 @@
       },
       "Akka.DependencyInjection": {
         "type": "Transitive",
-        "resolved": "1.5.67",
-        "contentHash": "O9scFUb7PrOS/8z4El2/nmXoY7rraqaScschB++WACuQV8FYSl/iOxem7R/NZf1juSegzl13NGj7031uT/NXIQ==",
+        "resolved": "1.5.68",
+        "contentHash": "dk1q/8wF0cMdbUegU64DTJK8lW9d+/QWDFZFLDJ82YLb0Ewg8o3gRHWSMAUt+4pFduh62Zuyxhvg5qhOeaOVgA==",
         "dependencies": {
-          "Akka": "1.5.67"
+          "Akka": "1.5.68"
         }
       },
       "Google.Protobuf": {
@@ -114,7 +114,7 @@
       "servus.akka": {
         "type": "Project",
         "dependencies": {
-          "Akka.Hosting": "[1.5.67, )",
+          "Akka.Hosting": "[1.5.68, )",
           "Servus.Core": "[0.33.10, )"
         }
       },
