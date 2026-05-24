@@ -670,6 +670,8 @@ namespace TurboHTTP.Server
         public System.TimeSpan BodyConsumptionTimeout { get; set; }
         public System.Collections.Generic.IList<TurboHTTP.Server.ListenerBinding> Endpoints { get; }
         public System.TimeSpan GracefulShutdownTimeout { get; set; }
+        public System.TimeSpan HandlerGracePeriod { get; set; }
+        public System.TimeSpan HandlerTimeout { get; set; }
         public TurboHTTP.Server.Http1ServerOptions Http1 { get; }
         public TurboHTTP.Server.Http2ServerOptions Http2 { get; }
         public TurboHTTP.Server.Http3ServerOptions Http3 { get; }
