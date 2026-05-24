@@ -163,4 +163,88 @@ public sealed class SseParserFlowSpec : TestKit
         Assert.Single(result);
         Assert.Equal("", result[0].Data);
     }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_default_event_type_to_message()
+    {
+        var result = await SseBytes("data: hello\n\n")
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Equal("message", result[0].EventType);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_handle_cr_only_line_endings()
+    {
+        var result = await SseBytes("data: hello\r\r")
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Single(result);
+        Assert.Equal("hello", result[0].Data);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_reject_id_with_null()
+    {
+        var raw = "id: bad\0id\ndata: hello\n\n";
+        var result = await SseBytes(raw)
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Single(result);
+        Assert.Null(result[0].Id);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_ignore_retry_with_non_digits()
+    {
+        var raw = "retry: abc\ndata: hello\n\n";
+        var result = await SseBytes(raw)
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Single(result);
+        Assert.Null(result[0].Retry);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_ignore_unknown_fields()
+    {
+        var raw = "foo: bar\ndata: hello\n\n";
+        var result = await SseBytes(raw)
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Single(result);
+        Assert.Equal("hello", result[0].Data);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_not_remove_trailing_lf_from_multiline_data()
+    {
+        var raw = "data: a\ndata: b\n\n";
+        var result = await SseBytes(raw)
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Single(result);
+        Assert.Equal("a\nb", result[0].Data);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_parse_httpbingo_format()
+    {
+        var raw = "event: ping\ndata: {\"id\":0,\"timestamp\":1234}\n\nevent: ping\ndata: {\"id\":1,\"timestamp\":5678}\n\n";
+        var result = await SseBytes(raw)
+            .Via(SseParserFlow.Instance)
+            .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("ping", result[0].EventType);
+        Assert.Contains("\"id\":0", result[0].Data);
+        Assert.Equal("ping", result[1].EventType);
+        Assert.Contains("\"id\":1", result[1].Data);
+    }
 }

@@ -44,7 +44,7 @@ public sealed class SseFormatterFlowSpec : TestKit
 
         var output = await FormatSingle(evt);
 
-        Assert.Equal("event: update\nid: 42\nretry: 3000\ndata: payload\n\n", output);
+        Assert.Equal("event: update\ndata: payload\nid: 42\nretry: 3000\n\n", output);
     }
 
     [Fact(Timeout = 5000)]
@@ -74,7 +74,7 @@ public sealed class SseFormatterFlowSpec : TestKit
 
         var output = await FormatSingle(evt);
 
-        Assert.Equal("id: 99\ndata: hello\n\n", output);
+        Assert.Equal("data: hello\nid: 99\n\n", output);
     }
 
     [Fact(Timeout = 5000)]
@@ -98,6 +98,52 @@ public sealed class SseFormatterFlowSpec : TestKit
         var output = await FormatSingle(new ServerSentEvent(""));
 
         Assert.Equal("data: \n\n", output);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_omit_event_field_for_default_message_type()
+    {
+        var evt = new ServerSentEvent("hello", EventType: "message");
+        var output = await FormatSingle(evt);
+
+        Assert.Equal("data: hello\n\n", output);
+        Assert.DoesNotContain("event:", output);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_suppress_id_with_null_character()
+    {
+        var evt = new ServerSentEvent("hello", Id: "bad\0id");
+        var output = await FormatSingle(evt);
+
+        Assert.DoesNotContain("id:", output);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_suppress_id_with_line_breaks()
+    {
+        var evt = new ServerSentEvent("hello", Id: "bad\nid");
+        var output = await FormatSingle(evt);
+
+        Assert.DoesNotContain("id:", output);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_suppress_negative_retry()
+    {
+        var evt = new ServerSentEvent("hello", Retry: TimeSpan.FromMilliseconds(-1));
+        var output = await FormatSingle(evt);
+
+        Assert.DoesNotContain("retry:", output);
+    }
+
+    [Fact(Timeout = 5000)]
+    public async Task Flow_should_handle_cr_lf_in_data()
+    {
+        var evt = new ServerSentEvent("line1\r\nline2\rline3");
+        var output = await FormatSingle(evt);
+
+        Assert.Equal("data: line1\ndata: line2\ndata: line3\n\n", output);
     }
 
     [Fact(Timeout = 5000)]
