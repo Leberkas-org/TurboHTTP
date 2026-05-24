@@ -18,7 +18,8 @@ internal sealed record TcpConnectionReady(Flow<ITransportOutbound, ITransportInb
 
 internal sealed record TcpConnectionInitFailed(Exception Error);
 
-internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>>
+internal sealed class TcpListenerStage
+    : GraphStageWithMaterializedValue<SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>, Task>
 {
     private readonly TcpListenerOptions _options;
 
@@ -33,20 +34,26 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
         Shape = new SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>(_out);
     }
 
-    protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
-        => new Logic(this);
+    public override ILogicAndMaterializedValue<Task> CreateLogicAndMaterializedValue(
+        Attributes inheritedAttributes)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        return new LogicAndMaterializedValue<Task>(new Logic(this, tcs), tcs.Task);
+    }
 
     private sealed class Logic : GraphStageLogic
     {
         private readonly TcpListenerStage _stage;
+        private readonly TaskCompletionSource _boundSignal;
         private readonly Queue<Flow<ITransportOutbound, ITransportInbound, NotUsed>> _pendingConnections = new();
         private TcpListener? _listener;
         private IActorRef _self = null!;
         private CancellationTokenSource? _cts;
 
-        public Logic(TcpListenerStage stage) : base(stage.Shape)
+        public Logic(TcpListenerStage stage, TaskCompletionSource boundSignal) : base(stage.Shape)
         {
             _stage = stage;
+            _boundSignal = boundSignal;
 
             SetHandler(stage._out, onPull: TryPush);
         }
@@ -72,6 +79,7 @@ internal sealed class TcpListenerStage : GraphStage<SourceShape<Flow<ITransportO
             }
 
             _listener.Start(_stage._options.Backlog);
+            _boundSignal.TrySetResult();
             _ = AcceptLoopAsync(_listener, _self, _cts.Token);
         }
 

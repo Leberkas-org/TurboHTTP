@@ -21,9 +21,9 @@ public sealed class ListenerActorConnectionLimitSpec : TestKit
             _source = source;
         }
 
-        public Source<Flow<ITransportOutbound, ITransportInbound, NotUsed>, NotUsed> Bind(ListenerOptions options)
+        public Source<Flow<ITransportOutbound, ITransportInbound, NotUsed>, Task> Bind(ListenerOptions options)
         {
-            return _source;
+            return _source.MapMaterializedValue(_ => Task.CompletedTask);
         }
     }
 

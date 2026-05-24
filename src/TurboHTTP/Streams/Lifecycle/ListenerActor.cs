@@ -38,6 +38,8 @@ internal sealed class ListenerActor : ReceiveActor
 
     internal sealed record ListeningStarted;
 
+    private sealed record BindCompleted(IActorRef ReplyTo);
+
     internal sealed record ListenerStopped;
 
     internal sealed record ListenerFailed(Exception? Error);
@@ -62,6 +64,7 @@ internal sealed class ListenerActor : ReceiveActor
         _connectionLoggingCategory = connectionLoggingCategory;
 
         Receive<StartListening>(_ => OnStartListening());
+        Receive<BindCompleted>(OnBindCompleted);
         Receive<IncomingConnection>(OnIncomingConnection);
         Receive<StopAccepting>(_ => OnStopAccepting());
         Receive<GracefulStop>(OnGracefulStop);
@@ -78,10 +81,11 @@ internal sealed class ListenerActor : ReceiveActor
 
         var listenerSource = _factory.Bind(_listenerOptions);
         var self = Self;
+        var sender = Sender;
 
-        var (killSwitch, completionTask) = listenerSource
+        var ((boundTask, killSwitch), completionTask) = listenerSource
             .Select(flow => new IncomingConnection(flow))
-            .ViaMaterialized(KillSwitches.Single<IncomingConnection>(), Keep.Right)
+            .ViaMaterialized(KillSwitches.Single<IncomingConnection>(), Keep.Both)
             .ToMaterialized(
                 Sink.ForEach<IncomingConnection>(msg => self.Tell(msg)),
                 Keep.Both)
@@ -89,11 +93,18 @@ internal sealed class ListenerActor : ReceiveActor
 
         _listenerKillSwitch = killSwitch;
 
-        Sender.Tell(new ListeningStarted());
+        boundTask.PipeTo(Self,
+            success: () => new BindCompleted(sender),
+            failure: ex => new ListenerFailed(ex));
 
         completionTask.PipeTo(Self,
             success: () => new ListenerStopped(),
             failure: ex => new ListenerFailed(ex));
+    }
+
+    private void OnBindCompleted(BindCompleted msg)
+    {
+        msg.ReplyTo.Tell(new ListeningStarted());
     }
 
     private void OnIncomingConnection(IncomingConnection msg)

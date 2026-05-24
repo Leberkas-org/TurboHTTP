@@ -17,7 +17,7 @@ internal sealed record QuicAcceptFailed(Exception Error);
 internal sealed record QuicListenerBound(QuicListener Listener);
 
 internal sealed class QuicListenerStage
-    : GraphStage<SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>>
+    : GraphStageWithMaterializedValue<SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>, Task>
 {
     private readonly QuicListenerOptions _options;
 
@@ -32,20 +32,26 @@ internal sealed class QuicListenerStage
         Shape = new SourceShape<Flow<ITransportOutbound, ITransportInbound, NotUsed>>(_out);
     }
 
-    protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
-        => new Logic(this);
+    public override ILogicAndMaterializedValue<Task> CreateLogicAndMaterializedValue(
+        Attributes inheritedAttributes)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        return new LogicAndMaterializedValue<Task>(new Logic(this, tcs), tcs.Task);
+    }
 
     private sealed class Logic : GraphStageLogic
     {
         private readonly QuicListenerStage _stage;
+        private readonly TaskCompletionSource _boundSignal;
         private readonly Queue<Flow<ITransportOutbound, ITransportInbound, NotUsed>> _pendingConnections = new();
         private QuicListener? _listener;
         private IActorRef _self = null!;
         private CancellationTokenSource? _cts;
 
-        public Logic(QuicListenerStage stage) : base(stage.Shape)
+        public Logic(QuicListenerStage stage, TaskCompletionSource boundSignal) : base(stage.Shape)
         {
             _stage = stage;
+            _boundSignal = boundSignal;
 
             SetHandler(stage._out, onPull: () => TryPush());
         }
@@ -141,6 +147,7 @@ internal sealed class QuicListenerStage
             {
                 case QuicListenerBound bound:
                     _listener = bound.Listener;
+                    _boundSignal.TrySetResult();
                     _ = AcceptLoopAsync(_listener, _self, _cts!.Token);
                     break;
                 case QuicConnectionAccepted accepted:
