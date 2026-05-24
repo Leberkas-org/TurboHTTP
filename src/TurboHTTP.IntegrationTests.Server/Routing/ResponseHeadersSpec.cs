@@ -20,14 +20,14 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/custom-header", (TurboHttpContext ctx) =>
+        routeTable.Add("GET", "/custom-header", (TurboHttpContext ctx) =>
         {
             ctx.Response.Headers["X-Request-Id"] = "abc-123";
             ctx.Response.StatusCode = 200;
             return Results.Ok("ok").ExecuteAsync(ctx);
         });
 
-        routeTable.Add(HttpMethod.Get, "/multi-header", (TurboHttpContext ctx) =>
+        routeTable.Add("GET", "/multi-header", (TurboHttpContext ctx) =>
         {
             ctx.Response.Headers.Append("X-Tag", "alpha");
             ctx.Response.Headers.Append("X-Tag", "beta");
@@ -35,7 +35,7 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
             return Results.Ok("ok").ExecuteAsync(ctx);
         });
 
-        routeTable.Add(HttpMethod.Get, "/cache-headers", (TurboHttpContext ctx) =>
+        routeTable.Add("GET", "/cache-headers", (TurboHttpContext ctx) =>
         {
             ctx.Response.Headers["Cache-Control"] = "no-cache, no-store";
             ctx.Response.Headers["ETag"] = "\"v1\"";

@@ -4,12 +4,12 @@ namespace TurboHTTP.Routing;
 
 internal sealed class RouteEntry
 {
-    public HttpMethod Method { get; }
+    public string Method { get; }
     public string Pattern { get; }
     public string[] Segments { get; }
     public IRouteDispatcher Dispatcher { get; }
 
-    public RouteEntry(HttpMethod method, string pattern, IRouteDispatcher dispatcher)
+    public RouteEntry(string method, string pattern, IRouteDispatcher dispatcher)
     {
         Method = method;
         Pattern = pattern;
@@ -17,9 +17,9 @@ internal sealed class RouteEntry
         Dispatcher = dispatcher;
     }
 
-    public bool TryMatch(HttpMethod method, ReadOnlySpan<char> path, RouteValueDictionary routeValues)
+    public bool TryMatch(string method, ReadOnlySpan<char> path, RouteValueDictionary routeValues)
     {
-        if (Method.Method != "*" && !Method.Equals(method))
+        if (Method != "*" && !string.Equals(Method, method, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

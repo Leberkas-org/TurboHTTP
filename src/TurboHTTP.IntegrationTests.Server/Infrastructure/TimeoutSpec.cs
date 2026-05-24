@@ -26,7 +26,7 @@ public sealed class TimeoutSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/fast", () => Results.Ok("ok"));
+        routeTable.Add("GET", "/fast", () => Results.Ok("ok"));
     }
 
     [Fact(Timeout = 20000)]

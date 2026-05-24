@@ -21,7 +21,7 @@ public sealed class ConnectionInfoSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/connection", (HttpContext ctx) =>
+        routeTable.Add("GET", "/connection", (HttpContext ctx) =>
         {
             return Results.Ok(new
             {
@@ -32,7 +32,7 @@ public sealed class ConnectionInfoSpec : ServerSpecBase
             });
         });
 
-        routeTable.Add(HttpMethod.Get, "/protocol", (HttpContext ctx) =>
+        routeTable.Add("GET", "/protocol", (HttpContext ctx) =>
         {
             return Results.Ok(new { protocol = ctx.Request.Protocol });
         });

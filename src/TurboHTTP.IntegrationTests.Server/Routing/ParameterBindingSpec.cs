@@ -22,23 +22,23 @@ public sealed class ParameterBindingSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/users/{id}", (int id) =>
+        routeTable.Add("GET", "/users/{id}", (int id) =>
             Results.Ok(new { id }));
 
-        routeTable.Add(HttpMethod.Get, "/search", (string q) =>
+        routeTable.Add("GET", "/search", (string q) =>
             Results.Ok(new { query = q }));
 
-        routeTable.Add(HttpMethod.Get, "/paged", (string q, int page) =>
+        routeTable.Add("GET", "/paged", (string q, int page) =>
             Results.Ok(new { query = q, page }));
 
-        routeTable.Add(HttpMethod.Get, "/with-header",
+        routeTable.Add("GET", "/with-header",
             ([FromHeader(Name = "X-Tenant")] string tenant) =>
                 Results.Ok(new { tenant }));
 
-        routeTable.Add(HttpMethod.Get, "/optional", (string? name) =>
+        routeTable.Add("GET", "/optional", (string? name) =>
             Results.Ok(new { name = name ?? "default" }));
 
-        routeTable.Add(HttpMethod.Get, "/items/{category}/{id}", (string category, int id) =>
+        routeTable.Add("GET", "/items/{category}/{id}", (string category, int id) =>
             Results.Ok(new { category, id }));
     }
 

@@ -5,24 +5,11 @@ using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Routing;
 using TurboHTTP.Server;
-using TurboHTTP.Server.Middleware;
 
 namespace TurboHTTP.Streams.Stages.Server;
 
 internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, TurboHttpContext>>
 {
-    private static readonly Dictionary<string, HttpMethod> CachedMethods = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["GET"] = HttpMethod.Get,
-        ["POST"] = HttpMethod.Post,
-        ["PUT"] = HttpMethod.Put,
-        ["DELETE"] = HttpMethod.Delete,
-        ["PATCH"] = HttpMethod.Patch,
-        ["HEAD"] = HttpMethod.Head,
-        ["OPTIONS"] = HttpMethod.Options,
-        ["TRACE"] = HttpMethod.Trace,
-    };
-
     private readonly RouteTable _routeTable;
     private readonly TurboRequestDelegate _pipeline;
     private readonly int _parallelism;
@@ -34,7 +21,8 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
 
     public override FlowShape<TurboHttpContext, TurboHttpContext> Shape { get; }
 
-    public RoutingStage(RouteTable routeTable, TurboRequestDelegate pipeline, int parallelism, TimeSpan handlerTimeout, TimeSpan handlerGracePeriod)
+    public RoutingStage(RouteTable routeTable, TurboRequestDelegate pipeline, int parallelism, TimeSpan handlerTimeout,
+        TimeSpan handlerGracePeriod)
     {
         _routeTable = routeTable;
         _pipeline = pipeline;
@@ -47,10 +35,15 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
 
     private sealed record DispatchCompleted(int Sequence, TurboHttpContext Context);
+
     private sealed record DispatchFailed(int Sequence, TurboHttpContext Context, Exception Error);
+
     private sealed record ResponseReady(int Sequence, TurboHttpContext Context, Task HandlerTask);
+
     private sealed record HandlerFinished(int Sequence, TurboHttpContext Context);
+
     private sealed record HandlerFaulted(int Sequence, TurboHttpContext Context, Exception Error);
+
     private sealed record HandlerTimedOut(int Sequence, TurboHttpContext Context);
 
     private sealed class Logic : GraphStageLogic
@@ -99,11 +92,9 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
         {
             var ctx = Grab(_stage._in);
             var seq = _sequence++;
-            var methodString = ctx.Request.Method;
-            var method = CachedMethods.TryGetValue(methodString, out var cached) ? cached : new HttpMethod(methodString);
             var path = ctx.Request.Path.Value ?? "/";
 
-            var match = _stage._routeTable.Match(method, path);
+            var match = _stage._routeTable.Match(ctx.Request.Method, path);
             if (match is not { IsMatch: true, Dispatcher: not null })
             {
                 ctx.Response.StatusCode = 404;
@@ -161,16 +152,16 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                 var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
                 var headersReady = bodyFeature?.WhenHeadersReady;
 
-                Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod).ContinueWith(
-                    _ => new HandlerTimedOut(seq, ctx),
-                    TaskScheduler.Default)
+                Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod, cts.Token).ContinueWith(
+                        _ => new HandlerTimedOut(seq, ctx),
+                        TaskScheduler.Default)
                     .PipeTo(_stageActor!);
 
                 if (headersReady is not null)
                 {
                     Task.WhenAny(headersReady, task).ContinueWith(
-                        _ => new ResponseReady(seq, ctx, task),
-                        TaskScheduler.Default)
+                            _ => new ResponseReady(seq, ctx, task),
+                            TaskScheduler.Default)
                         .PipeTo(_stageActor!);
                 }
                 else
@@ -195,8 +186,10 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                 case ResponseReady(var seq, var ctx, var handlerTask):
                     if (handlerTask.IsFaulted)
                     {
-                        var feature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
-                        if (feature is null || !feature.HasStarted)
+                        if (ctx.Features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature
+                            {
+                                HasStarted: true
+                            })
                         {
                             ctx.Response.StatusCode = 500;
                         }
@@ -216,6 +209,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                             success: () => new HandlerFinished(seq, ctx),
                             failure: ex => new HandlerFaulted(seq, ctx, ex));
                     }
+
                     break;
 
                 case HandlerFinished(var seq, var finishedCtx):
@@ -226,6 +220,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                     {
                         CompleteStage();
                     }
+
                     break;
 
                 case HandlerFaulted(var seq, var faultedCtx, _):
@@ -236,6 +231,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                     {
                         CompleteStage();
                     }
+
                     break;
 
                 case DispatchCompleted(var seq, var ctx):
@@ -266,6 +262,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
                             Emit(seq, ctx);
                         }
                     }
+
                     break;
             }
 

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
@@ -25,19 +24,19 @@ public sealed class ConnectionLimitSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/block-slot-1", async () =>
+        routeTable.Add("GET", "/block-slot-1", async () =>
         {
             await _slot1Gate.Task;
             return Results.Ok("slot1-done");
         });
 
-        routeTable.Add(HttpMethod.Get, "/block-slot-2", async () =>
+        routeTable.Add("GET", "/block-slot-2", async () =>
         {
             await _slot2Gate.Task;
             return Results.Ok("slot2-done");
         });
 
-        routeTable.Add(HttpMethod.Get, "/fast", () => Results.Ok("ok"));
+        routeTable.Add("GET", "/fast", () => Results.Ok("ok"));
     }
 
     public override async ValueTask DisposeAsync()
@@ -76,7 +75,7 @@ public sealed class ConnectionLimitSpec : ServerSpecBase
         await Task.Delay(200, CancellationToken);
 
         // Third request should be rejected or timeout (no slots available)
-        var request3Failed = false;
+        bool request3Failed;
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -106,7 +105,10 @@ public sealed class ConnectionLimitSpec : ServerSpecBase
             await request1;
             await request2;
         }
-        catch { }
+        catch
+        {
+            // noop
+        }
 
         Assert.True(request3Failed, "Third connection should have been rejected");
     }

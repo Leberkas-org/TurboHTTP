@@ -19,7 +19,7 @@ public sealed class EntityDelegateBindingSpec
         });
 
         var frozen = table.Freeze();
-        var match = frozen.Match(HttpMethod.Get, "/entities/42");
+        var match = frozen.Match("GET", "/entities/42");
         Assert.True(match.IsMatch);
     }
 
@@ -34,7 +34,7 @@ public sealed class EntityDelegateBindingSpec
         });
 
         var frozen = table.Freeze();
-        var match = frozen.Match(HttpMethod.Post, "/entities/42");
+        var match = frozen.Match("POST", "/entities/42");
         Assert.True(match.IsMatch);
     }
 

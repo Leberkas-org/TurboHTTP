@@ -7,7 +7,6 @@ using Servus.Akka.Transport;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages.Server;
@@ -91,7 +90,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
                 }
 
                 var bodyFeature = response.TurboResponse.HttpContext.Features.Get<IHttpResponseBodyFeature>();
-                var hasBody = bodyFeature is { Writer: not null };
+                var hasBody = bodyFeature is not null;
                 if (!hasBody)
                 {
                     ServerContextFactory.Return(response);
@@ -120,10 +119,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
         Pull(_inNetwork);
     }
 
-    private void OnStageActorMessage((IActorRef sender, object message) args)
-    {
-        _sm.OnBodyMessage(args.message);
-    }
+    private void OnStageActorMessage((IActorRef sender, object message) args) => _sm.OnBodyMessage(args.message);
 
     private void OnNetworkPush()
     {

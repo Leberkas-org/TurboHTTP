@@ -1,10 +1,6 @@
 using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Routing;
@@ -27,13 +23,13 @@ public sealed class GracefulShutdownSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/slow", async () =>
+        routeTable.Add("GET", "/slow", async () =>
         {
             await _handlerGate.Task;
             return Results.Ok("done");
         });
 
-        routeTable.Add(HttpMethod.Get, "/fast", () => Results.Ok("ok"));
+        routeTable.Add("GET", "/fast", () => Results.Ok("ok"));
     }
 
     public override async ValueTask DisposeAsync()

@@ -26,7 +26,7 @@ public sealed class TlsHandshakeFeatureSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/tls-info", (HttpContext context) =>
+        routeTable.Add("GET", "/tls-info", (HttpContext context) =>
         {
             var tls = context.Features.Get<ITlsHandshakeFeature>();
             if (tls is null)
@@ -38,7 +38,7 @@ public sealed class TlsHandshakeFeatureSpec : ServerSpecBase
             {
                 Protocol = tls.Protocol.ToString(),
                 CipherSuite = tls.NegotiatedCipherSuite?.ToString(),
-                HostName = tls.HostName
+                tls.HostName
             };
 
             return Results.Ok(response);

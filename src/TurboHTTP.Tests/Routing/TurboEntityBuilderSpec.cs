@@ -20,7 +20,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        var result = frozen.Match(HttpMethod.Get, "/orders/42");
+        var result = frozen.Match("GET", "/orders/42");
         Assert.True(result.IsMatch);
         Assert.IsType<EntityDispatcher>(result.Dispatcher);
     }
@@ -37,10 +37,10 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        Assert.True(frozen.Match(HttpMethod.Get, "/orders/1").IsMatch);
-        Assert.True(frozen.Match(HttpMethod.Put, "/orders/1").IsMatch);
-        Assert.True(frozen.Match(HttpMethod.Delete, "/orders/1").IsMatch);
-        Assert.False(frozen.Match(HttpMethod.Post, "/orders/1").IsMatch);
+        Assert.True(frozen.Match("GET", "/orders/1").IsMatch);
+        Assert.True(frozen.Match("PUT", "/orders/1").IsMatch);
+        Assert.True(frozen.Match("DELETE", "/orders/1").IsMatch);
+        Assert.False(frozen.Match("POST", "/orders/1").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -53,7 +53,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        var result = frozen.Match(HttpMethod.Get, "/tenants/t1/orders/o42");
+        var result = frozen.Match("GET", "/tenants/t1/orders/o42");
         Assert.True(result.IsMatch);
         Assert.Equal("t1", result.RouteValues["tenantId"]);
         Assert.Equal("o42", result.RouteValues["orderId"]);
@@ -69,7 +69,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        Assert.False(frozen.Match(HttpMethod.Post, "/orders/1").IsMatch);
+        Assert.False(frozen.Match("POST", "/orders/1").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -77,7 +77,7 @@ public sealed class TurboEntityBuilderSpec
     {
         var table = new TurboRouteTable();
 
-        table.Add(HttpMethod.Get, "/health", ctx =>
+        table.Add("GET", "/health", ctx =>
         {
             ctx.Response.StatusCode = 200;
             return Task.CompletedTask;
@@ -89,11 +89,11 @@ public sealed class TurboEntityBuilderSpec
 
         var frozen = table.Freeze();
 
-        var healthResult = frozen.Match(HttpMethod.Get, "/health");
+        var healthResult = frozen.Match("GET", "/health");
         Assert.True(healthResult.IsMatch);
         Assert.IsType<DelegateDispatcher>(healthResult.Dispatcher);
 
-        var orderResult = frozen.Match(HttpMethod.Get, "/orders/42");
+        var orderResult = frozen.Match("GET", "/orders/42");
         Assert.True(orderResult.IsMatch);
         Assert.IsType<EntityDispatcher>(orderResult.Dispatcher);
     }
@@ -109,7 +109,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        Assert.True(frozen.Match(HttpMethod.Get, "/orders/1").IsMatch);
+        Assert.True(frozen.Match("GET", "/orders/1").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -122,7 +122,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        Assert.True(frozen.Match(HttpMethod.Post, "/orders/1").IsMatch);
+        Assert.True(frozen.Match("POST", "/orders/1").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -135,7 +135,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        Assert.True(frozen.Match(HttpMethod.Post, "/orders/1").IsMatch);
+        Assert.True(frozen.Match("POST", "/orders/1").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -150,7 +150,7 @@ public sealed class TurboEntityBuilderSpec
         builder.AddToRouteTable(table);
         var frozen = table.Freeze();
 
-        Assert.True(frozen.Match(HttpMethod.Get, "/orders/1").IsMatch);
+        Assert.True(frozen.Match("GET", "/orders/1").IsMatch);
     }
 
     [Fact(Timeout = 5000)]

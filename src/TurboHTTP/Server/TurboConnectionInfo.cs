@@ -10,7 +10,6 @@ public sealed class TurboConnectionInfo : ConnectionInfo
     private SslStream? _sslStream;
     private bool _allowDelayedNegotiation;
     private SslApplicationProtocol _negotiatedProtocol;
-    private Servus.Akka.Transport.SecurityInfo? _securityInfo;
 
     public override string Id { get; set; }
     public override IPAddress? RemoteIpAddress { get; set; }
@@ -44,11 +43,11 @@ public sealed class TurboConnectionInfo : ConnectionInfo
         _negotiatedProtocol = protocol;
     }
 
-    internal Servus.Akka.Transport.SecurityInfo? SecurityInfo => _securityInfo;
+    internal Servus.Akka.Transport.SecurityInfo? SecurityInfo { get; private set; }
 
     internal void SetSecurityInfo(Servus.Akka.Transport.SecurityInfo securityInfo)
     {
-        _securityInfo = securityInfo;
+        SecurityInfo = securityInfo;
     }
 
     internal void SetClientCertificateFromHandshake(SslStream sslStream)

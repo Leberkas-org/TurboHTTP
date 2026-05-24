@@ -21,14 +21,14 @@ public sealed class ServerSmokeSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/hello", () => Results.Ok("Hello from TurboHTTP Server"));
-        routeTable.Add(HttpMethod.Post, "/echo", async (HttpContext ctx) =>
+        routeTable.Add("GET", "/hello", () => Results.Ok("Hello from TurboHTTP Server"));
+        routeTable.Add("POST", "/echo", async (HttpContext ctx) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var body = await reader.ReadToEndAsync(CancellationToken);
             return Results.Ok(body);
         });
-        routeTable.Add(HttpMethod.Get, "/connection-info", (HttpContext ctx) =>
+        routeTable.Add("GET", "/connection-info", (HttpContext ctx) =>
         {
             var remoteIp = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             return Results.Ok(remoteIp);

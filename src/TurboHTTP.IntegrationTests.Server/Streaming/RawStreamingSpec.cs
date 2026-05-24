@@ -1,8 +1,6 @@
 using System.Net;
 using System.Text;
-using Akka;
 using Akka.Streams.Dsl;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
@@ -23,7 +21,7 @@ public sealed class RawStreamingSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/stream-bytes", () =>
+        routeTable.Add("GET", "/stream-bytes", () =>
         {
             var chunks = new[]
             {
@@ -34,7 +32,7 @@ public sealed class RawStreamingSpec : ServerSpecBase
             return TurboStreamResults.Stream(Source.From(chunks), "application/octet-stream");
         });
 
-        routeTable.Add(HttpMethod.Get, "/stream-text", () =>
+        routeTable.Add("GET", "/stream-text", () =>
         {
             var lines = new[] { "line1\n", "line2\n", "line3\n" };
             var chunks = lines.Select(l =>
@@ -42,7 +40,7 @@ public sealed class RawStreamingSpec : ServerSpecBase
             return TurboStreamResults.Stream(Source.From(chunks), "text/plain");
         });
 
-        routeTable.Add(HttpMethod.Get, "/stream-large", () =>
+        routeTable.Add("GET", "/stream-large", () =>
         {
             var chunk = new byte[1024];
             Array.Fill(chunk, (byte)0xAB);

@@ -39,7 +39,7 @@ public sealed class SniCertSelectionSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/sni-test", () => Results.Ok("SNI test response"));
+        routeTable.Add("GET", "/sni-test", () => Results.Ok("SNI test response"));
     }
 
     protected override HttpClient CreateHttpClient() => CreateTlsClient();

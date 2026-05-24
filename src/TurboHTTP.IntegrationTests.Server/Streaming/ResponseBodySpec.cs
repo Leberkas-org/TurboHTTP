@@ -22,7 +22,7 @@ public sealed class ResponseBodySpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/stream-no-cl", () =>
+        routeTable.Add("GET", "/stream-no-cl", () =>
         {
             var chunks = new[] { "chunk1", "chunk2", "chunk3" }
                 .Select(s => (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(s))
@@ -30,7 +30,7 @@ public sealed class ResponseBodySpec : ServerSpecBase
             return TurboStreamResults.Stream(Source.From(chunks), "text/plain");
         });
 
-        routeTable.Add(HttpMethod.Get, "/with-cl", (TurboHttpContext ctx) =>
+        routeTable.Add("GET", "/with-cl", (TurboHttpContext ctx) =>
         {
             var body = Encoding.UTF8.GetBytes("exact-length-body");
             ctx.Response.StatusCode = 200;
@@ -39,9 +39,9 @@ public sealed class ResponseBodySpec : ServerSpecBase
             return ctx.Response.Body.WriteAsync(body).AsTask();
         });
 
-        routeTable.Add(HttpMethod.Get, "/no-content", () => Results.NoContent());
+        routeTable.Add("GET", "/no-content", () => Results.NoContent());
 
-        routeTable.Add(HttpMethod.Get, "/not-modified", () => Results.StatusCode(304));
+        routeTable.Add("GET", "/not-modified", () => Results.StatusCode(304));
     }
 
     [Fact(Timeout = 15000)]

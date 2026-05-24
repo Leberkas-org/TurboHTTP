@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TurboHTTP.Routing;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Shared;
 

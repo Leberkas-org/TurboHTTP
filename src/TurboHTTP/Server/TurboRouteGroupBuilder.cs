@@ -15,30 +15,30 @@ public sealed class TurboRouteGroupBuilder
 
     public TurboRouteHandlerBuilder MapGet(string pattern, Delegate handler)
     {
-        return _table.Add(HttpMethod.Get, _prefix + pattern, handler);
+        return _table.Add("GET", _prefix + pattern, handler);
     }
 
     public TurboRouteHandlerBuilder MapPost(string pattern, Delegate handler)
     {
-        return _table.Add(HttpMethod.Post, _prefix + pattern, handler);
+        return _table.Add("POST", _prefix + pattern, handler);
     }
 
     public TurboRouteHandlerBuilder MapPut(string pattern, Delegate handler)
     {
-        return _table.Add(HttpMethod.Put, _prefix + pattern, handler);
+        return _table.Add("PUT", _prefix + pattern, handler);
     }
 
     public TurboRouteHandlerBuilder MapDelete(string pattern, Delegate handler)
     {
-        return _table.Add(HttpMethod.Delete, _prefix + pattern, handler);
+        return _table.Add("DELETE", _prefix + pattern, handler);
     }
 
     public TurboRouteHandlerBuilder MapPatch(string pattern, Delegate handler)
     {
-        return _table.Add(HttpMethod.Patch, _prefix + pattern, handler);
+        return _table.Add("PATCH", _prefix + pattern, handler);
     }
 
-    public TurboRouteHandlerBuilder MapMethods(string pattern, IEnumerable<HttpMethod> methods, Delegate handler)
+    public TurboRouteHandlerBuilder MapMethods(string pattern, IEnumerable<string> methods, Delegate handler)
     {
         TurboRouteHandlerBuilder? last = null;
         foreach (var method in methods)

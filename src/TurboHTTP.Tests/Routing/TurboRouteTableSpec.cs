@@ -10,9 +10,9 @@ public sealed class TurboRouteTableSpec
     public void Add_should_register_route()
     {
         var table = new TurboRouteTable();
-        table.Add(HttpMethod.Get, "/health", _ => Results.Ok().ExecuteAsync(null!));
+        table.Add("GET", "/health", _ => Results.Ok().ExecuteAsync(null!));
         var frozen = table.Freeze();
-        var result = frozen.Match(HttpMethod.Get, "/health");
+        var result = frozen.Match("GET", "/health");
         Assert.True(result.IsMatch);
     }
 
@@ -20,7 +20,7 @@ public sealed class TurboRouteTableSpec
     public void Freeze_should_return_same_instance_on_second_call()
     {
         var table = new TurboRouteTable();
-        table.Add(HttpMethod.Get, "/test", _ => Results.Ok().ExecuteAsync(null!));
+        table.Add("GET", "/test", _ => Results.Ok().ExecuteAsync(null!));
         var first = table.Freeze();
         var second = table.Freeze();
         Assert.Same(first, second);
@@ -33,7 +33,7 @@ public sealed class TurboRouteTableSpec
         var group = table.CreateGroup("/api/v1");
         group.MapGet("/users", () => Results.Ok());
         var frozen = table.Freeze();
-        var result = frozen.Match(HttpMethod.Get, "/api/v1/users");
+        var result = frozen.Match("GET", "/api/v1/users");
         Assert.True(result.IsMatch);
     }
 
@@ -45,7 +45,7 @@ public sealed class TurboRouteTableSpec
         var v1 = api.MapGroup("/v1");
         v1.MapGet("/items", () => Results.Ok());
         var frozen = table.Freeze();
-        var result = frozen.Match(HttpMethod.Get, "/api/v1/items");
+        var result = frozen.Match("GET", "/api/v1/items");
         Assert.True(result.IsMatch);
     }
 
@@ -53,7 +53,7 @@ public sealed class TurboRouteTableSpec
     public void RouteBuilder_should_return_from_map_methods()
     {
         var table = new TurboRouteTable();
-        var builder = table.Add(HttpMethod.Get, "/test", _ => Results.Ok().ExecuteAsync(null!));
+        var builder = table.Add("GET", "/test", _ => Results.Ok().ExecuteAsync(null!));
         Assert.NotNull(builder);
         Assert.IsType<TurboRouteHandlerBuilder>(builder);
     }

@@ -35,7 +35,7 @@ public sealed class ClientCertificateModeRequireSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/test", () => Results.Ok("OK"));
+        routeTable.Add("GET", "/test", () => Results.Ok("OK"));
     }
 
     protected override HttpClient? CreateHttpClient() => null;

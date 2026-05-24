@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
@@ -39,9 +38,9 @@ public sealed class MiddlewareSpec : ServerSpecBase
             });
         });
 
-        routeTable.Add(HttpMethod.Get, "/hello", () => Results.Ok("hello"));
-        routeTable.Add(HttpMethod.Get, "/api/data", () => Results.Ok(new { value = 42 }));
-        routeTable.Add(HttpMethod.Get, "/other", () => Results.Ok("other"));
+        routeTable.Add("GET", "/hello", () => Results.Ok("hello"));
+        routeTable.Add("GET", "/api/data", () => Results.Ok(new { value = 42 }));
+        routeTable.Add("GET", "/other", () => Results.Ok("other"));
     }
 
     [Fact(Timeout = 15000)]

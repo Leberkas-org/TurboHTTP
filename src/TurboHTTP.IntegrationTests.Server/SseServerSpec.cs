@@ -21,9 +21,9 @@ public sealed class SseServerSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/echo", () => Results.Ok("ok"));
-        routeTable.Add(HttpMethod.Get, "/text", () => Results.Ok("hello world"));
-        routeTable.Add(HttpMethod.Get, "/events", () =>
+        routeTable.Add("GET", "/echo", () => Results.Ok("ok"));
+        routeTable.Add("GET", "/text", () => Results.Ok("hello world"));
+        routeTable.Add("GET", "/events", () =>
         {
             var source = Source.From(["event1", "event2"]);
             return TurboStreamResults.EventStream(source);

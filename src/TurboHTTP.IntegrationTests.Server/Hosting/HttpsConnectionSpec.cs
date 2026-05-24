@@ -25,7 +25,7 @@ public sealed class HttpsConnectionSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/secure-hello", () => Results.Ok("Hello from HTTPS"));
+        routeTable.Add("GET", "/secure-hello", () => Results.Ok("Hello from HTTPS"));
     }
 
     protected override HttpClient CreateHttpClient() => CreateTlsClient();

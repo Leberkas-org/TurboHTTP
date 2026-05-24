@@ -20,7 +20,7 @@ public sealed class TurboRoutingExtensionsSpec
 
         var table = app.Services.GetRequiredService<TurboRouteTable>();
         var frozen = table.Freeze();
-        Assert.True(frozen.Match(HttpMethod.Get, "/health").IsMatch);
+        Assert.True(frozen.Match("GET", "/health").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -34,7 +34,7 @@ public sealed class TurboRoutingExtensionsSpec
 
         var table = app.Services.GetRequiredService<TurboRouteTable>();
         var frozen = table.Freeze();
-        Assert.True(frozen.Match(HttpMethod.Post, "/items").IsMatch);
+        Assert.True(frozen.Match("POST", "/items").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -60,7 +60,7 @@ public sealed class TurboRoutingExtensionsSpec
 
         var table = app.Services.GetRequiredService<TurboRouteTable>();
         var frozen = table.Freeze();
-        Assert.True(frozen.Match(HttpMethod.Get, "/api/users").IsMatch);
+        Assert.True(frozen.Match("GET", "/api/users").IsMatch);
     }
 
     [Fact(Timeout = 5000)]

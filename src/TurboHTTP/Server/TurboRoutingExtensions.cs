@@ -8,31 +8,31 @@ public static class TurboRoutingExtensions
 {
     public static TurboRouteHandlerBuilder MapTurboGet(this WebApplication app, string pattern, Delegate handler)
     {
-        return app.Services.GetRequiredService<TurboRouteTable>().Add(HttpMethod.Get, pattern, handler);
+        return app.Services.GetRequiredService<TurboRouteTable>().Add("GET", pattern, handler);
     }
 
     public static TurboRouteHandlerBuilder MapTurboPost(this WebApplication app, string pattern, Delegate handler)
     {
-        return app.Services.GetRequiredService<TurboRouteTable>().Add(HttpMethod.Post, pattern, handler);
+        return app.Services.GetRequiredService<TurboRouteTable>().Add("POST", pattern, handler);
     }
 
     public static TurboRouteHandlerBuilder MapTurboPut(this WebApplication app, string pattern, Delegate handler)
     {
-        return app.Services.GetRequiredService<TurboRouteTable>().Add(HttpMethod.Put, pattern, handler);
+        return app.Services.GetRequiredService<TurboRouteTable>().Add("PUT", pattern, handler);
     }
 
     public static TurboRouteHandlerBuilder MapTurboDelete(this WebApplication app, string pattern, Delegate handler)
     {
-        return app.Services.GetRequiredService<TurboRouteTable>().Add(HttpMethod.Delete, pattern, handler);
+        return app.Services.GetRequiredService<TurboRouteTable>().Add("DELETE", pattern, handler);
     }
 
     public static TurboRouteHandlerBuilder MapTurboPatch(this WebApplication app, string pattern, Delegate handler)
     {
-        return app.Services.GetRequiredService<TurboRouteTable>().Add(HttpMethod.Patch, pattern, handler);
+        return app.Services.GetRequiredService<TurboRouteTable>().Add("PATCH", pattern, handler);
     }
 
     public static TurboRouteHandlerBuilder MapTurboMethods(
-        this WebApplication app, string pattern, IEnumerable<HttpMethod> methods, Delegate handler)
+        this WebApplication app, string pattern, IEnumerable<string> methods, Delegate handler)
     {
         TurboRouteHandlerBuilder? last = null;
         foreach (var method in methods)

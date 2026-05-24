@@ -23,14 +23,14 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/multi", () =>
+        routeTable.Add("GET", "/multi", () =>
             Results.Ok(new { method = "GET" }));
-        routeTable.Add(HttpMethod.Post, "/multi", () =>
+        routeTable.Add("POST", "/multi", () =>
             Results.Ok(new { method = "POST" }));
-        routeTable.Add(HttpMethod.Put, "/multi", () =>
+        routeTable.Add("PUT", "/multi", () =>
             Results.Ok(new { method = "PUT" }));
 
-        routeTable.Add(HttpMethod.Post, "/upload", async (TurboHttpContext ctx) =>
+        routeTable.Add("POST", "/upload", async (TurboHttpContext ctx) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var file = form.Files.GetFile("document");

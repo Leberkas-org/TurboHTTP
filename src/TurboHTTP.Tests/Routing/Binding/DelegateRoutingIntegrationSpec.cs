@@ -19,7 +19,7 @@ public sealed class DelegateRoutingIntegrationSpec
         app.MapTurboGet("/health", () => TypedResults.Ok("ok"));
 
         var table = app.Services.GetRequiredService<TurboRouteTable>();
-        var result = table.Freeze().Match(HttpMethod.Get, "/health");
+        var result = table.Freeze().Match("GET", "/health");
         Assert.True(result.IsMatch);
     }
 
@@ -33,7 +33,7 @@ public sealed class DelegateRoutingIntegrationSpec
         app.MapTurboGet("/health", () => TypedResults.Ok("healthy"));
 
         var table = app.Services.GetRequiredService<TurboRouteTable>();
-        var result = table.Freeze().Match(HttpMethod.Get, "/health");
+        var result = table.Freeze().Match("GET", "/health");
         Assert.True(result.IsMatch);
 
         var ctx = CreateContext("/health");
@@ -54,7 +54,7 @@ public sealed class DelegateRoutingIntegrationSpec
         api.MapGet("/users", () => TypedResults.Ok("users"));
 
         var table = app.Services.GetRequiredService<TurboRouteTable>();
-        Assert.True(table.Freeze().Match(HttpMethod.Get, "/api/users").IsMatch);
+        Assert.True(table.Freeze().Match("GET", "/api/users").IsMatch);
     }
 
     private static TurboHttpContext CreateContext(string path)

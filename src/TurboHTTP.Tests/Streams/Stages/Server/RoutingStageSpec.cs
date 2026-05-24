@@ -13,11 +13,11 @@ public sealed class RoutingStageSpec : StreamTestBase
 {
     private static readonly TurboRequestDelegate NoOpPipeline = _ => Task.CompletedTask;
 
-    private TurboHttpContext CreateTestContext(HttpMethod method, string uri)
+    private TurboHttpContext CreateTestContext(string method, string uri)
     {
         var path = new Uri(uri).PathAndQuery;
         return ServerTestContext.Request()
-            .Method(method.Method)
+            .Method(method)
             .Path(path)
             .Services(new ServiceCollection().BuildServiceProvider())
             .Materializer(Materializer)
@@ -28,7 +28,7 @@ public sealed class RoutingStageSpec : StreamTestBase
     public async Task Stage_should_route_request_to_matching_handler()
     {
         var routeTable = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/health",
+            .Add("GET", "/api/health",
                 new DelegateDispatcher(ctx =>
                 {
                     ctx.Response.StatusCode = 200;
@@ -37,7 +37,7 @@ public sealed class RoutingStageSpec : StreamTestBase
             .Build();
 
         var stage = new RoutingStage(routeTable, NoOpPipeline, 1, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
-        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/health");
+        var ctx = CreateTestContext("GET", "http://localhost/api/health");
 
         var result = await Source.Single(ctx)
             .Via(Flow.FromGraph(stage))
@@ -51,7 +51,7 @@ public sealed class RoutingStageSpec : StreamTestBase
     {
         var routeTable = new RouteTableBuilder().Build();
         var stage = new RoutingStage(routeTable, NoOpPipeline, 1, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
-        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/unknown");
+        var ctx = CreateTestContext("GET", "http://localhost/api/unknown");
 
         var result = await Source.Single(ctx)
             .Via(Flow.FromGraph(stage))
@@ -65,7 +65,7 @@ public sealed class RoutingStageSpec : StreamTestBase
     {
         string? capturedId = null;
         var routeTable = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/orders/{id}", new DelegateDispatcher(ctx =>
+            .Add("GET", "/api/orders/{id}", new DelegateDispatcher(ctx =>
             {
                 capturedId = ctx.Request.RouteValues["id"]?.ToString();
                 ctx.Response.StatusCode = 200;
@@ -74,7 +74,7 @@ public sealed class RoutingStageSpec : StreamTestBase
             .Build();
 
         var stage = new RoutingStage(routeTable, NoOpPipeline, 1, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
-        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/orders/42");
+        var ctx = CreateTestContext("GET", "http://localhost/api/orders/42");
 
         await Source.Single(ctx)
             .Via(Flow.FromGraph(stage))
@@ -87,12 +87,12 @@ public sealed class RoutingStageSpec : StreamTestBase
     public async Task Stage_should_return_500_on_dispatch_failure()
     {
         var routeTable = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/fail",
+            .Add("GET", "/api/fail",
                 new DelegateDispatcher(_ => throw new InvalidOperationException("boom")))
             .Build();
 
         var stage = new RoutingStage(routeTable, NoOpPipeline, 1, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
-        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/fail");
+        var ctx = CreateTestContext("GET", "http://localhost/api/fail");
 
         var result = await Source.Single(ctx)
             .Via(Flow.FromGraph(stage))
@@ -108,7 +108,7 @@ public sealed class RoutingStageSpec : StreamTestBase
         var handlerRelease = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var routeTable = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/stream",
+            .Add("GET", "/api/stream",
                 new DelegateDispatcher(async ctx =>
                 {
                     ctx.Response.StatusCode = 200;
@@ -120,7 +120,7 @@ public sealed class RoutingStageSpec : StreamTestBase
             .Build();
 
         var stage = new RoutingStage(routeTable, NoOpPipeline, 1, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
-        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/stream");
+        var ctx = CreateTestContext("GET", "http://localhost/api/stream");
 
         var resultTask = Source.Single(ctx)
             .Via(Flow.FromGraph(stage))
@@ -139,7 +139,7 @@ public sealed class RoutingStageSpec : StreamTestBase
     public async Task Stage_should_still_push_after_handler_completes_without_StartAsync()
     {
         var routeTable = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/sync",
+            .Add("GET", "/api/sync",
                 new DelegateDispatcher(async ctx =>
                 {
                     await Task.Delay(50);
@@ -148,7 +148,7 @@ public sealed class RoutingStageSpec : StreamTestBase
             .Build();
 
         var stage = new RoutingStage(routeTable, NoOpPipeline, 1, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5));
-        var ctx = CreateTestContext(HttpMethod.Get, "http://localhost/api/sync");
+        var ctx = CreateTestContext("GET", "http://localhost/api/sync");
 
         var result = await Source.Single(ctx)
             .Via(Flow.FromGraph(stage))

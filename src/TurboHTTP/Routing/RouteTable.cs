@@ -28,12 +28,12 @@ public sealed class RouteTable
         _entries = entries;
     }
 
-    public RouteMatchResult Match(HttpMethod method, string path)
+    public RouteMatchResult Match(string method, string path)
     {
         foreach (var entry in _entries)
         {
             if (entry.IsStaticMatch(path)
-                && (entry.Method.Method == "*" || entry.Method.Equals(method)))
+                && (entry.Method == "*" || string.Equals(entry.Method, method, StringComparison.OrdinalIgnoreCase)))
             {
                 return new RouteMatchResult(true, entry.Dispatcher, RouteMatchResult.EmptyRouteValues);
             }
@@ -61,7 +61,7 @@ internal sealed class RouteTableBuilder
 {
     private readonly List<RouteEntry> _entries = [];
 
-    public RouteTableBuilder Add(HttpMethod method, string pattern, IRouteDispatcher dispatcher)
+    public RouteTableBuilder Add(string method, string pattern, IRouteDispatcher dispatcher)
     {
         _entries.Add(new RouteEntry(method, pattern, dispatcher));
         return this;

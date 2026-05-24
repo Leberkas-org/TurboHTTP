@@ -8,14 +8,14 @@ public sealed class TurboRouteTable
     private readonly List<RouteEntry> _entries = [];
     private RouteTable? _frozen;
 
-    public TurboRouteHandlerBuilder Add(HttpMethod method, string pattern, Func<TurboHttpContext, Task> handler)
+    public TurboRouteHandlerBuilder Add(string method, string pattern, Func<TurboHttpContext, Task> handler)
     {
         var dispatcher = new DelegateDispatcher(handler);
         _entries.Add(new RouteEntry(method, pattern, dispatcher));
         return new TurboRouteHandlerBuilder();
     }
 
-    public TurboRouteHandlerBuilder Add(HttpMethod method, string pattern, Delegate handler)
+    public TurboRouteHandlerBuilder Add(string method, string pattern, Delegate handler)
     {
         var bound = DelegateHandlerBinder.Bind(pattern, handler);
         var dispatcher = new DelegateDispatcher((ctx) => bound(ctx, ctx.RequestServices));
@@ -23,7 +23,7 @@ public sealed class TurboRouteTable
         return new TurboRouteHandlerBuilder();
     }
 
-    internal TurboRouteHandlerBuilder AddWithDispatcher(HttpMethod method, string pattern, IRouteDispatcher dispatcher)
+    internal TurboRouteHandlerBuilder AddWithDispatcher(string method, string pattern, IRouteDispatcher dispatcher)
     {
         _entries.Add(new RouteEntry(method, pattern, dispatcher));
         return new TurboRouteHandlerBuilder();

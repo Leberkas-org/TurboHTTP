@@ -10,10 +10,10 @@ public sealed class RouteTableSpec
     public void Match_should_find_exact_static_route()
     {
         var table = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/health", Dummy())
+            .Add("GET", "/api/health", Dummy())
             .Build();
 
-        var result = table.Match(HttpMethod.Get, "/api/health");
+        var result = table.Match("GET", "/api/health");
         Assert.True(result.IsMatch);
     }
 
@@ -21,10 +21,10 @@ public sealed class RouteTableSpec
     public void Match_should_return_no_match_for_unknown_path()
     {
         var table = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/health", Dummy())
+            .Add("GET", "/api/health", Dummy())
             .Build();
 
-        var result = table.Match(HttpMethod.Get, "/api/unknown");
+        var result = table.Match("GET", "/api/unknown");
         Assert.False(result.IsMatch);
     }
 
@@ -32,10 +32,10 @@ public sealed class RouteTableSpec
     public void Match_should_extract_route_parameters()
     {
         var table = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/orders/{id}", Dummy())
+            .Add("GET", "/api/orders/{id}", Dummy())
             .Build();
 
-        var result = table.Match(HttpMethod.Get, "/api/orders/42");
+        var result = table.Match("GET", "/api/orders/42");
         Assert.True(result.IsMatch);
         Assert.Equal("42", result.RouteValues["id"]);
     }
@@ -44,10 +44,10 @@ public sealed class RouteTableSpec
     public void Match_should_extract_multiple_parameters()
     {
         var table = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/{controller}/{id}", Dummy())
+            .Add("GET", "/api/{controller}/{id}", Dummy())
             .Build();
 
-        var result = table.Match(HttpMethod.Get, "/api/orders/42");
+        var result = table.Match("GET", "/api/orders/42");
         Assert.True(result.IsMatch);
         Assert.Equal("orders", result.RouteValues["controller"]);
         Assert.Equal("42", result.RouteValues["id"]);
@@ -57,10 +57,10 @@ public sealed class RouteTableSpec
     public void Match_should_respect_http_method()
     {
         var table = new RouteTableBuilder()
-            .Add(HttpMethod.Post, "/api/orders", Dummy())
+            .Add("POST", "/api/orders", Dummy())
             .Build();
 
-        var result = table.Match(HttpMethod.Get, "/api/orders");
+        var result = table.Match("GET", "/api/orders");
         Assert.False(result.IsMatch);
     }
 
@@ -68,11 +68,11 @@ public sealed class RouteTableSpec
     public void Match_should_support_wildcard_method()
     {
         var table = new RouteTableBuilder()
-            .Add(new HttpMethod("*"), "/api/health", Dummy())
+            .Add("*", "/api/health", Dummy())
             .Build();
 
-        Assert.True(table.Match(HttpMethod.Get, "/api/health").IsMatch);
-        Assert.True(table.Match(HttpMethod.Post, "/api/health").IsMatch);
+        Assert.True(table.Match("GET", "/api/health").IsMatch);
+        Assert.True(table.Match("POST", "/api/health").IsMatch);
     }
 
     [Fact(Timeout = 5000)]
@@ -89,11 +89,11 @@ public sealed class RouteTableSpec
         });
 
         var table = new RouteTableBuilder()
-            .Add(HttpMethod.Get, "/api/orders/latest", staticDispatcher)
-            .Add(HttpMethod.Get, "/api/orders/{id}", paramDispatcher)
+            .Add("GET", "/api/orders/latest", staticDispatcher)
+            .Add("GET", "/api/orders/{id}", paramDispatcher)
             .Build();
 
-        var result = table.Match(HttpMethod.Get, "/api/orders/latest");
+        var result = table.Match("GET", "/api/orders/latest");
         Assert.True(result.IsMatch);
         Assert.Same(staticDispatcher, result.Dispatcher);
     }

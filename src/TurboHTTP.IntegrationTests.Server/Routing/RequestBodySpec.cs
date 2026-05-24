@@ -22,14 +22,14 @@ public sealed class RequestBodySpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Post, "/echo-body", async (TurboHttpContext ctx) =>
+        routeTable.Add("POST", "/echo-body", async (TurboHttpContext ctx) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var body = await reader.ReadToEndAsync();
             return Results.Ok(new { body });
         });
 
-        routeTable.Add(HttpMethod.Post, "/echo-json", async (TurboHttpContext ctx) =>
+        routeTable.Add("POST", "/echo-json", async (TurboHttpContext ctx) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var raw = await reader.ReadToEndAsync();
@@ -37,7 +37,7 @@ public sealed class RequestBodySpec : ServerSpecBase
             return Results.Ok(parsed.RootElement);
         });
 
-        routeTable.Add(HttpMethod.Post, "/form", async (TurboHttpContext ctx) =>
+        routeTable.Add("POST", "/form", async (TurboHttpContext ctx) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var name = form["name"].ToString();

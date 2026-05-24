@@ -26,7 +26,7 @@ public sealed class ClientCertificateModeAllowSpec : ServerSpecBase
                 listen.UseHttps(_serverCert, httpsOptions =>
                 {
                     httpsOptions.ClientCertificateMode = ClientCertificateMode.AllowCertificate;
-                    httpsOptions.ClientCertificateValidationCallback = (_, cert, _, _) => true;
+                    httpsOptions.ClientCertificateValidationCallback = (_, _, _, _) => true;
                 });
                 listen.Protocols = HttpProtocols.Http1;
             });
@@ -35,7 +35,7 @@ public sealed class ClientCertificateModeAllowSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/test", () => Results.Ok("OK"));
+        routeTable.Add("GET", "/test", () => Results.Ok("OK"));
     }
 
     protected override HttpClient? CreateHttpClient() => null;

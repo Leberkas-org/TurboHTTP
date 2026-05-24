@@ -20,7 +20,7 @@ public sealed class ErrorHandlingSpec : ServerSpecBase
 
     protected override void ConfigureRoutes(TurboRouteTable routeTable)
     {
-        routeTable.Add(HttpMethod.Get, "/throw-sync", () =>
+        routeTable.Add("GET", "/throw-sync", () =>
         {
             throw new InvalidOperationException("sync boom");
 #pragma warning disable CS0162
@@ -28,7 +28,7 @@ public sealed class ErrorHandlingSpec : ServerSpecBase
 #pragma warning restore CS0162
         });
 
-        routeTable.Add(HttpMethod.Get, "/throw-async", async () =>
+        routeTable.Add("GET", "/throw-async", async () =>
         {
             await Task.Yield();
             throw new InvalidOperationException("async boom");
@@ -37,7 +37,7 @@ public sealed class ErrorHandlingSpec : ServerSpecBase
 #pragma warning restore CS0162
         });
 
-        routeTable.Add(HttpMethod.Get, "/ok", () => Results.Ok("fine"));
+        routeTable.Add("GET", "/ok", () => Results.Ok("fine"));
     }
 
     [Fact(Timeout = 15000)]

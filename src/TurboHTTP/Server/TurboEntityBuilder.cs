@@ -9,7 +9,7 @@ namespace TurboHTTP.Server;
 public sealed class TurboEntityBuilder
 {
     private readonly string _pattern;
-    private readonly Dictionary<HttpMethod, TurboEntityMethodBuilder> _methods = new();
+    private readonly Dictionary<string, TurboEntityMethodBuilder> _methods = new(StringComparer.OrdinalIgnoreCase);
     private readonly EntityResponseMapperCollection _responseMappers = new();
     private TimeSpan _timeout = TimeSpan.FromSeconds(5);
     private IEntityActorResolver _resolver = new GenericActorRefFactory(_ => ActorRefs.Nobody);
@@ -20,19 +20,19 @@ public sealed class TurboEntityBuilder
     }
 
     public TurboEntityMethodBuilder OnGet(Delegate messageFactory)
-        => AddMethod(HttpMethod.Get, messageFactory);
+        => AddMethod("GET", messageFactory);
 
     public TurboEntityMethodBuilder OnPost(Delegate messageFactory)
-        => AddMethod(HttpMethod.Post, messageFactory);
+        => AddMethod("POST", messageFactory);
 
     public TurboEntityMethodBuilder OnPut(Delegate messageFactory)
-        => AddMethod(HttpMethod.Put, messageFactory);
+        => AddMethod("PUT", messageFactory);
 
     public TurboEntityMethodBuilder OnDelete(Delegate messageFactory)
-        => AddMethod(HttpMethod.Delete, messageFactory);
+        => AddMethod("DELETE", messageFactory);
 
     public TurboEntityMethodBuilder OnPatch(Delegate messageFactory)
-        => AddMethod(HttpMethod.Patch, messageFactory);
+        => AddMethod("PATCH", messageFactory);
 
     public TurboEntityBuilder Response<TResponse>(Func<TurboHttpContext, TResponse, Task> mapper)
     {
@@ -78,7 +78,7 @@ public sealed class TurboEntityBuilder
         }
     }
 
-    private TurboEntityMethodBuilder AddMethod(HttpMethod method, Delegate messageFactory)
+    private TurboEntityMethodBuilder AddMethod(string method, Delegate messageFactory)
     {
         var bound = DelegateHandlerBinder.BindEntityDelegate(_pattern, messageFactory);
         var builder = new TurboEntityMethodBuilder(bound);
