@@ -60,9 +60,13 @@ internal sealed class QuicClientProvider : IAsyncDisposable
                 throw new InvalidOperationException("QUIC connections require a non-empty hostname for TLS SNI.");
             }
 
+            EndPoint remoteEndPoint = IPAddress.TryParse(_options.Host, out var ip)
+                ? new IPEndPoint(ip, _options.Port)
+                : new DnsEndPoint(_options.Host, _options.Port);
+
             var clientConnectionOptions = new QuicClientConnectionOptions
             {
-                RemoteEndPoint = new DnsEndPoint(_options.Host, _options.Port),
+                RemoteEndPoint = remoteEndPoint,
                 DefaultStreamErrorCode = 0x0100,
                 DefaultCloseErrorCode = 0x0100,
                 MaxInboundBidirectionalStreams = _options.MaxBidirectionalStreams,
