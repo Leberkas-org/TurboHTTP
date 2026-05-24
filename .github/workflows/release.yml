@@ -72,7 +72,7 @@ jobs:
           /p:PackageVersion=${{ needs.release-please.outputs.version }}
 
       - name: Upload NuGet artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-packages
           path: ${{ env.PACKAGE_OUTPUT_DIRECTORY }}/*.nupkg
