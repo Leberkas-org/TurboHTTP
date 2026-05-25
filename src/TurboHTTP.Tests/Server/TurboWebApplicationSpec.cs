@@ -50,4 +50,40 @@ public sealed class TurboWebApplicationSpec
         Assert.True(urls.Contains("http://localhost:5000"));
         Assert.False(urls.Contains("http://localhost:9999"));
     }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_should_expose_services()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+
+        Assert.NotNull(builder.Services);
+        Assert.NotNull(builder.Configuration);
+        Assert.NotNull(builder.Logging);
+        Assert.NotNull(builder.Environment);
+        Assert.NotNull(builder.Server);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_Build_should_return_app_with_registered_services()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+        var app = builder.Build();
+
+        Assert.NotNull(app);
+        Assert.NotNull(app.Services);
+        Assert.NotNull(app.Services.GetService<TurboRouteTable>());
+        Assert.NotNull(app.Services.GetService<TurboPipelineBuilder>());
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_Server_should_be_same_instance_in_app()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+        builder.Server.HandlerTimeout = TimeSpan.FromSeconds(99);
+        var app = builder.Build();
+
+        var resolved = app.Services.GetRequiredService<TurboServerOptions>();
+        Assert.Same(builder.Server, resolved);
+        Assert.Equal(TimeSpan.FromSeconds(99), resolved.HandlerTimeout);
+    }
 }
