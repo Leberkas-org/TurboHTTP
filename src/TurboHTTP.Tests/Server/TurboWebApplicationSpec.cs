@@ -24,4 +24,30 @@ public sealed class TurboWebApplicationSpec
         Assert.Same(options, resolved);
         Assert.Equal(TimeSpan.FromSeconds(99), resolved.HandlerTimeout);
     }
+
+    [Fact(Timeout = 5000)]
+    public void TurboUrlCollection_Add_should_delegate_to_options_urls()
+    {
+        var options = new TurboServerOptions();
+        var urls = new TurboUrlCollection(options);
+
+        urls.Add("http://localhost:5000");
+        urls.Add("https://localhost:5001");
+
+        Assert.Equal(2, urls.Count);
+        Assert.Contains("http://localhost:5000", options.Urls);
+        Assert.Contains("https://localhost:5001", options.Urls);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboUrlCollection_should_implement_ICollection()
+    {
+        var options = new TurboServerOptions();
+        var urls = new TurboUrlCollection(options);
+        urls.Add("http://localhost:5000");
+
+        Assert.False(urls.IsReadOnly);
+        Assert.True(urls.Contains("http://localhost:5000"));
+        Assert.False(urls.Contains("http://localhost:9999"));
+    }
 }
