@@ -2,17 +2,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TurboHTTP.Server.Middleware;
 
-public sealed class TurboPipelineBuilder : ITurboPipelineBuilder
+public sealed class TurboPipelineBuilder : ITurboApplicationBuilder
 {
     private readonly List<Func<TurboRequestDelegate, TurboRequestDelegate>> _components = [];
 
-    public ITurboPipelineBuilder Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
+    public ITurboApplicationBuilder Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
     {
         _components.Add(next => ctx => middleware(ctx, next));
         return this;
     }
 
-    public ITurboPipelineBuilder Use<T>() where T : class, ITurboMiddleware
+    public ITurboApplicationBuilder Use<T>() where T : class, ITurboMiddleware
     {
         _components.Add(next => ctx =>
         {
@@ -22,13 +22,13 @@ public sealed class TurboPipelineBuilder : ITurboPipelineBuilder
         return this;
     }
 
-    public ITurboPipelineBuilder Run(TurboRequestDelegate handler)
+    public ITurboApplicationBuilder Run(TurboRequestDelegate handler)
     {
         _components.Add(_ => handler);
         return this;
     }
 
-    public ITurboPipelineBuilder Map(string pathPrefix, Action<ITurboPipelineBuilder> configure)
+    public ITurboApplicationBuilder Map(string pathPrefix, Action<ITurboApplicationBuilder> configure)
     {
         var branch = new TurboPipelineBuilder();
         configure(branch);
@@ -51,8 +51,8 @@ public sealed class TurboPipelineBuilder : ITurboPipelineBuilder
         return this;
     }
 
-    public ITurboPipelineBuilder MapWhen(Func<TurboHttpContext, bool> predicate,
-        Action<ITurboPipelineBuilder> configure)
+    public ITurboApplicationBuilder MapWhen(Func<TurboHttpContext, bool> predicate,
+        Action<ITurboApplicationBuilder> configure)
     {
         var branch = new TurboPipelineBuilder();
         configure(branch);

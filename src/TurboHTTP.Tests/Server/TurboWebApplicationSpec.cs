@@ -196,7 +196,7 @@ public sealed class TurboWebApplicationSpec
     public void Pipeline_interface_should_also_work()
     {
         var app = TurboWebApplication.Create();
-        ITurboPipelineBuilder pipeline = app;
+        ITurboApplicationBuilder pipeline = app;
 
         var result = pipeline.Use(async (ctx, next) => await next(ctx));
 

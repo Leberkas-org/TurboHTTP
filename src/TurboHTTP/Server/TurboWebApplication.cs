@@ -7,7 +7,7 @@ using TurboHTTP.Server.Middleware;
 
 namespace TurboHTTP.Server;
 
-public sealed class TurboWebApplication : IHost, ITurboEndpointRouteBuilder, ITurboPipelineBuilder, IAsyncDisposable
+public sealed class TurboWebApplication : IHost, ITurboEndpointRouteBuilder, ITurboApplicationBuilder, IAsyncDisposable
 {
     private readonly IHost _host;
     private readonly TurboRouteTable _routeTable;
@@ -87,31 +87,31 @@ public sealed class TurboWebApplication : IHost, ITurboEndpointRouteBuilder, ITu
 
     TurboRouteTable ITurboEndpointRouteBuilder.RouteTable => _routeTable;
 
-    public ITurboPipelineBuilder Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
+    public ITurboApplicationBuilder Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
     {
         _pipelineBuilder.Use(middleware);
         return this;
     }
 
-    public ITurboPipelineBuilder Use<T>() where T : class, ITurboMiddleware
+    public ITurboApplicationBuilder Use<T>() where T : class, ITurboMiddleware
     {
         _pipelineBuilder.Use<T>();
         return this;
     }
 
-    public ITurboPipelineBuilder Run(TurboRequestDelegate handler)
+    public ITurboApplicationBuilder Run(TurboRequestDelegate handler)
     {
         _pipelineBuilder.Run(handler);
         return this;
     }
 
-    public ITurboPipelineBuilder Map(string pathPrefix, Action<ITurboPipelineBuilder> configure)
+    public ITurboApplicationBuilder Map(string pathPrefix, Action<ITurboApplicationBuilder> configure)
     {
         _pipelineBuilder.Map(pathPrefix, configure);
         return this;
     }
 
-    public ITurboPipelineBuilder MapWhen(Func<TurboHttpContext, bool> predicate, Action<ITurboPipelineBuilder> configure)
+    public ITurboApplicationBuilder MapWhen(Func<TurboHttpContext, bool> predicate, Action<ITurboApplicationBuilder> configure)
     {
         _pipelineBuilder.MapWhen(predicate, configure);
         return this;

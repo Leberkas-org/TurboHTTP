@@ -490,6 +490,15 @@ namespace TurboHTTP.Server
     {
         public static System.Collections.Generic.List<System.Net.Security.SslApplicationProtocol> ToAlpnProtocols(this TurboHTTP.Server.HttpProtocols protocols) { }
     }
+    public interface ITurboApplicationBuilder
+    {
+        TurboHTTP.Server.ITurboApplicationBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure);
+        TurboHTTP.Server.ITurboApplicationBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure);
+        TurboHTTP.Server.ITurboApplicationBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler);
+        TurboHTTP.Server.ITurboApplicationBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware);
+        TurboHTTP.Server.ITurboApplicationBuilder Use<T>()
+            where T :  class, TurboHTTP.Server.ITurboMiddleware;
+    }
     public interface ITurboEndpointRouteBuilder
     {
         TurboHTTP.Routing.TurboRouteTable RouteTable { get; }
@@ -498,15 +507,6 @@ namespace TurboHTTP.Server
     public interface ITurboMiddleware
     {
         System.Threading.Tasks.Task InvokeAsync(TurboHTTP.Server.TurboHttpContext context, TurboHTTP.Server.TurboRequestDelegate next);
-    }
-    public interface ITurboPipelineBuilder
-    {
-        TurboHTTP.Server.ITurboPipelineBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure);
-        TurboHTTP.Server.ITurboPipelineBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure);
-        TurboHTTP.Server.ITurboPipelineBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler);
-        TurboHTTP.Server.ITurboPipelineBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware);
-        TurboHTTP.Server.ITurboPipelineBuilder Use<T>()
-            where T :  class, TurboHTTP.Server.ITurboMiddleware;
     }
     public sealed class ListenerBinding
     {
@@ -641,8 +641,8 @@ namespace TurboHTTP.Server
     }
     public static class TurboMiddlewareExtensions
     {
-        public static Microsoft.AspNetCore.Builder.WebApplication MapTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, string pathPrefix, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public static Microsoft.AspNetCore.Builder.WebApplication MapTurboWhen(this Microsoft.AspNetCore.Builder.WebApplication app, System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
+        public static Microsoft.AspNetCore.Builder.WebApplication MapTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
+        public static Microsoft.AspNetCore.Builder.WebApplication MapTurboWhen(this Microsoft.AspNetCore.Builder.WebApplication app, System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
         public static Microsoft.AspNetCore.Builder.WebApplication RunTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, TurboHTTP.Server.TurboRequestDelegate handler) { }
         public static Microsoft.AspNetCore.Builder.WebApplication UseTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
         public static Microsoft.AspNetCore.Builder.WebApplication UseTurbo<T>(this Microsoft.AspNetCore.Builder.WebApplication app)
@@ -730,7 +730,7 @@ namespace TurboHTTP.Server
         public static Microsoft.AspNetCore.Http.IResult EventStream(Akka.Streams.Dsl.Source<string, Akka.NotUsed> source) { }
         public static Microsoft.AspNetCore.Http.IResult Stream(Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> source, string? contentType = null) { }
     }
-    public sealed class TurboWebApplication : Microsoft.Extensions.Hosting.IHost, System.IAsyncDisposable, System.IDisposable, TurboHTTP.Server.ITurboEndpointRouteBuilder, TurboHTTP.Server.ITurboPipelineBuilder
+    public sealed class TurboWebApplication : Microsoft.Extensions.Hosting.IHost, System.IAsyncDisposable, System.IDisposable, TurboHTTP.Server.ITurboApplicationBuilder, TurboHTTP.Server.ITurboEndpointRouteBuilder
     {
         public Microsoft.Extensions.Configuration.IConfiguration Configuration { get; }
         public Microsoft.Extensions.Hosting.IHostEnvironment Environment { get; }
@@ -740,15 +740,15 @@ namespace TurboHTTP.Server
         public System.Collections.Generic.ICollection<string> Urls { get; }
         public void Dispose() { }
         public System.Threading.Tasks.ValueTask DisposeAsync() { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
         public System.Threading.Tasks.Task RunAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task RunAsync(System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Use<T>()
+        public TurboHTTP.Server.ITurboApplicationBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder Use<T>()
             where T :  class, TurboHTTP.Server.ITurboMiddleware { }
         public System.Threading.Tasks.Task WaitForShutdownAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public static TurboHTTP.Server.TurboWebApplication Create(string[]? args = null) { }
@@ -767,14 +767,14 @@ namespace TurboHTTP.Server
 }
 namespace TurboHTTP.Server.Middleware
 {
-    public sealed class TurboPipelineBuilder : TurboHTTP.Server.ITurboPipelineBuilder
+    public sealed class TurboPipelineBuilder : TurboHTTP.Server.ITurboApplicationBuilder
     {
         public TurboPipelineBuilder() { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
-        public TurboHTTP.Server.ITurboPipelineBuilder Use<T>()
+        public TurboHTTP.Server.ITurboApplicationBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
+        public TurboHTTP.Server.ITurboApplicationBuilder Use<T>()
             where T :  class, TurboHTTP.Server.ITurboMiddleware { }
     }
 }

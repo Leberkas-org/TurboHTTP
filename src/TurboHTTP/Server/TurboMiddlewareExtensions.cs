@@ -35,7 +35,7 @@ public static class TurboMiddlewareExtensions
     public static WebApplication MapTurbo(
         this WebApplication app,
         string pathPrefix,
-        Action<ITurboPipelineBuilder> configure)
+        Action<ITurboApplicationBuilder> configure)
     {
         app.Services.GetRequiredService<TurboPipelineBuilder>()
             .Map(pathPrefix, configure);
@@ -45,7 +45,7 @@ public static class TurboMiddlewareExtensions
     public static WebApplication MapTurboWhen(
         this WebApplication app,
         Func<TurboHttpContext, bool> predicate,
-        Action<ITurboPipelineBuilder> configure)
+        Action<ITurboApplicationBuilder> configure)
     {
         app.Services.GetRequiredService<TurboPipelineBuilder>()
             .MapWhen(predicate, configure);
