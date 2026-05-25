@@ -87,59 +87,34 @@ public sealed class TurboWebApplication : IHost, ITurboEndpointRouteBuilder, ITu
 
     TurboRouteTable ITurboEndpointRouteBuilder.RouteTable => _routeTable;
 
-    public TurboWebApplication Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
+    public ITurboPipelineBuilder Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
     {
         _pipelineBuilder.Use(middleware);
         return this;
     }
 
-    public TurboWebApplication Use<T>() where T : class, ITurboMiddleware
+    public ITurboPipelineBuilder Use<T>() where T : class, ITurboMiddleware
     {
         _pipelineBuilder.Use<T>();
         return this;
     }
 
-    public TurboWebApplication Run(TurboRequestDelegate handler)
+    public ITurboPipelineBuilder Run(TurboRequestDelegate handler)
     {
         _pipelineBuilder.Run(handler);
         return this;
     }
 
-    public TurboWebApplication Map(string pathPrefix, Action<ITurboPipelineBuilder> configure)
+    public ITurboPipelineBuilder Map(string pathPrefix, Action<ITurboPipelineBuilder> configure)
     {
         _pipelineBuilder.Map(pathPrefix, configure);
         return this;
     }
 
-    public TurboWebApplication MapWhen(Func<TurboHttpContext, bool> predicate, Action<ITurboPipelineBuilder> configure)
+    public ITurboPipelineBuilder MapWhen(Func<TurboHttpContext, bool> predicate, Action<ITurboPipelineBuilder> configure)
     {
         _pipelineBuilder.MapWhen(predicate, configure);
         return this;
-    }
-
-    ITurboPipelineBuilder ITurboPipelineBuilder.Use(Func<TurboHttpContext, TurboRequestDelegate, Task> middleware)
-    {
-        return Use(middleware);
-    }
-
-    ITurboPipelineBuilder ITurboPipelineBuilder.Use<T>()
-    {
-        return Use<T>();
-    }
-
-    ITurboPipelineBuilder ITurboPipelineBuilder.Run(TurboRequestDelegate handler)
-    {
-        return Run(handler);
-    }
-
-    ITurboPipelineBuilder ITurboPipelineBuilder.Map(string pathPrefix, Action<ITurboPipelineBuilder> configure)
-    {
-        return Map(pathPrefix, configure);
-    }
-
-    ITurboPipelineBuilder ITurboPipelineBuilder.MapWhen(Func<TurboHttpContext, bool> predicate, Action<ITurboPipelineBuilder> configure)
-    {
-        return MapWhen(predicate, configure);
     }
 
     public static TurboWebApplicationBuilder CreateBuilder()

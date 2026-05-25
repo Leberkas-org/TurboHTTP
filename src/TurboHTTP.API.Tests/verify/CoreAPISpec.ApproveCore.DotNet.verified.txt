@@ -740,15 +740,15 @@ namespace TurboHTTP.Server
         public System.Collections.Generic.ICollection<string> Urls { get; }
         public void Dispose() { }
         public System.Threading.Tasks.ValueTask DisposeAsync() { }
-        public TurboHTTP.Server.TurboWebApplication Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public TurboHTTP.Server.TurboWebApplication MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
-        public TurboHTTP.Server.TurboWebApplication Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
+        public TurboHTTP.Server.ITurboPipelineBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
+        public TurboHTTP.Server.ITurboPipelineBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboPipelineBuilder> configure) { }
+        public TurboHTTP.Server.ITurboPipelineBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
         public System.Threading.Tasks.Task RunAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task RunAsync(System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public TurboHTTP.Server.TurboWebApplication Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
-        public TurboHTTP.Server.TurboWebApplication Use<T>()
+        public TurboHTTP.Server.ITurboPipelineBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
+        public TurboHTTP.Server.ITurboPipelineBuilder Use<T>()
             where T :  class, TurboHTTP.Server.ITurboMiddleware { }
         public System.Threading.Tasks.Task WaitForShutdownAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public static TurboHTTP.Server.TurboWebApplication Create(string[]? args = null) { }
