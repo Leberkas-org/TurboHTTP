@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/Leberkas-org/TurboHTTP/compare/v1.0.1...v1.0.2) (2026-05-25)
+
+
+### Bug Fixes
+
+* **docs:** Pin likec4 to 1.50.0 ([06c08fb](https://github.com/Leberkas-org/TurboHTTP/commit/06c08fb988c68b85b8b64c1ba9797e518fe94103))
+
 ## [1.0.1](https://github.com/Leberkas-org/TurboHTTP/compare/v1.0.0...v1.0.1) (2026-05-25)
 
 
