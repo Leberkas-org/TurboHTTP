@@ -28,6 +28,9 @@ internal static class ServerContextFactory
         features.Set<IHttpResponseBodyFeature>(responseBodyFeature);
         features.Set<ITurboResponseBodyFeature>(responseBodyFeature);
 
+        var trailersFeature = new TurboHttpResponseTrailersFeature();
+        features.Set<IHttpResponseTrailersFeature>(trailersFeature);
+
         if (tlsFeature is not null)
         {
             features.Set<ITlsHandshakeFeature>(tlsFeature);

@@ -135,6 +135,8 @@ internal sealed class Http2ServerSessionManager
             return;
         }
 
+        state.SetTurboContext(context);
+
         var responseFeature = context.Features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
         var hasBody = contentLength is not 0;
@@ -244,8 +246,25 @@ internal sealed class Http2ServerSessionManager
 
         if (!state.HasPendingOutbound)
         {
-            EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: true));
-            CloseStream(streamId);
+            var context = state.GetTurboContext();
+            var trailerFeature = context?.Features.Get<IHttpResponseTrailersFeature>();
+            var hasTrailers = trailerFeature?.Trailers.Count > 0;
+
+            if (hasTrailers)
+            {
+                EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: false));
+                var trailerFrames = _responseEncoder.EncodeTrailers(streamId, trailerFeature!.Trailers);
+                for (var i = 0; i < trailerFrames.Count; i++)
+                {
+                    EmitFrame(trailerFrames[i]);
+                }
+                CloseStream(streamId);
+            }
+            else
+            {
+                EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: true));
+                CloseStream(streamId);
+            }
         }
     }
 
@@ -272,8 +291,25 @@ internal sealed class Http2ServerSessionManager
 
         if (state is { HasPendingOutbound: false, IsBodyEncoderComplete: true })
         {
-            EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: true));
-            CloseStream(streamId);
+            var context = state.GetTurboContext();
+            var trailerFeature = context?.Features.Get<IHttpResponseTrailersFeature>();
+            var hasTrailers = trailerFeature?.Trailers.Count > 0;
+
+            if (hasTrailers)
+            {
+                EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: false));
+                var trailerFrames = _responseEncoder.EncodeTrailers(streamId, trailerFeature!.Trailers);
+                for (var i = 0; i < trailerFrames.Count; i++)
+                {
+                    EmitFrame(trailerFrames[i]);
+                }
+                CloseStream(streamId);
+            }
+            else
+            {
+                EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: true));
+                CloseStream(streamId);
+            }
         }
     }
 

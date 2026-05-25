@@ -93,6 +93,37 @@ public sealed class TurboHttpResponse : HttpResponse
         Headers["Location"] = location;
     }
 
+    public void DeclareTrailer(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        var existing = Headers["Trailer"].ToString();
+        Headers["Trailer"] = string.IsNullOrEmpty(existing)
+            ? name
+            : string.Concat(existing, ", ", name);
+    }
+
+    public void AppendTrailer(string name, string value)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(value);
+
+        var feature = HttpContext.Features.Get<IHttpResponseTrailersFeature>();
+        if (feature is null)
+        {
+            throw new InvalidOperationException(
+                "Response trailers are only supported on HTTP/2 and HTTP/3 connections.");
+        }
+
+        feature.Trailers.Append(name, value);
+    }
+
+    public IHeaderDictionary GetTrailers()
+    {
+        var feature = HttpContext.Features.Get<IHttpResponseTrailersFeature>();
+        return feature?.Trailers ?? new HeaderDictionary();
+    }
+
     internal void Reset(IFeatureCollection features)
     {
         _features = features;
@@ -101,6 +132,10 @@ public sealed class TurboHttpResponse : HttpResponse
         if (features.Get<IHttpResponseFeature>() is TurboHttpResponseFeature turboFeature)
         {
             turboFeature.Reset();
+        }
+        if (features.Get<IHttpResponseTrailersFeature>() is TurboHttpResponseTrailersFeature trailersFeature)
+        {
+            trailersFeature.Reset();
         }
     }
 }

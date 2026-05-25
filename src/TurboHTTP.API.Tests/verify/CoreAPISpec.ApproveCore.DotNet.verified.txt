@@ -249,6 +249,9 @@ namespace TurboHTTP.Context
         public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
         public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
         public override int StatusCode { get; set; }
+        public void AppendTrailer(string name, string value) { }
+        public void DeclareTrailer(string name) { }
+        public Microsoft.AspNetCore.Http.IHeaderDictionary GetTrailers() { }
         public override void OnCompleted(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
         public override void OnStarting(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
         public override void Redirect(string location, bool permanent = false) { }

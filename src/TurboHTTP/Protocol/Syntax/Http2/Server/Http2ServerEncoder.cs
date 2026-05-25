@@ -1,4 +1,6 @@
 using System.Buffers;
+using Microsoft.AspNetCore.Http;
+using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Server;
 
@@ -106,6 +108,44 @@ internal sealed class Http2ServerEncoder
                     break;
             }
         }
+    }
+
+    /// <summary>
+    /// Encodes trailer headers into HTTP/2 HEADERS frame(s).
+    /// RFC 9113 §8.1: Trailers are sent as a HEADERS frame with END_STREAM.
+    /// RFC 9110 §6.5.1: Filters prohibited trailer fields (transfer-encoding, content-length, etc.).
+    /// </summary>
+    public IReadOnlyList<Http2Frame> EncodeTrailers(int streamId, IHeaderDictionary trailers)
+    {
+        ArgumentNullException.ThrowIfNull(trailers);
+
+        ReturnRentedBuffers();
+
+        _reusableHeaders.Clear();
+
+        foreach (var header in trailers)
+        {
+            if (TrailerFieldValidator.IsAllowedInTrailer(header.Key))
+            {
+                _reusableHeaders.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(header.Key), header.Value.ToString() ?? string.Empty));
+            }
+        }
+
+        if (_reusableHeaders.Count == 0)
+        {
+            return Array.Empty<Http2Frame>();
+        }
+
+        var hpackOwner = MemoryPool<byte>.Shared.Rent(4096);
+        _rentedBodyOwners.Add(hpackOwner);
+        var hpackWritable = hpackOwner.Memory.Span;
+        var hpackBytesWritten = _hpack.Encode(_reusableHeaders, ref hpackWritable, useHuffman: true);
+        var headerBlock = hpackOwner.Memory[..hpackBytesWritten];
+
+        _reusableFrames.Clear();
+        EncodeHeaderFrames(_reusableFrames, streamId, headerBlock, endStream: true);
+
+        return _reusableFrames;
     }
 
     /// <summary>
