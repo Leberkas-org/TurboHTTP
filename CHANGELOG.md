@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.1](https://github.com/Leberkas-org/TurboHTTP/compare/v1.0.0...v1.0.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* **docs:** correct scenario snippets to use real TurboHTTP APIs ([69d4eb5](https://github.com/Leberkas-org/TurboHTTP/commit/69d4eb5d3e2438027a1cabd6da11bb641cb5f108))
+* **docs:** pin likec4 to 1.50.0 to avoid icon resolver bug ([5b4ecff](https://github.com/Leberkas-org/TurboHTTP/commit/5b4ecff5987c9fedef5eaa9991fd33f9028334b2))
+
+
+### Documentation
+
+* add scenarios showcase page with all 5 scenarios ([40f1f9e](https://github.com/Leberkas-org/TurboHTTP/commit/40f1f9eea5c1a468026ee8d001eb0c21574967c8))
+* add scenarios to VitePress navigation ([c7cab1b](https://github.com/Leberkas-org/TurboHTTP/commit/c7cab1be842b7eefdb15664234dd0967b329dc3c))
+
 ## [1.0.0](https://github.com/Leberkas-org/TurboHTTP/compare/v0.9.2...v1.0.0) (2026-05-25)
 
 
