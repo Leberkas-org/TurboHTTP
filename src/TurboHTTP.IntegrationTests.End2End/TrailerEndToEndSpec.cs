@@ -16,14 +16,14 @@ public sealed class TrailerEndToEndSpec : IAsyncLifetime
     {
         _fixture = new TurboServerFixture(app =>
         {
-            app.MapTurboPost("/echo-with-trailers", (TurboHttpContext ctx) =>
+            app.MapPost("/echo-with-trailers", (TurboHttpContext ctx) =>
             {
                 ctx.TurboResponse.AppendTrailer("grpc-status", "0");
                 ctx.TurboResponse.AppendTrailer("grpc-message", "OK");
                 return Results.Ok("response body");
             });
 
-            app.MapTurboPost("/echo-with-prohibited-trailers", (TurboHttpContext ctx) =>
+            app.MapPost("/echo-with-prohibited-trailers", (TurboHttpContext ctx) =>
             {
                 ctx.TurboResponse.AppendTrailer("grpc-status", "0");
                 ctx.TurboResponse.AppendTrailer("content-length", "13");

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.Server;
@@ -10,27 +9,24 @@ namespace TurboHTTP.Tests.Shared;
 
 public class TurboServerFixture : IAsyncLifetime
 {
-    private readonly Action<WebApplication> _configureRoutes;
-    private WebApplication? _app;
+    private readonly Action<TurboWebApplication> _configureRoutes;
+    private TurboWebApplication? _app;
 
-    public TurboServerFixture(Action<WebApplication> configureRoutes)
+    public TurboServerFixture(Action<TurboWebApplication> configureRoutes)
     {
         _configureRoutes = configureRoutes;
     }
 
-    public Uri HttpBaseAddress {get; private set; } = null!;
+    public Uri HttpBaseAddress { get; private set; } = null!;
     public int HttpPort { get; private set; }
 
     public async ValueTask InitializeAsync()
     {
         var port = GetFreePort();
-        var builder = WebApplication.CreateBuilder();
+        var builder = TurboWebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
 
-        builder.Services.AddTurboKestrel(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = (ushort)port });
-        });
+        builder.Server.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = (ushort)port });
 
         _app = builder.Build();
         _configureRoutes(_app);

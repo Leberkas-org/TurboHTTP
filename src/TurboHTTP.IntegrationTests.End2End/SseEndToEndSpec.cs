@@ -21,14 +21,14 @@ public sealed class SseEndToEndSpec : IAsyncLifetime
     {
         _fixture = new TurboServerFixture(app =>
         {
-            app.MapTurboGet("/events", () =>
+            app.MapGet("/events", () =>
             {
                 var source = Source.From(["hello", "world"])
                     .Select(msg => msg);
                 return TurboStreamResults.EventStream(source);
             });
 
-            app.MapTurboGet("/echo", () => Results.Ok("ok"));
+            app.MapGet("/echo", () => Results.Ok("ok"));
         });
 
         await _fixture.InitializeAsync();
