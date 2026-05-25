@@ -14,8 +14,10 @@ public sealed class TurboHttpResponseFeatureSpec
     [Fact(Timeout = 5000)]
     public void StatusCode_should_be_settable()
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.StatusCode = 404;
+        var feature = new TurboHttpResponseFeature
+        {
+            StatusCode = 404
+        };
         Assert.Equal(404, feature.StatusCode);
     }
 
@@ -29,8 +31,10 @@ public sealed class TurboHttpResponseFeatureSpec
     [Fact(Timeout = 5000)]
     public void ReasonPhrase_should_be_settable()
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.ReasonPhrase = "All Good";
+        var feature = new TurboHttpResponseFeature
+        {
+            ReasonPhrase = "All Good"
+        };
         Assert.Equal("All Good", feature.ReasonPhrase);
     }
 
@@ -44,8 +48,13 @@ public sealed class TurboHttpResponseFeatureSpec
     [Fact(Timeout = 5000)]
     public void Headers_should_return_IHeaderDictionary()
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.Headers["X-Custom"] = "value";
+        var feature = new TurboHttpResponseFeature
+        {
+            Headers =
+            {
+                ["X-Custom"] = "value"
+            }
+        };
         Assert.Equal("value", feature.Headers["X-Custom"].ToString());
     }
 

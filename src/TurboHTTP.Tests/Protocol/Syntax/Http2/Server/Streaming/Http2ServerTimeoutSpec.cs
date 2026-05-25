@@ -88,8 +88,13 @@ public sealed class Http2ServerTimeoutSpec
     public void PreStart_should_schedule_keep_alive_timeout()
     {
         var ops = new FakeServerOps();
-        var options = new TurboServerOptions();
-        options.Http2.KeepAliveTimeout = TimeSpan.FromSeconds(130);
+        var options = new TurboServerOptions
+        {
+            Http2 =
+            {
+                KeepAliveTimeout = TimeSpan.FromSeconds(130)
+            }
+        };
         var sm = new Http2ServerStateMachine(options, ops);
 
         sm.PreStart();
@@ -152,8 +157,13 @@ public sealed class Http2ServerTimeoutSpec
     public void Headers_timeout_should_rst_stream_on_continuation_timeout()
     {
         var ops = new FakeServerOps();
-        var options = new TurboServerOptions();
-        options.Http2.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+        var options = new TurboServerOptions
+        {
+            Http2 =
+            {
+                RequestHeadersTimeout = TimeSpan.FromSeconds(30)
+            }
+        };
         var sm = new Http2ServerStateMachine(options, ops);
 
         sm.PreStart();
@@ -197,8 +207,13 @@ public sealed class Http2ServerTimeoutSpec
     public void Headers_timeout_should_cancel_on_endheaders()
     {
         var ops = new FakeServerOps();
-        var options = new TurboServerOptions();
-        options.Http2.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+        var options = new TurboServerOptions
+        {
+            Http2 =
+            {
+                RequestHeadersTimeout = TimeSpan.FromSeconds(30)
+            }
+        };
         var sm = new Http2ServerStateMachine(options, ops);
 
         sm.PreStart();

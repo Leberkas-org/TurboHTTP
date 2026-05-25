@@ -36,8 +36,10 @@ public sealed class ContextPoolingSpec
     [Fact(Timeout = 5000)]
     public void TurboHttpResponseFeature_Reset_clears_status_code()
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.StatusCode = 404;
+        var feature = new TurboHttpResponseFeature
+        {
+            StatusCode = 404
+        };
 
         feature.Reset();
 
@@ -47,8 +49,10 @@ public sealed class ContextPoolingSpec
     [Fact(Timeout = 5000)]
     public void TurboHttpResponseFeature_Reset_clears_reason_phrase()
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.ReasonPhrase = "Not Found";
+        var feature = new TurboHttpResponseFeature
+        {
+            ReasonPhrase = "Not Found"
+        };
 
         feature.Reset();
 
@@ -58,8 +62,13 @@ public sealed class ContextPoolingSpec
     [Fact(Timeout = 5000)]
     public void TurboHttpResponseFeature_Reset_clears_headers()
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.Headers["Content-Type"] = "application/json";
+        var feature = new TurboHttpResponseFeature
+        {
+            Headers =
+            {
+                ["Content-Type"] = "application/json"
+            }
+        };
 
         feature.Reset();
 

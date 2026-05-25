@@ -3,7 +3,6 @@ using Akka.Hosting;
 using Akka.Streams.Dsl;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Server;
-using TurboHTTP.Server.Middleware;
 using TurboHTTP.Routing;
 using TurboHTTP.Streams.Stages.Server;
 using TurboHTTP.Tests.Shared;

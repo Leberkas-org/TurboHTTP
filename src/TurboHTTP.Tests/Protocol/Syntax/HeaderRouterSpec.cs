@@ -9,11 +9,13 @@ public sealed class HeaderRouterSpec
     [Fact(Timeout = 5000)]
     public void ApplyToHeaderDictionary_should_write_all_headers_flat()
     {
-        var parsed = new HeaderCollection();
-        parsed.Add("Host", "example.com");
-        parsed.Add("Content-Type", "text/plain");
-        parsed.Add("Content-Length", "42");
-        parsed.Add("Accept", "application/json");
+        var parsed = new HeaderCollection
+        {
+            { "Host", "example.com" },
+            { "Content-Type", "text/plain" },
+            { "Content-Length", "42" },
+            { "Accept", "application/json" }
+        };
 
         var dict = new HeaderDictionary();
         HeaderRouter.ApplyToHeaderDictionary(dict, parsed);
@@ -27,9 +29,11 @@ public sealed class HeaderRouterSpec
     [Fact(Timeout = 5000)]
     public void ApplyToHeaderDictionary_should_handle_multiple_values()
     {
-        var parsed = new HeaderCollection();
-        parsed.Add("Accept", "text/html");
-        parsed.Add("Accept", "application/json");
+        var parsed = new HeaderCollection
+        {
+            { "Accept", "text/html" },
+            { "Accept", "application/json" }
+        };
 
         var dict = new HeaderDictionary();
         HeaderRouter.ApplyToHeaderDictionary(dict, parsed);

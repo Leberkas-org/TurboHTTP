@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Text;
 using TurboHTTP.Protocol.LineBased.Body;
-using TurboHTTP.Protocol.Syntax;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 

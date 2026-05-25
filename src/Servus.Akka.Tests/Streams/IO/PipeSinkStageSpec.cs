@@ -206,10 +206,10 @@ public sealed class PipeSinkStageSpec : TestKit
         _ = Source.Single((ReadOnlyMemory<byte>)data.AsMemory())
             .RunWith(sink, _materializer);
 
-        var result = await pipe.Reader.ReadAsync();
+        var result = await pipe.Reader.ReadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(3, result.Buffer.Length);
         pipe.Reader.AdvanceTo(result.Buffer.End);
-        pipe.Reader.Complete();
+        await pipe.Reader.CompleteAsync();
     }
 
     [Fact(Timeout = 5000)]
@@ -232,7 +232,7 @@ public sealed class PipeSinkStageSpec : TestKit
         var pipe = new CanceledFlushResultPipe();
         var sink = PipeSink.To(pipe.Writer);
 
-        var data = new byte[] { 40, 50 };
+        var data = "(2"u8.ToArray();
         var task = Source.Single((ReadOnlyMemory<byte>)data.AsMemory())
             .RunWith(sink, _materializer);
 
@@ -261,7 +261,7 @@ public sealed class PipeSinkStageSpec : TestKit
         var pipe = new SynchronousWritePipe();
         var sink = PipeSink.To(pipe.Writer);
 
-        var data = new byte[] { 60, 70 };
+        var data = "<F"u8.ToArray();
         var task = Source.Single((ReadOnlyMemory<byte>)data.AsMemory())
             .RunWith(sink, _materializer);
 
@@ -275,7 +275,7 @@ public sealed class PipeSinkStageSpec : TestKit
         var pipe = new SlowWritePipe(delayMs: 50);
         var sink = PipeSink.To(pipe.Writer);
 
-        var data = new byte[] { 80, 90 };
+        var data = "PZ"u8.ToArray();
         var task = Source.Single((ReadOnlyMemory<byte>)data.AsMemory())
             .RunWith(sink, _materializer);
 
@@ -321,69 +321,6 @@ public sealed class PipeSinkStageSpec : TestKit
         Assert.Equal(new byte[] { 1, 2, 3, 4, 5, 6 }, total.ToArray());
     }
 
-    private sealed class FailingFlushPipe
-    {
-        private readonly Pipe _pipe = new();
-
-        public PipeWriter Writer { get; }
-
-        public FailingFlushPipe()
-        {
-            Writer = new FailingPipeWriter(_pipe.Writer);
-        }
-
-        private sealed class FailingPipeWriter : PipeWriter
-        {
-            private readonly PipeWriter _inner;
-
-            public FailingPipeWriter(PipeWriter inner)
-            {
-                _inner = inner;
-            }
-
-            public override void Advance(int bytes)
-            {
-                _inner.Advance(bytes);
-            }
-
-            public override Memory<byte> GetMemory(int sizeHint = 0)
-            {
-                return _inner.GetMemory(sizeHint);
-            }
-
-            public override Span<byte> GetSpan(int sizeHint = 0)
-            {
-                return _inner.GetSpan(sizeHint);
-            }
-
-            public override async ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
-            {
-                await Task.Delay(10, cancellationToken);
-                throw new InvalidOperationException("Flush failed");
-            }
-
-            public override async ValueTask<FlushResult> FlushAsync(CancellationToken cancellationToken = default)
-            {
-                return await _inner.FlushAsync(cancellationToken);
-            }
-
-            public override void CancelPendingFlush()
-            {
-                _inner.CancelPendingFlush();
-            }
-
-            public override void Complete(Exception? exception = null)
-            {
-                _inner.Complete(exception);
-            }
-
-            public override async ValueTask CompleteAsync(Exception? exception = null)
-            {
-                await _inner.CompleteAsync(exception);
-            }
-        }
-    }
-
     private sealed class CompletedFlushResultPipe
     {
         private readonly Pipe _pipe = new();
@@ -422,7 +359,8 @@ public sealed class PipeSinkStageSpec : TestKit
                 return _inner.GetSpan(sizeHint);
             }
 
-            public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+            public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer,
+                CancellationToken cancellationToken = default)
             {
                 _owner.WriteWasCalled = true;
                 return new ValueTask<FlushResult>(new FlushResult(isCompleted: true, isCanceled: false));
@@ -488,7 +426,8 @@ public sealed class PipeSinkStageSpec : TestKit
                 return _inner.GetSpan(sizeHint);
             }
 
-            public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+            public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer,
+                CancellationToken cancellationToken = default)
             {
                 _owner.WriteWasCalled = true;
                 return new ValueTask<FlushResult>(new FlushResult(isCompleted: false, isCanceled: true));
@@ -554,7 +493,8 @@ public sealed class PipeSinkStageSpec : TestKit
                 return _inner.GetSpan(sizeHint);
             }
 
-            public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+            public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer,
+                CancellationToken cancellationToken = default)
             {
                 _owner.WriteWasCalled = true;
                 var span = _inner.GetSpan(buffer.Length);
@@ -627,7 +567,8 @@ public sealed class PipeSinkStageSpec : TestKit
                 return _inner.GetSpan(sizeHint);
             }
 
-            public override async ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+            public override async ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> buffer,
+                CancellationToken cancellationToken = default)
             {
                 _owner.WriteWasCalled = true;
                 await Task.Delay(_delayMs, cancellationToken);

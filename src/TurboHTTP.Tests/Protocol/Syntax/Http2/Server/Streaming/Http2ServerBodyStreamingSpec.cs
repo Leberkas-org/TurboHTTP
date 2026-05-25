@@ -164,8 +164,13 @@ public sealed class Http2ServerBodyStreamingSpec
     {
         var ops = new FakeServerOps();
         const long maxBodySize = 100;
-        var options = new TurboServerOptions();
-        options.Http2.MaxRequestBodySize = maxBodySize;
+        var options = new TurboServerOptions
+        {
+            Http2 =
+            {
+                MaxRequestBodySize = maxBodySize
+            }
+        };
         var sm = new Http2ServerStateMachine(options, ops);
 
         // Send HEADERS frame with endStream=false

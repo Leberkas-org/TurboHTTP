@@ -5,7 +5,6 @@ using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server;
 
@@ -15,10 +14,14 @@ public sealed class Http2ServerTrailerEncodingSpec
     [Trait("RFC", "RFC9113-8.1")]
     public void TrailerFeature_should_store_and_retrieve_trailer_headers()
     {
-        var feature = new TurboHttpResponseTrailersFeature();
-
-        feature.Trailers["grpc-status"] = "0";
-        feature.Trailers["grpc-message"] = "OK";
+        var feature = new TurboHttpResponseTrailersFeature
+        {
+            Trailers =
+            {
+                ["grpc-status"] = "0",
+                ["grpc-message"] = "OK"
+            }
+        };
 
         Assert.Equal("0", feature.Trailers["grpc-status"]);
         Assert.Equal("OK", feature.Trailers["grpc-message"]);
@@ -28,9 +31,13 @@ public sealed class Http2ServerTrailerEncodingSpec
     [Trait("RFC", "RFC9110-6.5.1")]
     public void TrailerFeature_should_reject_prohibited_trailer_fields()
     {
-        var feature = new TurboHttpResponseTrailersFeature();
-
-        feature.Trailers["transfer-encoding"] = "chunked";
+        var feature = new TurboHttpResponseTrailersFeature
+        {
+            Trailers =
+            {
+                ["transfer-encoding"] = "chunked"
+            }
+        };
 
         Assert.DoesNotContain(feature.GetAllowedTrailers(),
             h => h.Key.Equals("transfer-encoding", StringComparison.OrdinalIgnoreCase));

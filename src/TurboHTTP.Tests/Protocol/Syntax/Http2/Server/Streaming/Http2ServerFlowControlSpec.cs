@@ -124,10 +124,15 @@ public sealed class Http2ServerFlowControlSpec
         // Create SM with small window so we can easily exceed threshold
         const int initialWindowSize = 16384;
         var ops = new FakeServerOps();
-        var options = new TurboServerOptions();
-        options.Http2.MaxConcurrentStreams = 100;
-        options.Http2.InitialConnectionWindowSize = 65535;
-        options.Http2.InitialStreamWindowSize = initialWindowSize;
+        var options = new TurboServerOptions
+        {
+            Http2 =
+            {
+                MaxConcurrentStreams = 100,
+                InitialConnectionWindowSize = 65535,
+                InitialStreamWindowSize = initialWindowSize
+            }
+        };
         var sm = new Http2ServerStateMachine(options, ops);
 
         // Send HEADERS on stream 1 with endStream=false to accept body data
@@ -252,10 +257,15 @@ public sealed class Http2ServerFlowControlSpec
     {
         const int initialWindowSize = 20000;
         var ops = new FakeServerOps();
-        var options = new TurboServerOptions();
-        options.Http2.MaxConcurrentStreams = 100;
-        options.Http2.InitialConnectionWindowSize = 65535;
-        options.Http2.InitialStreamWindowSize = initialWindowSize;
+        var options = new TurboServerOptions
+        {
+            Http2 =
+            {
+                MaxConcurrentStreams = 100,
+                InitialConnectionWindowSize = 65535,
+                InitialStreamWindowSize = initialWindowSize
+            }
+        };
         var sm = new Http2ServerStateMachine(options, ops);
 
         // Send HEADERS

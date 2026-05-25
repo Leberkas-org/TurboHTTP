@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using TurboHTTP.Routing;
 using TurboHTTP.Server;
 using TurboHTTP.Server.Middleware;
@@ -14,8 +12,10 @@ public sealed class TurboWebApplicationSpec
     [Fact(Timeout = 5000)]
     public void AddTurboKestrel_with_instance_should_register_same_instance()
     {
-        var options = new TurboServerOptions();
-        options.HandlerTimeout = TimeSpan.FromSeconds(99);
+        var options = new TurboServerOptions
+        {
+            HandlerTimeout = TimeSpan.FromSeconds(99)
+        };
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddTurboKestrel(options);
@@ -30,10 +30,11 @@ public sealed class TurboWebApplicationSpec
     public void TurboUrlCollection_Add_should_delegate_to_options_urls()
     {
         var options = new TurboServerOptions();
-        var urls = new TurboUrlCollection(options);
-
-        urls.Add("http://localhost:5000");
-        urls.Add("https://localhost:5001");
+        var urls = new TurboUrlCollection(options)
+        {
+            "http://localhost:5000",
+            "https://localhost:5001"
+        };
 
         Assert.Equal(2, urls.Count);
         Assert.Contains("http://localhost:5000", options.Urls);
@@ -44,12 +45,11 @@ public sealed class TurboWebApplicationSpec
     public void TurboUrlCollection_should_implement_ICollection()
     {
         var options = new TurboServerOptions();
-        var urls = new TurboUrlCollection(options);
-        urls.Add("http://localhost:5000");
+        var urls = new TurboUrlCollection(options) { "http://localhost:5000" };
 
         Assert.False(urls.IsReadOnly);
-        Assert.True(urls.Contains("http://localhost:5000"));
-        Assert.False(urls.Contains("http://localhost:9999"));
+        Assert.Contains("http://localhost:5000", urls);
+        Assert.DoesNotContain("http://localhost:9999", urls);
     }
 
     [Fact(Timeout = 5000)]
@@ -79,8 +79,13 @@ public sealed class TurboWebApplicationSpec
     [Fact(Timeout = 5000)]
     public void TurboWebApplicationBuilder_Server_should_be_same_instance_in_app()
     {
-        var builder = new TurboWebApplicationBuilder(null);
-        builder.Server.HandlerTimeout = TimeSpan.FromSeconds(99);
+        var builder = new TurboWebApplicationBuilder(null)
+        {
+            Server =
+            {
+                HandlerTimeout = TimeSpan.FromSeconds(99)
+            }
+        };
         var app = builder.Build();
 
         var resolved = app.Services.GetRequiredService<TurboServerOptions>();
@@ -158,7 +163,7 @@ public sealed class TurboWebApplicationSpec
     public void MapGet_with_context_handler_should_register_route()
     {
         var app = TurboWebApplication.Create();
-        var result = app.MapGet("/test", (TurboHttpContext ctx) => Task.CompletedTask);
+        var result = app.MapGet("/test", _ => Task.CompletedTask);
         Assert.NotNull(result);
     }
 
@@ -177,7 +182,7 @@ public sealed class TurboWebApplicationSpec
     {
         var app = TurboWebApplication.Create();
 
-        var result = app.Run(ctx => Task.CompletedTask);
+        var result = app.Run(_ => Task.CompletedTask);
 
         Assert.Same(app, result);
     }
@@ -187,7 +192,7 @@ public sealed class TurboWebApplicationSpec
     {
         var app = TurboWebApplication.Create();
 
-        var result = app.Map("/branch", branch => branch.Run(ctx => Task.CompletedTask));
+        var result = app.Map("/branch", branch => branch.Run(_ => Task.CompletedTask));
 
         Assert.Same(app, result);
     }

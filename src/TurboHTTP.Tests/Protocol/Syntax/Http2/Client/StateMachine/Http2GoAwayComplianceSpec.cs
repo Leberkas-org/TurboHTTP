@@ -11,8 +11,13 @@ public sealed class Http2GoAwayComplianceSpec
 {
     private static TurboClientOptions MakeConfig(int maxConcurrentStreams = 100)
     {
-        var options = new TurboClientOptions();
-        options.Http2.MaxConcurrentStreams = maxConcurrentStreams;
+        var options = new TurboClientOptions
+        {
+            Http2 =
+            {
+                MaxConcurrentStreams = maxConcurrentStreams
+            }
+        };
         return options;
     }
 

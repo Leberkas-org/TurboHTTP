@@ -46,8 +46,13 @@ public sealed class Http3ServerStateMachineTimerSpec
     public void PreStart_should_schedule_keep_alive_timer()
     {
         var ops = new FakeServerOps();
-        var options = new TurboServerOptions();
-        options.Http3.KeepAliveTimeout = TimeSpan.FromSeconds(130);
+        var options = new TurboServerOptions
+        {
+            Http3 =
+            {
+                KeepAliveTimeout = TimeSpan.FromSeconds(130)
+            }
+        };
         var sm = new Http3ServerStateMachine(options, ops);
 
         sm.PreStart();

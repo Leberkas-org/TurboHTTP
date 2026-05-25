@@ -104,8 +104,10 @@ public sealed class TurboHttpResponseSpec
 
     private static FeatureCollection CreateFeatures(int statusCode = 200)
     {
-        var feature = new TurboHttpResponseFeature();
-        feature.StatusCode = statusCode;
+        var feature = new TurboHttpResponseFeature
+        {
+            StatusCode = statusCode
+        };
         var features = new FeatureCollection();
         features.Set<IHttpResponseFeature>(feature);
         return features;
