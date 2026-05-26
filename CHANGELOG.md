@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.0.2...v1.1.0) (2026-05-26)
+
+
+### Features
+
+* **ci:** Add docs build workflow ([1741c44](https://github.com/Leberkas-org/TurboHTTP/commit/1741c44f4a0009cf96f040319eb199aa588fae69))
+
+
+### Bug Fixes
+
+* **ci:** Remove docs push trigger ([3368641](https://github.com/Leberkas-org/TurboHTTP/commit/3368641ed0f5312b84851b8e59c664c862cec78a))
+* Update lock file dependencies ([8399514](https://github.com/Leberkas-org/TurboHTTP/commit/8399514e9a8baed02d7b45b11bbb5a96793088fa))
+
+
+### Documentation
+
+* Add LikeC4 plugin and diagrams ([25f17bd](https://github.com/Leberkas-org/TurboHTTP/commit/25f17bd8d11322408ae877777e97a57c1a3e0288))
+
 ## [1.0.2](https://github.com/Leberkas-org/TurboHTTP/compare/v1.0.1...v1.0.2) (2026-05-25)
 
 
