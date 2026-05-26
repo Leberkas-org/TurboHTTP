@@ -1,4 +1,4 @@
-name: CI
+name: Build & Test
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - ".github/workflows/docs.yml"
       - ".github/workflows/commitlint.yml"
       - ".github/workflows/codeql.yml"
+      - ".github/workflows/release.yml"
   pull_request:
     branches: ["main"]
     paths-ignore:
@@ -19,6 +20,7 @@ on:
       - ".github/workflows/docs.yml"
       - ".github/workflows/commitlint.yml"
       - ".github/workflows/codeql.yml"
+      - ".github/workflows/release.yml"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -38,6 +40,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || !startsWith(github.event.head_commit.message, 'chore(main): release')
 
     steps:
       - name: Checkout

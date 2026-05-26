@@ -1,4 +1,4 @@
-name: Commit Lint
+name: PR & Commit Lint
 
 on:
   pull_request:
