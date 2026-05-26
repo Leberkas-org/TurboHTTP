@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TurboHTTP.Routing;
@@ -62,6 +63,7 @@ public sealed class TurboWebApplicationSpec
         Assert.NotNull(builder.Logging);
         Assert.NotNull(builder.Environment);
         Assert.NotNull(builder.Server);
+        Assert.NotNull(builder.Host);
     }
 
     [Fact(Timeout = 5000)]
@@ -91,6 +93,66 @@ public sealed class TurboWebApplicationSpec
         var resolved = app.Services.GetRequiredService<TurboServerOptions>();
         Assert.Same(builder.Server, resolved);
         Assert.Equal(TimeSpan.FromSeconds(99), resolved.HandlerTimeout);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_Host_ConfigureHostOptions_should_configure_host_options()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+
+        var result = builder.Host.ConfigureHostOptions(options =>
+        {
+            options.ShutdownTimeout = TimeSpan.FromSeconds(15);
+        });
+
+        Assert.NotNull(result);
+        var app = builder.Build();
+        Assert.NotNull(app);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_Host_ConfigureAppConfiguration_should_add_configuration()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+
+        builder.Host.ConfigureAppConfiguration(config =>
+        {
+            var data = new Dictionary<string, string?> { { "test-key", "test-value" } };
+            config.AddInMemoryCollection(data);
+        });
+
+        var configValue = builder.Configuration["test-key"];
+        Assert.Equal("test-value", configValue);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_Host_ConfigureServices_should_register_service()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+
+        builder.Host.ConfigureServices(services =>
+        {
+            services.AddScoped<TestService>();
+        });
+
+        var app = builder.Build();
+        var service = app.Services.GetService<TestService>();
+        Assert.NotNull(service);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void TurboWebApplicationBuilder_Host_methods_should_return_self_for_chaining()
+    {
+        var builder = new TurboWebApplicationBuilder(null);
+        var host = builder.Host;
+
+        var result1 = host.ConfigureHostOptions(_ => { });
+        var result2 = result1.ConfigureAppConfiguration(_ => { });
+        var result3 = result2.ConfigureServices(_ => { });
+
+        Assert.Same(host, result1);
+        Assert.Same(host, result2);
+        Assert.Same(host, result3);
     }
 
     [Fact(Timeout = 5000)]
@@ -207,4 +269,8 @@ public sealed class TurboWebApplicationSpec
 
         Assert.Same(app, result);
     }
+}
+
+internal sealed class TestService
+{
 }

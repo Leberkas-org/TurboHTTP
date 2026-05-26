@@ -7,14 +7,46 @@ using TurboHTTP.Server.Middleware;
 
 namespace TurboHTTP.Server;
 
+public sealed class TurboHostBuilder
+{
+    private readonly HostApplicationBuilder _inner;
+
+    internal TurboHostBuilder(HostApplicationBuilder inner)
+    {
+        _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+    }
+
+    public TurboHostBuilder ConfigureHostOptions(Action<HostOptions> configure)
+    {
+        _inner.Services.Configure(configure);
+        return this;
+    }
+
+    public TurboHostBuilder ConfigureAppConfiguration(Action<IConfigurationBuilder> configure)
+    {
+        configure(_inner.Configuration);
+        return this;
+    }
+
+    public TurboHostBuilder ConfigureServices(Action<IServiceCollection> configure)
+    {
+        configure(_inner.Services);
+        return this;
+    }
+}
+
 public sealed class TurboWebApplicationBuilder
 {
     private readonly HostApplicationBuilder _hostBuilder;
+    private readonly TurboHostBuilder _hostBuilderFacade;
 
     internal TurboWebApplicationBuilder(string[]? args)
     {
-        _hostBuilder = Host.CreateApplicationBuilder(args ?? []);
+        _hostBuilder = global::Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder(args ?? []);
+        _hostBuilderFacade = new TurboHostBuilder(_hostBuilder);
     }
+
+    public TurboHostBuilder Host => _hostBuilderFacade;
 
     public IServiceCollection Services => _hostBuilder.Services;
 
