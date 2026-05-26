@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context.Features;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpResetFeature : IHttpResetFeature
+internal sealed class TurboHttpResetFeature : IHttpResetFeature, ITurboResetFeature
 {
     private readonly Action<int> _resetCallback;
 

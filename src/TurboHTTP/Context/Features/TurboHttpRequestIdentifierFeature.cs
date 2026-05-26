@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpRequestIdentifierFeature : IHttpRequestIdentifierFeature
+internal sealed class TurboHttpRequestIdentifierFeature : IHttpRequestIdentifierFeature, ITurboRequestIdentifierFeature
 {
     private readonly TurboHttpContext _context;
 

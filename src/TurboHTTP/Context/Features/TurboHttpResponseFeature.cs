@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context;
 using TurboHTTP.Context.Adapters;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
+internal sealed class TurboHttpResponseFeature : IHttpResponseFeature, ITurboResponseFeature
 {
+    private readonly TurboResponseHeaderDictionary _headers = new();
     private readonly List<(Func<object?, Task> callback, object? state)> _onStartingCallbacks = [];
     private readonly List<(Func<object?, Task> callback, object? state)> _onCompletedCallbacks = [];
 
@@ -13,25 +15,53 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
 
     public string? ReasonPhrase { get; set; }
 
-    public IHeaderDictionary Headers { get; set; } = new TurboResponseHeaderDictionary();
-
     public Stream Body { get; set; } = Stream.Null;
 
     public bool HasStarted { get; private set; }
 
-    public void OnStarting(Func<object, Task> callback, object state)
+    public IHeaderDictionary Headers => _headers;
+
+    public void OnStarting(Func<object?, Task> callback, object? state)
     {
         ArgumentNullException.ThrowIfNull(callback);
-
-        _onStartingCallbacks.Add((callback, state)!);
+        _onStartingCallbacks.Add((callback, state));
     }
 
-    public void OnCompleted(Func<object, Task> callback, object state)
+    public void OnCompleted(Func<object?, Task> callback, object? state)
     {
         ArgumentNullException.ThrowIfNull(callback);
-
-        _onCompletedCallbacks.Add((callback, state)!);
+        _onCompletedCallbacks.Add((callback, state));
     }
+
+    void IHttpResponseFeature.OnStarting(Func<object, Task> callback, object state)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        OnStarting((Func<object?, Task>)callback!, state!);
+    }
+
+    void IHttpResponseFeature.OnCompleted(Func<object, Task> callback, object state)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        OnCompleted((Func<object?, Task>)callback!, state!);
+    }
+
+    void ITurboResponseFeature.OnStarting(Func<object?, Task> callback, object? state)
+    {
+        OnStarting(callback, state);
+    }
+
+    void ITurboResponseFeature.OnCompleted(Func<object?, Task> callback, object? state)
+    {
+        OnCompleted(callback, state);
+    }
+
+    IHeaderDictionary IHttpResponseFeature.Headers
+    {
+        get => _headers;
+        set { }
+    }
+
+    ITurboHeaderDictionary ITurboResponseFeature.Headers => _headers;
 
     internal async Task FireOnStartingAsync()
     {
@@ -58,13 +88,6 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
         Body = Stream.Null;
         _onStartingCallbacks.Clear();
         _onCompletedCallbacks.Clear();
-        if (Headers is TurboResponseHeaderDictionary turboHeaders)
-        {
-            turboHeaders.Reset();
-        }
-        else
-        {
-            Headers = new TurboResponseHeaderDictionary();
-        }
+        _headers.Reset();
     }
 }

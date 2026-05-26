@@ -1,16 +1,32 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context;
+using TurboHTTP.Context.Adapters;
 using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpResponseTrailersFeature : IHttpResponseTrailersFeature
+internal sealed class TurboHttpResponseTrailersFeature : IHttpResponseTrailersFeature, ITurboResponseTrailersFeature
 {
-    public IHeaderDictionary Trailers { get; set; } = new HeaderDictionary();
+    private TurboResponseHeaderDictionary _trailers = new();
+
+    public IHeaderDictionary Trailers => _trailers;
+
+    IHeaderDictionary IHttpResponseTrailersFeature.Trailers
+    {
+        get => _trailers;
+        set { }
+    }
+
+    ITurboHeaderDictionary ITurboResponseTrailersFeature.Trailers
+    {
+        get => _trailers;
+        set => _trailers = (TurboResponseHeaderDictionary)value;
+    }
 
     public IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> GetAllowedTrailers()
     {
-        foreach (var header in Trailers)
+        foreach (var header in _trailers)
         {
             if (TrailerFieldValidator.IsAllowedInTrailer(header.Key))
             {
@@ -21,6 +37,6 @@ internal sealed class TurboHttpResponseTrailersFeature : IHttpResponseTrailersFe
 
     internal void Reset()
     {
-        Trailers.Clear();
+        _trailers.Clear();
     }
 }

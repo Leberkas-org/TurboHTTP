@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context;
+using TurboHTTP.Context.Adapters;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpRequestFeature : IHttpRequestFeature
+internal sealed class TurboHttpRequestFeature : IHttpRequestFeature, ITurboRequestFeature
 {
+    private readonly TurboResponseHeaderDictionary _headers = new();
+
     public string Protocol { get; set; } = "HTTP/1.1";
 
     public string Scheme { get; set; } = "http";
@@ -19,9 +23,21 @@ internal sealed class TurboHttpRequestFeature : IHttpRequestFeature
 
     public string RawTarget { get; set; } = "/";
 
-    public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
-
     public Stream Body { get; set; } = Stream.Null;
 
+    public IHeaderDictionary Headers
+    {
+        get => _headers;
+        set { }
+    }
+
     internal string? ExtractedHost { get; set; }
+
+    IHeaderDictionary IHttpRequestFeature.Headers
+    {
+        get => _headers;
+        set { }
+    }
+
+    ITurboHeaderDictionary ITurboRequestFeature.Headers => _headers;
 }

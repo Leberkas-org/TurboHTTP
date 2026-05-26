@@ -1,10 +1,11 @@
 using System.Net;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpConnectionFeature(TurboConnectionInfo info) : IHttpConnectionFeature
+internal sealed class TurboHttpConnectionFeature(TurboConnectionInfo info) : IHttpConnectionFeature, ITurboConnectionFeature
 {
     private readonly TurboConnectionInfo _info = info ?? throw new ArgumentNullException(nameof(info));
 
