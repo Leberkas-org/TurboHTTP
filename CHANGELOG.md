@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.2.0...v1.3.0) (2026-05-26)
+
+
+### Features
+
+* add own collection interfaces and dual-implement on adapter classes ([7944d50](https://github.com/Leberkas-org/TurboHTTP/commit/7944d50a9ccf7f868e3aebcc85e004a4c6f8a771))
+* add standalone ITurbo*Feature interfaces for ASP.NET Core decoupling ([f420515](https://github.com/Leberkas-org/TurboHTTP/commit/f4205154c11f85ee6ee95b483305c53a9688e0f2))
+* complete ServerContextFactory migration to TurboFeatureCollection ([e9d48aa](https://github.com/Leberkas-org/TurboHTTP/commit/e9d48aab1869ab58de4732665d209d14a9469722))
+* dual-implement all feature classes with both ASP.NET Core and own interfaces ([7bdaf92](https://github.com/Leberkas-org/TurboHTTP/commit/7bdaf9201b67108b740587110308d072ca0d63f2))
+* migrate protocol layer from ASP.NET Core feature interfaces to own ITurbo* interfaces ([1b920c0](https://github.com/Leberkas-org/TurboHTTP/commit/1b920c0a67b15b520c01b009af5d353de131a1df))
+
 ## [1.2.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.1.0...v1.2.0) (2026-05-26)
 
 
