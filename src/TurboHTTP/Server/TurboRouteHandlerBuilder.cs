@@ -31,9 +31,21 @@ public sealed class TurboRouteHandlerBuilder
         return this;
     }
 
+    public TurboRouteHandlerBuilder RequireAuthorization(string? policy)
+    {
+        Metadata.AuthorizationPolicies.Add(policy);
+        return this;
+    }
+
     public TurboRouteHandlerBuilder AllowAnonymous()
     {
         Metadata.AllowsAnonymous = true;
+        return this;
+    }
+
+    public TurboRouteHandlerBuilder WithDisplayName(string displayName)
+    {
+        Metadata.DisplayName = displayName;
         return this;
     }
 
@@ -53,7 +65,8 @@ public sealed class TurboRouteHandlerBuilder
     {
         if (Metadata.Items.Count == 0 && Metadata.Tags.Count == 0 &&
             !Metadata.RequiresAuthorization && !Metadata.AllowsAnonymous &&
-            Metadata.Name is null)
+            Metadata.AuthorizationPolicies.Count == 0 &&
+            Metadata.Name is null && Metadata.DisplayName is null)
         {
             return null;
         }
@@ -65,7 +78,12 @@ public sealed class TurboRouteHandlerBuilder
             items.Add(new TagsMetadata(Metadata.Tags.ToArray()));
         }
 
-        if (Metadata.RequiresAuthorization)
+        foreach (var policy in Metadata.AuthorizationPolicies)
+        {
+            items.Add(new AuthorizeData(policy, null, null));
+        }
+
+        if (Metadata.RequiresAuthorization && Metadata.AuthorizationPolicies.Count == 0)
         {
             items.Add(new AuthorizeData(null, null, null));
         }
