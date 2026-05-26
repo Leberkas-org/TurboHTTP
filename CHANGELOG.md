@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.2.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.1.0...v1.2.0) (2026-05-26)
+
+
+### Features
+
+* add Host property to TurboWebApplicationBuilder for full builder parity ([7977263](https://github.com/Leberkas-org/TurboHTTP/commit/79772639541da397ddf54845ef1884634e39b5ac))
+* Add metadata support to TurboRouteHandlerBuilder and TurboRouteGroupBuilder ([ca7ee9c](https://github.com/Leberkas-org/TurboHTTP/commit/ca7ee9c17e5aa69ab1d4c85aa0ffa4076518d796))
+* add TurboEndpointMetadata type with marker interfaces ([9eab9c8](https://github.com/Leberkas-org/TurboHTTP/commit/9eab9c86ecfa5b59c681c3dabd480f14641105b1))
+* add TurboServerLimits, Listen(string url), ConfigureEndpointDefaults ([0a63b9d](https://github.com/Leberkas-org/TurboHTTP/commit/0a63b9dce780956cb7cd63ebc25b3d943fbd214e))
+* deprecate MapTurbo*/UseTurbo* WebApplication extensions for 2.0 removal ([f81b3ed](https://github.com/Leberkas-org/TurboHTTP/commit/f81b3ed60380ecb569a540ad8a34db56c6217823))
+* wire endpoint metadata from route registration through RoutingStage to TurboHttpContext ([e7a0cf7](https://github.com/Leberkas-org/TurboHTTP/commit/e7a0cf7f338f148b0259b05041221be891f241d1))
+
+
+### Bug Fixes
+
+* improve NotSupportedException messages for WebSockets and Session ([f1fab94](https://github.com/Leberkas-org/TurboHTTP/commit/f1fab949bb7b6c4766327f15136f65eb4bef21ab))
+* use N * 1024 size literals in TurboServerOptions per CLAUDE.md ([dfef509](https://github.com/Leberkas-org/TurboHTTP/commit/dfef5096112cc52c0253d91298ced30c13421364))
+
 ## [1.1.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.0.2...v1.1.0) (2026-05-26)
 
 
