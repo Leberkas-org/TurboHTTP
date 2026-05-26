@@ -1,6 +1,12 @@
 import { defineConfig } from 'vitepress'
+import { LikeC4VitePlugin } from 'likec4/vite-plugin'
 
 export default defineConfig({
+    vite: {
+        plugins: [
+            LikeC4VitePlugin({ workspace: './likec4' }),
+        ],
+    },
     title: 'TurboHTTP',
     description: 'High-performance HTTP client and server for .NET built on Akka.Streams — HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with automatic retries, caching, cookies, connection pooling, middleware pipeline, routing, and entity gateway.',
     base: '/',
