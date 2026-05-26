@@ -55,7 +55,9 @@ public sealed class TurboHttpContext : HttpContext
     public override HttpResponse Response => TurboResponse;
     public TurboHttpResponse TurboResponse { get; }
     public override ConnectionInfo Connection => _connectionInfo;
-    public override WebSocketManager WebSockets => throw new NotSupportedException("WebSockets are not yet supported.");
+    public override WebSocketManager WebSockets
+        => throw new NotSupportedException(
+            "TurboHTTP does not support WebSockets. Use Akka.Streams for bidirectional streaming.");
 
     public override ClaimsPrincipal User
     {
@@ -80,8 +82,10 @@ public sealed class TurboHttpContext : HttpContext
 
     public override ISession Session
     {
-        get => throw new NotSupportedException("Sessions are not yet supported.");
-        set => throw new NotSupportedException("Sessions are not yet supported.");
+        get => throw new NotSupportedException(
+            "TurboHTTP does not support ASP.NET Core sessions. Use ITurboMiddleware with context.Items for per-request state.");
+        set => throw new NotSupportedException(
+            "TurboHTTP does not support ASP.NET Core sessions. Use ITurboMiddleware with context.Items for per-request state.");
     }
 
     public override void Abort() => RequestAborted = new CancellationToken(true);
