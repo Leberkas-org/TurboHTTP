@@ -1,7 +1,7 @@
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using TurboHTTP.Routing;
 using TurboHTTP.Server.Hosting;
 using TurboHTTP.Server.Middleware;
@@ -10,6 +10,18 @@ namespace TurboHTTP.Server;
 
 public static class TurboServerServiceCollectionExtensions
 {
+    public static IServiceCollection AddTurboServer(
+        this IServiceCollection services,
+        Action<TurboServerOptions>? configure = null)
+    {
+        services.AddSingleton<IServer, TurboServer>();
+        if (configure is not null)
+        {
+            services.Configure(configure);
+        }
+        return services;
+    }
+
     public static IServiceCollection AddTurboKestrel(
         this IServiceCollection services,
         Action<TurboServerOptions>? configure = null)
@@ -20,7 +32,7 @@ public static class TurboServerServiceCollectionExtensions
         services.TryAddSingleton(options);
         services.TryAddSingleton<TurboRouteTable>();
         services.TryAddSingleton<TurboPipelineBuilder>();
-        services.TryAddSingleton<IHostedService, TurboServerHostedService>();
+        services.AddTurboServer();
 
         return services;
     }
@@ -37,7 +49,7 @@ public static class TurboServerServiceCollectionExtensions
         services.TryAddSingleton(options);
         services.TryAddSingleton<TurboRouteTable>();
         services.TryAddSingleton<TurboPipelineBuilder>();
-        services.TryAddSingleton<IHostedService, TurboServerHostedService>();
+        services.AddTurboServer();
 
         return services;
     }
@@ -49,7 +61,7 @@ public static class TurboServerServiceCollectionExtensions
         services.TryAddSingleton(options);
         services.TryAddSingleton<TurboRouteTable>();
         services.TryAddSingleton<TurboPipelineBuilder>();
-        services.TryAddSingleton<IHostedService, TurboServerHostedService>();
+        services.AddTurboServer();
 
         return services;
     }

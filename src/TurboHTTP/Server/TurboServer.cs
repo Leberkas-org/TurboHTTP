@@ -3,45 +3,50 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.Hosting.Logging;
 using Akka.Streams;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TurboHTTP.Routing;
 using TurboHTTP.Server.Middleware;
 using TurboHTTP.Streams.Lifecycle;
 
-namespace TurboHTTP.Server.Hosting;
+namespace TurboHTTP.Server;
 
-internal sealed class TurboServerHostedService : IHostedService, IDisposable
+public sealed class TurboServer : IServer
 {
     private static readonly Config LoggingHocon = ConfigurationFactory.ParseString(
         """akka.loggers = ["Akka.Hosting.Logging.LoggerFactoryLogger, Akka.Hosting"]""");
 
     private readonly TurboServerOptions _options;
-    private readonly TurboRouteTable _routeTable;
-    private readonly TurboPipelineBuilder _pipelineBuilder;
-    private readonly IServiceProvider _services;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IServiceProvider _services;
+    private readonly FeatureCollection _features = new();
 
     private ActorSystem? _system;
     private bool _ownsSystem;
     private IActorRef _supervisor = ActorRefs.Nobody;
 
-    public TurboServerHostedService(
-        TurboServerOptions options,
-        TurboRouteTable routeTable,
-        TurboPipelineBuilder pipelineBuilder,
-        IServiceProvider services,
-        ILoggerFactory loggerFactory)
+    public TurboServer(
+        IOptions<TurboServerOptions> options,
+        ILoggerFactory loggerFactory,
+        IServiceProvider services)
     {
-        _options = options;
-        _routeTable = routeTable;
-        _pipelineBuilder = pipelineBuilder;
-        _services = services;
+        _options = options.Value;
         _loggerFactory = loggerFactory;
+        _services = services;
+
+        var addressesFeature = new ServerAddressesFeature();
+        _features.Set<IServerAddressesFeature>(addressesFeature);
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public IFeatureCollection Features => _features;
+
+    public async Task StartAsync<TContext>(
+        IHttpApplication<TContext> application,
+        CancellationToken cancellationToken) where TContext : notnull
     {
         _system = _services.GetService<ActorSystem>();
         if (_system is null)
@@ -54,8 +59,9 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
         }
 
         var materializer = _system.Materializer();
-        var routeTable = _routeTable.Freeze();
-        var pipeline = _pipelineBuilder.Build();
+
+        TurboRequestDelegate pipeline = _ => Task.CompletedTask;
+        var routeTable = new TurboRouteTable().Freeze();
 
         var resolver = new EndpointResolver();
         var resolvedEndpoints = resolver.Resolve(_options);
@@ -102,7 +108,6 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
             await Task.Delay(_options.GracefulShutdownTimeout, CancellationToken.None);
             return Done.Instance;
         });
-
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -120,4 +125,10 @@ internal sealed class TurboServerHostedService : IHostedService, IDisposable
             _system?.Dispose();
         }
     }
+}
+
+internal sealed class ServerAddressesFeature : IServerAddressesFeature
+{
+    public ICollection<string> Addresses { get; } = new List<string>();
+    public bool PreferHostingUrls { get; set; }
 }
