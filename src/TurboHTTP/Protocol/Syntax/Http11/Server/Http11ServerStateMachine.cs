@@ -136,7 +136,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                 var feature = _decoder.GetRequestFeature();
                 var hasBody = feature.Body != Stream.Null;
                 var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature,
-                    _ops.TlsHandshakeFeature);
+                    _ops.TlsHandshakeFeature, _serverOptions.Limits.MaxRequestBodySize);
 
                 if (!ShouldComplete && feature.Protocol == "HTTP/1.0")
                 {

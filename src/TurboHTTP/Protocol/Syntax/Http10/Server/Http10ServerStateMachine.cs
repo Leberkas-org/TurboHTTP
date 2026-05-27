@@ -18,6 +18,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     private readonly Http10ServerDecoder _decoder;
     private readonly Http10ServerEncoder _encoder;
     private readonly long _maxRequestBodySize;
+    private readonly TurboServerOptions _serverOptions;
 
     private IFeatureCollection? _deferredFeatures;
     private IMemoryOwner<byte>? _deferredBodyOwner;
@@ -32,6 +33,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     {
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
         ArgumentNullException.ThrowIfNull(options);
+        _serverOptions = options;
         _maxRequestBodySize = options.Http1.MaxRequestBodySize;
 
         var shared = SharedHttpOptions.Default with
@@ -75,7 +77,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
                 ShouldComplete = true;
                 var feature = _decoder.GetRequestFeature();
                 var hasBody = feature.Body != Stream.Null;
-                var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature);
+                var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature, _serverOptions.Limits.MaxRequestBodySize);
                 _ops.OnRequest(features);
             }
         }
