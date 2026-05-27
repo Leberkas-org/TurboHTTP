@@ -6,9 +6,9 @@ using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Syntax.Http10.Options;
 using TurboHTTP.Server;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
 using HttpVersion = System.Net.HttpVersion;
+
 
 namespace TurboHTTP.Protocol.Syntax.Http10.Server;
 
@@ -19,7 +19,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     private readonly Http10ServerEncoder _encoder;
     private readonly long _maxRequestBodySize;
 
-    private RequestContext? _deferredContext;
+    private IFeatureCollection? _deferredFeatures;
     private IMemoryOwner<byte>? _deferredBodyOwner;
     private int _deferredBodyLength;
     private IBodyEncoder? _activeBodyEncoder;
@@ -75,8 +75,8 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
                 ShouldComplete = true;
                 var feature = _decoder.GetRequestFeature();
                 var hasBody = feature.Body != Stream.Null;
-                var context = ServerContextFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionInfo, _ops.TlsHandshakeFeature);
-                _ops.OnRequest(context);
+                var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature);
+                _ops.OnRequest(features);
             }
         }
         catch (Exception)
@@ -89,11 +89,11 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(RequestContext context)
+    public void OnResponse(IFeatureCollection features)
     {
-        _deferredContext = context;
+        _deferredFeatures = features;
 
-        var responseBody = context.Features.Get<IHttpResponseBodyFeature>();
+        var responseBody = features.Get<IHttpResponseBodyFeature>();
         if (responseBody is TurboHttpResponseBodyFeature turboBody)
         {
             var bodyStream = turboBody.GetResponseStream();
@@ -118,20 +118,20 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     {
         switch (msg)
         {
-            case OutboundBodyChunk chunk when _deferredContext is not null:
+            case OutboundBodyChunk chunk when _deferredFeatures is not null:
                 _deferredBodyOwner?.Dispose();
                 _deferredBodyOwner = chunk.Owner;
                 _deferredBodyLength = chunk.Length;
                 break;
 
-            case OutboundBodyComplete when _deferredContext is not null && _deferredBodyOwner is not null:
+            case OutboundBodyComplete when _deferredFeatures is not null && _deferredBodyOwner is not null:
                 TransportBuffer? item = null;
                 try
                 {
                     var body = _deferredBodyOwner.Memory.Span[.._deferredBodyLength];
                     var bufferSize = 8192 + _deferredBodyLength;
                     item = TransportBuffer.Rent(bufferSize);
-                    var written = _encoder.EncodeDeferred(item.FullMemory.Span, _deferredContext, body);
+                    var written = _encoder.EncodeDeferred(item.FullMemory.Span, _deferredFeatures, body);
                     item.Length = written;
                     _ops.OnOutbound(new TransportData(item));
                 }
@@ -144,17 +144,17 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
                 {
                     _deferredBodyOwner.Dispose();
                     _deferredBodyOwner = null;
-                    _deferredContext = null;
+                    _deferredFeatures = null;
                 }
                 break;
 
             case OutboundBodyFailed failed:
                 _deferredBodyOwner?.Dispose();
                 _deferredBodyOwner = null;
-                if (_deferredContext is not null)
+                if (_deferredFeatures is not null)
                 {
                     Tracing.For("Protocol").Error(this, "Failed to read HTTP/1.0 response body: {0}", failed.Reason.Message);
-                    _deferredContext = null;
+                    _deferredFeatures = null;
                 }
                 break;
         }
@@ -166,6 +166,6 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         _activeBodyEncoder = null;
         _deferredBodyOwner?.Dispose();
         _deferredBodyOwner = null;
-        _deferredContext = null;
+        _deferredFeatures = null;
     }
 }

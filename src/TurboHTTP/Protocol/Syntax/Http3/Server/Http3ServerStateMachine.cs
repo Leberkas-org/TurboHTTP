@@ -1,8 +1,8 @@
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Server;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http3.Server;
 
@@ -86,9 +86,9 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(RequestContext context)
+    public void OnResponse(IFeatureCollection features)
     {
-        _sessionManager.OnResponse(context);
+        _sessionManager.OnResponse(features);
     }
 
     public void OnDownstreamFinished()

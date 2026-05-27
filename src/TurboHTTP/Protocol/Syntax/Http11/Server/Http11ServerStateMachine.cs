@@ -7,7 +7,6 @@ using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Streams;
-using TurboHTTP.Streams.Stages.Server;
 using HttpVersion = System.Net.HttpVersion;
 
 namespace TurboHTTP.Protocol.Syntax.Http11.Server;
@@ -136,21 +135,21 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
                 var feature = _decoder.GetRequestFeature();
                 var hasBody = feature.Body != Stream.Null;
-                var context = ServerContextFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionInfo, _ops.TlsHandshakeFeature);
+                var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature);
 
                 if (!ShouldComplete && feature.Protocol == "HTTP/1.0")
                 {
                     ShouldComplete = true;
                 }
 
-                if (TryHandleH2cUpgrade(context))
+                if (TryHandleH2cUpgrade(features))
                 {
                     _decoder.Reset();
                     break;
                 }
 
                 _pendingResponseCount++;
-                _ops.OnRequest(context);
+                _ops.OnRequest(features);
                 _decoder.Reset();
             }
         }
@@ -164,7 +163,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(RequestContext context)
+    public void OnResponse(IFeatureCollection features)
     {
         if (_pendingResponseCount == 0)
         {
@@ -173,8 +172,8 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
         _pendingResponseCount--;
 
-        var responseFeature = context.Features.Get<IHttpResponseFeature>();
-        var responseBody = context.Features.Get<IHttpResponseBodyFeature>();
+        var responseFeature = features.Get<IHttpResponseFeature>();
+        var responseBody = features.Get<IHttpResponseBodyFeature>();
 
         var statusCode = responseFeature?.StatusCode ?? 200;
         var suppressBody = statusCode is >= 100 and < 200 or 204 or 304;
@@ -187,7 +186,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
         var responseBuffer = TransportBuffer.Rent(8192);
         var span = responseBuffer.FullMemory.Span;
-        var written = _encoder.Encode(span, context, isChunked, connectionClose: ShouldComplete);
+        var written = _encoder.Encode(span, features, isChunked, connectionClose: ShouldComplete);
         responseBuffer.Length = written;
         _ops.OnOutbound(new TransportData(responseBuffer));
 
@@ -294,14 +293,14 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         return null;
     }
 
-    private bool TryHandleH2cUpgrade(RequestContext context)
+    private bool TryHandleH2cUpgrade(IFeatureCollection features)
     {
         if (_ops is not IProtocolSwitchCapable switchable)
         {
             return false;
         }
 
-        var requestFeature = context.Features.Get<IHttpRequestFeature>();
+        var requestFeature = features.Get<IHttpRequestFeature>();
         var requestHeaders = requestFeature?.Headers;
         if (requestHeaders is null)
         {

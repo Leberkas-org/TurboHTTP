@@ -110,9 +110,9 @@ internal sealed class Http3ServerSessionManager
         }
     }
 
-    public void OnResponse(RequestContext context)
+    public void OnResponse(IFeatureCollection features)
     {
-        var streamId = GetStreamIdFromContext(context);
+        var streamId = GetStreamIdFromFeatures(features);
 
         if (streamId < 0)
         {
@@ -128,10 +128,10 @@ internal sealed class Http3ServerSessionManager
 
         var (_, state) = streamData;
 
-        var headersFrame = _responseEncoder.EncodeHeaders(context);
+        var headersFrame = _responseEncoder.EncodeHeaders(features);
         EmitDataFrame(headersFrame, streamId);
 
-        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var responseFeature = features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
         var hasBody = contentLength is not 0;
 
@@ -141,7 +141,7 @@ internal sealed class Http3ServerSessionManager
             return;
         }
 
-        var responseBody = context.Features.Get<IHttpResponseBodyFeature>();
+        var responseBody = features.Get<IHttpResponseBodyFeature>();
         if (responseBody is not TurboHttpResponseBodyFeature turboBody)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));
@@ -460,15 +460,15 @@ internal sealed class Http3ServerSessionManager
                 requestFeature.Body = state.GetBodyStream();
             }
 
-            var context = ServerContextFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionInfo, _ops.TlsHandshakeFeature);
-            context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
+            var features = FeatureCollectionFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature);
+            features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             var capturedStreamId = streamId;
-            context.Features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
+            features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
                 errorCode => EmitRstStream(capturedStreamId, (ErrorCode)errorCode)));
 
             _bodyRateStates.Remove(streamId);
-            _ops.OnRequest(context);
+            _ops.OnRequest(features);
         }
     }
 
@@ -502,9 +502,9 @@ internal sealed class Http3ServerSessionManager
         }
     }
 
-    private long GetStreamIdFromContext(RequestContext context)
+    private long GetStreamIdFromFeatures(IFeatureCollection features)
     {
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)
         {
             return streamIdFeature.StreamId;

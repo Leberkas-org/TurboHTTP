@@ -1,12 +1,12 @@
 using System.Net.Security;
 using Akka.Actor;
 using Akka.Event;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol;
 
@@ -55,7 +55,7 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(RequestContext context) => _inner!.OnResponse(context);
+    public void OnResponse(IFeatureCollection features) => _inner!.OnResponse(features);
     public void OnDownstreamFinished() => _inner?.OnDownstreamFinished();
     public void OnTimerFired(string name) => _inner?.OnTimerFired(name);
     public void OnBodyMessage(object msg) => _inner?.OnBodyMessage(msg);

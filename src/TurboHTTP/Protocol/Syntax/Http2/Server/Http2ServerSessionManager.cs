@@ -126,22 +126,22 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    public void OnResponse(RequestContext context)
+    public void OnResponse(IFeatureCollection features)
     {
-        var streamId = GetStreamIdFromContext(context);
+        var streamId = GetStreamIdFromFeatures(features);
         if (!_streams.TryGetValue(streamId, out var state))
         {
             Tracing.For("Protocol").Warning(this, "HTTP/2: Response for unknown stream {0}", streamId);
             return;
         }
 
-        state.SetTurboContext(context);
+        state.SetTurboContext(features);
 
-        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var responseFeature = features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
         var hasBody = contentLength is not 0;
 
-        var frames = _responseEncoder.EncodeHeaders(context, streamId, hasBody);
+        var frames = _responseEncoder.EncodeHeaders(features, streamId, hasBody);
         for (var i = 0; i < frames.Count; i++)
         {
             EmitFrame(frames[i]);
@@ -153,7 +153,7 @@ internal sealed class Http2ServerSessionManager
             return;
         }
 
-        var responseBody = context.Features.Get<IHttpResponseBodyFeature>();
+        var responseBody = features.Get<IHttpResponseBodyFeature>();
         if (responseBody is not TurboHttpResponseBodyFeature turboBody)
         {
             CloseStream(streamId);
@@ -538,14 +538,14 @@ internal sealed class Http2ServerSessionManager
                 requestFeature.Body = state.GetBodyStream();
             }
 
-            var context = ServerContextFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionInfo, _ops.TlsHandshakeFeature);
-            context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
+            var features = FeatureCollectionFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature);
+            features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             var capturedStreamId = streamId;
-            context.Features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
+            features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
                 errorCode => EmitRstStream(capturedStreamId, (Http2ErrorCode)errorCode)));
 
-            _ops.OnRequest(context);
+            _ops.OnRequest(features);
         }
         catch (HttpProtocolException ex)
         {
@@ -555,9 +555,9 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    private int GetStreamIdFromContext(RequestContext context)
+    private int GetStreamIdFromFeatures(IFeatureCollection features)
     {
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)
         {
             return (int)streamIdFeature.StreamId;
