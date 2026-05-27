@@ -165,12 +165,18 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
         private async ValueTask<FlushResult> CommitAndFlushAsync(CancellationToken cancellationToken)
         {
             _started = true;
-            if (_onStarting is not null)
+            try
             {
-                await _onStarting();
+                if (_onStarting is not null)
+                {
+                    await _onStarting();
+                }
+            }
+            finally
+            {
+                _headerCommit.TrySetResult();
             }
 
-            _headerCommit.TrySetResult();
             return await _inner.FlushAsync(cancellationToken);
         }
 
