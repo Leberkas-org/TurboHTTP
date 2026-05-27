@@ -4,22 +4,11 @@ TurboHTTP replaces Kestrel as the transport layer. Everything above the transpor
 
 ## The Key Idea
 
-```
-┌──────────────────────────────────────────────────┐
-│  Your Application Code                           │
-│  (middleware, routing, controllers, minimal APIs) │
-├──────────────────────────────────────────────────┤
-│  ASP.NET Core Hosting (IHost, IHttpApplication)  │
-├──────────────────────────────────────────────────┤
-│  TurboHTTP Server (IServer)                      │
-│  ┌────────────────────────────────────────────┐  │
-│  │ ApplicationBridgeStage                     │  │
-│  │ Protocol Engines (H1, H2, H3)              │  │
-│  │ Actor Hierarchy (Supervisor → Connections)  │  │
-│  │ Transport (TCP / QUIC)                     │  │
-│  └────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────┘
-```
+| Layer | What handles it |
+|-------|----------------|
+| **Your Application Code** | Middleware, routing, controllers, minimal APIs |
+| **ASP.NET Core Hosting** | `IHost`, `IHttpApplication`, `HostingApplication` |
+| **TurboHTTP Server** | `ApplicationBridgeStage`, protocol engines (H1/H2/H3), actor hierarchy, TCP/QUIC transport |
 
 TurboHTTP sits below the `IHttpApplication<TContext>` boundary. When a request arrives, TurboHTTP decodes it into an `IFeatureCollection` and hands it to ASP.NET Core's `HostingApplication`, which runs your middleware pipeline.
 

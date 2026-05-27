@@ -196,9 +196,13 @@ builder.Host.UseTurboHttp(options =>
 | `CertificatePassword` | `string?` | null | Certificate password |
 | `EnabledSslProtocols` | `SslProtocols` | `None` (OS default) | Allowed TLS versions |
 | `HandshakeTimeout` | `TimeSpan` | 10 seconds | TLS handshake timeout |
-| `ClientCertificateMode` | `ClientCertificateMode` | `NoCertificate` | Client certificate requirement |
-| `ClientCertificateValidationCallback` | `RemoteCertificateValidationCallback?` | null | Custom client cert validation |
-| `ServerCertificateSelector` | `Func<string?, X509Certificate2?>?` | null | SNI-based certificate selection |
+| `ClientCertificateMode` | `ClientCertificateMode` | `NoCertificate` | Client cert requirement |
+| `ClientCertificateValidationCallback` | `Callback?` | null | Custom client cert validation |
+| `ServerCertificateSelector` | `Func?` | null | SNI-based cert selection |
+
+Full types for the abbreviated entries:
+- `ClientCertificateValidationCallback`: `RemoteCertificateValidationCallback?`
+- `ServerCertificateSelector`: `Func<string?, X509Certificate2?>?`
 
 ### Connection Logging
 
