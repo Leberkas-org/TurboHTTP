@@ -183,6 +183,105 @@ public sealed class TurboServerMetricsSpec : IDisposable
         Assert.False(string.IsNullOrEmpty(Metrics.ServerRequestDuration().Description));
     }
 
+    [Fact(Timeout = 5000)]
+    public void PipelineInFlight_should_increment_and_decrement()
+    {
+        ClearMeasurements();
+
+        Metrics.PipelineInFlight().Add(1,
+            new KeyValuePair<string, object?>("server.address", "127.0.0.1"),
+            new KeyValuePair<string, object?>("server.port", 8080));
+
+        Metrics.PipelineInFlight().Add(-1,
+            new KeyValuePair<string, object?>("server.address", "127.0.0.1"),
+            new KeyValuePair<string, object?>("server.port", 8080));
+
+        _listener.RecordObservableInstruments();
+
+        var measurements = GetLongMeasurements("turbo.server.pipeline.inflight");
+        Assert.Equal(2, measurements.Count);
+        Assert.Equal(0, measurements.Sum(m => m.Value));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void PipelinePending_should_track_reorder_buffer()
+    {
+        ClearMeasurements();
+
+        Metrics.PipelinePending().Add(1,
+            new KeyValuePair<string, object?>("server.address", "127.0.0.1"),
+            new KeyValuePair<string, object?>("server.port", 8080));
+
+        _listener.RecordObservableInstruments();
+
+        var m = Assert.Single(GetLongMeasurements("turbo.server.pipeline.pending"));
+        Assert.Equal(1, m.Value);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void HandlerTimeouts_should_increment()
+    {
+        ClearMeasurements();
+
+        Metrics.HandlerTimeouts().Add(1,
+            new KeyValuePair<string, object?>("server.address", "127.0.0.1"));
+
+        _listener.RecordObservableInstruments();
+
+        var m = Assert.Single(GetLongMeasurements("turbo.server.handler.timeouts"));
+        Assert.Equal(1, m.Value);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void DrainActive_should_track_draining_connections()
+    {
+        ClearMeasurements();
+
+        Metrics.DrainActive().Add(1);
+        Metrics.DrainActive().Add(-1);
+
+        _listener.RecordObservableInstruments();
+
+        var measurements = GetLongMeasurements("turbo.server.drain.active");
+        Assert.Equal(2, measurements.Count);
+        Assert.Equal(0, measurements.Sum(m => m.Value));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void ProtocolNegotiationDuration_should_record()
+    {
+        ClearMeasurements();
+
+        Metrics.ProtocolNegotiationDuration().Record(0.002,
+            new KeyValuePair<string, object?>("network.protocol.version", "2"));
+
+        _listener.RecordObservableInstruments();
+
+        var m = Assert.Single(GetDoubleMeasurements("turbo.server.protocol_negotiation.duration"));
+        Assert.Equal(0.002, m.Value);
+        Assert.Equal("2", GetTag(m.Tags, "network.protocol.version"));
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Differenzierung_instruments_should_have_correct_units()
+    {
+        Assert.Equal("{request}", Metrics.PipelineInFlight().Unit);
+        Assert.Equal("{request}", Metrics.PipelinePending().Unit);
+        Assert.Equal("{timeout}", Metrics.HandlerTimeouts().Unit);
+        Assert.Equal("{connection}", Metrics.DrainActive().Unit);
+        Assert.Equal("s", Metrics.ProtocolNegotiationDuration().Unit);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Differenzierung_instruments_should_have_descriptions()
+    {
+        Assert.False(string.IsNullOrEmpty(Metrics.PipelineInFlight().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.PipelinePending().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.HandlerTimeouts().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.DrainActive().Description));
+        Assert.False(string.IsNullOrEmpty(Metrics.ProtocolNegotiationDuration().Description));
+    }
+
     private void ClearMeasurements()
     {
         _longMeasurements.Clear();
