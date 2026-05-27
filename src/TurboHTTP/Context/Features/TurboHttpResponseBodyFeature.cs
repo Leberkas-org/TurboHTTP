@@ -23,7 +23,7 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
 
     internal Task WhenHeadersReady => _writer.WhenHeadersReady;
 
-    public Stream Stream => field ??= _writer.AsStream();
+    public Stream Stream => field ??= _writer.AsStream(leaveOpen: true);
 
     public PipeWriter Writer => _writer;
 
@@ -141,6 +141,8 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
             }
         }
 
+        public override bool CanGetUnflushedBytes => _inner.CanGetUnflushedBytes;
+        public override long UnflushedBytes => _inner.UnflushedBytes;
         public override Memory<byte> GetMemory(int sizeHint = 0) => _inner.GetMemory(sizeHint);
         public override Span<byte> GetSpan(int sizeHint = 0) => _inner.GetSpan(sizeHint);
 
@@ -162,6 +164,16 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
             return CommitAndFlushAsync(cancellationToken);
         }
 
+        public override ValueTask<FlushResult> WriteAsync(ReadOnlyMemory<byte> source, CancellationToken cancellationToken = default)
+        {
+            if (_started)
+            {
+                return _inner.WriteAsync(source, cancellationToken);
+            }
+
+            return CommitAndWriteAsync(source, cancellationToken);
+        }
+
         private async ValueTask<FlushResult> CommitAndFlushAsync(CancellationToken cancellationToken)
         {
             _started = true;
@@ -178,6 +190,25 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
             }
 
             return await _inner.FlushAsync(cancellationToken);
+        }
+
+        private async ValueTask<FlushResult> CommitAndWriteAsync(ReadOnlyMemory<byte> source, CancellationToken cancellationToken)
+        {
+            _started = true;
+            try
+            {
+                if (_onStarting is not null)
+                {
+                    await _onStarting();
+                }
+            }
+            finally
+            {
+                _headerCommit.TrySetResult();
+            }
+
+            _bytesWritten += source.Length;
+            return await _inner.WriteAsync(source, cancellationToken);
         }
 
         public override void Complete(Exception? exception = null)

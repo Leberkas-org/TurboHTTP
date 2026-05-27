@@ -344,6 +344,7 @@ docs/superpowers/*
 COMMIT.md
 .tools/
 coverage-results/
+results/
 .maggus/runs
 .maggus/MEMORY.md
 .maggus/RELEASE_NOTES.md
