@@ -8,15 +8,16 @@ When your ASP.NET Core application starts with TurboHTTP Server configured, the 
 
 1. **ActorSystem**: Creates or reuses an Akka.NET ActorSystem (or reuses one from the DI container if already present)
 2. **Materializer**: Creates a Streams materializer for the system
-3. **ServerSupervisorActor**: Creates the top-level supervisor responsible for the entire server
-4. **ListenerActors**: For each configured endpoint, creates a listener that binds the transport (TCP or QUIC)
-5. **Coordinated Shutdown**: Hooks into Akka's shutdown lifecycle to ensure graceful termination
+3. **ApplicationBridgeStage**: Creates the bridge flow that connects protocol engines to `IHttpApplication<TContext>`
+4. **EndpointResolver**: Resolves all configured endpoints into listener bindings
+5. **ServerSupervisorActor**: Spawns the top-level supervisor with one `ListenerActor` per endpoint
+6. **Coordinated Shutdown**: Hooks into Akka's shutdown lifecycle to ensure graceful termination
 
 ```csharp
 // In Program.cs
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);  // Creates one listener
     options.ListenLocalhost(5101);  // Creates another listener
@@ -27,10 +28,9 @@ var app = builder.Build();
 await app.RunAsync();  // Blocks until shutdown signal
 ```
 
-When `app.RunAsync()` is called, the TurboServerHostedService:
+When `app.RunAsync()` is called, TurboServer (IServer):
 - Initializes the actor system and materializer
-- Creates the ServerSupervisorActor
-- Creates a ListenerActor for each endpoint
+- Resolves all configured endpoints
 - Registers shutdown hooks with Akka Coordinated Shutdown
 
 ## Actor Hierarchy
@@ -79,9 +79,7 @@ Each active connection runs in a ConnectionActor. It:
 - Materializes the complete Akka.Streams graph:
   - Transport inbound/outbound flow
   - Protocol engine (HTTP/1.0, 1.1, 2, or 3)
-  - Request/response handling
-  - Middleware pipeline
-  - Routing and handler execution
+  - ApplicationBridgeStage → IHttpApplication<TContext> → ASP.NET Core pipeline
 - Holds a kill switch to stop processing cleanly
 - Reports completion (success, error, or shutdown) back to the supervisor
 
@@ -94,10 +92,10 @@ From the moment a client connects until it closes, here's what happens:
 1. **Connection arrives**: ListenerActor receives an incoming connection from the transport
 2. **ConnectionActor spawned**: A new actor is created for this connection, watched by the listener
 3. **Pipeline materialized**: The full Akka.Streams graph is wired up:
-   - Protocol engine decodes transport bytes into HTTP requests
-   - Middleware processes each request
-   - Router finds and executes the handler
-   - Response is encoded back to bytes and sent
+   - Protocol engine decodes transport bytes into IFeatureCollection
+   - ApplicationBridgeStage creates TContext via IHttpApplication.CreateContext()
+   - ASP.NET Core middleware pipeline processes the request
+   - Response features are encoded back to bytes and sent
 4. **Request loop**: The connection waits for the next request (keep-alive) or closes
 5. **Completion**: When the connection closes (client disconnect, keep-alive timeout, error):
    - ConnectionActor reports completion reason to supervisor
@@ -137,7 +135,7 @@ If a request handler is blocked indefinitely (e.g., waiting on unresponsive I/O)
 
 Set the timeout in configuration:
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.GracefulShutdownTimeout = TimeSpan.FromSeconds(60);
 });
@@ -151,7 +149,7 @@ Key options control server and connection behavior:
 ### Connection Limits
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     // Limit concurrent connections (0 = unlimited)
     options.MaxConcurrentConnections = 1000;
@@ -167,7 +165,7 @@ builder.Services.AddTurboKestrel(options =>
 ### Timeouts
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     // Time to wait for the next request on keep-alive connections
     options.KeepAliveTimeout = TimeSpan.FromSeconds(120);
@@ -186,7 +184,7 @@ builder.Services.AddTurboKestrel(options =>
 ### Buffer and Chunk Sizes
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     // Buffer size before reading request body into memory
     // Larger uploads are streamed
@@ -200,7 +198,7 @@ builder.Services.AddTurboKestrel(options =>
 ### HTTP Protocol Options
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     // HTTP/1.x settings
     options.Http1.MaxPipelinedRequests = 16;
@@ -227,7 +225,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddSingleton<RedisCache>();
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);
     options.GracefulShutdownTimeout = TimeSpan.FromSeconds(30);
@@ -238,7 +236,7 @@ var app = builder.Build();
 // Register a hosted service for custom shutdown logic
 builder.Services.AddHostedService<GracefulShutdownHandler>();
 
-app.MapTurboPost("/orders", async (CreateOrderRequest req, IOrderRepository repo) =>
+app.MapPost("/orders", async (CreateOrderRequest req, IOrderRepository repo) =>
 {
     var order = await repo.CreateAsync(req.CustomerId, req.Items);
     return new { id = order.Id };
@@ -271,27 +269,15 @@ public sealed class GracefulShutdownHandler : IHostedService
 Your handler's `StopAsync` is called during Coordinated Shutdown, before the ActorSystem shuts down. This gives you an opportunity to flush caches, close connections, or notify external systems.
 
 ::: tip Combining with health checks
-For zero-downtime deployments, pair graceful shutdown with health check middleware:
+For zero-downtime deployments, use ASP.NET Core's built-in health check middleware:
 
 ```csharp
-var shuttingDown = false;
+builder.Services.AddHealthChecks();
 
-app.UseTurbo(async (context, next) =>
-{
-    if (shuttingDown && context.Request.Path != "/health")
-    {
-        context.Response.StatusCode = 503;
-        await context.Response.WriteAsync("Service shutting down");
-        return;
-    }
-    await next(context);
-});
-
-// Health endpoint stays up during graceful shutdown
-app.MapTurboGet("/health", () => new { status = "ok" });
+app.MapHealthChecks("/health");
 ```
 
-This way, load balancers detect the server is draining and route new requests elsewhere, while existing connections finish their work.
+Load balancers query `/health` to detect when the server is draining and route new requests elsewhere.
 :::
 
 ## Transport Layer

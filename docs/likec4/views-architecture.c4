@@ -33,9 +33,7 @@ views {
     include turbohttp.streams.ExpectContinueBidiStage
     include turbohttp.streams.AltSvcBidiStage
     include turbohttp.serverStages.NegotiatingServerEngine
-    include turbohttp.serverStages.HttpContextBidiStage
-    include turbohttp.serverStages.MiddlewarePipelineStage
-    include turbohttp.serverStages.RoutingStage
+    include turbohttp.serverStages.ApplicationBridgeStage
     include network
   }
 
@@ -93,7 +91,7 @@ views {
 
   view serverPipeline of turbohttp.serverStages {
     title 'Server — Request Pipeline'
-    description 'How an incoming HTTP request flows through the server: ALPN negotiation → wire decode → context creation → middleware → routing → response'
+    description 'How an incoming HTTP request flows through the server: ALPN negotiation → wire decode → ApplicationBridgeStage → ASP.NET Core'
     include turbohttp.server.ConnectionActor
     include turbohttp.server.ProtocolRouter
     include turbohttp.serverStages.NegotiatingServerEngine
@@ -105,9 +103,7 @@ views {
     include turbohttp.serverStages.Http11ServerConnectionStage
     include turbohttp.serverStages.Http20ServerConnectionStage
     include turbohttp.serverStages.Http30ServerConnectionStage
-    include turbohttp.serverStages.HttpContextBidiStage
-    include turbohttp.serverStages.MiddlewarePipelineStage
-    include turbohttp.serverStages.RoutingStage
+    include turbohttp.serverStages.ApplicationBridgeStage
     include network
   }
 }

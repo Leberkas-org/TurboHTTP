@@ -104,13 +104,13 @@ Incoming TCP/QUIC Bytes
     ↓
 [Server Protocol Engine] — Http10/11/20/30ServerEngine decodes request, encodes response
     ↓
-[HttpContextBidiStage] — wraps parsed request as TurboHttpContext (request/response object)
+[ApplicationBridgeStage] — wraps parsed request as IFeatureCollection (HttpContext)
     ↓
-[MiddlewarePipelineStage] — runs registered middleware (Use/Run/Map/MapWhen)
+[Middleware] — runs registered middleware (Use/Run/Map/MapWhen)
     ↓
-[RoutingStage] — matches request path to registered route pattern
+[Routing] — matches request path to registered route pattern
     ↓
-[DispatcherStage] — delegates to DelegateDispatcher (handler function) or EntityDispatcher (actor)
+[Dispatcher] — delegates to handler function or actor
     ↓
 [Handler / Entity Actor] — executes your code; returns response
     ↓
@@ -127,10 +127,10 @@ Each connection is bound to a single `ConnectionActor` that owns the entire Akka
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ProtocolRouter`             | Inspects initial bytes to detect HTTP/1.0, 1.1, 2, or 3; routes to the appropriate server engine state machine                                                                                                     |
 | `Http*ServerEngine`          | Protocol-specific state machine: parses request bytes, manages connection/stream-level flow control, encodes response frames                                                                                        |
-| `HttpContextBidiStage`       | Wraps the parsed protocol request as a `TurboHttpContext` object with `.Request` and `.Response` properties                                                                                                         |
-| `MiddlewarePipelineStage`    | Runs all registered middleware in order (outermost-first for request, innermost-first for response). Middleware can short-circuit by not calling `next(ctx)`                                                          |
-| `RoutingStage`               | Matches the request path against registered route patterns; extracts route parameters (`{id}`, etc.) into `ctx.RouteValues`                                                                                        |
-| `DispatcherStage`            | Selects and invokes the handler: `DelegateDispatcher` for function-based routes (`MapTurboGet`), `EntityDispatcher` for actor-based routes (`MapTurboEntity`)                                                         |
+| `ApplicationBridgeStage`      | Wraps the parsed protocol request as an `IFeatureCollection` (standard ASP.NET Core `HttpContext`)                                                                                                                 |
+| Middleware                   | Runs all registered middleware in order (outermost-first for request, innermost-first for response). Middleware can short-circuit by not calling `next(ctx)`                                                          |
+| Routing                      | Matches the request path against registered route patterns; extracts route parameters (`{id}`, etc.) into route values                                                                                             |
+| Dispatcher                   | Selects and invokes the handler: standard handler functions or actor-based routes                                                                                                                                   |
 | `ParameterBindingStage`      | (within dispatcher) Binds route parameters, query string, body, and headers to handler parameters using reflection and model binding                                                                                 |
 
 After the handler returns a response, the response object flows back through the pipeline in reverse — middleware response hooks can transform or log the response, and the protocol engine serialises it back to wire bytes.

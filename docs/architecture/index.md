@@ -72,11 +72,9 @@ Incoming TCP/QUIC Connection
     ↓
 [Protocol Decoder] — parses HTTP/1.0, 1.1, 2, or 3 bytes
     ↓
-[HttpContext Builder] — creates TurboHttpContext from parsed request
+[ApplicationBridgeStage] — bridges IFeatureCollection to ASP.NET Core
     ↓
-[Middleware Pipeline] — runs registered middleware (Use/Run/Map/MapWhen)
-    ↓
-[Router] — matches request to registered route
+[ASP.NET Core Pipeline] — middleware, routing, handler execution
     ↓
 [Dispatcher] — DelegateDispatcher (handler) or EntityDispatcher (actor)
     ↓

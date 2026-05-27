@@ -310,9 +310,9 @@ On the server side, incoming requests flow through a different pipeline. Each `C
   <LikeC4Diagram viewId="serverPipeline" :height="400" />
 </ClientOnly>
 
-Network bytes arrive at the protocol-specific `ConnectionStage`, are decoded into HTTP requests, wrapped in a `TurboHttpContext` by the `HttpContextBidiStage`, pass through the middleware pipeline, and reach the routing stage which dispatches to the matched handler.
+Network bytes arrive at the protocol-specific `ConnectionStage`, are decoded into HTTP requests, wrapped in an `IFeatureCollection` (standard `HttpContext`) by the `ApplicationBridgeStage`, pass through the middleware pipeline, and reach the routing stage which dispatches to the matched handler.
 
 ## Related Guides
 
-- [Middleware Pipeline](/server/middleware) — server middleware composition
+- [ASP.NET Core Integration](/server/aspnet-core) — server middleware composition
 - [Feature Options](/api/feature-options) — client pipeline extensions

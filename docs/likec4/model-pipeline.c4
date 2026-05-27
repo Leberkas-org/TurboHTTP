@@ -18,8 +18,8 @@
 //   cache hit  --- cached response  -->  response chain at retry level (bypasses ContentEncoding + engine)
 //
 // SERVER PIPELINE (per connection, inside ConnectionActor):
-//   Network -> ConnectionStage -> HttpContextBidiStage -> MiddlewarePipelineStage -> RoutingStage
-//   Response flows back through the same stages in reverse.
+//   Network -> ConnectionStage -> ApplicationBridgeStage -> IHttpApplication<TContext> (ASP.NET Core)
+//   Response flows back through the same IFeatureCollection.
 
 model {
   // Request chain (outermost -> innermost)
@@ -102,27 +102,22 @@ model {
   network -[flows]-> turbohttp.serverStages.Http20ServerConnectionStage 'inbound bytes'
   network -[flows]-> turbohttp.serverStages.Http30ServerConnectionStage 'inbound bytes'
 
-  // ─── Server: ConnectionStage → HttpContextBidiStage (decoded request)
+  // ─── Server: ConnectionStage → ApplicationBridgeStage (decoded request as IFeatureCollection)
 
-  turbohttp.serverStages.Http10ServerConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
-  turbohttp.serverStages.Http11ServerConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
-  turbohttp.serverStages.Http20ServerConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
-  turbohttp.serverStages.Http30ServerConnectionStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'decoded request'
+  turbohttp.serverStages.Http10ServerConnectionStage -[flows]-> turbohttp.serverStages.ApplicationBridgeStage 'IFeatureCollection'
+  turbohttp.serverStages.Http11ServerConnectionStage -[flows]-> turbohttp.serverStages.ApplicationBridgeStage 'IFeatureCollection'
+  turbohttp.serverStages.Http20ServerConnectionStage -[flows]-> turbohttp.serverStages.ApplicationBridgeStage 'IFeatureCollection'
+  turbohttp.serverStages.Http30ServerConnectionStage -[flows]-> turbohttp.serverStages.ApplicationBridgeStage 'IFeatureCollection'
 
-  // ─── Server: Request chain — HttpContext → Middleware → Routing ────
+  // ─── Server: ApplicationBridgeStage dispatches to ASP.NET Core ────
+  // ApplicationBridgeStage calls IHttpApplication.CreateContext(features) → ProcessRequestAsync() → DisposeContext()
 
-  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.MiddlewarePipelineStage 'TurboHttpContext'
-  turbohttp.serverStages.MiddlewarePipelineStage -[flows]-> turbohttp.serverStages.RoutingStage 'request (middleware applied)'
+  // ─── Server: Response — ApplicationBridgeStage → ConnectionStage → Network
 
-  // ─── Server: Response chain — Routing → Middleware → HttpContext → ConnectionStage
-
-  turbohttp.serverStages.RoutingStage -[flows]-> turbohttp.serverStages.MiddlewarePipelineStage 'response'
-  turbohttp.serverStages.MiddlewarePipelineStage -[flows]-> turbohttp.serverStages.HttpContextBidiStage 'response (after middleware)'
-
-  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.Http10ServerConnectionStage 'response'
-  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.Http11ServerConnectionStage 'response'
-  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.Http20ServerConnectionStage 'response'
-  turbohttp.serverStages.HttpContextBidiStage -[flows]-> turbohttp.serverStages.Http30ServerConnectionStage 'response'
+  turbohttp.serverStages.ApplicationBridgeStage -[flows]-> turbohttp.serverStages.Http10ServerConnectionStage 'response IFeatureCollection'
+  turbohttp.serverStages.ApplicationBridgeStage -[flows]-> turbohttp.serverStages.Http11ServerConnectionStage 'response IFeatureCollection'
+  turbohttp.serverStages.ApplicationBridgeStage -[flows]-> turbohttp.serverStages.Http20ServerConnectionStage 'response IFeatureCollection'
+  turbohttp.serverStages.ApplicationBridgeStage -[flows]-> turbohttp.serverStages.Http30ServerConnectionStage 'response IFeatureCollection'
 
   // ─── Server: Outbound — ConnectionStage → Network (wire encode) ───
 

@@ -99,13 +99,13 @@ Incoming TCP/QUIC Connection
     ↓
 [Protocol Decoder] — parses HTTP/1.0, 1.1, 2, or 3 bytes
     ↓
-[HttpContext Builder] — creates TurboHttpContext from parsed request
+[HttpContext Builder] — creates standard HttpContext from parsed request
     ↓
 [Middleware Pipeline] — runs registered middleware (Use/Run/Map/MapWhen)
     ↓
 [Router] — matches request to registered route
     ↓
-[Dispatcher] — DelegateDispatcher (handler) or EntityDispatcher (actor)
+[Dispatcher] — handler function or actor
     ↓
 [Parameter Binding] — binds route values, query, body, headers to handler parameters
     ↓

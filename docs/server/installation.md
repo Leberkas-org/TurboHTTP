@@ -17,65 +17,75 @@ Or add it to your `.csproj`:
 <PackageReference Include="TurboHTTP" Version="1.*" />
 ```
 
-## Minimal Setup
+## Register the Server
 
-The fastest way to get started is to register TurboHTTP with dependency injection and map a single route:
+TurboHTTP registers as an `IServer` implementation, replacing Kestrel:
 
 ```csharp
-using TurboHTTP;
-using TurboHTTP.Hosting;
-using Microsoft.AspNetCore.Http;
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5000);
 });
 
 var app = builder.Build();
-
-app.MapTurboGet("/hello", () => TypedResults.Ok("Hello from TurboHTTP"));
-
+app.MapGet("/", () => "Hello from TurboHTTP!");
 await app.RunAsync();
 ```
 
-This creates a server listening on `http://localhost:5000` with HTTP/1.1 and HTTP/2 enabled by default.
-
-::: tip About AddTurboKestrel
-TurboHTTP Server is a fully standalone HTTP server — it does not use or depend on Kestrel. The `AddTurboKestrel` method name follows ASP.NET Core configuration conventions for familiarity. Under the hood, TurboHTTP uses its own TCP/QUIC transport layer (Servus.Akka.Transport).
-:::
+`UseTurboHttp()` removes any existing `IServer` registration (including Kestrel) and registers `TurboServer`. After this call, your application uses standard ASP.NET Core — `app.MapGet`, `app.Use`, controllers, minimal APIs.
 
 ::: tip
-`ListenLocalhost(5000)` is equivalent to listening on `127.0.0.1:5000`. Use `ListenAnyIP(5000)` to listen on all IPv4 addresses.
+`ListenLocalhost(5000)` binds to `127.0.0.1:5000`. Use `ListenAnyIP(5000)` to listen on all IPv4 addresses.
 :::
+
+## Side-by-Side with Kestrel
+
+The only change from a standard Kestrel setup is replacing the server registration:
+
+```csharp
+// Before (Kestrel — default)
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+app.MapGet("/", () => "Hello");
+await app.RunAsync();
+
+// After (TurboHTTP)
+var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseTurboHttp(options =>        // <-- this is the only change
+{
+    options.ListenLocalhost(5000);
+});
+var app = builder.Build();
+app.MapGet("/", () => "Hello");
+await app.RunAsync();
+```
+
+Everything else — middleware, routing, DI, configuration — stays exactly the same.
 
 ## Endpoint Configuration
 
 ### Multiple Endpoints
 
-Listen on multiple addresses and ports:
-
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
-    options.ListenLocalhost(5000);        // HTTP on localhost:5000
-    options.ListenAnyIP(8080);            // HTTP on all interfaces:8080
+    options.ListenLocalhost(5000);
+    options.ListenAnyIP(8080);
     options.ListenLocalhost(5001, listen =>
     {
-        listen.UseHttps();                // HTTPS on localhost:5001
+        listen.UseHttps();
     });
 });
 ```
 
 ### Explicit Address Binding
 
-Use `Listen()` to bind to a specific IP address:
-
 ```csharp
 using System.Net;
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.Listen(IPAddress.Loopback, 5000);
     options.Listen(IPAddress.Parse("192.168.1.100"), 8080);
@@ -84,60 +94,53 @@ builder.Services.AddTurboKestrel(options =>
 
 ### Protocol Selection
 
-By default, endpoints support both HTTP/1.1 and HTTP/2. To use a specific protocol:
+Endpoints default to HTTP/1.1 and HTTP/2. Override per endpoint:
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5000, listen =>
     {
-        listen.Protocols = HttpProtocols.Http1;    // HTTP/1.1 only
+        listen.Protocols = HttpProtocols.Http1;
     });
 
     options.ListenLocalhost(5001, listen =>
     {
-        listen.Protocols = HttpProtocols.Http2;    // HTTP/2 only
+        listen.UseHttps();
+        listen.Protocols = HttpProtocols.Http1AndHttp2;
     });
 
     options.ListenLocalhost(5002, listen =>
     {
-        listen.Protocols = HttpProtocols.Http1AndHttp2;  // Default
+        listen.UseHttps();
+        listen.Protocols = HttpProtocols.Http3;
     });
 });
 ```
 
-Supported protocols:
-
-| Protocol | Value | Use Case |
-|----------|-------|----------|
-| `Http1` | HTTP/1.1 only | Legacy clients, maximum compatibility |
-| `Http2` | HTTP/2 (ALPN h2) | Modern clients, multiplexing, server push |
-| `Http1AndHttp2` | HTTP/1.1 and HTTP/2 (default) | Protocol negotiation via ALPN |
-| `Http3` | HTTP/3 (QUIC) | Ultra-low latency, UDP-based |
+| Protocol | Value | Transport | Notes |
+|----------|-------|-----------|-------|
+| `Http1` | HTTP/1.1 only | TCP | Maximum compatibility |
+| `Http2` | HTTP/2 only | TCP | Multiplexing, HPACK compression |
+| `Http1AndHttp2` | Both (default) | TCP | ALPN negotiation selects protocol |
+| `Http3` | HTTP/3 | QUIC (UDP) | Requires HTTPS |
 
 ::: warning
-HTTP/3 support is **not yet available** in this release. Use `Http1AndHttp2` or `Http1` on HTTPS endpoints.
+HTTP/3 requires HTTPS. Configuring `Http3` without `UseHttps()` throws at startup.
 :::
 
 ## HTTPS Configuration
 
-### Self-Signed or Generated Certificate
-
-Use TurboHTTP's built-in certificate handling:
+### Dev Certificate
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+options.ListenLocalhost(5001, listen =>
 {
-    options.ListenLocalhost(5001, listen =>
-    {
-        listen.UseHttps();  // Auto-generates a certificate
-    });
+    listen.UseHttps();
 });
 ```
 
 ### Certificate from File
-
-Load a certificate from disk:
 
 ```csharp
 options.ListenLocalhost(443, listen =>
@@ -146,14 +149,19 @@ options.ListenLocalhost(443, listen =>
 });
 ```
 
-### Certificate from X509Certificate2
-
-Provide a certificate object directly:
+PEM certificates are also supported:
 
 ```csharp
-using System.Security.Cryptography.X509Certificates;
+options.ListenLocalhost(443, listen =>
+{
+    listen.UseHttps("certs/server.pem");
+});
+```
 
-var cert = new X509Certificate2("certs/server.pfx", "password123");
+### Certificate Object
+
+```csharp
+var cert = X509CertificateLoader.LoadPkcs12FromFile("certs/server.pfx", "password123");
 
 options.ListenLocalhost(443, listen =>
 {
@@ -163,55 +171,53 @@ options.ListenLocalhost(443, listen =>
 
 ### HTTPS Defaults
 
-Configure SSL protocol versions and handshake timeout globally:
+Apply settings to all HTTPS endpoints:
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ConfigureHttpsDefaults(https =>
     {
-        https.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls13;
-        https.HandshakeTimeout = TimeSpan.FromSeconds(10);
+        https.EnabledSslProtocols = SslProtocols.Tls13;
+        https.HandshakeTimeout = TimeSpan.FromSeconds(15);
     });
 
-    options.ListenLocalhost(443, listen =>
+    options.ListenLocalhost(5001, listen =>
     {
-        listen.UseHttps();  // Inherits global HTTPS defaults
+        listen.UseHttps();  // inherits defaults
     });
 });
 ```
 
-**TurboHttpsOptions** properties:
-
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `ServerCertificate` | `X509Certificate2?` | null | Certificate object |
-| `CertificatePath` | `string?` | null | Path to .pfx file |
+| `CertificatePath` | `string?` | null | Path to .pfx or .pem file |
 | `CertificatePassword` | `string?` | null | Certificate password |
-| `EnabledSslProtocols` | `SslProtocols` | `None` | TLS versions (e.g., Tls12, Tls13) |
-| `ClientCertificateValidationCallback` | `RemoteCertificateValidationCallback?` | null | Client cert validation |
+| `EnabledSslProtocols` | `SslProtocols` | `None` (OS default) | Allowed TLS versions |
 | `HandshakeTimeout` | `TimeSpan` | 10 seconds | TLS handshake timeout |
+| `ClientCertificateMode` | `ClientCertificateMode` | `NoCertificate` | Client certificate requirement |
+| `ClientCertificateValidationCallback` | `RemoteCertificateValidationCallback?` | null | Custom client cert validation |
+| `ServerCertificateSelector` | `Func<string?, X509Certificate2?>?` | null | SNI-based certificate selection |
+
+### Connection Logging
+
+Enable per-connection logging for debugging:
+
+```csharp
+options.ListenLocalhost(5000, listen =>
+{
+    listen.UseConnectionLogging();
+});
+```
 
 ## Configuration from appsettings.json
 
-Use `IConfiguration` to externalize endpoint and HTTPS settings:
-
-```csharp
-builder.Services.AddTurboKestrel(
-    builder.Configuration,
-    options =>
-    {
-        // Optional: override or add endpoints programmatically
-        options.ListenLocalhost(9000);
-    }
-);
-```
-
-In `appsettings.json`:
+TurboHTTP reads endpoint configuration from the `TurboHTTP` section:
 
 ```json
 {
-  "TurboKestrel": {
+  "TurboHTTP": {
     "Endpoints": {
       "Http": {
         "Url": "http://localhost:5000"
@@ -234,59 +240,10 @@ In `appsettings.json`:
 }
 ```
 
-::: tip
-Endpoint configuration keys (e.g., `Endpoints:Http`, `Endpoints:Https`) are arbitrary — use meaningful names for your use case. Multiple endpoints are supported by adding more keys under `Endpoints`.
-:::
-
-### Configuration Structure
-
-**Endpoints:**
-- `Url` (required) — full URL (http/https, host, port)
-- `Protocols` (optional) — `Http1`, `Http2`, `Http1AndHttp2`, `Http3`
-- `Certificate` (optional for HTTPS) — sub-object with `Path` and `Password`
-- `SslProtocols` (optional) — comma-separated TLS versions
-
-**HttpsDefaults:**
-- `SslProtocols` (optional) — applies to all HTTPS endpoints without explicit override
-- `HandshakeTimeout` (optional) — TimeSpan format (e.g., `00:00:30`)
-
-## Server Options Reference
-
-Beyond endpoint configuration, TurboServerOptions exposes performance and protocol-level tuning:
-
-```csharp
-builder.Services.AddTurboKestrel(options =>
-{
-    // Connection limits
-    options.MaxConcurrentConnections = 1000;
-    options.MaxConcurrentUpgradedConnections = 500;
-
-    // Timeouts
-    options.KeepAliveTimeout = TimeSpan.FromSeconds(120);
-    options.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
-    options.GracefulShutdownTimeout = TimeSpan.FromSeconds(30);
-    options.BodyConsumptionTimeout = TimeSpan.FromSeconds(30);
-
-    // Buffering
-    options.BodyBufferThreshold = 65536;        // Request body threshold
-    options.ResponseBodyChunkSize = 16384;      // Response chunk size
-
-    // Protocol-specific settings available via options.Http1, options.Http2, options.Http3
-    options.Http2.MaxConcurrentStreams = 100;
-    options.Http2.MaxFrameSize = 16384;
-    options.Http2.MaxHeaderListSize = 8192;
-
-    options.Http3.MaxConcurrentStreams = 100;
-    options.Http3.MaxHeaderListSize = 8192;
-    options.Http3.EnableWebTransport = false;
-
-    // Endpoints
-    options.ListenLocalhost(5000);
-});
-```
+Endpoint names (`Http`, `Https`) are arbitrary — use meaningful names for your setup.
 
 ## Next Steps
 
-- [Getting Started](./index) — routing, middleware, and basic patterns
-- [Configuration](./configuration) — all TurboServerOptions explained
-- [API Reference](/api/) — full public API surface
+- [Configuration](./configuration) — all server options in detail
+- [Using with ASP.NET Core](./aspnet-core) — middleware, routing, DI patterns
+- [Hosting & Lifecycle](./hosting) — actor hierarchy, graceful shutdown

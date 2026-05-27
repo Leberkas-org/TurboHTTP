@@ -17,13 +17,12 @@ TurboHTTP's public API is organized into client, server, and feature configurati
 
 | Type | Description | Reference |
 |------|-------------|-----------|
-| `AddTurboKestrel()` | Server registration (standalone, not Kestrel) | [Server API](./server) |
+| `UseTurboHttp()` | Server registration on `builder.Host` (standalone HTTP server) | [Server API](./server) |
 | `TurboServerOptions` | Endpoints, protocols, timeouts | [Server API](./server) |
 | `Http1ServerOptions` / `Http2ServerOptions` / `Http3ServerOptions` | Per-protocol tuning | [Server API](./server) |
-| `MapTurboGet/Post/Put/Delete/Patch()` | Route registration | [Server API](./server) |
-| `ITurboMiddleware` | Middleware pipeline | [Server API](./server) |
-| `TurboHttpContext` | Request/response context with Akka.Streams access | [Server API](./server) |
-| `TurboEntityBuilder` | Actor-based entity routing | [Entity Gateway API](./entity-gateway) |
+| `app.MapGet/Post/Put/Delete/Patch()` | Standard ASP.NET Core route registration | [Server API](./server) |
+| ASP.NET Core middleware | Standard middleware pipeline | [Server API](./server) |
+| Standard `HttpContext` | Request/response context via `IFeatureCollection` | [Server API](./server) |
 
 ## DI Registration
 
@@ -48,13 +47,15 @@ builder.Services.AddTurboHttpClient<IMyApiClient>(options => { ... });
 ### Server
 
 ```csharp
-builder.Services.AddTurboKestrel(options =>
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);
 });
 
 var app = builder.Build();
-app.Run();
+await app.RunAsync();
 ```
 
 ## Quick Links

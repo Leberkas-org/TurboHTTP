@@ -46,7 +46,7 @@ views {
     description 'Server-side Http10ServerConnectionStage decodes request bytes and encodes response bytes. Connection closes after each response.'
     include turbohttp.serverStages.Http10ServerEngine
     include turbohttp.serverStages.Http10ServerConnectionStage
-    include turbohttp.serverStages.HttpContextBidiStage
+    include turbohttp.serverStages.ApplicationBridgeStage
     include network
   }
 
@@ -55,7 +55,7 @@ views {
     description 'Server-side Http11ServerConnectionStage handles chunked TE, Host header validation, keep-alive evaluation, and connection reuse.'
     include turbohttp.serverStages.Http11ServerEngine
     include turbohttp.serverStages.Http11ServerConnectionStage
-    include turbohttp.serverStages.HttpContextBidiStage
+    include turbohttp.serverStages.ApplicationBridgeStage
     include network
   }
 
@@ -64,7 +64,7 @@ views {
     description 'Server-side Http20ServerConnectionStage handles HPACK decompression, frame decoding, stream multiplexing, flow control, SETTINGS/PING/GOAWAY, and response frame encoding.'
     include turbohttp.serverStages.Http20ServerEngine
     include turbohttp.serverStages.Http20ServerConnectionStage
-    include turbohttp.serverStages.HttpContextBidiStage
+    include turbohttp.serverStages.ApplicationBridgeStage
     include network
   }
 
@@ -73,7 +73,7 @@ views {
     description 'Server-side Http30ServerConnectionStage handles QPACK decompression, frame decoding over QUIC streams, flow control, GOAWAY, and response encoding.'
     include turbohttp.serverStages.Http30ServerEngine
     include turbohttp.serverStages.Http30ServerConnectionStage
-    include turbohttp.serverStages.HttpContextBidiStage
+    include turbohttp.serverStages.ApplicationBridgeStage
     include network
   }
 }

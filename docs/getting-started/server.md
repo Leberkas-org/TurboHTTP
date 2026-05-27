@@ -1,98 +1,80 @@
 # Server Quick Start
 
-Build a working TurboHTTP server in under 5 minutes.
+Build a working TurboHTTP server in under 5 minutes. TurboHTTP replaces Kestrel as a drop-in `IServer` implementation — everything above the transport layer is standard ASP.NET Core.
 
-::: tip Standalone Server
-TurboHTTP Server is a fully standalone HTTP server built on Akka.Streams with its own TCP/QUIC transport (Servus.Akka.Transport). The `AddTurboKestrel` method name is a configuration convention — it does not use Kestrel.
-:::
-
-## 1. Install
+## 1. Create a Project
 
 ```bash
+dotnet new web -n MyTurboApp
+cd MyTurboApp
 dotnet add package TurboHTTP
 ```
 
 ## 2. Configure the Server
 
-```csharp
-using TurboHTTP.Hosting;
+In `Program.cs`:
 
+```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);
 });
 
 var app = builder.Build();
-```
 
-## 3. Add Routes
+app.MapGet("/health", () => new { status = "healthy" });
 
-```csharp
-app.MapTurboGet("/health", () => new { status = "healthy" });
-
-app.MapTurboGet("/users/{id}", (int id) => new { id, name = "User " + id });
-
-app.MapTurboPost("/users", (CreateUserRequest req) =>
-    new { created = true, name = req.Name });
-
-app.MapTurboDelete("/users/{id}", (int id) => new { deleted = true, id });
+app.MapGet("/", () => "Hello from TurboHTTP!");
 
 await app.RunAsync();
-
-public sealed record CreateUserRequest(string Name, string Email);
 ```
 
-## 4. Add Middleware
+`UseTurboHttp()` registers `TurboServer` as the `IServer` implementation. After that, you use standard ASP.NET Core — `app.MapGet`, `app.UseRouting`, middleware, controllers, minimal APIs — everything works as you'd expect.
+
+## 3. Test It
+
+```bash
+dotnet run
+
+# In another terminal:
+curl http://localhost:5100/health
+# {"status":"healthy"}
+
+curl http://localhost:5100/
+# Hello from TurboHTTP!
+```
+
+## 4. Add HTTPS
 
 ```csharp
-app.UseTurbo(async (context, next) =>
+builder.Host.UseTurboHttp(options =>
 {
-    Console.WriteLine($"[{context.Request.Method}] {context.Request.Path}");
-    await next(context);
+    options.ListenLocalhost(5100);
+    options.ListenLocalhost(5101, listen =>
+    {
+        listen.UseHttps();
+        listen.Protocols = HttpProtocols.Http1AndHttp2;
+    });
 });
 ```
 
-## 5. Route Groups
+## What's Different from Kestrel?
 
-```csharp
-var api = app.MapTurboGroup("/api/v1");
-api.MapGet("/users", () => new[] { "Alice", "Bob" });
-api.MapPost("/users", (CreateUserRequest req) => new { created = true });
-```
+TurboHTTP is a transport-level replacement — it handles TCP/QUIC connections, protocol negotiation, and HTTP wire format. Your ASP.NET Core code stays the same.
 
-::: warning Route Group Methods
-Inside a route group, use `MapGet`, `MapPost`, etc. (no "Turbo" prefix). The `MapTurbo*` prefix is only on `WebApplication` extension methods.
-:::
-
-## 6. Test It
-
-```bash
-curl http://localhost:5100/health
-curl http://localhost:5100/users/42
-curl -X POST http://localhost:5100/users -H "Content-Type: application/json" -d '{"name":"Alice","email":"alice@example.com"}'
-```
-
-## Server Architecture
-
-TurboHTTP Server uses an actor hierarchy for connection management:
-
-```
-ServerSupervisorActor
-├── ListenerActor (endpoint :5100)
-│   ├── ConnectionActor (client A)
-│   └── ConnectionActor (client B)
-└── ListenerActor (endpoint :5101)
-    └── ConnectionActor (client C)
-```
-
-Each connection gets its own actor, and protocol engines (HTTP/1.0, 1.1, 2, 3) are selected via ALPN negotiation.
+| | Kestrel | TurboHTTP |
+|---|---------|-----------|
+| Transport | libuv / SocketsHttpHandler | Akka.Streams + Servus.Akka.Transport |
+| Connection model | Thread pool | Actor per connection |
+| Protocols | HTTP/1.1, HTTP/2, HTTP/3 | HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3 |
+| Backpressure | Pipe-based | Akka.Streams reactive streams |
+| Shutdown | IHostApplicationLifetime | Akka Coordinated Shutdown |
 
 ## Next Steps
 
-- [Installation & Setup](/server/installation) — endpoints, HTTPS, protocols
-- [Middleware Pipeline](/server/middleware) — composition, error handling
-- [Routing](/server/routing) — parameters, binding, groups
-- [Entity Gateway](/server/entity-gateway) — actor-based stateful handling
-- [Real-World Scenarios](/server/scenarios) — combined feature examples
+- [Installation & Setup](/server/installation) — endpoints, HTTPS, certificates
+- [Configuration](/server/configuration) — all server options
+- [Using with ASP.NET Core](/server/aspnet-core) — middleware, routing, DI guidance
+- [Hosting & Lifecycle](/server/hosting) — actor hierarchy, graceful shutdown

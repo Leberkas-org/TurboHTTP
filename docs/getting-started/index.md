@@ -54,21 +54,21 @@ var response = await client.SendAsync(
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);
 });
 
 var app = builder.Build();
 
-app.MapTurboGet("/health", () => new { status = "healthy" });
-app.MapTurboGet("/users/{id}", (int id) => new { id, name = "User " + id });
+app.MapGet("/health", () => new { status = "healthy" });
+app.MapGet("/users/{id}", (int id) => new { id, name = "User " + id });
 
 await app.RunAsync();
 ```
 
-::: tip About AddTurboKestrel
-Despite the name, TurboHTTP Server is a fully standalone HTTP server built on Akka.Streams with its own TCP/QUIC transport layer. The method is named `AddTurboKestrel` for configuration familiarity — it does not use or depend on Kestrel.
+::: tip About UseTurboHttp
+TurboHTTP Server is a fully standalone HTTP server built on Akka.Streams with its own TCP/QUIC transport layer. Register it on `builder.Host` using `UseTurboHttp()` — it does not use or depend on Kestrel.
 :::
 
 ## Next Steps

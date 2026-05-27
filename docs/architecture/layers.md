@@ -79,12 +79,12 @@ TurboHTTP Server provides an ASP.NET Core-style programming model for handling i
 
 ### Registration
 
-Register the server via `AddTurboKestrel` and configure endpoints:
+Register the server via `UseTurboHttp` on `builder.Host` and configure endpoints:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTurboKestrel(options =>
+builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);
     options.ListenLocalhost(5101, listen => listen.UseHttps());
@@ -95,10 +95,10 @@ var app = builder.Build();
 
 ### Middleware
 
-Register middleware and routes on the `WebApplication` instance:
+Register middleware and routes on the `WebApplication` instance using standard ASP.NET Core methods:
 
 ```csharp
-app.UseTurbo(async (context, next) =>
+app.Use(async (context, next) =>
 {
     // process request
     await next(context);
@@ -108,24 +108,9 @@ app.UseTurbo(async (context, next) =>
 
 ### Routes
 
-Define routes with Minimal API-style methods:
+Define routes with standard ASP.NET Core Minimal API methods:
 
 ```csharp
-app.MapTurboGet("/users/{id:int}", (int id) => GetUser(id));
-app.MapTurboPost("/users", (CreateUserRequest req) => Results.Created($"/users/{req.Id}", req));
-```
-
-### Entity Gateway
-
-Route to Akka.NET actors for stateful request handling:
-
-```csharp
-app.MapTurboEntity<int>("/orders/{id:int}", entity =>
-{
-    entity.UseActorRef<OrderActor>();
-    entity.OnGet((int id) => new GetOrder(id));
-    entity.OnPost((int id, CreateOrderRequest req) => new CreateOrder(id, req.Items));
-    entity.OnPut((int id, UpdateOrderRequest req) => new UpdateOrder(id, req.Status));
-    entity.OnDelete((int id) => new CancelOrder(id));
-});
+app.MapGet("/users/{id:int}", (int id) => GetUser(id));
+app.MapPost("/users", (CreateUserRequest req) => Results.Created($"/users/{req.Id}", req));
 ```

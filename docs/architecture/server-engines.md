@@ -97,16 +97,13 @@ After encoding each response, `Http11ServerEngine` evaluates the `Connection` he
 **Configuration:**
 
 ```csharp
-var options = new TurboServerOptions
+builder.Host.UseTurboHttp(options =>
 {
-    Http2 = new Http2Options
-    {
-        MaxFrameSize = 16 * 1024,           // default 16KB
-        MaxHeaderListSize = 32 * 1024,      // default 32KB
-        InitialWindowSize = 65_535,         // stream-level flow control window
-        InitialConnectionWindowSize = 1 * 1024 * 1024, // connection-level window
-    }
-};
+    options.Http2.MaxFrameSize = 16 * 1024;
+    options.Http2.MaxHeaderListSize = 32 * 1024;
+    options.Http2.InitialStreamWindowSize = 768 * 1024;
+    options.Http2.InitialConnectionWindowSize = 1 * 1024 * 1024;
+});
 ```
 
 ---
@@ -139,16 +136,11 @@ var options = new TurboServerOptions
 **Configuration:**
 
 ```csharp
-var options = new TurboServerOptions
+builder.Host.UseTurboHttp(options =>
 {
-    Http3 = new Http3Options
-    {
-        MaxFrameSize = 16 * 1024,           // default 16KB
-        MaxHeaderListSize = 32 * 1024,      // default 32KB
-        InitialMaxStreamDataBidiLocal = 1 * 1024 * 1024,   // per-stream flow control
-        InitialMaxData = 10 * 1024 * 1024,  // connection-level flow control
-    }
-};
+    options.Http3.MaxHeaderListSize = 32 * 1024;
+    options.Http3.QpackMaxTableCapacity = 4 * 1024;
+});
 ```
 
 ---
@@ -158,19 +150,19 @@ var options = new TurboServerOptions
 Each protocol has its own configuration section on `TurboServerOptions`:
 
 ```csharp
-var options = new TurboServerOptions
+builder.Host.UseTurboHttp(options =>
 {
-    Binding = new BindingOptions
+    options.ListenLocalhost(5000);
+    options.ListenLocalhost(5001, listen =>
     {
-        Port = 8080,
-        EnableHttp1 = true,
-        EnableHttp2 = true,
-        EnableHttp3 = true,
-    },
-    Http1 = new Http1Options { IdleTimeout = TimeSpan.FromSeconds(120) },
-    Http2 = new Http2Options { MaxFrameSize = 32 * 1024 },
-    Http3 = new Http3Options { MaxHeaderListSize = 64 * 1024 },
-};
+        listen.UseHttps();
+        listen.Protocols = HttpProtocols.Http1AndHttp2;
+    });
+
+    options.Http1.KeepAliveTimeout = TimeSpan.FromSeconds(120);
+    options.Http2.MaxFrameSize = 32 * 1024;
+    options.Http3.MaxHeaderListSize = 64 * 1024;
+});
 ```
 
 ::: tip
@@ -205,5 +197,6 @@ If no ALPN is advertised or negotiation fails, the server defaults to **HTTP/1.1
 
 - [HTTP/2 & Multiplexing](/client/http2) — client-side HTTP/2 configuration
 - [HTTP/3 & QUIC](/client/http3) — client-side HTTP/3 configuration
-- [Server Configuration](/server/configuration) — server protocol settings
-- [Hosting & Lifecycle](/server/hosting) — connection management
+- [Configuration](/server/configuration) — all server options
+- [Hosting & Lifecycle](/server/hosting) — actor hierarchy and shutdown
+- [Using with ASP.NET Core](/server/aspnet-core) — how the pipeline integrates

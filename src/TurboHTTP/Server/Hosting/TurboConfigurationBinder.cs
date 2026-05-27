@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace TurboHTTP.Server.Hosting;
 
-internal static class TurboKestrelConfigurationBinder
+internal static class TurboConfigurationBinder
 {
     public static void Bind(TurboServerOptions options, IConfigurationSection section)
     {

@@ -181,13 +181,13 @@ model {
 
     server = container 'Server Layer' {
       #server
-      description 'Standalone HTTP server with actor-based lifecycle, middleware, and routing'
+      description 'IServer implementation with actor-based lifecycle and Akka.Streams pipeline'
       technology 'C# / Akka.NET / Servus.Akka.Transport'
 
-      TurboServerHostedService = component 'TurboServerHostedService' {
-        #server
-        technology 'IHostedService'
-        description 'ASP.NET Core hosted service entry point: creates ActorSystem, materializer, and spawns ServerSupervisorActor on startup'
+      TurboServer = component 'TurboServer' {
+        #server #api
+        technology 'IServer'
+        description 'ASP.NET Core IServer implementation: creates ActorSystem, materializer, ApplicationBridgeStage, and spawns ServerSupervisorActor on startup'
       }
 
       ServerSupervisorActor = actor 'ServerSupervisorActor' {
@@ -282,22 +282,10 @@ model {
         description 'Server-side HTTP/3: QPACK decompression, frame decoding over QUIC streams, flow control, GOAWAY, response encoding'
       }
 
-      HttpContextBidiStage = component 'HttpContextBidiStage' {
+      ApplicationBridgeStage = component 'ApplicationBridgeStage' {
         #server #stage
-        technology 'BidiStage'
-        description 'Creates TurboHttpContext from decoded HTTP requests; writes response back to the protocol layer'
-      }
-
-      MiddlewarePipelineStage = component 'MiddlewarePipelineStage' {
-        #server #stage
-        technology 'GraphStage'
-        description 'Executes the middleware chain (Use/Run/Map/MapWhen) for each request; middleware can short-circuit or delegate to next'
-      }
-
-      RoutingStage = component 'RoutingStage' {
-        #server #stage
-        technology 'GraphStage'
-        description 'Matches incoming requests to registered route handlers (MapTurboGet/Post/Put/Delete/Patch); dispatches to handler delegates or entity gateway'
+        technology 'GraphStage<FlowShape>'
+        description 'Bridges Akka.Streams to ASP.NET Core: creates TContext from IFeatureCollection via IHttpApplication.CreateContext(), dispatches to ProcessRequestAsync(), emits response features'
       }
     }
   }
@@ -374,8 +362,8 @@ model {
   turbohttp.streams.Http20ClientEngine -> servus.TcpConnectionStage 'TCP transport'
   turbohttp.streams.Http30ClientEngine -> servus.QuicConnectionStage 'QUIC transport'
 
-  turbohttp.server.TurboServerHostedService -> turbohttp.server.ServerSupervisorActor 'Creates on startup'
-  turbohttp.server.TurboServerHostedService -> turbohttp.server.TurboServerOptions 'Reads configuration'
+  turbohttp.server.TurboServer -> turbohttp.server.ServerSupervisorActor 'Creates on startup'
+  turbohttp.server.TurboServer -> turbohttp.server.TurboServerOptions 'Reads configuration'
   turbohttp.server.ServerSupervisorActor -> turbohttp.server.ListenerActor 'Spawns per endpoint'
   turbohttp.server.ListenerActor -> turbohttp.server.ConnectionActor 'Spawns per client'
 
@@ -385,11 +373,8 @@ model {
   servus.QuicListenerFactory -> network 'Accepts QUIC connections'
 
   turbohttp.server.ConnectionActor -> turbohttp.serverStages.NegotiatingServerEngine 'Materialises protocol engine'
-  turbohttp.server.ConnectionActor -> turbohttp.serverStages.HttpContextBidiStage 'Creates HTTP context'
-  turbohttp.server.ConnectionActor -> turbohttp.serverStages.MiddlewarePipelineStage 'Runs middleware'
-  turbohttp.server.ConnectionActor -> turbohttp.serverStages.RoutingStage 'Dispatches to routes'
+  turbohttp.server.ConnectionActor -> turbohttp.serverStages.ApplicationBridgeStage 'Dispatches to IHttpApplication'
 
-  turbohttp.serverStages.NegotiatingServerEngine -> turbohttp.server.ProtocolRouter 'Resolves protocol via ALPN'
   turbohttp.serverStages.NegotiatingServerEngine -> turbohttp.serverStages.Http10ServerEngine 'HTTP/1.0'
   turbohttp.serverStages.NegotiatingServerEngine -> turbohttp.serverStages.Http11ServerEngine 'HTTP/1.1'
   turbohttp.serverStages.NegotiatingServerEngine -> turbohttp.serverStages.Http20ServerEngine 'HTTP/2'
