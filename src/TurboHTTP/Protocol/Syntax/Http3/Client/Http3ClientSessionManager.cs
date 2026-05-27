@@ -111,10 +111,7 @@ internal sealed class Http3ClientSessionManager
         _qpackStreamManager.AccumulateEncoderInstructions();
         _qpackStreamManager.FlushIfNeeded();
 
-        foreach (var frame in frames)
-        {
-            EmitSerializedFrame(frame, streamId);
-        }
+        EmitBatchedFrames(frames, streamId);
 
         if (request.Content is null)
         {
@@ -322,6 +319,40 @@ internal sealed class Http3ClientSessionManager
         }
 
         _preConnectBuffer.Clear();
+    }
+
+    private void EmitBatchedFrames(IReadOnlyList<Http3Frame> frames, long streamId)
+    {
+        if (frames.Count == 0)
+        {
+            return;
+        }
+
+        if (frames.Count == 1)
+        {
+            EmitSerializedFrame(frames[0], streamId);
+            return;
+        }
+
+        var totalSize = 0;
+        for (var i = 0; i < frames.Count; i++)
+        {
+            totalSize += frames[i].SerializedSize;
+        }
+
+        var buf = TransportBuffer.Rent(totalSize);
+        var span = buf.FullMemory.Span;
+        var offset = 0;
+
+        for (var i = 0; i < frames.Count; i++)
+        {
+            var frameSpan = span[offset..];
+            var written = frames[i].WriteTo(ref frameSpan);
+            offset += written;
+        }
+
+        buf.Length = offset;
+        EmitOutbound(new MultiplexedData(buf, streamId));
     }
 
     private void EmitSerializedFrame(Http3Frame frame, long streamId)
