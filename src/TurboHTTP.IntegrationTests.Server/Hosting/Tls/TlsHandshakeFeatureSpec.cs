@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Context.Features;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -10,10 +10,10 @@ namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
 public sealed class TlsHandshakeFeatureSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
         var certificate = CreateSelfSignedCertificate("localhost");
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.ListenLocalhost(port, listen =>
             {
@@ -23,9 +23,9 @@ public sealed class TlsHandshakeFeatureSpec : ServerSpecBase
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/tls-info", (HttpContext context) =>
+        app.MapGet("/tls-info", (HttpContext context) =>
         {
             var tls = context.Features.Get<ITlsHandshakeFeature>();
             if (tls is null)

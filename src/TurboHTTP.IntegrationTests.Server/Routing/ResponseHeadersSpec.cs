@@ -1,6 +1,6 @@
 using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -9,48 +9,35 @@ namespace TurboHTTP.IntegrationTests.Server.Routing;
 
 public sealed class ResponseHeadersSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/custom-header", (TurboHttpContext ctx) =>
+        app.MapGet("/custom-header", (HttpContext ctx) =>
         {
             ctx.Response.Headers["X-Request-Id"] = "abc-123";
-            ctx.Response.StatusCode = 200;
-            return new ResultAdapter(Results.Ok("ok")).ExecuteAsync(ctx);
+            return Results.Ok("ok");
         });
 
-        routeTable.Add("GET", "/multi-header", (TurboHttpContext ctx) =>
+        app.MapGet("/multi-header", (HttpContext ctx) =>
         {
             ctx.Response.Headers.Append("X-Tag", "alpha");
             ctx.Response.Headers.Append("X-Tag", "beta");
-            ctx.Response.StatusCode = 200;
-            return new ResultAdapter(Results.Ok("ok")).ExecuteAsync(ctx);
+            return Results.Ok("ok");
         });
 
-        routeTable.Add("GET", "/cache-headers", (TurboHttpContext ctx) =>
+        app.MapGet("/cache-headers", (HttpContext ctx) =>
         {
             ctx.Response.Headers["Cache-Control"] = "no-cache, no-store";
             ctx.Response.Headers["ETag"] = "\"v1\"";
-            ctx.Response.StatusCode = 200;
-            return new ResultAdapter(Results.Ok("cached")).ExecuteAsync(ctx);
+            return Results.Ok("cached");
         });
-    }
-
-    private sealed class ResultAdapter(IResult inner)
-    {
-        public async Task ExecuteAsync(TurboHttpContext httpContext)
-        {
-            var features = httpContext.Features;
-            var httpContextAdapter = new DefaultHttpContext(features);
-            await inner.ExecuteAsync(httpContextAdapter);
-        }
     }
 
     [Fact(Timeout = 15000)]

@@ -1,6 +1,6 @@
 using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -9,36 +9,39 @@ namespace TurboHTTP.IntegrationTests.Server.Middleware;
 
 public sealed class MiddlewareSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        var pipeline = Services.GetRequiredService<TurboPipelineBuilder>();
-
-        pipeline.Use(async (ctx, next) =>
+        app.Use(async (ctx, next) =>
         {
             ctx.Response.Headers["X-Powered-By"] = "TurboHTTP";
             await next(ctx);
         });
 
-        pipeline.Map("/api", api =>
+        app.MapWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), api =>
         {
             api.Use(async (ctx, next) =>
             {
                 ctx.Response.Headers["X-Api-Version"] = "2.0";
                 await next(ctx);
             });
+            api.UseRouting();
+            api.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGet("/api/data", () => Results.Ok(new { value = 42 }));
+            });
         });
 
-        routeTable.Add("GET", "/hello", () => Results.Ok("hello"));
-        routeTable.Add("GET", "/api/data", () => Results.Ok(new { value = 42 }));
-        routeTable.Add("GET", "/other", () => Results.Ok("other"));
+        app.MapGet("/hello", () => Results.Ok("hello"));
+        app.MapGet("/api/data", () => Results.Ok(new { value = 42 }));
+        app.MapGet("/other", () => Results.Ok("other"));
     }
 
     [Fact(Timeout = 15000)]

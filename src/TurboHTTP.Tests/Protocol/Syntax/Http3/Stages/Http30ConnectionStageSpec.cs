@@ -5,7 +5,6 @@ using Akka.Streams.TestKit;
 using Servus.Akka.Transport;
 using TurboHTTP.Streams.Stages.Client;
 using TurboHTTP.Tests.Shared;
-using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Stages;
 

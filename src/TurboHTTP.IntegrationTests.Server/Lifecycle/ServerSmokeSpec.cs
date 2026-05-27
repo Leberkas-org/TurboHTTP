@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -10,24 +10,24 @@ namespace TurboHTTP.IntegrationTests.Server.Lifecycle;
 
 public sealed class ServerSmokeSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/hello", () => Results.Ok("Hello from TurboHTTP Server"));
-        routeTable.Add("POST", "/echo", async (HttpContext ctx) =>
+        app.MapGet("/hello", () => Results.Ok("Hello from TurboHTTP Server"));
+        app.MapPost("/echo", async (HttpContext ctx) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var body = await reader.ReadToEndAsync(CancellationToken);
             return Results.Ok(body);
         });
-        routeTable.Add("GET", "/connection-info", (HttpContext ctx) =>
+        app.MapGet("/connection-info", (HttpContext ctx) =>
         {
             var remoteIp = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             return Results.Ok(remoteIp);

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
 
@@ -13,13 +13,13 @@ public sealed class SniCertSelectionSpec : ServerSpecBase
     private X509Certificate2? _certB;
     private int _selectorCallCount;
 
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
         _certA = CreateSelfSignedCertificate("host-a.local");
         _certB = CreateSelfSignedCertificate("host-b.local");
         _selectorCallCount = 0;
 
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.ListenLocalhost(port, listen =>
             {
@@ -36,9 +36,9 @@ public sealed class SniCertSelectionSpec : ServerSpecBase
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/sni-test", () => Results.Ok("SNI test response"));
+        app.MapGet("/sni-test", () => Results.Ok("SNI test response"));
     }
 
     protected override HttpClient CreateHttpClient() => CreateTlsClient();

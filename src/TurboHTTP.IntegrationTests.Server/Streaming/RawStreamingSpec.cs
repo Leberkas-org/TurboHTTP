@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
-using Akka.Streams.Dsl;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -10,42 +10,56 @@ namespace TurboHTTP.IntegrationTests.Server.Streaming;
 
 public sealed class RawStreamingSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/stream-bytes", () =>
+        app.MapGet("/stream-bytes", () =>
         {
             var chunks = new[]
             {
-                (ReadOnlyMemory<byte>)new byte[] { 1, 2, 3 },
-                (ReadOnlyMemory<byte>)new byte[] { 4, 5, 6 },
-                (ReadOnlyMemory<byte>)new byte[] { 7, 8, 9 }
+                new byte[] { 1, 2, 3 },
+                new byte[] { 4, 5, 6 },
+                new byte[] { 7, 8, 9 }
             };
-            return TurboStreamResults.Stream(Source.From(chunks), "application/octet-stream");
+            return Results.Stream(async stream =>
+            {
+                foreach (var chunk in chunks)
+                {
+                    await stream.WriteAsync(chunk);
+                }
+            }, "application/octet-stream");
         });
 
-        routeTable.Add("GET", "/stream-text", () =>
+        app.MapGet("/stream-text", () =>
         {
             var lines = new[] { "line1\n", "line2\n", "line3\n" };
-            var chunks = lines.Select(l =>
-                (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(l)).ToArray();
-            return TurboStreamResults.Stream(Source.From(chunks), "text/plain");
+            return Results.Stream(async stream =>
+            {
+                foreach (var line in lines)
+                {
+                    await stream.WriteAsync(Encoding.UTF8.GetBytes(line));
+                }
+            }, "text/plain");
         });
 
-        routeTable.Add("GET", "/stream-large", () =>
+        app.MapGet("/stream-large", () =>
         {
-            var chunk = new byte[1024];
-            Array.Fill(chunk, (byte)0xAB);
-            var source = Source.From(Enumerable.Range(0, 100)
-                .Select(_ => (ReadOnlyMemory<byte>)chunk.ToArray().AsMemory()));
-            return TurboStreamResults.Stream(source, "application/octet-stream");
+            return Results.Stream(async stream =>
+            {
+                var chunk = new byte[1024];
+                Array.Fill(chunk, (byte)0xAB);
+                for (var i = 0; i < 100; i++)
+                {
+                    await stream.WriteAsync(chunk);
+                }
+            }, "application/octet-stream");
         });
     }
 
