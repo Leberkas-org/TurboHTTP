@@ -93,7 +93,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     {
         _deferredContext = context;
 
-        var responseBody = context.Features.Get<ITurboResponseBodyFeature>();
+        var responseBody = context.Features.Get<IHttpResponseBodyFeature>();
         if (responseBody is TurboHttpResponseBodyFeature turboBody)
         {
             var bodyStream = turboBody.GetResponseStream();

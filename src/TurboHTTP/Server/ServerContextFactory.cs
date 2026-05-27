@@ -19,26 +19,21 @@ internal static class ServerContextFactory
     {
         var features = new TurboFeatureCollection();
 
-        features.Set<ITurboRequestFeature>(requestFeature);
         features.Set<IHttpRequestFeature>(requestFeature);
 
         var bodyFeature = new TurboRequestBodyFeature { Body = requestFeature.Body };
-        features.Set<ITurboRequestBodyFeature>(bodyFeature);
+        features.Set<TurboRequestBodyFeature>(bodyFeature);
 
         var responseFeature = new TurboHttpResponseFeature();
-        features.Set<ITurboResponseFeature>(responseFeature);
         features.Set<IHttpResponseFeature>(responseFeature);
 
         var detectionFeature = new TurboHttpRequestBodyDetectionFeature(hasBody);
-        features.Set<ITurboRequestBodyDetectionFeature>(detectionFeature);
         features.Set<IHttpRequestBodyDetectionFeature>(detectionFeature);
 
         var responseBodyFeature = new TurboHttpResponseBodyFeature();
-        features.Set<ITurboResponseBodyFeature>(responseBodyFeature);
         features.Set<IHttpResponseBodyFeature>(responseBodyFeature);
 
         var trailersFeature = new TurboHttpResponseTrailersFeature();
-        features.Set<ITurboResponseTrailersFeature>(trailersFeature);
         features.Set<IHttpResponseTrailersFeature>(trailersFeature);
 
         if (tlsFeature is not null)
@@ -69,11 +64,9 @@ internal static class ServerContextFactory
         }
 
         var lifetimeFeature = new TurboHttpRequestLifetimeFeature(ctx);
-        features.Set<ITurboRequestLifetimeFeature>(lifetimeFeature);
         features.Set<IHttpRequestLifetimeFeature>(lifetimeFeature);
 
         var identifierFeature = new TurboHttpRequestIdentifierFeature(ctx);
-        features.Set<ITurboRequestIdentifierFeature>(identifierFeature);
         features.Set<IHttpRequestIdentifierFeature>(identifierFeature);
 
         return ctx;

@@ -2,6 +2,7 @@ using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Features.Sse;
 
@@ -34,7 +35,7 @@ internal sealed class EventStreamResult(Source<string, NotUsed> source) : ITurbo
         turboCtx.Response.ContentType = "text/event-stream";
         turboCtx.Response.Headers.CacheControl = "no-cache";
 
-        if (turboCtx.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
+        if (turboCtx.Features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
         {
             return;
         }
@@ -59,7 +60,7 @@ internal sealed class SseEventStreamResult(Source<ServerSentEvent, NotUsed> sour
         turboCtx.Response.ContentType = "text/event-stream";
         turboCtx.Response.Headers.CacheControl = "no-cache";
 
-        if (turboCtx.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
+        if (turboCtx.Features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
         {
             return;
         }
@@ -82,7 +83,7 @@ internal sealed class AkkaStreamResult(Source<ReadOnlyMemory<byte>, NotUsed> sou
             turboCtx.Response.ContentType = contentType;
         }
 
-        if (turboCtx.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
+        if (turboCtx.Features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
         {
             return;
         }

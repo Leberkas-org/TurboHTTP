@@ -5,7 +5,7 @@ using TurboHTTP.Context.Adapters;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpRequestFeature : IHttpRequestFeature, ITurboRequestFeature
+internal sealed class TurboHttpRequestFeature : IHttpRequestFeature
 {
     private readonly TurboResponseHeaderDictionary _headers = new();
 
@@ -42,22 +42,4 @@ internal sealed class TurboHttpRequestFeature : IHttpRequestFeature, ITurboReque
     }
 
     internal string? ExtractedHost { get; set; }
-
-    IHeaderDictionary IHttpRequestFeature.Headers
-    {
-        get => _headers;
-        set
-        {
-            if (value is not null)
-            {
-                _headers.Clear();
-                foreach (var kvp in value)
-                {
-                    _headers[kvp.Key] = kvp.Value;
-                }
-            }
-        }
-    }
-
-    ITurboHeaderDictionary ITurboRequestFeature.Headers => _headers;
 }

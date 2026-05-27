@@ -11,7 +11,7 @@ public sealed class TurboFeatureCollectionSpec
     public void Get_should_return_null_for_unset_feature()
     {
         var collection = new TurboFeatureCollection();
-        Assert.Null(collection.Get<ITurboRequestFeature>());
+        Assert.Null(collection.Get<IHttpRequestFeature>());
     }
 
     [Fact(Timeout = 5000)]
@@ -19,8 +19,8 @@ public sealed class TurboFeatureCollectionSpec
     {
         var collection = new TurboFeatureCollection();
         var feature = new TurboHttpRequestFeature();
-        collection.Set<ITurboRequestFeature>(feature);
-        Assert.Same(feature, collection.Get<ITurboRequestFeature>());
+        collection.Set<IHttpRequestFeature>(feature);
+        Assert.Same(feature, collection.Get<IHttpRequestFeature>());
     }
 
     [Fact(Timeout = 5000)]
@@ -28,8 +28,8 @@ public sealed class TurboFeatureCollectionSpec
     {
         var collection = new TurboFeatureCollection();
         var feature = new TurboHttpResponseFeature();
-        collection.Set<ITurboResponseFeature>(feature);
-        Assert.Same(feature, collection.Get<ITurboResponseFeature>());
+        collection.Set<IHttpResponseFeature>(feature);
+        Assert.Same(feature, collection.Get<IHttpResponseFeature>());
     }
 
     [Fact(Timeout = 5000)]
@@ -43,8 +43,8 @@ public sealed class TurboFeatureCollectionSpec
             IPAddress.Loopback,
             80);
         var feature = new TurboHttpConnectionFeature(info);
-        collection.Set<ITurboConnectionFeature>(feature);
-        Assert.Same(feature, collection.Get<ITurboConnectionFeature>());
+        collection.Set<IHttpConnectionFeature>(feature);
+        Assert.Same(feature, collection.Get<IHttpConnectionFeature>());
     }
 
     [Fact(Timeout = 5000)]
@@ -52,9 +52,9 @@ public sealed class TurboFeatureCollectionSpec
     {
         var collection = new TurboFeatureCollection();
         var feature = new TurboHttpRequestFeature();
-        collection.Set<ITurboRequestFeature>(feature);
-        collection.Set<ITurboRequestFeature>(null);
-        Assert.Null(collection.Get<ITurboRequestFeature>());
+        collection.Set<IHttpRequestFeature>(feature);
+        collection.Set<IHttpRequestFeature>(null);
+        Assert.Null(collection.Get<IHttpRequestFeature>());
     }
 
     [Fact(Timeout = 5000)]
@@ -74,17 +74,6 @@ public sealed class TurboFeatureCollectionSpec
         collection.Set<IHttpRequestFeature>(feature);
         IFeatureCollection fc = collection;
         Assert.Same(feature, fc.Get<IHttpRequestFeature>());
-    }
-
-    [Fact(Timeout = 5000)]
-    public void Same_feature_registered_under_both_interfaces_should_be_retrievable_by_either()
-    {
-        var collection = new TurboFeatureCollection();
-        var feature = new TurboHttpRequestFeature();
-        collection.Set<ITurboRequestFeature>(feature);
-        collection.Set<IHttpRequestFeature>(feature);
-        Assert.Same(feature, collection.Get<ITurboRequestFeature>());
-        Assert.Same(feature, collection.Get<IHttpRequestFeature>());
     }
 
     [Fact(Timeout = 5000)]

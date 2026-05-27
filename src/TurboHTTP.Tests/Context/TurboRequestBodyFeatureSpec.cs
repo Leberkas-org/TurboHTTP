@@ -6,13 +6,6 @@ namespace TurboHTTP.Tests.Context;
 public sealed class TurboRequestBodyFeatureSpec
 {
     [Fact(Timeout = 5000)]
-    public void TurboRequestBodyFeature_should_implement_iturorequestbodyfeature()
-    {
-        var feature = new TurboRequestBodyFeature();
-        Assert.IsAssignableFrom<ITurboRequestBodyFeature>(feature);
-    }
-
-    [Fact(Timeout = 5000)]
     public void TurboRequestBodyFeature_should_have_default_body_stream_null()
     {
         var feature = new TurboRequestBodyFeature();

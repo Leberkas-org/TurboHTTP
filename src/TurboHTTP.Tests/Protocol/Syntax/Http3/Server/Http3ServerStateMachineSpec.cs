@@ -194,7 +194,7 @@ public sealed class Http3ServerStateMachineSpec
         Assert.Equal("/api/data", requestFeature.Path);
 
         // Verify body was accumulated
-        var bodyFeature = context.Features.Get<ITurboRequestBodyFeature>();
+        var bodyFeature = context.Features.Get<TurboRequestBodyFeature>();
         Assert.NotNull(bodyFeature);
         var bodyStream = bodyFeature.Body;
         var content = await new StreamReader(bodyStream).ReadToEndAsync(TestContext.Current.CancellationToken);

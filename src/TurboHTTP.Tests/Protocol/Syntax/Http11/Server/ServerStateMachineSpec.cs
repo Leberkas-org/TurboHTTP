@@ -395,7 +395,7 @@ public sealed class ServerStateMachineSpec
         {
             var bodyFeature = new TurboHttpResponseBodyFeature();
             features.Set<IHttpResponseBodyFeature>(bodyFeature);
-            features.Set<ITurboResponseBodyFeature>(bodyFeature);
+            features.Set<IHttpResponseBodyFeature>(bodyFeature);
         }
 
         features.Set<IHttpResponseFeature>(responseFeature);

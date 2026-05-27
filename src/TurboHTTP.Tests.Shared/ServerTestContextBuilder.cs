@@ -177,12 +177,10 @@ internal sealed class ServerTestContextBuilder
             Body = requestFeature.Body,
             BodySource = _bodySource ?? Source.Empty<ReadOnlyMemory<byte>>()
         };
-        features.Set<ITurboRequestBodyFeature>(requestBodyFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(conn));
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
 
         return new TurboHttpContext(features, conn, _services, _cancellationToken, _materializer!);
     }

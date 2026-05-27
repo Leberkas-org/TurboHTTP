@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Authors>leberkas-org</Authors>
+        <Company>leberkas-org</Company>
         <Title>TurboHTTP</Title>
         <Description>High-performance HTTP client and server for .NET built on Akka.Streams. Supports HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with backpressure, connection pooling, retries, cookies, caching, and an actor-based entity gateway.</Description>
         <PackageTags>http;http2;http3;quic;akka;akka-streams;reactive;backpressure;httpclient;httpserver</PackageTags>
@@ -22,8 +22,7 @@
         <DebugType>embedded</DebugType>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
-
-
+    
     <ItemGroup>
         <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\"/>
         <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="\"/>
@@ -35,8 +34,8 @@
         <PackageReference Include="Akka.Hosting"/>
         <PackageReference Include="Akka.Streams"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream"/>
-        <PackageReference Include="Servus.Akka"/>
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions"/>
+        <PackageReference Include="Servus.Akka"/>
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>

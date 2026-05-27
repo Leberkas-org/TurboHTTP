@@ -5,7 +5,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpConnectionFeature(TurboConnectionInfo info) : IHttpConnectionFeature, ITurboConnectionFeature
+internal sealed class TurboHttpConnectionFeature(TurboConnectionInfo info) : IHttpConnectionFeature
 {
     private readonly TurboConnectionInfo _info = info ?? throw new ArgumentNullException(nameof(info));
 

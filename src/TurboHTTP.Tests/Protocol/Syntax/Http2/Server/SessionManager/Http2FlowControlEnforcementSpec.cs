@@ -24,7 +24,7 @@ public sealed class Http2FlowControlEnforcementSpec
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
         return new TurboHttpContext(features);
     }

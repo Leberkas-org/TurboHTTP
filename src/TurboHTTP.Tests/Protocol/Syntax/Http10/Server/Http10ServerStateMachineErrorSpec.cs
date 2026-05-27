@@ -22,7 +22,7 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
         return new TurboHttpContext(features);
     }
 

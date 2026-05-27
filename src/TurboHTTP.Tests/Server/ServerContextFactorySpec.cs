@@ -32,7 +32,7 @@ public sealed class ServerContextFactorySpec
         var requestFeature = new TurboHttpRequestFeature();
         var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
 
-        var bodyFeature = ctx.Features.Get<ITurboRequestBodyFeature>();
+        var bodyFeature = ctx.Features.Get<TurboRequestBodyFeature>();
         Assert.NotNull(bodyFeature);
     }
 
@@ -67,7 +67,7 @@ public sealed class ServerContextFactorySpec
         var responseBodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>();
         Assert.NotNull(responseBodyFeature);
 
-        var turboResponseBody = ctx.Features.Get<ITurboResponseBodyFeature>();
+        var turboResponseBody = ctx.Features.Get<IHttpResponseBodyFeature>();
         Assert.NotNull(turboResponseBody);
     }
 

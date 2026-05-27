@@ -1,14 +1,12 @@
 using System.Buffers;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Multiplexed;
 using TurboHTTP.Protocol.Multiplexed.Body;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
 
@@ -133,7 +131,7 @@ internal sealed class Http3ServerSessionManager
         var headersFrame = _responseEncoder.EncodeHeaders(context);
         EmitDataFrame(headersFrame, streamId);
 
-        var responseFeature = context.Features.Get<ITurboResponseFeature>();
+        var responseFeature = context.Features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
         var hasBody = contentLength is not 0;
 
@@ -143,7 +141,7 @@ internal sealed class Http3ServerSessionManager
             return;
         }
 
-        var responseBody = context.Features.Get<ITurboResponseBodyFeature>();
+        var responseBody = context.Features.Get<IHttpResponseBodyFeature>();
         if (responseBody is not TurboHttpResponseBodyFeature turboBody)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));
@@ -163,7 +161,7 @@ internal sealed class Http3ServerSessionManager
         _ops.OnScheduleTimer(string.Concat("drain-body:", streamId.ToString()), TimeSpan.FromMilliseconds(0));
     }
 
-    private static long? ExtractContentLength(ITurboResponseFeature? responseFeature)
+    private static long? ExtractContentLength(IHttpResponseFeature? responseFeature)
     {
         if (responseFeature?.Headers is null)
         {
@@ -466,7 +464,7 @@ internal sealed class Http3ServerSessionManager
             context.Features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             var capturedStreamId = streamId;
-            context.Features.Set<ITurboResetFeature>(new TurboHttpResetFeature(
+            context.Features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
                 errorCode => EmitRstStream(capturedStreamId, (ErrorCode)errorCode)));
 
             _bodyRateStates.Remove(streamId);

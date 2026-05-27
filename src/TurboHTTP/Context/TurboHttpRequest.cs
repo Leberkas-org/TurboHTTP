@@ -180,7 +180,7 @@ public sealed class TurboHttpRequest
     }
 
     public Source<ReadOnlyMemory<byte>, NotUsed> BodySource
-        => _features.Get<ITurboRequestBodyFeature>()?.BodySource ?? Source.Empty<ReadOnlyMemory<byte>>();
+        => _features.Get<TurboRequestBodyFeature>()?.BodySource ?? Source.Empty<ReadOnlyMemory<byte>>();
 
     public bool HasFormContentType
     {

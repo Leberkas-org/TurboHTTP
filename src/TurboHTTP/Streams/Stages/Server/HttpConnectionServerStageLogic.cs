@@ -2,6 +2,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
@@ -88,7 +89,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
                     return;
                 }
 
-                var bodyFeature = response.TurboResponse.HttpContext.Features.Get<ITurboResponseBodyFeature>();
+                var bodyFeature = response.TurboResponse.HttpContext.Features.Get<IHttpResponseBodyFeature>();
                 var hasBody = bodyFeature is not null;
                 if (!hasBody)
                 {

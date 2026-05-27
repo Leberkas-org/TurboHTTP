@@ -2,11 +2,12 @@ using System.Buffers;
 using System.IO.Pipelines;
 using Akka;
 using Akka.Streams.Dsl;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Streams.IO;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpResponseBodyFeature : ITurboResponseBodyFeature
+internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
 {
     private readonly Pipe _pipe = new();
     private readonly TaskCompletionSource _headerCommit = new(TaskCreationOptions.RunContinuationsAsynchronously);

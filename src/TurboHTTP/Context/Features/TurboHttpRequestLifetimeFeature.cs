@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpRequestLifetimeFeature : IHttpRequestLifetimeFeature, ITurboRequestLifetimeFeature
+internal sealed class TurboHttpRequestLifetimeFeature : IHttpRequestLifetimeFeature
 {
     private readonly TurboHttpContext _context;
 

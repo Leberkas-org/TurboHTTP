@@ -1,6 +1,5 @@
 using System.Buffers;
 using Microsoft.AspNetCore.Http;
-using TurboHTTP.Context;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Server;
@@ -78,7 +77,8 @@ internal sealed class Http2ServerEncoder
     private static void BuildHeaderList(TurboHttpContext context, List<HpackHeader> headers)
     {
         // RFC 9113 §7.2: :status pseudo-header (required)
-        headers.Add(new HpackHeader(WellKnownHeaders.Status, WellKnownHeaders.GetStatusCodeString(context.Response.StatusCode)));
+        headers.Add(new HpackHeader(WellKnownHeaders.Status,
+            WellKnownHeaders.GetStatusCodeString(context.Response.StatusCode)));
 
         // Add regular headers
         foreach (var h in context.Response.Headers)
@@ -116,7 +116,7 @@ internal sealed class Http2ServerEncoder
     /// RFC 9113 §8.1: Trailers are sent as a HEADERS frame with END_STREAM.
     /// RFC 9110 §6.5.1: Filters prohibited trailer fields (transfer-encoding, content-length, etc.).
     /// </summary>
-    public IReadOnlyList<Http2Frame> EncodeTrailers(int streamId, ITurboHeaderDictionary trailers)
+    public IReadOnlyList<Http2Frame> EncodeTrailers(int streamId, IHeaderDictionary trailers)
     {
         ArgumentNullException.ThrowIfNull(trailers);
 
@@ -128,7 +128,8 @@ internal sealed class Http2ServerEncoder
         {
             if (TrailerFieldValidator.IsAllowedInTrailer(header.Key))
             {
-                _reusableHeaders.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(header.Key), header.Value.ToString() ?? string.Empty));
+                _reusableHeaders.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(header.Key),
+                    header.Value.ToString() ?? string.Empty));
             }
         }
 
@@ -166,5 +167,4 @@ internal sealed class Http2ServerEncoder
 
         _rentedBodyOwners.Clear();
     }
-
 }

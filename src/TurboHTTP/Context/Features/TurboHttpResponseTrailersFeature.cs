@@ -6,22 +6,14 @@ using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpResponseTrailersFeature : IHttpResponseTrailersFeature, ITurboResponseTrailersFeature
+internal sealed class TurboHttpResponseTrailersFeature : IHttpResponseTrailersFeature
 {
     private TurboResponseHeaderDictionary _trailers = new();
 
-    public IHeaderDictionary Trailers => _trailers;
-
-    IHeaderDictionary IHttpResponseTrailersFeature.Trailers
+    public IHeaderDictionary Trailers
     {
         get => _trailers;
         set { }
-    }
-
-    ITurboHeaderDictionary ITurboResponseTrailersFeature.Trailers
-    {
-        get => _trailers;
-        set => _trailers = (TurboResponseHeaderDictionary)value;
     }
 
     public IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> GetAllowedTrailers()

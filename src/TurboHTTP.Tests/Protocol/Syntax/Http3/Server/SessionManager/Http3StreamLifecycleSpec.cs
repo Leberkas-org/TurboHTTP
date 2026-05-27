@@ -24,7 +24,7 @@ public sealed class Http3StreamLifecycleSpec
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
         return new TurboHttpContext(features);
     }
 

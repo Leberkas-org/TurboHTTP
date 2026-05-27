@@ -16,7 +16,6 @@ internal static class ServerTestContext
         features.Set<IHttpResponseFeature>(responseFeature);
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
         return new TurboHttpContext(features);
     }
 

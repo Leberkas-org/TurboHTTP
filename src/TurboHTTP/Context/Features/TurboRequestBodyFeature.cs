@@ -3,7 +3,7 @@ using Akka.Streams.Dsl;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboRequestBodyFeature : ITurboRequestBodyFeature
+internal sealed class TurboRequestBodyFeature
 {
     public Stream Body { get; set; } = Stream.Null;
 

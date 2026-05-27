@@ -61,7 +61,7 @@ public sealed class Http11ServerEncoderBenchmark
         features.Set<IHttpResponseFeature>(responseFeature);
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
 
         var context = new TurboHttpContext(features);
         context.Response.ContentLength = contentLength;

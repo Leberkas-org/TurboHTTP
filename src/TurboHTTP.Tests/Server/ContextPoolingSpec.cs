@@ -14,8 +14,6 @@ public sealed class ContextPoolingSpec
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        features.Set<ITurboRequestBodyFeature>(new TurboRequestBodyFeature());
-
         var connectionInfo = new TurboConnectionInfo(
             "test-id",
             null,
@@ -113,7 +111,6 @@ public sealed class ContextPoolingSpec
         newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        newFeatures.Set<ITurboRequestBodyFeature>(new TurboRequestBodyFeature());
 
         var newConnectionInfo = new TurboConnectionInfo("new-id", null, 0, null, 0);
         ctx.Reset(newFeatures, newConnectionInfo, null, CancellationToken.None, null!);
@@ -131,7 +128,6 @@ public sealed class ContextPoolingSpec
         newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        newFeatures.Set<ITurboRequestBodyFeature>(new TurboRequestBodyFeature());
 
         var newConnectionInfo = new TurboConnectionInfo("new-id", null, 0, null, 0);
         ctx.Reset(newFeatures, newConnectionInfo, null, CancellationToken.None, null!);
@@ -149,7 +145,6 @@ public sealed class ContextPoolingSpec
         newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        newFeatures.Set<ITurboRequestBodyFeature>(new TurboRequestBodyFeature());
 
         var newConnectionInfo = new TurboConnectionInfo("new-id", null, 0, null, 0);
         ctx.Reset(newFeatures, newConnectionInfo, null, CancellationToken.None, null!);
@@ -166,7 +161,6 @@ public sealed class ContextPoolingSpec
         features.Set<IHttpRequestFeature>(requestFeature);
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        features.Set<ITurboRequestBodyFeature>(new TurboRequestBodyFeature());
 
         var request = new TurboHttpRequest(features);
         var originalUri = request.RequestUri;
@@ -175,10 +169,10 @@ public sealed class ContextPoolingSpec
 
         var newHeaders = new HeaderDictionary { { "Host", "different.com" } };
         var newFeatures = new TurboFeatureCollection();
-        newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature { Scheme = "http", Path = "/test", Headers = newHeaders });
+        newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature
+            { Scheme = "http", Path = "/test", Headers = newHeaders });
         newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        newFeatures.Set<ITurboRequestBodyFeature>(new TurboRequestBodyFeature());
 
         request.Reset(newFeatures);
 

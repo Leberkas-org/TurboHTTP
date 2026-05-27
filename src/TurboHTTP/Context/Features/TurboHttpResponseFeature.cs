@@ -5,7 +5,7 @@ using TurboHTTP.Context.Adapters;
 
 namespace TurboHTTP.Context.Features;
 
-internal sealed class TurboHttpResponseFeature : IHttpResponseFeature, ITurboResponseFeature
+internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
 {
     private readonly TurboResponseHeaderDictionary _headers = new();
     private readonly List<(Func<object?, Task> callback, object? state)> _onStartingCallbacks = [];
@@ -19,7 +19,11 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature, ITurboRes
 
     public bool HasStarted { get; private set; }
 
-    public IHeaderDictionary Headers => _headers;
+    public IHeaderDictionary Headers
+    {
+        get => _headers;
+        set { }
+    }
 
     public void OnStarting(Func<object?, Task> callback, object? state)
     {
@@ -44,24 +48,6 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature, ITurboRes
         ArgumentNullException.ThrowIfNull(callback);
         OnCompleted((Func<object?, Task>)callback!, state!);
     }
-
-    void ITurboResponseFeature.OnStarting(Func<object?, Task> callback, object? state)
-    {
-        OnStarting(callback, state);
-    }
-
-    void ITurboResponseFeature.OnCompleted(Func<object?, Task> callback, object? state)
-    {
-        OnCompleted(callback, state);
-    }
-
-    IHeaderDictionary IHttpResponseFeature.Headers
-    {
-        get => _headers;
-        set { }
-    }
-
-    ITurboHeaderDictionary ITurboResponseFeature.Headers => _headers;
 
     internal async Task FireOnStartingAsync()
     {

@@ -17,7 +17,7 @@ public sealed class Http11ServerConnectionPersistenceSpec
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
         return new TurboHttpContext(features);
     }
 

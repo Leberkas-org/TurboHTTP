@@ -56,7 +56,7 @@ public sealed class TurboStreamResultsSpec : IDisposable
         var result = TurboStreamResults.Stream(source, "application/octet-stream");
         await result.ExecuteAsync(ctx);
 
-        var bodyFeature = ctx.Features.Get<ITurboResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+        var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
         var chunks = await bodyFeature!.GetResponseSource()
             .RunWith(Sink.Seq<ReadOnlyMemory<byte>>(), _materializer);
 
@@ -75,7 +75,7 @@ public sealed class TurboStreamResultsSpec : IDisposable
         var result = TurboStreamResults.EventStream(source);
         await result.ExecuteAsync(ctx);
 
-        var bodyFeature = ctx.Features.Get<ITurboResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+        var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
         var chunks = await bodyFeature!.GetResponseSource()
             .RunWith(Sink.Seq<ReadOnlyMemory<byte>>(), _materializer);
 
@@ -92,7 +92,7 @@ public sealed class TurboStreamResultsSpec : IDisposable
         features.Set<IHttpResponseFeature>(responseFeature);
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<ITurboResponseBodyFeature>(bodyFeature);
+        features.Set<IHttpResponseBodyFeature>(bodyFeature);
 
         return new TurboHttpContext(
             features,
