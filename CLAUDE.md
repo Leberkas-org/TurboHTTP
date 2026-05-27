@@ -35,10 +35,9 @@ cd ../docs && npm install && npm run docs:dev
 
 ```
 Client Surface  (TurboHTTP/Client/)          - ITurboHttpClient, factory, builder, DI, options
-Server Surface  (TurboHTTP/Server/)          - TurboServerOptions, TurboHttpContext, Hosting, Middleware
-Context         (TurboHTTP/Context/)         - TurboHttpRequest, TurboHttpResponse, Adapters, Features
-Routing         (TurboHTTP/Routing/)         - RouteTable, dispatchers, Binding/
-Streams Layer   (TurboHTTP/Streams/)         - Engines, Stages/{Client,Server,Features,Routing}, Lifecycle, Pooling
+Server Surface  (TurboHTTP/Server/)          - TurboServer (IServer), TurboServerOptions, Hosting, FeatureCollectionFactory
+Context         (TurboHTTP/Context/)         - Features/ (IHttp*Feature implementations), Adapters/
+Streams Layer   (TurboHTTP/Streams/)         - Engines, Stages/{Client,Server,Features}, Lifecycle, Pooling
 Protocol Layer  (TurboHTTP/Protocol/)        - Http10/, Http11/, Http2/, Http3/, Semantics/
 Features        (TurboHTTP/Features/)        - Cookies/, Caching/, AltSvc/
 Diagnostics     (TurboHTTP/Diagnostics/)     - Metrics, tracing, logging

@@ -2,7 +2,6 @@ using System.Net;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.TestKit;
-using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Features.Caching;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;

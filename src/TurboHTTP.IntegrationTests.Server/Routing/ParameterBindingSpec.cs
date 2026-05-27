@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -11,33 +11,33 @@ namespace TurboHTTP.IntegrationTests.Server.Routing;
 
 public sealed class ParameterBindingSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/users/{id}", (int id) =>
+        app.MapGet("/users/{id}", (int id) =>
             Results.Ok(new { id }));
 
-        routeTable.Add("GET", "/search", (string q) =>
+        app.MapGet("/search", (string q) =>
             Results.Ok(new { query = q }));
 
-        routeTable.Add("GET", "/paged", (string q, int page) =>
+        app.MapGet("/paged", (string q, int page) =>
             Results.Ok(new { query = q, page }));
 
-        routeTable.Add("GET", "/with-header",
+        app.MapGet("/with-header",
             ([FromHeader(Name = "X-Tenant")] string tenant) =>
                 Results.Ok(new { tenant }));
 
-        routeTable.Add("GET", "/optional", (string? name) =>
+        app.MapGet("/optional", (string? name) =>
             Results.Ok(new { name = name ?? "default" }));
 
-        routeTable.Add("GET", "/items/{category}/{id}", (string category, int id) =>
+        app.MapGet("/items/{category}/{id}", (string category, int id) =>
             Results.Ok(new { category, id }));
     }
 

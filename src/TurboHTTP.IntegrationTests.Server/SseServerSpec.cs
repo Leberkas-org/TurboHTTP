@@ -1,7 +1,7 @@
 using System.Net;
-using Akka.Streams.Dsl;
+using System.Text;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -10,22 +10,27 @@ namespace TurboHTTP.IntegrationTests.Server;
 
 public sealed class SseServerSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/echo", () => Results.Ok("ok"));
-        routeTable.Add("GET", "/text", () => Results.Ok("hello world"));
-        routeTable.Add("GET", "/events", () =>
+        app.MapGet("/echo", () => Results.Ok("ok"));
+        app.MapGet("/text", () => Results.Ok("hello world"));
+        app.MapGet("/events", async (HttpContext ctx) =>
         {
-            var source = Source.From(["event1", "event2"]);
-            return TurboStreamResults.EventStream(source);
+            ctx.Response.ContentType = "text/event-stream";
+            var events = new[] { "event1", "event2" };
+            foreach (var evt in events)
+            {
+                var data = Encoding.UTF8.GetBytes($"data: {evt}\n\n");
+                await ctx.Response.Body.WriteAsync(data);
+            }
         });
     }
 

@@ -1,12 +1,9 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context;
 using TurboHTTP.Context.Adapters;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server;
 

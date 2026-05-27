@@ -9,33 +9,6 @@ public sealed class TurboServerOptions
 {
     public TurboServerLimits Limits { get; } = new();
 
-    [Obsolete("Use Limits.MaxConcurrentConnections instead")]
-    public int MaxConcurrentConnections
-    {
-        get => Limits.MaxConcurrentConnections;
-        set => Limits.MaxConcurrentConnections = value;
-    }
-
-    [Obsolete("Use Limits.MaxConcurrentUpgradedConnections instead")]
-    public int MaxConcurrentUpgradedConnections
-    {
-        get => Limits.MaxConcurrentUpgradedConnections;
-        set => Limits.MaxConcurrentUpgradedConnections = value;
-    }
-
-    [Obsolete("Use Limits.KeepAliveTimeout instead")]
-    public TimeSpan KeepAliveTimeout
-    {
-        get => Limits.KeepAliveTimeout;
-        set => Limits.KeepAliveTimeout = value;
-    }
-
-    [Obsolete("Use Limits.RequestHeadersTimeout instead")]
-    public TimeSpan RequestHeadersTimeout
-    {
-        get => Limits.RequestHeadersTimeout;
-        set => Limits.RequestHeadersTimeout = value;
-    }
     public TimeSpan GracefulShutdownTimeout { get; set; } = TimeSpan.FromSeconds(30);
     public TimeSpan HandlerTimeout { get; set; } = TimeSpan.FromSeconds(30);
     public TimeSpan HandlerGracePeriod { get; set; } = TimeSpan.FromSeconds(5);

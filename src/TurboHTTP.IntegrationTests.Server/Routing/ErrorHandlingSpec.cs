@@ -1,6 +1,6 @@
 using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -9,17 +9,17 @@ namespace TurboHTTP.IntegrationTests.Server.Routing;
 
 public sealed class ErrorHandlingSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/throw-sync", () =>
+        app.MapGet("/throw-sync", () =>
         {
             throw new InvalidOperationException("sync boom");
 #pragma warning disable CS0162
@@ -27,7 +27,7 @@ public sealed class ErrorHandlingSpec : ServerSpecBase
 #pragma warning restore CS0162
         });
 
-        routeTable.Add("GET", "/throw-async", async () =>
+        app.MapGet("/throw-async", async () =>
         {
             await Task.Yield();
             throw new InvalidOperationException("async boom");
@@ -36,7 +36,7 @@ public sealed class ErrorHandlingSpec : ServerSpecBase
 #pragma warning restore CS0162
         });
 
-        routeTable.Add("GET", "/ok", () => Results.Ok("fine"));
+        app.MapGet("/ok", () => Results.Ok("fine"));
     }
 
     [Fact(Timeout = 15000)]

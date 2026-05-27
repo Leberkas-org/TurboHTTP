@@ -31,7 +31,7 @@
     <Project Path="TurboHTTP.API.Tests/TurboHTTP.API.Tests.csproj" />
     <Project Path="TurboHTTP.IntegrationTests.Client/TurboHTTP.IntegrationTests.Client.csproj" />
     <Project Path="TurboHTTP.IntegrationTests.End2End/TurboHTTP.IntegrationTests.End2End.csproj" />
-    <!-- <Project Path="TurboHTTP.IntegrationTests.Server/TurboHTTP.IntegrationTests.Server.csproj" /> -->
+    <Project Path="TurboHTTP.IntegrationTests.Server/TurboHTTP.IntegrationTests.Server.csproj" /> 
     <Project Path="TurboHTTP.Tests.Shared/TurboHTTP.Tests.Shared.csproj" />
     <Project Path="TurboHTTP.Tests/TurboHTTP.Tests.csproj" />
   </Folder>

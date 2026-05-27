@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -12,24 +12,24 @@ namespace TurboHTTP.IntegrationTests.Server.Routing;
 
 public sealed class RoutingEdgeCasesSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/multi", () =>
+        app.MapGet("/multi", () =>
             Results.Ok(new { method = "GET" }));
-        routeTable.Add("POST", "/multi", () =>
+        app.MapPost("/multi", () =>
             Results.Ok(new { method = "POST" }));
-        routeTable.Add("PUT", "/multi", () =>
+        app.MapPut("/multi", () =>
             Results.Ok(new { method = "PUT" }));
 
-        routeTable.Add("POST", "/upload", async (TurboHttpContext ctx) =>
+        app.MapPost("/upload", async (HttpContext ctx) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var file = form.Files.GetFile("document");

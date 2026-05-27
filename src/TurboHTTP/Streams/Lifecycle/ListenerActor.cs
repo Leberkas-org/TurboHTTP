@@ -105,7 +105,7 @@ internal sealed class ListenerActor : ReceiveActor
 
     private void OnIncomingConnection(IncomingConnection msg)
     {
-        var limit = _serverOptions.MaxConcurrentConnections;
+        var limit = _serverOptions.Limits.MaxConcurrentConnections;
         if (limit > 0 && _activeConnections.Count >= limit)
         {
             _log.Warning("Connection rejected: limit {0} reached ({1} active)",

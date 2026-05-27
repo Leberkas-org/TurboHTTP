@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
 
@@ -9,10 +9,10 @@ namespace TurboHTTP.IntegrationTests.Server.Hosting;
 
 public sealed class HttpsConnectionSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
         var certificate = CreateSelfSignedCertificate("localhost");
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.ListenLocalhost(port, listen =>
             {
@@ -22,9 +22,9 @@ public sealed class HttpsConnectionSpec : ServerSpecBase
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/secure-hello", () => Results.Ok("Hello from HTTPS"));
+        app.MapGet("/secure-hello", () => Results.Ok("Hello from HTTPS"));
     }
 
     protected override HttpClient CreateHttpClient() => CreateTlsClient();

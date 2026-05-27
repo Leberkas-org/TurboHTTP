@@ -1,5 +1,4 @@
 using Akka;
-using Akka.Streams;
 using Akka.Streams.Dsl;
 using Servus.Akka.Streams.IO;
 using TurboHTTP.Features.Sse;

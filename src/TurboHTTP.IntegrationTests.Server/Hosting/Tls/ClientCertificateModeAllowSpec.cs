@@ -1,7 +1,7 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -13,12 +13,12 @@ public sealed class ClientCertificateModeAllowSpec : ServerSpecBase
     private X509Certificate2? _serverCert;
     private X509Certificate2? _clientCert;
 
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
         _serverCert = CreateSelfSignedCertificate("localhost");
         _clientCert = CreateSelfSignedCertificate("client");
 
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.ListenLocalhost(port, listen =>
             {
@@ -32,9 +32,9 @@ public sealed class ClientCertificateModeAllowSpec : ServerSpecBase
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/test", () => Results.Ok("OK"));
+        app.MapGet("/test", () => Results.Ok("OK"));
     }
 
     protected override HttpClient? CreateHttpClient() => null;

@@ -1,3 +1,4 @@
+using System.Net;
 using Akka.Event;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
@@ -6,9 +7,7 @@ using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
-using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
-using HttpVersion = System.Net.HttpVersion;
 
 namespace TurboHTTP.Protocol.Syntax.Http11.Server;
 
@@ -50,8 +49,8 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         var encOpts = new Http11ServerEncoderOptions
         {
             Shared = shared,
-            KeepAliveTimeout = options.Http1.KeepAliveTimeout ?? options.KeepAliveTimeout,
-            RequestHeadersTimeout = options.Http1.RequestHeadersTimeout ?? options.RequestHeadersTimeout,
+            KeepAliveTimeout = options.Http1.KeepAliveTimeout ?? options.Limits.KeepAliveTimeout,
+            RequestHeadersTimeout = options.Http1.RequestHeadersTimeout ?? options.Limits.RequestHeadersTimeout,
         };
 
         var decOpts = new Http11ServerDecoderOptions
@@ -136,7 +135,8 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
                 var feature = _decoder.GetRequestFeature();
                 var hasBody = feature.Body != Stream.Null;
-                var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature);
+                var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature,
+                    _ops.TlsHandshakeFeature);
 
                 if (!ShouldComplete && feature.Protocol == "HTTP/1.0")
                 {
@@ -197,10 +197,11 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
             {
                 _ops.OnScheduleTimer("keep-alive", _keepAliveTimeout);
             }
+
             return;
         }
 
-        if (!_draining && _decoder.CurrentBodyDecoder is { } bodyDecoder && !bodyDecoder.IsComplete)
+        if (!_draining && _decoder.CurrentBodyDecoder is { IsComplete: false })
         {
             _draining = true;
         }
@@ -264,6 +265,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                 {
                     _ops.OnScheduleTimer("keep-alive", _keepAliveTimeout);
                 }
+
                 break;
 
             case OutboundBodyFailed failed:
@@ -309,8 +311,9 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         }
 
         var hasUpgrade = requestHeaders.TryGetValue("Upgrade", out var upgradeValue)
-            && !string.IsNullOrEmpty(upgradeValue)
-            && upgradeValue.ToString().Split(',').Any(v => v.Trim().Equals("h2c", StringComparison.OrdinalIgnoreCase));
+                         && !string.IsNullOrEmpty(upgradeValue)
+                         && upgradeValue.ToString().Split(',')
+                             .Any(v => v.Trim().Equals("h2c", StringComparison.OrdinalIgnoreCase));
 
         if (!hasUpgrade)
         {
@@ -328,8 +331,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         responseBuffer.Length = responseBytes.Length;
         _ops.OnOutbound(new TransportData(responseBuffer));
 
-        switchable.RequestProtocolSwitch(
-            ops => new Http2ServerStateMachine(_serverOptions, ops));
+        switchable.RequestProtocolSwitch(ops => new Http2ServerStateMachine(_serverOptions, ops));
 
         return true;
     }
@@ -344,6 +346,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
             _ops.OnCancelTimer("request-headers");
             _requestHeadersTimerActive = false;
         }
+
         _ops.OnCancelTimer("keep-alive");
     }
 }

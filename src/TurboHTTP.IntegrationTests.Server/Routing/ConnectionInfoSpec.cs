@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -10,17 +10,17 @@ namespace TurboHTTP.IntegrationTests.Server.Routing;
 
 public sealed class ConnectionInfoSpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/connection", (HttpContext ctx) =>
+        app.MapGet("/connection", (HttpContext ctx) =>
         {
             return Results.Ok(new
             {
@@ -31,7 +31,7 @@ public sealed class ConnectionInfoSpec : ServerSpecBase
             });
         });
 
-        routeTable.Add("GET", "/protocol", (HttpContext ctx) =>
+        app.MapGet("/protocol", (HttpContext ctx) =>
         {
             return Results.Ok(new { protocol = ctx.Request.Protocol });
         });

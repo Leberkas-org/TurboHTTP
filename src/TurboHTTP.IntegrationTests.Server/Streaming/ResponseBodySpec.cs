@@ -1,8 +1,7 @@
 using System.Net;
 using System.Text;
-using Akka.Streams.Dsl;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -11,25 +10,29 @@ namespace TurboHTTP.IntegrationTests.Server.Streaming;
 
 public sealed class ResponseBodySpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("GET", "/stream-no-cl", () =>
+        app.MapGet("/stream-no-cl", () =>
         {
-            var chunks = new[] { "chunk1", "chunk2", "chunk3" }
-                .Select(s => (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(s))
-                .ToArray();
-            return TurboStreamResults.Stream(Source.From(chunks), "text/plain");
+            var chunks = new[] { "chunk1", "chunk2", "chunk3" };
+            return Results.Stream(async stream =>
+            {
+                foreach (var chunk in chunks)
+                {
+                    await stream.WriteAsync(Encoding.UTF8.GetBytes(chunk));
+                }
+            }, "text/plain");
         });
 
-        routeTable.Add("GET", "/with-cl", (TurboHttpContext ctx) =>
+        app.MapGet("/with-cl", (HttpContext ctx) =>
         {
             var body = Encoding.UTF8.GetBytes("exact-length-body");
             ctx.Response.StatusCode = 200;
@@ -38,9 +41,9 @@ public sealed class ResponseBodySpec : ServerSpecBase
             return ctx.Response.Body.WriteAsync(body).AsTask();
         });
 
-        routeTable.Add("GET", "/no-content", () => Results.NoContent());
+        app.MapGet("/no-content", () => Results.NoContent());
 
-        routeTable.Add("GET", "/not-modified", () => Results.StatusCode(304));
+        app.MapGet("/not-modified", () => Results.StatusCode(304));
     }
 
     [Fact(Timeout = 15000)]

@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
@@ -11,24 +11,24 @@ namespace TurboHTTP.IntegrationTests.Server.Routing;
 
 public sealed class RequestBodySpec : ServerSpecBase
 {
-    protected override void ConfigureServer(IServiceCollection services, ushort port)
+    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
-        services.AddTurboKestrel(options =>
+        builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
         });
     }
 
-    protected override void ConfigureRoutes(TurboRouteTable routeTable)
+    protected override void ConfigureEndpoints(WebApplication app)
     {
-        routeTable.Add("POST", "/echo-body", async (TurboHttpContext ctx) =>
+        app.MapPost("/echo-body", async (HttpContext ctx) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var body = await reader.ReadToEndAsync();
             return Results.Ok(new { body });
         });
 
-        routeTable.Add("POST", "/echo-json", async (TurboHttpContext ctx) =>
+        app.MapPost("/echo-json", async (HttpContext ctx) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var raw = await reader.ReadToEndAsync();
@@ -36,7 +36,7 @@ public sealed class RequestBodySpec : ServerSpecBase
             return Results.Ok(parsed.RootElement);
         });
 
-        routeTable.Add("POST", "/form", async (TurboHttpContext ctx) =>
+        app.MapPost("/form", async (HttpContext ctx) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var name = form["name"].ToString();

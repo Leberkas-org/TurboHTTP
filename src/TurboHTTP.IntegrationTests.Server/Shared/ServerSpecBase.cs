@@ -2,51 +2,49 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Shared;
 
 public abstract class ServerSpecBase : IAsyncLifetime
 {
-    private IHost? _host;
+    private WebApplication? _app;
     private HttpClient? _client;
 
     protected ushort Port { get; private set; }
 
     protected HttpClient Client => _client!;
 
-    protected IServiceProvider Services => _host!.Services;
+    protected IServiceProvider Services => _app!.Services;
 
     protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
-    protected abstract void ConfigureServer(IServiceCollection services, ushort port);
+    protected abstract void ConfigureServer(WebApplicationBuilder builder, ushort port);
 
-    protected abstract void ConfigureRoutes(TurboRouteTable routeTable);
+    protected abstract void ConfigureEndpoints(WebApplication app);
 
     protected virtual HttpClient? CreateHttpClient() => new();
 
     public async ValueTask InitializeAsync()
     {
         Port = GetFreePort();
-        var builder = Host.CreateApplicationBuilder();
+        var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
-        ConfigureServer(builder.Services, Port);
-        _host = builder.Build();
-        ConfigureRoutes(_host.Services.GetRequiredService<TurboRouteTable>());
-        await _host.StartAsync();
+        ConfigureServer(builder, Port);
+        _app = builder.Build();
+        ConfigureEndpoints(_app);
+        await _app.StartAsync();
         _client = CreateHttpClient();
     }
 
     public virtual async ValueTask DisposeAsync()
     {
         _client?.Dispose();
-        if (_host is not null)
+        if (_app is not null)
         {
-            await _host.StopAsync();
-            _host.Dispose();
+            await _app.StopAsync();
+            await _app.DisposeAsync();
         }
     }
 
