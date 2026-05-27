@@ -16,6 +16,8 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
     private IHttpRequestIdentifierFeature? _identifier;
     private IHttpResponseTrailersFeature? _trailers;
     private IHttpResetFeature? _reset;
+    private IHttpMaxRequestBodySizeFeature? _maxRequestBodySize;
+    private IHttpBodyControlFeature? _bodyControl;
     private Dictionary<Type, object>? _extras;
     private int _revision;
 
@@ -69,6 +71,16 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
         if (typeof(T) == typeof(IHttpResetFeature))
         {
             return Unsafe.As<T>(_reset);
+        }
+
+        if (typeof(T) == typeof(IHttpMaxRequestBodySizeFeature))
+        {
+            return Unsafe.As<T>(_maxRequestBodySize);
+        }
+
+        if (typeof(T) == typeof(IHttpBodyControlFeature))
+        {
+            return Unsafe.As<T>(_bodyControl);
         }
 
         return _extras is not null && _extras.TryGetValue(typeof(T), out var val) ? (T)val : null;
@@ -142,6 +154,20 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
         if (typeof(T) == typeof(IHttpResetFeature))
         {
             _reset = Unsafe.As<IHttpResetFeature>(feature);
+            _revision++;
+            return;
+        }
+
+        if (typeof(T) == typeof(IHttpMaxRequestBodySizeFeature))
+        {
+            _maxRequestBodySize = Unsafe.As<IHttpMaxRequestBodySizeFeature>(feature);
+            _revision++;
+            return;
+        }
+
+        if (typeof(T) == typeof(IHttpBodyControlFeature))
+        {
+            _bodyControl = Unsafe.As<IHttpBodyControlFeature>(feature);
             _revision++;
             return;
         }
@@ -254,6 +280,16 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
             return _reset;
         }
 
+        if (type == typeof(IHttpMaxRequestBodySizeFeature))
+        {
+            return _maxRequestBodySize;
+        }
+
+        if (type == typeof(IHttpBodyControlFeature))
+        {
+            return _bodyControl;
+        }
+
         return _extras is not null && _extras.TryGetValue(type, out var val) ? val : null;
     }
 
@@ -329,6 +365,20 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
             return;
         }
 
+        if (type == typeof(IHttpMaxRequestBodySizeFeature))
+        {
+            _maxRequestBodySize = (IHttpMaxRequestBodySizeFeature?)instance;
+            _revision++;
+            return;
+        }
+
+        if (type == typeof(IHttpBodyControlFeature))
+        {
+            _bodyControl = (IHttpBodyControlFeature?)instance;
+            _revision++;
+            return;
+        }
+
         if (instance is null)
         {
             _extras?.Remove(type);
@@ -392,6 +442,16 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
         if (_reset is not null)
         {
             yield return new KeyValuePair<Type, object>(typeof(IHttpResetFeature), _reset);
+        }
+
+        if (_maxRequestBodySize is not null)
+        {
+            yield return new KeyValuePair<Type, object>(typeof(IHttpMaxRequestBodySizeFeature), _maxRequestBodySize);
+        }
+
+        if (_bodyControl is not null)
+        {
+            yield return new KeyValuePair<Type, object>(typeof(IHttpBodyControlFeature), _bodyControl);
         }
 
         if (_extras is not null)
